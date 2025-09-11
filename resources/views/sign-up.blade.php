@@ -169,22 +169,23 @@
         <div class="kanan">
             <h3>Daftarkan akun idSpora</h3>
 
-            <form action="#" method="get">
+            <form action="{{ route('sign-up.post') }}" method="POST">
+                @csrf
                 <div class="mb-3">
                     <h6>Nama Lengkap</h6>
-                    <input type="text" class="form-control" required>
+                    <input type="text" name="name" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <h6>Nomor Telepon</h6>
-                    <input type="tel" class="form-control" required>
+                    <input type="tel" name="phone" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <h6>Email</h6>
-                    <input type="email" class="form-control" required>
+                    <input type="email" name="email" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <h6>Kata Sandi</h6>
-                    <input type="password" class="form-control" required>
+                    <input type="password" name="password" class="form-control" required>
                 </div>
 
                 <button type="submit" class="btn-register">Daftar</button>
