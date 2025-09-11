@@ -1,4 +1,4 @@
-@include('partials.navbar')
+
 <!DOCTYPE html>
 <html lang="id">
 
