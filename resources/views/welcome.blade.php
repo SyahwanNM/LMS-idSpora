@@ -1,4 +1,4 @@
-@include('partials.navbar')
+@include('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="id">
 
