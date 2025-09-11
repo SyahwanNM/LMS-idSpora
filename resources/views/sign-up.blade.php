@@ -32,6 +32,15 @@
             padding: 40px;
         }
 
+        .back {
+            position: fixed;
+            top: 50px;
+            left: 70px;
+            width: 20px;
+            height: auto;
+            cursor: pointer;
+        }
+
         .kiri {
             flex: 0.8;
             display: flex;
@@ -151,6 +160,7 @@
 </head>
 
 <body>
+    <img class="back" src="aset/back.png" alt="">
     <div class="main-container">
         <div class="kiri">
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
