@@ -1,11 +1,86 @@
-@import 'tailwindcss';
+@import "bootstrap/dist/css/bootstrap.min.css";
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+:root {
+    --primary-gradient: radial-gradient(
+        circle at 50% 50%,
+        #51376c 0%,
+        #2e2050 100%
+    );
+    --primary: #51376c;
+    --primary-dark: #2e2050;
+    --secondary: #fbbf24;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --font-main: "poppins";
+    --bg-main: #f8fafc;
+}
+body {
+    padding-top: 56px;
+    font-family: var(--font-main);
+    background: var(--bg-main);
+}
+.card-custom {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 2px 16px 0 rgba(44, 34, 84, 0.08);
+    color: #51376c;
+    margin: 50px;
+}
+.card-custom-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #51376c;
+}
+.card-custom-desc {
+    color: #334155;
+    font-size: 1rem;
+}
+.navbar-gradient {
+    background: linear-gradient(90deg, #252346 0%, #5b56ac 100%);
+    opacity: 0.9;
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Navbar gradient text color */
+.navbar-gradient,
+.navbar-gradient .navbar-brand,
+.navbar-gradient .nav-link,
+.navbar-gradient .navbar-text {
+    color: #fff !important;
+}
+
+/* Custom button colors */
+.btn {
+    border-radius: 10px;
+}
+.btn-primary {
+    background: #f4c430;
+    color: #fff;
+    border: none;
+    transition: background 0.2s;
+}
+.btn-primary:hover,
+.btn-primary:active {
+    background: #252346 35%;
+    color: #fff !important;
+    border: 1px solid #fff;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #000;
+}
+
+.btn-secondary:hover,
+.btn-secondary:active {
+    background: #252346 35%;
+    color: #fff !important;
+    border: 1px solid #fff;
+    box-shadow: none;
+}
+
+.navbar-gradient .form-control::placeholder {
+    color: #fff !important;
+    opacity: 1;
+    opacity: 50%;
 }
