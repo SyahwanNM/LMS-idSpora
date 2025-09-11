@@ -11,12 +11,13 @@
     --secondary: #fbbf24;
     --danger: #ef4444;
     --success: #22c55e;
-    --font-main: "Inter", "Arial", sans-serif;
+    --font-main: "poppins";
     --bg-main: #f8fafc;
 }
 body {
+    padding-top: 56px;
     font-family: var(--font-main);
-    background: var(--primary-gradient);
+    background: var(--bg-main);
 }
 .card-custom {
     background: #fff;
@@ -59,13 +60,27 @@ body {
 }
 .btn-primary:hover,
 .btn-primary:active {
-    background: #fff !important;
-    color: #f4c430 !important;
-    border: none;
+    background: #252346 35%;
+    color: #fff !important;
+    border: 1px solid #fff;
     box-shadow: none;
 }
 
 .btn-secondary {
     background: #fff;
     color: #000;
+}
+
+.btn-secondary:hover,
+.btn-secondary:active {
+    background: #252346 35%;
+    color: #fff !important;
+    border: 1px solid #fff;
+    box-shadow: none;
+}
+
+.navbar-gradient .form-control::placeholder {
+    color: #fff !important;
+    opacity: 1;
+    opacity: 50%;
 }
