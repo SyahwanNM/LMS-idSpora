@@ -10,7 +10,6 @@ class Certificates extends Model
         'user_id',
         'template_id',
         'file_path',
-        'issued_date',
         'expiry_date',
         'generated_at',
         'certificate_code',
