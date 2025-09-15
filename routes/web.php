@@ -90,4 +90,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
     Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
-});
+
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::resource('admin/events', \App\Http\Controllers\EventController::class, [
+            'names' => [
+                'index' => 'admin.events.index',
+                'create' => 'admin.events.create',
+                'store' => 'admin.events.store',
+                'show' => 'admin.events.show',
+                'edit' => 'admin.events.edit',
+                'update' => 'admin.events.update',
+                'destroy' => 'admin.events.destroy',
+            ]
+        ]);
+    });
+}); 
