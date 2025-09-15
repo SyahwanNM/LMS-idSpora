@@ -2,53 +2,94 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Models\Event;
 use Illuminate\Http\Request;
-use App\Models\Event; // kalau sudah ada model Event
 
 class EventController extends Controller
 {
-    // Halaman index (list semua event)
-    public function index(Request $request)
+    public function index()
     {
-        // kalau ada model Event, bisa query dari DB
-        // $events = Event::latest()->paginate(9);
-
-        // sementara pakai dummy data (sampai DB siap)
-        $events = collect(range(1,9))->map(fn($i)=> (object)[
-            'title' => 'AI for Lectures',
-            'date' => '04 September 2025',
-            'city' => 'Bandung',
-            'time' => '09:00 WIB',
-            'quota' => 50,
-            'price_original' => 100000,
-            'price_sale' => 75000,
-            'image_url' => 'https://via.placeholder.com/400x300.png?text=Event+Poster',
-            'slug' => 'ai-for-lectures-'.$i,
-        ]);
-
-        return view('events.index', compact('events'));
+        $events = Event::latest()->paginate(10);
+        return view('admin.events.index', compact('events'));
     }
 
-    // Halaman detail event
-    public function show($slug)
+    public function create()
     {
-        // kalau ada model Event:
-        // $event = Event::where('slug',$slug)->firstOrFail();
+        return view('admin.events.create');
+    }
 
-        // dummy untuk contoh
-        $event = (object)[
-            'title' => 'AI for Lectures',
-            'date' => '04 September 2025',
-            'city' => 'Bandung',
-            'time' => '09:00 WIB',
-            'quota' => 50,
-            'price_original' => 100000,
-            'price_sale' => 75000,
-            'image_url' => 'https://via.placeholder.com/800x500.png?text=Event+Poster',
-            'slug' => $slug,
-            'description' => 'Seminar AI khusus dosen untuk membahas integrasi AI di dunia pendidikan.',
-        ];
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'speaker' => 'required|string|max:255',
+            'description' => 'required',
+            'location' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'event_date' => 'required|date',
+            'event_time' => 'required',
+            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
 
-        return view('events.show', compact('event'));
+        // Simpan gambar ke storage
+        $imagePath = $request->file('image')->store('events', 'public');
+
+        // Simpan data ke database
+        Event::create([
+            'title' => $request->title,
+            'speaker' => $request->speaker,
+            'description' => $request->description,
+            'location' => $request->location,
+            'price' => $request->price,
+            'event_date' => $request->event_date,
+            'event_time' => $request->event_time,
+            'image' => $imagePath,
+        ]);
+
+        return redirect()->route('admin.events.index')->with('success', 'Event berhasil ditambahkan!');
+    }
+
+    public function show(Event $event)
+    {
+        return view('admin.events.show', compact('event'));
+    }
+
+    public function edit(Event $event)
+    {
+        return view('admin.events.edit', compact('event'));
+    }
+
+    public function update(Request $request, Event $event)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'speaker' => 'required|string|max:255',
+            'description' => 'required',
+            'location' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'event_date' => 'required|date',
+            'event_time' => 'required',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $data = $request->only([
+            'title', 'speaker', 'description', 'location', 'price', 'event_date', 'event_time'
+        ]);
+
+        // Jika ada gambar baru, simpan ke storage
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('events', 'public');
+        }
+
+        $event->update($data);
+
+        return redirect()->route('admin.events.index')->with('success', 'Event berhasil diupdate!');
+    }
+
+    public function destroy(Event $event)
+    {
+        $event->delete();
+        return redirect()->route('admin.events.index')->with('success', 'Event berhasil dihapus!');
     }
 }
