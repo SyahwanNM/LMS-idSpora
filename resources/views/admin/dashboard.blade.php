@@ -237,6 +237,28 @@
                         </div>
                     </div>
 
+                    <!-- Manage Events (tambahan baru) -->
+                    <div class="group cursor-pointer" onclick="window.location.href='{{ route('admin.events.index') }}'">
+                        <div class="flex items-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100 hover:border-purple-200 transition-all duration-200 hover:shadow-md">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-sm font-medium text-gray-900 group-hover:text-purple-600 transition-colors">Manage Events</h3>
+                                <p class="text-xs text-gray-500 mt-1">View and manage all events</p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- View Reports -->
                     <div class="group cursor-pointer" onclick="window.location.href='{{ route('admin.reports') }}'">
                         <div class="flex items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100 hover:border-green-200 transition-all duration-200 hover:shadow-md">
@@ -432,6 +454,7 @@
                     <div>
                         <label for="event_image" class="block text-sm font-medium text-gray-700">Event Image</label>
                         <input type="file" name="image" id="event_image" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        <img id="eventImagePreview" src="#" alt="Preview" style="display:none;max-width:100%;margin-top:10px;border-radius:8px;">
                     </div>
                 </div>
                 <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
@@ -575,7 +598,177 @@ function animateCounters() {
         }, 4000);
     }, 500);
 @endif
+
+// Preview gambar event pada modal tambah event
+document.getElementById('event_image').addEventListener('change', function(event) {
+    const [file] = event.target.files;
+    const preview = document.getElementById('eventImagePreview');
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    } else {
+        preview.src = '#';
+        preview.style.display = 'none';
+    }
+});
 </script>
+
+@section('scripts')
+<script>
+    // Modal Functions
+    function openAddCourseModal() {
+        document.getElementById('addCourseModal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeAddCourseModal() {
+        document.getElementById('addCourseModal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function openAddEventModal() {
+        document.getElementById('addEventModal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeAddEventModal() {
+        document.getElementById('addEventModal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modal when pressing escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAddCourseModal();
+                closeAddEventModal();
+            }
+        });
+
+        // Auto-refresh active users count every 30 seconds
+        setInterval(function() {
+            fetch('{{ route("admin.active-users-count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count) {
+                        document.querySelector('[data-active-users]').textContent = data.count.toLocaleString();
+                    }
+                })
+                .catch(error => console.log('Error fetching active users:', error));
+        }, 30000);
+
+        // Animate counters on page load
+        animateCounters();
+    });
+
+    // Counter Animation Function
+    function animateCounters() {
+        const counters = document.querySelectorAll('.text-2xl');
+        
+        counters.forEach(counter => {
+            const target = parseInt(counter.textContent.replace(/[^0-9]/g, ''));
+            const increment = target / 100;
+            let current = 0;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                
+                if (counter.textContent.includes('Rp')) {
+                    counter.textContent = 'Rp ' + Math.floor(current).toLocaleString('id-ID');
+                } else {
+                    counter.textContent = Math.floor(current).toLocaleString();
+                }
+            }, 20);
+        });
+    }
+
+    // Show success message after form submission
+    @if(session('success'))
+        setTimeout(function() {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full opacity-0 transition-all duration-300';
+            successDiv.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    {{ session('success') }}
+                </div>
+            `;
+            document.body.appendChild(successDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                successDiv.classList.remove('translate-x-full', 'opacity-0');
+            }, 100);
+            
+            // Animate out after 3 seconds
+            setTimeout(() => {
+                successDiv.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 300);
+            }, 3000);
+        }, 500);
+    @endif
+
+    // Show error messages
+    @if($errors->any())
+        setTimeout(function() {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full opacity-0 transition-all duration-300';
+            errorDiv.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Please check the form for errors
+                </div>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                errorDiv.classList.remove('translate-x-full', 'opacity-0');
+            }, 100);
+            
+            // Animate out after 4 seconds
+            setTimeout(() => {
+                errorDiv.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(errorDiv);
+                }, 300);
+            }, 4000);
+        }, 500);
+    @endif
+
+    // Preview gambar event pada modal tambah event
+    document.getElementById('event_image').addEventListener('change', function(event) {
+        const [file] = event.target.files;
+        const preview = document.getElementById('eventImagePreview');
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = '#';
+            preview.style.display = 'none';
+        }
+    });
+</script>
+@endsection
 
 <style>
 /* Custom scrollbar styles */
@@ -657,5 +850,3 @@ function animateCounters() {
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 </style>
-
-@endsection
