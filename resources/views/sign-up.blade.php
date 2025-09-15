@@ -156,11 +156,30 @@
         .text-login a:hover {
             text-decoration: underline;
         }
+
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #ff6b6b;
+        }
+
+        .alert-success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #51cf66;
+        }
     </style>
 </head>
 
 <body>
-    <img class="back" src="aset/back.png" alt="">
+    <a href="{{ route('welcome') }}">
+      <img class="back" src="aset/back.png" alt="Kembali">
+    </a>
     <div class="main-container">
         <div class="kiri">
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
@@ -169,23 +188,50 @@
         <div class="kanan">
             <h3>Daftarkan akun idSpora</h3>
 
-            <form action="{{ route('sign-up.post') }}" method="POST">
+            <form action="{{ route('register') }}" method="POST">
                 @csrf
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
+                @if (session('success'))
+                    <div class="alert alert-success">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
                 <div class="mb-3">
                     <h6>Nama Lengkap</h6>
-                    <input type="text" name="name" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <h6>Nomor Telepon</h6>
-                    <input type="tel" name="phone" class="form-control" required>
+                    <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
+                           value="{{ old('name') }}" required>
+                    @error('name')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="mb-3">
                     <h6>Email</h6>
-                    <input type="email" name="email" class="form-control" required>
+                    <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
+                           value="{{ old('email') }}" required>
+                    @error('email')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="mb-3">
                     <h6>Kata Sandi</h6>
-                    <input type="password" name="password" class="form-control" required>
+                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+                    @error('password')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="mb-3">
+                    <h6>Konfirmasi Kata Sandi</h6>
+                    <input type="password" name="password_confirmation" class="form-control" required>
                 </div>
 
                 <button type="submit" class="btn-register">Daftar</button>
@@ -199,7 +245,7 @@
             </button>
 
             <div class="text-login">
-                Sudah punya akun? <a href="{{ route('sign-in') }}">Masuk</a>
+                Sudah punya akun? <a href="{{ route('login') }}">Masuk</a>
             </div>
         </div>
     </div>
