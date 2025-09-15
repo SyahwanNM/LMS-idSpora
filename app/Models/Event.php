@@ -7,16 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Event extends Model
 {
     protected $fillable = [
-        'name',
+        'title',
+        'image',
+        'speaker',
         'description',
         'location',
-        'start_date',
-        'end_date',
+        'price',
+        'event_time',
+        'event_date',
     ];
 
-    // Relationship to certificates
-    public function certificates()
-    {
-        return $this->morphMany(Certificates::class, 'certifiable');
-    }
+    protected $casts = [
+        'event_date' => 'date',
+        'event_time' => 'datetime:H:i',
+        'price' => 'decimal:2',
+    ];
 }

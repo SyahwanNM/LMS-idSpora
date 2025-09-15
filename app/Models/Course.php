@@ -7,16 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 class Course extends Model
 {
     protected $fillable = [
-        'title',
+        'name',
+        'category_id',
         'description',
-        'instructor',
-        'duration',
         'level',
+        'price',
+        'duration',
+        'image',
     ];
 
-    // Relationship to certificates
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function modules()
+    {
+        return $this->hasMany(CourseModule::class)->orderBy('order_no');
+    }
+
     public function certificates()
     {
-        return $this->morphMany(Certificates::class, 'certifiable');
+        return $this->hasMany(Certificate::class);
     }
 }
