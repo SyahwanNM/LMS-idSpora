@@ -177,7 +177,7 @@
 </head>
 
 <body>
-    <a href="{{ route('welcome') }}">
+    <a href="{{ route('landing-page') }}">
       <img class="back" src="aset/back.png" alt="Kembali">
     </a>
     <div class="main-container">
