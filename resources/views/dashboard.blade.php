@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
             margin: 0;
@@ -512,7 +514,7 @@
 </head>
 
 <body>
-   
+
     <div class="box1">
         <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
             <div class="carousel-indicators">
@@ -525,13 +527,13 @@
             </div>
             <div class="carousel-inner">
                 <div class="carousel-item active">
-                    <img class="gambar-carousel" src="{{ asset('aset/ai.png') }}" class="d-block w-100" alt="Slide 1">
+                    <img class="gambar-carousel" src="{{ asset('aset/ai.jpg') }}" class="d-block w-100" alt="Slide 1">
                 </div>
                 <div class="carousel-item">
-                    <img class="gambar-carousel" src="{{ asset('aset/ai2.png') }}" class="d-block w-100" alt="Slide 2">
+                    <img class="gambar-carousel" src="{{ asset('aset/ai2.jpg') }}" class="d-block w-100" alt="Slide 2">
                 </div>
                 <div class="carousel-item">
-                    <img class="gambar-carousel" src="{{ asset('aset/ai3.png') }}" class="d-block w-100" alt="Slide 3">
+                    <img class="gambar-carousel" src="{{ asset('aset/ai3.jpg') }}" class="d-block w-100" alt="Slide 3">
                 </div>
             </div>
         </div>
@@ -621,48 +623,6 @@
             <div class="card-container-course">
                 <div class="card-course">
                     <div class="card-image-course-wrapper">
-                        <img src="{{ asset('aset/logo.png') }}" alt="Course">
-                        <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                        <span class="badge">Beginner</span>
-                    </div>
-
-                    <div class="card-body">
-                        <h4>Learn Artificial Intelligence Python</h4>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididunt...</p>
-
-                        <div class="tags">
-                            <div class="tags-left">
-                                <span>Programming</span>
-                                <span>AI</span>
-                            </div>
-                            <div class="tags-right">
-                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                                <div><img src="{{ asset('aset/ikon-bintang.png') }}"> <span>5.0</span></div>
-                            </div>
-                        </div>
-
-                        <div class="pembicara">
-                            <div class="pembicara-left">
-                                <img src="{{ asset('aset/profile.png') }}" alt="pembicara">
-                                <span>Sianunamanya</span>
-                            </div>
-                            <div class="pembicara-right">
-                                <div><img src="{{ asset('aset/ikon-playvideo.png') }}"> <span>10 Videos</span></div>
-                            </div>
-                        </div>
-
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                </div>
-                <div class="card-course">
-                    <div class="card-image">
                         <img src="{{ asset('aset/code.png') }}" alt="Course">
                         <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
                         <span class="badge">Beginner</span>
@@ -706,7 +666,49 @@
                 <div class="card-course">
                     <div class="card-image-course-wrapper">
                         <img src="{{ asset('aset/code.png') }}" alt="Course">
-                        <img src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge">Beginner</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h4>Learn Artificial Intelligence Python</h4>
+                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididunt...</p>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Programming</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                                <div><img src="{{ asset('aset/ikon-bintang.png') }}"> <span>5.0</span></div>
+                            </div>
+                        </div>
+
+                        <div class="pembicara">
+                            <div class="pembicara-left">
+                                <img src="{{ asset('aset/profile.png') }}" alt="pembicara">
+                                <span>Sianunamanya</span>
+                            </div>
+                            <div class="pembicara-right">
+                                <div><img src="{{ asset('aset/ikon-playvideo.png') }}"> <span>10 Videos</span></div>
+                            </div>
+                        </div>
+
+                        <div class="progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar"></div>
+                            </div>
+                            <p>30% selesai</p>
+                        </div>
+                        <button class="btn-lanjut">Lanjutkan</button>
+                    </div>
+                </div>
+                <div class="card-course">
+                    <div class="card-image-course-wrapper">
+                        <img src="{{ asset('aset/code.png') }}" alt="Course">
+                         <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
                         <span class="badge">Beginner</span>
                     </div>
                     <div class="card-body">
@@ -747,7 +749,7 @@
                 <div class="card-course">
                     <div class="card-image-course-wrapper">
                         <img src="{{ asset('aset/code.png') }}" alt="Course">
-                        <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                         <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
                         <span class="badge">Beginner</span>
                     </div>
 
@@ -1077,15 +1079,23 @@
                 responsive: true,
                 cutout: '75%',
                 plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false }
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
                 }
             },
             plugins: [{
                 id: 'textInside',
                 beforeDraw(chart) {
-                    const { width } = chart;
-                    const { height } = chart;
+                    const {
+                        width
+                    } = chart;
+                    const {
+                        height
+                    } = chart;
                     const ctx = chart.ctx;
                     ctx.restore();
 
@@ -1115,8 +1125,7 @@
             type: 'bar',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                datasets: [
-                    {
+                datasets: [{
                         label: 'Study',
                         data: [40, 20, 65, 35, 15],
                         backgroundColor: '#F4C430'
@@ -1131,11 +1140,15 @@
             options: {
                 responsive: true,
                 scales: {
-                    x: { stacked: true },
+                    x: {
+                        stacked: true
+                    },
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        ticks: { callback: value => value + ' Hr' }
+                        ticks: {
+                            callback: value => value + ' Hr'
+                        }
                     }
                 },
                 plugins: {
