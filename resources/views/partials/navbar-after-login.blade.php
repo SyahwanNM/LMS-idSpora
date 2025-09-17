@@ -11,13 +11,13 @@
         <div class="collapse navbar-collapse align-items-center" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-lg-0 d-flex align-items-center ms-3">
                 <li class="nav-item mx-3">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    <a class="nav-link active" aria-current="page" href="{{ route('dashboard') }}">Dashboard</a>
                 </li>
                 <li class="nav-item mx-3">
                     <a class="nav-link" href="#">Courses</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link" href="#">Events</a>
+                    <a class="nav-link" href="{{ route('events.index') }}">Events</a>
                 </li>
                 <li class="nav-item mx-3">
                     <a class="nav-link" href="#">About</a>
@@ -38,14 +38,33 @@
                 </div>
             </form>
             <div class="d-flex align-items-center ms-3" style="margin-right: 30px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bell"
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bell me-3"
                     viewBox="0 0 16 16">
                     <path
                         d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6" />
                 </svg>
-                <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                    alt="Profile" class="rounded-circle ms-3"
-                    style="width:40px; height:40px; object-fit:cover; border:2px solid #fff;">
+                
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" 
+                            data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;">
+                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                            alt="Profile" class="rounded-circle me-2"
+                            style="width:40px; height:40px; object-fit:cover; border:2px solid #fff;">
+                        <span class="text-white">{{ Auth::user()->name }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
+                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="dropdown-item">Logout</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
