@@ -37,8 +37,8 @@
                 </div>
             </form>
             <div class="d-flex align-items-center ms-3" style="margin-right: 30px;">
-                <a href="#" class="btn btn-primary me-2" sy>Login</a>
-                <a href="#" class="btn btn-secondary">Sign Up</a>
+                <a href="{{ route('login') }}" class="btn btn-primary me-2">Login</a>
+                <a href="{{ route('register') }}" class="btn btn-secondary">Sign Up</a>
             </div>
         </div>
     </div>
