@@ -9,6 +9,311 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>
+<style>
+    .box3 {
+        padding: 20px;
+    }
+
+    .box3 .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .box3 .header h3 {
+        margin-left: 40px;
+        padding: 5px;
+        font-weight: 500;
+    }
+
+    .box3 .header a {
+        color: #f4c542;
+        text-decoration: none;
+    }
+
+    .card-container-course {
+        display: flex;
+        gap: 30px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        scroll-behavior: smooth;
+        padding-left: 16px;
+    }
+
+    .card-container-course::-webkit-scrollbar {
+        display: none;
+    }
+
+    .card-course {
+        flex: 0 0 auto;
+        background: #fff;
+        padding: 16px;
+        border: 1px solid #cfd8dc;
+        border-radius: 12px;
+        overflow: hidden;
+        width: 350px;
+        border: 2px solid #f4c542;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-image-course-wrapper {
+        position: relative;
+    }
+
+    .bookmark {
+        position: absolute;
+        top: 147px;
+        right: 0px;
+        width: 25px;
+        height: auto;
+        cursor: pointer;
+    }
+
+    .badge {
+        position: absolute;
+        top: 152px;
+        right: 35px;
+        background: #34C75930;
+        border: 1px solid white;
+        color: #34C759;
+        padding: 3px 8px;
+        font-size: 12px;
+        border-radius: 12px;
+    }
+
+    .card-body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body h4 {
+        font-size: 15px;
+        font-weight: bold;
+        margin: 8px 0 4px;
+    }
+
+    .card-body .desc {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 10px;
+        line-height: 1.4em;
+        height: 38px;
+        overflow: hidden;
+    }
+
+    .tags {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .tags-left {
+        display: flex;
+        gap: 6px;
+    }
+
+    .tags-left span {
+        background: #eceff1;
+        font-size: 13px;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    .tags-right {
+        display: flex;
+        gap: 10px;
+        font-size: 14px;
+        color: #444;
+    }
+
+    .tags-right div {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .tags-right img {
+        width: 14px;
+        height: 14px;
+    }
+
+    .info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        margin: 6px 0;
+    }
+
+    .info div {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #444;
+    }
+
+    .info img {
+        width: 14px;
+        height: 14px;
+    }
+
+    .pembicara {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 8px 0;
+    }
+
+    .pembicara-left {
+        display: flex;
+        gap: 6px;
+    }
+
+    .pembicara-left span {
+        font-size: 12px;
+        margin-top: 5px;
+        border-radius: 10px;
+    }
+
+    .pembicara-right {
+        display: flex;
+        gap: 10px;
+        font-size: 13px;
+        color: #444;
+    }
+
+    .pembicara-right div {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .pembicara-right img {
+        width: 14px;
+        height: 14px;
+        margin-left: 70px;
+    }
+
+    .progress-wrapper {
+        margin-bottom: 8px;
+    }
+
+    .progress {
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 30%;
+        background: #f4c542;
+    }
+
+    .progress-wrapper p {
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .btn-lanjut {
+        width: 100%;
+        padding: 10px;
+        background: #1e2a57;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .box4 {
+        padding: 20px;
+    }
+
+    .box4 .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .box4 .header h3 {
+        margin-left: 40px;
+        padding: 5px;
+        font-weight: 500;
+    }
+
+    .box4 .header a {
+        color: #f4c542;
+        text-decoration: none;
+    }
+
+    .card-container-event {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        scroll-behavior: smooth;
+        padding-left: 16px;
+
+    }
+
+    .card-container-event::-webkit-scrollbar {
+        display: none;
+    }
+
+    .card-event {
+        flex: 0 0 auto;
+        width: 315px;
+        border: 2px solid #f4c542;
+        border-radius: 12px;
+        background: #fff;
+        padding: 16px;
+    }
+
+    .card-image-event {
+        width: 280px;
+        height: 320px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+
+    .card-image-event-wrapper {
+        position: relative;
+    }
+
+    .bookmark-event {
+        position: absolute;
+        top: 270px;
+        right: 10px;
+        width: 30px;
+        height: auto;
+        cursor: pointer;
+    }
+
+    .badge-event {
+        position: absolute;
+        top: 274px;
+        right: 50px;
+        background: #34C75940;
+        border: 1px solid white;
+        color: #34C759;
+        padding: 3px 8px;
+        font-size: 12px;
+        border-radius: 12px;
+    }
+
+    .desc-event {
+        font-size: 14px;
+        color: #666;
+        margin: 10px 0;
+        line-height: 1.4em;
+        height: 38px;
+        overflow: hidden;
+    }
+</style>
 
 <body>
 
@@ -423,6 +728,261 @@
             <h3>Event & Webinar</h3>
             <h6>Jadwal event dan webinar terbaru dari idSpora</h6>
         </div>
+        <div class="box4">
+            <div class="card-container-event">
+                <div class="card-event">
+                    <div class="card-image-event-wrapper">
+                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                        <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge-event">Beginner</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h4>AI For Lectures</h4>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Workshop</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                            </div>
+                        </div>
+                        <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                            tempor
+                            incididunt...</p>
+
+                        <div class="keterangan">
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                                <span>04 September 2025</span>
+                            </div>
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                                <span>Bandung • 09.00 WIB</span>
+                            </div>
+                        </div>
+                        <div class="box-harga">
+                            <div class="harga">
+                                <p class="coret">Rp. 100.000</p>
+                                <p class="harga-teks">Rp. 75.000</p>
+                            </div>
+                            <button class="btn-regist">Register</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-event">
+                    <div class="card-image-event-wrapper">
+                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                        <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge-event">Beginner</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h4>AI For Lectures</h4>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Workshop</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                            </div>
+                        </div>
+                        <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                            tempor
+                            incididunt...</p>
+
+                        <div class="keterangan">
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                                <span>04 September 2025</span>
+                            </div>
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                                <span>Bandung • 09.00 WIB</span>
+                            </div>
+                        </div>
+                        <div class="box-harga">
+                            <div class="harga">
+                                <p class="coret">Rp. 100.000</p>
+                                <p class="harga-teks">Rp. 75.000</p>
+                            </div>
+                            <button class="btn-regist">Register</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-event">
+                    <div class="card-image-event-wrapper">
+                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                        <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge-event">Beginner</span>
+                    </div>
+                    <div class="card-body">
+                        <h4>AI For Lectures</h4>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Workshop</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                            </div>
+                        </div>
+                        <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                            tempor
+                            incididunt...</p>
+
+                        <div class="keterangan">
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                                <span>04 September 2025</span>
+                            </div>
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                                <span>Bandung • 09.00 WIB</span>
+                            </div>
+                        </div>
+                        <div class="box-harga">
+                            <div class="harga">
+                                <p class="coret">Rp. 100.000</p>
+                                <p class="harga-teks">Rp. 75.000</p>
+                            </div>
+                            <button class="btn-regist">Register</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-event">
+                    <div class="card-image-event-wrapper">
+                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                        <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge-event">Beginner</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h4>AI For Lectures</h4>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Workshop</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                            </div>
+                        </div>
+                        <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                            tempor
+                            incididunt...</p>
+
+                        <div class="keterangan">
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                                <span>04 September 2025</span>
+                            </div>
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                                <span>Bandung • 09.00 WIB</span>
+                            </div>
+                        </div>
+                        <div class="box-harga">
+                            <div class="harga">
+                                <p class="coret">Rp. 100.000</p>
+                                <p class="harga-teks">Rp. 75.000</p>
+                            </div>
+                            <button class="btn-regist">Register</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-event">
+                    <div class="card-image-event-wrapper">
+                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                        <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge-event">Beginner</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h4>AI For Lectures</h4>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Workshop</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                            </div>
+                        </div>
+                        <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                            tempor
+                            incididunt...</p>
+
+                        <div class="keterangan">
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                                <span>04 September 2025</span>
+                            </div>
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                                <span>Bandung • 09.00 WIB</span>
+                            </div>
+                        </div>
+                        <div class="box-harga">
+                            <div class="harga">
+                                <p class="coret">Rp. 100.000</p>
+                                <p class="harga-teks">Rp. 75.000</p>
+                            </div>
+                            <button class="btn-regist">Register</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-event">
+                    <div class="card-image-event-wrapper">
+                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                        <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
+                        <span class="badge-event">Beginner</span>
+                    </div>
+
+                    <div class="card-body">
+                        <h4>AI For Lectures</h4>
+
+                        <div class="tags">
+                            <div class="tags-left">
+                                <span>Workshop</span>
+                                <span>AI</span>
+                            </div>
+                            <div class="tags-right">
+                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                            </div>
+                        </div>
+                        <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                            tempor
+                            incididunt...</p>
+
+                        <div class="keterangan">
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                                <span>04 September 2025</span>
+                            </div>
+                            <div class="keterangan">
+                                <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                                <span>Bandung • 09.00 WIB</span>
+                            </div>
+                        </div>
+                        <div class="box-harga">
+                            <div class="harga">
+                                <p class="coret">Rp. 100.000</p>
+                                <p class="harga-teks">Rp. 75.000</p>
+                            </div>
+                            <button class="btn-regist">Register</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <ul>
             <li></li>
         </ul>
@@ -442,3 +1002,4 @@
 </body>
 
 </html>
+@include('partials.footer-before-login')
