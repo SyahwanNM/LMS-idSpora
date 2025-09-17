@@ -172,11 +172,40 @@
     .text-login a:hover {
       text-decoration: underline;
     }
+
+    .alert {
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .alert-danger {
+      background-color: rgba(220, 53, 69, 0.2);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      color: #ff6b6b;
+    }
+
+    .alert-success {
+      background-color: rgba(40, 167, 69, 0.2);
+      border: 1px solid rgba(40, 167, 69, 0.3);
+      color: #51cf66;
+    }
+
+    .form-check-input:checked {
+      background-color: #f4a442;
+      border-color: #f4a442;
+    }
+
+    .form-check-label {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+    }
   </style>
 </head>
 
 <body>
-   <img class="back" src="aset/back.png" alt="">
+   <a href="{{ route('welcome') }}">
+     <img class="back" src="aset/back.png" alt="Kembali">
+   </a>
   <div class="main-container">
     <div class="kiri">
       <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
@@ -185,14 +214,46 @@
     <div class="kanan">
       <h3>Masuk</h3>
 
-      <form action="#" method="get">
+      <form action="{{ route('login') }}" method="POST">
+        @csrf
+        @if ($errors->any())
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+              @endforeach
+            </ul>
+          </div>
+        @endif
+        
+        @if (session('success'))
+          <div class="alert alert-success">
+            {{ session('success') }}
+          </div>
+        @endif
+
         <div class="mb-3">
           <h6>Email</h6>
-          <input type="email" class="form-control" required>
+          <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
+                 value="{{ old('email') }}" required>
+          @error('email')
+            <div class="invalid-feedback">{{ $message }}</div>
+          @enderror
         </div>
         <div class="mb-3">
           <h6>Kata Sandi</h6>
-          <input type="password" class="form-control" required>
+          <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+          @error('password')
+            <div class="invalid-feedback">{{ $message }}</div>
+          @enderror
+        </div>
+        <div class="mb-3">
+          <div class="form-check">
+            <input type="checkbox" name="remember" class="form-check-input" id="remember">
+            <label class="form-check-label" for="remember">
+              Ingat saya
+            </label>
+          </div>
         </div>
         <div class="lupa-password">
           <a href="{{ route('forgot-password') }}">
@@ -209,7 +270,7 @@
       </button>
 
       <div class="text-login">
-        Sudah punya akun? <a href="{{ route('sign-up') }}">Daftar</a>
+        Belum punya akun? <a href="{{ route('register') }}">Daftar</a>
       </div>
     </div>
   </div>
