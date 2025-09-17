@@ -8,15 +8,21 @@
     );
     --primary: #51376c;
     --primary-dark: #2e2050;
-    --secondary: #fbbf24;
+    --secondary: #f4c430;
     --danger: #ef4444;
     --success: #22c55e;
-    --font-main: "poppins";
+    --font-main: "Poppins";
     --bg-main: #f8fafc;
+    --fs-title: 64px;
+    --fs-heading: 40px;
+    --fs-subheading: 32px;
+    --fs-body: 18px;
+    --fs-caption: 14px;
+    --fs-small: 12px;
 }
 body {
     padding-top: 56px;
-    font-family: var(--font-main);
+    font-family: "Poppins", sans-serif;
     background: var(--bg-main);
 }
 .card-custom {
@@ -83,4 +89,591 @@ body {
     color: #fff !important;
     opacity: 1;
     opacity: 50%;
+}
+
+/* Font size utilities */
+.fs-10 {
+    font-size: 10px !important;
+}
+.fs-12 {
+    font-size: 12px !important;
+}
+.fs-14 {
+    font-size: 14px !important;
+}
+.fs-16 {
+    font-size: 16px !important;
+}
+.fs-18 {
+    font-size: 18px !important;
+}
+.fs-20 {
+    font-size: 20px !important;
+}
+.fs-24 {
+    font-size: 24px !important;
+}
+.fs-32 {
+    font-size: 32px !important;
+}
+.fs-40 {
+    font-size: 40px !important;
+}
+.fs-48 {
+    font-size: 48px !important;
+}
+.fs-64 {
+    font-size: 64px !important;
+}
+
+/* Font size utilities with semantic names */
+.fs-title {
+    font-size: 64px !important; /* Judul utama, hero, landing */
+    font-weight: 700;
+}
+.fs-heading {
+    font-size: 40px !important; /* Heading besar, section title */
+    font-weight: 600;
+}
+.fs-subheading {
+    font-size: 32px !important; /* Subheading, card title */
+    font-weight: 600;
+}
+.fs-body {
+    font-size: 18px !important; /* Konten utama, paragraf */
+    font-weight: 400;
+}
+.fs-caption {
+    font-size: 14px !important; /* Caption, deskripsi kecil */
+    font-weight: 400;
+}
+.fs-small {
+    font-size: 12px !important; /* Text kecil, helper */
+    font-weight: 400;
+}
+
+.reviews {
+    display: flex;
+    gap: 12px;
+    padding: 2 45px; /* tidak mentok kiri/kanan */
+    margin: 0;
+    overflow-x: auto;
+    align-items: stretch;
+    list-style: none;
+    max-width: 100vw;
+}
+
+/* Tiap item/card punya ukuran konsisten */
+.reviews > li {
+    flex: 0 0 220px; /* lebar konsisten */
+    max-width: 220px;
+}
+
+.reviews .card {
+    height: 100%;
+    width: 100%;
+    outline: 1px solid var(--secondary);
+}
+
+.reviews .card-body {
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    outline: var(--secondary);
+}
+
+.reviewer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.reviewer img {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 999px;
+    border: 2px solid #fff;
+}
+
+.reviewer-name {
+    font-size: 13px;
+    margin: 0;
+}
+
+.stars {
+    color: #fbbf24;
+    font-size: 15px;
+    margin-bottom: 8px;
+    line-height: 1;
+    display: inline-flex;
+    gap: 2px;
+}
+
+.review-text {
+    font-size: 12px;
+    line-height: 1.35;
+    margin: 0;
+    /* Batasi 3 baris supaya tinggi card seragam */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    /* “Baseline” tinggi area teks 3 baris */
+    min-height: calc(1.35em * 3);
+}
+
+.hero-carousel {
+    padding-top: 20px;
+    padding-bottom: 30px;
+    background: var(--bg-main);
+}
+
+/* Kontainer carousel (selaras padding dengan .reviews yang pakai 45px) */
+.custom-carousel {
+    width: 1350px;
+    height: 300px;
+    max-width: 100vw;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 18px 45px 0 45px;
+}
+
+/* Gambar item di dalam carousel */
+.custom-carousel .carousel-item img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+}
+
+.section-title {
+    text-align: center;
+    padding-top: 30px;
+    font-size: var(--fs-heading);
+    margin-bottom: 12px;
+}
+.section-title h3 {
+    margin-bottom: 4px;
+}
+.section-title h6 {
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    color: #555;
+    margin: 0;
+}
+
+.custom-carousel {
+    width: 1350px;
+    height: 300px;
+    max-width: 100vw;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 24px;
+    padding: 18px 45px 0 45px;
+}
+.custom-carousel .carousel-item img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+}
+
+.kategori-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 0;
+
+    justify-content: center;
+    align-items: stretch;
+    margin: 0;
+}
+.kategori-item {
+    background: var(--secondary);
+    color: #fff;
+    border-radius: 10px;
+    height: 48px;
+    min-width: 140px; /* konsisten */
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    width: max-content;
+    white-space: nowrap;
+    font-size: 16px;
+    font-weight: 500;
+}
+.kategori-item.wide {
+    min-width: 200px;
+}
+
+.course-list {
+    list-style: none;
+    padding: 0 45px; /* selaras dengan .reviews padding */
+    margin: 0 !important;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    max-width: 1200px;
+}
+
+/* Event card list grid */
+.event-list {
+    list-style: none;
+    padding: 0 45px;
+    margin: 0 !important;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    max-width: 1200px;
+}
+
+/* Event card style, similar to course-card */
+.event-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    border-radius: 10px;
+    box-shadow: 0 2px 16px 0 rgba(44, 34, 84, 0.08);
+    outline: 1.5px solid var(--secondary);
+    overflow: hidden;
+    background: #fff;
+}
+.event-card .thumb-wrapper {
+    position: relative;
+    width: 100%;
+}
+.event-card .event-thumb {
+    height: 480px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border-radius: 18px 18px 0 0;
+}
+.event-card .inner {
+    padding: 0 10px 10px 10px;
+}
+.event-card .title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 8px 0 4px 0;
+    color: var(--primary-dark);
+}
+.event-card .desc {
+    font-size: 14px;
+    color: #444;
+    margin: 4px 0 8px 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.35em * 2);
+}
+.event-card .meta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin: 4px 0 8px 0;
+    font-size: 13px;
+    color: #222;
+}
+.event-card .author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+.event-card .author img {
+    width: 26px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 999px;
+    border: 1px solid #fff;
+}
+.event-card .price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+.event-card .price-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.event-card .price-now {
+    color: #111;
+    font-size: 15px;
+    font-weight: 600;
+}
+.event-card .btn-enroll {
+    background: var(--secondary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.course-card {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 2px 16px 0 rgba(44, 34, 84, 0.08); /* sama nuansa shadow card-custom */
+    outline: 1px solid var(--secondary);
+    overflow: hidden;
+    background: #fff;
+}
+.course-card .thumb {
+    height: 160px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    padding: 10px;
+    border-radius: 15px 15px 0 0;
+}
+.course-card .inner {
+    padding: 0 10px 10px 10px;
+}
+.course-card .title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 4px 0;
+    color: var(--primary-dark);
+}
+.course-card .desc {
+    font-size: 13px;
+    color: #444;
+    margin: 4px 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: calc(1.35em * 2);
+}
+.course-card .tags {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 4px 0;
+    flex-wrap: wrap;
+}
+.course-card .tag {
+    background: var(--secondary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 2px 8px;
+    display: inline-block;
+}
+.course-card .meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    font-size: 13px;
+    color: #222;
+}
+.course-card .author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+.course-card .author img {
+    width: 26px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 999px;
+    border: 1px solid #fff;
+}
+.course-card .price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+.course-card .price-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.course-card .price-old {
+    text-decoration: line-through;
+    color: #aaa;
+    font-size: 12px;
+}
+.course-card .price-now {
+    color: #111;
+    font-size: 15px;
+    font-weight: 600;
+}
+.course-card .btn-enroll {
+    background: var(--secondary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Responsive kecil */
+@media (max-width: 480px) {
+    .reviews {
+        padding: 0 16px;
+    }
+    .reviews > li {
+        flex-basis: 200px;
+        max-width: 200px;
+    }
+    .course-list {
+        padding: 0 16px;
+    }
+    .kategori-item {
+        min-width: 120px;
+        font-size: 15px;
+    }
+}
+
+/* (opsional) Perbaikan kecil : hover btn-primary yang sebelumnya tidak valid color+opacity */
+.btn-primary:hover,
+.btn-primary:active {
+    background: rgba(37, 35, 70, 0.35); /* #252346 dengan opacity 35% */
+    color: #fff !important;
+    border: 1px solid #fff;
+    box-shadow: none;
+}
+.thumb-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Group badge & save button bottom right */
+.badge-save-group {
+    position: absolute;
+    right: 12px;
+    bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2;
+}
+.badge-save-group .course-badge {
+    position: static;
+    margin: 0;
+}
+.badge-save-group .save-btn {
+    position: static;
+    margin: 0;
+}
+.thumb-wrapper img.thumb {
+    height: 160px;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    padding: 10px;
+    border-radius: 15px 15px 0 0;
+}
+
+/* Overlay bottom for badge + save icon (glassmorphism) */
+
+/* Badge level */
+.course-badge {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+
+    /* glass effect */
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+/* Beginner = Hijau */
+.course-badge.beginner {
+    background: rgba(52, 199, 89, 0.1); /* hijau transparan 10% */
+    color: #34c759;
+    border: 1px solid rgba(52, 199, 89, 0.25);
+}
+
+/* Intermediate = Biru */
+.course-badge.intermediate {
+    background: rgba(0, 122, 255, 0.1); /* biru transparan 10% */
+    color: #007aff;
+    border: 1px solid rgba(0, 122, 255, 0.25);
+}
+
+/* Advance = Merah */
+.course-badge.advance {
+    background: rgba(255, 59, 48, 0.1); /* merah transparan 10% */
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.25);
+}
+
+/* Save button */
+.save-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(244, 244, 244, 0.2);
+    border: none;
+    border-radius: 50%;
+    padding: 6px;
+    cursor: pointer;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.save-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.partner {
+    padding: 40px 0;
+    text-align: center;
+}
+
+.partner-logos {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 45px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    align-items: center;
+    justify-items: center;
+}
+
+.partner-logos img {
+    max-height: 120px; /* seragam tinggi logo */
+    max-width: 160px; /* batasi lebar */
+    object-fit: contain; /* biar proporsional */
+    display: block;
+    transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.partner-logos img:hover {
+    filter: grayscale(0%) opacity(1);
+    transform: translateY(-2px);
+}
+
+/* responsif kecil */
+@media (max-width: 640px) {
+    .partner-logos {
+        padding: 0 16px;
+        gap: 18px;
+    }
+    .partner-logos img {
+        max-height: 36px;
+        max-width: 120px;
+    }
 }
