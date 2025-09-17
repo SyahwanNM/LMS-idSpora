@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-gradient fixed-top">
     <div class="container-fluid d-flex align-items-center" style="padding: 0;">
-        <a class="navbar-brand" href="#" style="margin-left: 30px; mar">
+        <a class="navbar-brand" href="#" style="margin-left: 30px;">
             <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="Logo idSpora" class="img-fluid"
                 style="max-width:80px; height:auto;">
         </a>
