@@ -14,8 +14,8 @@
     <div class="search-banner-container">
         <form class="search-banner-form" action="#" method="get" autocomplete="off">
             <div class="search-wrap">
-                <input id="site-search" class="form-control search-input" type="search" name="search" placeholder="Search"
-                    aria-label="Search" aria-expanded="false" aria-controls="search-suggest"> 
+                <input id="site-search" class="form-control search-input" type="search" name="search"
+                    placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest">
                 <span class="search-icon" aria-hidden="false">
                     <svg id="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                         fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
@@ -625,17 +625,18 @@
 
                 <div class="card-body">
                     <h4>AI For Lectures</h4>
-
-                    <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                    <div class="tags"> <span class="tag">Workshop</span> <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
                         tempor
                         incididunt...</p>
 
@@ -683,18 +684,21 @@
                 </div>
 
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
-
+                    <h3>AI For Lectures</h3>
                     <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                        <span class="tag">Workshop</span>
+                        <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
                         tempor
                         incididunt...</p>
 
@@ -741,18 +745,22 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
+                    <h3>AI For Lectures</h3>
 
                     <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                        <span class="tag">Workshop</span>
+                        <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
                         tempor
                         incididunt...</p>
 
@@ -800,18 +808,22 @@
                 </div>
 
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
+                    <h5>AI For Lectures</h5>
 
                     <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                        <span class="tag">Workshop</span>
+                        <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
                         tempor
                         incididunt...</p>
 
