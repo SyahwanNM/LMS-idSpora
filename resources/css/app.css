@@ -27,7 +27,7 @@
 }
 
 body.bg-split-horizontal {
-    background: linear-gradient(to bottom, #f5c52f 65%, var(--white) 100%);
+    background: linear-gradient(to bottom, #f5c52f 75%, var(--white) 100%);
     background-size: 100% 100svh;
     background-repeat: no-repeat;
     background-color: var(--white);
@@ -270,7 +270,8 @@ body {
 
 /* ---- Section dasar ---- */
 .testimoni-section {
-    padding: 24px 0;
+    padding-top: 0;
+    padding-bottom: 24px;
 }
 .testimoni-section .section-title h3 {
     margin: 0 0 4px;
@@ -372,7 +373,7 @@ body {
 }
 
 .hero-carousel {
-    padding-top: 20px;
+    padding-top: 0;
     padding-bottom: 30px;
     background: transparent;
 }
@@ -682,6 +683,22 @@ body {
     overflow: hidden;
 }
 
+.card-event .tags {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 4px 0;
+    flex-wrap: wrap;
+}
+.card-event .tag {
+    background: var(--secondary);
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 2px 8px;
+    display: inline-block;
+}
 .card-event .author img {
     width: 26px;
     height: 26px;
