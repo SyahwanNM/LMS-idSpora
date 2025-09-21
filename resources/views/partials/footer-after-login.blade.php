@@ -2,9 +2,10 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-3 col-md-6 mb-4">
-                <a class="navbar-brand" href="index.html"><img src="property/logo idspora_nobg_dark.png"
-                        alt="idSpora Logo" style="height: 60px; width: auto" /></a>
-                <p class="text-light">
+                <a class="navbar-brand" href="/">
+                    <img src="{{ asset('logo-idspora.png') }}" alt="idSpora Logo" style="height: auto; width: 120px; object-fit: contain; display: block;" />
+                </a>
+                <p class="text-light mt-2">
                     Belajar tanpa batas, berkembang tanpa henti.
                 </p>
                 <div class="social-links">
@@ -71,6 +72,3 @@
         </div>
     </div>
 </div>
-
-
-
