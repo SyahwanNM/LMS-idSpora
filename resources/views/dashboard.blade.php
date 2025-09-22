@@ -11,1055 +11,666 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow-x: hidden;
-            font-family: "Poppins";
-            color: black;
-        }
 
-
-        .gambar-carousel {
-            width: 1350px;
-            height: 300px;
-            margin: 35px;
-            object-fit: cover;
-        }
-
-        .row {
-            margin-left: 0;
-            margin-right: 0;
-        }
-
-        .col-md-4 {
-            padding-left: 5px;
-            padding-right: 5px;
-        }
-
-        .kotak {
-            width: 400px;
-            height: auto;
-            margin: 5px 40px;
-            padding: 15px;
-            box-shadow: 0 0 10px rgb(219, 215, 215);
-            color: black;
-            border-radius: 20px;
-        }
-
-        #gradesChart {
-            display: block;
-            margin: 0 auto;
-            max-width: 180px;
-        }
-
-        .judul {
-            text-align: left;
-            margin: 0px 50px;
-            font-weight: 600;
-        }
-
-        .bulan {
-            text-align: left;
-            margin: 0px 30px;
-            padding: 0px 20px 13px 20px;
-            font-weight: 400;
-            color: grey;
-        }
-
-        .stat-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .keterangan {
-            flex: 1;
-        }
-
-        .chart-wrapper {
-            flex-shrink: 0;
-            width: 180px;
-            height: 180px;
-        }
-
-        .chart-wrapper canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .stat-item img {
-            width: 40px;
-            height: 40px;
-            margin-right: 15px;
-        }
-
-        .stat-text .label {
-            font-size: 14px;
-            color: gray;
-            margin: 0;
-        }
-
-        .stat-text .value {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .task-item {
-            margin: 20px 50px;
-            padding: 8px 0;
-
-        }
-
-        .task-score {
-            float: right;
-            color: gray;
-        }
-
-        .progress {
-            height: 10px;
-        }
-
-        .progress-bar {
-            background-color: #F4C430;
-            height: 10px;
-        }
-
-        #hoursChart {
-            max-height: 250px;
-            margin-top: 20px;
-        }
-
-        .box3 {
-            padding: 20px;
-        }
-
-        .box3 .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .box3 .header h3 {
-            margin-left: 40px;
-            padding: 5px;
-            font-weight: 500;
-        }
-
-        .box3 .header a {
-            color: #f4c542;
-            text-decoration: none;
-        }
-
-        .card-container-course {
-            display: flex;
-            gap: 30px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scroll-behavior: smooth;
-            margin-left: 40px;
-        }
-
-        .card-container-course::-webkit-scrollbar {
-            display: none;
-        }
-
-        .card-course {
-            flex: 0 0 auto;
-            background: #fff;
-            padding: 16px;
-            border: 1px solid #cfd8dc;
-            border-radius: 12px;
-            overflow: hidden;
-            width: 350px;
-            border: 2px solid #f4c542;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-image-course-wrapper {
-            position: relative;
-        }
-
-        .bookmark {
-            position: absolute;
-            top: 147px;
-            right: 0px;
-            width: 25px;
-            height: auto;
-            cursor: pointer;
-        }
-
-        .badge {
-            position: absolute;
-            top: 152px;
-            right: 35px;
-            background: #34C75930;
-            border: 1px solid white;
-            color: #34C759;
-            padding: 3px 8px;
-            font-size: 12px;
-            border-radius: 12px;
-        }
-
-        .card-body {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-body h4 {
-            font-size: 15px;
-            font-weight: bold;
-            margin: 8px 0 4px;
-        }
-
-        .card-body .desc {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 10px;
-            line-height: 1.4em;
-            height: 38px;
-            overflow: hidden;
-        }
-
-        .tags {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .tags-left {
-            display: flex;
-            gap: 6px;
-        }
-
-        .tags-left span {
-            background: #eceff1;
-            font-size: 13px;
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-
-        .tags-right {
-            display: flex;
-            gap: 10px;
-            font-size: 14px;
-            color: #444;
-        }
-
-        .tags-right div {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .tags-right img {
-            width: 14px;
-            height: 14px;
-        }
-
-        .info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            margin: 6px 0;
-        }
-
-        .info div {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: #444;
-        }
-
-        .info img {
-            width: 14px;
-            height: 14px;
-        }
-
-        .pembicara {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 8px 0;
-        }
-
-        .pembicara-left {
-            display: flex;
-            gap: 6px;
-        }
-
-        .pembicara-left span {
-            font-size: 12px;
-            margin-top: 5px;
-            border-radius: 10px;
-        }
-
-        .pembicara-right {
-            display: flex;
-            gap: 10px;
-            font-size: 13px;
-            color: #444;
-        }
-
-        .pembicara-right div {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .pembicara-right img {
-            width: 14px;
-            height: 14px;
-            margin-left: 70px;
-        }
-
-        .progress-wrapper {
-            margin-bottom: 8px;
-        }
-
-        .progress {
-            height: 6px;
-            background: #e0e0e0;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 30%;
-            background: #f4c542;
-        }
-
-        .progress-wrapper p {
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .btn-lanjut {
-            width: 100%;
-            padding: 10px;
-            background: #1e2a57;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .box4 {
-            padding: 20px;
-        }
-
-        .box4 .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .box4 .header h3 {
-            margin-left: 40px;
-            padding: 5px;
-            font-weight: 500;
-        }
-
-        .box4 .header a {
-            color: #f4c542;
-            text-decoration: none;
-        }
-
-        .card-container-event {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scroll-behavior: smooth;
-            margin-left: 40px;
-
-        }
-
-        .card-container-event::-webkit-scrollbar {
-            display: none;
-        }
-
-        .card-event {
-            flex: 0 0 auto;
-            width: 315px;
-            border: 2px solid #f4c542;
-            border-radius: 12px;
-            background: #fff;
-            padding: 16px;
-        }
-
-        .card-image-event {
-            width: 280px;
-            height: 320px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-
-        .card-image-event-wrapper {
-            position: relative;
-        }
-
-        .bookmark-event {
-            position: absolute;
-            top: 270px;
-            right: 10px;
-            width: 30px;
-            height: auto;
-            cursor: pointer;
-        }
-
-        .badge-event {
-            position: absolute;
-            top: 274px;
-            right: 50px;
-            background: #34C75940;
-            border: 1px solid white;
-            color: #34C759;
-            padding: 3px 8px;
-            font-size: 12px;
-            border-radius: 12px;
-        }
-
-        .desc-event {
-            font-size: 14px;
-            color: #666;
-            margin: 10px 0;
-            line-height: 1.4em;
-            height: 38px;
-            overflow: hidden;
-        }
-
-        .keterangan {
-            color: grey;
-            font-size: 13px;
-            padding: 2px;
-        }
-
-        .box-harga {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .coret {
-            text-decoration: line-through;
-            color: black;
-            margin-top: 10px;
-        }
-
-        .harga-teks {
-            font-size: 20px;
-            font-weight: bold;
-            color: #f4c542;
-            margin-top: -20px;
-        }
-
-        .harga {
-            display: flex;
-            flex-direction: column;
-
-        }
-
-        .btn-regist {
-            width: auto;
-            padding: 8px 16px;
-            background: #f4c542;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .box5 {
-            margin-left: 50px;
-            margin-bottom: 50px;
-            padding: 10px;
-        }
-
-        .jenis-pelatihan {
-            display: flex;
-            align-items: center;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 10px;
-            scroll-behavior: smooth;
-        }
-
-        .nama-jenis {
-            background: #f4c542;
-            color: #fff;
-            padding: 10px;
-            margin-right: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 
 <body>
+    <div class="search-banner-container">
+        <form class="search-banner-form" action="#" method="get" autocomplete="off">
+            <div class="search-wrap">
+                <input id="site-search" class="form-control search-input" type="search" name="search"
+                    placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest">
+                <span class="search-icon" ariza-hidden="false">
+                    <svg id="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                    </svg>
+                </span>
 
-    <div class="box1">
-        <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
-            <div class="carousel-indicators">
-                <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="0" class="active"
-                    aria-current="true" aria-label="Slide 1"></button>
-                <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="1"
-                    aria-label="Slide 2"></button>
-                <button type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide-to="2"
-                    aria-label="Slide 3"></button>
+                <ul id="search-suggest" class="search-suggest" role="listbox"></ul>
             </div>
+        </form>
+    </div>
+    <section class="hero-carousel">
+        <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active">
-                    <img class="gambar-carousel" src="{{ asset('aset/ai.jpg') }}" class="d-block w-100" alt="Slide 1">
+                <div class="carousel-item active" data-bs-interval="10000">
+                    <img src="{{ asset('aset/ai.jpg') }}"
+                        class="d-block" alt="...">
+                </div>
+                <div class="carousel-item" data-bs-interval="2000">
+                    <img src="{{ asset('aset/ai2.jpg') }}"
+                        class="d-block" alt="...">
                 </div>
                 <div class="carousel-item">
-                    <img class="gambar-carousel" src="{{ asset('aset/ai2.jpg') }}" class="d-block w-100" alt="Slide 2">
-                </div>
-                <div class="carousel-item">
-                    <img class="gambar-carousel" src="{{ asset('aset/ai3.jpg') }}" class="d-block w-100" alt="Slide 3">
+                    <img src="{{ asset('aset/ai3.jpg') }}"
+                        class="d-block" alt="...">
                 </div>
             </div>
+
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
+                data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
+                data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
         </div>
+    </section>
 
-        <div class="box2">
-            <div class="row gx-2">
-                <div class="col-md-4">
-                    <div class="kotak">
-                        <h3 class="judul">Task Progress</h3>
-                        <div class="task-item">
-                            <span class="task-title">Web Programming</span>
-                            <span class="task-score">5/10</span>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 50%"></div>
-                            </div>
-                        </div>
-                        <div class="task-item">
-                            <span class="task-title">Data and Structure</span>
-                            <span class="task-score">4/15</span>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 20%"></div>
-                            </div>
-                        </div>
-                        <div class="task-item">
-                            <span class="task-title">Artificiall Intelligence</span>
-                            <span class="task-score">2/15</span>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 30%"></div>
-                            </div>
+    <div class="box2 container my-4">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <div class="kotak">
+                    <h3 class="diagram-title">Task Progress</h3>
+                    <div class="task-item">
+                        <span class="task-title">Web Programming</span>
+                        <span class="task-score">5/10</span>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 50%"></div>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="kotak">
-                        <h3 class="judul">Statistics</h3>
-                        <p class="bulan">Januari - Juni 2025</p>
-                        <div class="stat-container">
-                            <div class="keterangan">
-                                <div class="stat-item">
-                                    <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
-                                    <div class="stat-text">
-                                        <p class="label">Kehadiran</p>
-                                        <p class="value">90%</p>
-                                    </div>
-                                </div>
-
-                                <div class="stat-item">
-                                    <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
-                                    <div class="stat-text">
-                                        <p class="label">Tugas & Ujian</p>
-                                        <p class="value">70%</p>
-                                    </div>
-                                </div>
-
-                                <div class="stat-item">
-                                    <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
-                                    <div class="stat-text">
-                                        <p class="label">Kuis</p>
-                                        <p class="value">85%</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="chart-wrapper">
-                                <canvas id="gradesChart"></canvas>
-                            </div>
+                    <div class="task-item">
+                        <span class="task-title">Data and Structure</span>
+                        <span class="task-score">4/15</span>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 20%"></div>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="kotak">
-                        <h3 class="judul">Hours Spent</h3>
-                        <canvas id="hoursChart"></canvas>
+                    <div class="task-item">
+                        <span class="task-title">Artificiall Intelligence</span>
+                        <span class="task-score">2/15</span>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 30%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="box3">
-            <div class="header">
-                <h3>Lanjutkan Belajar</h3>
-                <a href="#">Lihat Lainnya</a>
+            <div class="col-12-md-4">
+                <div class="kotak">
+                    <h3 class="diagram-title">Statistics</h3>
+                    <p class="bulan">Januari - Juni 2025</p>
+                    <div class="stat-container">
+                        <div class="keterangan">
+                            <div class="stat-item">
+                                <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
+                                <div class="stat-text">
+                                    <p class="label">Kehadiran</p>
+                                    <p class="value">90%</p>
+                                </div>
+                            </div>
+
+                            <div class="stat-item">
+                                <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
+                                <div class="stat-text">
+                                    <p class="label">Tugas & Ujian</p>
+                                    <p class="value">70%</p>
+                                </div>
+                            </div>
+
+                            <div class="stat-item">
+                                <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
+                                <div class="stat-text">
+                                    <p class="label">Kuis</p>
+                                    <p class="value">85%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-wrapper">
+                            <canvas id="gradesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="card-container-course">
-                <div class="card-course">
-                    <div class="card-image-course-wrapper">
-                        <img src="{{ asset('aset/code.png') }}" alt="Course">
-                        <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                        <span class="badge">Beginner</span>
-                    </div>
-
-                    <div class="card-body">
-                        <h4>Learn Artificial Intelligence Python</h4>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididunt...</p>
-
-                        <div class="tags">
-                            <div class="tags-left">
-                                <span>Programming</span>
-                                <span>AI</span>
-                            </div>
-                            <div class="tags-right">
-                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                                <div><img src="{{ asset('aset/ikon-bintang.png') }}"> <span>5.0</span></div>
-                            </div>
-                        </div>
-
-                        <div class="pembicara">
-                            <div class="pembicara-left">
-                                <img src="{{ asset('aset/profile.png') }}" alt="pembicara">
-                                <span>Sianunamanya</span>
-                            </div>
-                            <div class="pembicara-right">
-                                <div><img src="{{ asset('aset/ikon-playvideo.png') }}"> <span>10 Videos</span></div>
-                            </div>
-                        </div>
-
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                </div>
-                <div class="card-course">
-                    <div class="card-image-course-wrapper">
-                        <img src="{{ asset('aset/code.png') }}" alt="Course">
-                        <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                        <span class="badge">Beginner</span>
-                    </div>
-
-                    <div class="card-body">
-                        <h4>Learn Artificial Intelligence Python</h4>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididunt...</p>
-
-                        <div class="tags">
-                            <div class="tags-left">
-                                <span>Programming</span>
-                                <span>AI</span>
-                            </div>
-                            <div class="tags-right">
-                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                                <div><img src="{{ asset('aset/ikon-bintang.png') }}"> <span>5.0</span></div>
-                            </div>
-                        </div>
-
-                        <div class="pembicara">
-                            <div class="pembicara-left">
-                                <img src="{{ asset('aset/profile.png') }}" alt="pembicara">
-                                <span>Sianunamanya</span>
-                            </div>
-                            <div class="pembicara-right">
-                                <div><img src="{{ asset('aset/ikon-playvideo.png') }}"> <span>10 Videos</span></div>
-                            </div>
-                        </div>
-
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                </div>
-                <div class="card-course">
-                    <div class="card-image-course-wrapper">
-                        <img src="{{ asset('aset/code.png') }}" alt="Course">
-                         <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                        <span class="badge">Beginner</span>
-                    </div>
-                    <div class="card-body">
-                        <h4>Learn Artificial Intelligence Python</h4>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididunt...</p>
-
-                        <div class="tags">
-                            <div class="tags-left">
-                                <span>Programming</span>
-                                <span>AI</span>
-                            </div>
-                            <div class="tags-right">
-                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                                <div><img src="{{ asset('aset/ikon-bintang.png') }}"> <span>5.0</span></div>
-                            </div>
-                        </div>
-
-                        <div class="pembicara">
-                            <div class="pembicara-left">
-                                <img src="{{ asset('aset/profile.png') }}" alt="pembicara">
-                                <span>Sianunamanya</span>
-                            </div>
-                            <div class="pembicara-right">
-                                <div><img src="{{ asset('aset/ikon-playvideo.png') }}"> <span>10 Videos</span></div>
-                            </div>
-                        </div>
-
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                </div>
-                <div class="card-course">
-                    <div class="card-image-course-wrapper">
-                        <img src="{{ asset('aset/code.png') }}" alt="Course">
-                         <img class="bookmark" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                        <span class="badge">Beginner</span>
-                    </div>
-
-                    <div class="card-body">
-                        <h4>Learn Artificial Intelligence Python</h4>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididunt...</p>
-
-                        <div class="tags">
-                            <div class="tags-left">
-                                <span>Programming</span>
-                                <span>AI</span>
-                            </div>
-                            <div class="tags-right">
-                                <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                                <div><img src="{{ asset('aset/ikon-bintang.png') }}"> <span>5.0</span></div>
-                            </div>
-                        </div>
-
-                        <div class="pembicara">
-                            <div class="pembicara-left">
-                                <img src="{{ asset('aset/profile.png') }}" alt="pembicara">
-                                <span>Sianunamanya</span>
-                            </div>
-                            <div class="pembicara-right">
-                                <div><img src="{{ asset('aset/ikon-playvideo.png') }}"> <span>10 Videos</span></div>
-                            </div>
-                        </div>
-
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
+            <div class="col-12 col-md-4">
+                <div class="kotak">
+                    <h3 class="diagram-title">Hours Spent</h3>
+                    <canvas id="hoursChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="box4">
-        <div class="header">
-            <h3>Event Mendatang</h3>
+
+    <section class="kursus-pelatihan">
+        <div class="header-card">
+            <h3>Lanjutkan Belajar</h3>
             <a href="#">Lihat Lainnya</a>
         </div>
 
-        <div class="card-container-event">
+        <ul class="course-list">
+            <li>
+                <article class="course-card">
+                    <div class="thumb-wrapper">
+                        <img class="thumb"
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
+                            alt="thumb">
+                        <div class="badge-save-group" style="gap:12px;">
+                            <span class="course-badge beginner">Beginner</span>
+                            <button class="save-btn" aria-label="Save course">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="inner">
+                        <h5 class="title">Learn Artificial Intelligence Python</h5>
+                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididun</p>
+                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
+                            <div class="meta" style="margin-left:auto; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                </svg>
+                                <span>118</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                </svg>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                        <div class="author"> <img
+                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                alt="Profile">
+                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
+                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path
+                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
+                                </svg>
+                                <span style="font-size:13px;">10 videos</span>
+                            </div>
+                        </div>
+                        <div class="price-row">
+                            <div class="price-col">
+                                <span class="price-old">Rp650.000</span>
+                                <span class="price-now">Rp150.000</span>
+                            </div>
+                            <button class="btn-enroll">Enroll Now</button>
+                        </div>
+                    </div>
+                </article>
+            </li>
+            <li>
+                <article class="course-card">
+                    <div class="thumb-wrapper">
+                        <img class="thumb"
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
+                            alt="thumb">
+                        <div class="badge-save-group" style="gap:12px;">
+                            <span class="course-badge beginner">Beginner</span>
+                            <button class="save-btn" aria-label="Save course">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="inner">
+                        <h5 class="title">Learn Artificial Intelligence Python</h5>
+                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididun</p>
+                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
+                            <div class="meta" style="margin-left:auto; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                </svg>
+                                <span>118</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                </svg>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                        <div class="author"> <img
+                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                alt="Profile">
+                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
+                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path
+                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
+                                </svg> <span style="font-size:13px;">10 videos</span> </div>
+                        </div>
+                        <div class="price-row">
+                            <div class="price-col">
+                                <span class="price-old">Rp650.000</span>
+                                <span class="price-now">Rp150.000</span>
+                            </div>
+                            <button class="btn-enroll">Enroll Now</button>
+                        </div>
+                    </div>
+                </article>
+            </li>
+            <li>
+                <article class="course-card">
+                    <div class="thumb-wrapper">
+                        <img class="thumb"
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
+                            alt="thumb">
+                        <div class="badge-save-group" style="gap:12px;">
+                            <span class="course-badge beginner">Beginner</span>
+                            <button class="save-btn" aria-label="Save course">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="inner">
+                        <h5 class="title">Learn Artificial Intelligence Python</h5>
+                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididun</p>
+                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
+                            <div class="meta" style="margin-left:auto; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                </svg>
+                                <span>118</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                </svg>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                        <div class="author"> <img
+                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                alt="Profile">
+                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
+                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path
+                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
+                                </svg> <span style="font-size:13px;">10 videos</span> </div>
+                        </div>
+                        <div class="price-row">
+                            <div class="price-col">
+                                <span class="price-old">Rp650.000</span>
+                                <span class="price-now">Rp150.000</span>
+                            </div>
+                            <button class="btn-enroll">Enroll Now</button>
+                        </div>
+                    </div>
+                </article>
+            </li>
+            <li>
+                <article class="course-card">
+                    <div class="thumb-wrapper">
+                        <img class="thumb"
+                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
+                            alt="thumb">
+                        <div class="badge-save-group" style="gap:12px;">
+                            <span class="course-badge beginner">Beginner</span>
+                            <button class="save-btn" aria-label="Save course">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="inner">
+                        <h5 class="title">Learn Artificial Intelligence Python</h5>
+                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                            incididun</p>
+                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
+                            <div class="meta" style="margin-left:auto; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                </svg>
+                                <span>118</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                </svg>
+                                <span>5.0</span>
+                            </div>
+                        </div>
+                        <div class="author"> <img
+                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                alt="Profile">
+                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
+                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path
+                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
+                                </svg> <span style="font-size:13px;">10 videos</span>
+                            </div>
+                        </div>
+                        <div class="price-row">
+                            <div class="price-col">
+                                <span class="price-old">Rp100.000</span>
+                                <span class="price-now">Rp75.000</span>
+                            </div>
+                            <button class="btn-enroll">Enroll Now</button>
+                        </div>
+                    </div>
+                </article>
+            </li>
+        </ul>
+    </section>
+
+    <section class="event">
+        <div class="header-card">
+            <h3>Event Mendatang</h3>
+            <a href="#">Lihat Lainnya</a>
+        </div>
+        <div class="event-list">
             <div class="card-event">
-                <div class="card-image-event-wrapper">
+                <div class="thumb-wrapper">
                     <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                    <span class="badge-event">Beginner</span>
+                    <div class="badge-save-group" style="gap:12px;">
+                        <span class="course-badge beginner">Beginner</span>
+                        <button class="save-btn" aria-label="Save course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path d="M2 2v13.5l6-3 6 3V2z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
                     <h4>AI For Lectures</h4>
-
-                    <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                    <div class="tags"> <span class="tag">Workshop</span> <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
+                        tempor
                         incididunt...</p>
 
-                    <div class="keterangan">
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                    <div class="keterangan keterangan-row">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-calendar-event" viewBox="0 0 16 16">
+                                <path
+                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                <path
+                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
                             <span>04 September 2025</span>
                         </div>
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                            </svg>
                             <span>Bandung • 09.00 WIB</span>
                         </div>
                     </div>
-                    <div class="box-harga">
-                        <div class="harga">
-                            <p class="coret">Rp. 100.000</p>
-                            <p class="harga-teks">Rp. 75.000</p>
+                    <div class="price-row">
+                        <div class="price-col">
+                            <span class="price-old">Rp650.000</span>
+                            <span class="price-now">Rp150.000</span>
                         </div>
-                        <button class="btn-regist">Register</button>
+                        <button class="btn-register">Register</button>
                     </div>
                 </div>
             </div>
             <div class="card-event">
-                <div class="card-image-event-wrapper">
+                <div class="thumb-wrapper">
                     <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                    <span class="badge-event">Beginner</span>
+                    <div class="badge-save-group" style="gap:12px;">
+                        <span class="course-badge beginner">Beginner</span>
+                        <button class="save-btn" aria-label="Save course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path d="M2 2v13.5l6-3 6 3V2z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
-
+                    <h3>AI For Lectures</h3>
                     <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                        <span class="tag">Workshop</span>
+                        <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
+                        tempor
                         incididunt...</p>
 
-                    <div class="keterangan">
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                    <div class="keterangan keterangan-row">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-calendar-event" viewBox="0 0 16 16">
+                                <path
+                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                <path
+                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
                             <span>04 September 2025</span>
                         </div>
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                            </svg>
                             <span>Bandung • 09.00 WIB</span>
                         </div>
                     </div>
-                    <div class="box-harga">
-                        <div class="harga">
-                            <p class="coret">Rp. 100.000</p>
-                            <p class="harga-teks">Rp. 75.000</p>
+                    <div class="price-row">
+                        <div class="price-col">
+                            <span class="price-old">Rp100.000</span>
+                            <span class="price-now">Rp75.000</span>
                         </div>
-                        <button class="btn-regist">Register</button>
+                        <button class="btn-register">Register</button>
                     </div>
                 </div>
             </div>
             <div class="card-event">
-                <div class="card-image-event-wrapper">
+                <div class="thumb-wrapper">
                     <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                    <span class="badge-event">Beginner</span>
+                    <div class="badge-save-group" style="gap:12px;">
+                        <span class="course-badge beginner">Beginner</span>
+                        <button class="save-btn" aria-label="Save course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path d="M2 2v13.5l6-3 6 3V2z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
+                    <h3>AI For Lectures</h3>
 
                     <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                        <span class="tag">Workshop</span>
+                        <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
+                        tempor
                         incididunt...</p>
 
-                    <div class="keterangan">
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                    <div class="keterangan keterangan-row">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-calendar-event" viewBox="0 0 16 16">
+                                <path
+                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                <path
+                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
                             <span>04 September 2025</span>
                         </div>
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                            </svg>
                             <span>Bandung • 09.00 WIB</span>
                         </div>
                     </div>
-                    <div class="box-harga">
-                        <div class="harga">
-                            <p class="coret">Rp. 100.000</p>
-                            <p class="harga-teks">Rp. 75.000</p>
+                    <div class="price-row">
+                        <div class="price-col">
+                            <span class="price-old">Rp100.000</span>
+                            <span class="price-now">Rp75.000</span>
                         </div>
-                        <button class="btn-regist">Register</button>
+                        <button class="btn-register">Register</button>
                     </div>
                 </div>
             </div>
             <div class="card-event">
-                <div class="card-image-event-wrapper">
+                <div class="thumb-wrapper">
                     <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                    <span class="badge-event">Beginner</span>
+                    <div class="badge-save-group" style="gap:12px;">
+                        <span class="course-badge beginner">Beginner</span>
+                        <button class="save-btn" aria-label="Save course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path d="M2 2v13.5l6-3 6 3V2z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
+                    <h5>AI For Lectures</h5>
 
                     <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
+                        <span class="tag">Workshop</span>
+                        <span class="tag">AI</span>
+                        <div class="meta" style="margin-left:auto; gap:6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span>118</span>
                         </div>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                        eiusmod
+                        tempor
                         incididunt...</p>
 
-                    <div class="keterangan">
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
+                    <div class="keterangan keterangan-row">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-calendar-event" viewBox="0 0 16 16">
+                                <path
+                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                <path
+                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
                             <span>04 September 2025</span>
                         </div>
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
+                        <div class="keterangan-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                            </svg>
                             <span>Bandung • 09.00 WIB</span>
                         </div>
                     </div>
-                    <div class="box-harga">
-                        <div class="harga">
-                            <p class="coret">Rp. 100.000</p>
-                            <p class="harga-teks">Rp. 75.000</p>
+                    <div class="price-row">
+                        <div class="price-col">
+                            <span class="price-old">Rp100.000</span>
+                            <span class="price-now">Rp75.000</span>
                         </div>
-                        <button class="btn-regist">Register</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-event">
-                <div class="card-image-event-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                    <span class="badge-event">Beginner</span>
-                </div>
-
-                <div class="card-body">
-                    <h4>AI For Lectures</h4>
-
-                    <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                        incididunt...</p>
-
-                    <div class="keterangan">
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="box-harga">
-                        <div class="harga">
-                            <p class="coret">Rp. 100.000</p>
-                            <p class="harga-teks">Rp. 75.000</p>
-                        </div>
-                        <button class="btn-regist">Register</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-event">
-                <div class="card-image-event-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <img class="bookmark-event" src="{{ asset('aset/ikon-bookmark.png') }}" alt="Bookmark">
-                    <span class="badge-event">Beginner</span>
-                </div>
-
-                <div class="card-body">
-                    <h4>AI For Lectures</h4>
-
-                    <div class="tags">
-                        <div class="tags-left">
-                            <span>Workshop</span>
-                            <span>AI</span>
-                        </div>
-                        <div class="tags-right">
-                            <div><img src="{{ asset('aset/ikon-participant.png') }}"><span>118</span></div>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                        incididunt...</p>
-
-                    <div class="keterangan">
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-kalender.png') }}" alt="tanggal">
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan">
-                            <img src="{{ asset('aset/ikon-lokasi.png') }}" alt="lokasi">
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="box-harga">
-                        <div class="harga">
-                            <p class="coret">Rp. 100.000</p>
-                            <p class="harga-teks">Rp. 75.000</p>
-                        </div>
-                        <button class="btn-regist">Register</button>
+                        <button class="btn-register">Register</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="box5">
-        <h3 class="jenis-text">Jenis Pelatihan</h3>
-        <div class="row">
-            <div class="jenis-pelatihan">
-                <span class="nama-jenis">Artificial Intelligence</span>
-                <span class="nama-jenis">Machine Learning</span>
-                <span class="nama-jenis">Mental Health</span>
-                <span class="nama-jenis">Digital Marketing</span>
-                <span class="nama-jenis">Graphic Design</span>
-                <span class="nama-jenis">Business</span>
-            </div>
+    <section class="pelatihan">
+        <div class="section-title">
+            <h3>Jenis Pelatihan</h3>
+            <h6>Pilih kategori yang sesuai dengan minat dan kebutuhan Anda</h6>
         </div>
-    </div>
+
+        <ul class="kategori-list">
+            <li>
+                <div class="kategori-item">Artificial Intelligence</div>
+            </li>
+            <li>
+                <div class="kategori-item">Machine Learning</div>
+            </li>
+            <li>
+                <div class="kategori-item">Mental Health</div>
+            </li>
+            <li>
+                <div class="kategori-item">Digital Marketing</div>
+            </li>
+            <li>
+                <div class="kategori-item">Graphic Design</div>
+            </li>
+            <li>
+                <div class="kategori-item wide">Business</div>
+            </li>
+        </ul>
+    </section>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1169,8 +780,7 @@
         });
     </script>
 
-
-
 </body>
 
 </html>
+@include('partials.footer-before-login')
