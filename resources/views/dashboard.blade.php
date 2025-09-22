@@ -62,77 +62,60 @@
         </div>
     </section>
 
-    <div class="box2 container my-4">
-        <div class="row g-3">
-            <div class="col-12 col-md-4">
+    <div class="box2">
+        <div class="row gx-2">
+            <div class="col-md-4">
                 <div class="kotak">
-                    <h3 class="diagram-title">Task Progress</h3>
-                    <div class="task-item">
-                        <span class="task-title">Web Programming</span>
-                        <span class="task-score">5/10</span>
+                    <h3 class="judul">Task Progress</h3>
+                    <div class="task-item"> <span class="task-title">Web Programming</span> <span class="task-score">5/10</span>
                         <div class="progress">
                             <div class="progress-bar" style="width: 50%"></div>
                         </div>
                     </div>
-                    <div class="task-item">
-                        <span class="task-title">Data and Structure</span>
-                        <span class="task-score">4/15</span>
+                    <div class="task-item"> <span class="task-title">Data and Structure</span> <span class="task-score">4/15</span>
                         <div class="progress">
                             <div class="progress-bar" style="width: 20%"></div>
                         </div>
                     </div>
-                    <div class="task-item">
-                        <span class="task-title">Artificiall Intelligence</span>
-                        <span class="task-score">2/15</span>
+                    <div class="task-item"> <span class="task-title">Artificiall Intelligence</span> <span class="task-score">2/15</span>
                         <div class="progress">
                             <div class="progress-bar" style="width: 30%"></div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-12-md-4">
+            <div class="col-md-4">
                 <div class="kotak">
-                    <h3 class="diagram-title">Statistics</h3>
+                    <h3 class="judul">Statistics</h3>
                     <p class="bulan">Januari - Juni 2025</p>
                     <div class="stat-container">
                         <div class="keterangan">
-                            <div class="stat-item">
-                                <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
+                            <div class="stat-item"> <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
                                 <div class="stat-text">
                                     <p class="label">Kehadiran</p>
                                     <p class="value">90%</p>
                                 </div>
                             </div>
-
-                            <div class="stat-item">
-                                <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
+                            <div class="stat-item"> <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
                                 <div class="stat-text">
                                     <p class="label">Tugas & Ujian</p>
                                     <p class="value">70%</p>
                                 </div>
                             </div>
-
-                            <div class="stat-item">
-                                <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
+                            <div class="stat-item"> <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
                                 <div class="stat-text">
                                     <p class="label">Kuis</p>
                                     <p class="value">85%</p>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="chart-wrapper">
-                            <canvas id="gradesChart"></canvas>
-                        </div>
+                        <div class="chart-wrapper"> <canvas id="gradesChart"></canvas> </div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-12 col-md-4">
+            <div class="col-md-4">
                 <div class="kotak">
-                    <h3 class="diagram-title">Hours Spent</h3>
-                    <canvas id="hoursChart"></canvas>
+                    <h3 class="judul">Hours Spent</h3> <canvas id="hoursChart"></canvas>
                 </div>
             </div>
         </div>

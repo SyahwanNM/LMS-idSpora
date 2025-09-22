@@ -12,7 +12,7 @@
     --danger: #ef4444;
     --success: #22c55e;
     --font-main: "Poppins";
-    --bg-main: #F8FAFC;
+    --bg-main: #f8fafc;
 
     --fs-title: 64px;
     --fs-heading: 40px;
@@ -340,22 +340,16 @@ body {
     color: black;
     border-radius: 20px;
 }
-
 #gradesChart {
     display: block;
     margin: 0 auto;
     max-width: 180px;
-}
-.diagram-title {
-    font-weight: 600;
-    margin-bottom: 15px;
 }
 .judul {
     text-align: left;
     margin: 0px 50px;
     font-weight: 600;
 }
-
 .bulan {
     text-align: left;
     margin: 0px 30px;
@@ -363,146 +357,62 @@ body {
     font-weight: 400;
     color: grey;
 }
-
 .stat-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
-
 .keterangan {
     flex: 1;
 }
-
 .chart-wrapper {
     flex-shrink: 0;
-    width: 160px;
-    height: 160px;
+    width: 180px;
+    height: 180px;
 }
-
 .chart-wrapper canvas {
     width: 100% !important;
     height: 100% !important;
 }
-
 .stat-item {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
 }
-
 .stat-item img {
     width: 40px;
     height: 40px;
     margin-right: 15px;
 }
-
 .stat-text .label {
     font-size: 14px;
     color: gray;
     margin: 0;
 }
-
 .stat-text .value {
     font-size: 16px;
     font-weight: 600;
     margin: 0;
 }
-
 .task-item {
-    margin: 12px 0;
+    margin: 20px 50px;
+    padding: 8px 0;
 }
 .task-score {
     float: right;
     color: gray;
 }
 .progress {
-    width: 100%;
     height: 10px;
-    margin-top: 4px;
-    border-radius: 5px;
 }
-
 .progress-bar {
     background-color: #f4c430;
     height: 10px;
-    border-radius: 5px;
 }
-
 #hoursChart {
     max-height: 250px;
     margin-top: 20px;
 }
-
-@media (max-width: 991px) {
-    .box2 .row {
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .kotak {
-        max-width: 95%;
-        margin: 0 auto;
-    }
-
-    .stat-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-
-    .chart-wrapper {
-        width: 140px;
-        height: 140px;
-        margin: 0 auto;
-    }
-
-    .judul {
-        margin: 0 20px;
-        text-align: center;
-    }
-
-    .bulan {
-        margin: 0;
-        text-align: center;
-        padding: 0 0 10px;
-    }
-}
-@media (max-width: 767px) {
-    .stat-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-    .chart-wrapper {
-        margin: 0 auto;
-    }
-}
-
-@media (max-width: 575px) {
-    .stat-item img {
-        width: 30px;
-        height: 30px;
-    }
-
-    .stat-text .label {
-        font-size: 12px;
-    }
-
-    .stat-text .value {
-        font-size: 14px;
-    }
-
-    .chart-wrapper {
-        width: 120px;
-        height: 120px;
-    }
-
-    #hoursChart {
-        max-height: 180px;
-    }
-}
-
 /* Kartu & isi — pakai style yang sudah kamu punya */
 .reviews .card {
     height: 100%;
