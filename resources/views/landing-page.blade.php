@@ -10,7 +10,7 @@
 
 </head>
 
-<body class="bg-split-horizontal">
+<body>
     <div class="search-banner-container">
         <form class="search-banner-form" action="#" method="get" autocomplete="off">
             <div class="search-wrap">
@@ -365,7 +365,7 @@
                             src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
                             alt="thumb">
                         <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
+                            <span class="course-badge beginner w-3">Beginner</span>
                             <button class="save-btn" aria-label="Save course">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                     viewBox="0 0 16 16">
