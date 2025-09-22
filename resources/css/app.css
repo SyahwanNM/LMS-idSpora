@@ -12,7 +12,7 @@
     --danger: #ef4444;
     --success: #22c55e;
     --font-main: "Poppins";
-    --bg-main: #f8fafc;
+    --bg-main: #F8FAFC;
 
     --fs-title: 64px;
     --fs-heading: 40px;
@@ -39,7 +39,7 @@ body {
     max-width: 100vw;
     overflow-x: hidden;
     font-family: var(--font-main), poppins;
-    background-color: var(--white);
+    background-color: var(--bg-main);
     min-height: 100vh;
 }
 
@@ -155,9 +155,18 @@ body {
 
 .search-banner-container {
     width: 100%;
+    max-width: 600px;
     display: flex;
     justify-content: center;
-    margin-top: 32px;
+    align-items: center;
+    margin: 32px auto 0 auto;
+    box-sizing: border-box;
+}
+@media (max-width: 700px) {
+    .search-banner-container {
+        max-width: 98vw;
+        margin-top: 20px;
+    }
 }
 .search-banner-form {
     width: 100%;
@@ -177,8 +186,8 @@ body {
 /* input */
 .search-input {
     height: 44px;
-    border-radius: 10px;
-    background: transparent;
+    border-radius: 50px;
+    background: var(--white);
     border: 1.5px solid var(--primary-dark);
     color: var(--white);
     font-size: 16px;
@@ -1058,12 +1067,12 @@ body {
 
 /* Beginner = Hijau */
 .course-badge.beginner {
-    background: rgba(52, 199, 89, 0.1); /* hijau transparan 10% */
-    color: #34c759;
-    border: 1px solid rgba(52, 199, 89, 0.25);
+    background: var(--bg-main);
+    opacity: 90%;
+    color: green;
+    box-shadow: blur(0px 8px 30px rgba(0, 0, 0, 0.15));
 }
 
-/* Intermediate = Biru */
 .course-badge.intermediate {
     background: rgba(0, 122, 255, 0.1); /* biru transparan 10% */
     color: #007aff;
