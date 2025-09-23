@@ -34,18 +34,47 @@
                             <span>Export Data</span>
                         </button>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <img class="h-10 w-10 rounded-full border-2 border-white/30" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name ?? 'Admin') }}&background=f59e0b&color=fff" alt="Admin">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-medium text-white">{{ Auth::user()->name ?? 'Admin' }}</span>
-                            <span class="text-xs text-amber-100">Administrator</span>
+                    <!-- User Dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" onclick="toggleUserDropdown()" class="flex items-center space-x-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-all duration-200 border border-white/30">
+                            <img class="h-8 w-8 rounded-full border-2 border-white/30" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name ?? 'Admin') }}&background=f59e0b&color=fff" alt="Admin">
+                            <div class="flex flex-col items-start">
+                                <span class="text-sm font-medium">{{ Auth::user()->name ?? 'Admin' }}</span>
+                                <span class="text-xs text-amber-100">Administrator</span>
+                            </div>
+                            <svg class="w-4 h-4 ml-2 transition-transform duration-200" id="dropdownArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdownMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50">
+                            <div class="py-1">
+                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Profil Saya
+                                </a>
+                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    Pengaturan
+                                </a>
+                                <hr class="my-1">
+                                <form action="{{ route('logout') }}" method="POST" class="block">
+                                    @csrf
+                                    <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                        </svg>
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form action="{{ route('logout') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="bg-red-500/80 hover:bg-red-600/80 backdrop-blur-sm text-white px-3 py-1 rounded text-sm transition-all duration-200 border border-red-400/30">
-                                Logout
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -581,11 +610,46 @@ function closeAddEventModal() {
 
 // Close modals when clicking outside
 document.addEventListener('DOMContentLoaded', function() {
+    // User Dropdown Toggle - with better error handling
+    function initUserDropdown() {
+        const userDropdownButton = document.getElementById('userDropdownButton');
+        const userDropdownMenu = document.getElementById('userDropdownMenu');
+        const dropdownArrow = document.getElementById('dropdownArrow');
+        
+        if (userDropdownButton && userDropdownMenu && dropdownArrow) {
+            userDropdownButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdownMenu.classList.toggle('hidden');
+                dropdownArrow.classList.toggle('rotate-180');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!userDropdownButton.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                    userDropdownMenu.classList.add('hidden');
+                    dropdownArrow.classList.remove('rotate-180');
+                }
+            });
+        } else {
+            console.log('User dropdown elements not found');
+        }
+    }
+    
+    // Initialize dropdown
+    initUserDropdown();
+    
     // Close modal when pressing escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeAddCourseModal();
             closeAddEventModal();
+            // Also close dropdown on escape
+            const userDropdownMenu = document.getElementById('userDropdownMenu');
+            const dropdownArrow = document.getElementById('dropdownArrow');
+            if (userDropdownMenu && !userDropdownMenu.classList.contains('hidden')) {
+                userDropdownMenu.classList.add('hidden');
+                if (dropdownArrow) dropdownArrow.classList.remove('rotate-180');
+            }
         }
     });
 
@@ -881,6 +945,30 @@ document.addEventListener('DOMContentLoaded', function() {
             preview.style.display = 'none';
         }
     });
+});
+
+// User Dropdown Functionality
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const arrow = document.getElementById('dropdownArrow');
+    
+    if (dropdown && arrow) {
+        dropdown.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const button = document.getElementById('userDropdownButton');
+    
+    if (dropdown && button && !button.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+        const arrow = document.getElementById('dropdownArrow');
+        if (arrow) arrow.classList.remove('rotate-180');
+    }
+});
 </script>
 @endsection
 
@@ -977,5 +1065,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .content-wrapper footer {
     margin-top: auto;
+}
+
+/* User Dropdown Styles */
+#userDropdownMenu {
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+#userDropdownMenu.hidden {
+    animation: dropdownFadeOut 0.2s ease-in;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes dropdownFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Dropdown arrow rotation */
+#dropdownArrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+#dropdownArrow.rotate-180 {
+    transform: rotate(180deg);
+}
+
+/* Dropdown menu hover effects */
+#userDropdownMenu a:hover {
+    background-color: #f3f4f6;
+}
+
+#userDropdownMenu button:hover {
+    background-color: #fef2f2;
 }
 </style>
