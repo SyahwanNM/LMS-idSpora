@@ -333,6 +333,7 @@ body {
 .kotak {
     width: 100%;
     max-width: 400px;
+    min-width: 140px;
     height: auto;
     margin: 8px auto;
     padding: 15px;
@@ -568,20 +569,25 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-left: 10px;
     margin-top: 50px;
+    margin-bottom: 24px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 15px;
 }
 
 .header-card h3 {
-    margin-left: 40px;
-    padding: 10px;
+    margin: 0;
+    padding: 0;
     font-weight: 500;
 }
 
 .header-card a {
     color: #f4c542;
     text-decoration: none;
-    margin-right: 50px;
+    margin: 0;
+  
 }
 
 .course-list {
@@ -708,6 +714,37 @@ body {
     box-shadow: 0 5px 10px 0 #f5c52f;
     transform: translateY(-1px) scale(1.02);
     transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+.progress-wrapper {
+    margin-bottom: 8px;
+}
+
+.progress {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 30%;
+    background: #f4c542;
+}
+
+.progress-wrapper p {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.btn-lanjut {
+    width: 100%;
+    padding: 10px;
+    background: #1e2a57;
+    color: #f4c542;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
 }
 
