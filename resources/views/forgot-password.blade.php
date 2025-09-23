@@ -110,19 +110,37 @@
         </div>
 
         <div class="kanan">
-            <form action="{{ route('sign-up') }}" method="get">
-                <h3>Lupa Kata Sandi?</h3>
+            <h3>Lupa Kata Sandi?</h3>
+            
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-                <form>
-                    <div class="mb-3">
-                        <h6>Email</h6>
-                        <input type="email" class="form-control" required>
-                    </div>
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
 
-                    <a href="{{ route('verifikasi') }}">
-                        <button type="submit" class="btn-register">Kirim Kode Verifikasi</button>
-                    </a>
-                </form>
+            <form action="{{ route('forgot-password.send') }}" method="post">
+                @csrf
+                <div class="mb-3">
+                    <h6>Email</h6>
+                    <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
+                </div>
+
+                <button type="submit" class="btn-register">Kirim Kode Verifikasi</button>
+            </form>
+            
+            <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
+                <a href="{{ route('login') }}" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kembali ke Login</a>
+            </div>
         </div>
     </div>
 </body>
