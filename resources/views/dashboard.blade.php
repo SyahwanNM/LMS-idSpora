@@ -67,7 +67,7 @@
         <div class="box2">
             <div class="row justify-content-center gx-4">
                 <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="kotak">
+                    <div class="kotak h-100">
                         <h3 class="judul">Task Progress</h3>
                         <div class="task-item"> <span class="task-title">Web Programming</span> <span class="task-score">5/10</span>
                             <div class="progress">
@@ -87,7 +87,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="kotak">
+                    <div class="kotak h-100">
                         <h3 class="judul">Statistics</h3>
                         <p class="bulan">Januari - Juni 2025</p>
                         <div class="stat-container">
@@ -116,7 +116,7 @@
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-12 mb-4">
-                    <div class="kotak">
+                    <div class="kotak h-100">
                         <h3 class="judul">Hours Spent</h3> <canvas id="hoursChart"></canvas>
                     </div>
                 </div>
