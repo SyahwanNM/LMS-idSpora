@@ -62,60 +62,63 @@
         </div>
     </section>
 
-    <div class="box2">
-        <div class="row gx-2">
-            <div class="col-md-4">
-                <div class="kotak">
-                    <h3 class="judul">Task Progress</h3>
-                    <div class="task-item"> <span class="task-title">Web Programming</span> <span class="task-score">5/10</span>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 50%"></div>
+    <div class="container">
+
+        <div class="box2">
+            <div class="row justify-content-center gx-4">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="kotak">
+                        <h3 class="judul">Task Progress</h3>
+                        <div class="task-item"> <span class="task-title">Web Programming</span> <span class="task-score">5/10</span>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 50%"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="task-item"> <span class="task-title">Data and Structure</span> <span class="task-score">4/15</span>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 20%"></div>
+                        <div class="task-item"> <span class="task-title">Data and Structure</span> <span class="task-score">4/15</span>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 20%"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="task-item"> <span class="task-title">Artificiall Intelligence</span> <span class="task-score">2/15</span>
-                        <div class="progress">
-                            <div class="progress-bar" style="width: 30%"></div>
+                        <div class="task-item"> <span class="task-title">Artificiall Intelligence</span> <span class="task-score">2/15</span>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 30%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="kotak">
-                    <h3 class="judul">Statistics</h3>
-                    <p class="bulan">Januari - Juni 2025</p>
-                    <div class="stat-container">
-                        <div class="keterangan">
-                            <div class="stat-item"> <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
-                                <div class="stat-text">
-                                    <p class="label">Kehadiran</p>
-                                    <p class="value">90%</p>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="kotak">
+                        <h3 class="judul">Statistics</h3>
+                        <p class="bulan">Januari - Juni 2025</p>
+                        <div class="stat-container">
+                            <div class="keterangan">
+                                <div class="stat-item"> <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
+                                    <div class="stat-text">
+                                        <p class="label">Kehadiran</p>
+                                        <p class="value">90%</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item"> <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
+                                    <div class="stat-text">
+                                        <p class="label">Tugas & Ujian</p>
+                                        <p class="value">70%</p>
+                                    </div>
+                                </div>
+                                <div class="stat-item"> <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
+                                    <div class="stat-text">
+                                        <p class="label">Kuis</p>
+                                        <p class="value">85%</p>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="stat-item"> <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
-                                <div class="stat-text">
-                                    <p class="label">Tugas & Ujian</p>
-                                    <p class="value">70%</p>
-                                </div>
-                            </div>
-                            <div class="stat-item"> <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
-                                <div class="stat-text">
-                                    <p class="label">Kuis</p>
-                                    <p class="value">85%</p>
-                                </div>
-                            </div>
+                            <div class="chart-wrapper"> <canvas id="gradesChart"></canvas> </div>
                         </div>
-                        <div class="chart-wrapper"> <canvas id="gradesChart"></canvas> </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="kotak">
-                    <h3 class="judul">Hours Spent</h3> <canvas id="hoursChart"></canvas>
+                <div class="col-lg-4 col-md-12 mb-4">
+                    <div class="kotak">
+                        <h3 class="judul">Hours Spent</h3> <canvas id="hoursChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -180,13 +183,14 @@
                                 <span style="font-size:13px;">10 videos</span>
                             </div>
                         </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp650.000</span>
-                                <span class="price-now">Rp150.000</span>
+                        <div class="progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar"></div>
                             </div>
-                            <button class="btn-enroll">Enroll Now</button>
+                            <p>30% selesai</p>
                         </div>
+                        <button class="btn-lanjut">Lanjutkan</button>
+                    </div>
                     </div>
                 </article>
             </li>
@@ -239,13 +243,14 @@
                                         d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
                                 </svg> <span style="font-size:13px;">10 videos</span> </div>
                         </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp650.000</span>
-                                <span class="price-now">Rp150.000</span>
+                        <div class="progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar"></div>
                             </div>
-                            <button class="btn-enroll">Enroll Now</button>
+                            <p>30% selesai</p>
                         </div>
+                        <button class="btn-lanjut">Lanjutkan</button>
+                    </div>
                     </div>
                 </article>
             </li>
@@ -298,13 +303,14 @@
                                         d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
                                 </svg> <span style="font-size:13px;">10 videos</span> </div>
                         </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp650.000</span>
-                                <span class="price-now">Rp150.000</span>
+                        <div class="progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar"></div>
                             </div>
-                            <button class="btn-enroll">Enroll Now</button>
+                            <p>30% selesai</p>
                         </div>
+                        <button class="btn-lanjut">Lanjutkan</button>
+                    </div>
                     </div>
                 </article>
             </li>
@@ -358,13 +364,13 @@
                                 </svg> <span style="font-size:13px;">10 videos</span>
                             </div>
                         </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp100.000</span>
-                                <span class="price-now">Rp75.000</span>
+                        <div class="progress-wrapper">
+                            <div class="progress">
+                                <div class="progress-bar"></div>
                             </div>
-                            <button class="btn-enroll">Enroll Now</button>
+                            <p>30% selesai</p>
                         </div>
+                        <button class="btn-lanjut">Lanjutkan</button>
                     </div>
                 </article>
             </li>
