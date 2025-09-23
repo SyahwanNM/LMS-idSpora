@@ -46,13 +46,17 @@
                 
                 <div class="dropdown">
                     <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" 
-                            data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;">
+                            data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;"
+                            onclick="toggleUserDropdown()">
                         <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
                             alt="Profile" class="rounded-circle me-2"
                             style="width:40px; height:40px; object-fit:cover; border:2px solid #fff;">
                         <span class="text-white">{{ Auth::user()->name }}</span>
+                        <svg class="ms-2" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
+                            <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                        </svg>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <ul class="dropdown-menu dropdown-menu-end" id="userDropdownMenu" aria-labelledby="userDropdown" style="display: none;">
                         <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
                         <li><a class="dropdown-item" href="#">Profile</a></li>
                         <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -69,3 +73,68 @@
         </div>
     </div>
 </nav>
+
+<script>
+// User Dropdown Functionality
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const arrow = document.getElementById('dropdownArrow');
+    
+    if (dropdown && arrow) {
+        if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+            dropdown.style.display = 'block';
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            dropdown.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const button = document.getElementById('userDropdown');
+    const arrow = document.getElementById('dropdownArrow');
+    
+    if (dropdown && button && !button.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+});
+
+// Initialize dropdown when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('userDropdown');
+    if (button) {
+        // Remove Bootstrap data attributes to prevent conflicts
+        button.removeAttribute('data-bs-toggle');
+        button.removeAttribute('aria-expanded');
+    }
+});
+</script>
+
+<style>
+/* Dropdown arrow rotation */
+#dropdownArrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Dropdown menu positioning */
+#userDropdownMenu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    min-width: 200px;
+    background-color: white;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+}
+
+/* Dropdown item hover effects */
+#userDropdownMenu .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+</style>

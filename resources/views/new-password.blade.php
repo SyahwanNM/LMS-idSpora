@@ -183,22 +183,44 @@
         </div>
 
         <div class="kanan">
-            <form action="{{ route('sign-in') }}" method="get">
-                <h3>New Password</h3>
+            <h3>Password Baru</h3>
+            
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-                <form>
-                    <div class="mb-3">
-                        <h6>Password</h6>
-                        <input type="password" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <h6>Confirm Password</h6>
-                        <input type="password" class="form-control" required>
-                    </div>
-                    <a href="{{ route('sign-in') }}">
-                        <button type="submit" class="btn-register">Ganti</button>
-                    </a>
-                </form>
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            <form action="{{ route('new-password.reset') }}" method="post">
+                @csrf
+                <input type="hidden" name="token" value="{{ session('token') }}">
+                
+                <div class="mb-3">
+                    <h6>Password Baru</h6>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Konfirmasi Password</h6>
+                    <input type="password" name="password_confirmation" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn-register">Reset Password</button>
+            </form>
+            
+            <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
+                <a href="{{ route('login') }}" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kembali ke Login</a>
+            </div>
         </div>
     </div>
 </body>

@@ -29,9 +29,12 @@ Route::middleware(['guest'])->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/forgot-password', function () {
-    return view('forgot-password');
-})->name('forgot-password');
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot-password');
+Route::post('/forgot-password', [AuthController::class, 'sendResetCode'])->name('forgot-password.send');
+Route::get('/verifikasi', [AuthController::class, 'showVerification'])->name('verifikasi');
+Route::post('/verifikasi', [AuthController::class, 'verifyCode'])->name('verifikasi.verify');
+Route::get('/new-password', [AuthController::class, 'showNewPassword'])->name('new-password');
+Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('new-password.reset');
 
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {

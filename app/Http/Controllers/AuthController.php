@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\PasswordResetToken;
+use App\Mail\PasswordResetMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -100,5 +105,156 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'Logout berhasil!');
+    }
+
+    public function showForgotPassword()
+    {
+        return view('forgot-password');
+    }
+
+    public function sendResetCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ], [
+            'email.required' => 'Email harus diisi',
+            'email.email' => 'Format email tidak valid',
+            'email.exists' => 'Email tidak terdaftar dalam sistem',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput($request->only('email'));
+        }
+
+        $user = User::where('email', $request->email)->first();
+        
+        // Generate kode verifikasi 6 digit
+        $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Generate token unik
+        $token = Str::random(64);
+        
+        // Hapus token lama jika ada
+        PasswordResetToken::where('email', $request->email)->delete();
+        
+        // Simpan token baru
+        PasswordResetToken::create([
+            'email' => $request->email,
+            'token' => $token,
+            'verification_code' => $verificationCode,
+            'expires_at' => Carbon::now()->addMinutes(15), // 15 menit
+        ]);
+
+        // Kirim email
+        try {
+            Mail::to($request->email)->send(new PasswordResetMail($verificationCode, $user->name));
+            
+            return redirect()->route('verifikasi')
+                ->with('success', 'Kode verifikasi telah dikirim ke email Anda')
+                ->with('email', $request->email);
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            \Log::error('Email sending failed: ' . $e->getMessage());
+            \Log::error('Email config: ' . json_encode([
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'username' => config('mail.mailers.smtp.username'),
+                'encryption' => config('mail.mailers.smtp.encryption'),
+            ]));
+            
+            return redirect()->back()
+                ->withErrors(['email' => 'Gagal mengirim email: ' . $e->getMessage() . '. Silakan periksa konfigurasi email.'])
+                ->withInput($request->only('email'));
+        }
+    }
+
+    public function showVerification()
+    {
+        return view('verifikasi');
+    }
+
+    public function verifyCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'verification_code' => 'required|string|size:6',
+        ], [
+            'verification_code.required' => 'Kode verifikasi harus diisi',
+            'verification_code.size' => 'Kode verifikasi harus 6 digit',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput($request->only('verification_code'));
+        }
+
+        $resetToken = PasswordResetToken::where('verification_code', $request->verification_code)
+            ->where('is_used', false)
+            ->first();
+
+        if (!$resetToken || $resetToken->isExpired()) {
+            return redirect()->back()
+                ->withErrors(['verification_code' => 'Kode verifikasi tidak valid atau sudah kadaluarsa']);
+        }
+
+        // Mark token as used
+        $resetToken->update(['is_used' => true]);
+
+        return redirect()->route('new-password')
+            ->with('success', 'Kode verifikasi berhasil')
+            ->with('token', $resetToken->token);
+    }
+
+    public function showNewPassword()
+    {
+        return view('new-password');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string|min:6|confirmed',
+            'token' => 'required|string',
+        ], [
+            'password.required' => 'Password harus diisi',
+            'password.min' => 'Password minimal 6 karakter',
+            'password.confirmed' => 'Konfirmasi password tidak cocok',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput($request->except('password', 'password_confirmation'));
+        }
+
+        $resetToken = PasswordResetToken::where('token', $request->token)
+            ->where('is_used', true)
+            ->first();
+
+        if (!$resetToken || $resetToken->isExpired()) {
+            return redirect()->route('forgot-password')
+                ->withErrors(['error' => 'Token tidak valid atau sudah kadaluarsa']);
+        }
+
+        $user = User::where('email', $resetToken->email)->first();
+        
+        if (!$user) {
+            return redirect()->route('forgot-password')
+                ->withErrors(['error' => 'User tidak ditemukan']);
+        }
+
+        // Update password
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        // Hapus token
+        $resetToken->delete();
+
+        return redirect()->route('login')
+            ->with('success', 'Password berhasil direset. Silakan login dengan password baru.');
     }
 }
