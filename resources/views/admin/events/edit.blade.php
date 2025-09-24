@@ -108,6 +108,16 @@
                                         </div>
 
                                         <div class="mb-3">
+                                            <label for="discount_percentage" class="form-label fw-semibold">
+                                                <i class="bi bi-percent me-1"></i>Diskon (%) <span class="text-muted">(Opsional)</span>
+                                            </label>
+                                            <input type="number" name="discount_percentage" id="discount_percentage" 
+                                                   class="form-control" min="0" max="100" step="1" 
+                                                   value="{{ old('discount_percentage', $event->discount_percentage) }}" placeholder="0">
+                                            <div class="form-text">Masukkan persentase diskon (0-100%). Contoh: 10 untuk diskon 10%</div>
+                                        </div>
+
+                                        <div class="mb-3">
                                             <label for="image" class="form-label fw-semibold">
                                                 Gambar Event
                                             </label>

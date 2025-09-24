@@ -27,6 +27,7 @@ class EventController extends Controller
             'description' => 'required',
             'location' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
+            'discount_percentage' => 'nullable|integer|min:0|max:100',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
@@ -42,6 +43,7 @@ class EventController extends Controller
             'description' => $request->description,
             'location' => $request->location,
             'price' => $request->price,
+            'discount_percentage' => $request->discount_percentage ?? 0,
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'image' => $imagePath,
@@ -68,13 +70,14 @@ class EventController extends Controller
             'description' => 'required',
             'location' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
+            'discount_percentage' => 'nullable|integer|min:0|max:100',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'description', 'location', 'price', 'event_date', 'event_time'
+            'title', 'speaker', 'description', 'location', 'price', 'discount_percentage', 'event_date', 'event_time'
         ]);
 
         // Jika ada gambar baru, simpan ke storage
