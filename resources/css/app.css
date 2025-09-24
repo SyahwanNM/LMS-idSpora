@@ -12,7 +12,7 @@
     --danger: #ef4444;
     --success: #22c55e;
     --font-main: "Poppins";
-    --bg-main: #F8FAFC;
+    --bg-main: #f8fafc;
 
     --fs-title: 64px;
     --fs-heading: 40px;
@@ -277,6 +277,16 @@ body {
     transition: transform 0.6s ease-in-out;
 }
 
+.section-title {
+    text-align: center;
+    margin: 30px 0 20px;
+}
+
+.section-title h3 {
+    font-weight: 600;
+    font-size: 24px;
+}
+
 /* ---- Section dasar ---- */
 .testimoni-section {
     padding-top: 0;
@@ -319,6 +329,91 @@ body {
     min-width: 0; /* biar konten bisa menyusut tanpa overflow */
 }
 
+/* Diagram bar*/
+.kotak {
+    width: 100%;
+    max-width: 400px;
+    min-width: 140px;
+    height: auto;
+    margin: 8px auto;
+    padding: 15px;
+    box-shadow: 0 0 10px rgb(219, 215, 215);
+    color: black;
+    border-radius: 20px;
+}
+#gradesChart {
+    display: block;
+    margin: 0 auto;
+    max-width: 180px;
+}
+.judul {
+    text-align: left;
+    margin: 0px 50px;
+    font-weight: 600;
+}
+.bulan {
+    text-align: left;
+    margin: 0px 30px;
+    padding: 0px 20px 13px 20px;
+    font-weight: 400;
+    color: grey;
+}
+.stat-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.keterangan {
+    flex: 1;
+}
+.chart-wrapper {
+    flex-shrink: 0;
+    width: 180px;
+    height: 180px;
+}
+.chart-wrapper canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+.stat-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.stat-item img {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+}
+.stat-text .label {
+    font-size: 14px;
+    color: gray;
+    margin: 0;
+}
+.stat-text .value {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+.task-item {
+    margin: 20px 50px;
+    padding: 8px 0;
+}
+.task-score {
+    float: right;
+    color: gray;
+}
+.progress {
+    height: 10px;
+}
+.progress-bar {
+    background-color: #f4c430;
+    height: 10px;
+}
+#hoursChart {
+    max-height: 250px;
+    margin-top: 20px;
+}
 /* Kartu & isi — pakai style yang sudah kamu punya */
 .reviews .card {
     height: 100%;
@@ -413,6 +508,7 @@ body {
 }
 .section-title h3 {
     margin-bottom: 4px;
+    margin-top: 50px;
     color: #000;
 }
 .section-title h6 {
@@ -445,7 +541,7 @@ body {
     flex-wrap: wrap;
     gap: 12px;
     padding: 10px 0;
-
+    padding-bottom: 50px;
     justify-content: center;
     align-items: stretch;
     margin: 0;
@@ -468,6 +564,30 @@ body {
 }
 .kategori-item.wide {
     min-width: 200px;
+}
+.header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 50px;
+    margin-bottom: 24px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 15px;
+}
+
+.header-card h3 {
+    margin: 0;
+    padding: 0;
+    font-weight: 500;
+}
+
+.header-card a {
+    color: #f4c542;
+    text-decoration: none;
+    margin: 0;
+  
 }
 
 .course-list {
@@ -594,6 +714,37 @@ body {
     box-shadow: 0 5px 10px 0 #f5c52f;
     transform: translateY(-1px) scale(1.02);
     transition: box-shadow 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+.progress-wrapper {
+    margin-bottom: 8px;
+}
+
+.progress {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 30%;
+    background: #f4c542;
+}
+
+.progress-wrapper p {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.btn-lanjut {
+    width: 100%;
+    padding: 10px;
+    background: #1e2a57;
+    color: #f4c542;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
 }
 
@@ -767,6 +918,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1;
 }
 
 .keterangan svg {
