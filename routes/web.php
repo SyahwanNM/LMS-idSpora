@@ -35,7 +35,7 @@ Route::get('/verifikasi', [AuthController::class, 'showVerification'])->name('ve
 Route::post('/verifikasi', [AuthController::class, 'verifyCode'])->name('verifikasi.verify');
 Route::get('/new-password', [AuthController::class, 'showNewPassword'])->name('new-password');
 Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('new-password.reset');
-
+                                                                        
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
