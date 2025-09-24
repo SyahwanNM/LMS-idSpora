@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Course;
 use App\Models\Event;
-use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class LandingPageController extends Controller
 {
     public function index()
     {
-        // Get upcoming events (next 4 events)
-        $upcomingEvents = Event::where('event_date', '>=', Carbon::now()->format('Y-m-d'))
-            ->orderBy('event_date', 'asc')
+        // Get 4 latest courses or best rated courses
+        $featuredCourses = Course::with(['category', 'modules'])
+            ->orderBy('created_at', 'desc')
             ->limit(4)
             ->get();
 
-        return view('landing-page', compact('upcomingEvents'));
+        // Get 4 latest events
+        $featuredEvents = Event::orderBy('created_at', 'desc')
+            ->limit(4)
+            ->get();
+
+        return view('landing-page', compact('featuredCourses', 'featuredEvents'));
     }
 }
-
