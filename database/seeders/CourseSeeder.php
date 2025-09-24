@@ -29,7 +29,7 @@ class CourseSeeder extends Seeder
                 'level' => 'beginner',
                 'price' => 299000,
                 'duration' => 120,
-                'image' => 'courses/web-development-bootcamp.jpg',
+                'image' => null, // Will use placeholder
             ],
             [
                 'name' => 'Advanced React Patterns',
@@ -38,7 +38,7 @@ class CourseSeeder extends Seeder
                 'level' => 'advanced',
                 'price' => 199000,
                 'duration' => 40,
-                'image' => 'courses/advanced-react-patterns.jpg',
+                'image' => null, // Will use placeholder
             ],
             [
                 'name' => 'Mobile App Development with Flutter',
@@ -47,7 +47,7 @@ class CourseSeeder extends Seeder
                 'level' => 'intermediate',
                 'price' => 249000,
                 'duration' => 80,
-                'image' => 'courses/flutter-mobile-development.jpg',
+                'image' => null, // Will use placeholder
             ],
             [
                 'name' => 'Data Science with Python',
@@ -56,7 +56,7 @@ class CourseSeeder extends Seeder
                 'level' => 'intermediate',
                 'price' => 349000,
                 'duration' => 100,
-                'image' => 'courses/data-science-python.jpg',
+                'image' => null, // Will use placeholder
             ],
             [
                 'name' => 'UI/UX Design Fundamentals',
@@ -65,7 +65,7 @@ class CourseSeeder extends Seeder
                 'level' => 'beginner',
                 'price' => 179000,
                 'duration' => 60,
-                'image' => 'courses/ui-ux-design-fundamentals.jpg',
+                'image' => null, // Will use placeholder
             ],
             [
                 'name' => 'DevOps and Cloud Deployment',
@@ -74,7 +74,7 @@ class CourseSeeder extends Seeder
                 'level' => 'intermediate',
                 'price' => 279000,
                 'duration' => 70,
-                'image' => 'courses/devops-cloud-deployment.jpg',
+                'image' => null, // Will use placeholder
             ],
             [
                 'name' => 'Cybersecurity Essentials',
@@ -83,7 +83,7 @@ class CourseSeeder extends Seeder
                 'level' => 'beginner',
                 'price' => 229000,
                 'duration' => 50,
-                'image' => 'courses/cybersecurity-essentials.jpg',
+                'image' => null, // Will use placeholder
             ],
         ];
 
