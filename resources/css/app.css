@@ -1121,3 +1121,109 @@ body {
 .footer-section a:hover {
     text-decoration: none !important;
 }
+
+/* Testimoni Slider Styles */
+.testimoni-container {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 45px;
+}
+
+.testimoni-slider {
+    overflow: hidden;
+    position: relative;
+}
+
+.testimoni-track {
+    display: flex;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+}
+
+.testimoni-slide {
+    flex: 0 0 100%;
+    width: 100%;
+}
+
+.testimoni-slide.active {
+    display: block;
+}
+
+/* Navigation Buttons */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--secondary);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-btn:hover {
+    background: var(--secondary);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.nav-btn-left {
+    left: 15px;
+}
+
+.nav-btn-right {
+    right: 15px;
+}
+
+.nav-btn svg {
+    transition: transform 0.2s ease;
+}
+
+.nav-btn:hover svg {
+    transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .testimoni-container {
+        padding: 0 20px;
+    }
+    
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .nav-btn-left {
+        left: 8px;
+    }
+    
+    .nav-btn-right {
+        right: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .testimoni-container {
+        padding: 0 16px;
+    }
+    
+    .nav-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .nav-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+}
