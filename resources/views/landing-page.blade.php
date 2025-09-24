@@ -369,14 +369,17 @@
         </div>
 
         <ul class="course-list">
+            @forelse($featuredCourses as $course)
             <li>
                 <article class="course-card">
                     <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
+                        @if($course->image)
+                            <img class="thumb" src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        @else
+                            <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        @endif
                         <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner w-3">Beginner</span>
+                            <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
                             <button class="save-btn" aria-label="Save course">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                     viewBox="0 0 16 16">
@@ -387,29 +390,29 @@
                     </div>
 
                     <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
+                        <h5 class="title">{{ $course->name }}</h5>
+                        <p class="desc">{{ Str::limit(strip_tags($course->description), 80) }}</p>
+                        <div class="tags"> 
+                            <span class="tag">{{ $course->category->name ?? 'No Category' }}</span> 
+                            <span class="tag">{{ $course->duration }}h</span>
                             <div class="meta" style="margin-left:auto; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
                                     viewBox="0 0 16 16">
                                     <path
                                         d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
                                 </svg>
-                                <span>118</span>
+                                <span>{{ $course->modules->count() }}</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                     viewBox="0 0 16 16">
                                     <path
                                         d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
                                 </svg>
-                                <span>5.0</span>
+                                <span>4.8</span>
                             </div>
                         </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
+                        <div class="author"> 
+                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2" alt="Profile">
+                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">idSpora Team</h6>
                             <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                                     viewBox="0 0 16 16">
@@ -417,197 +420,26 @@
                                     <path
                                         d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
                                 </svg>
-                                <span style="font-size:13px;">10 videos</span>
+                                <span style="font-size:13px;">{{ $course->modules->count() }} videos</span>
                             </div>
                         </div>
                         <div class="price-row">
                             <div class="price-col">
-                                <span class="price-old">Rp650.000</span>
-                                <span class="price-now">Rp150.000</span>
+                                <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                             </div>
                             <button class="btn-enroll">Enroll Now</button>
                         </div>
                     </div>
                 </article>
             </li>
+            @empty
             <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
-                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span> </div>
-                        </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp650.000</span>
-                                <span class="price-now">Rp150.000</span>
-                            </div>
-                            <button class="btn-enroll">Enroll Now</button>
-                        </div>
-                    </div>
-                </article>
+                <div class="text-center py-5">
+                    <h5 class="mb-3">Belum ada kursus tersedia</h5>
+                    <p class="text-muted">Kursus akan segera hadir!</p>
+                </div>
             </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
-                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span> </div>
-                        </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp650.000</span>
-                                <span class="price-now">Rp150.000</span>
-                            </div>
-                            <button class="btn-enroll">Enroll Now</button>
-                        </div>
-                    </div>
-                </article>
-            </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span>
-                            </div>
-                        </div>
-                        <div class="price-row">
-                            <div class="price-col">
-                                <span class="price-old">Rp100.000</span>
-                                <span class="price-now">Rp75.000</span>
-                            </div>
-                            <button class="btn-enroll">Enroll Now</button>
-                        </div>
-                    </div>
-                </article>
-            </li>
+            @endforelse
         </ul>
         <div class="align-items-center" style="padding: 20px; text-align: center !important;">
             <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
@@ -620,12 +452,16 @@
             <h6>Jadwal event dan webinar terbaru dari idSpora</h6>
         </div>
         <div class="event-list">
+            @forelse($featuredEvents as $event)
             <div class="card-event">
                 <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
+                    @if($event->image)
+                        <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" style="width: 100%; height: 200px; object-fit: cover;">
+                    @else
+                        <img class="card-image-event" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}" style="width: 100%; height: 200px; object-fit: cover;">
+                    @endif
                     <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
+                        <button class="save-btn" aria-label="Save event">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                 viewBox="0 0 16 16">
                                 <path d="M2 2v13.5l6-3 6 3V2z" />
@@ -635,21 +471,12 @@
                 </div>
 
                 <div class="card-body">
-                    <h4>AI For Lectures</h4>
-                    <div class="tags"> <span class="tag">Workshop</span> <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
+                    <h4>{{ $event->title }}</h4>
+                    <div class="tags"> 
+                        <span class="tag">Event</span> 
+                        <span class="tag">{{ $event->speaker }}</span>
                     </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
+                    <p class="desc-event">{{ Str::limit(strip_tags($event->description), 80) }}</p>
 
                     <div class="keterangan keterangan-row">
                         <div class="keterangan-item">
@@ -660,7 +487,7 @@
                                 <path
                                     d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
                             </svg>
-                            <span>04 September 2025</span>
+                            <span>{{ $event->event_date->format('d F Y') }}</span>
                         </div>
                         <div class="keterangan-item">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -668,205 +495,28 @@
                                 <path
                                     d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
                             </svg>
-                            <span>Bandung • 09.00 WIB</span>
+                            <span>{{ $event->location }}</span>
                         </div>
                     </div>
                     <div class="price-row">
                         <div class="price-col">
-                            <span class="price-old">Rp650.000</span>
-                            <span class="price-now">Rp150.000</span>
+                            @if($event->hasDiscount())
+                                <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                <span class="price-now">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</span>
+                            @else
+                                <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                            @endif
                         </div>
-                        <button class="btn-register">Register</button>
+                        <button class="btn-register">Daftar Sekarang</button>
                     </div>
                 </div>
             </div>
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <h3>AI For Lectures</h3>
-                    <div class="tags">
-                        <span class="tag">Workshop</span>
-                        <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp100.000</span>
-                            <span class="price-now">Rp75.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
-                </div>
+            @empty
+            <div class="text-center py-5">
+                <h5 class="mb-3">Belum ada event tersedia</h5>
+                <p class="text-muted">Event akan segera hadir!</p>
             </div>
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h3>AI For Lectures</h3>
-
-                    <div class="tags">
-                        <span class="tag">Workshop</span>
-                        <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp100.000</span>
-                            <span class="price-now">Rp75.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <h5>AI For Lectures</h5>
-
-                    <div class="tags">
-                        <span class="tag">Workshop</span>
-                        <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp100.000</span>
-                            <span class="price-now">Rp75.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
-                </div>
-            </div>
+            @endforelse
         </div>
         <div class="align-items-center" style="padding: 20px 0; text-align: center !important;">
             <a href="#" class="btn btn-primary">Lihat Semua Event</a>
@@ -948,6 +598,45 @@
             // Initialize
             showSlide(0);
             startAutoSlide();
+        });
+        
+        // Scroll reveal animation
+        function reveal() {
+            var reveals = document.querySelectorAll('.reveal');
+            
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                var elementVisible = 150;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add('active');
+                }
+            }
+        }
+        
+        // Add reveal class to sections
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.kursus-pelatihan, .testimoni-section, .partner, .footer-section');
+            sections.forEach(section => {
+                section.classList.add('reveal');
+            });
+            
+            // Initial reveal check
+            reveal();
+        });
+        
+        // Listen for scroll events
+        window.addEventListener('scroll', reveal);
+        
+        // Parallax effect for hero section
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const parallax = document.querySelector('.hero-section');
+            if (parallax) {
+                const speed = scrolled * 0.5;
+                parallax.style.transform = `translateY(${speed}px)`;
+            }
         });
     </script>
 </body>
