@@ -65,261 +65,272 @@
             <h6>Testimoni dari ribuan learner yang telah bergabung</h6>
         </div>
 
-        <div id="testimoniCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500"
-            data-bs-pause="false" data-bs-touch="true">
-            <div class="carousel-inner">
-
-                <!-- SLIDE 1: 1-2-3-4-5 -->
-                <div class="carousel-item active">
-                    <ul class="reviews">
-                        <!-- Card 1 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
+        <div class="testimoni-container">
+            <button class="nav-btn nav-btn-left" id="prevBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+                </svg>
+            </button>
+            
+            <div class="testimoni-slider" id="testimoniSlider">
+                <div class="testimoni-track" id="testimoniTrack">
+                    <!-- Review Set 1 -->
+                    <div class="testimoni-slide active">
+                        <ul class="reviews">
+                            <!-- Card 1 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                     </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 2 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
+                            <!-- Card 2 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                     </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 3 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Ahmad Jani</h6>
+                            <!-- Card 3 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Ahmad Jani</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
+                                            diterapkan di pekerjaan. Recommended banget!</p>
                                     </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
-                                        diterapkan di pekerjaan. Recommended banget!</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 4 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Vero Glorify</h6>
+                            <!-- Card 4 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Vero Glorify</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
+                                            basic sampai advanced semua ada.</p>
                                     </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
-                                        basic sampai advanced semua ada.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 5 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Agnes Mauaja</h6>
+                            <!-- Card 5 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Agnes Mauaja</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
+                                            dengan lebih baik. Terima kasih Idspora!</p>
                                     </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
-                                        dengan lebih baik. Terima kasih Idspora!</p>
                                 </div>
-                            </div>
-                        </li>
-                    </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Review Set 2 -->
+                    <div class="testimoni-slide">
+                        <ul class="reviews">
+                            <!-- Card 5 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Agnes Mauaja</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
+                                            dengan lebih baik. Terima kasih Idspora!</p>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Card 4 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Vero Glorify</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
+                                            basic sampai advanced semua ada.</p>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Card 3 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Ahmad Jani</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
+                                            diterapkan di pekerjaan. Recommended banget!</p>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Card 2 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- Card 1 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                </svg>
+                                            @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-
-                <!-- SLIDE 2: 5-4-3-2-1 (dibalik) -->
-                <div class="carousel-item">
-                    <ul class="reviews">
-                        <!-- Card 5 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Agnes Mauaja</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
-                                        dengan lebih baik. Terima kasih Idspora!</p>
-                                </div>
-                            </div>
-                        </li>
-
-                        <!-- Card 4 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Vero Glorify</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
-                                        basic sampai advanced semua ada.</p>
-                                </div>
-                            </div>
-                        </li>
-
-                        <!-- Card 3 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Ahmad Jani</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
-                                        diterapkan di pekerjaan. Recommended banget!</p>
-                                </div>
-                            </div>
-                        </li>
-
-                        <!-- Card 2 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
-                                </div>
-                            </div>
-                        </li>
-
-                        <!-- Card 1 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-
             </div>
+            
+            <button class="nav-btn nav-btn-right" id="nextBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+            </button>
         </div>
     </section>
 
@@ -874,6 +885,71 @@
         </div>
     </section>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slider = document.getElementById('testimoniSlider');
+            const track = document.getElementById('testimoniTrack');
+            const slides = document.querySelectorAll('.testimoni-slide');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            let currentSlide = 0;
+            let autoSlideInterval;
+            
+            // Function to show specific slide
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === index);
+                });
+                
+                // Smooth transition
+                track.style.transform = `translateX(-${index * 100}%)`;
+            }
+            
+            // Function to go to next slide
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            }
+            
+            // Function to go to previous slide
+            function prevSlide() {
+                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                showSlide(currentSlide);
+            }
+            
+            // Auto slide every 10 seconds
+            function startAutoSlide() {
+                autoSlideInterval = setInterval(nextSlide, 10000);
+            }
+            
+            // Stop auto slide
+            function stopAutoSlide() {
+                clearInterval(autoSlideInterval);
+            }
+            
+            // Event listeners for navigation buttons
+            nextBtn.addEventListener('click', function() {
+                stopAutoSlide();
+                nextSlide();
+                startAutoSlide();
+            });
+            
+            prevBtn.addEventListener('click', function() {
+                stopAutoSlide();
+                prevSlide();
+                startAutoSlide();
+            });
+            
+            // Pause auto slide on hover
+            slider.addEventListener('mouseenter', stopAutoSlide);
+            slider.addEventListener('mouseleave', startAutoSlide);
+            
+            // Initialize
+            showSlide(0);
+            startAutoSlide();
+        });
+    </script>
 </body>
 
 </html>
