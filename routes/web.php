@@ -16,9 +16,19 @@ Route::get('/profile-index', function () {
     return view('profile.index');
 })->name('profile.index');
 
+Route::get('/course-index', function () {
+    return view('course.index');
+})->name('course.index');
+
+Route::get('/course-detail', function () {
+    return view('course.detail');
+})->name('course.detail');
+
+
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [EventController::class, 'show'])->name('events.show');
+
 
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
