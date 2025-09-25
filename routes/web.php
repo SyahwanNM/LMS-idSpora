@@ -14,6 +14,10 @@ Route::get('/', function () {
     return view('landing-page');
 })->name('landing-page');
 
+Route::get('/profile-index', function () {
+    return view('profile.index');
+})->name('profile.index');
+
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [EventController::class, 'show'])->name('events.show');
