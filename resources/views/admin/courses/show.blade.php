@@ -72,7 +72,9 @@
                     @if($course->description)
                         <div class="mb-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
-                            <p class="text-gray-600">{{ $course->description }}</p>
+                            <div class="course-description">
+                                {!! $course->description !!}
+                            </div>
                         </div>
                     @endif
 
@@ -218,4 +220,185 @@
         </div>
     </main>
 </div>
+
+<style>
+/* Course Description Styling */
+.course-description {
+    line-height: 1.6;
+    color: #374151;
+}
+
+.course-description h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.course-description h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.course-description h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.course-description h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.course-description p {
+    margin-bottom: 1rem;
+    color: #4b5563;
+}
+
+.course-description ul {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.course-description ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.course-description li {
+    margin-bottom: 0.5rem;
+    color: #4b5563;
+}
+
+.course-description strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.course-description em {
+    font-style: italic;
+    color: #4b5563;
+}
+
+.course-description blockquote {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    color: #6b7280;
+    background-color: #f8fafc;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+.course-description code {
+    background-color: #f1f5f9;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: #e11d48;
+}
+
+.course-description pre {
+    background-color: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.course-description pre code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.course-description table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.course-description th {
+    background-color: #f9fafb;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.course-description td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    color: #4b5563;
+}
+
+.course-description tr:last-child td {
+    border-bottom: none;
+}
+
+.course-description img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.course-description a {
+    color: #3b82f6;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.course-description a:hover {
+    color: #1d4ed8;
+}
+
+.course-description hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 2rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .course-description h1 {
+        font-size: 1.75rem;
+    }
+    
+    .course-description h2 {
+        font-size: 1.375rem;
+    }
+    
+    .course-description h3 {
+        font-size: 1.125rem;
+    }
+    
+    .course-description table {
+        font-size: 0.875rem;
+    }
+    
+    .course-description th,
+    .course-description td {
+        padding: 0.5rem;
+    }
+}
+</style>
 @endsection

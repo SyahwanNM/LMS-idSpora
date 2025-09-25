@@ -67,7 +67,9 @@
                         </div>
                         
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $course->name }}</h3>
-                        <p class="text-sm text-gray-600 mb-4">{{ Str::limit($course->description, 100) }}</p>
+                        <div class="text-sm text-gray-600 mb-4 course-description-preview">
+                            {!! Str::limit(strip_tags($course->description), 100) !!}
+                        </div>
                         
                         <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
                             <span>{{ $course->category->name ?? 'No Category' }}</span>
@@ -213,4 +215,22 @@
         </div>
     </footer>
 </div>
+
+<style>
+/* Course Description Preview Styling */
+.course-description-preview {
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+.course-description-preview strong {
+    font-weight: 600;
+    color: #374151;
+}
+
+.course-description-preview em {
+    font-style: italic;
+    color: #6b7280;
+}
+</style>
 @endsection

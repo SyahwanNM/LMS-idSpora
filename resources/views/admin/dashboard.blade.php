@@ -34,18 +34,47 @@
                             <span>Export Data</span>
                         </button>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <img class="h-10 w-10 rounded-full border-2 border-white/30" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name ?? 'Admin') }}&background=f59e0b&color=fff" alt="Admin">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-medium text-white">{{ Auth::user()->name ?? 'Admin' }}</span>
-                            <span class="text-xs text-amber-100">Administrator</span>
+                    <!-- User Dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownButton" onclick="toggleUserDropdown()" class="flex items-center space-x-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-all duration-200 border border-white/30">
+                            <img class="h-8 w-8 rounded-full border-2 border-white/30" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name ?? 'Admin') }}&background=f59e0b&color=fff" alt="Admin">
+                            <div class="flex flex-col items-start">
+                                <span class="text-sm font-medium">{{ Auth::user()->name ?? 'Admin' }}</span>
+                                <span class="text-xs text-amber-100">Administrator</span>
+                            </div>
+                            <svg class="w-4 h-4 ml-2 transition-transform duration-200" id="dropdownArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="userDropdownMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50">
+                            <div class="py-1">
+                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Profil Saya
+                                </a>
+                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    Pengaturan
+                                </a>
+                                <hr class="my-1">
+                                <form action="{{ route('logout') }}" method="POST" class="block">
+                                    @csrf
+                                    <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                        </svg>
+                                        Logout
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form action="{{ route('logout') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="bg-red-500/80 hover:bg-red-600/80 backdrop-blur-sm text-white px-3 py-1 rounded text-sm transition-all duration-200 border border-red-400/30">
-                                Logout
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -176,7 +205,7 @@
 
                 <div class="space-y-4">
                     <!-- Add New Course -->
-                    <div class="group cursor-pointer" onclick="openAddCourseModal()">
+                    <div class="group cursor-pointer" onclick="window.location.href='{{ route('admin.courses.create') }}'">
                         <div class="flex items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 hover:border-blue-200 transition-all duration-200 hover:shadow-md">
                             <div class="flex-shrink-0">
                                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -198,7 +227,7 @@
                     </div>
 
                     <!-- Add New Event -->
-                    <div class="group cursor-pointer" onclick="openAddEventModal()">
+                    <div class="group cursor-pointer" onclick="window.location.href='{{ route('admin.events.create') }}'">
                         <div class="flex items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100 hover:border-purple-200 transition-all duration-200 hover:shadow-md">
                             <div class="flex-shrink-0">
                                 <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
@@ -425,167 +454,52 @@
     </footer>
 </div>
 
-<!-- Add Course Modal -->
-<div id="addCourseModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAddCourseModal()"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <form action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div>
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
-                        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-5">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Add New Course</h3>
-                    </div>
-                </div>
-                <div class="mt-5 space-y-4">
-                    <div>
-                        <label for="course_name" class="block text-sm font-medium text-gray-700">Course Name</label>
-                        <input type="text" name="name" id="course_name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Enter course name">
-                    </div>
-                    <div>
-                        <label for="course_category" class="block text-sm font-medium text-gray-700">Category</label>
-                        <select name="category_id" id="course_category" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            <option value="">Select Category</option>
-                            @foreach(\App\Models\Category::all() as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="course_description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea name="description" id="course_description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Enter course description"></textarea>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="course_level" class="block text-sm font-medium text-gray-700">Level</label>
-                            <select name="level" id="course_level" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="beginner">Beginner</option>
-                                <option value="intermediate">Intermediate</option>
-                                <option value="advanced">Advanced</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="course_duration" class="block text-sm font-medium text-gray-700">Duration (Hours)</label>
-                            <input type="number" name="duration" id="course_duration" required min="0" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0">
-                        </div>
-                    </div>
-                    <div>
-                        <label for="course_price" class="block text-sm font-medium text-gray-700">Price (Rp)</label>
-                        <input type="number" name="price" id="course_price" required min="0" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="0">
-                    </div>
-                    <div>
-                        <label for="course_image" class="block text-sm font-medium text-gray-700">Course Image</label>
-                        <input type="file" name="image" id="course_image" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                    </div>
-                </div>
-                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm">Create Course</button>
-                    <button type="button" onclick="closeAddCourseModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- Add Event Modal -->
-<div id="addEventModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeAddEventModal()"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div>
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-purple-100">
-                        <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-5">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Add New Event</h3>
-                    </div>
-                </div>
-                <div class="mt-5 space-y-4">
-                    <div>
-                        <label for="event_title" class="block text-sm font-medium text-gray-700">Event Title</label>
-                        <input type="text" name="title" id="event_title" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="Enter event title">
-                    </div>
-                    <div>
-                        <label for="event_speaker" class="block text-sm font-medium text-gray-700">Speaker</label>
-                        <input type="text" name="speaker" id="event_speaker" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="Enter speaker name">
-                    </div>
-                    <div>
-                        <label for="event_description" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea name="description" id="event_description" rows="3" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="Enter event description"></textarea>
-                    </div>
-                    <div>
-                        <label for="event_location" class="block text-sm font-medium text-gray-700">Location</label>
-                        <input type="text" name="location" id="event_location" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="Enter event location">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="event_date" class="block text-sm font-medium text-gray-700">Event Date</label>
-                            <input type="date" name="event_date" id="event_date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="event_time" class="block text-sm font-medium text-gray-700">Event Time</label>
-                            <input type="time" name="event_time" id="event_time" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
-                        </div>
-                    </div>
-                    <div>
-                        <label for="event_price" class="block text-sm font-medium text-gray-700">Ticket Price (Rp)</label>
-                        <input type="number" name="price" id="event_price" required min="0" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm" placeholder="0">
-                    </div>
-                    <div>
-                        <label for="event_image" class="block text-sm font-medium text-gray-700">Event Image</label>
-                        <input type="file" name="image" id="event_image" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
-                        <img id="eventImagePreview" src="#" alt="Preview" style="display:none;max-width:100%;margin-top:10px;border-radius:8px;">
-                    </div>
-                </div>
-                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:col-start-2 sm:text-sm">Create Event</button>
-                    <button type="button" onclick="closeAddEventModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:col-start-1 sm:text-sm">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script>
 // Modal Functions
-function openAddCourseModal() {
-    document.getElementById('addCourseModal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
 
-function closeAddCourseModal() {
-    document.getElementById('addCourseModal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
-
-function openAddEventModal() {
-    document.getElementById('addEventModal').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function closeAddEventModal() {
-    document.getElementById('addEventModal').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
 
 // Close modals when clicking outside
 document.addEventListener('DOMContentLoaded', function() {
+    // User Dropdown Toggle - with better error handling
+    function initUserDropdown() {
+        const userDropdownButton = document.getElementById('userDropdownButton');
+        const userDropdownMenu = document.getElementById('userDropdownMenu');
+        const dropdownArrow = document.getElementById('dropdownArrow');
+        
+        if (userDropdownButton && userDropdownMenu && dropdownArrow) {
+            userDropdownButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdownMenu.classList.toggle('hidden');
+                dropdownArrow.classList.toggle('rotate-180');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!userDropdownButton.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+                    userDropdownMenu.classList.add('hidden');
+                    dropdownArrow.classList.remove('rotate-180');
+                }
+            });
+        } else {
+            console.log('User dropdown elements not found');
+        }
+    }
+    
+    // Initialize dropdown
+    initUserDropdown();
+    
     // Close modal when pressing escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            closeAddCourseModal();
-            closeAddEventModal();
+            // Close dropdown on escape
+            const userDropdownMenu = document.getElementById('userDropdownMenu');
+            const dropdownArrow = document.getElementById('dropdownArrow');
+            if (userDropdownMenu && !userDropdownMenu.classList.contains('hidden')) {
+                userDropdownMenu.classList.add('hidden');
+                if (dropdownArrow) dropdownArrow.classList.remove('rotate-180');
+            }
         }
     });
 
@@ -690,22 +604,6 @@ function animateCounters() {
     }, 500);
 @endif
 
-// Preview gambar event pada modal tambah event
-document.getElementById('event_image').addEventListener('change', function(event) {
-    const [file] = event.target.files;
-    const preview = document.getElementById('eventImagePreview');
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-        }
-        reader.readAsDataURL(file);
-    } else {
-        preview.src = '#';
-        preview.style.display = 'none';
-    }
-});
 
 // Simple footer positioning
 document.addEventListener('DOMContentLoaded', function() {
@@ -734,33 +632,20 @@ document.addEventListener('DOMContentLoaded', function() {
 @section('scripts')
 <script>
     // Modal Functions
-    function openAddCourseModal() {
-        document.getElementById('addCourseModal').classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-    }
 
-    function closeAddCourseModal() {
-        document.getElementById('addCourseModal').classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-    }
-
-    function openAddEventModal() {
-        document.getElementById('addEventModal').classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-    }
-
-    function closeAddEventModal() {
-        document.getElementById('addEventModal').classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-    }
 
     // Close modals when clicking outside
     document.addEventListener('DOMContentLoaded', function() {
         // Close modal when pressing escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeAddCourseModal();
-                closeAddEventModal();
+                // Close dropdown on escape
+                const userDropdownMenu = document.getElementById('userDropdownMenu');
+                const dropdownArrow = document.getElementById('dropdownArrow');
+                if (userDropdownMenu && !userDropdownMenu.classList.contains('hidden')) {
+                    userDropdownMenu.classList.add('hidden');
+                    if (dropdownArrow) dropdownArrow.classList.remove('rotate-180');
+                }
             }
         });
 
@@ -865,22 +750,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     @endif
 
-    // Preview gambar event pada modal tambah event
-    document.getElementById('event_image').addEventListener('change', function(event) {
-        const [file] = event.target.files;
-        const preview = document.getElementById('eventImagePreview');
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        } else {
-            preview.src = '#';
-            preview.style.display = 'none';
-        }
-    });
+});
+
+// User Dropdown Functionality
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const arrow = document.getElementById('dropdownArrow');
+    
+    if (dropdown && arrow) {
+        dropdown.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const button = document.getElementById('userDropdownButton');
+    
+    if (dropdown && button && !button.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+        const arrow = document.getElementById('dropdownArrow');
+        if (arrow) arrow.classList.remove('rotate-180');
+    }
+});
 </script>
 @endsection
 
@@ -977,5 +870,54 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .content-wrapper footer {
     margin-top: auto;
+}
+
+/* User Dropdown Styles */
+#userDropdownMenu {
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+#userDropdownMenu.hidden {
+    animation: dropdownFadeOut 0.2s ease-in;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes dropdownFadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Dropdown arrow rotation */
+#dropdownArrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+#dropdownArrow.rotate-180 {
+    transform: rotate(180deg);
+}
+
+/* Dropdown menu hover effects */
+#userDropdownMenu a:hover {
+    background-color: #f3f4f6;
+}
+
+#userDropdownMenu button:hover {
+    background-color: #fef2f2;
 }
 </style>
