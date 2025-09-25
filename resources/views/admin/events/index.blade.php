@@ -32,7 +32,7 @@
                         <p class="card-text mb-1"><strong>Date:</strong> {{ $event->event_date }} <strong>Time:</strong> {{ $event->event_time }}</p>
                         <p class="card-text mb-1"><strong>Location:</strong> {{ $event->location }}</p>
                         <p class="card-text mb-2"><strong>Price:</strong> Rp{{ number_format($event->price, 0, ',', '.') }}</p>
-                        <p class="card-text text-muted" style="font-size: 0.95em;">{{ Str::limit($event->description, 80) }}</p>
+                        <p class="card-text text-muted event-description-preview" style="font-size: 0.95em;">{{ Str::limit(strip_tags($event->description), 80) }}</p>
                         <div class="mt-auto d-flex justify-content-between">
                             <a href="{{ route('admin.events.show', $event) }}" class="btn btn-outline-info btn-sm">View</a>
                             <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-outline-warning btn-sm">Edit</a>
@@ -106,4 +106,24 @@
         modal.show();
     }
 </script>
+@endsection
+
+@section('styles')
+<style>
+/* Event Description Preview Styling */
+.event-description-preview {
+    line-height: 1.4;
+    color: #6c757d;
+}
+
+.event-description-preview strong {
+    font-weight: 600;
+    color: #495057;
+}
+
+.event-description-preview em {
+    font-style: italic;
+    color: #6c757d;
+}
+</style>
 @endsection
