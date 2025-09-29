@@ -173,6 +173,26 @@ body {
     max-width: 1350px;
     padding-inline: 45px;
 }
+
+.search-container {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+@media (max-width: 700px) {
+    .search-banner-container {
+        max-width: 98vw;
+        margin-top: 20px;
+    }
+}
+.search-form {
+    width: 100%;
+    max-width: 1350px;
+    padding-inline: 45px;
+}
 .search-wrap {
     position: relative;
     width: 100%;
@@ -191,7 +211,16 @@ body {
     border: 1.5px solid var(--primary-dark);
     color: var(--white);
     font-size: 16px;
-    padding-inline: 1rem 40px; /* ruang kanan untuk ikon */
+    padding-inline: 1rem 40px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input-2 {
+    height: 44px;
+    border-radius: 10px;
+    background: var(--white);
+    border: 1.5px solid var(--primary-dark);
+    color: var(--white);
+    font-size: 16px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -201,7 +230,6 @@ body {
     box-shadow: 0 0 0 3px rgba(58, 48, 129, 0.25);
 }
 
-/* ikon kaca pembesar */
 .search-icon {
     position: absolute;
     right: 12px;
@@ -216,7 +244,6 @@ body {
     cursor: pointer;
 }
 
-/* suggestions */
 .search-suggest {
     display: none;
     position: absolute;
@@ -287,6 +314,10 @@ body {
     font-size: 24px;
 }
 
+.carousel-inner {
+    margin-top: 25px;
+}
+
 /* ---- Section dasar ---- */
 .testimoni-section {
     padding-top: 0;
@@ -308,7 +339,6 @@ body {
     transition: transform 0.1s ease;
 }
 
-/* ---- Reviews: tetap gaya kamu, tapi dipastikan 5 kolom selalu pas ---- */
 .reviews {
     --gap: 18px;
     display: flex;
@@ -322,11 +352,10 @@ body {
     width: 100%;
 }
 
-/* 5 kolom fleksibel (menggantikan width 220px supaya selalu muat 5 item) */
 .reviews > li {
     flex: 1 1 calc((100% - (4 * var(--gap))) / 5);
     max-width: calc((100% - (4 * var(--gap))) / 5);
-    min-width: 0; /* biar konten bisa menyusut tanpa overflow */
+    min-width: 0;
 }
 
 /* Diagram bar*/
@@ -432,6 +461,10 @@ body {
     height: 100%;
 }
 
+.card-body h5 {
+    margin-top: 10px;
+}
+
 .reviewer {
     display: flex;
     align-items: center;
@@ -493,7 +526,6 @@ body {
     padding: 0 45px 0 45px;
 }
 
-/* Gambar item di dalam carousel */
 .custom-carousel .carousel-item img {
     width: 100%;
     height: 400px;
@@ -518,7 +550,6 @@ body {
     margin: 0;
 }
 
-/* Fix horizontal scroll for course and event containers */
 .card-container-course {
     display: flex;
     gap: 24px;
@@ -551,7 +582,7 @@ body {
     color: var(--white);
     border-radius: 10px;
     height: 48px;
-    min-width: 140px; /* konsisten */
+    min-width: 140px;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -587,7 +618,6 @@ body {
     color: #f4c542;
     text-decoration: none;
     margin: 0;
-  
 }
 
 .course-list {
@@ -748,7 +778,6 @@ body {
     cursor: pointer;
 }
 
-/* Responsive kecil */
 .event-list {
     list-style: none;
     padding: 0px;
@@ -758,6 +787,11 @@ body {
     gap: 16px;
     max-width: 1200px;
     box-sizing: border-box;
+    justify-content: center;
+    align-items: start;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 0;
 }
 
 .card-event {
@@ -913,7 +947,6 @@ body {
     cursor: pointer;
 }
 
-/* Keterangan: align icon and text in each row */
 .keterangan {
     display: flex;
     flex-direction: column;
@@ -955,10 +988,9 @@ body {
     }
 }
 
-/* (opsional) Perbaikan kecil : hover btn-primary yang sebelumnya tidak valid color+opacity */
 .btn-primary:hover,
 .btn-primary:active {
-    background: rgba(37, 35, 70, 0.35); /* #252346 dengan opacity 35% */
+    background: rgba(37, 35, 70, 0.35);
     color: var(--white) !important;
     border: 1px solid var(--white);
     box-shadow: none;
@@ -969,7 +1001,6 @@ body {
     width: 100%;
 }
 
-/* Group badge & save button bottom right */
 .badge-save-group {
     position: absolute;
     right: 12px;
@@ -997,7 +1028,6 @@ body {
     border-radius: 15px 15px 0 0;
 }
 
-/* Badge level */
 .course-badge {
     position: absolute;
     bottom: 20px;
@@ -1006,13 +1036,10 @@ body {
     font-size: 12px;
     font-weight: 600;
     border-radius: 6px;
-
-    /* glass effect */
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
 
-/* Beginner = Hijau */
 .course-badge.beginner {
     background: var(--bg-main);
     opacity: 90%;
@@ -1021,19 +1048,17 @@ body {
 }
 
 .course-badge.intermediate {
-    background: rgba(0, 122, 255, 0.1); /* biru transparan 10% */
+    background: rgba(0, 122, 255, 0.1);
     color: #007aff;
     border: 1px solid rgba(0, 122, 255, 0.25);
 }
 
-/* Advance = Merah */
 .course-badge.advance {
-    background: rgba(255, 59, 48, 0.1); /* merah transparan 10% */
+    background: rgba(255, 59, 48, 0.1);
     color: #ff3b30;
     border: 1px solid rgba(255, 59, 48, 0.25);
 }
 
-/* Save button */
 .save-btn {
     position: absolute;
     bottom: 20px;
@@ -1068,9 +1093,9 @@ body {
 }
 
 .partner-logos img {
-    max-height: 120px; /* seragam tinggi logo */
-    max-width: 160px; /* batasi lebar */
-    object-fit: contain; /* biar proporsional */
+    max-height: 120px;
+    max-width: 160px;
+    object-fit: contain;
     display: block;
     transition: filter 0.2s ease, transform 0.2s ease;
 }
@@ -1080,7 +1105,6 @@ body {
     transform: translateY(-2px);
 }
 
-/* responsif kecil */
 @media (max-width: 640px) {
     .partner-logos {
         padding: 0 16px;
@@ -1092,6 +1116,100 @@ body {
     }
 }
 
+.filter-container {
+    background: #1e2a47;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 1000px;
+    margin: auto;
+    flex-direction: column;
+    display: flex;
+    gap: 20px;
+}
+.filter-box {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.options {
+    position: relative;
+    flex: 1;
+}
+
+.options label {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #ddd;
+    display: block;
+    margin-left: 20px;
+}
+
+.options select {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #5a6a90;
+    background-color: #1e2a47;
+    color: white;
+    font-size: 14px;
+}
+
+.options select option {
+    background-color: white;
+    color: black;
+    padding: 8px;
+}
+
+.options select:focus {
+    outline: none;
+    border-bottom: 1px solid #fff;
+}
+label {
+    color: white;
+}
+
+.dropdown-toggle {
+    background-color: #f2f4ff;
+    border: none;
+    border-radius: 30px;
+}
+
+.pagination .page-link {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin: 0 4px;
+    color: #333;
+    background-color: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #ccc;
+    border-color: #ccc;
+    pointer-events: none;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #1a1a1a;
+    color: white;
+    border-color: #1a1a1a;
+}
+
+.pagination .page-link:hover {
+    background-color: #e0f7fa;
+    color: #1a1a1a;
+    border-color: #b2ebf2;
+}
+
+.hidden {
+    display: none !important;
+}
 .footer-section {
     background: var(--primary-dark);
     color: white;
