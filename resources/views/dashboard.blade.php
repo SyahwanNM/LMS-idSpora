@@ -412,7 +412,7 @@
                                 <span>118</span>
                             </div>
                         </div>
-                        <p class="desc-event">{{ Str::limit(strip_tags($event->description), 80) }}</p>
+                        <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description, '<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
                         <div class="keterangan keterangan-row">
                             <div class="keterangan-item">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16">
