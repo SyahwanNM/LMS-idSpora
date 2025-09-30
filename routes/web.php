@@ -12,6 +12,10 @@ use App\Http\Controllers\QuizController;
 
 Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('landing-page');
 
+Route::get('/event', function () {
+    return view('event');
+})->name('event');
+
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [EventController::class, 'show'])->name('events.show');
