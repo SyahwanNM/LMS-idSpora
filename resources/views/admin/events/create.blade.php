@@ -31,7 +31,7 @@
                     @endif
 
                     <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data" id="eventForm">
-                        @csrf
+        @csrf
                         
                         <div class="row">
                             <!-- Left Column -->
@@ -81,32 +81,32 @@
                                         </h6>
                                     </div>
                                     <div class="card-body">
-                                        <div class="mb-3">
+        <div class="mb-3">
                                             <label for="event_date" class="form-label fw-semibold">
                                                 Tanggal Event <span class="text-danger">*</span>
                                             </label>
                                             <input type="date" name="event_date" id="event_date" class="form-control" 
                                                    required value="{{ old('event_date') }}">
-                                        </div>
+        </div>
 
-                                        <div class="mb-3">
+        <div class="mb-3">
                                             <label for="event_time" class="form-label fw-semibold">
                                                 Waktu Event <span class="text-danger">*</span>
                                             </label>
                                             <input type="time" name="event_time" id="event_time" class="form-control" 
                                                    required value="{{ old('event_time') }}">
-                                        </div>
+        </div>
 
-                                        <div class="mb-3">
+        <div class="mb-3">
                                             <label for="price" class="form-label fw-semibold">
                                                 Harga Tiket (Rp) <span class="text-danger">*</span>
                                             </label>
                                             <input type="number" name="price" id="price" class="form-control" 
                                                    required min="0" step="1000" value="{{ old('price', 0) }}" 
                                                    placeholder="0">
-                                        </div>
+        </div>
 
-                                        <div class="mb-3">
+        <div class="mb-3">
                                             <label for="discount_percentage" class="form-label fw-semibold">
                                                 <i class="bi bi-percent me-1"></i>Diskon (%) <span class="text-muted">(Opsional)</span>
                                             </label>
@@ -114,9 +114,9 @@
                                                    class="form-control" min="0" max="100" step="1" 
                                                    value="{{ old('discount_percentage', 0) }}" placeholder="0">
                                             <div class="form-text">Masukkan persentase diskon (0-100%). Contoh: 10 untuk diskon 10%</div>
-                                        </div>
+        </div>
 
-                                        <div class="mb-3">
+        <div class="mb-3">
                                             <label for="image" class="form-label fw-semibold">
                                                 Gambar Event <span class="text-danger">*</span>
                                             </label>
@@ -149,10 +149,10 @@
                             </div>
                         </div>
                     </form>
-                </div>
-            </div>
         </div>
-    </div>
+        </div>
+        </div>
+        </div>
 </div>
 @endsection
 
@@ -551,6 +551,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Auto-saving draft...');
         }, 30000); // Auto-save every 30 seconds
     });
-});
+    });
 </script>
 @endsection
