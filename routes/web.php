@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\CourseController;
@@ -14,8 +15,8 @@ use App\Http\Controllers\QuizController;
 Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('landing-page');
 
 // Public routes
-Route::get('/events', [EventController::class, 'index'])->name('events.index');
-Route::get('/events/{slug}', [EventController::class, 'show'])->name('events.show');
+Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+// (Optional) show detail route could be added later with slug or id
 
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
