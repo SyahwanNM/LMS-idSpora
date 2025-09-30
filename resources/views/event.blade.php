@@ -68,6 +68,7 @@
                 <select>
                     <option>Low to High</option>
                     <option>High to Low</option>
+                    <option>Free</option>
                 </select>
             </div>
         </div>
@@ -92,7 +93,7 @@
     </div>
     <section class="event">
         <div class="header-card">
-            <h5>Event Mendatang</h5>
+            <h3>Event Mendatang</h3>
             <div class="dropdown-box d-flex gap-2">
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -995,7 +996,7 @@
             <div class="card-event">
                 <div class="thumb-wrapper">
                     <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
+                    <div class="badge-save-group" style="gap: 12px;">
                         <span class="course-badge beginner">Beginner</span>
                         <button class="save-btn" aria-label="Save course">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1424,3 +1425,4 @@
 </body>
 
 </html>
+@include('partials.footer-after-login')
