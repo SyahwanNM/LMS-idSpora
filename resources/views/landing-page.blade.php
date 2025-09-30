@@ -454,20 +454,18 @@
         <div class="event-list">
             @forelse($featuredEvents as $event)
             <div class="card-event">
-                <div class="thumb-wrapper">
+                <div class="event-poster">
                     @if($event->image)
-                        <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
                     @else
-                        <img class="card-image-event" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <img class="event-poster-img" src="https://via.placeholder.com/600x800/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}">
                     @endif
-                    <div class="badge-save-group" style="gap:12px;">
-                        <button class="save-btn" aria-label="Save event">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
+                    <button class="save-btn save-btn--event" aria-label="Save event" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2 2v13.5l6-3 6 3V2z" />
+                        </svg>
+                    </button>
+                   
                 </div>
 
                 <div class="card-body">

@@ -383,253 +383,70 @@
             <a href="#">Lihat Lainnya</a>
         </div>
         <div class="event-list">
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
+            @forelse($upcomingEvents as $event)
+                <div class="card-event">
+                    <div class="thumb-wrapper">
+                        @if($event->image)
+                            <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
+                        @else
+                            <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
+                        @endif
+                        <div class="badge-save-group" style="gap:12px;">
+                            <span class="course-badge beginner">Beginner</span>
+                            <button class="save-btn" aria-label="Save course" type="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h4>{{ $event->title }}</h4>
+                        <div class="tags">
+                            <span class="tag">{{ $event->speaker ? Str::limit($event->speaker, 18) : 'Narasumber' }}</span>
+                            <span class="tag">{{ $event->location ? Str::limit($event->location, 18) : 'Lokasi TBA' }}</span>
+                            <div class="meta" style="margin-left:auto; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                </svg>
+                                <span>118</span>
+                            </div>
+                        </div>
+                        <p class="desc-event">{{ Str::limit(strip_tags($event->description), 80) }}</p>
+                        <div class="keterangan keterangan-row">
+                            <div class="keterangan-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16">
+                                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                                </svg>
+                                <span>{{ $event->event_date?->format('d F Y') }}</span>
+                            </div>
+                            <div class="keterangan-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                                </svg>
+                                <span>{{ $event->location ? ($event->event_time ? $event->location.' • '.$event->event_time?->format('H:i').' WIB' : $event->location) : '-' }}</span>
+                            </div>
+                        </div>
+                        <div class="price-row">
+                            <div class="price-col">
+                                @if($event->hasDiscount())
+                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                    <span class="price-now">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</span>
+                                @else
+                                    <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                @endif
+                            </div>
+                            <button class="btn-register" type="button">Register</button>
+                        </div>
                     </div>
                 </div>
-
-                <div class="card-body">
-                    <h4>AI For Lectures</h4>
-                    <div class="tags"> <span class="tag">Workshop</span> <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp650.000</span>
-                            <span class="price-now">Rp150.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
+            @empty
+                <div class="text-center py-5" style="grid-column:1/-1;">
+                    <h5 class="mb-3">Belum ada event tersedia</h5>
+                    <p class="text-muted">Event akan segera hadir!</p>
                 </div>
-            </div>
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <h3>AI For Lectures</h3>
-                    <div class="tags">
-                        <span class="tag">Workshop</span>
-                        <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp100.000</span>
-                            <span class="price-now">Rp75.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h3>AI For Lectures</h3>
-
-                    <div class="tags">
-                        <span class="tag">Workshop</span>
-                        <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp100.000</span>
-                            <span class="price-now">Rp75.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-event">
-                <div class="thumb-wrapper">
-                    <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="Course">
-                    <div class="badge-save-group" style="gap:12px;">
-                        <span class="course-badge beginner">Beginner</span>
-                        <button class="save-btn" aria-label="Save course">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <h5>AI For Lectures</h5>
-
-                    <div class="tags">
-                        <span class="tag">Workshop</span>
-                        <span class="tag">AI</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path
-                                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>118</span>
-                        </div>
-                    </div>
-                    <p class="desc-event">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod
-                        tempor
-                        incididunt...</p>
-
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path
-                                    d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path
-                                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>04 September 2025</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path
-                                    d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>Bandung • 09.00 WIB</span>
-                        </div>
-                    </div>
-                    <div class="price-row">
-                        <div class="price-col">
-                            <span class="price-old">Rp100.000</span>
-                            <span class="price-now">Rp75.000</span>
-                        </div>
-                        <button class="btn-register">Register</button>
-                    </div>
-                </div>
-            </div>
+            @endforelse
         </div>
     </section>
 

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
@@ -12,27 +13,9 @@ use App\Http\Controllers\QuizController;
 
 Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('landing-page');
 
-Route::get('/profile-index', function () {
-    return view('profile.index');
-})->name('profile.index');
-
-Route::get('/course-index', function () {
-    return view('course.index');
-})->name('course.index');
-
-Route::get('/course-detail', function () {
-    return view('course.detail');
-})->name('course.detail');
-
-
-Route::get('/event', function () {
-    return view('event');
-})->name('event');
-
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [EventController::class, 'show'])->name('events.show');
-
 
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
@@ -55,12 +38,7 @@ Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('ne
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
-    Route::get('/dashboard', function () {
-        if (Auth::user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
