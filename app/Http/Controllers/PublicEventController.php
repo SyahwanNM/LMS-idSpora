@@ -42,6 +42,26 @@ class PublicEventController extends Controller
 		$events = $query->paginate(12)->withQueryString();
 		$locations = Event::select('location')->whereNotNull('location')->distinct()->orderBy('location')->pluck('location');
 
+		// Tandai event yang sudah diregistrasi user login
+		if($request->user()){
+			$userRegEventIds = $request->user()->eventRegistrations()->pluck('event_id')->toArray();
+			$events->getCollection()->transform(function($ev) use ($userRegEventIds){
+				$ev->is_registered = in_array($ev->id, $userRegEventIds);
+				return $ev;
+			});
+		}
+
 		return view('event', compact('events', 'locations'));
+	}
+
+	public function show(Event $event, Request $request)
+	{
+		// Tandai sudah terdaftar (reuse logic ringkas)
+		$isRegistered = false;
+		if($request->user()){
+			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
+		}
+		$event->is_registered = $isRegistered;
+		return view('events.show', compact('event'));
 	}
 }

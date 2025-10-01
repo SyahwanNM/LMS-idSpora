@@ -1,21 +1,33 @@
-@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Event</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-</head>
-
+    <style>
+        /* Event page image enlargement (slightly taller) */
+        .event .event-list {row-gap:40px;} /* a bit more vertical spacing between cards */
+        .event .card-event .thumb-wrapper {position:relative; height:380px;} /* enlarged from presumed ~320/340 */
+        .event .card-event .card-image-event {width:100%; height:100%; object-fit:cover;}
+        @media (max-width:1200px){ .event .card-event .thumb-wrapper {height:360px;} }
+        @media (max-width:992px){ .event .card-event .thumb-wrapper {height:340px;} }
+        @media (max-width:768px){ .event .card-event .thumb-wrapper {height:280px;} }
+        /* Add extra top spacing for event section */
+        section.event {margin-top:55px;}
+        section.event .header-card {margin-bottom:28px;}
+        /* Lower the main heading relative to filter dropdowns */
+        section.event .header-card h3 {margin-top:14px;}
+    </style>
+    </head>
 <body>
-    </div>
+    @include('partials.navbar-after-login')
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
@@ -89,7 +101,6 @@
                 </div>
             </form>
         </div>
-    </div>
     </div>
     <section class="event">
         <div class="header-card">
@@ -194,7 +205,10 @@
                                     <span class="price-now">{{ $isFree ? 'Gratis' : 'Rp'.number_format($event->price,0,',','.') }}</span>
                                 @endif
                             </div>
-                            <button class="btn-register" type="button">Register</button>
+                            @php $registered = !empty($event->is_registered); @endphp
+                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" data-event-id="{{ $event->id }}" data-event-title="{{ e($event->title) }}" {{ $registered ? 'disabled' : '' }}>
+                                {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -208,9 +222,85 @@
         @if(isset($events) && $events instanceof \Illuminate\Pagination\AbstractPaginator)
             <div class="mt-4 d-flex justify-content-center">{!! $events->links() !!}</div>
         @endif
+    <!-- Success Registration Modal -->
+    <div class="modal fade" id="registrationSuccessModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white py-2">
+            <h6 class="modal-title">Pendaftaran Berhasil</h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">Anda berhasil terdaftar pada event: <strong id="registeredEventTitle"></strong></p>
+          </div>
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
     </section>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.footer-after-login')
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+        document.querySelectorAll('.register-btn').forEach(btn => {
+            btn.addEventListener('click', function(){
+                if(this.classList.contains('btn-success')) return; // already
+                const eventId = this.dataset.eventId;
+                const self = this;
+                self.disabled = true; // prevent double click
+                self.classList.add('disabled');
+                fetch(`/events/${eventId}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({})
+                })
+                .then(async r => {
+                    if(r.status === 401){
+                        alert('Silakan login terlebih dahulu.');
+                        throw new Error('Unauthenticated');
+                    }
+                    if(r.status === 419){
+                        alert('Sesi kadaluarsa, refresh halaman.');
+                        throw new Error('CSRF/Session expired');
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    if(data.status === 'ok' || data.status === 'already'){
+                        self.classList.remove('btn-primary');
+                        self.classList.add('btn-success');
+                        self.textContent = 'Anda Terdaftar';
+                        self.disabled = true;
+                        document.getElementById('registeredEventTitle').textContent = data.event_title || self.dataset.eventTitle;
+                        const modalEl = document.getElementById('registrationSuccessModal');
+                        const m = new bootstrap.Modal(modalEl);
+                        m.show();
+                    } else if(data.message){
+                        alert(data.message);
+                        self.disabled = false;
+                        self.classList.remove('disabled');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    if(!self.classList.contains('btn-success')){
+                        self.disabled = false;
+                        self.classList.remove('disabled');
+                    }
+                });
+            });
+        });
+    });
+    </script>
 </body>
-
 </html>
-@include('partials.footer-after-login')

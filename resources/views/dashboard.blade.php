@@ -126,9 +126,9 @@
 
 
     <section class="kursus-pelatihan">
-        <div class="header-card">
-            <h3>Lanjutkan Belajar</h3>
-            <a href="#">Lihat Lainnya</a>
+        <div class="header-card d-flex align-items-center justify-content-between" style="gap:16px;">
+            <h3 class="mb-0">Lanjutkan Belajar</h3>
+            <a href="#" class="see-more-link text-decoration-none">Lihat Lainnya &raquo;</a>
         </div>
 
         <ul class="course-list">
@@ -378,9 +378,9 @@
     </section>
 
     <section class="event">
-        <div class="header-card">
-            <h3>Event Mendatang</h3>
-            <a href="#">Lihat Lainnya</a>
+        <div class="header-card d-flex align-items-center justify-content-between" style="gap:16px;">
+            <h3 class="mb-0">Event Mendatang</h3>
+            <a href="#" class="see-more-link text-decoration-none">Lihat Lainnya &raquo;</a>
         </div>
         <div class="event-list">
             @forelse($upcomingEvents as $event)
@@ -515,6 +515,8 @@
         gap:4px;
         text-transform:uppercase;
     }
+    .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
+    .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
     </style>
     <script>
         const ctx = document.getElementById('gradesChart');

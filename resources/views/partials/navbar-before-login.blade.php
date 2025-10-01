@@ -14,7 +14,7 @@
                     <a class="nav-link {{ request()->routeIs('landing-page') ? 'active' : '' }}" aria-current="page" href="{{ route('landing-page') }}">Home</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link" href="#">Courses</a>
+                    <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Courses</a>
                 </li>
                 <li class="nav-item mx-3">
                     <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Events</a>
@@ -30,32 +30,4 @@
         </div>
     </div>
 </nav>
-<style>
-/* Enhanced navbar hover + active indicator */
-.navbar-gradient .nav-link {
-    position: relative;
-    color: #fff !important;
-    transition: color .25s ease;
-    padding-bottom: 6px;
-}
-.navbar-gradient .nav-link::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: 2px;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg,#ffe259,#ffa751);
-    transition: width .35s cubic-bezier(.65,.05,.36,1), left .35s cubic-bezier(.65,.05,.36,1);
-    border-radius: 2px;
-    opacity: .9;
-}
-.navbar-gradient .nav-link:hover,
-.navbar-gradient .nav-link:focus { color:#ffe8b3 !important; }
-/* Only active link shows underline */
-.navbar-gradient .nav-link.active { font-weight:600; }
-.navbar-gradient .nav-link.active::after { width:70%; left:15%; }
-@media (hover: none) {
-    .navbar-gradient .nav-link::after { display:none; }
-}
-</style>
+@include('partials.navbar-styles')
