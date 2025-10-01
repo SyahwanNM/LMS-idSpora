@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Course;
 use App\Models\Event;
 use App\Models\Certificate;
+use App\Models\DashboardMetric;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,50 +20,83 @@ class AdminController extends Controller
 
     public function dashboard()
     {
-        // Get statistics data
-        $activeUsers = User::where('role', 'user')->count();
+        // Current totals
+        $activeUsers = User::count(); // total accounts
         $totalCourses = Course::count();
         $totalEvents = Event::count();
         $totalCertificates = Certificate::count();
-        
-        // Calculate total revenue from courses
-        $totalRevenue = Course::sum('price') ?? 0;
-        
-        // Get recent activities (you can customize this based on your needs)
+        $totalRevenue = Course::sum('price') ?? 0; // Adjust if you have real transaction table
+
+        // Snapshot logic (daily)
+        $today = now()->startOfDay()->toDateString();
+        $yesterdayDate = now()->subDay()->startOfDay()->toDateString();
+
+        // Ensure today's snapshot exists (idempotent)
+        DashboardMetric::firstOrCreate(
+            ['snapshot_date' => $today],
+            [
+                'users_count' => $activeUsers,
+                'courses_count' => $totalCourses,
+                'events_count' => $totalEvents,
+                'revenue_total' => $totalRevenue,
+            ]
+        );
+
+    $todaySnapshot = DashboardMetric::where('snapshot_date', $today)->first();
+    $yesterdaySnapshot = DashboardMetric::where('snapshot_date', $yesterdayDate)->first();
+
+        // Helper closure to compute percent change
+        $percentChange = function ($current, $previous) {
+            if ($previous === null) return null; // No data
+            if ($previous == 0) return $current > 0 ? 100 : 0; // Avoid division by zero
+            return round((($current - $previous) / $previous) * 100, 1);
+        };
+
+        // Determine baseline (yesterday if exists, otherwise today's first snapshot for intra-day change)
+        $usingIntraDayBaseline = false;
+        if (!$yesterdaySnapshot) {
+            $usingIntraDayBaseline = true;
+        }
+
+        $baselineUsers = $yesterdaySnapshot->users_count ?? ($todaySnapshot->users_count ?? null);
+        $baselineCourses = $yesterdaySnapshot->courses_count ?? ($todaySnapshot->courses_count ?? null);
+        $baselineEvents = $yesterdaySnapshot->events_count ?? ($todaySnapshot->events_count ?? null);
+        $baselineRevenue = $yesterdaySnapshot->revenue_total ?? ($todaySnapshot->revenue_total ?? null);
+
+        $activeUsersChangePercent = $percentChange($activeUsers, $baselineUsers);
+        $totalCoursesChangePercent = $percentChange($totalCourses, $baselineCourses);
+        $totalEventsChangePercent = $percentChange($totalEvents, $baselineEvents);
+        $totalRevenueChangePercent = $percentChange($totalRevenue, $baselineRevenue);
+
+        // Recent activities placeholder (replace with real audit/activity log later)
         $recentActivities = [
             [
-                'user' => 'John Doe',
-                'action' => 'Enrolled in Web Development Course',
-                'time' => '2 hours ago',
-                'avatar' => 'https://ui-avatars.com/api/?name=John+Doe&background=3b82f6&color=fff'
-            ],
-            [
-                'user' => 'Sarah Smith',
-                'action' => 'Completed JavaScript Fundamentals',
-                'time' => '4 hours ago',
-                'avatar' => 'https://ui-avatars.com/api/?name=Sarah+Smith&background=10b981&color=fff'
-            ],
-            [
-                'user' => 'Mike Johnson',
-                'action' => 'Registered for Tech Conference 2024',
-                'time' => '6 hours ago',
-                'avatar' => 'https://ui-avatars.com/api/?name=Mike+Johnson&background=f59e0b&color=fff'
+                'user' => 'System',
+                'action' => 'Dashboard metrics updated',
+                'time' => 'Just now',
+                'avatar' => 'https://ui-avatars.com/api/?name=System&background=6b7280&color=fff'
             ]
         ];
 
         return view('admin.dashboard', compact(
             'activeUsers',
-            'totalCourses', 
+            'totalCourses',
             'totalEvents',
             'totalCertificates',
             'totalRevenue',
-            'recentActivities'
+            'recentActivities',
+            'activeUsersChangePercent',
+            'totalCoursesChangePercent',
+            'totalEventsChangePercent',
+            'totalRevenueChangePercent',
+            'usingIntraDayBaseline'
         ));
     }
 
     public function activeUsersCount()
     {
-        $count = User::where('role', 'user')->count();
+    // Return total accounts count
+    $count = User::count();
         return response()->json(['count' => $count]);
     }
 

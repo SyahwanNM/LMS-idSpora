@@ -37,19 +37,12 @@
 
     --navy: #0b1b3f;
     --white: #fff;
-    --split: clamp(55px, 15vh, 120px);
+    --split: clamp(120px);
 }
 
 body.bg-split-horizontal {
-    background: linear-gradient(135deg, 
-        #f4c430 0%, 
-        #f7d94a 25%, 
-        #faf3e0 50%, 
-        #ffffff 75%, 
-        #f8fafc 100%
-    );
+    background: var(--primary-dark);
     background-size: 100% 100svh;
-    background-repeat: no-repeat;
     background-color: var(--white);
 }
 
@@ -119,6 +112,21 @@ body {
 .navbar-gradient .navbar-brand:hover {
     transform: scale(1.05);
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* breadcrumb */
+.breadcrumb {
+    background: transparent;
+    padding: 20px 0;
+}
+
+.breadcrumb-item a {
+    color: var(--primary-dark);
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: var(--secondary);
 }
 
 /* Custom button colors */
@@ -214,11 +222,31 @@ body {
 
 .search-banner-container {
     width: 100%;
-    max-width: 600px;
+    max-width: 100svh;
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 32px auto 0 auto;
+    box-sizing: border-box;
+}
+@media (max-width: 100svh) {
+    .search-banner-container {
+        max-width: 100svh;
+        margin-top: 20px;
+    }
+}
+.search-banner-form {
+    width: 100%;
+    max-width: 100svh;
+    padding-inline: 45px;
+}
+
+.search-container {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     box-sizing: border-box;
 }
 @media (max-width: 700px) {
@@ -227,7 +255,7 @@ body {
         margin-top: 20px;
     }
 }
-.search-banner-form {
+.search-form {
     width: 100%;
     max-width: 1350px;
     padding-inline: 45px;
@@ -245,12 +273,22 @@ body {
 /* input */
 .search-input {
     height: 44px;
-    border-radius: 50px;
+    width: 100%;
+    border-radius: 15px;
     background: var(--white);
     border: 1.5px solid var(--primary-dark);
     color: var(--white);
     font-size: 16px;
-    padding-inline: 1rem 40px; /* ruang kanan untuk ikon */
+    padding-inline: 1rem 40px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input-2 {
+    height: 44px;
+    border-radius: 10px;
+    background: var(--white);
+    border: 1.5px solid var(--primary-dark);
+    color: var(--white);
+    font-size: 16px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -260,7 +298,6 @@ body {
     box-shadow: 0 0 0 3px rgba(58, 48, 129, 0.25);
 }
 
-/* ikon kaca pembesar */
 .search-icon {
     position: absolute;
     right: 12px;
@@ -275,7 +312,6 @@ body {
     cursor: pointer;
 }
 
-/* suggestions */
 .search-suggest {
     display: none;
     position: absolute;
@@ -340,7 +376,11 @@ body {
     text-align: center;
     margin: 30px 0 20px;
     animation: fadeInUp 0.8s ease-out;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary) 0%,
+        var(--primary-dark) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -388,6 +428,10 @@ html {
     font-size: 24px;
 }
 
+.carousel-inner {
+    margin-top: 25px;
+}
+
 /* ---- Section dasar ---- */
 .testimoni-section {
     padding-top: 0;
@@ -409,7 +453,6 @@ html {
     transition: transform 0.1s ease;
 }
 
-/* ---- Reviews: tetap gaya kamu, tapi dipastikan 5 kolom selalu pas ---- */
 .reviews {
     --gap: 18px;
     display: flex;
@@ -423,11 +466,10 @@ html {
     width: 100%;
 }
 
-/* 5 kolom fleksibel (menggantikan width 220px supaya selalu muat 5 item) */
 .reviews > li {
     flex: 1 1 calc((100% - (4 * var(--gap))) / 5);
     max-width: calc((100% - (4 * var(--gap))) / 5);
-    min-width: 0; /* biar konten bisa menyusut tanpa overflow */
+    min-width: 0;
 }
 
 /* Diagram bar*/
@@ -533,6 +575,10 @@ html {
     height: 100%;
 }
 
+.card-body h5 {
+    margin-top: 10px;
+}
+
 .reviewer {
     display: flex;
     align-items: center;
@@ -594,7 +640,6 @@ html {
     padding: 0 45px 0 45px;
 }
 
-/* Gambar item di dalam carousel */
 .custom-carousel .carousel-item img {
     width: 100%;
     height: 400px;
@@ -619,7 +664,6 @@ html {
     margin: 0;
 }
 
-/* Fix horizontal scroll for course and event containers */
 .card-container-course {
     display: flex;
     gap: 24px;
@@ -652,7 +696,7 @@ html {
     color: var(--white);
     border-radius: 10px;
     height: 48px;
-    min-width: 140px; /* konsisten */
+    min-width: 140px;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -688,7 +732,6 @@ html {
     color: #f4c542;
     text-decoration: none;
     margin: 0;
-  
 }
 
 .course-list {
@@ -713,10 +756,18 @@ html {
     animation-fill-mode: both;
 }
 
-.course-list li:nth-child(1) { animation-delay: 0.1s; }
-.course-list li:nth-child(2) { animation-delay: 0.2s; }
-.course-list li:nth-child(3) { animation-delay: 0.3s; }
-.course-list li:nth-child(4) { animation-delay: 0.4s; }
+.course-list li:nth-child(1) {
+    animation-delay: 0.1s;
+}
+.course-list li:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.course-list li:nth-child(3) {
+    animation-delay: 0.3s;
+}
+.course-list li:nth-child(4) {
+    animation-delay: 0.4s;
+}
 
 .course-card {
     border: 1px solid var(--border-light);
@@ -826,7 +877,11 @@ html {
     font-weight: 600;
 }
 .course-card .btn-enroll {
-    background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--secondary) 0%,
+        var(--secondary-dark) 100%
+    );
     color: var(--white);
     border: none;
     border-radius: 8px;
@@ -841,13 +896,18 @@ html {
 }
 
 .course-card .btn-enroll::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
     transition: left 0.5s;
 }
 
@@ -865,7 +925,8 @@ html {
 }
 
 .course-card:hover {
-    box-shadow: 0 12px 32px rgba(245, 197, 47, 0.25), 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 12px 32px rgba(245, 197, 47, 0.25),
+        0 4px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-8px) scale(1.03);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
@@ -880,13 +941,18 @@ html {
 }
 
 .course-card::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
     transition: left 0.5s;
     z-index: 1;
 }
@@ -926,7 +992,6 @@ html {
     cursor: pointer;
 }
 
-/* Responsive kecil */
 .event-list {
     list-style: none;
     padding: 0px;
@@ -936,6 +1001,11 @@ html {
     gap: 16px;
     max-width: 1200px;
     box-sizing: border-box;
+    justify-content: center;
+    align-items: start;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 0;
 }
 
 .card-event {
@@ -1121,7 +1191,6 @@ html {
     cursor: pointer;
 }
 
-/* Keterangan: align icon and text in each row */
 .keterangan {
     display: flex;
     flex-direction: column;
@@ -1146,6 +1215,68 @@ html {
     line-height: 1.2;
 }
 
+/* ================= Event Poster (Generic) ================= */
+.event-poster {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f3f4f6;
+    display: block;
+}
+@supports not (aspect-ratio: 3 / 4) {
+    .event-poster { padding-top:133.333%; height:0; }
+    .event-poster > * { position:absolute; inset:0; }
+}
+.event-poster-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .5s ease;
+}
+.card-event:hover .event-poster-img { transform: scale(1.045); }
+.event-poster-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg,#f4c430,#e6b82a);
+    color: #111;
+    font-size: 11px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.12);
+    z-index:2;
+}
+.save-btn--event {
+    position:absolute;
+    bottom:10px;
+    right:10px;
+    background: rgba(0,0,0,0.45);
+    z-index:2;
+}
+.save-btn--event:hover { background: rgba(0,0,0,0.75); }
+
+/* ========== Event List Specific (smaller inside card) ========== */
+.event-list .card-event { padding: 12px 12px 16px; }
+.event-list .event-poster {
+    aspect-ratio: auto; /* allow fixed responsive height */
+    height: clamp(170px, 26vw, 230px);
+    border-radius: 14px;
+    margin-bottom: 10px;
+}
+.event-list .event-poster-img { height: 100%; }
+@media (max-width: 900px) {
+    .event-list { grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); }
+    .event-list .event-poster { height: clamp(170px, 38vw, 240px); }
+}
+@media (max-width: 640px) {
+    .event-list { grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+    .event-list .event-poster { height: 190px; }
+}
+
 @media (max-width: 480px) {
     .reviews {
         padding: 0 16px;
@@ -1168,10 +1299,9 @@ html {
     }
 }
 
-/* (opsional) Perbaikan kecil : hover btn-primary yang sebelumnya tidak valid color+opacity */
 .btn-primary:hover,
 .btn-primary:active {
-    background: rgba(37, 35, 70, 0.35); /* #252346 dengan opacity 35% */
+    background: rgba(37, 35, 70, 0.35);
     color: var(--white) !important;
     border: 1px solid var(--white);
     box-shadow: none;
@@ -1184,7 +1314,6 @@ html {
     overflow: hidden;
 }
 
-/* Group badge & save button bottom right */
 .badge-save-group {
     position: absolute;
     right: 12px;
@@ -1211,7 +1340,6 @@ html {
     border-radius: 15px 15px 0 0;
 }
 
-/* Badge level */
 .course-badge {
     position: absolute;
     bottom: 20px;
@@ -1229,8 +1357,13 @@ html {
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
 }
 
 .course-card:hover .course-badge {
@@ -1238,7 +1371,6 @@ html {
     box-shadow: 0 4px 12px rgba(245, 197, 47, 0.4);
 }
 
-/* Beginner = Hijau */
 .course-badge.beginner {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     opacity: 95%;
@@ -1255,7 +1387,6 @@ html {
     font-weight: 600;
 }
 
-/* Advance = Merah */
 .course-badge.advance {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     color: white;
@@ -1264,7 +1395,6 @@ html {
     font-weight: 600;
 }
 
-/* Save button */
 .save-btn {
     position: absolute;
     bottom: 20px;
@@ -1283,8 +1413,13 @@ html {
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-3px); }
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
 }
 .save-btn:hover {
     background: rgba(0, 0, 0, 0.7);
@@ -1309,9 +1444,9 @@ html {
 }
 
 .partner-logos img {
-    max-height: 120px; /* seragam tinggi logo */
-    max-width: 160px; /* batasi lebar */
-    object-fit: contain; /* biar proporsional */
+    max-height: 120px;
+    max-width: 160px;
+    object-fit: contain;
     display: block;
     transition: filter 0.2s ease, transform 0.2s ease;
 }
@@ -1322,7 +1457,6 @@ html {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* responsif kecil */
 @media (max-width: 640px) {
     .partner-logos {
         padding: 0 16px;
@@ -1334,8 +1468,117 @@ html {
     }
 }
 
+.filter-container {
+    background: #1e2a47;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 1000px;
+    margin: auto;
+    flex-direction: column;
+    display: flex;
+    gap: 20px;
+}
+.filter-box {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.options {
+    position: relative;
+    flex: 1;
+}
+
+.options label {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #ddd;
+    display: block;
+    margin-left: 20px;
+}
+
+.options select {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #5a6a90;
+    background-color: #1e2a47;
+    color: white;
+    font-size: 14px;
+}
+
+.options select option {
+    background-color: white;
+    color: black;
+    padding: 8px;
+}
+
+.options select:focus {
+    outline: none;
+    border-bottom: 1px solid #fff;
+}
+label {
+    color: white;
+}
+
+.dropdown-toggle {
+    background-color: #f2f4ff;
+    border: none;
+    border-radius: 30px;
+}
+
+.pagination .page-link {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin: 0 4px;
+    margin-bottom: 40px;
+    color: #333;
+    background-color: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #ccc;
+    border-color: #ccc;
+    pointer-events: none;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #1a1a1a;
+    color: white;
+    border-color: #1a1a1a;
+}
+
+.pagination .page-link:hover {
+    background-color: #e0f7fa;
+    color: #1a1a1a;
+    border-color: #b2ebf2;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ===== Landing Page Event Card Layout (refined for poster ratio) ===== */
+.event-list .card-event { display:flex; flex-direction:column; }
+.event-list .card-event .card-body { flex:1; display:flex; flex-direction:column; padding-top:12px; }
+.event-list .card-event .desc-event {
+    height:auto; min-height:0; max-height:none; display:-webkit-box; -webkit-box-orient:vertical;
+    -webkit-line-clamp:3; line-clamp:3; overflow:hidden; margin-bottom:8px; line-height:1.35;
+}
+@media (max-width:640px){ .event-list .card-event .desc-event { -webkit-line-clamp:4; line-clamp:4; } }
 .footer-section {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, #1a1a2e 100%);
+    background: linear-gradient(
+        135deg,
+        var(--primary-dark) 0%,
+        var(--primary) 50%,
+        #1a1a2e 100%
+    );
     color: white;
     padding: 50px 0 10px;
     position: relative;
@@ -1345,7 +1588,13 @@ html {
 }
 
 .footer-section:hover {
-    background: linear-gradient(135deg, #1a1a2e 0%, var(--primary-dark) 30%, var(--primary) 70%, #2e2050 100%);
+    background: linear-gradient(
+        135deg,
+        #1a1a2e 0%,
+        var(--primary-dark) 30%,
+        var(--primary) 70%,
+        #2e2050 100%
+    );
     box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.15);
 }
 
@@ -1451,7 +1700,11 @@ html {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.9) 100%
+    );
     border: 2px solid var(--secondary);
     border-radius: 50%;
     width: 48px;
@@ -1468,10 +1721,15 @@ html {
 }
 
 .nav-btn:hover {
-    background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--secondary) 0%,
+        var(--secondary-dark) 100%
+    );
     color: white;
     transform: translateY(-50%) scale(1.1);
-    box-shadow: 0 8px 24px rgba(244, 196, 48, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(244, 196, 48, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.15);
     border-color: var(--secondary-light);
 }
 
@@ -1496,16 +1754,16 @@ html {
     .testimoni-container {
         padding: 0 20px;
     }
-    
+
     .nav-btn {
         width: 40px;
         height: 40px;
     }
-    
+
     .nav-btn-left {
         left: 8px;
     }
-    
+
     .nav-btn-right {
         right: 8px;
     }
@@ -1515,14 +1773,103 @@ html {
     .testimoni-container {
         padding: 0 16px;
     }
-    
+
     .nav-btn {
         width: 36px;
         height: 36px;
     }
-    
+
     .nav-btn svg {
         width: 20px;
         height: 20px;
     }
+}
+
+.filter-container {
+    background: #1e2a47;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 1000px;
+    margin: auto;
+    flex-direction: column;
+    display: flex;
+    gap: 20px;
+}
+.filter-box {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.options {
+    position: relative;
+    flex: 1;
+}
+
+.options label {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #ddd;
+    display: block;
+    margin-left: 20px;
+}
+
+.options select {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #5a6a90;
+    background-color: #1e2a47;
+    color: white;
+    font-size: 14px;
+}
+
+.options select option {
+    background-color: white;
+    color: black;
+    padding: 8px;
+}
+
+.options select:focus {
+    outline: none;
+    border-bottom: 1px solid #fff;
+}
+label {
+    color: white;
+}
+
+.pagination .page-link {
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin: 0 4px;
+    color: #333;
+    background-color: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #ccc;
+    border-color: #ccc;
+    pointer-events: none;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #1a1a1a;
+    color: white;
+    border-color: #1a1a1a;
+}
+
+.pagination .page-link:hover {
+    background-color: #e0f7fa;
+    color: #1a1a1a;
+    border-color: #b2ebf2;
+}
+
+.hidden {
+    display: none !important;
 }
