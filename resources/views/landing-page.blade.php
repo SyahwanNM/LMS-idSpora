@@ -638,6 +638,16 @@
     .login-fallback-card .close-fallback {position:absolute;top:6px;right:10px;background:none;border:none;font-size:1.35rem;line-height:1;color:#888;cursor:pointer;transition:color .2s, transform .2s;}
     .login-fallback-card .close-fallback:hover {color:#111;transform:scale(1.1);} 
     @media (max-width:520px){.login-fallback-card{margin:0 1rem;border-radius:18px;}}
+    /* Adjust event card image size & spacing */
+    .event-list .card-event .event-poster {position:relative; height: 340px; /* increased from previous ~200-260 */}
+    .event-list .card-event .event-poster-img {width:100%; height:100%; object-fit:cover;}
+    /* Slightly larger grid items vertically */
+    .event-list {row-gap:34px;}
+    /* If card body needs more top separation from image */
+    .event-list .card-event .card-body {padding-top:18px;}
+    @media (max-width: 768px){
+        .event-list .card-event .event-poster {height:280px;}
+    }
     </style>
 
     <section class="partner">

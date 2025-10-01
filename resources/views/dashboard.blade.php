@@ -391,9 +391,15 @@
                         @else
                             <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
                         @endif
+                        @php
+                            $showDiscountBadge = $event->hasDiscount() && $event->price > 0 && $event->price > $event->discounted_price;
+                            $percentOff = $showDiscountBadge ? round((($event->price - $event->discounted_price) / $event->price) * 100) : 0;
+                        @endphp
+                        @if($showDiscountBadge && $percentOff > 0)
+                            <span class="discount-badge">{{ $percentOff }}% off</span>
+                        @endif
                         <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course" type="button">
+                            <button class="save-btn" aria-label="Save event" type="button">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M2 2v13.5l6-3 6 3V2z" />
                                 </svg>
@@ -480,9 +486,38 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    /* === Dashboard Event Card Image Size (Reduced Slightly) & Horizontal Spacing === */
+    .event .event-list {row-gap:38px; padding:0 18px;} /* added horizontal breathing space */
+    .event .card-event .thumb-wrapper {position:relative;height:360px;} /* was 400px */
+    .event .card-event .card-image-event {width:100%;height:100%;object-fit:cover;}
+    .event .card-event .card-body {padding-top:20px;} /* slightly reduced */
+    @media (max-width:1200px){ .event .card-event .thumb-wrapper {height:340px;} }
+    @media (max-width:992px){ .event .card-event .thumb-wrapper {height:320px;} }
+    @media (max-width:768px){ .event .card-event .thumb-wrapper {height:260px;} }
+    /* Discount badge styling */
+    .event .card-event .thumb-wrapper {overflow:hidden;}
+    .event .card-event .discount-badge {
+        position:absolute;
+        top:12px;
+        left:12px;
+        background:#212f4d;
+        color:#d6bc3a;
+        font-size:13px;
+        font-weight:600;
+        padding:6px 10px 5px;
+        border-radius:6px;
+        line-height:1;
+        letter-spacing:.5px;
+        box-shadow:0 2px 6px rgba(0,0,0,.25);
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        text-transform:uppercase;
+    }
+    </style>
     <script>
         const ctx = document.getElementById('gradesChart');
-
         new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -496,40 +531,27 @@
                 responsive: true,
                 cutout: '75%',
                 plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        enabled: false
-                    }
+                    legend: { display: false },
+                    tooltip: { enabled: false }
                 }
             },
             plugins: [{
                 id: 'textInside',
                 beforeDraw(chart) {
-                    const {
-                        width
-                    } = chart;
-                    const {
-                        height
-                    } = chart;
+                    const { width, height } = chart;
                     const ctx = chart.ctx;
                     ctx.restore();
-
                     const fontSize = (height / 5).toFixed(2);
                     ctx.font = `${fontSize}px Poppins`;
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#d4af37';
-
                     const text = '75%';
                     const textX = Math.round((width - ctx.measureText(text).width) / 2);
                     const textY = height / 2.2;
                     ctx.fillText(text, textX, textY);
-
                     ctx.font = `${(height / 15).toFixed(2)}px Poppins`;
                     ctx.fillStyle = '#999';
-                    ctx.fillText("Grades Completed", width / 2.9, height / 1.7);
-
+                    ctx.fillText('Grades Completed', width / 2.9, height / 1.7);
                     ctx.save();
                 }
             }]
