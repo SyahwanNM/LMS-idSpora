@@ -384,7 +384,20 @@
         </div>
         <div class="event-list">
             @forelse($upcomingEvents as $event)
-                <div class="card-event">
+                @php
+                    $startAt = null;
+                    if($event->event_date){
+                        $dateStr = $event->event_date->format('Y-m-d');
+                        if($event->event_time){
+                            // Ensure we have H:i:s
+                            $timeStr = method_exists($event->event_time,'format') ? $event->event_time->format('H:i:s') : (is_string($event->event_time)? $event->event_time : '00:00:00');
+                        } else {
+                            $timeStr = '00:00:00';
+                        }
+                        try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
+                    }
+                @endphp
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif>
                     <div class="thumb-wrapper">
                         @if($event->image)
                             <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
@@ -434,6 +447,12 @@
                                 <span>{{ $event->location ? ($event->event_time ? $event->location.' • '.$event->event_time?->format('H:i').' WIB' : $event->location) : '-' }}</span>
                             </div>
                         </div>
+                        @if($startAt)
+                        <div class="countdown-wrapper" data-countdown-wrapper>
+                            <span class="countdown-label">Mulai dalam:</span>
+                            <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}">--:--:--</span>
+                        </div>
+                        @endif
                         <div class="price-row">
                             <div class="price-col">
                                 @if($event->hasDiscount())
@@ -520,6 +539,12 @@
     }
     .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
     .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
+    /* Countdown styles */
+    .countdown-wrapper {margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;}
+    .countdown-label {color:#555; font-weight:500;}
+    .countdown-timer {background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:150px; text-align:center;}
+    .countdown-timer.started {background:#198754; color:#fff;}
+    .countdown-timer.expired {background:#6c757d; color:#fff;}
     </style>
     <script>
         const ctx = document.getElementById('gradesChart');
@@ -611,6 +636,40 @@
                 }
             }
         });
+    </script>
+    <script>
+       
+        (function(){
+            function formatDiff(totalSec){
+                if(totalSec <= 0) return 'Dimulai';
+                let sec = totalSec;
+                const days = Math.floor(sec/86400); sec%=86400;
+                const hours = Math.floor(sec/3600); sec%=3600;
+                const minutes = Math.floor(sec/60);
+                if(minutes === 0 && hours === 0 && days === 0) return '< 1 menit';
+                const parts = [];
+                if(days > 0) parts.push(days + ' hari');
+                if(hours > 0 || days > 0) parts.push(hours + ' jam');
+                parts.push(minutes + ' menit');
+                return parts.join(' ');
+            }
+            function update(){
+                const now = Math.floor(Date.now()/1000);
+                document.querySelectorAll('[data-countdown]').forEach(el=>{
+                    const start = parseInt(el.getAttribute('data-start-ts'),10);
+                    if(!start) return;
+                    const diff = start - now;
+                    if(diff <= 0){
+                        el.textContent = 'Dimulai';
+                        el.classList.add('started');
+                        return;
+                    }
+                    el.textContent = formatDiff(diff);
+                });
+            }
+            update();
+            setInterval(update,1000);
+        })();
     </script>
 
 </body>

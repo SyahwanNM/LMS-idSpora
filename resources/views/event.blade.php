@@ -24,6 +24,15 @@
         section.event .header-card {margin-bottom:28px;}
         /* Lower the main heading relative to filter dropdowns */
         section.event .header-card h3 {margin-top:14px;}
+        /* Discount badge styling (added) */
+        .event .card-event .thumb-wrapper {overflow:hidden;}
+        .event .card-event .discount-badge {position:absolute; top:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:13px; font-weight:600; padding:6px 10px 5px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;}
+        /* Countdown styles */
+        .countdown-wrapper {margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;}
+        .countdown-label {color:#555; font-weight:500;}
+        .countdown-timer {background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:140px; text-align:center;}
+        .countdown-timer.started {background:#198754; color:#fff;}
+        .countdown-timer.expired {background:#6c757d; color:#fff;}
     </style>
     </head>
 <body>
@@ -145,12 +154,29 @@
                 $loopEvents = isset($events) ? $events : ($upcomingEvents ?? collect());
             @endphp
             @forelse($loopEvents as $event)
-                <div class="card-event">
+                @php
+                    $startAt = null;
+                    if($event->event_date){
+                        $dateStr = $event->event_date->format('Y-m-d');
+                        if($event->event_time){
+                            $timeStr = method_exists($event->event_time,'format') ? $event->event_time->format('H:i:s') : (is_string($event->event_time) ? $event->event_time : '00:00:00');
+                        } else { $timeStr = '00:00:00'; }
+                        try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
+                    }
+                @endphp
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif>
                     <div class="thumb-wrapper">
                         @if(!empty($event->image))
                             <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
                         @else
                             <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
+                        @endif
+                        @php
+                            $showDiscountBadge = method_exists($event,'hasDiscount') && $event->hasDiscount() && $event->price > 0 && $event->price > $event->discounted_price;
+                            $percentOff = $showDiscountBadge ? round((($event->price - $event->discounted_price) / $event->price) * 100) : 0;
+                        @endphp
+                        @if($showDiscountBadge && $percentOff > 0)
+                            <span class="discount-badge">{{ $percentOff }}% off</span>
                         @endif
                         <div class="badge-save-group" style="gap:12px;">
                             <span class="course-badge beginner">Beginner</span>
@@ -195,6 +221,12 @@
                                 </span>
                             </div>
                         </div>
+                        @if($startAt)
+                        <div class="countdown-wrapper" data-countdown-wrapper>
+                            <span class="countdown-label">Mulai dalam:</span>
+                            <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}">--</span>
+                        </div>
+                        @endif
                         <div class="price-row">
                             <div class="price-col">
                                 @if(method_exists($event,'hasDiscount') && $event->hasDiscount())
@@ -301,6 +333,40 @@
             });
         });
     });
+    </script>
+    <script>
+    // Countdown script (hari jam menit) for event listing
+    (function(){
+        function formatDiff(totalSec){
+            if(totalSec <= 0) return 'Dimulai';
+            let sec = totalSec;
+            const days = Math.floor(sec/86400); sec%=86400;
+            const hours = Math.floor(sec/3600); sec%=3600;
+            const minutes = Math.floor(sec/60);
+            if(minutes === 0 && hours === 0 && days === 0) return '< 1 menit';
+            const parts = [];
+            if(days > 0) parts.push(days + ' hari');
+            if(hours > 0 || days > 0) parts.push(hours + ' jam');
+            parts.push(minutes + ' menit');
+            return parts.join(' ');
+        }
+        function update(){
+            const now = Math.floor(Date.now()/1000);
+            document.querySelectorAll('[data-countdown]').forEach(el => {
+                const start = parseInt(el.getAttribute('data-start-ts'),10);
+                if(!start) return;
+                const diff = start - now;
+                if(diff <= 0){
+                    el.textContent = 'Dimulai';
+                    el.classList.add('started');
+                    return;
+                }
+                el.textContent = formatDiff(diff);
+            });
+        }
+        update();
+        setInterval(update, 60000); // update every minute sufficient for minute resolution
+    })();
     </script>
 </body>
 </html>
