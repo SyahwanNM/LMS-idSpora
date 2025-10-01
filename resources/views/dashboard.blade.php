@@ -443,7 +443,10 @@
                                     <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
                                 @endif
                             </div>
-                            <button class="btn-register" type="button">Register</button>
+                            @php $registered = !empty($event->is_registered); @endphp
+                            <button class="btn-register btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" {{ $registered ? 'disabled' : '' }}>
+                                {{ $registered ? 'Anda Terdaftar' : 'Register' }}
+                            </button>
                         </div>
                     </div>
                 </div>
