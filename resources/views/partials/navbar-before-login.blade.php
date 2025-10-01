@@ -11,13 +11,13 @@
         <div class="collapse navbar-collapse align-items-center" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-lg-0 d-flex align-items-center ms-3">
                 <li class="nav-item mx-3">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    <a class="nav-link {{ request()->routeIs('landing-page') ? 'active' : '' }}" aria-current="page" href="{{ route('landing-page') }}">Home</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link" href="#">Courses</a>
+                    <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Courses</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link" href="#">Events</a>
+                    <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Events</a>
                 </li>
                 <li class="nav-item mx-3">
                     <a class="nav-link" href="#">About</a>
@@ -30,3 +30,4 @@
         </div>
     </div>
 </nav>
+@include('partials.navbar-styles')

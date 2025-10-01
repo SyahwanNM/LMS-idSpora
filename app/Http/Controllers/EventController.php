@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\EventRegistration;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -94,5 +95,31 @@ class EventController extends Controller
     {
         $event->delete();
         return redirect()->route('admin.events.index')->with('success', 'Event berhasil dihapus!');
+    }
+
+    // Public registration (AJAX)
+    public function register(Request $request, Event $event)
+    {
+        $request->validate([]); // no fields yet, just user context
+        $user = $request->user();
+        if(!$user){
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+        $existing = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->first();
+        if($existing){
+            return response()->json(['status' => 'already', 'message' => 'Sudah terdaftar', 'event_title' => $event->title]);
+        }
+        $reg = EventRegistration::create([
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+            'status' => 'active',
+            'registration_code' => 'EVT-'.strtoupper(uniqid())
+        ]);
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Berhasil daftar event',
+            'event_title' => $event->title,
+            'button_text' => 'Anda Terdaftar'
+        ]);
     }
 }

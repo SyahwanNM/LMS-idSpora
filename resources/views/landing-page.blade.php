@@ -454,20 +454,18 @@
         <div class="event-list">
             @forelse($featuredEvents as $event)
             <div class="card-event">
-                <div class="thumb-wrapper">
+                <div class="event-poster">
                     @if($event->image)
-                        <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
                     @else
-                        <img class="card-image-event" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <img class="event-poster-img" src="https://via.placeholder.com/600x800/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}">
                     @endif
-                    <div class="badge-save-group" style="gap:12px;">
-                        <button class="save-btn" aria-label="Save event">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                    </div>
+                    <button class="save-btn save-btn--event" aria-label="Save event" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2 2v13.5l6-3 6 3V2z" />
+                        </svg>
+                    </button>
+                   
                 </div>
 
                 <div class="card-body">
@@ -507,7 +505,12 @@
                                 <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
                             @endif
                         </div>
-                        <button class="btn-register">Daftar Sekarang</button>
+                        @auth
+                            <button class="btn-register" type="button" onclick="window.location='{{ route('events.show', $event->id) }}'">Daftar Sekarang</button>
+                        @endauth
+                        @guest
+                            <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}">Daftar Sekarang</button>
+                        @endguest
                     </div>
                 </div>
             </div>
@@ -522,6 +525,130 @@
             <a href="#" class="btn btn-primary">Lihat Semua Event</a>
         </div>
     </section>
+
+    @guest
+    <!-- Modal: Login Required -->
+    <div class="modal fade" id="loginRequiredModal" tabindex="-1" aria-labelledby="loginRequiredLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginRequiredLabel">Butuh Login</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="flex-shrink-0" style="width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#eef2ff;color:#4f46e5;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                                <path fill="#fff" d="M8.93 6.588a.5.5 0 0 0-.832-.374L5.5 8.293V9.5a.5.5 0 0 0 .5.5h.793l2.105-2.105a.5.5 0 0 0 .032-.707z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Anda belum login</h6>
+                            <p class="mb-0 text-muted" style="font-size:.9rem;">Silakan login terlebih dahulu untuk mendaftar atau mengikuti event ini.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Nanti Saja</button>
+                    <a href="{{ route('login') }}" class="btn btn-primary">Login Sekarang</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endguest
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const needLoginButtons = document.querySelectorAll('.need-login');
+        if(needLoginButtons.length){
+            needLoginButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const modalEl = document.getElementById('loginRequiredModal');
+                    if(window.bootstrap && modalEl){
+                        const m = new bootstrap.Modal(modalEl);
+                        m.show();
+                        animateModal(modalEl);
+                    } else {
+                        // Custom animated fallback (NO native alert)
+                        createAnimatedLoginPrompt();
+                    }
+                });
+            });
+        }
+    });
+
+    function animateModal(modalEl){
+        const dialog = modalEl.querySelector('.modal-dialog');
+        if(!dialog) return;
+        dialog.classList.add('modal-animate-in');
+        dialog.addEventListener('animationend', ()=> dialog.classList.remove('modal-animate-in'), {once:true});
+    }
+
+    function createAnimatedLoginPrompt(){
+        if(document.querySelector('.login-fallback-overlay')) return;
+        const overlay = document.createElement('div');
+        overlay.className = 'login-fallback-overlay';
+        overlay.innerHTML = `
+            <div class="login-fallback-card" role="dialog" aria-modal="true" aria-label="Butuh Login">
+                <button type="button" class="close-fallback" aria-label="Tutup">&times;</button>
+                <div class="icon-wrap">
+                    <svg width="46" height="46" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="36" cy="36" r="34" class="pulse" fill="#EEF2FF" stroke="#4f46e5" stroke-width="2" />
+                        <path d="M30 37.5 34.5 42 44 32" stroke="#4f46e5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="draw-check" />
+                    </svg>
+                </div>
+                <h5 class="mb-2">Anda belum login</h5>
+                <p class="text-muted mb-3 small">Login untuk mendaftar & mengikuti event ini.</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    
+                    <a href="{{ route('login') }}" class="btn btn-primary btn-sm flex-grow-1">Login Sekarang</a>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        requestAnimationFrame(()=> overlay.classList.add('show'));
+        overlay.addEventListener('click', (e)=>{
+            if(e.target.classList.contains('login-fallback-overlay') || e.target.classList.contains('close-fallback')){
+                overlay.classList.remove('show');
+                overlay.classList.add('closing');
+                setTimeout(()=> overlay.remove(), 320);
+            }
+        });
+    }
+    </script>
+    <style>
+    /* Modal animation enhancement */
+    #loginRequiredModal .modal-dialog { animation-duration:.65s; animation-fill-mode:both; }
+    .modal-animate-in { animation: modalPop .65s cubic-bezier(.16,.8,.24,1); }
+    @keyframes modalPop {0%{transform:translateY(28px) scale(.9);opacity:0;}50%{transform:translateY(-4px) scale(1.01);}70%{transform:translateY(0) scale(.998);}100%{transform:translateY(0) scale(1);opacity:1;}}
+
+    /* Fallback overlay (when Bootstrap JS absent) */
+    .login-fallback-overlay {position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(17,24,39,.38);backdrop-filter:blur(4px);opacity:0;transition:opacity .3s ease;z-index:1200;}
+    .login-fallback-overlay.show {opacity:1;}
+    .login-fallback-overlay.closing {opacity:0;}
+    .login-fallback-card {width:100%;max-width:340px;background:#fff;border-radius:20px;padding:1.4rem 1.3rem 1.6rem;box-shadow:0 20px 40px -16px rgba(0,0,0,.25),0 4px 10px -2px rgba(0,0,0,.12);position:relative;animation:fallbackCardIn .6s cubic-bezier(.16,.8,.24,1);text-align:center;}
+    @keyframes fallbackCardIn {0%{transform:translateY(28px) scale(.9);opacity:0;}55%{transform:translateY(-6px) scale(1.02);}75%{transform:translateY(0) scale(.995);}100%{transform:translateY(0) scale(1);opacity:1;}}
+    .login-fallback-card h5 {font-weight:600;letter-spacing:.3px;}
+    .login-fallback-card .icon-wrap {width:72px;height:72px;border-radius:24px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;position:relative;}
+    .login-fallback-card .icon-wrap .pulse {animation:pulseRing 2s ease-out infinite;}
+    @keyframes pulseRing {0%{transform:scale(.6);opacity:.55;}70%{transform:scale(1);opacity:0;}100%{opacity:0;}}
+    .login-fallback-card .draw-check {stroke-dasharray:40;stroke-dashoffset:40;animation:drawCheck 1s ease forwards .35s;}
+    @keyframes drawCheck {to{stroke-dashoffset:0;}}
+    .login-fallback-card .close-fallback {position:absolute;top:6px;right:10px;background:none;border:none;font-size:1.35rem;line-height:1;color:#888;cursor:pointer;transition:color .2s, transform .2s;}
+    .login-fallback-card .close-fallback:hover {color:#111;transform:scale(1.1);} 
+    @media (max-width:520px){.login-fallback-card{margin:0 1rem;border-radius:18px;}}
+    /* Adjust event card image size & spacing */
+    .event-list .card-event .event-poster {position:relative; height: 340px; /* increased from previous ~200-260 */}
+    .event-list .card-event .event-poster-img {width:100%; height:100%; object-fit:cover;}
+    /* Slightly larger grid items vertically */
+    .event-list {row-gap:34px;}
+    /* If card body needs more top separation from image */
+    .event-list .card-event .card-body {padding-top:18px;}
+    @media (max-width: 768px){
+        .event-list .card-event .event-poster {height:280px;}
+    }
+    </style>
 
     <section class="partner">
         <div class="section-title">

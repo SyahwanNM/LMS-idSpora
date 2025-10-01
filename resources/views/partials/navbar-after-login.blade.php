@@ -11,13 +11,13 @@
         <div class="collapse navbar-collapse align-items-center" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-lg-0 d-flex align-items-center ms-3">
                 <li class="nav-item mx-3">
-                    <a class="nav-link active" aria-current="page" href="{{ route('dashboard') }}">Dashboard</a>
+                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" aria-current="page" href="{{ route('dashboard') }}">Dashboard</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link" href="#">Courses</a>
+                    <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Courses</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link" href="{{ route('events.index') }}">Events</a>
+                    <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Events</a>
                 </li>
                 <li class="nav-item mx-3">
                     <a class="nav-link" href="#">About</a>
@@ -61,18 +61,40 @@
                         <li><a class="dropdown-item" href="#">Profile</a></li>
                         <li><a class="dropdown-item" href="#">Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="dropdown-item">Logout</button>
-                            </form>
-                        </li>
+                                                <li>
+                                                        <button type="button" class="dropdown-item" onclick="openLogoutModal()">Logout</button>
+                                                </li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 </nav>
+
+@include('partials.flash')
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning-subtle">
+                <h5 class="modal-title" id="logoutConfirmLabel">Konfirmasi Logout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Anda yakin ingin keluar?</p>
+                <small class="text-muted">Sesi Anda akan diakhiri dan perlu login kembali.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <form id="logoutRealForm" action="{{ route('logout') }}" method="POST" class="d-inline">
+            @csrf
+            <button type="button" id="confirmLogoutBtn" class="btn btn-danger">Ya, Logout</button>
+        </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 // User Dropdown Functionality
@@ -112,6 +134,86 @@ document.addEventListener('DOMContentLoaded', function() {
         button.removeAttribute('aria-expanded');
     }
 });
+
+// Logout modal logic
+let logoutModalInstance;
+function openLogoutModal(){
+    const modalEl = document.getElementById('logoutConfirmModal');
+    if (!logoutModalInstance) {
+        logoutModalInstance = new bootstrap.Modal(modalEl);
+    }
+    logoutModalInstance.show();
+}
+
+// Pre-logout toast + submit
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('confirmLogoutBtn');
+    const form = document.getElementById('logoutRealForm');
+    if(btn && form){
+        btn.addEventListener('click', () => {
+            // Prevent double click
+            if(btn.disabled) return;
+            btn.disabled = true;
+            showLogoutSuccessState();
+            showInstantLogoutToast(); // tetap tampilkan toast kecil di pojok
+            // delay supaya animasi check terlihat
+            setTimeout(()=> form.submit(), 900);
+        });
+    }
+});
+
+function showInstantLogoutToast(){
+    let container = document.querySelector('.flash-toast-container');
+    if(!container){
+        container = document.createElement('div');
+        container.className = 'flash-toast-container';
+        container.setAttribute('aria-live','polite');
+        container.setAttribute('aria-atomic','true');
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'flash-toast flash-success';
+    toast.setAttribute('role','status');
+    toast.innerHTML = `
+        <div class="flash-icon">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
+            </svg>
+        </div>
+        <div class="flash-body">
+            <div class="flash-title">Berhasil</div>
+            <div class="flash-message">Anda berhasil logout</div>
+        </div>
+        <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
+        <div class="flash-progress" style="animation-duration: 0.6s"></div>`;
+    container.appendChild(toast);
+    requestAnimationFrame(()=> toast.classList.add('show'));
+    const closeBtn = toast.querySelector('.flash-close');
+    if(closeBtn){
+        closeBtn.addEventListener('click', ()=> {toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400);});
+    }
+    setTimeout(()=> {toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400);}, 550);
+}
+
+function showLogoutSuccessState(){
+    const modalEl = document.getElementById('logoutConfirmModal');
+    if(!modalEl) return;
+    const body = modalEl.querySelector('.modal-body');
+    const footer = modalEl.querySelector('.modal-footer');
+    if(footer) footer.style.display='none';
+    if(body){
+        body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
+        body.innerHTML = `
+            <div class="logout-success-feedback text-center">
+                <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
+                    <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
+                    <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
+                </svg>
+                <p class="fw-semibold mb-1 mt-3">Berhasil logout</p>
+                <small class="text-muted">Mengalihkan...</small>
+            </div>`;
+    }
+}
 </script>
 
 <style>
@@ -137,4 +239,38 @@ document.addEventListener('DOMContentLoaded', function() {
 #userDropdownMenu .dropdown-item:hover {
     background-color: #f8f9fa;
 }
+
+/* Logout success animation */
+.logout-success-feedback .check-anim { display:block; }
+.logout-success-feedback .circle { stroke-dasharray: 201; stroke-dashoffset:201; animation: draw-circle .55s ease-out forwards; }
+.logout-success-feedback .check { stroke-dasharray: 40; stroke-dashoffset:40; animation: draw-check .35s ease-out .45s forwards; }
+@keyframes draw-circle { to { stroke-dashoffset:0; } }
+@keyframes draw-check { to { stroke-dashoffset:0; } }
+</style>
+<style>
+/* Enhanced navbar hover + active indicator (logged-in) */
+.navbar-gradient .nav-link {
+    position: relative;
+    color: #fff !important;
+    transition: color .25s ease;
+    padding-bottom: 6px;
+}
+.navbar-gradient .nav-link::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg,#ffe259,#ffa751);
+    transition: width .35s cubic-bezier(.65,.05,.36,1), left .35s cubic-bezier(.65,.05,.36,1);
+    border-radius: 2px;
+    opacity: .9;
+}
+.navbar-gradient .nav-link:hover,
+.navbar-gradient .nav-link:focus { color: #ffe8b3 !important; }
+/* Only active link shows underline */
+.navbar-gradient .nav-link.active { font-weight:600; }
+.navbar-gradient .nav-link.active::after { width:70%; left:15%; }
+@media (hover: none) { .navbar-gradient .nav-link::after { display:none; } }
 </style>
