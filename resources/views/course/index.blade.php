@@ -1,4 +1,3 @@
-@include ('partials.navbar-before-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,37 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+@include('partials.navbar-after-login')
 </head>
-
-<style>
-    .category {
-        background: var(--primary-dark);
-        margin: 45px;
-        border-radius: 15px;
-    }
-
-    .category .container {
-        padding: 20px;
-        display: flex;
-        margin: 0;
-    }
-
-    .container h6 {
-        color: white;
-        align-items: left;
-        padding-top: 10px;
-    }
-
-    .dropdown .btn {
-        background: transparent;
-        color: var(--white);
-    }
-
-    .search .h6 {
-        color: var(--white);
-    }
-</style>
-
 <body>
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
@@ -467,6 +437,11 @@
         <div class="align-items-center" style="padding: 20px; text-align: center !important;">
             <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
         </div>
+        @if(method_exists($featuredCourses, 'links'))
+        <div class="d-flex justify-content-center mt-3 mb-2">
+            {{ $featuredCourses->withQueryString()->links() }}
+        </div>
+        @endif
     </section>
     
     <script>

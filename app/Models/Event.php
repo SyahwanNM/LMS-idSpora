@@ -39,4 +39,10 @@ class Event extends Model
     {
         return $this->discount_percentage > 0;
     }
+
+    // Relationship: event has many registrations
+    public function registrations()
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
 }

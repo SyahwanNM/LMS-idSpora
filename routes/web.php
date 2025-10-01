@@ -14,9 +14,10 @@ use App\Http\Controllers\QuizController;
 
 Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('landing-page');
 
-// Public routes
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
-// (Optional) show detail route could be added later with slug or id
+Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
+Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
 
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
