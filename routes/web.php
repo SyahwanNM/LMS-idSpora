@@ -13,11 +13,20 @@ use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
 
-Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('landing-page');
+// Landing page: jika sudah login arahkan ke dashboard
+Route::get('/', function(){
+    if(auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return app(\App\Http\Controllers\LandingPageController::class)->index(request());
+})->name('landing-page');
 
-Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
-Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
+// Event routes now require authentication to view & register
+Route::middleware('auth')->group(function(){
+    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+    Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
+});
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
 
 // Authentication routes (only for guests)

@@ -453,7 +453,7 @@
         </div>
         <div class="event-list">
             @forelse($featuredEvents as $event)
-            <div class="card-event">
+            <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
                     @if($event->image)
                         <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
@@ -509,7 +509,7 @@
                             <button class="btn-register" type="button" onclick="window.location='{{ route('events.show', $event->id) }}'">Daftar Sekarang</button>
                         @endauth
                         @guest
-                            <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}">Daftar Sekarang</button>
+                            <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}" data-redirect="{{ route('events.show', $event->id) }}">Daftar Sekarang</button>
                         @endguest
                     </div>
                 </div>
@@ -551,7 +551,7 @@
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Nanti Saja</button>
-                    <a href="{{ route('login') }}" class="btn btn-primary">Login Sekarang</a>
+                    <a href="{{ route('login') }}" class="btn btn-primary" id="loginRedirectLink">Login Sekarang</a>
                 </div>
             </div>
         </div>
@@ -560,23 +560,55 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function(){
-        const needLoginButtons = document.querySelectorAll('.need-login');
-        if(needLoginButtons.length){
-            needLoginButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const modalEl = document.getElementById('loginRequiredModal');
-                    if(window.bootstrap && modalEl){
-                        const m = new bootstrap.Modal(modalEl);
-                        m.show();
-                        animateModal(modalEl);
-                    } else {
-                        // Custom animated fallback (NO native alert)
-                        createAnimatedLoginPrompt();
-                    }
-                });
-            });
+        let pendingRedirect = null;
+        function showLoginRequired(){
+            const modalEl = document.getElementById('loginRequiredModal');
+            if(window.bootstrap && modalEl){
+                const m = new bootstrap.Modal(modalEl);
+                m.show();
+                animateModal(modalEl);
+            } else {
+                createAnimatedLoginPrompt();
+            }
+            // Update login link with redirect if available
+            const link = document.getElementById('loginRedirectLink');
+            if(link){
+                if(pendingRedirect){
+                    const enc = encodeURIComponent(pendingRedirect);
+                    link.href = `${link.getAttribute('href').split('?')[0]}?redirect=${enc}`;
+                } else {
+                    // fallback remove param
+                    link.href = link.getAttribute('href').split('?')[0];
+                }
+            }
         }
+
+        // Existing buttons
+        const needLoginButtons = document.querySelectorAll('.need-login');
+        needLoginButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                pendingRedirect = btn.getAttribute('data-redirect') || null;
+                showLoginRequired();
+            });
+        });
+
+        // Entire card clickable (guest only)
+        const loginCards = document.querySelectorAll('.login-required-card[data-requires-login="true"]');
+        loginCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if(e.target.closest('.need-login') || e.target.closest('.save-btn')) return;
+                pendingRedirect = card.getAttribute('data-redirect') || null;
+                showLoginRequired();
+            });
+            card.addEventListener('keydown', (e)=>{
+                if(e.key === 'Enter' || e.key === ' '){
+                    e.preventDefault();
+                    pendingRedirect = card.getAttribute('data-redirect') || null;
+                    showLoginRequired();
+                }
+            });
+        });
     });
 
     function animateModal(modalEl){
@@ -648,6 +680,8 @@
     @media (max-width: 768px){
         .event-list .card-event .event-poster {height:280px;}
     }
+    .login-required-card {cursor:pointer;}
+    .login-required-card:focus {outline:2px solid #4f46e5; outline-offset:2px;}
     </style>
 
     <section class="partner">
