@@ -9,35 +9,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<style>
-    .category {
-        background: var(--primary-dark);
-        margin: 45px;
-        border-radius: 15px;
-    }
-
-    .category .container {
-        padding: 20px;
-        display: flex;
-        margin: 0;
-    }
-
-    .container h6 {
-        color: white;
-        align-items: left;
-        padding-top: 10px;
-    }
-
-    .dropdown .btn {
-        background: transparent;
-        color: var(--white);
-    }
-
-    .search .h6 {
-        color: var(--white);
-    }
-</style>
-
 <body>
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
@@ -179,7 +150,6 @@
                         </div>
                         <button class="btn-lanjut">Lanjutkan</button>
                     </div>
-                    </div>
                 </article>
             </li>
             <li>
@@ -239,7 +209,6 @@
                         </div>
                         <button class="btn-lanjut">Lanjutkan</button>
                     </div>
-                    </div>
                 </article>
             </li>
             <li>
@@ -298,7 +267,6 @@
                             <p>30% selesai</p>
                         </div>
                         <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
                     </div>
                 </article>
             </li>
@@ -363,28 +331,8 @@
                 </article>
             </li>
         </ul>
+    </section>
     
-
-    <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                <li class="page-item">
-                    <a class="page-link" href="#" id="prevBtn" aria-label="Previous">
-                        <span aria-hidden="true">&lt;</span>
-                    </a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="javascript:void(0)" data-page="1">1</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">2</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&gt;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-    
-
     <section class="kursus-pelatihan">
         <div class="section-title">
             <h3>Kursus Pilihan</h3>
@@ -468,7 +416,24 @@
             <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
         </div>
     </section>
-    
+
+    <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item">
+                    <a class="page-link" href="#" id="prevBtn" aria-label="Previous">
+                        <span aria-hidden="true">&lt;</span>
+                    </a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="javascript:void(0)" data-page="1">1</a></li>
+                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">2</a></li>
+                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&gt;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const pageLinks = document.querySelectorAll('.pagination .page-link[data-page]');

@@ -35,7 +35,7 @@
     --fs-caption: 14px;
     --fs-small: 12px;
 
-    --navy: #0b1b3f;
+    --navy: #252346;
     --white: #fff;
     --split: clamp(120px);
 }
@@ -54,6 +54,7 @@ body {
     font-family: var(--font-main), poppins;
     background-color: var(--bg-main);
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 @supports (height: 1svh) {
@@ -114,21 +115,33 @@ body {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* breadcrumb */
+.container {
+    padding: 0;
+    margin: 0 60px 0 60px;
+}
 .breadcrumb {
     background: transparent;
     padding: 20px 0;
+    color: var(--white) !important;
+    margin: 0;
 }
 
 .breadcrumb-item a {
-    color: var(--primary-dark);
     text-decoration: none;
+    color: var(--white);
+}
+
+.breadcrumb-item::before {
+    color: var(--white);
 }
 
 .breadcrumb-item.active {
     color: var(--secondary);
 }
 
+.breadcrumb-item.active::before {
+    color: var(--white);
+}
 /* Custom button colors */
 .btn {
     border-radius: 10px;
@@ -583,7 +596,6 @@ html {
     min-height: calc(1.35em * 3);
 }
 
-/* Optional: sedikit responsif padding di layar kecil */
 @media (max-width: 576px) {
     .reviews {
         padding: 0 16px;
@@ -596,24 +608,33 @@ html {
     background: transparent;
 }
 
-/* Kontainer carousel (selaras padding dengan .reviews yang pakai 45px) */
 .custom-carousel {
-    width: 100%;
-    height: 300px;
-    max-width: 1350px;
-    margin: 0 auto;
-    overflow: hidden;
-    border-radius: 24px;
-    padding: 0 45px 0 45px;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    padding: 0;
+    border-radius: 0;
 }
 
-/* Gambar item di dalam carousel */
+.custom-carousel .carousel-inner {
+    overflow: hidden;
+    margin: 0;
+}
+
+.custom-carousel .carousel-item {
+    height: clamp(180px, 28vw, 480px);
+}
+
 .custom-carousel .carousel-item img {
     width: 100%;
-    height: 400px;
+    height: 100%;
     object-fit: cover;
+    display: block;
 }
-
 .section-title {
     text-align: center;
     padding-top: 10px;
@@ -632,7 +653,6 @@ html {
     margin: 0;
 }
 
-/* Fix horizontal scroll for course and event containers */
 .card-container-course {
     display: flex;
     gap: 24px;
@@ -1679,4 +1699,85 @@ label {
 
 .hidden {
     display: none !important;
+}
+
+.video-recap-section {
+    padding: 60px 0;
+    background: white;
+    position: relative;
+}
+
+.video-recap-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(244, 196, 48, 0.3),
+        transparent
+    );
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid rgba(244, 196, 48, 0.3);
+    background: transparent;
+    margin: 30px auto 20px 60px;
+}
+
+.video-container img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    border-radius: 20px;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        circle at 50% 50%,
+        #1B1B1B 0%,
+        #1B1B1B 80%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.video-overlay:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.play-button {
+    width: 80px;
+    height: 80px;
+    background: var(--primary-yellow);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--dark-blue);
+    transition: all 0.3s ease;
+}
+
+.play-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 30px rgba(244, 196, 48, 0.4);
 }
