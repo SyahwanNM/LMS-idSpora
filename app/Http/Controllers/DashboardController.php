@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Event;
 use App\Models\Course;
+use App\Models\EventRegistration;
 
 class DashboardController extends Controller
 {
@@ -21,6 +22,22 @@ class DashboardController extends Controller
             ->orderBy('event_date')
             ->limit(8)
             ->get();
+
+        // Mark events that the current (non-admin) user has registered for
+        if (Auth::check() && Auth::user()->role !== 'admin' && $upcomingEvents->isNotEmpty()) {
+            $registeredIds = EventRegistration::query()
+                ->where('user_id', Auth::id())
+                ->whereIn('event_id', $upcomingEvents->pluck('id'))
+                ->pluck('event_id')
+                ->all();
+
+            if (!empty($registeredIds)) {
+                $upcomingEvents->transform(function($ev) use ($registeredIds) {
+                    $ev->is_registered = in_array($ev->id, $registeredIds, true);
+                    return $ev;
+                });
+            }
+        }
 
         // Featured courses sample (adjust logic as needed)
         $featuredCourses = Course::query()

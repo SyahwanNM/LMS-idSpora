@@ -99,12 +99,20 @@
                         <p class="text-sm font-medium text-amber-700">Active Users</p>
                         <div class="flex items-baseline">
                             <p class="text-2xl font-bold text-amber-900" data-active-users>{{ number_format($activeUsers ?? 0) }}</p>
-                            <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span class="sr-only">Increased by</span>
-                                12%
+                            @php $val = $activeUsersChangePercent; @endphp
+                            <p class="ml-2 flex items-center text-sm font-semibold {{ is_null($val) ? 'text-gray-400' : ($val > 0 ? 'text-green-600' : ($val < 0 ? 'text-red-600' : 'text-gray-500')) }}">
+                                @if(!is_null($val))
+                                    @if($val > 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 {{ $val>0?'text-green-500':'' }}" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @elseif($val < 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500 rotate-180" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @else
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 10h12v2H4z" /></svg>
+                                    @endif
+                                    <span class="ml-1">{{ $val > 0 ? '+' : '' }}{{ $val }}%</span>
+                                @else
+                                    <span class="ml-1">—</span>
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -125,12 +133,20 @@
                         <p class="text-sm font-medium text-yellow-700">Total Courses</p>
                         <div class="flex items-baseline">
                             <p class="text-2xl font-bold text-yellow-900">{{ number_format($totalCourses ?? 0) }}</p>
-                            <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span class="sr-only">Increased by</span>
-                                8%
+                            @php $val = $totalCoursesChangePercent; @endphp
+                            <p class="ml-2 flex items-center text-sm font-semibold {{ is_null($val) ? 'text-gray-400' : ($val > 0 ? 'text-green-600' : ($val < 0 ? 'text-red-600' : 'text-gray-500')) }}">
+                                @if(!is_null($val))
+                                    @if($val > 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @elseif($val < 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500 rotate-180" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @else
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 10h12v2H4z" /></svg>
+                                    @endif
+                                    <span class="ml-1">{{ $val > 0 ? '+' : '' }}{{ $val }}%</span>
+                                @else
+                                    <span class="ml-1">—</span>
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -151,12 +167,20 @@
                         <p class="text-sm font-medium text-orange-700">Total Events</p>
                         <div class="flex items-baseline">
                             <p class="text-2xl font-bold text-orange-900">{{ number_format($totalEvents ?? 0) }}</p>
-                            <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span class="sr-only">Increased by</span>
-                                15%
+                            @php $val = $totalEventsChangePercent; @endphp
+                            <p class="ml-2 flex items-center text-sm font-semibold {{ is_null($val) ? 'text-gray-400' : ($val > 0 ? 'text-green-600' : ($val < 0 ? 'text-red-600' : 'text-gray-500')) }}">
+                                @if(!is_null($val))
+                                    @if($val > 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @elseif($val < 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500 rotate-180" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @else
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 10h12v2H4z" /></svg>
+                                    @endif
+                                    <span class="ml-1">{{ $val > 0 ? '+' : '' }}{{ $val }}%</span>
+                                @else
+                                    <span class="ml-1">—</span>
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -177,12 +201,20 @@
                         <p class="text-sm font-medium text-yellow-800">Total Revenue</p>
                         <div class="flex items-baseline">
                             <p class="text-2xl font-bold text-yellow-900">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</p>
-                            <p class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span class="sr-only">Increased by</span>
-                                22%
+                            @php $val = $totalRevenueChangePercent; @endphp
+                            <p class="ml-2 flex items-center text-sm font-semibold {{ is_null($val) ? 'text-gray-400' : ($val > 0 ? 'text-green-600' : ($val < 0 ? 'text-red-600' : 'text-gray-500')) }}">
+                                @if(!is_null($val))
+                                    @if($val > 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @elseif($val < 0)
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-red-500 rotate-180" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                                    @else
+                                        <svg class="self-center flex-shrink-0 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 10h12v2H4z" /></svg>
+                                    @endif
+                                    <span class="ml-1">{{ $val > 0 ? '+' : '' }}{{ $val }}%</span>
+                                @else
+                                    <span class="ml-1">—</span>
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -287,6 +319,28 @@
                             <div class="flex-shrink-0">
                                 <svg class="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manage Users -->
+                    <div class="group cursor-pointer" onclick="window.location.href='{{ route('admin.users.index') }}'">
+                        <div class="flex items-center p-4 bg-gradient-to-r from-slate-50 to-gray-100 rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-200 hover:shadow-md">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 0 0-5-4M9 20H4v-2a4 4 0 0 1 5-4m8-6a4 4 0 1 1-8 0 4 4 0 0 1 8 0m-4 6c-3.314 0-6 2.239-6 5v1h12v-1c0-2.761-2.686-5-6-5" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <h3 class="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors">Manage Users</h3>
+                                <p class="text-xs text-gray-500 mt-1">Kelola akun & role pengguna</p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <svg class="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                 </svg>
                             </div>
                         </div>

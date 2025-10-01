@@ -11,6 +11,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\UserManagementController;
 
 Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('landing-page');
 
@@ -48,6 +49,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/active-users-count', [AdminController::class, 'activeUsersCount'])->name('admin.active-users-count');
         Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
         Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
+
+    // User management (Admin accounts & regular users)
+    Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');
+    Route::get('/admin/users/create', [UserManagementController::class, 'create'])->name('admin.users.create');
+    Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
+    Route::get('/admin/users/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
+    Route::put('/admin/users/{user}', [UserManagementController::class, 'update'])->name('admin.users.update');
+    Route::delete('/admin/users/{user}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
         
         // Course management routes
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
