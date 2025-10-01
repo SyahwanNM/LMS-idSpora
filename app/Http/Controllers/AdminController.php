@@ -42,8 +42,8 @@ class AdminController extends Controller
             ]
         );
 
-        $todaySnapshot = DashboardMetric::where('snapshot_date', $today)->first();
-        $yesterdaySnapshot = DashboardMetric::where('snapshot_date', $yesterdayDate)->first();
+    $todaySnapshot = DashboardMetric::where('snapshot_date', $today)->first();
+    $yesterdaySnapshot = DashboardMetric::where('snapshot_date', $yesterdayDate)->first();
 
         // Helper closure to compute percent change
         $percentChange = function ($current, $previous) {
@@ -52,10 +52,21 @@ class AdminController extends Controller
             return round((($current - $previous) / $previous) * 100, 1);
         };
 
-        $activeUsersChangePercent = $percentChange($activeUsers, $yesterdaySnapshot->users_count ?? null);
-        $totalCoursesChangePercent = $percentChange($totalCourses, $yesterdaySnapshot->courses_count ?? null);
-        $totalEventsChangePercent = $percentChange($totalEvents, $yesterdaySnapshot->events_count ?? null);
-        $totalRevenueChangePercent = $percentChange($totalRevenue, $yesterdaySnapshot->revenue_total ?? null);
+        // Determine baseline (yesterday if exists, otherwise today's first snapshot for intra-day change)
+        $usingIntraDayBaseline = false;
+        if (!$yesterdaySnapshot) {
+            $usingIntraDayBaseline = true;
+        }
+
+        $baselineUsers = $yesterdaySnapshot->users_count ?? ($todaySnapshot->users_count ?? null);
+        $baselineCourses = $yesterdaySnapshot->courses_count ?? ($todaySnapshot->courses_count ?? null);
+        $baselineEvents = $yesterdaySnapshot->events_count ?? ($todaySnapshot->events_count ?? null);
+        $baselineRevenue = $yesterdaySnapshot->revenue_total ?? ($todaySnapshot->revenue_total ?? null);
+
+        $activeUsersChangePercent = $percentChange($activeUsers, $baselineUsers);
+        $totalCoursesChangePercent = $percentChange($totalCourses, $baselineCourses);
+        $totalEventsChangePercent = $percentChange($totalEvents, $baselineEvents);
+        $totalRevenueChangePercent = $percentChange($totalRevenue, $baselineRevenue);
 
         // Recent activities placeholder (replace with real audit/activity log later)
         $recentActivities = [
@@ -77,7 +88,8 @@ class AdminController extends Controller
             'activeUsersChangePercent',
             'totalCoursesChangePercent',
             'totalEventsChangePercent',
-            'totalRevenueChangePercent'
+            'totalRevenueChangePercent',
+            'usingIntraDayBaseline'
         ));
     }
 
