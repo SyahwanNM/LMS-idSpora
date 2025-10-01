@@ -11,7 +11,11 @@
     <header class="bg-white shadow-sm border-b border-gray-200 mb-4">
         <div class="container py-3 d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-                <a href="{{ route('dashboard') }}" class="me-3 text-decoration-none">
+                <a href="{{ request()->routeIs('admin.events.index') 
+                    ? route('admin.dashboard') 
+                    : (request()->routeIs('admin.events.*') 
+                        ? route('admin.events.index') 
+                        : route('admin.dashboard')) }}" class="me-3 text-decoration-none">
                     <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>

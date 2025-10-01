@@ -602,7 +602,7 @@
                 <h5 class="mb-2">Anda belum login</h5>
                 <p class="text-muted mb-3 small">Login untuk mendaftar & mengikuti event ini.</p>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-outline-secondary btn-sm flex-grow-1 close-fallback">Nanti Saja</button>
+                    
                     <a href="{{ route('login') }}" class="btn btn-primary btn-sm flex-grow-1">Login Sekarang</a>
                 </div>
             </div>`;
