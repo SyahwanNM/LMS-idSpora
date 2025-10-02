@@ -118,7 +118,7 @@
                 </div>
                 <hr>
                 <button class="btn btn-warning w-100 mb-2">Enroll Now</button>
-                <button class="btn btn-outline-secondary w-100">Save</button>
+                <button class="save btn btn-outline-secondary w-100">Save</button>
 
                 <p class="note">Note: all course have 30-days money-back guarantee</p>
             </div>
