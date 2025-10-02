@@ -1013,13 +1013,23 @@ body {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color .18s, box-shadow .18s, transform .12s;
 }
 
-.card-event .btn-register:hover {
-    background: var(--white);
-    color: var(--secondary);
-    border: 1px solid var(--secondary);
-    cursor: pointer;
+.card-event .btn-register:hover,
+.card-event .btn-register:focus {
+    background: #1d2540; /* sedikit lebih gelap dari var(--secondary) */
+    color: var(--white);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(244,196,48,0.35);
+}
+.card-event .btn-register:active {
+    background:#161d33; /* lebih gelap saat ditekan */
+    transform: translateY(1px);
+}
+.card-event .btn-register:disabled {
+    opacity:.55;
+    cursor: not-allowed;
 }
 
 .card-event:hover {
@@ -1572,6 +1582,27 @@ label {
     padding: 10px;
     width: 100%;
     border-radius: 10px;
+    color:#1f1d15; /* pastikan teks terlihat */
+    font-weight:600;
+    transition:background-color .2s, box-shadow .2s, transform .15s;
+}
+
+/* Hover / focus / active states untuk meningkatkan visibilitas dan menghindari teks hilang */
+.enroll:hover,
+.enroll:focus {
+    background-color:#e0b326; /* sedikit lebih gelap */
+    color:#1f1d15;
+    outline:none;
+    box-shadow:0 0 0 3px rgba(244,196,48,0.35);
+}
+.enroll:active {
+    background-color:#cfa31d; /* lebih gelap saat ditekan */
+    transform:translateY(1px);
+    color:#1f1d15;
+}
+.enroll:disabled {
+    opacity:.65;
+    cursor:not-allowed;
 }
 
 .enroll.cek-tiket-btn {
