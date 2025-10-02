@@ -32,11 +32,12 @@
             <div class="overview">
                 <h3 class="mb-3">Overview</h3>
                 @php
-                    $cleanDescription = $event->description ?? '';
-                    // Remove <p> and <strong> tags but keep their inner text
-                    $cleanDescription = preg_replace('/<\\/?(p|strong)>/i', '', $cleanDescription);
+                    // Izinkan tag dasar termasuk italic & list agar formatting admin muncul.
+                    // Jika ingin keamanan lebih ketat, bisa integrasi HTML Purifier nanti.
+                    $rawDescription = $event->description ?? '';
+                    $cleanDescription = strip_tags($rawDescription, '<p><br><strong><b><em><i><ul><ol><li>');
                 @endphp
-                <p>{!! nl2br(e($cleanDescription)) !!}</p>
+                <div class="event-description-rich">{!! $cleanDescription !!}</div>
             </div>
             <div class="terms-condition">
                 <h3 class="mb-3">Terms and Condition</h3>

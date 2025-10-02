@@ -474,7 +474,7 @@
                             </div>
                             @php $registered = !empty($event->is_registered); @endphp
                             <button class="btn-register btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" {{ $registered ? 'disabled' : '' }}>
-                                {{ $registered ? 'Anda Terdaftar' : 'Register' }}
+                                {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
                             </button>
                         </div>
                     </div>
