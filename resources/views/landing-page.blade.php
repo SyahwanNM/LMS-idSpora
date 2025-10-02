@@ -425,7 +425,11 @@
                         </div>
                         <div class="price-row">
                             <div class="price-col">
-                                <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                @if((int)$course->price === 0)
+                                    <span class="price-now price-free" aria-label="Gratis">FREE</span>
+                                @else
+                                    <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                @endif
                             </div>
                             <button class="btn-enroll">Enroll Now</button>
                         </div>
@@ -453,7 +457,7 @@
         </div>
         <div class="event-list">
             @forelse($featuredEvents as $event)
-            <div class="card-event">
+            <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
                     @if($event->image)
                         <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
@@ -498,18 +502,28 @@
                     </div>
                     <div class="price-row">
                         <div class="price-col">
-                            @if($event->hasDiscount())
-                                <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                <span class="price-now">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</span>
+                            @php
+                                $finalEventPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
+                            @endphp
+                            @if((int)$finalEventPrice === 0)
+                                @if($event->hasDiscount() && (int)$event->price > 0)
+                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                @endif
+                                <span class="price-now price-free" aria-label="Gratis">FREE</span>
                             @else
-                                <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                @if($event->hasDiscount())
+                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                    <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
+                                @else
+                                    <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
+                                @endif
                             @endif
                         </div>
                         @auth
                             <button class="btn-register" type="button" onclick="window.location='{{ route('events.show', $event->id) }}'">Daftar Sekarang</button>
                         @endauth
                         @guest
-                            <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}">Daftar Sekarang</button>
+                            <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}" data-redirect="{{ route('events.show', $event->id) }}">Daftar Sekarang</button>
                         @endguest
                     </div>
                 </div>
@@ -551,7 +565,7 @@
                 </div>
                 <div class="modal-footer d-flex justify-content-between">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Nanti Saja</button>
-                    <a href="{{ route('login') }}" class="btn btn-primary">Login Sekarang</a>
+                    <a href="{{ route('login') }}" class="btn btn-primary" id="loginRedirectLink">Login Sekarang</a>
                 </div>
             </div>
         </div>
@@ -560,23 +574,55 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function(){
-        const needLoginButtons = document.querySelectorAll('.need-login');
-        if(needLoginButtons.length){
-            needLoginButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const modalEl = document.getElementById('loginRequiredModal');
-                    if(window.bootstrap && modalEl){
-                        const m = new bootstrap.Modal(modalEl);
-                        m.show();
-                        animateModal(modalEl);
-                    } else {
-                        // Custom animated fallback (NO native alert)
-                        createAnimatedLoginPrompt();
-                    }
-                });
-            });
+        let pendingRedirect = null;
+        function showLoginRequired(){
+            const modalEl = document.getElementById('loginRequiredModal');
+            if(window.bootstrap && modalEl){
+                const m = new bootstrap.Modal(modalEl);
+                m.show();
+                animateModal(modalEl);
+            } else {
+                createAnimatedLoginPrompt();
+            }
+            // Update login link with redirect if available
+            const link = document.getElementById('loginRedirectLink');
+            if(link){
+                if(pendingRedirect){
+                    const enc = encodeURIComponent(pendingRedirect);
+                    link.href = `${link.getAttribute('href').split('?')[0]}?redirect=${enc}`;
+                } else {
+                    // fallback remove param
+                    link.href = link.getAttribute('href').split('?')[0];
+                }
+            }
         }
+
+        // Existing buttons
+        const needLoginButtons = document.querySelectorAll('.need-login');
+        needLoginButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                pendingRedirect = btn.getAttribute('data-redirect') || null;
+                showLoginRequired();
+            });
+        });
+
+        // Entire card clickable (guest only)
+        const loginCards = document.querySelectorAll('.login-required-card[data-requires-login="true"]');
+        loginCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if(e.target.closest('.need-login') || e.target.closest('.save-btn')) return;
+                pendingRedirect = card.getAttribute('data-redirect') || null;
+                showLoginRequired();
+            });
+            card.addEventListener('keydown', (e)=>{
+                if(e.key === 'Enter' || e.key === ' '){
+                    e.preventDefault();
+                    pendingRedirect = card.getAttribute('data-redirect') || null;
+                    showLoginRequired();
+                }
+            });
+        });
     });
 
     function animateModal(modalEl){
@@ -647,6 +693,21 @@
     .event-list .card-event .card-body {padding-top:18px;}
     @media (max-width: 768px){
         .event-list .card-event .event-poster {height:280px;}
+    }
+    .login-required-card {cursor:pointer;}
+    .login-required-card:focus {outline:2px solid #4f46e5; outline-offset:2px;}
+    /* FREE price styling */
+    .price-free { 
+        color:#15803d; 
+        font-weight:600; 
+        letter-spacing:.5px; 
+        background:#dcfce7; 
+        padding:4px 10px; 
+        border-radius:30px; 
+        font-size:.82rem; 
+        display:inline-block; 
+        line-height:1.05; 
+        box-shadow:0 0 0 1px #bbf7d0 inset; 
     }
     </style>
 

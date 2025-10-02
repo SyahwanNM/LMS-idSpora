@@ -397,7 +397,7 @@
                         try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
                     }
                 @endphp
-                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif>
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
                         @if($event->image)
                             <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
@@ -455,16 +455,26 @@
                         @endif
                         <div class="price-row">
                             <div class="price-col">
-                                @if($event->hasDiscount())
-                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                    <span class="price-now">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</span>
+                                @php
+                                    $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
+                                @endphp
+                                @if((int)$finalPrice === 0)
+                                    @if($event->hasDiscount() && (int)$event->price > 0)
+                                        <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                    @endif
+                                    <span class="price-now price-free" aria-label="Gratis">FREE</span>
                                 @else
-                                    <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                    @if($event->hasDiscount())
+                                        <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                        <span class="price-now">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                    @else
+                                        <span class="price-now">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                    @endif
                                 @endif
                             </div>
                             @php $registered = !empty($event->is_registered); @endphp
                             <button class="btn-register btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" {{ $registered ? 'disabled' : '' }}>
-                                {{ $registered ? 'Anda Terdaftar' : 'Register' }}
+                                {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
                             </button>
                         </div>
                     </div>
@@ -545,6 +555,8 @@
     .countdown-timer {background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:150px; text-align:center;}
     .countdown-timer.started {background:#198754; color:#fff;}
     .countdown-timer.expired {background:#6c757d; color:#fff;}
+    /* FREE price styling (matches landing page) */
+    .price-free {color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;}
     </style>
     <script>
         const ctx = document.getElementById('gradesChart');
@@ -669,6 +681,12 @@
             }
             update();
             setInterval(update,1000);
+            // Add click navigation for event cards
+            document.querySelectorAll('.event-list .card-event[data-detail-url]').forEach(card => {
+                const url = card.getAttribute('data-detail-url');
+                if(!url) return;
+                card.addEventListener('click', () => { window.location = url; });
+            });
         })();
     </script>
 

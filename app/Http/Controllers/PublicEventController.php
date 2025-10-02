@@ -62,6 +62,23 @@ class PublicEventController extends Controller
 			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
 		}
 		$event->is_registered = $isRegistered;
-		return view('events.show', compact('event'));
+		// Jika sudah terdaftar: tetap tampilkan halaman detail (tidak redirect ke payment)
+		return view('events.detail', compact('event'));
+	}
+
+	public function ticket(Event $event, Request $request)
+	{
+		$user = $request->user();
+		if(!$user){
+			return redirect()->route('login', ['redirect'=>request()->fullUrl()]);
+		}
+		$registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
+		if(!$registration){
+			return redirect()->route('events.show',$event)->with('warning','Anda belum terdaftar pada event ini.');
+		}
+		return view('events.ticket', [
+			'event' => $event,
+			'registration' => $registration
+		]);
 	}
 }

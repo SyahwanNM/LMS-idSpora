@@ -16,10 +16,11 @@ class DashboardController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        // Upcoming events (nearest future first)
+        // Upcoming events: tampilkan event yang baru DITAMBAHKAN (created_at terbaru) di paling kiri.
+        // Tetap hanya ambil event dengan tanggal >= hari ini.
         $upcomingEvents = Event::query()
             ->whereDate('event_date', '>=', now()->toDateString())
-            ->orderBy('event_date')
+            ->orderByDesc('created_at') // terbaru dulu
             ->limit(8)
             ->get();
 
