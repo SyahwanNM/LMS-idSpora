@@ -1571,6 +1571,22 @@ label {
     margin-top: 20px;
     padding: 10px;
     width: 100%;
+    border-radius: 10px;
+}
+
+.enroll.cek-tiket-btn {
+    text-decoration: none;
+    color: #000; /* sama seperti default text button Daftar Sekarang */
+    font-weight: 600;
+}
+.enroll.cek-tiket-btn:hover {
+    filter: brightness(0.95);
+}
+
+/* Rounded corners for Cek Tiket / Kode & Save buttons */
+.enroll.cek-tiket-btn,
+.save {
+    border-radius: 10px;
 }
 
 .save {

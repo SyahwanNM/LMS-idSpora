@@ -12,6 +12,8 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
+use App\Models\Event;
+use App\Models\EventRegistration;
 
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/', function(){
@@ -22,8 +24,14 @@ Route::get('/', function(){
 })->name('landing-page');
 
 
-Route::get('/payment', function () {
-    return view('payment');
+// Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
+Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
+    $user = auth()->user();
+    $already = $user && $user->eventRegistrations()->where('event_id',$event->id)->exists();
+    if($already){
+        return redirect()->route('events.show',$event)->with('info','Anda sudah terdaftar.');
+    }
+    return view('payment', compact('event'));
 })->name('payment');
 
 // Event routes now require authentication to view & register
@@ -31,6 +39,10 @@ Route::middleware('auth')->group(function(){
     Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
     Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
     Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
+    Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
+    // Certificate (event) - show & download (H+4 logic inside controller)
+    Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
+    Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
 
