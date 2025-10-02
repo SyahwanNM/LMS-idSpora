@@ -425,7 +425,11 @@
                         </div>
                         <div class="price-row">
                             <div class="price-col">
-                                <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                @if((int)$course->price === 0)
+                                    <span class="price-now price-free" aria-label="Gratis">FREE</span>
+                                @else
+                                    <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                @endif
                             </div>
                             <button class="btn-enroll">Enroll Now</button>
                         </div>
@@ -498,11 +502,21 @@
                     </div>
                     <div class="price-row">
                         <div class="price-col">
-                            @if($event->hasDiscount())
-                                <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                <span class="price-now">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</span>
+                            @php
+                                $finalEventPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
+                            @endphp
+                            @if((int)$finalEventPrice === 0)
+                                @if($event->hasDiscount() && (int)$event->price > 0)
+                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                @endif
+                                <span class="price-now price-free" aria-label="Gratis">FREE</span>
                             @else
-                                <span class="price-now">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                @if($event->hasDiscount())
+                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                    <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
+                                @else
+                                    <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
+                                @endif
                             @endif
                         </div>
                         @auth
@@ -682,6 +696,19 @@
     }
     .login-required-card {cursor:pointer;}
     .login-required-card:focus {outline:2px solid #4f46e5; outline-offset:2px;}
+    /* FREE price styling */
+    .price-free { 
+        color:#15803d; 
+        font-weight:600; 
+        letter-spacing:.5px; 
+        background:#dcfce7; 
+        padding:4px 10px; 
+        border-radius:30px; 
+        font-size:.82rem; 
+        display:inline-block; 
+        line-height:1.05; 
+        box-shadow:0 0 0 1px #bbf7d0 inset; 
+    }
     </style>
 
     <section class="partner">

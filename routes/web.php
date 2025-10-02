@@ -21,6 +21,11 @@ Route::get('/', function(){
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
 
+
+Route::get('/payment', function () {
+    return view('payment');
+})->name('payment');
+
 // Event routes now require authentication to view & register
 Route::middleware('auth')->group(function(){
     Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');

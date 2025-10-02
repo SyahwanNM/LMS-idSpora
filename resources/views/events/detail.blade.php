@@ -31,7 +31,11 @@
             </div>
             <div class="overview">
                 <h3 class="mb-3">Overview</h3>
-                @php $cleanDescription = preg_replace('/<\\/?p>/i', '', $event->description ?? ''); @endphp
+                @php
+                    $cleanDescription = $event->description ?? '';
+                    // Remove <p> and <strong> tags but keep their inner text
+                    $cleanDescription = preg_replace('/<\\/?(p|strong)>/i', '', $cleanDescription);
+                @endphp
                 <p>{!! nl2br(e($cleanDescription)) !!}</p>
             </div>
             <div class="terms-condition">
@@ -58,7 +62,7 @@
                         <small class="diskon">{{ $event->discount_percentage }}% OFF</small>
                     </div>
                 @else
-                    <h4 class="price-text">@if((int)$event->price===0) Gratis @else Rp{{ number_format($event->price,0,',','.') }} @endif</h4>
+                    <h4 class="price-text">@if((int)$event->price===0) FREE @else Rp{{ number_format($event->price,0,',','.') }} @endif</h4>
                 @endif
                 <hr>
                 <div class="info-box">
@@ -142,6 +146,24 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Shrink event main image (previously full width). Adjust as needed */
+        .container-detail .kiri .event-img {
+            width:100%;
+            max-width:520px; /* limit width on large screens */
+            max-height:320px; /* cap vertical size */
+            object-fit:cover;
+            border-radius:18px;
+            display:block;
+            margin:0 auto 28px; /* center with spacing below */
+            box-shadow:0 8px 24px -8px rgba(0,0,0,.18), 0 2px 6px -2px rgba(0,0,0,.12);
+            transition:box-shadow .25s, transform .3s;
+        }
+        .container-detail .kiri .event-img:hover {transform:translateY(-3px); box-shadow:0 14px 32px -10px rgba(0,0,0,.22),0 3px 10px -3px rgba(0,0,0,.16);}        
+        @media (max-width:768px){
+            .container-detail .kiri .event-img {max-width:100%; max-height:240px; margin-bottom:22px;}
+        }
+    </style>
     <script>
         function copyLink(){
             const temp = document.createElement('input');
@@ -175,4 +197,4 @@
     </script>
 </body>
 </html>
-@include('partials.footer-after-login')
+@include('partials.footer-before-login')
