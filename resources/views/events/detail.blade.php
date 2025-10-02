@@ -110,9 +110,17 @@
                     </div>
                 </div>
                 <hr>
-                @php $registered = !empty($event->is_registered); @endphp
+                @php 
+                    $registered = !empty($event->is_registered); 
+                    $finalPrice = $hasDiscount ? $event->discounted_price : $event->price; 
+                    $isEventFree = (int)$finalPrice === 0;
+                @endphp
                 @auth
-                    <button id="registerBtn" class="enroll {{ $registered ? 'btn-success disabled' : '' }}" data-event-id="{{ $event->id }}">{{ $registered ? 'Anda Terdaftar' : 'Daftar Sekarang' }}</button>
+                    @if($registered)
+                        <a href="{{ route('events.ticket',$event) }}" class="enroll cek-tiket-btn" style="text-align:center; display:block;">Cek Tiket / Kode</a>
+                    @else
+                        <button id="registerBtn" class="enroll" data-event-id="{{ $event->id }}" data-paid="{{ $isEventFree ? '0':'1' }}">Daftar Sekarang</button>
+                    @endif
                 @endauth
                 @guest
                     <a href="{{ route('login',['redirect'=>request()->fullUrl()]) }}" class="enroll">Login untuk Mendaftar</a>
@@ -207,6 +215,12 @@
         if(btn){
             btn.addEventListener('click', () => {
                 if(btn.classList.contains('btn-success')) return;
+                const isPaid = btn.getAttribute('data-paid') === '1';
+                if(isPaid){
+                    // Langsung ke halaman payment
+                    window.location.href = `{{ route('payment',$event) }}`;
+                    return;
+                }
                 btn.disabled = true;
                 fetch(`/events/${btn.dataset.eventId}/register`, {
                     method:'POST',
@@ -214,9 +228,15 @@
                     body: JSON.stringify({})
                 }).then(r=>r.json()).then(data=>{
                     if(data.status==='ok' || data.status==='already'){
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-success');
-                        btn.textContent = 'Anda Terdaftar';
+                        const ticketUrl = `/events/${btn.dataset.eventId}/ticket`;
+                        const link = document.createElement('a');
+                        link.href = ticketUrl;
+                        link.className = 'enroll';
+                        link.textContent = 'Cek Tiket / Kode';
+                        link.style.textAlign = 'center';
+                        btn.replaceWith(link);
+                    } else if(data.status==='payment_required' && data.redirect){
+                        window.location.href = data.redirect;
                     } else { alert(data.message || 'Gagal mendaftar'); btn.disabled=false; }
                 }).catch(()=>{ alert('Terjadi kesalahan'); btn.disabled=false; });
             });

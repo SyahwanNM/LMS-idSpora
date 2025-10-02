@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment</title>
+    <title>Payment - {{ isset($event)? $event->title : 'Event' }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -19,20 +19,22 @@
 </head>
 
 <body>
-    <div class="link-box mb-3">
-        <a href="">Home</a>
+    <div class="link-box mb-3" style="margin-top:80px;">
+        <a href="{{ route('dashboard') }}">Home</a>
         <p>/</p>
-        <a href="">Event</a>
+        <a href="{{ route('events.index') }}">Event</a>
         <p>/</p>
-        <a href="">Digital Marketing Masterclass 2025</a>
-        <p>/</p>
-        <a class="active" href="">Payment</a>
+        @if(isset($event))
+            <a href="{{ route('events.show',$event) }}">{{ Str::limit($event->title,40) }}</a>
+            <p>/</p>
+        @endif
+        <a class="active" href="#">Payment</a>
     </div>
     <div class="box-payment">
         <div class="kiri-payment">
             <h3>Data Peserta</h3>
             <p class="judul-input">Email</p>
-            <input class="form" type="email">
+            <input class="form" type="email" value="{{ auth()->user()->email ?? '' }}" readonly>
             <p class="judul-input">Nama Lengkap</p>
             <div class="warning">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#EC0606" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
@@ -41,7 +43,7 @@
                 </svg>
                 <p class="warning-text">Nama akan digunakan di sertifikat</p>
             </div>
-            <input class="form" type="text">
+            <input class="form" type="text" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat">
             <div class="form-group">
                 <p class="judul-input">No Whatsapp</p>
                 <div class="wa-input">
@@ -60,19 +62,52 @@
             <div class="ticket-header">Order Detail</div>
             <div class="ticket-content"> <img src="{{ asset('aset/event.png') }}" alt="Event">
                 <div class="info">
-                    <h4>Digital Marketing Masterclass 2025</h4>
-                    <p>IdSpora</p>
-                    <div class="price">Rp 50.000</div>
+                    <h4>{{ isset($event)? $event->title : 'Event Title' }}</h4>
+                    <p>{{ isset($event)? 'IdSpora' : '' }}</p>
+                    @php
+                        $isFree = isset($event) ? ((int)$event->price === 0) : false;
+                        $hasDiscount = isset($event) ? $event->hasDiscount() : false;
+                        $finalPrice = isset($event) ? ($hasDiscount ? $event->discounted_price : $event->price) : 0;
+                    @endphp
+                    <div class="price">
+                        @if($isFree)
+                            <span class="badge-diskon">Diskon 100%</span>
+                            <span class="ms-2 fw-semibold" style="color:#16a34a;">FREE</span>
+                        @else
+                            @if($hasDiscount)
+                                <span class="text-decoration-line-through text-muted me-2">Rp{{ number_format($event->price,0,',','.') }}</span>
+                                <span class="fw-semibold">Rp{{ number_format($finalPrice,0,',','.') }}</span>
+                                <span class="badge-diskon ms-2">Diskon {{ $event->discount_percentage }}%</span>
+                            @else
+                                <span class="fw-semibold">Rp{{ number_format($finalPrice,0,',','.') }}</span>
+                            @endif
+                        @endif
+                    </div>
                 </div>
             </div>
             <div class="ticket-divider"></div>
             <div class="ticket-footer">
                 <div>
                     <h5>Total</h5>
-                    <p>Rp 50.000</p>
+                    <p class="m-0">
+                        @if(isset($event))
+                            @if($isFree)
+                                FREE
+                            @else
+                                Rp{{ number_format($finalPrice,0,',','.') }}
+                            @endif
+                        @else
+                            -
+                        @endif
+                    </p>
                 </div>
                 <div class="icon">📄</div>
-            </div> <button class="btn-pay">Bayar</button>
+            </div>
+            <form method="POST" action="#">
+                @csrf
+                <input type="hidden" name="event_id" value="{{ $event->id ?? '' }}">
+                <button type="submit" class="btn-pay mt-2">@if(isset($event) && $isFree) Daftar Gratis @else Bayar @endif</button>
+            </form>
         </div>
     </div>
 </body>
