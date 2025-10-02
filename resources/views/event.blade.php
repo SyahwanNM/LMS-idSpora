@@ -164,7 +164,7 @@
                         try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
                     }
                 @endphp
-                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif>
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
                         @if(!empty($event->image))
                             <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
@@ -188,7 +188,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <h4>{{ $event->title }}</h4>
+                        <h4 class="event-title" style="cursor:pointer;">{{ $event->title }}</h4>
                         <div class="tags">
                             <span class="tag">{{ $event->speaker ? Str::limit($event->speaker,18) : 'Narasumber' }}</span>
                             <span class="tag">{{ $event->location ? Str::limit($event->location,18) : 'Lokasi TBA' }}</span>
@@ -238,7 +238,7 @@
                                 @endif
                             </div>
                             @php $registered = !empty($event->is_registered); @endphp
-                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" data-event-id="{{ $event->id }}" data-event-title="{{ e($event->title) }}" {{ $registered ? 'disabled' : '' }}>
+                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" data-event-id="{{ $event->id }}" data-event-title="{{ e($event->title) }}" {{ $registered ? 'disabled' : '' }} onclick="event.stopPropagation();">
                                 {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
                             </button>
                         </div>
@@ -278,6 +278,22 @@
     document.addEventListener('DOMContentLoaded', function(){
         const tokenMeta = document.querySelector('meta[name="csrf-token"]');
         const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
+        // Card click -> go to detail
+        document.querySelectorAll('.card-event').forEach(card => {
+            const url = card.getAttribute('data-detail-url');
+            if(!url) return;
+            card.addEventListener('click', function(){
+                window.location = url;
+            });
+            // Prevent nested anchor style selection issues
+            const titleEl = card.querySelector('.event-title');
+            if(titleEl){
+                titleEl.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    window.location = url;
+                });
+            }
+        });
         document.querySelectorAll('.register-btn').forEach(btn => {
             btn.addEventListener('click', function(){
                 if(this.classList.contains('btn-success')) return; // already

@@ -107,8 +107,27 @@ class EventController extends Controller
         }
         $existing = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->first();
         if($existing){
-            return response()->json(['status' => 'already', 'message' => 'Sudah terdaftar', 'event_title' => $event->title]);
+            return response()->json([
+                'status' => 'already',
+                'message' => 'Sudah terdaftar',
+                'event_title' => $event->title,
+                'redirect' => route('events.ticket', $event)
+            ]);
         }
+        // Hitung final price (sesudah diskon bila ada)
+        $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
+        $isFree = (int)$finalPrice === 0;
+
+        if(!$isFree){
+            // Event berbayar: jangan langsung daftar; arahkan ke payment
+            return response()->json([
+                'status' => 'payment_required',
+                'message' => 'Pembayaran diperlukan sebelum pendaftaran dikonfirmasi.',
+                'redirect' => route('payment', $event)
+            ], 200);
+        }
+
+        // Event gratis: langsung daftarkan
         $reg = EventRegistration::create([
             'user_id' => $user->id,
             'event_id' => $event->id,
@@ -117,9 +136,10 @@ class EventController extends Controller
         ]);
         return response()->json([
             'status' => 'ok',
-            'message' => 'Berhasil daftar event',
+            'message' => 'Berhasil daftar event (GRATIS)',
             'event_title' => $event->title,
-            'button_text' => 'Anda Terdaftar'
+            'button_text' => 'Anda Terdaftar',
+            'redirect' => route('events.ticket', $event)
         ]);
     }
 }
