@@ -1246,8 +1246,8 @@ label {
     margin: 0;
 }
 .event-img {
-    width: 750px;
-    height: 400px;
+    width: 100%;
+    height: auto;
     border-radius: 10px;
     margin: 0 0 20px 0;
     display: block;
@@ -1312,27 +1312,49 @@ label {
 .terms-condition p {
     font-size: small;
 }
+.kiri {
+    flex: 2;
+}
 
 .kanan {
     border: solid #f4c430 2px;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+    flex: 1.5;
+    max-width: 400px;
 }
 .price-text {
     color: #000;
+}
+.text-danger{
+    width: 100%;
 }
 .diskon {
     background-color: #252346;
     color: #f4c430;
     padding: 10px;
-    margin-left: 70px;
+    margin-left: 60px;
     margin-top: -20px;
     margin-bottom: 30px;
 }
 .info-box {
     margin-top: 30px;
 }
+.info-box > div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.info-box svg {
+    flex-shrink: 0;
+}
+
+.info-box p {
+    margin: 0 0 0 10px;
+}
+
 .time-alert {
     display: flex;
     align-items: center;
@@ -1473,8 +1495,7 @@ label {
 .online-text {
     margin-left: 10px;
 }
-
-.sponsor-box {
+    .sponsor-box {
     margin-top: 30px;
 }
 
