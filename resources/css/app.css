@@ -1,11 +1,9 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 
 :root {
-    --primary-gradient: radial-gradient(
-        circle at 50% 50%,
-        #51376c 0%,
-        #2e2050 100%
-    );
+    --primary-gradient: radial-gradient(circle at 50% 50%,
+            #51376c 0%,
+            #2e2050 100%);
     --primary: #51376c;
     --primary-dark: #2e2050;
     --secondary: #f4c430;
@@ -66,12 +64,14 @@ body {
 .btn {
     border-radius: 10px;
 }
+
 .btn-primary {
     background: var(--secondary);
     color: var(--white);
     border: none !important;
     transition: background 0.2s;
 }
+
 .btn-primary:hover,
 .btn-primary:active {
     background: #252346 35%;
@@ -96,60 +96,81 @@ body {
 .fs-10 {
     font-size: 10px !important;
 }
+
 .fs-12 {
     font-size: 12px !important;
 }
+
 .fs-14 {
     font-size: 14px !important;
 }
+
 .fs-16 {
     font-size: 16px !important;
 }
+
 .fs-18 {
     font-size: 18px !important;
 }
+
 .fs-20 {
     font-size: 20px !important;
 }
+
 .fs-24 {
     font-size: 24px !important;
 }
+
 .fs-32 {
     font-size: 32px !important;
 }
+
 .fs-40 {
     font-size: 40px !important;
 }
+
 .fs-48 {
     font-size: 48px !important;
 }
+
 .fs-64 {
     font-size: 64px !important;
 }
 
 /* Font size utilities with semantic names */
 .fs-title {
-    font-size: 64px !important; /* Judul utama, hero, landing */
+    font-size: 64px !important;
+    /* Judul utama, hero, landing */
     font-weight: 700;
 }
+
 .fs-heading {
-    font-size: 40px !important; /* Heading besar, section title */
+    font-size: 40px !important;
+    /* Heading besar, section title */
     font-weight: 600;
 }
+
 .fs-subheading {
-    font-size: 32px !important; /* Subheading, card title */
+    font-size: 32px !important;
+    /* Subheading, card title */
     font-weight: 600;
 }
+
 .fs-body {
-    font-size: 18px !important; /* Konten utama, paragraf */
+    font-size: 18px !important;
+    /* Konten utama, paragraf */
     font-weight: 400;
 }
+
 .fs-caption {
-    font-size: 14px !important; /* Caption, deskripsi kecil */
+    font-size: 14px !important;
+    /* Caption, deskripsi kecil */
     font-weight: 400;
 }
+
 .fs-small {
-    font-size: 12px !important; /* Text kecil, helper */
+    font-size: 12px !important;
+    /* Text kecil, helper */
     font-weight: 400;
 }
 
@@ -164,12 +185,14 @@ body {
     margin: 32px auto 0 auto;
     box-sizing: border-box;
 }
+
 @media (max-width: 700px) {
     .search-banner-container {
         max-width: 98vw;
         margin-top: 20px;
     }
 }
+
 .search-banner-form {
     width: 100%;
     max-width: 1350px;
@@ -184,17 +207,20 @@ body {
     align-items: center;
     box-sizing: border-box;
 }
+
 @media (max-width: 700px) {
     .search-banner-container {
         max-width: 98vw;
         margin-top: 20px;
     }
 }
+
 .search-form {
     width: 100%;
     max-width: 1350px;
     padding-inline: 45px;
 }
+
 .search-wrap {
     position: relative;
     width: 100%;
@@ -216,6 +242,7 @@ body {
     padding-inline: 1rem 40px;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 .search-input-2 {
     height: 44px;
     border-radius: 10px;
@@ -264,9 +291,11 @@ body {
     overflow-y: auto;
     z-index: 20;
 }
+
 .search-wrap.is-open .search-suggest {
     display: block;
 }
+
 .search-suggest li {
     padding: 10px 12px;
     border-radius: 8px;
@@ -275,6 +304,7 @@ body {
     align-items: center;
     gap: 8px;
 }
+
 .search-suggest li:hover,
 .search-suggest li.is-active {
     background: var(--bg-main);
@@ -285,6 +315,7 @@ body {
         padding-inline: 16px;
     }
 }
+
 /*TESTIMONI CAROUSEL*/
 .testimoni-section .carousel .reviews {
     justify-content: center;
@@ -296,7 +327,8 @@ body {
         padding: 0 16px;
         max-width: 100vw;
     }
-    .testimoni-section .carousel .reviews > li {
+
+    .testimoni-section .carousel .reviews>li {
         flex: 0 1 100%;
         max-width: 360px;
     }
@@ -324,9 +356,11 @@ body {
     padding-top: 0;
     padding-bottom: 24px;
 }
+
 .testimoni-section .section-title h3 {
     margin: 0 0 4px;
 }
+
 .testimoni-section .section-title h6 {
     margin: 0 0 16px;
     font-weight: 400;
@@ -336,6 +370,7 @@ body {
 .testimoni-section .carousel {
     overflow: hidden;
 }
+
 .testimoni-section .carousel .carousel-item {
     transition: transform 0.1s ease;
 }
@@ -353,7 +388,7 @@ body {
     width: 100%;
 }
 
-.reviews > li {
+.reviews>li {
     flex: 1 1 calc((100% - (4 * var(--gap))) / 5);
     max-width: calc((100% - (4 * var(--gap))) / 5);
     min-width: 0;
@@ -371,16 +406,19 @@ body {
     color: black;
     border-radius: 20px;
 }
+
 #gradesChart {
     display: block;
     margin: 0 auto;
     max-width: 180px;
 }
+
 .judul {
     text-align: left;
     margin: 0px 50px;
     font-weight: 600;
 }
+
 .bulan {
     text-align: left;
     margin: 0px 30px;
@@ -388,58 +426,71 @@ body {
     font-weight: 400;
     color: grey;
 }
+
 .stat-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
+
 .keterangan {
     flex: 1;
 }
+
 .chart-wrapper {
     flex-shrink: 0;
     width: 180px;
     height: 180px;
 }
+
 .chart-wrapper canvas {
     width: 100% !important;
     height: 100% !important;
 }
+
 .stat-item {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
 }
+
 .stat-item img {
     width: 40px;
     height: 40px;
     margin-right: 15px;
 }
+
 .stat-text .label {
     font-size: 14px;
     color: gray;
     margin: 0;
 }
+
 .stat-text .value {
     font-size: 16px;
     font-weight: 600;
     margin: 0;
 }
+
 .task-item {
     margin: 20px 50px;
     padding: 8px 0;
 }
+
 .task-score {
     float: right;
     color: gray;
 }
+
 .progress {
     height: 10px;
 }
+
 .progress-bar {
     background-color: #f4c430;
     height: 10px;
 }
+
 #hoursChart {
     max-height: 250px;
     margin-top: 20px;
@@ -473,6 +524,7 @@ body {
     gap: 8px;
     margin-bottom: 8px;
 }
+
 .reviewer img {
     width: 30px;
     height: 30px;
@@ -480,6 +532,7 @@ body {
     border-radius: 999px;
     border: 2px solid var(--white);
 }
+
 .reviewer-name {
     font-size: 13px;
     margin: 0;
@@ -539,11 +592,13 @@ body {
     font-size: var(--fs-heading);
     margin-bottom: 12px;
 }
+
 .section-title h3 {
     margin-bottom: 4px;
     margin-top: 50px;
     color: #000;
 }
+
 .section-title h6 {
     font-size: var(--fs-caption);
     font-weight: 500;
@@ -571,6 +626,7 @@ body {
     align-items: stretch;
     margin: 0;
 }
+
 .kategori-item {
     background: var(--secondary);
     color: var(--white);
@@ -587,9 +643,11 @@ body {
     font-size: 16px;
     font-weight: 500;
 }
+
 .kategori-item.wide {
     min-width: 200px;
 }
+
 .header-card {
     display: flex;
     justify-content: space-between;
@@ -632,6 +690,7 @@ body {
     overflow: hidden;
     background: var(--white);
 }
+
 .course-card .thumb {
     height: 160px;
     width: 100%;
@@ -640,15 +699,18 @@ body {
     padding: 10px;
     border-radius: 15px 15px 0 0;
 }
+
 .course-card .inner {
     padding: 0 10px 10px 10px;
 }
+
 .course-card .title {
     font-size: 16px;
     font-weight: 600;
     margin: 4px 0;
     color: var(--primary-dark);
 }
+
 .course-card .desc {
     font-size: 13px;
     color: #444;
@@ -658,6 +720,7 @@ body {
     overflow: hidden;
     min-height: calc(1.35em * 2);
 }
+
 .course-card .tags {
     display: flex;
     gap: 8px;
@@ -665,6 +728,7 @@ body {
     margin: 4px 0;
     flex-wrap: wrap;
 }
+
 .course-card .tag {
     background: var(--secondary);
     color: var(--white);
@@ -674,6 +738,7 @@ body {
     padding: 2px 8px;
     display: inline-block;
 }
+
 .course-card .meta {
     display: flex;
     align-items: center;
@@ -682,12 +747,14 @@ body {
     font-size: 13px;
     color: #222;
 }
+
 .course-card .author {
     display: flex;
     align-items: center;
     gap: 8px;
     margin: 6px 0;
 }
+
 .course-card .author img {
     width: 26px;
     height: 26px;
@@ -695,27 +762,32 @@ body {
     border-radius: 999px;
     border: 1px solid var(--white);
 }
+
 .course-card .price-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-top: 6px;
 }
+
 .course-card .price-col {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
 }
+
 .course-card .price-old {
     text-decoration: line-through;
     color: #aaa;
     font-size: 12px;
 }
+
 .course-card .price-now {
     color: #111;
     font-size: 15px;
     font-weight: 600;
 }
+
 .course-card .btn-enroll {
     background: var(--secondary);
     color: var(--white);
@@ -740,6 +812,7 @@ body {
     transition: box-shadow 0.2s, transform 0.2s;
     cursor: pointer;
 }
+
 .progress-wrapper {
     margin-bottom: 8px;
 }
@@ -887,6 +960,7 @@ body {
     margin: 4px 0;
     flex-wrap: wrap;
 }
+
 .card-event .tag {
     background: var(--secondary);
     color: var(--white);
@@ -896,6 +970,7 @@ body {
     padding: 2px 8px;
     display: inline-block;
 }
+
 .card-event .author img {
     width: 26px;
     height: 26px;
@@ -903,22 +978,26 @@ body {
     border-radius: 999px;
     border: 1px solid var(--white);
 }
+
 .card-event .price-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-top: 6px;
 }
+
 .card-event .price-col {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
 }
+
 .card-event .price-old {
     text-decoration: line-through;
     color: #aaa;
     font-size: 12px;
 }
+
 .card-event .price-now {
     color: #111;
     font-size: 15px;
@@ -966,6 +1045,7 @@ body {
     display: inline-block;
     vertical-align: middle;
 }
+
 .keterangan span {
     display: inline-block;
     vertical-align: middle;
@@ -978,13 +1058,16 @@ body {
     .reviews {
         padding: 0 16px;
     }
-    .reviews > li {
+
+    .reviews>li {
         flex-basis: 200px;
         max-width: 200px;
     }
+
     .course-list {
         padding: 0 16px;
     }
+
     .kategori-item {
         min-width: 120px;
         font-size: 15px;
@@ -998,6 +1081,7 @@ body {
     border: 1px solid var(--white);
     box-shadow: none;
 }
+
 .thumb-wrapper {
     position: relative;
     display: inline-block;
@@ -1014,14 +1098,17 @@ body {
     gap: 8px;
     z-index: 2;
 }
+
 .badge-save-group .course-badge {
     position: static;
     margin: 0;
 }
+
 .badge-save-group .save-btn {
     position: static;
     margin: 0;
 }
+
 .thumb-wrapper img.thumb {
     height: 160px;
     width: 100%;
@@ -1076,6 +1163,7 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .save-btn:hover {
     background: rgba(0, 0, 0, 0.7);
 }
@@ -1113,6 +1201,7 @@ body {
         padding: 0 16px;
         gap: 18px;
     }
+
     .partner-logos img {
         max-height: 36px;
         max-width: 120px;
@@ -1130,6 +1219,7 @@ body {
     display: flex;
     gap: 20px;
 }
+
 .filter-box {
     display: flex;
     gap: 10px;
@@ -1169,6 +1259,7 @@ body {
     outline: none;
     border-bottom: 1px solid #fff;
 }
+
 label {
     color: white;
 }
@@ -1223,48 +1314,67 @@ label {
     align-items: center;
     gap: 6px;
     font-size: 14px;
-    margin-top: 40px;
-    margin-left: 55px;
+   margin: 40px 0 20px 0;   
+    max-width: 1200px;
+    flex-wrap: wrap;
 }
+
 .link-box a {
     text-decoration: none;
     color: grey;
 }
+
 .link-box a:hover {
     text-decoration: none;
-    color: rgb(0, 0, 0);
+    color: black;
 }
+
 .link-box a:active {
     text-decoration: none;
     color: black;
 }
+
 .link-box .active {
     text-decoration: none;
     color: black;
 }
+
 .link-box p {
     margin: 0;
 }
+
 .event-img {
     width: 100%;
-    height: auto;
     border-radius: 10px;
-    margin: 0 0 20px 0;
-    display: block;
+    margin-bottom: 20px;
+    object-fit: cover;
 }
 
 .container-detail {
-    display: flex;
-    gap: 30px;
-    align-items: flex-start;
-    margin-left: 50px;
-    margin-bottom: 100px;
-    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 3fr 1fr; 
+    gap: 40px;                      
+    width: 100%;                   
+    max-width: 1400px;             
+    margin: 0 auto;                
+    padding: 0 30px; 
+    margin-bottom: 50px;              
+}
+
+@media (max-width: 992px) {
+    .container-detail {
+        grid-template-columns: 1fr;
+    }
+
+    .kanan {
+        max-width: 100%;
+    }
 }
 
 .box-event img {
     display: flex;
 }
+
 .profile-box {
     display: flex;
     align-items: center;
@@ -1281,12 +1391,6 @@ label {
 .black {
     color: #000;
     font-weight: bold;
-}
-
-@media (max-width: 768px) {
-    .container-detail {
-        flex-direction: column;
-    }
 }
 
 .overview {
@@ -1312,8 +1416,9 @@ label {
 .terms-condition p {
     font-size: small;
 }
+
 .kiri {
-    flex: 2;
+    width: 100%;
 }
 
 .kanan {
@@ -1321,15 +1426,19 @@ label {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
-    flex: 1.5;
+    width: 100%;
     max-width: 400px;
 }
+
 .price-text {
     color: #000;
 }
-.text-danger{
-    width: 100%;
+
+.text-danger {
+    width: 190px;
+    font-size: medium;
 }
+
 .diskon {
     background-color: #252346;
     color: #f4c430;
@@ -1337,11 +1446,14 @@ label {
     margin-left: 60px;
     margin-top: -20px;
     margin-bottom: 30px;
+    width: 120px;
 }
+
 .info-box {
     margin-top: 30px;
 }
-.info-box > div {
+
+.info-box>div {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
@@ -1373,9 +1485,11 @@ label {
 .time-alert p {
     margin-top: -10px;
 }
+
 .box-diskon {
     display: flex;
 }
+
 .date {
     display: flex;
 }
@@ -1392,6 +1506,7 @@ label {
 .ikon {
     margin-top: 5px;
 }
+
 .time {
     display: flex;
 }
@@ -1404,6 +1519,7 @@ label {
     margin-left: 140px;
     color: #6c6c6c;
 }
+
 .location {
     display: flex;
 }
@@ -1416,6 +1532,7 @@ label {
     margin-left: 185px;
     color: #6c6c6c;
 }
+
 .bahasa {
     display: flex;
 }
@@ -1428,6 +1545,7 @@ label {
     margin-left: 197px;
     color: #6c6c6c;
 }
+
 .sertifikat {
     display: flex;
 }
@@ -1448,6 +1566,7 @@ label {
     padding: 10px;
     width: 100%;
 }
+
 .save {
     background-color: #252346;
     color: white;
@@ -1456,6 +1575,7 @@ label {
     padding: 10px;
     width: 100%;
 }
+
 .note {
     color: #6c6c6c;
     margin-top: 10px;
@@ -1466,6 +1586,7 @@ label {
 .box-benefit {
     margin-top: 20px;
 }
+
 .materi {
     display: flex;
     margin-top: 20px;
@@ -1474,6 +1595,7 @@ label {
 .materi-text {
     margin-left: 10px;
 }
+
 .sertif {
     display: flex;
 }
@@ -1481,6 +1603,7 @@ label {
 .sertif-text {
     margin-left: 10px;
 }
+
 .record {
     display: flex;
 }
@@ -1488,6 +1611,7 @@ label {
 .record-text {
     margin-left: 10px;
 }
+
 .online {
     display: flex;
 }
@@ -1495,13 +1619,15 @@ label {
 .online-text {
     margin-left: 10px;
 }
-    .sponsor-box {
+
+.sponsor-box {
     margin-top: 30px;
 }
 
 .share-box {
     margin-top: 30px;
 }
+
 .box-copy {
     background-color: #e9ecef;
     display: flex;
@@ -1518,14 +1644,17 @@ label {
     font-size: 14px;
     color: #666;
 }
+
 .link-box a {
     text-decoration: none;
     color: #444;
 }
+
 .link-box a.active {
     font-weight: 600;
     color: #000;
 }
+
 .box-payment {
     background: #fff;
     border-radius: 20px;
@@ -1537,12 +1666,15 @@ label {
     gap: 40px;
     width: 1200px;
 }
+
 .kiri-payment {
     flex: 2;
 }
+
 .kanan-payment {
     flex: 1;
 }
+
 .box-payment .form {
     width: 100%;
     border: solid 2px #f4c430;
@@ -1550,29 +1682,35 @@ label {
     margin-bottom: 10px;
     padding: 10px;
 }
+
 .judul-input {
     margin-top: 5px;
     font-weight: 500;
 }
+
 .warning {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-top: -30px;
 }
+
 .warning-text {
     color: #ec0606;
     font-size: 13px;
     font-weight: 500;
     margin-top: 15px;
 }
+
 .form-group {
     margin-bottom: 20px;
 }
+
 .wa-input {
     display: flex;
     gap: 8px;
 }
+
 .wa-input select,
 .wa-input input {
     padding: 10px;
@@ -1580,9 +1718,11 @@ label {
     border-radius: 5px;
     font-size: 14px;
 }
+
 .wa-input select {
     width: 120px;
 }
+
 .wa-input input {
     flex: 1;
 }
@@ -1595,6 +1735,7 @@ label {
     overflow: hidden;
     position: relative;
 }
+
 .ticket::before {
     content: "";
     position: absolute;
@@ -1607,12 +1748,14 @@ label {
     border-radius: 8px 8px 0 0;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
+
 .ticket-header {
     padding: 20px;
     font-weight: 600;
     color: #1e2a50;
     font-size: 16px;
 }
+
 .ticket-content {
     background: #e2effd;
     margin: 0 20px 20px 20px;
@@ -1622,36 +1765,43 @@ label {
     gap: 12px;
     align-items: center;
 }
+
 .ticket-content img {
     width: 100px;
     height: 70px;
     border-radius: 8px;
     object-fit: cover;
 }
+
 .ticket-content .info {
     flex: 1;
 }
+
 .ticket-content .info h4 {
     margin: 0;
     font-size: 14px;
     font-weight: 600;
     color: #111;
 }
+
 .ticket-content .info p {
     margin: 4px 0;
     font-size: 12px;
     color: #666;
 }
+
 .ticket-content .info .price {
     color: #16a34a;
     font-weight: 600;
     font-size: 14px;
 }
+
 .ticket-divider {
     position: relative;
     border-top: 2px dashed #cbd5e1;
     margin: 0 20px;
 }
+
 .ticket-divider::before,
 .ticket-divider::after {
     content: "";
@@ -1662,30 +1812,36 @@ label {
     background: #f8fafc;
     border-radius: 50%;
 }
+
 .ticket-divider::before {
     left: -20px;
 }
+
 .ticket-divider::after {
     right: -20px;
 }
+
 .ticket-footer {
     padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .ticket-footer h5 {
     margin: 0;
     font-size: 14px;
     color: #1e2a50;
     font-weight: 600;
 }
+
 .ticket-footer p {
     margin: 0;
     font-size: 16px;
     font-weight: 700;
     color: #111827;
 }
+
 .btn-pay {
     display: block;
     width: calc(100% - 40px);
@@ -1699,9 +1855,11 @@ label {
     cursor: pointer;
     transition: 0.2s;
 }
+
 .btn-pay:hover {
     background: #d8aa1f;
 }
+
 @media (max-width: 992px) {
     .box-payment {
         flex-direction: column;
@@ -1723,12 +1881,10 @@ label {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        var(--primary-yellow),
-        transparent
-    );
+    background: linear-gradient(90deg,
+            transparent,
+            var(--primary-yellow),
+            transparent);
 }
 
 .footer-section a {
