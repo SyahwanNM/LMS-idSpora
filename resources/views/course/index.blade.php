@@ -1,3 +1,4 @@
+@include ('partials.navbar-before-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-@include('partials.navbar-after-login')
 </head>
+
 <body>
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
@@ -149,7 +150,6 @@
                         </div>
                         <button class="btn-lanjut">Lanjutkan</button>
                     </div>
-                    </div>
                 </article>
             </li>
             <li>
@@ -209,7 +209,6 @@
                         </div>
                         <button class="btn-lanjut">Lanjutkan</button>
                     </div>
-                    </div>
                 </article>
             </li>
             <li>
@@ -268,7 +267,6 @@
                             <p>30% selesai</p>
                         </div>
                         <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
                     </div>
                 </article>
             </li>
@@ -333,28 +331,8 @@
                 </article>
             </li>
         </ul>
+    </section>
     
-
-    <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                <li class="page-item">
-                    <a class="page-link" href="#" id="prevBtn" aria-label="Previous">
-                        <span aria-hidden="true">&lt;</span>
-                    </a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="javascript:void(0)" data-page="1">1</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">2</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&gt;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-    
-
     <section class="kursus-pelatihan">
         <div class="section-title">
             <h3>Kursus Pilihan</h3>
@@ -437,13 +415,25 @@
         <div class="align-items-center" style="padding: 20px; text-align: center !important;">
             <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
         </div>
-        @if(method_exists($featuredCourses, 'links'))
-        <div class="d-flex justify-content-center mt-3 mb-2">
-            {{ $featuredCourses->withQueryString()->links() }}
-        </div>
-        @endif
     </section>
-    
+
+    <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item">
+                    <a class="page-link" href="#" id="prevBtn" aria-label="Previous">
+                        <span aria-hidden="true">&lt;</span>
+                    </a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="javascript:void(0)" data-page="1">1</a></li>
+                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">2</a></li>
+                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&gt;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const pageLinks = document.querySelectorAll('.pagination .page-link[data-page]');
