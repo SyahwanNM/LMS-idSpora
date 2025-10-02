@@ -54,7 +54,7 @@ body {
     opacity: 0.9;
 }
 
-/* Navbar gradient text color */
+/* NAVBAR GRADIENT */
 .navbar-gradient,
 .navbar-gradient .navbar-brand,
 .navbar-gradient .nav-link,
@@ -62,7 +62,7 @@ body {
     color: var(--white) !important;
 }
 
-/* Custom button colors */
+/* CUSTOM BUTTON */
 .btn {
     border-radius: 10px;
 }
@@ -92,7 +92,7 @@ body {
     box-shadow: none;
 }
 
-/* Font size utilities */
+/* FFONT SIZE  */
 .fs-10 {
     font-size: 10px !important;
 }
@@ -153,6 +153,8 @@ body {
     font-weight: 400;
 }
 
+/*SEARCH BAR*/
+
 .search-banner-container {
     width: 100%;
     max-width: 600px;
@@ -203,7 +205,7 @@ body {
     opacity: 65%;
 }
 
-/* input */
+/* INPUT */
 .search-input {
     height: 44px;
     border-radius: 50px;
@@ -283,7 +285,7 @@ body {
         padding-inline: 16px;
     }
 }
-
+/*TESTIMONI CAROUSEL*/
 .testimoni-section .carousel .reviews {
     justify-content: center;
     overflow-x: visible;
@@ -318,7 +320,6 @@ body {
     margin-top: 25px;
 }
 
-/* ---- Section dasar ---- */
 .testimoni-section {
     padding-top: 0;
     padding-bottom: 24px;
@@ -358,7 +359,7 @@ body {
     min-width: 0;
 }
 
-/* Diagram bar*/
+/* DIAGRAM BAR*/
 .kotak {
     width: 100%;
     max-width: 400px;
@@ -443,7 +444,8 @@ body {
     max-height: 250px;
     margin-top: 20px;
 }
-/* Kartu & isi — pakai style yang sudah kamu punya */
+
+/*REVIEW CARD*/
 .reviews .card {
     height: 100%;
     width: 100%;
@@ -502,7 +504,6 @@ body {
     min-height: calc(1.35em * 3);
 }
 
-/* Optional: sedikit responsif padding di layar kecil */
 @media (max-width: 576px) {
     .reviews {
         padding: 0 16px;
@@ -515,7 +516,7 @@ body {
     background: transparent;
 }
 
-/* Kontainer carousel (selaras padding dengan .reviews yang pakai 45px) */
+/*CAROUSEL*/
 .custom-carousel {
     width: 100%;
     height: 300px;
@@ -550,17 +551,10 @@ body {
     margin: 0;
 }
 
+/*COURSE CARD*/
 .card-container-course {
     display: flex;
     gap: 24px;
-    overflow-x: auto;
-    padding: 0 16px 10px 16px;
-    scroll-behavior: smooth;
-}
-
-.card-container-event {
-    display: flex;
-    gap: 16px;
     overflow-x: auto;
     padding: 0 16px 10px 16px;
     scroll-behavior: smooth;
@@ -776,6 +770,15 @@ body {
     border: none;
     border-radius: 8px;
     cursor: pointer;
+}
+
+/*CARD EVENT*/
+.card-container-event {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 0 16px 10px 16px;
+    scroll-behavior: smooth;
 }
 
 .event-list {
@@ -1116,6 +1119,7 @@ body {
     }
 }
 
+/*FILTER*/
 .filter-container {
     background: #1e2a47;
     padding: 20px;
@@ -1175,6 +1179,7 @@ label {
     border-radius: 30px;
 }
 
+/*PAGE LEBIH DARI SATU*/
 .pagination .page-link {
     border-radius: 50% !important;
     width: 40px;
@@ -1211,6 +1216,280 @@ label {
 .hidden {
     display: none !important;
 }
+
+/*DETAIL EVENT*/
+.link-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    margin-top: 40px;
+    margin-left: 55px;
+}
+.link-box a {
+    text-decoration: none;
+    color: grey;
+}
+.link-box a:hover {
+    text-decoration: none;
+    color: rgb(0, 0, 0);
+}
+.link-box a:active {
+    text-decoration: none;
+    color:rgb(10, 49, 223);
+}
+.link-box .active {
+    text-decoration: none;
+    color: rgb(10, 49, 223);
+}
+.link-box p {
+    margin: 0;
+}
+.event-img {
+    width: 750px;
+    height: 400px;
+    border-radius: 10px;
+    margin: 0 0 20px 0;
+    display: block;
+}
+
+.container-detail {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    margin-left: 50px;
+    margin-bottom: 100px;
+    max-width: 1200px;
+}
+
+.box-event img {
+    display: flex;
+}
+.profile-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-box img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.black {
+    color: #000;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .container-detail {
+        flex-direction: column;
+    }
+}
+
+.overview {
+    border: solid #f4c430 2px;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+}
+
+.overview p {
+    font-size: small;
+}
+
+.terms-condition {
+    border: solid #f4c430 2px;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+}
+
+.terms-condition p {
+    font-size: small;
+}
+
+.kanan {
+    border: solid #f4c430 2px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+}
+.price-text {
+    color: #000;
+}
+.diskon {
+    background-color: #252346;
+    color: #f4c430;
+    padding: 10px;
+    margin-left: 70px;
+    margin-top: -20px;
+    margin-bottom: 30px;
+}
+.info-box {
+    margin-top: 30px;
+}
+.time-alert {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    margin-top: 5px;
+}
+
+.time-alert svg {
+    margin-right: 8px;
+}
+
+.time-alert .ikon {
+    margin-top: -30px;
+}
+
+.time-alert p {
+    margin-top: -10px;
+}
+.box-diskon {
+    display: flex;
+}
+.date {
+    display: flex;
+}
+
+.date-judul {
+    margin-left: 10px;
+}
+
+.date-text {
+    margin-left: 118px;
+    color: #6c6c6c;
+}
+
+.ikon {
+    margin-top: 5px;
+}
+.time {
+    display: flex;
+}
+
+.time-judul {
+    margin-left: 10px;
+}
+
+.time-text {
+    margin-left: 140px;
+    color: #6c6c6c;
+}
+.location {
+    display: flex;
+}
+
+.location-judul {
+    margin-left: 10px;
+}
+
+.location-text {
+    margin-left: 185px;
+    color: #6c6c6c;
+}
+.bahasa {
+    display: flex;
+}
+
+.bahasa-judul {
+    margin-left: 10px;
+}
+
+.bahasa-text {
+    margin-left: 197px;
+    color: #6c6c6c;
+}
+.sertifikat {
+    display: flex;
+}
+
+.sertifikat-judul {
+    margin-left: 10px;
+}
+
+.sertifikat-text {
+    margin-left: 220px;
+    color: #6c6c6c;
+}
+
+.enroll {
+    background-color: #f4c430;
+    border: none;
+    margin-top: 20px;
+    padding: 10px;
+    width: 100%;
+}
+.save {
+    background-color: #252346;
+    color: white;
+    margin-top: 10px;
+    border: none;
+    padding: 10px;
+    width: 100%;
+}
+.note {
+    color: #6c6c6c;
+    margin-top: 10px;
+    font-size: medium;
+    margin-bottom: 30px;
+}
+
+.box-benefit {
+    margin-top: 20px;
+}
+.materi {
+    display: flex;
+    margin-top: 20px;
+}
+
+.materi-text {
+    margin-left: 10px;
+}
+.sertif {
+    display: flex;
+}
+
+.sertif-text {
+    margin-left: 10px;
+}
+.record {
+    display: flex;
+}
+
+.record-text {
+    margin-left: 10px;
+}
+.online {
+    display: flex;
+}
+
+.online-text {
+    margin-left: 10px;
+}
+
+.sponsor-box {
+    margin-top: 30px;
+}
+
+.share-box {
+    margin-top: 30px;
+}
+.box-copy {
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 5px;
+}
+
+/*FOOTER*/
 .footer-section {
     background: var(--primary-dark);
     color: white;

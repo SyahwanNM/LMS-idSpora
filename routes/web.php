@@ -18,6 +18,10 @@ Route::get('/event', function () {
     return view('event');
 })->name('event');
 
+Route::get('/detail-event', function () {
+    return view('detail-event');
+})->name('detail-event');
+
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{slug}', [EventController::class, 'show'])->name('events.show');
