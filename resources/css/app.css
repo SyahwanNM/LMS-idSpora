@@ -435,7 +435,6 @@ html {
     transition: transform 0.1s ease;
 }
 
-/* ---- Reviews: tetap gaya kamu, tapi dipastikan 5 kolom selalu pas ---- */
 .reviews {
     --gap: 18px;
     display: flex;

@@ -71,23 +71,59 @@
     background: var(--white);
     max-width: 800px;
     border-radius: 20px;
-    width: fit-content;
-    margin: 60px;
+    margin: 60px 60px;
     padding: 0;
-    border-color: #E4E4E6;
-    display: flex;
-    flex: wrap;
+    border: 1px solid #E4E4E6;
+    overflow: hidden;
   }
 
   .content-description-title {
     display: flex;
-    gap: 110px;
-    align-items: center;
-    background: #E4E4E6;
-    padding: 25px;
+    background: #EAEAEA;
+    padding: 0;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
   }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px 15px;
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+    text-align: center;
+  }
+
+  .tab-btn:not(:first-child) {
+    border-left: 1px solid #D8D8D8;
+  }
+
+  .tab-btn.active {
+    color: var(--secondary);
+    font-weight: 600;
+    background: rgba(237, 227, 199, 0.4);
+  }
+
+  .tab-content {
+    display: none;
+    padding: 20px;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .comments {
+    margin: 60px;
+  }
+
+  .textarea {
+    margin-bottom: 30px;
+  }
+
 </style>
 
 <body>
@@ -171,18 +207,92 @@
     </div>
     <div class="content-description">
       <div class="content-description-title">
-        <div class="overview" style="padding-left: 45px; padding-right: 45px;">
-          <h5>Overview</h5>
-        </div>
-        <div class="syllabus" style="padding-left: 45px; padding-right: 45px;">
-          <h5>Syllabus</h5>
-        </div>
-        <div class="reviews">
-          <h5>Reviews</h5>
-        </div>
+        <button class="tab-btn" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="syllabus">Syllabus</button>
+        <button class="tab-btn" data-tab="review">Review</button>
+      </div>
+      <div class="tab-content active" id="overview">
+        <h5>Overview</h5>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+      </div>
+      <div class="tab-content" id="syllabus">
+        <h5>Syllabus</h5>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+      </div>
+      <div class="tab-content" id="review">
+        <h5>Reviews</h5>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
+        <p>
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
+          placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
+          vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.
+          Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
+          himenaeos.
+        </p>
       </div>
     </div>
-
+    <div class="comments">
+      <h6>Leave a Comment</h6>
+      <form action="#" method="POST">
+        <div class="form-group">
+          <textarea id="comment" name="comment" rows="4" class="form-control"  placeholder="Comment" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Post Comment</button>
+      </form>
+    </div>
   </section>
 
   <script>
@@ -196,6 +306,23 @@
               `;
       videoContainer.innerHTML = videoEmbed;
     }
+
+    const tabs = document.querySelectorAll(".tab-btn");
+    const contents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        // hapus class active dari semua
+        tabs.forEach(btn => btn.classList.remove("active"));
+        contents.forEach(content => content.classList.remove("active"));
+
+        // tambahkan class active ke tab & konten yang diklik
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
+
   </script>
 
 </body>
