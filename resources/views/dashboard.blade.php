@@ -397,7 +397,7 @@
                         try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
                     }
                 @endphp
-                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif>
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
                         @if($event->image)
                             <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
@@ -669,6 +669,12 @@
             }
             update();
             setInterval(update,1000);
+            // Add click navigation for event cards
+            document.querySelectorAll('.event-list .card-event[data-detail-url]').forEach(card => {
+                const url = card.getAttribute('data-detail-url');
+                if(!url) return;
+                card.addEventListener('click', () => { window.location = url; });
+            });
         })();
     </script>
 

@@ -62,6 +62,6 @@ class PublicEventController extends Controller
 			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
 		}
 		$event->is_registered = $isRegistered;
-		return view('events.show', compact('event'));
+		return view('events.detail', compact('event'));
 	}
 }
