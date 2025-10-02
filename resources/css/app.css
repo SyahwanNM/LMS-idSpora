@@ -1352,13 +1352,14 @@ label {
 
 .container-detail {
     display: grid;
-    grid-template-columns: 3fr 1fr; 
-    gap: 40px;                      
-    width: 100%;                   
-    max-width: 1400px;             
-    margin: 0 auto;                
-    padding: 0 30px; 
-    margin-bottom: 50px;              
+    /* Make right column genuinely wider */
+    grid-template-columns: 2fr 1.25fr; /* total 3.25 units, right ≈ 38.5% */
+    gap: 38px;
+    width: 100%;
+    max-width: 1320px; /* allow a bit more total width so right card can breathe */
+    margin: 0 auto;
+    padding: 0 30px;
+    margin-bottom: 50px;
 }
 
 @media (max-width: 992px) {
@@ -1395,10 +1396,11 @@ label {
 
 .overview {
     border: solid #f4c430 2px;
-    padding: 20px;
+    padding: 18px 18px 16px;
     border-radius: 10px;
-    margin-top: 30px;
-    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+    margin-top: 26px;
+    box-shadow: 0 0 8px 6px rgba(0,0,0,0.06);
+    max-width: 880px; /* shorten width inside left column */
 }
 
 .overview p {
@@ -1407,10 +1409,11 @@ label {
 
 .terms-condition {
     border: solid #f4c430 2px;
-    padding: 20px;
+    padding: 18px 18px 16px;
     border-radius: 10px;
-    margin-top: 30px;
-    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+    margin-top: 24px;
+    box-shadow: 0 0 8px 6px rgba(0,0,0,0.06);
+    max-width: 760px; /* a bit shorter than overview */
 }
 
 .terms-condition p {
@@ -1423,14 +1426,14 @@ label {
 
 .kanan {
     border: solid #f4c430 2px;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+    padding: 24px 26px 22px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px 8px rgba(0,0,0,0.07);
     width: 100%;
-    max-width: 400px;
+    max-width: 560px; /* increased width */
     align-self: start;
-    /* Batasi tinggi agar tidak terlalu panjang melewati bagian share */
     max-height: 100%;
+    margin-left: 0; /* remove shift */
 }
 
 .price-text {

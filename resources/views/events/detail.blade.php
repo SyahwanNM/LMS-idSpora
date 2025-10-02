@@ -50,19 +50,36 @@
         </div>
         <div class="kanan">
             <div class="price">
-                @php $hasDiscount = $event->hasDiscount(); @endphp
-                @if($hasDiscount)
-                    <span class="text-muted text-decoration-line-through">Rp{{ number_format($event->price,0,',','.') }}</span>
-                    <h4 class="price-text">Rp{{ number_format($event->discounted_price,0,',','.') }}</h4>
-                    <div class="box-diskon">
-                        <div class="time-alert">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="ikon bi bi-alarm" viewBox="0 0 16 16"><path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/><path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/></svg>
-                            <p class="text-danger">Diskon {{ $event->discount_percentage }}%</p>
-                        </div>
-                        <small class="diskon">{{ $event->discount_percentage }}% OFF</small>
-                    </div>
+                @php 
+                    $hasDiscount = $event->hasDiscount(); 
+                    $isFree = (int)$event->price === 0; 
+                @endphp
+                @if($hasDiscount && !$isFree)
+                    <span class="text-muted text-decoration-line-through d-block mb-1">Rp{{ number_format($event->price,0,',','.') }}</span>
+                    <h4 class="price-text mb-2">Rp{{ number_format($event->discounted_price,0,',','.') }}</h4>
+                    <span class="badge-diskon mb-2">Diskon {{ $event->discount_percentage }}%</span>
                 @else
-                    <h4 class="price-text">@if((int)$event->price===0) FREE @else Rp{{ number_format($event->price,0,',','.') }} @endif</h4>
+                    <h4 class="price-text mb-2">@if($isFree) FREE @else Rp{{ number_format($event->price,0,',','.') }} @endif</h4>
+                    @if($isFree)
+                        <span class="badge-diskon mb-2">Diskon 100%</span>
+                    @elseif($hasDiscount)
+                        <span class="badge-diskon mb-2">Diskon {{ $event->discount_percentage }}%</span>
+                    @endif
+                @endif
+                @php
+                    $targetDateTime = null;
+                    if($event->event_date){
+                        // Gabungkan tanggal + (opsional) waktu event, fallback 00:00 jika tidak ada
+                        $datePart = $event->event_date->format('Y-m-d');
+                        $timePart = $event->event_time?->format('H:i:s') ?? '00:00:00';
+                        $targetDateTime = $datePart.' '.$timePart; // local time (assume Asia/Jakarta on server)
+                    }
+                @endphp
+                @if($targetDateTime)
+                <div id="eventCountdown" class="d-flex align-items-center gap-2 mt-2" data-target="{{ $targetDateTime }}" style="background:#ffe5e5;border:1px solid #ffb3b3;padding:8px 12px;border-radius:10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#dc3545" class="bi bi-alarm flex-shrink-0" viewBox="0 0 16 16"><path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/><path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/></svg>
+                    <div class="small fw-semibold text-danger mb-0"><span id="countdownText">Menghitung...</span></div>
+                </div>
                 @endif
                 <hr>
                 <div class="info-box">
@@ -150,16 +167,27 @@
         /* Shrink event main image (previously full width). Adjust as needed */
         .container-detail .kiri .event-img {
             width:100%;
-            max-width:520px; /* limit width on large screens */
-            max-height:320px; /* cap vertical size */
+            max-width:880px; /* match overview card width */
+            max-height:340px;
             object-fit:cover;
-            border-radius:18px;
+            border-radius:16px;
             display:block;
-            margin:0 auto 28px; /* center with spacing below */
-            box-shadow:0 8px 24px -8px rgba(0,0,0,.18), 0 2px 6px -2px rgba(0,0,0,.12);
+            margin:0 0 26px 0; /* left aligned to follow overview */
+            box-shadow:0 8px 22px -10px rgba(0,0,0,.16), 0 2px 6px -2px rgba(0,0,0,.12);
             transition:box-shadow .25s, transform .3s;
         }
-        .container-detail .kiri .event-img:hover {transform:translateY(-3px); box-shadow:0 14px 32px -10px rgba(0,0,0,.22),0 3px 10px -3px rgba(0,0,0,.16);}        
+        .container-detail .kiri .event-img:hover {transform:translateY(-3px); box-shadow:0 14px 34px -12px rgba(0,0,0,.22),0 3px 10px -3px rgba(0,0,0,.16);}        
+        .badge-diskon {
+            display:inline-block;
+            background:#535088;
+            color:#f4d24b; /* kuning */
+            font-weight:600;
+            padding:5px 14px;
+            border-radius:22px;
+            font-size:12px;
+            letter-spacing:.3px;
+            box-shadow:0 4px 10px -4px rgba(0,0,0,.25);
+        }
         @media (max-width:768px){
             .container-detail .kiri .event-img {max-width:100%; max-height:240px; margin-bottom:22px;}
         }
@@ -194,6 +222,41 @@
             });
         }
         @endauth
+
+        // Countdown (Hari : Jam : Menit : Detik) sampai waktu event
+        (function(){
+            const box = document.getElementById('eventCountdown');
+            if(!box) return;
+            const targetStr = box.getAttribute('data-target'); // format 'YYYY-MM-DD HH:MM:SS'
+            // Asumsikan timezone server Asia/Jakarta; paksa interpretasi lokal browser lalu hitung selisih
+            const parts = targetStr.split(/[- :]/); // [Y,m,d,H,i,s]
+            const target = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
+            const textEl = document.getElementById('countdownText');
+            function pad(n){return n<10?'0'+n:n;}
+            function tick(){
+                const now = new Date();
+                let diff = target.getTime() - now.getTime();
+                if(diff <= 0){
+                    textEl.textContent = 'Sedang berlangsung atau selesai';
+                    clearInterval(timer);
+                    return;
+                }
+                const days = Math.floor(diff / (1000*60*60*24));
+                diff -= days * (1000*60*60*24);
+                const hours = Math.floor(diff / (1000*60*60));
+                diff -= hours * (1000*60*60);
+                const minutes = Math.floor(diff / (1000*60));
+                diff -= minutes * (1000*60);
+                const seconds = Math.floor(diff / 1000);
+                if(days > 0){
+                    textEl.textContent = `Sisa ${days} hari ${pad(hours)} jam ${pad(minutes)} menit ${pad(seconds)} detik`;
+                } else {
+                    textEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)} lagi`;
+                }
+            }
+            tick();
+            const timer = setInterval(tick,1000);
+        })();
     </script>
 </body>
 </html>
