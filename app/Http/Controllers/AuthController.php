@@ -77,6 +77,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
+            'avatar' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'name.required' => 'Nama lengkap harus diisi',
             'email.required' => 'Email harus diisi',
@@ -85,6 +86,9 @@ class AuthController extends Controller
             'password.required' => 'Kata sandi harus diisi',
             'password.min' => 'Kata sandi minimal 6 karakter',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok',
+            'avatar.image' => 'File avatar harus berupa gambar',
+            'avatar.mimes' => 'Format avatar harus jpg, jpeg, png, atau webp',
+            'avatar.max' => 'Ukuran avatar maks 2MB',
         ]);
 
         if ($validator->fails()) {
@@ -93,17 +97,26 @@ class AuthController extends Controller
                 ->withInput($request->except('password', 'password_confirmation'));
         }
 
-        $user = User::create([
+        $avatarFileName = null;
+        if ($request->hasFile('avatar')) {
+            // Simpan di disk public (storage/app/public/avatars) dengan folder "avatars"
+            $storedPath = $request->file('avatar')->store('avatars', 'public'); // hasil: avatars/namafile.ext
+            // Simpan hanya nama file (atau bisa simpan full path; accessor kita mendukung kasus tanpa slash)
+            $avatarFileName = basename($storedPath);
+        }
+
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user', // Default role
+            'role' => 'user',
+            'avatar' => $avatarFileName,
         ]);
 
-        Auth::login($user);
-
-        // Redirect berdasarkan role (untuk registrasi, default adalah user)
-        return redirect()->intended('/dashboard')->with('success', 'Registrasi berhasil!');
+        // Jangan auto-login. Minta user login manual agar konsisten dengan requirement.
+        return redirect()->route('login')
+            ->with('success', 'Registrasi berhasil! Silakan login menggunakan email & kata sandi yang baru dibuat.')
+            ->withInput(['email' => $request->email]);
     }
 
     public function logout(Request $request)

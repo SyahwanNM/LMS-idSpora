@@ -271,10 +271,10 @@
 
       <div class="garis">atau</div>
 
-      <button class="btn-google">
+      <a href="{{ route('auth.google', array_filter(['redirect' => $redirectTarget ?? null])) }}" class="btn-google" style="text-decoration:none;">
         <img src="{{ asset('aset/logo-google.png') }}" alt="logo google">
-        Google
-      </button>
+        Login dengan Google
+      </a>
 
       <div class="text-login">
         Belum punya akun? <a href="{{ route('register') }}">Daftar</a>
