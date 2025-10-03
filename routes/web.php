@@ -12,6 +12,7 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\SocialAuthController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -53,6 +54,10 @@ Route::middleware(['guest'])->group(function () {
 
     Route::get('/sign-up', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/sign-up', [AuthController::class, 'register'])->name('register.post');
+
+    // Social auth (Google)
+    Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -73,8 +78,13 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/admin/active-users-count', [AdminController::class, 'activeUsersCount'])->name('admin.active-users-count');
+    Route::get('/admin/export', [AdminController::class, 'exportData'])->name('admin.export');
         Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
         Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
+    Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
+    Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+    Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+    Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
 
     // User management (Admin accounts & regular users)
     Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');

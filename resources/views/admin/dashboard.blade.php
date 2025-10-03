@@ -27,7 +27,7 @@
                         </a>
                     </div>
                     <div class="relative">
-                        <button class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-white/30">
+                        <button id="exportDataBtn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-white/30" type="button" data-export-url="{{ route('admin.export') }}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5v-12"></path>
                             </svg>
@@ -50,13 +50,13 @@
                         <!-- Dropdown Menu -->
                         <div id="userDropdownMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50">
                             <div class="py-1">
-                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                <a href="{{ route('admin.profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                     Profil Saya
                                 </a>
-                                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                <a href="{{ route('admin.settings') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -64,9 +64,9 @@
                                     Pengaturan
                                 </a>
                                 <hr class="my-1">
-                                <form action="{{ route('logout') }}" method="POST" class="block">
+                                <form action="{{ route('logout') }}" method="POST" class="block" id="logoutForm">
                                     @csrf
-                                    <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                    <button type="submit" id="logoutBtn" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 relative">
                                         <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                         </svg>
@@ -406,6 +406,9 @@
                                                 <span class="font-medium text-gray-900">{{ $activity['user'] }}</span>
                                             </div>
                                             <p class="mt-0.5 text-sm text-gray-500">{{ $activity['action'] }}</p>
+                                            @if(!empty($activity['description']))
+                                                <p class="mt-1 text-xs text-gray-400 leading-snug">{{ $activity['description'] }}</p>
+                                            @endif
                                         </div>
                                         <div class="mt-2 text-sm text-gray-700">
                                             <p>{{ $activity['time'] }}</p>
@@ -524,6 +527,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initActiveUsersPoll();
     animateCounters();
     showFlashMessages();
+    initExportButton();
 });
 
 function initUserDropdown() {
@@ -583,6 +587,31 @@ function showFlashMessages() {
     @if($errors->any())
         createToast('error', 'Please check the form for errors');
     @endif
+}
+
+function initExportButton(){
+    const btn = document.getElementById('exportDataBtn');
+    if(!btn) return;
+    btn.addEventListener('click', function(){
+        const url = btn.getAttribute('data-export-url');
+        if(!url) return;
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add('opacity-60','cursor-not-allowed');
+        btn.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle><path class="opacity-75" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M4 12a8 8 0 018-8" /></svg><span>Mengunduh...</span>`;
+        // Use iframe to not disturb current page state
+        const iframe = document.createElement('iframe');
+        iframe.style.display='none';
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        // Revert after some seconds (download starts)
+        setTimeout(()=>{
+            btn.disabled = false;
+            btn.classList.remove('opacity-60','cursor-not-allowed');
+            btn.innerHTML = originalHtml;
+            setTimeout(()=> iframe.remove(), 60000); // cleanup after a minute
+        }, 3000);
+    });
 }
 
 function createToast(type, message) {
@@ -678,6 +707,60 @@ document.addEventListener('DOMContentLoaded', function() {
     if (footer) {
         footer.style.marginTop = 'auto';
     }
+});
+</script>
+
+<!-- Logout Success Modal -->
+<div id="logoutSuccessModal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="relative w-full max-w-xs bg-white rounded-2xl shadow-xl p-6 overflow-hidden animate-scaleIn">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg relative">
+            <svg class="w-12 h-12 text-white stroke-[3] animate-drawCheck" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="absolute inset-0 rounded-full ring-4 ring-green-400/40 animate-pulseRing"></span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800 text-center mb-1">Berhasil Logout</h3>
+        <p class="text-sm text-gray-500 text-center mb-4">Sampai jumpa lagi! Anda akan dialihkan...</p>
+        <div class="flex justify-center">
+            <div class="h-1 w-40 bg-gray-200 rounded overflow-hidden">
+                <div id="logoutProgress" class="h-full bg-green-500 w-0 animate-progressBar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes scaleIn {0%{transform:translateY(18px) scale(.9);opacity:0;}60%{transform:translateY(-4px) scale(1.02);}100%{transform:translateY(0) scale(1);opacity:1;}}
+@keyframes drawCheck {0%{stroke-dasharray:48;stroke-dashoffset:48;opacity:0;}20%{opacity:1;}100%{stroke-dashoffset:0;opacity:1;}}
+@keyframes pulseRing {0%{transform:scale(.6);opacity:.6;}70%{transform:scale(1);opacity:0;}100%{opacity:0;}}
+@keyframes progressGrow {from{width:0;}to{width:100%;}}
+.animate-scaleIn{animation:scaleIn .65s cubic-bezier(.16,.8,.24,1) forwards;}
+.animate-drawCheck{animation:drawCheck .9s ease .25s forwards;}
+.animate-pulseRing{animation:pulseRing 2.2s ease-out infinite;}
+.animate-progressBar{animation:progressGrow 1.6s linear forwards;}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutForm = document.getElementById('logoutForm');
+    const modal = document.getElementById('logoutSuccessModal');
+    if(!logoutBtn || !logoutForm || !modal) return;
+    let submitting = false;
+    logoutBtn.addEventListener('click', function(e){
+        // Prevent immediate submit; show modal first
+        if(submitting) return; // avoid duplicate
+        e.preventDefault();
+        // Show modal
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        // After animation + short delay, submit form
+        setTimeout(()=>{
+            submitting = true;
+            logoutForm.submit();
+        }, 1100); // wait for check animation mostly done
+    });
 });
 </script>
 
