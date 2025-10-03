@@ -22,6 +22,13 @@
 
     <form action="{{ route('admin.profile.update') }}" method="POST" class="space-y-6 bg-white rounded-xl shadow p-6 border border-gray-200">
         @csrf
+            <div class="flex items-center gap-4 pb-2">
+                <img src="{{ $user->avatar_url }}" alt="Avatar" class="w-20 h-20 rounded-full object-cover border border-gray-300">
+                <div class="text-xs text-gray-500 leading-snug">
+                    <p>Avatar otomatis disinkron dari Google saat login.</p>
+                    <p class="mt-1">Fitur upload avatar lokal bisa ditambahkan nanti.</p>
+                </div>
+            </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
             <input type="text" name="name" value="{{ old('name', $user->name) }}" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500" required>
