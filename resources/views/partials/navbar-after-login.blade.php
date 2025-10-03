@@ -48,9 +48,9 @@
                     <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" 
                             data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;"
                             onclick="toggleUserDropdown()">
-                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                            alt="Profile" class="rounded-circle me-2"
-                            style="width:40px; height:40px; object-fit:cover; border:2px solid #fff;">
+                        <img src="{{ Auth::user()->avatar_url }}"
+                            alt="Avatar" class="rounded-circle me-2"
+                            style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
                         <span class="text-white">{{ Auth::user()->name }}</span>
                         <svg class="ms-2" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
                             <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>

@@ -22,6 +22,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'google_id',
+        'avatar',
     ];
 
     /**
@@ -50,5 +52,22 @@ class User extends Authenticatable
     public function eventRegistrations()
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    /**
+     * Accessor unified URL avatar (gunakan jika di view: Auth::user()->avatar_url)
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if($this->avatar){
+            // Jika avatar sudah berupa URL (Google) langsung pakai
+            if(str_starts_with($this->avatar,'http')){
+                return $this->avatar;
+            }
+            // Jika nanti kita simpan file lokal: storage/app/public/avatars
+            return asset('storage/avatars/'.$this->avatar);
+        }
+        // Fallback avatar default
+        return asset('aset/profile.png');
     }
 }

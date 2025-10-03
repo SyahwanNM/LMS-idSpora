@@ -14,7 +14,7 @@
                     <a class="nav-link {{ request()->routeIs('landing-page') ? 'active' : '' }}" aria-current="page" href="{{ route('landing-page') }}">Home</a>
                 </li>
                 <li class="nav-item mx-3">
-                    <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Courses</a>
+                    <a class="nav-link" href="{{ route('login') }}?redirect={{ urlencode(route('courses.index')) }}">Courses</a>
                 </li>
                 <li class="nav-item mx-3">
                     <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Events</a>
