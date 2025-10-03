@@ -30,6 +30,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|min:6',
+            'redirect' => 'sometimes|string|nullable'
         ], [
             'email.required' => 'Email harus diisi',
             'email.email' => 'Format email tidak valid',
@@ -48,13 +49,21 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            
-            // Redirect berdasarkan role
-            if (Auth::user()->role === 'admin') {
-                return redirect()->intended('/admin/dashboard')->with('success', 'Login berhasil! Selamat datang di Admin Panel.');
-            } else {
-                return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
+
+            $user = Auth::user();
+
+            // Admin SELALU diarahkan ke dashboard admin (abaikan redirect intent publik)
+            if (strcasecmp($user->role, 'admin') === 0) {
+                return redirect('/admin/dashboard')->with('success', 'Login berhasil! Selamat datang di Admin Panel.');
             }
+
+            // Untuk user biasa, gunakan parameter redirect (jika valid) atau intended() fallback
+            $safeRedirect = $this->resolveSafeRedirect($request);
+            if ($safeRedirect) {
+                return redirect($safeRedirect)->with('success', 'Login berhasil!');
+            }
+            // intended akan bekerja jika sebelumnya ada guard yang menyimpan url.intended; jika tidak fallback ke /dashboard
+            return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
         }
 
         return redirect()->back()
@@ -256,5 +265,31 @@ class AuthController extends Controller
 
         return redirect()->route('login')
             ->with('success', 'Password berhasil direset. Silakan login dengan password baru.');
+    }
+
+    /**
+     * Validasi dan kembalikan redirect internal yang aman.
+     * Mengizinkan: relative path ("/something") atau full URL dengan host yang sama.
+     */
+    private function resolveSafeRedirect(Request $request): ?string
+    {
+        $redirect = $request->input('redirect');
+        if (!$redirect) return null;
+
+        // Jika full URL, pastikan host sama
+        if (filter_var($redirect, FILTER_VALIDATE_URL)) {
+            $appHost = $request->getHost();
+            $urlHost = parse_url($redirect, PHP_URL_HOST);
+            if ($urlHost !== $appHost) return null; // Host berbeda -> tolak
+            $path = parse_url($redirect, PHP_URL_PATH) ?: '/';
+            $query = parse_url($redirect, PHP_URL_QUERY);
+            return $path . ($query ? ('?' . $query) : '');
+        }
+
+        // Jika relative path aman
+        if (str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
+            return $redirect;
+        }
+        return null;
     }
 }

@@ -500,6 +500,18 @@
                             <span>{{ $event->location }}</span>
                         </div>
                     </div>
+                    @php
+                        $datePart = $event->event_date ? $event->event_date->format('Y-m-d') : '';
+                        // event_time cast H:i; ensure we get string H:i
+                        $timePart = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '00:00';
+                        $isoDateTime = $datePart ? $datePart.'T'.$timePart.':00' : '';
+                    @endphp
+                    <div class="countdown-row" data-event-datetime="{{ $isoDateTime }}">
+                        <span class="cd-part cd-days">00</span><small>d</small>
+                        <span class="cd-part cd-hours">00</span><small>h</small>
+                        <span class="cd-part cd-mins">00</span><small>m</small>
+                        <span class="cd-part cd-secs">00</span><small>s</small>
+                    </div>
                     <div class="price-row">
                         <div class="price-col">
                             @php
@@ -589,7 +601,12 @@
             if(link){
                 if(pendingRedirect){
                     const enc = encodeURIComponent(pendingRedirect);
-                    link.href = `${link.getAttribute('href').split('?')[0]}?redirect=${enc}`;
+                    // Tambahkan redirect hanya untuk halaman publik (bukan admin)
+                    if(!pendingRedirect.startsWith('/admin')){
+                        link.href = `${link.getAttribute('href').split('?')[0]}?redirect=${enc}`;
+                    } else {
+                        link.href = link.getAttribute('href').split('?')[0];
+                    }
                 } else {
                     // fallback remove param
                     link.href = link.getAttribute('href').split('?')[0];
@@ -709,6 +726,12 @@
         line-height:1.05; 
         box-shadow:0 0 0 1px #bbf7d0 inset; 
     }
+    /* In-card countdown */
+    .countdown-row {margin:12px 0 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:.65rem; letter-spacing:.5px;}
+    .countdown-row .cd-part {background:#1e293b; color:#f1f5f9; padding:4px 6px; border-radius:6px; font-weight:600; font-size:.75rem; min-width:34px; text-align:center; display:inline-block; box-shadow:0 2px 4px -2px rgba(0,0,0,.25);} 
+    .countdown-row small {font-size:.6rem; margin-left:-2px; margin-right:4px; color:#475569; font-weight:500;}
+    .countdown-row.is-live .cd-part {background:#16a34a;} 
+    .countdown-row.is-live small {color:#15803d;} 
     </style>
 
     <section class="partner">
@@ -756,9 +779,9 @@
                 showSlide(currentSlide);
             }
             
-            // Auto slide every 10 seconds
+            // Auto slide every 8 seconds
             function startAutoSlide() {
-                autoSlideInterval = setInterval(nextSlide, 10000);
+                autoSlideInterval = setInterval(nextSlide, 8000);
             }
             
             // Stop auto slide
@@ -779,13 +802,49 @@
                 startAutoSlide();
             });
             
-            // Pause auto slide on hover
-            slider.addEventListener('mouseenter', stopAutoSlide);
-            slider.addEventListener('mouseleave', startAutoSlide);
+            // Pause auto slide on hover (area slider & nav buttons)
+            const pauseTargets = [slider, prevBtn, nextBtn];
+            pauseTargets.forEach(el => {
+                el.addEventListener('mouseenter', stopAutoSlide);
+                el.addEventListener('mouseleave', startAutoSlide);
+            });
             
             // Initialize
             showSlide(0);
             startAutoSlide();
+        });
+
+        // In-card event countdowns
+        document.addEventListener('DOMContentLoaded', function(){
+            const rows = document.querySelectorAll('.countdown-row[data-event-datetime]');
+            if(!rows.length) return;
+            function pad(n){return n.toString().padStart(2,'0');}
+            function update(){
+                const now = Date.now();
+                rows.forEach(r => {
+                    if(r.classList.contains('is-live')) return;
+                    const dt = r.getAttribute('data-event-datetime');
+                    if(!dt) return;
+                    let target = new Date(dt);
+                    if(isNaN(target.getTime())) target = new Date(dt+'Z');
+                    const diff = target.getTime() - now;
+                    if(diff <= 0){
+                        r.classList.add('is-live');
+                        r.innerHTML = '<span class="cd-part" style="min-width:auto;padding:4px 10px;">LIVE</span>';
+                        return;
+                    }
+                    const d = Math.floor(diff/86400000);
+                    const h = Math.floor((diff%86400000)/3600000);
+                    const m = Math.floor((diff%3600000)/60000);
+                    const s = Math.floor((diff%60000)/1000);
+                    r.querySelector('.cd-days').textContent = pad(d);
+                    r.querySelector('.cd-hours').textContent = pad(h);
+                    r.querySelector('.cd-mins').textContent = pad(m);
+                    r.querySelector('.cd-secs').textContent = pad(s);
+                });
+            }
+            update();
+            setInterval(update,1000);
         });
         
         // Scroll reveal animation
@@ -827,6 +886,29 @@
             }
         });
     </script>
+    <style>
+    /* Testimoni slider 5-card layout & transition */
+    .testimoni-container {position:relative; max-width:1280px; margin:0 auto; padding:0 40px;}
+    .testimoni-slider {overflow:hidden; width:100%;}
+    .testimoni-track {display:flex; width:100%; transition:transform .7s cubic-bezier(.16,.8,.24,1);}
+    .testimoni-slide {flex:0 0 100%; padding:4px 4px 10px;}
+    .testimoni-slide .reviews {display:flex; gap:18px; list-style:none; padding:0; margin:0;}
+    .testimoni-slide .reviews li {flex:1 0 calc((100% - 72px)/5); max-width:calc((100% - 72px)/5);} /* 72px = 18*4 gaps */
+    .testimoni-slide .card {height:100%; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px -6px rgba(0,0,0,.12); transition:box-shadow .25s, transform .25s; background:#fff;}
+    .testimoni-slide .card:hover {box-shadow:0 12px 28px -10px rgba(0,0,0,.18); transform:translateY(-4px);} 
+    .testimoni-slide .reviewer {display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+    .testimoni-slide .reviewer img {width:48px; height:48px; object-fit:cover; border-radius:14px;}
+    .testimoni-slide .stars {display:flex; gap:2px; margin-bottom:8px;}
+    .testimoni-slide .review-text {font-size:.8rem; line-height:1.35; color:#444; margin:0;}
+    .nav-btn {position:absolute; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid #d1d5db; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 6px 18px -6px rgba(0,0,0,.18); transition:background .25s, transform .25s, box-shadow .25s; z-index:5;}
+    .nav-btn:hover {background:#f3f4f6; transform:translateY(-50%) translateY(-3px);} 
+    .nav-btn:active {transform:translateY(-50%);} 
+    .nav-btn-left {left:6px;} 
+    .nav-btn-right {right:6px;} 
+    @media (max-width:1024px){ .testimoni-container {padding:0 28px;} }
+    @media (max-width:820px){ .testimoni-slide .reviews li {flex:1 0 calc((100% - 36px)/3); max-width:calc((100% - 36px)/3);} /* 3 per view */ }
+    @media (max-width:560px){ .testimoni-slide .reviews li {flex:1 0 calc((100% - 18px)/2); max-width:calc((100% - 18px)/2);} .nav-btn{display:none;} }
+    </style>
 </body>
 
 </html>
