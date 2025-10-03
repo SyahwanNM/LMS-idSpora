@@ -73,8 +73,13 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/admin/active-users-count', [AdminController::class, 'activeUsersCount'])->name('admin.active-users-count');
+    Route::get('/admin/export', [AdminController::class, 'exportData'])->name('admin.export');
         Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
         Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
+    Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
+    Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+    Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+    Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
 
     // User management (Admin accounts & regular users)
     Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');

@@ -216,6 +216,13 @@
 
       <form action="{{ route('login') }}" method="POST">
         @csrf
+    @php
+      // Pastikan nilai redirect tetap ada setelah error validasi
+      $redirectTarget = old('redirect', request('redirect'));
+    @endphp
+    @if(!empty($redirectTarget))
+      <input type="hidden" name="redirect" value="{{ $redirectTarget }}">
+    @endif
         @if ($errors->any())
           <div class="alert alert-danger">
             <ul class="mb-0">
