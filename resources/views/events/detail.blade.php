@@ -40,13 +40,16 @@
                 <div class="event-description-rich">{!! $cleanDescription !!}</div>
             </div>
             <div class="terms-condition">
-                <h3 class="mb-3">Terms and Condition</h3>
-                <p>1. Event ini berlaku untuk umum <br>
-                    2. Peserta diharapkan join grup WA setelah mendaftar (atau melalui dashboard) <br>
-                    3. Informasi & link room dibagikan lewat grup WA <br>
-                    4. Sertifikat dapat diunduh H+4 setelah acara <br>
-                    5. Kontribusi mulai Rp{{ number_format(((int)$event->discounted_price ?: (int)$event->price) ?: 5000,0,',','.') }} untuk akses materi, rekaman, sertifikat (jika berlaku) <br>
-                    6. Peserta wajib mengikuti aturan yang berlaku.</p>
+                <h3 class="mb-3">Terms and Conditions</h3>
+                @php
+                    $rawTnc = $event->terms_and_conditions ?? '';
+                    $cleanTnc = strip_tags($rawTnc, '<p><br><strong><b><em><i><ul><ol><li><a><blockquote>');
+                @endphp
+                @if(!empty(trim($cleanTnc)))
+                    <div class="event-tnc-rich">{!! $cleanTnc !!}</div>
+                @else
+                    <p class="text-muted">Belum ada syarat dan ketentuan yang ditambahkan.</p>
+                @endif
             </div>
         </div>
         <div class="kanan">
@@ -118,7 +121,7 @@
                 @endphp
                 @auth
                     @if($registered)
-                        <a href="{{ route('events.ticket',$event) }}" class="enroll cek-tiket-btn" style="text-align:center; display:block;">Cek Tiket / Kode</a>
+                        <a href="{{ route('events.ticket',$event) }}" class="save cek-tiket-btn" style="display:block; text-align:center;">Cek Tiket / Kode</a>
                     @else
                         <button id="registerBtn" class="enroll" data-event-id="{{ $event->id }}" data-paid="{{ $isEventFree ? '0':'1' }}">Daftar Sekarang</button>
                     @endif
@@ -200,7 +203,77 @@
         @media (max-width:768px){
             .container-detail .kiri .event-img {max-width:100%; max-height:240px; margin-bottom:22px;}
         }
+
+        /* Success registration modal */
+        .success-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .success-overlay.show { display: flex; animation: fadeIn .15s ease-out; }
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        .success-modal { background: #fff; border-radius: 16px; padding: 24px 22px; width: 92%; max-width: 380px; text-align: center; box-shadow: 0 18px 44px -16px rgba(0,0,0,.35), 0 6px 18px -6px rgba(0,0,0,.18); transform: scale(.94); animation: pop .18s ease-out forwards; }
+        @keyframes pop { to { transform: scale(1) } }
+        .success-check { width: 86px; height: 86px; border-radius: 50%; background: #eafaf1; border: 2px solid #34c75930; margin: 6px auto 14px; display: grid; place-items: center; }
+        .success-check svg { width: 54px; height: 54px; }
+        .success-check path { stroke: #19a05a; stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .6s ease forwards .15s; }
+        @keyframes draw { to { stroke-dashoffset: 0 } }
+        .success-title { font-weight: 700; margin: 0 0 6px; color: #0f5132; }
+        .success-text { margin: 0; color: #276749; font-size: 14px; }
+        .success-small { margin-top: 10px; font-size: 12px; color: #64748b; }
+
+        /* Confirm registration modal */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .confirm-overlay.show { display: flex; animation: fadeIn .15s ease-out; }
+        .confirm-modal { background: #fff; border-radius: 16px; padding: 20px 20px; width: 92%; max-width: 380px; text-align: center; box-shadow: 0 18px 44px -16px rgba(0,0,0,.35), 0 6px 18px -6px rgba(0,0,0,.18); transform: scale(.94); animation: pop .18s ease-out forwards; }
+        .confirm-title { font-weight: 700; margin: 4px 0 8px; color: #111827; }
+        .confirm-text { margin: 0 0 12px; color: #374151; font-size: 14px; }
+        .confirm-actions { display:flex; gap:10px; justify-content:center; margin-top:6px; }
+    .btn-outline { background:#fff; border:1px solid #cbd5e1; color:#334155; border-radius:10px; padding:8px 14px; font-weight:600; cursor:pointer; transition: all .15s ease; }
+    .btn-primary-confirm { background:#4f46e5; color:#fff; border:none; border-radius:10px; padding:8px 14px; font-weight:600; cursor:pointer; transition: all .15s ease; }
+    .btn-outline:hover { background:#f1f5f9; border-color:#94a3b8; box-shadow: 0 6px 16px -8px rgba(2,6,23,.25); transform: translateY(-1px); }
+    .btn-primary-confirm:hover { background:#4338ca; box-shadow: 0 8px 18px -10px rgba(2,6,23,.35); transform: translateY(-1px); }
+    .btn-outline:active, .btn-primary-confirm:active { transform: translateY(0); box-shadow:none; }
+
+    /* Hover for register/cek tiket button */
+    .enroll { transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; }
+    .enroll:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(0,0,0,.25); filter: brightness(1.02); }
+        /* Save-styled anchor: yellow button look */
+        a.save, a.save:hover, a.save:focus, a.save:active { text-decoration: none !important; }
+        a.save {
+            background: #f4c430; /* yellow */
+            color: #111827; /* dark text for contrast */
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-align: center;
+            border: none;
+            transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+        }
+        a.save:hover { filter: brightness(0.98); transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(0,0,0,.25); }
     </style>
+    <!-- Success Modal -->
+    <div id="successOverlay" class="success-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="success-modal">
+            <div class="success-check">
+                <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <path d="M18 42 L34 58 L62 26"></path>
+                </svg>
+            </div>
+            <h5 id="successTitle" class="success-title">Pendaftaran Berhasil</h5>
+            <p id="successText" class="success-text">Anda telah terdaftar pada event ini.</p>
+            <div class="success-small">Anda bisa cek tiket/kode dari tombol di halaman ini.</div>
+        </div>
+    </div>
+    <!-- Confirm Modal -->
+    <div id="confirmOverlay" class="confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="confirm-modal">
+            <h5 class="confirm-title">Konfirmasi</h5>
+            <p class="confirm-text">Apakah kamu yakin ingin mendaftar event ini?</p>
+            <div class="confirm-actions">
+                <button type="button" id="confirmNo" class="btn-outline">Batal</button>
+                <button type="button" id="confirmYes" class="btn-primary-confirm">Ya, daftar</button>
+            </div>
+        </div>
+    </div>
     <script>
         function copyLink(){
             const temp = document.createElement('input');
@@ -217,33 +290,73 @@
             btn.addEventListener('click', () => {
                 if(btn.classList.contains('btn-success')) return;
                 const isPaid = btn.getAttribute('data-paid') === '1';
-                if(isPaid){
-                    // Langsung ke halaman payment
-                    window.location.href = `{{ route('payment',$event) }}`;
-                    return;
-                }
-                btn.disabled = true;
-                fetch(`/events/${btn.dataset.eventId}/register`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
-                    body: JSON.stringify({})
-                }).then(r=>r.json()).then(data=>{
-                    if(data.status==='ok' || data.status==='already'){
-                        const ticketUrl = `/events/${btn.dataset.eventId}/ticket`;
-                        const link = document.createElement('a');
-                        link.href = ticketUrl;
-                        link.className = 'enroll';
-                        link.textContent = 'Cek Tiket / Kode';
-                        link.style.textAlign = 'center';
-                        btn.replaceWith(link);
-                    } else if(data.status==='payment_required' && data.redirect){
-                        window.location.href = data.redirect;
-                    } else { alert(data.message || 'Gagal mendaftar'); btn.disabled=false; }
-                }).catch(()=>{ alert('Terjadi kesalahan'); btn.disabled=false; });
+                showConfirmRegister(async () => {
+                    if(isPaid){
+                        window.location.href = `{{ route('payment',$event) }}`;
+                        return;
+                    }
+                    btn.disabled = true;
+                    fetch(`/events/${btn.dataset.eventId}/register`, {
+                        method:'POST',
+                        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+                        body: JSON.stringify({})
+                    }).then(r=>r.json()).then(data=>{
+                        // Show success animation for free registration success
+                        if(data.status==='ok'){
+                            showRegistrationSuccess('Pendaftaran Berhasil','Anda telah terdaftar pada event ini.');
+                        } else if(data.status==='already'){
+                            showRegistrationSuccess('Sudah Terdaftar','Anda sudah terdaftar pada event ini.');
+                        }
+                        if(data.status==='ok' || data.status==='already'){
+                            const ticketUrl = `/events/${btn.dataset.eventId}/ticket`;
+                            const link = document.createElement('a');
+                            link.href = ticketUrl;
+                            link.className = 'save cek-tiket-btn';
+                            link.textContent = 'Cek Tiket / Kode';
+                            link.style.textAlign = 'center';
+                            btn.replaceWith(link);
+                        } else if(data.status==='payment_required' && data.redirect){
+                            window.location.href = data.redirect;
+                        } else { alert(data.message || 'Gagal mendaftar'); btn.disabled=false; }
+                    }).catch(()=>{ alert('Terjadi kesalahan'); btn.disabled=false; });
+                });
             });
         }
         @endauth
 
+        function showRegistrationSuccess(title, text){
+            try{
+                const overlay = document.getElementById('successOverlay');
+                const t = document.getElementById('successTitle');
+                const d = document.getElementById('successText');
+                if(!overlay || !t || !d) return;
+                t.textContent = title || 'Pendaftaran Berhasil';
+                d.textContent = text || 'Anda telah terdaftar pada event ini.';
+                overlay.classList.add('show');
+                // auto hide after 2 seconds
+                setTimeout(()=>{ overlay.classList.remove('show'); }, 2000);
+            }catch(_e){ /* no-op */ }
+        }
+        function showConfirmRegister(onYes){
+            const overlay = document.getElementById('confirmOverlay');
+            const yesBtn = document.getElementById('confirmYes');
+            const noBtn = document.getElementById('confirmNo');
+            if(!overlay || !yesBtn || !noBtn) { if(typeof onYes==='function') onYes(); return; }
+            let closed = false;
+            const close = ()=>{ if(closed) return; closed = true; overlay.classList.remove('show'); cleanup(); };
+            const cleanup = ()=>{
+                yesBtn.removeEventListener('click', yesHandler);
+                noBtn.removeEventListener('click', noHandler);
+                overlay.removeEventListener('click', backdropHandler);
+            };
+            const yesHandler = ()=>{ close(); if(typeof onYes==='function') onYes(); };
+            const noHandler = ()=>{ close(); };
+            const backdropHandler = (e)=>{ if(e.target === overlay) close(); };
+            yesBtn.addEventListener('click', yesHandler);
+            noBtn.addEventListener('click', noHandler);
+            overlay.addEventListener('click', backdropHandler);
+            overlay.classList.add('show');
+        }
         // Countdown (Hari : Jam : Menit : Detik) sampai waktu event
         (function(){
             const box = document.getElementById('eventCountdown');

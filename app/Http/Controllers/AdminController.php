@@ -28,7 +28,14 @@ class AdminController extends Controller
         // Current totals
         $activeUsers = User::count(); // total accounts
         $totalCourses = Course::count();
-        $totalEvents = Event::count();
+        // Hitung hanya event aktif (belum lewat >= 6 jam sejak mulai)
+        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
+        $totalEvents = Event::query()
+            ->where(function($q) use ($threshold){
+                $q->whereNull('event_date')
+                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
+            })
+            ->count();
         $totalCertificates = Certificate::count();
         $totalRevenue = Course::sum('price') ?? 0; // Adjust if you have real transaction table
 
