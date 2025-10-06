@@ -68,9 +68,6 @@
     @else
         <div class="text-center py-5">
             <h5 class="mb-3">Belum ada event.</h5>
-            <a href="{{ route('admin.events.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i> Tambah Event
-            </a>
         </div>
     @endif
 </div>

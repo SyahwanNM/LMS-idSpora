@@ -1,4 +1,3 @@
-@include('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +10,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+    @include('partials.navbar-after-login')
     <div class="link-box mb-3" style="margin-top:80px;">
         <a href="{{ route('dashboard') }}">Home</a>
         <p>/</p>
@@ -18,189 +18,319 @@
         <p>/</p>
         <a class="active" href="#">{{ Str::limit($event->title,50) }}</a>
     </div>
+    @php 
+        $hasDiscount = $event->hasDiscount();
+        $isFree = (int)$event->price === 0;
+        $finalPrice = $hasDiscount ? $event->discounted_price : $event->price;
+        $daysLeft = null;
+        if($event->event_date){
+            $daysLeft = now()->diffInDays($event->event_date, false);
+        }
+        // Target datetime untuk countdown event (gabungkan tanggal + waktu jika ada)
+        $targetDateTime = null;
+        if($event->event_date){
+            $datePart = $event->event_date->format('Y-m-d');
+            $timePart = $event->event_time?->format('H:i:s') ?? '00:00:00';
+            $targetDateTime = $datePart.' '.$timePart; // diasumsikan zona waktu server Asia/Jakarta
+        }
+        // Sanitized content
+        $rawDescription = $event->description ?? '';
+        $cleanDescription = strip_tags($rawDescription, '<p><br><strong><b><em><i><ul><ol><li><a>');
+        $rawTnc = $event->terms_and_conditions ?? '';
+        $cleanTnc = strip_tags($rawTnc, '<p><br><strong><b><em><i><ul><ol><li><a><blockquote>');
+    @endphp
 
-    <div class="container-detail">
-        <div class="kiri">
-            <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" class="event-img" alt="{{ $event->title }}">
-            <div class="profile-box">
-                <img src="{{ asset('aset/profile.png') }}" alt="profile" class="rounded-circle" width="60" height="60">
-                <div>
-                    <h5 class="mb-1">{{ $event->title }}</h5>
-                    <h6 class="text-muted">Created by <span class="black">IdSpora</span></h6>
+    <div class="event-detail-grid">
+        <div class="col-main">
+            <div class="event-hero">
+                <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}">
+                <div class="hero-chips">
+                    <span class="chip"><i class="bi bi-calendar2-date me-1"></i>{{ $event->event_date?->format('d M Y') ?? '-' }}</span>
+                    <span class="chip"><i class="bi bi-clock me-1"></i>{{ $event->event_time?->format('H:i') ?? '-' }} WIB</span>
+                    <span class="chip"><i class="bi bi-geo-alt me-1"></i>{{ $event->location ?? 'TBA' }}</span>
                 </div>
             </div>
-            <div class="overview">
-                <h3 class="mb-3">Overview</h3>
-                @php
-                    // Izinkan tag dasar termasuk italic & list agar formatting admin muncul.
-                    // Jika ingin keamanan lebih ketat, bisa integrasi HTML Purifier nanti.
-                    $rawDescription = $event->description ?? '';
-                    $cleanDescription = strip_tags($rawDescription, '<p><br><strong><b><em><i><ul><ol><li>');
-                @endphp
-                <div class="event-description-rich">{!! $cleanDescription !!}</div>
-            </div>
-            <div class="terms-condition">
-                <h3 class="mb-3">Terms and Condition</h3>
-                <p>1. Event ini berlaku untuk umum <br>
-                    2. Peserta diharapkan join grup WA setelah mendaftar (atau melalui dashboard) <br>
-                    3. Informasi & link room dibagikan lewat grup WA <br>
-                    4. Sertifikat dapat diunduh H+4 setelah acara <br>
-                    5. Kontribusi mulai Rp{{ number_format(((int)$event->discounted_price ?: (int)$event->price) ?: 5000,0,',','.') }} untuk akses materi, rekaman, sertifikat (jika berlaku) <br>
-                    6. Peserta wajib mengikuti aturan yang berlaku.</p>
+            <h2 class="event-title mt-3">{{ $event->title }}</h2>
+            <p class="event-subtitle mb-3">Created by <b>IdSpora</b></p>
+            <div class="card-tabs">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab">Overview</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tnc" type="button" role="tab">Terms & Conditions</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                                                <button class="nav-link wa-tab" data-bs-toggle="tab" data-bs-target="#tab-schedule" type="button" role="tab">
+                            <i class="bi bi-whatsapp me-1"></i>
+                            Link WhatsApp
+                        </button>
+
+                    </li>
+                </ul>
+                <div class="tab-content p-3">
+                    <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+                        <div class="event-description-rich">{!! $cleanDescription !!}</div>
+                    </div>
+                    <div class="tab-pane fade" id="tab-schedule" role="tabpanel">
+                        <p class="text-muted mb-0">Jadwal akan diumumkan kemudian.</p>
+                    </div>
+                    <div class="tab-pane fade" id="tab-tnc" role="tabpanel">
+                        @if(!empty(trim($cleanTnc)))
+                            <div class="event-tnc-rich">{!! $cleanTnc !!}</div>
+                        @else
+                            <p class="text-muted mb-0">Belum ada syarat dan ketentuan yang ditambahkan.</p>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="kanan">
-            <div class="price">
-                @php 
-                    $hasDiscount = $event->hasDiscount(); 
-                    $isFree = (int)$event->price === 0; 
-                @endphp
-                @if($hasDiscount && !$isFree)
-                    <span class="text-muted text-decoration-line-through d-block mb-1">Rp{{ number_format($event->price,0,',','.') }}</span>
-                    <h4 class="price-text mb-2">Rp{{ number_format($event->discounted_price,0,',','.') }}</h4>
-                    <span class="badge-diskon mb-2">Diskon {{ $event->discount_percentage }}%</span>
-                @else
-                    <h4 class="price-text mb-2">@if($isFree) FREE @else Rp{{ number_format($event->price,0,',','.') }} @endif</h4>
-                    @if($isFree)
-                        <span class="badge-diskon mb-2">Diskon 100%</span>
-                    @elseif($hasDiscount)
-                        <span class="badge-diskon mb-2">Diskon {{ $event->discount_percentage }}%</span>
+        <div class="col-side">
+            <div class="sidebar-card">
+                <div class="price-wrap">
+                    @if($hasDiscount && !$isFree)
+                        <div class="mb-1">
+                            <span class="old-price">Rp{{ number_format($event->price,0,',','.') }}</span>
+                        </div>
+                        <div class="price">Rp{{ number_format($event->discounted_price,0,',','.') }}</div>
+                        <span class="badge-off d-inline-block mt-3">{{ (int)$event->discount_percentage }}% off</span>
+
+                    @else
+                        <div class="price">@if($isFree) FREE @else Rp{{ number_format($event->price,0,',','.') }} @endif</div>
                     @endif
-                @endif
-                @php
-                    $targetDateTime = null;
-                    if($event->event_date){
-                        // Gabungkan tanggal + (opsional) waktu event, fallback 00:00 jika tidak ada
-                        $datePart = $event->event_date->format('Y-m-d');
-                        $timePart = $event->event_time?->format('H:i:s') ?? '00:00:00';
-                        $targetDateTime = $datePart.' '.$timePart; // local time (assume Asia/Jakarta on server)
-                    }
-                @endphp
-                @if($targetDateTime)
-                <div id="eventCountdown" class="d-flex align-items-center gap-2 mt-2" data-target="{{ $targetDateTime }}" style="background:#ffe5e5;border:1px solid #ffb3b3;padding:8px 12px;border-radius:10px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#dc3545" class="bi bi-alarm flex-shrink-0" viewBox="0 0 16 16"><path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/><path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/></svg>
-                    <div class="small fw-semibold text-danger mb-0"><span id="countdownText">Menghitung...</span></div>
+                    @if($targetDateTime)
+                        <div id="priceCountdown" class="countdown-box mt-2" data-target="{{ $targetDateTime }}">
+                            <i class="bi bi-alarm me-1"></i>
+                            <span id="countdownTextPrice">Menghitung...</span>
+                        </div>
+                    @endif
                 </div>
-                @endif
-                <hr>
-                <div class="info-box">
-                    <div class="date">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#A1A5B3" class="ikon bi bi-calendar2-date" viewBox="0 0 16 16"><path d="M6.445 12.688V7.354h-.633A13 13 0 0 0 4.5 8.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/><path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5z"/></svg>
-                        <p class="date-judul">Tanggal</p>
-                        <p class="date-text">{{ $event->event_date?->format('d F Y') ?? '-' }}</p>
-                    </div>
-                    <div class="time">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#A1A5B3" class="ikon bi bi-clock" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/></svg>
-                        <p class="time-judul">Waktu</p>
-                        <p class="time-text">{{ $event->event_time?->format('H:i') ?? '-' }} WIB</p>
-                    </div>
-                    <div class="location">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#A1A5B3" class="ikon bi bi-geo-alt" viewBox="0 0 16 16"><path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10"/><path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></svg>
-                        <p class="location-judul">Lokasi</p>
-                        <p class="location-text">{{ $event->location ?? 'TBA' }}</p>
-                    </div>
-                    <div class="bahasa">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 16 16"><path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"/><path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2"/><path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z"/></svg>
-                        <p class="bahasa-judul">Bahasa</p>
-                        <p class="bahasa-text">Indonesia</p>
-                    </div>
-                    <div class="sertifikat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#A1A5B3" class="ikon bi bi-book" viewBox="0 0 16 16"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783"/></svg>
-                        <p class="sertifikat-judul">Sertifikat</p>
-                        <p class="sertifikat-text">Gratis</p>
-                    </div>
+                <div class="mini-info">
+                    <div><i class="bi bi-calendar2-date"></i><span>{{ $event->event_date?->format('d F Y') ?? '-' }}</span></div>
+                    <div><i class="bi bi-clock"></i><span>{{ $event->event_time?->format('H:i') ?? '-' }} WIB</span></div>
+                    <div><i class="bi bi-geo-alt"></i><span>{{ $event->location ?? 'TBA' }}</span></div>
                 </div>
-                <hr>
                 @php 
-                    $registered = !empty($event->is_registered); 
-                    $finalPrice = $hasDiscount ? $event->discounted_price : $event->price; 
+                    $registered = !empty($event->is_registered);
                     $isEventFree = (int)$finalPrice === 0;
                 @endphp
+                <div class="cta">
                 @auth
                     @if($registered)
-                        <a href="{{ route('events.ticket',$event) }}" class="enroll cek-tiket-btn" style="text-align:center; display:block;">Cek Tiket / Kode</a>
+                        <a href="{{ route('events.ticket',$event) }}" class="btn btn-warning w-100 fw-semibold text-dark">Cek Tiket / Kode</a>
                     @else
-                        <button id="registerBtn" class="enroll" data-event-id="{{ $event->id }}" data-paid="{{ $isEventFree ? '0':'1' }}">Daftar Sekarang</button>
+                        <button id="registerBtn" class="btn btn-warning w-100 fw-semibold text-dark enroll" data-event-id="{{ $event->id }}" data-paid="{{ $isEventFree ? '0':'1' }}">Register Now</button>
                     @endif
                 @endauth
                 @guest
-                    <a href="{{ route('login',['redirect'=>request()->fullUrl()]) }}" class="enroll">Login untuk Mendaftar</a>
+                    <a href="{{ route('login',['redirect'=>request()->fullUrl()]) }}" class="btn btn-warning w-100 fw-semibold text-dark">Login untuk Mendaftar</a>
                 @endguest
-                <button class="save">Save</button>
-                <p class="note">Note: all course have 30-days money-back guarantee</p>
-            </div>
-            <hr>
-            <div class="box-benefit">
-                <h4>This Event Include</h4>
-                <div class="materi">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-book" viewBox="0 0 16 16"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783"/></svg>
-                    <p class="materi-text">Materi pembelajaran Lengkap</p>
+                    <button class="btn btn-light w-100 mt-2 save">Save</button>
                 </div>
-                <div class="sertif">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-trophy" viewBox="0 0 16 16"><path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5q0 .807-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33 33 0 0 1 2.5.5m.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935m10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935M3.504 1q.01.775.056 1.469c.13 2.028.457 3.546.87 4.667C5.294 9.48 6.484 10 7 10a.5.5 0 0 1 .5.5v2.61a1 1 0 0 1-.757.97l-1.426.356a.5.5 0 0 0-.179.085L4.5 15h7l-.638-.479a.5.5 0 0 0-.18-.085l-1.425-.356a1 1 0 0 1-.757-.97V10.5A.5.5 0 0 1 9 10c.516 0 1.706-.52 2.57-2.864.413-1.12.74-2.64.87-4.667q.045-.694.056-1.469z"/></svg>
-                    <p class="sertif-text">Sertifikat Kehadiran</p>
+                <div class="includes">
+                    <h6 class="fw-semibold mb-2">This event includes:</h6>
+                    <ul class="list-unstyled m-0">
+                        <li><i class="bi bi-file-earmark-text text-warning me-2"></i>Slide Materi</li>
+                        <li><i class="bi bi-award text-warning me-2"></i>Sertifikat</li>
+                        <li><i class="bi bi-people text-warning me-2"></i>Grup Diskusi</li>
+                    </ul>
                 </div>
-                <div class="record">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-tv" viewBox="0 0 16 16"><path d="M2.5 13.5A.5.5 0 0 1 3 13h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5M13.991 3l.024.001a1.5 1.5 0 0 1 .538.143.76.76 0 0 1 .302.254c.067.1.145.277.145.602v5.991l-.001.024a1.5 1.5 0 0 1-.143.538.76.76 0 0 1-.254.302c-.1.067-.277.145-.602.145H2.009l-.024-.001a1.5 1.5 0 0 1-.538-.143.76.76 0 0 1-.302-.254C1.078 10.502 1 10.325 1 10V4.009l.001-.024a1.5 1.5 0 0 1 .143-.538.76.76 0 0 1 .254-.302C1.498 3.078 1.675 3 2 3zM14 2H2C0 2 0 4 0 4v6c0 2 2 2 2 2h12c2 0 2-2 2-2V4c0-2-2-2-2-2"/></svg>
-                    <p class="record-text">Rekaman Tersedia</p>
-                </div>
-                <div class="online">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-layers" viewBox="0 0 16 16"><path d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0zM8 9.433 1.562 6 8 2.567 14.438 6z"/></svg>
-                    <p class="online-text">100% Online Course</p>
-                </div>
-            </div>
-            <hr>
-            <div class="sponsor-box">
-                <h4 class="mb-3">Sponsor & Partner</h4>
-                <p>Ko+Lab</p>
-                <p>Fakultas Ilmu Terapan</p>
-                <p>Telkom University</p>
-            </div>
-            <hr>
-            <div class="share-box mt-4">
-                <p class="fw-semibold">Share this event:</p>
-                <div class="box-copy d-flex gap-3 align-items-center flex-wrap">
-                    <button class="btn btn-outline-secondary btn-sm" onclick="copyLink()"><i class="bi bi-clipboard"></i> Copy link</button>
-                    <a href="#" class="text-dark fs-6"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-dark fs-6"><i class="bi bi-twitter"></i></a>
-                    <a href="mailto:?subject={{ urlencode($event->title) }}" class="text-dark fs-6"><i class="bi bi-envelope"></i></a>
-                    <a href="https://wa.me/?text={{ urlencode($event->title.' '.request()->fullUrl()) }}" target="_blank" class="text-dark fs-6"><i class="bi bi-whatsapp"></i></a>
+                <div class="share">
+                    <p class="fw-semibold mb-2">Share this event:</p>
+                    <div class="share-list">
+                        <button type="button" class="share-item" onclick="copyLink()" aria-label="Copy link">
+                            <i class="bi bi-clipboard"></i>
+                            <span>Copy link</span>
+                        </button>
+                        <a href="#" class="share-item" aria-label="Share to Facebook"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="share-item" aria-label="Share to X/Twitter"><i class="bi bi-twitter"></i></a>
+                        <a href="mailto:?subject={{ urlencode($event->title) }}" class="share-item" aria-label="Share via email"><i class="bi bi-envelope"></i></a>
+                        <a href="https://wa.me/?text={{ urlencode($event->title.' '.request()->fullUrl()) }}" target="_blank" class="share-item" aria-label="Share to WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        /* Shrink event main image (previously full width). Adjust as needed */
-        .container-detail .kiri .event-img {
-            width:100%;
-            max-width:880px; /* match overview card width */
-            max-height:340px;
-            object-fit:cover;
-            border-radius:16px;
-            display:block;
-            margin:0 0 26px 0; /* left aligned to follow overview */
-            box-shadow:0 8px 22px -10px rgba(0,0,0,.16), 0 2px 6px -2px rgba(0,0,0,.12);
-            transition:box-shadow .25s, transform .3s;
+        /* Grid layout matching mockup */
+        .event-detail-grid{max-width:1200px;margin:20px auto 60px;padding:0 20px;display:grid;grid-template-columns:1.8fr 1fr;gap:24px}
+        .col-side{position:relative}
+        .sidebar-card{position:sticky;top:88px;background:#fff;border-radius:16px;padding:18px 18px 16px;box-shadow:0 12px 40px -18px rgba(0,0,0,.2),0 4px 12px -4px rgba(0,0,0,.08)}
+        .price-wrap .old-price{color:#9ca3af;text-decoration:line-through}
+    .price-wrap .badge-off{background:#252346;color:#F4C430;border-radius:999px;padding:6px 12px;font-weight:700;font-size:12px;}
+        .price-wrap .price{font-size:28px;font-weight:800;margin:4px 0}
+        .price-wrap .left-note{font-size:12px;color:#ef4444;font-weight:600}
+    .countdown-box{display:flex;align-items:center;gap:6px;background:#fee2e2;border:1px solid #fecaca;color:#dc2626;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600}
+        .mini-info{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px}
+        .mini-info i{color:#9ca3af;margin-right:8px}
+        .mini-info div{display:flex;align-items:center;font-size:14px;color:#111827}
+    /* Share section styling */
+    .share-list{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .share-item{display:inline-flex;align-items:center;gap:8px;color:#64748b;text-decoration:none;background:none;border:none;padding:0;font-size:14px;cursor:pointer}
+    .share-item i{font-size:18px;color:#64748b}
+    .share-item span{font-weight:500}
+    .share-item:hover{color:#475569}
+    .share-item:hover i{color:#475569}
+    .card-tabs{background:#fff;border-radius:16px;box-shadow:0 12px 40px -18px rgba(0,0,0,.2),0 4px 12px -4px rgba(0,0,0,.08)}
+    .card-tabs .nav-tabs{border:none;background:#f1f5f9;border-radius:12px;gap:12px;padding:8px 10px;display:flex;flex-wrap:wrap}
+    .card-tabs .nav-link{position:relative;border:none;border-radius:10px;font-weight:600;color:#64748b;padding:10px 16px;transition:color .2s, background-color .2s, box-shadow .2s; min-width:120px; text-align:center}
+    /* WhatsApp tab style */
+    .card-tabs .nav-link.wa-tab{background:#25D366;color:#fff}
+    .card-tabs .nav-link.wa-tab i{color:#fff}
+    .card-tabs .nav-link.wa-tab::after{display:none}
+    .card-tabs .nav-link.wa-tab:hover, .card-tabs .nav-link.wa-tab:focus{background:#1EBE5A;color:#fff}
+    .card-tabs .nav-link.wa-tab:hover i, .card-tabs .nav-link.wa-tab:focus i{color:#fff}
+    .card-tabs .nav-link.wa-tab.active{background:#19A956;color:#fff;box-shadow:0 10px 24px -14px rgba(0,0,0,.25)}
+    .card-tabs .nav-link:hover{color:#f4c430;background:#fff}
+    .card-tabs .nav-link.active{color:#f4c430;background:#fff;box-shadow:0 10px 24px -14px rgba(0,0,0,.25)}
+    .card-tabs .nav-link::after{content:'';position:absolute;left:12px;right:12px;bottom:-8px;height:3px;background:#f4c430;border-radius:6px;opacity:0;transform:scaleX(0);transition:transform .25s ease,opacity .25s ease}
+    .card-tabs .nav-link.active::after{opacity:1;transform:scaleX(1)}
+    .card-tabs .tab-content{padding:16px}
+    .event-description-rich p, .event-tnc-rich p{margin-bottom:.85rem;line-height:1.7;color:#0f172a}
+    .event-description-rich ul, .event-tnc-rich ul{padding-left:1.25rem}
+    .event-description-rich li, .event-tnc-rich li{margin:.25rem 0}
+        .event-hero{position:relative;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px -18px rgba(0,0,0,.2),0 4px 12px -4px rgba(0,0,0,.08)}
+        .event-hero img{display:block;width:100%;height:360px;object-fit:cover}
+        .hero-chips{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
+        .hero-chips .chip{background:rgba(15,23,42,.82);color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;backdrop-filter:saturate(180%) blur(8px)}
+    .event-title{font-size:24px;font-weight:700}
+    .event-subtitle{margin-top:2px;color:#64748b}
+    .sidebar-card .includes{margin-top:16px;padding-top:12px;border-top:1px solid #e5e7eb}
+    .includes ul li{margin:6px 0}
+    .sidebar-card .share{margin-top:20px;padding-top:12px;border-top:1px solid #e5e7eb}
+        .save{border:1px solid #e5e7eb}
+
+        /* Success registration modal */
+        .success-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .success-overlay.show { display: flex; animation: fadeIn .15s ease-out; }
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        .success-modal { background: #fff; border-radius: 16px; padding: 24px 22px; width: 92%; max-width: 380px; text-align: center; box-shadow: 0 18px 44px -16px rgba(0,0,0,.35), 0 6px 18px -6px rgba(0,0,0,.18); transform: scale(.94); animation: pop .18s ease-out forwards; }
+        @keyframes pop { to { transform: scale(1) } }
+        .success-check { width: 86px; height: 86px; border-radius: 50%; background: #eafaf1; border: 2px solid #34c75930; margin: 6px auto 14px; display: grid; place-items: center; }
+        .success-check svg { width: 54px; height: 54px; }
+        .success-check path { stroke: #19a05a; stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .6s ease forwards .15s; }
+        @keyframes draw { to { stroke-dashoffset: 0 } }
+        .success-title { font-weight: 700; margin: 0 0 6px; color: #0f5132; }
+        .success-text { margin: 0; color: #276749; font-size: 14px; }
+        .success-small { margin-top: 10px; font-size: 12px; color: #64748b; }
+
+        /* Confirm registration modal */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .confirm-overlay.show { display: flex; animation: fadeIn .15s ease-out; }
+        .confirm-modal { background: #fff; border-radius: 16px; padding: 20px 20px; width: 92%; max-width: 380px; text-align: center; box-shadow: 0 18px 44px -16px rgba(0,0,0,.35), 0 6px 18px -6px rgba(0,0,0,.18); transform: scale(.94); animation: pop .18s ease-out forwards; }
+        .confirm-title { font-weight: 700; margin: 4px 0 8px; color: #111827; }
+        .confirm-text { margin: 0 0 12px; color: #374151; font-size: 14px; }
+        .confirm-actions { display:flex; gap:10px; justify-content:center; margin-top:6px; }
+    .btn-outline { background:#fff; border:1px solid #cbd5e1; color:#334155; border-radius:10px; padding:8px 14px; font-weight:600; cursor:pointer; transition: all .15s ease; }
+    .btn-primary-confirm { background:#4f46e5; color:#fff; border:none; border-radius:10px; padding:8px 14px; font-weight:600; cursor:pointer; transition: all .15s ease; }
+    .btn-outline:hover { background:#f1f5f9; border-color:#94a3b8; box-shadow: 0 6px 16px -8px rgba(2,6,23,.25); transform: translateY(-1px); }
+    .btn-primary-confirm:hover { background:#4338ca; box-shadow: 0 8px 18px -10px rgba(2,6,23,.35); transform: translateY(-1px); }
+    .btn-outline:active, .btn-primary-confirm:active { transform: translateY(0); box-shadow:none; }
+
+    /* Hover for register/cek tiket button */
+    .enroll { transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; }
+    .enroll:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(0,0,0,.25); filter: brightness(1.02); }
+        /* Save-styled anchor: yellow button look */
+        a.save, a.save:hover, a.save:focus, a.save:active { text-decoration: none !important; }
+        a.save {
+            background: #f4c430; /* yellow */
+            color: #111827; /* dark text for contrast */
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-align: center;
+            border: none;
+            transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
         }
-        .container-detail .kiri .event-img:hover {transform:translateY(-3px); box-shadow:0 14px 34px -12px rgba(0,0,0,.22),0 3px 10px -3px rgba(0,0,0,.16);}        
-        .badge-diskon {
-            display:inline-block;
-            background:#535088;
-            color:#f4d24b; /* kuning */
-            font-weight:600;
-            padding:5px 14px;
-            border-radius:22px;
-            font-size:12px;
-            letter-spacing:.3px;
-            box-shadow:0 4px 10px -4px rgba(0,0,0,.25);
+        a.save:hover { filter: brightness(0.98); transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(0,0,0,.25); }
+        @media (max-width: 992px){
+            .event-detail-grid{grid-template-columns:1fr}
+            .sidebar-card{position:static}
+            .event-hero img{height:240px}
         }
-        @media (max-width:768px){
-            .container-detail .kiri .event-img {max-width:100%; max-height:240px; margin-bottom:22px;}
+        @media (max-width: 576px){
+            .card-tabs .nav-tabs{gap:8px;padding:6px}
+            .card-tabs .nav-link{min-width:0;padding:8px 12px}
         }
     </style>
+    <script>
+        // Persist active tab via URL hash (#tab=overview|schedule|tnc)
+        (function(){
+            const hash = location.hash.match(/#tab=(overview|schedule|tnc)/)?.[1];
+            if(hash){
+                const btn = document.querySelector(`[data-bs-target="#tab-${hash}"]`);
+                if(btn && window.bootstrap){
+                    const t = new bootstrap.Tab(btn);
+                    t.show();
+                }
+            }
+            document.querySelectorAll('.card-tabs [data-bs-toggle="tab"]').forEach(el=>{
+                el.addEventListener('shown.bs.tab', (e)=>{
+                    const target = e.target.getAttribute('data-bs-target');
+                    const name = target ? target.replace('#tab-','') : '';
+                    if(name){ history.replaceState(null, '', `#tab=${name}`); }
+                });
+            });
+        })();
+        // Countdown di card harga (menuju waktu mulai event)
+        (function(){
+            const box = document.getElementById('priceCountdown');
+            if(!box) return;
+            const targetStr = box.getAttribute('data-target'); // 'YYYY-MM-DD HH:MM:SS'
+            if(!targetStr) return;
+            const parts = targetStr.split(/[- :]/);
+            const target = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
+            const textEl = document.getElementById('countdownTextPrice');
+            function pad(n){return n<10?'0'+n:n;}
+            function tick(){
+                const now = new Date();
+                let diff = target.getTime() - now.getTime();
+                if(diff <= 0){ textEl.textContent = 'Sedang berlangsung / selesai'; clearInterval(timer); return; }
+                const days = Math.floor(diff / (1000*60*60*24));
+                diff -= days * (1000*60*60*24);
+                const hours = Math.floor(diff / (1000*60*60));
+                diff -= hours * (1000*60*60);
+                const minutes = Math.floor(diff / (1000*60));
+                diff -= minutes * (1000*60);
+                const seconds = Math.floor(diff / 1000);
+                if(days > 0){
+                    textEl.textContent = `${days} hari ${pad(hours)} jam ${pad(minutes)} menit ${pad(seconds)} Detik `;
+                } else {
+                    textEl.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)} lagi`;
+                }
+            }
+            tick();
+            const timer = setInterval(tick,1000);
+        })();
+    </script>
+    <!-- Success Modal -->
+    <div id="successOverlay" class="success-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="success-modal">
+            <div class="success-check">
+                <svg viewBox="0 0 80 80" aria-hidden="true">
+                    <path d="M18 42 L34 58 L62 26"></path>
+                </svg>
+            </div>
+            <h5 id="successTitle" class="success-title">Pendaftaran Berhasil</h5>
+            <p id="successText" class="success-text">Anda telah terdaftar pada event ini.</p>
+            <div class="success-small">Anda bisa cek tiket/kode dari tombol di halaman ini.</div>
+        </div>
+    </div>
+    <!-- Confirm Modal -->
+    <div id="confirmOverlay" class="confirm-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="confirm-modal">
+            <h5 class="confirm-title">Konfirmasi</h5>
+            <p class="confirm-text">Apakah kamu yakin ingin mendaftar event ini?</p>
+            <div class="confirm-actions">
+                <button type="button" id="confirmNo" class="btn-outline">Batal</button>
+                <button type="button" id="confirmYes" class="btn-primary-confirm">Ya, daftar</button>
+            </div>
+        </div>
+    </div>
     <script>
         function copyLink(){
             const temp = document.createElement('input');
@@ -217,33 +347,73 @@
             btn.addEventListener('click', () => {
                 if(btn.classList.contains('btn-success')) return;
                 const isPaid = btn.getAttribute('data-paid') === '1';
-                if(isPaid){
-                    // Langsung ke halaman payment
-                    window.location.href = `{{ route('payment',$event) }}`;
-                    return;
-                }
-                btn.disabled = true;
-                fetch(`/events/${btn.dataset.eventId}/register`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
-                    body: JSON.stringify({})
-                }).then(r=>r.json()).then(data=>{
-                    if(data.status==='ok' || data.status==='already'){
-                        const ticketUrl = `/events/${btn.dataset.eventId}/ticket`;
-                        const link = document.createElement('a');
-                        link.href = ticketUrl;
-                        link.className = 'enroll';
-                        link.textContent = 'Cek Tiket / Kode';
-                        link.style.textAlign = 'center';
-                        btn.replaceWith(link);
-                    } else if(data.status==='payment_required' && data.redirect){
-                        window.location.href = data.redirect;
-                    } else { alert(data.message || 'Gagal mendaftar'); btn.disabled=false; }
-                }).catch(()=>{ alert('Terjadi kesalahan'); btn.disabled=false; });
+                showConfirmRegister(async () => {
+                    if(isPaid){
+                        window.location.href = `{{ route('payment',$event) }}`;
+                        return;
+                    }
+                    btn.disabled = true;
+                    fetch(`/events/${btn.dataset.eventId}/register`, {
+                        method:'POST',
+                        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+                        body: JSON.stringify({})
+                    }).then(r=>r.json()).then(data=>{
+                        // Show success animation for free registration success
+                        if(data.status==='ok'){
+                            showRegistrationSuccess('Pendaftaran Berhasil','Anda telah terdaftar pada event ini.');
+                        } else if(data.status==='already'){
+                            showRegistrationSuccess('Sudah Terdaftar','Anda sudah terdaftar pada event ini.');
+                        }
+                        if(data.status==='ok' || data.status==='already'){
+                            const ticketUrl = `/events/${btn.dataset.eventId}/ticket`;
+                            const link = document.createElement('a');
+                            link.href = ticketUrl;
+                            link.className = 'save cek-tiket-btn';
+                            link.textContent = 'Cek Tiket / Kode';
+                            link.style.textAlign = 'center';
+                            btn.replaceWith(link);
+                        } else if(data.status==='payment_required' && data.redirect){
+                            window.location.href = data.redirect;
+                        } else { alert(data.message || 'Gagal mendaftar'); btn.disabled=false; }
+                    }).catch(()=>{ alert('Terjadi kesalahan'); btn.disabled=false; });
+                });
             });
         }
         @endauth
 
+        function showRegistrationSuccess(title, text){
+            try{
+                const overlay = document.getElementById('successOverlay');
+                const t = document.getElementById('successTitle');
+                const d = document.getElementById('successText');
+                if(!overlay || !t || !d) return;
+                t.textContent = title || 'Pendaftaran Berhasil';
+                d.textContent = text || 'Anda telah terdaftar pada event ini.';
+                overlay.classList.add('show');
+                // auto hide after 2 seconds
+                setTimeout(()=>{ overlay.classList.remove('show'); }, 2000);
+            }catch(_e){ /* no-op */ }
+        }
+        function showConfirmRegister(onYes){
+            const overlay = document.getElementById('confirmOverlay');
+            const yesBtn = document.getElementById('confirmYes');
+            const noBtn = document.getElementById('confirmNo');
+            if(!overlay || !yesBtn || !noBtn) { if(typeof onYes==='function') onYes(); return; }
+            let closed = false;
+            const close = ()=>{ if(closed) return; closed = true; overlay.classList.remove('show'); cleanup(); };
+            const cleanup = ()=>{
+                yesBtn.removeEventListener('click', yesHandler);
+                noBtn.removeEventListener('click', noHandler);
+                overlay.removeEventListener('click', backdropHandler);
+            };
+            const yesHandler = ()=>{ close(); if(typeof onYes==='function') onYes(); };
+            const noHandler = ()=>{ close(); };
+            const backdropHandler = (e)=>{ if(e.target === overlay) close(); };
+            yesBtn.addEventListener('click', yesHandler);
+            noBtn.addEventListener('click', noHandler);
+            overlay.addEventListener('click', backdropHandler);
+            overlay.classList.add('show');
+        }
         // Countdown (Hari : Jam : Menit : Detik) sampai waktu event
         (function(){
             const box = document.getElementById('eventCountdown');
@@ -279,6 +449,6 @@
             const timer = setInterval(tick,1000);
         })();
     </script>
+    @include('partials.footer-before-login')
 </body>
 </html>
-@include('partials.footer-before-login')

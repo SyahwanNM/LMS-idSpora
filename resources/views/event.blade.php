@@ -238,7 +238,7 @@
                                 @endif
                             </div>
                             @php $registered = !empty($event->is_registered); @endphp
-                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" data-event-id="{{ $event->id }}" data-event-title="{{ e($event->title) }}" {{ $registered ? 'disabled' : '' }} onclick="event.stopPropagation();">
+                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" {{ $registered ? 'disabled' : '' }} onclick="event.stopPropagation();">
                                 {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
                             </button>
                         </div>
@@ -273,11 +273,9 @@
     </div>
     </section>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    @include('partials.footer-after-login')
+    @include('partials.footer-before-login')
     <script>
     document.addEventListener('DOMContentLoaded', function(){
-        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-        const token = tokenMeta ? tokenMeta.getAttribute('content') : '';
         // Card click -> go to detail
         document.querySelectorAll('.card-event').forEach(card => {
             const url = card.getAttribute('data-detail-url');
@@ -294,58 +292,13 @@
                 });
             }
         });
+        // Register button -> go to detail page instead of direct registration
         document.querySelectorAll('.register-btn').forEach(btn => {
             btn.addEventListener('click', function(){
-                if(this.classList.contains('btn-success')) return; // already
-                const eventId = this.dataset.eventId;
-                const self = this;
-                self.disabled = true; // prevent double click
-                self.classList.add('disabled');
-                fetch(`/events/${eventId}/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({})
-                })
-                .then(async r => {
-                    if(r.status === 401){
-                        alert('Silakan login terlebih dahulu.');
-                        throw new Error('Unauthenticated');
-                    }
-                    if(r.status === 419){
-                        alert('Sesi kadaluarsa, refresh halaman.');
-                        throw new Error('CSRF/Session expired');
-                    }
-                    return r.json();
-                })
-                .then(data => {
-                    if(data.status === 'ok' || data.status === 'already'){
-                        self.classList.remove('btn-primary');
-                        self.classList.add('btn-success');
-                        self.textContent = 'Anda Terdaftar';
-                        self.disabled = true;
-                        document.getElementById('registeredEventTitle').textContent = data.event_title || self.dataset.eventTitle;
-                        const modalEl = document.getElementById('registrationSuccessModal');
-                        const m = new bootstrap.Modal(modalEl);
-                        m.show();
-                    } else if(data.message){
-                        alert(data.message);
-                        self.disabled = false;
-                        self.classList.remove('disabled');
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    if(!self.classList.contains('btn-success')){
-                        self.disabled = false;
-                        self.classList.remove('disabled');
-                    }
-                });
+                if(this.disabled) return;
+                const card = this.closest('.card-event');
+                const url = card ? card.getAttribute('data-detail-url') : null;
+                if(url) window.location = url;
             });
         });
     });

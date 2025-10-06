@@ -581,8 +581,9 @@ function animateCounters() {
 }
 
 function showFlashMessages() {
-    @if(session('success'))
-        createToast('success', `{{ addslashes(session('success')) }}`);
+    @php($loginSuccess = session()->pull('login_success'))
+    @if(!empty($loginSuccess))
+        createToast('success', `{{ addslashes($loginSuccess) }}`);
     @endif
     @if($errors->any())
         createToast('error', 'Please check the form for errors');
@@ -625,65 +626,7 @@ function createToast(type, message) {
     setTimeout(() => { div.classList.add('translate-x-full','opacity-0'); setTimeout(()=>div.remove(),300); }, 3000);
 }
 
-// Show success message after form submission
-@if(session('success'))
-    setTimeout(function() {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full opacity-0 transition-all duration-300';
-        successDiv.innerHTML = `
-            <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                {{ session('success') }}
-            </div>
-        `;
-        document.body.appendChild(successDiv);
-        
-        // Animate in
-        setTimeout(() => {
-            successDiv.classList.remove('translate-x-full', 'opacity-0');
-        }, 100);
-        
-        // Animate out after 3 seconds
-        setTimeout(() => {
-            successDiv.classList.add('translate-x-full', 'opacity-0');
-            setTimeout(() => {
-                document.body.removeChild(successDiv);
-            }, 300);
-        }, 3000);
-    }, 500);
-@endif
-
-// Show error messages
-@if($errors->any())
-    setTimeout(function() {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full opacity-0 transition-all duration-300';
-        errorDiv.innerHTML = `
-            <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Please check the form for errors
-            </div>
-        `;
-        document.body.appendChild(errorDiv);
-        
-        // Animate in
-        setTimeout(() => {
-            errorDiv.classList.remove('translate-x-full', 'opacity-0');
-        }, 100);
-        
-        // Animate out after 4 seconds
-        setTimeout(() => {
-            errorDiv.classList.add('translate-x-full', 'opacity-0');
-            setTimeout(() => {
-                document.body.removeChild(errorDiv);
-            }, 300);
-        }, 4000);
-    }, 500);
-@endif
+// Flash messages are handled by showFlashMessages() using createToast
 
 
 // Simple footer positioning

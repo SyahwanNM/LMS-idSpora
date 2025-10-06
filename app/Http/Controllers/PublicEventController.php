@@ -11,6 +11,13 @@ class PublicEventController extends Controller
 	{
 		$query = Event::query();
 
+		// Sembunyikan event yang sudah berlangsung > 6 jam (antisipasi sebelum cleanup jalan)
+		$threshold = now()->subHours(6)->format('Y-m-d H:i:s');
+		$query->where(function($q) use ($threshold){
+			$q->whereNull('event_date')
+			  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
+		});
+
 		// Search
 		if ($search = $request->get('search')) {
 			$query->where(function ($q) use ($search) {
