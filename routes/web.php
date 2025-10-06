@@ -13,6 +13,7 @@ use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\PaymentController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -34,6 +35,15 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
     }
     return view('payment', compact('event'));
 })->name('payment');
+
+// Midtrans Snap token endpoint (auth required)
+Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
+
+// Finalize registration after successful payment (auth required)
+Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController::class, 'finalize'])->name('payment.finalize');
+
+// Midtrans notification webhook (no auth)
+Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('midtrans.notify');
 
 // Event routes now require authentication to view & register
 Route::middleware('auth')->group(function(){

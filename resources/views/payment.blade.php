@@ -5,6 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Payment - {{ isset($event)? $event->title : 'Event' }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -59,7 +60,7 @@
         <a class="active" href="#">Payment</a>
     </div>
     <div class="box-payment">
-        <form id="paymentForm" method="POST" action="#" novalidate>
+    <form id="paymentForm" method="POST" action="#" novalidate>
             @csrf
             <input type="hidden" name="event_id" value="{{ $event->id ?? '' }}">
         <div class="kiri-payment">
@@ -91,7 +92,12 @@
 
         <div class="ticket">
             <div class="ticket-header">Order Detail</div>
-            <div class="ticket-content"> <img src="{{ asset('aset/event.png') }}" alt="Event">
+            <div class="ticket-content">
+                @if(isset($event))
+                    <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}">
+                @else
+                    <img src="{{ asset('aset/event.png') }}" alt="Event">
+                @endif
                 <div class="info">
                     <h4>{{ isset($event)? $event->title : 'Event Title' }}</h4>
                     <p>{{ isset($event)? 'IdSpora' : '' }}</p>
@@ -141,6 +147,7 @@
 </body>
 
 </html>
+<script src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
 <script>
 // Sanity check & enable/disable tombol bayar
 document.addEventListener('DOMContentLoaded', function(){
@@ -150,6 +157,9 @@ document.addEventListener('DOMContentLoaded', function(){
     const dial = form.querySelector('select[name="dial_code"]');
     const wa = form.querySelector('input[name="whatsapp"]');
     const btn = form.querySelector('.btn-pay');
+    // Gunakan harga final (setelah diskon) untuk menentukan free vs paid
+    const isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
+    const eventId = @json($event->id ?? null);
 
     function isValidPhone(val){ return /^[0-9]{6,15}$/.test(val.trim()); }
 
@@ -168,11 +178,92 @@ document.addEventListener('DOMContentLoaded', function(){
         wa.addEventListener(evt, validate);
     });
 
-    form.addEventListener('submit', function(e){
+    form.addEventListener('submit', async function(e){
+        e.preventDefault();
         validate();
         if(btn.disabled){
-            e.preventDefault();
             alert('Lengkapi data peserta terlebih dahulu (Nama minimal 3 huruf, pilih kode dial, nomor WA 6–15 digit).');
+            return;
+        }
+        if(!eventId){
+            alert('Event tidak valid.');
+            return;
+        }
+        // Free event: langsung arahkan ke pendaftaran (skip Midtrans)
+        if(isFree){
+            try{
+                const res = await fetch(`/events/${eventId}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if(data.status === 'ok' || data.status === 'already'){
+                    window.location = `/events/${eventId}`;
+                } else {
+                    alert(data.message || 'Gagal mendaftar.');
+                }
+            }catch(err){
+                alert('Terjadi kesalahan saat mendaftar.');
+            }
+            return;
+        }
+        // Paid event: get snap token then open snap
+        try{
+            btn.disabled = true;
+            const tokenRes = await fetch(`/payment/${eventId}/snap-token`, { headers: { 'Accept':'application/json' } });
+            const data = await tokenRes.json();
+            if(data && data.free){
+                // Backend mendeteksi harga final 0 → perlakukan sebagai free
+                const res = await fetch(`/events/${eventId}/register`, {
+                    method: 'POST', headers: { 'Content-Type':'application/json','X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),'Accept':'application/json' }, body: JSON.stringify({})
+                });
+                const rj = await res.json();
+                if(rj.status==='ok' || rj.status==='already'){ window.location = `/events/${eventId}`; return; }
+                alert(rj.message || 'Gagal mendaftar.');
+                return;
+            }
+            const snapToken = data?.snapToken;
+            if(!snapToken){
+                const msg = data?.message || 'Snap token not found';
+                throw new Error(msg);
+            }
+            window.snap.pay(snapToken, {
+                onSuccess: async function(result){
+                    // Confirm to server and create registration
+                    try{
+                        await fetch(`/payment/${eventId}/finalize`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ order_id: result.order_id })
+                        });
+                    }catch(e){ /* ignore and continue redirect */ }
+                    window.location = `/events/${eventId}`;
+                },
+                onPending: function(result){
+                    // Allow user to continue later; redirect to detail
+                    window.location = `/events/${eventId}`;
+                },
+                onError: function(result){
+                    alert('Pembayaran gagal. Silakan coba lagi.');
+                },
+                onClose: function(){
+                    // User closed popup, keep on payment page
+                }
+            });
+        }catch(err){
+            console.error(err);
+            alert('Gagal menginisiasi pembayaran: ' + (err?.message || 'unknown error'));
+        }finally{
+            btn.disabled = false;
         }
     });
 

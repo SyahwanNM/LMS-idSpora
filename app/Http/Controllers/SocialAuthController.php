@@ -68,7 +68,7 @@ class SocialAuthController extends Controller
         }
 
         if($user->role === 'admin'){
-            return redirect('/admin/dashboard')->with('success','Login Google berhasil (Admin)');
+            return redirect('/admin/dashboard')->with('login_success','Login Google berhasil (Admin)');
         }
 
         $intended = session()->pull('social_redirect');

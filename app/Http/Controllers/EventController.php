@@ -11,7 +11,14 @@ class EventController extends Controller
 {
     public function index()
     {
-        $events = Event::latest()->paginate(10);
+        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
+        $events = Event::query()
+            ->where(function($q) use ($threshold){
+                $q->whereNull('event_date')
+                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
+            })
+            ->latest()
+            ->paginate(10);
         return view('admin.events.index', compact('events'));
     }
 
@@ -26,6 +33,7 @@ class EventController extends Controller
             'title' => 'required|string|max:255',
             'speaker' => 'required|string|max:255',
             'description' => 'required',
+            'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
@@ -42,6 +50,7 @@ class EventController extends Controller
             'title' => $request->title,
             'speaker' => $request->speaker,
             'description' => $request->description,
+            'terms_and_conditions' => $request->terms_and_conditions,
             'location' => $request->location,
             'price' => $request->price,
             'discount_percentage' => $request->discount_percentage ?? 0,
@@ -69,6 +78,7 @@ class EventController extends Controller
             'title' => 'required|string|max:255',
             'speaker' => 'required|string|max:255',
             'description' => 'required',
+            'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
@@ -78,7 +88,7 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'description', 'location', 'price', 'discount_percentage', 'event_date', 'event_time'
+            'title', 'speaker', 'description', 'terms_and_conditions', 'location', 'price', 'discount_percentage', 'event_date', 'event_time'
         ]);
 
         // Jika ada gambar baru, simpan ke storage
