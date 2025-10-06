@@ -54,7 +54,8 @@ class AuthController extends Controller
 
             // Admin SELALU diarahkan ke dashboard admin (abaikan redirect intent publik)
             if (strcasecmp($user->role, 'admin') === 0) {
-                return redirect('/admin/dashboard')->with('success', 'Login berhasil! Selamat datang di Admin Panel.');
+                // Gunakan flash key khusus agar dashboard hanya menampilkan notifikasi login sekali
+                return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
             }
 
             // Untuk user biasa, gunakan parameter redirect (jika valid) atau intended() fallback

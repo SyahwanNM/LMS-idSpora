@@ -18,7 +18,14 @@ class DashboardController extends Controller
 
         // Upcoming events: tampilkan event yang baru DITAMBAHKAN (created_at terbaru) di paling kiri.
         // Tetap hanya ambil event dengan tanggal >= hari ini.
+        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
         $upcomingEvents = Event::query()
+            // Hanya event yang belum lewat 6 jam sejak start
+            ->where(function($q) use ($threshold){
+                $q->whereNull('event_date')
+                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
+            })
+            // Tambahan: tetap filter tanggal >= hari ini untuk preferensi UI (opsional)
             ->whereDate('event_date', '>=', now()->toDateString())
             ->orderByDesc('created_at') // terbaru dulu
             ->limit(8)
