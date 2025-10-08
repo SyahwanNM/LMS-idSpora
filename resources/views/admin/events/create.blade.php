@@ -78,6 +78,15 @@
                                            required value="{{ old('location') }}" 
                                            placeholder="Lokasi event (contoh: Jakarta, Online, dll)">
                                 </div>
+
+                                <div class="mb-4">
+                                    <label for="whatsapp_link" class="form-label fw-semibold">
+                                        <i class="bi bi-whatsapp me-1"></i>Link WhatsApp Grup <span class="text-muted">(Opsional)</span>
+                                    </label>
+                                    <input type="url" name="whatsapp_link" id="whatsapp_link" class="form-control" 
+                                           value="{{ old('whatsapp_link') }}" placeholder="https://chat.whatsapp.com/… atau https://wa.me/…">
+                                    <div class="form-text">Link grup atau kontak WhatsApp untuk peserta setelah mendaftar.</div>
+                                </div>
                             </div>
 
                             <!-- Right Column -->

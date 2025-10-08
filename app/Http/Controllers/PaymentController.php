@@ -10,6 +10,7 @@ use Midtrans\Transaction;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\Payment;
+use App\Models\UserNotification;
 use Illuminate\Support\Str;
 
 class PaymentController extends Controller
@@ -142,6 +143,20 @@ class PaymentController extends Controller
                     'status' => 'active',
                     'registration_code' => 'EVT-'.strtoupper(uniqid())
                 ]);
+                // Notification for paid registration
+                try{
+                    $ev = Event::find($payment->event_id);
+                    if($ev){
+                        UserNotification::create([
+                            'user_id' => $payment->user_id,
+                            'type' => 'event_registration',
+                            'title' => 'Pembayaran Berhasil',
+                            'message' => 'Pendaftaran untuk "'.$ev->title.'" telah dikonfirmasi.',
+                            'data' => ['url' => route('events.show', $ev)],
+                            'expires_at' => now()->addDays(14),
+                        ]);
+                    }
+                }catch(\Throwable $e){ /* ignore */ }
             }
         }
 
@@ -197,6 +212,16 @@ class PaymentController extends Controller
                     'status' => 'active',
                     'registration_code' => 'EVT-'.strtoupper(uniqid())
                 ]);
+                try{
+                    UserNotification::create([
+                        'user_id' => $user->id,
+                        'type' => 'event_registration',
+                        'title' => $isFree ? 'Pendaftaran Event Berhasil' : 'Pembayaran Berhasil',
+                        'message' => ($isFree ? 'Kamu terdaftar di ' : 'Pendaftaran untuk ').'"'.$event->title.'" telah dikonfirmasi.',
+                        'data' => ['url' => route('events.show', $event)],
+                        'expires_at' => now()->addDays(14),
+                    ]);
+                }catch(\Throwable $e){ /* ignore */ }
             }
             $registered = true;
         }

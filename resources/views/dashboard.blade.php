@@ -16,11 +16,11 @@
 
 <body>
     <div class="search-banner-container">
-        <form class="search-banner-form" action="#" method="get" autocomplete="off">
+        <form class="search-banner-form" action="{{ route('events.searchRedirect') }}" method="get" autocomplete="off">
             <div class="search-wrap">
                 <input id="site-search" class="form-control search-input" type="search" name="search"
                     placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest">
-                <span class="search-icon" ariza-hidden="false">
+                <span class="search-icon" ariza-hidden="false" id="search-submit-trigger" tabindex="0" role="button">
                     <svg id="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                         fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
                         <path
@@ -428,7 +428,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
                                 </svg>
-                                <span>118</span>
+                                <span>{{ $event->registrations_count ?? 0 }}</span>
                             </div>
                         </div>
                         <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description, '<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
@@ -559,45 +559,21 @@
     .price-free {color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;}
     </style>
     <script>
-        const ctx = document.getElementById('gradesChart');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: [75, 25],
-                    backgroundColor: ['#F4C430', '#e6eef4'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '75%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false }
-                }
-            },
-            plugins: [{
-                id: 'textInside',
-                beforeDraw(chart) {
-                    const { width, height } = chart;
-                    const ctx = chart.ctx;
-                    ctx.restore();
-                    const fontSize = (height / 5).toFixed(2);
-                    ctx.font = `${fontSize}px Poppins`;
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#d4af37';
-                    const text = '75%';
-                    const textX = Math.round((width - ctx.measureText(text).width) / 2);
-                    const textY = height / 2.2;
-                    ctx.fillText(text, textX, textY);
-                    ctx.font = `${(height / 15).toFixed(2)}px Poppins`;
-                    ctx.fillStyle = '#999';
-                    ctx.fillText('Grades Completed', width / 2.9, height / 1.7);
-                    ctx.save();
-                }
-            }]
-        });
+        // Submit search to redirect route on icon click or Enter
+        (function(){
+            const form = document.querySelector('.search-banner-form');
+            const input = document.getElementById('site-search');
+            const trigger = document.getElementById('search-submit-trigger');
+            function submitIfNotEmpty(){
+                if(!input) return;
+                const q = (input.value || '').trim();
+                if(q.length === 0){ input.focus(); return; }
+                form?.submit();
+            }
+            trigger?.addEventListener('click', submitIfNotEmpty);
+            trigger?.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); submitIfNotEmpty(); }});
+            input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); submitIfNotEmpty(); }});
+        })();
     </script>
     <script>
         const hoursCtx = document.getElementById('hoursChart');
