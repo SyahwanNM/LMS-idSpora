@@ -56,6 +56,26 @@
                 $certificateReady = now()->greaterThanOrEqualTo($event->event_date->copy()->addDays(4));
             }
         @endphp
+        @php
+            // Server-side QR generation for reliability (PNG preferred, SVG fallback if Imagick isn't available)
+            $qrPayload = [
+                'type' => 'idspora_ticket',
+                'event_id' => (int) $event->id,
+                'reg_code' => (string) $registration->registration_code,
+                'issued_at' => now()->timestamp,
+            ];
+            $qrText = json_encode($qrPayload, JSON_UNESCAPED_SLASHES);
+            $qrPng = null; $qrSvg = null;
+            try {
+                $qrPng = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(220)->margin(1)->errorCorrection('M')->generate($qrText));
+            } catch (\Throwable $e) {
+                try {
+                    $qrSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(220)->margin(1)->errorCorrection('M')->generate($qrText);
+                } catch (\Throwable $e2) {
+                    $qrSvg = null;
+                }
+            }
+        @endphp
         <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
             <div class="code-box" id="regCode">{{ $registration->registration_code }}</div>
             <span class="badge-status">Terdaftar</span>
@@ -79,6 +99,30 @@
             <div class="meta-item">
                 <h6>Status</h6>
                 <p>{{ ucfirst($registration->status) }}</p>
+            </div>
+        </div>
+        <!-- QR Code Section -->
+        <div class="qr-card mt-4">
+            <div class="qr-left">
+                <h6 class="qr-title">QR Tiket</h6>
+                <p class="qr-desc">Tunjukkan kode QR ini saat registrasi/validasi.</p>
+                <div class="qr-box">
+                    @if($qrPng)
+                        <img alt="QR Tiket {{ $event->title }}" width="220" height="220" loading="eager" src="data:image/png;base64,{{ $qrPng }}"/>
+                    @elseif($qrSvg)
+                        {!! $qrSvg !!}
+                    @else
+                        <div class="text-danger small">QR gagal dihasilkan</div>
+                    @endif
+                </div>
+                <p class="qr-caption">Kode: <strong>{{ $registration->registration_code }}</strong></p>
+            </div>
+            <div class="qr-right">
+                <ul class="qr-tips">
+                    <li>Pastikan layar cukup terang saat memindai.</li>
+                    <li>Simpan tiket ini atau screenshot untuk berjaga-jaga.</li>
+                    <li>Jangan bagikan kode registrasi Anda ke orang lain.</li>
+                </ul>
             </div>
         </div>
         <div class="actions">
@@ -208,6 +252,19 @@
         /* Preview container adjustments */
         #printPreviewContainer .code-box{ box-shadow:0 6px 18px -6px rgba(0,0,0,.2); }
         .modal #printPreviewContainer .actions, .modal #printPreviewContainer .link-box { display:none !important; }
+        /* QR styles */
+        .qr-card{ display:grid; grid-template-columns: 1fr; gap:18px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:16px; }
+        .qr-title{ margin:0 0 4px; font-size:13px; color:#475569; text-transform:uppercase; letter-spacing:.6px; font-weight:700; }
+        .qr-desc{ margin:0 0 12px; color:#64748b; font-size:13px; }
+        .qr-box{ display:inline-flex; align-items:center; justify-content:center; background:#ffffff; border:1px dashed #cbd5e1; border-radius:12px; padding:10px; width:max-content; }
+        .qr-caption{ margin-top:8px; font-size:12px; color:#475569; }
+        .qr-right .qr-tips{ margin:0; padding-left:18px; color:#475569; font-size:13px; }
+        @media (min-width: 768px){
+            .qr-card{ grid-template-columns: auto 1fr; align-items:center; }
+        }
+        @media print{
+            .qr-card{ background:#fff !important; border-color:#ddd !important; }
+        }
     </style>
     @include('partials.footer-before-login')
 </body>

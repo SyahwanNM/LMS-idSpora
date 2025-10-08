@@ -14,6 +14,7 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -49,8 +50,13 @@ Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('mid
 Route::middleware('auth')->group(function(){
     Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
     Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+        // Redirect search to the best-matching event detail (exact title match preferred)
+        Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
     Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
     Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
+    // Notifications
+    Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationsController::class,'markAllRead'])->name('notifications.markAllRead');
     // Certificate (event) - show & download (H+4 logic inside controller)
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');

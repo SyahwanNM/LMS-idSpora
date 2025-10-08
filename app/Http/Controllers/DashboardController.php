@@ -20,6 +20,7 @@ class DashboardController extends Controller
         // Tetap hanya ambil event dengan tanggal >= hari ini.
         $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
         $upcomingEvents = Event::query()
+            ->withCount('registrations')
             // Hanya event yang belum lewat 6 jam sejak start
             ->where(function($q) use ($threshold){
                 $q->whereNull('event_date')

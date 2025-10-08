@@ -16,6 +16,7 @@ class Event extends Model
         'description',
         'terms_and_conditions',
         'location',
+        'whatsapp_link',
         'price',
         'discount_percentage',
         'event_time',
