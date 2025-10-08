@@ -61,11 +61,15 @@
                          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tnc" type="button" role="tab">Terms & Conditions</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                                                <button class="nav-link wa-tab" data-bs-toggle="tab" data-bs-target="#tab-schedule" type="button" role="tab">
-                            <i class="bi bi-whatsapp me-1"></i>
+                        @php $locked = !($event->is_registered ?? false); @endphp
+                        <button class="nav-link wa-tab d-inline-flex align-items-center {{ $locked ? 'disabled opacity-75' : '' }}" data-bs-toggle="tab" data-bs-target="#tab-schedule" type="button" role="tab" {{ $locked ? 'aria-disabled=true' : '' }}>
+                            @if($locked)
+                                <i class="bi bi-lock-fill me-1"></i>
+                            @else
+                                <i class="bi bi-whatsapp me-1"></i>
+                            @endif
                             Link WhatsApp
                         </button>
-
                     </li>
                 </ul>
                 <div class="tab-content p-3">
@@ -73,7 +77,31 @@
                         <div class="event-description-rich">{!! $cleanDescription !!}</div>
                     </div>
                     <div class="tab-pane fade" id="tab-schedule" role="tabpanel">
-                        <p class="text-muted mb-0">Jadwal akan diumumkan kemudian.</p>
+                        @php $waLink = $event->whatsapp_link ?? null; @endphp
+                        @auth
+                            @if(!$event->is_registered)
+                                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                    <i class="bi bi-lock-fill me-2"></i>
+                                    <div>Fitur ini terkunci. Daftar event terlebih dahulu untuk mengakses link WhatsApp.</div>
+                                </div>
+                            @else
+                                @if($waLink)
+                                    <a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-success d-inline-flex align-items-center gap-2">
+                                        <i class="bi bi-whatsapp"></i>
+                                        Buka Link WhatsApp
+                                    </a>
+                                    <p class="small text-muted mt-2 mb-0">Link ini hanya dapat diakses oleh peserta terdaftar.</p>
+                                @else
+                                    <p class="text-muted mb-0">Link WhatsApp belum disediakan oleh admin.</p>
+                                @endif
+                            @endif
+                        @endauth
+                        @guest
+                            <div class="alert alert-info d-flex align-items-center" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <div>Silakan login dan daftar event untuk membuka link WhatsApp.</div>
+                            </div>
+                        @endguest
                     </div>
                     <div class="tab-pane fade" id="tab-tnc" role="tabpanel">
                         @if(!empty(trim($cleanTnc)))
