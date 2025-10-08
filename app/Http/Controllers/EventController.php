@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -35,6 +36,7 @@ class EventController extends Controller
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
+            'whatsapp_link' => 'nullable|url|max:255',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'event_date' => 'required|date',
@@ -52,6 +54,7 @@ class EventController extends Controller
             'description' => $request->description,
             'terms_and_conditions' => $request->terms_and_conditions,
             'location' => $request->location,
+            'whatsapp_link' => $request->whatsapp_link,
             'price' => $request->price,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'event_date' => $request->event_date,
@@ -80,6 +83,7 @@ class EventController extends Controller
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
+            'whatsapp_link' => 'nullable|url|max:255',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'event_date' => 'required|date',
@@ -88,7 +92,7 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'description', 'terms_and_conditions', 'location', 'price', 'discount_percentage', 'event_date', 'event_time'
+            'title', 'speaker', 'description', 'terms_and_conditions', 'location', 'whatsapp_link', 'price', 'discount_percentage', 'event_date', 'event_time'
         ]);
 
         // Jika ada gambar baru, simpan ke storage
@@ -144,6 +148,17 @@ class EventController extends Controller
             'status' => 'active',
             'registration_code' => 'EVT-'.strtoupper(uniqid())
         ]);
+        // Create notification (expires in 14 days)
+        try{
+            UserNotification::create([
+                'user_id' => $user->id,
+                'type' => 'event_registration',
+                'title' => 'Pendaftaran Event Berhasil',
+                'message' => 'Kamu terdaftar di "'.$event->title.'".',
+                'data' => ['url' => route('events.show', $event)],
+                'expires_at' => now()->addDays(14),
+            ]);
+        }catch(\Throwable $e){ /* ignore */ }
         return response()->json([
             'status' => 'ok',
             'message' => 'Berhasil daftar event (GRATIS)',

@@ -3,13 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class PublicEventController extends Controller
 {
 	public function index(Request $request)
 	{
-		$query = Event::query();
+		$query = Event::query()
+			->withCount([
+				'registrations as registrations_count' => function($q){
+					$q->select(DB::raw('COUNT(DISTINCT user_id)'))
+					  ->where('status','active');
+				}
+			]);
 
 		// Sembunyikan event yang sudah berlangsung > 6 jam (antisipasi sebelum cleanup jalan)
 		$threshold = now()->subHours(6)->format('Y-m-d H:i:s');
@@ -59,6 +66,39 @@ class PublicEventController extends Controller
 		}
 
 		return view('event', compact('events', 'locations'));
+	}
+
+	public function searchRedirect(Request $request)
+	{
+		$search = trim((string) $request->get('search', ''));
+		if ($search === '') {
+			return redirect()->route('events.index');
+		}
+
+		// Prefer exact (case-insensitive) match first
+		$exact = Event::whereRaw('LOWER(title) = ?', [mb_strtolower($search)])->first();
+		if ($exact) {
+			return redirect()->route('events.show', $exact);
+		}
+
+		// Then try best partial match, prioritize prefix matches
+		$likeTerm = "%{$search}%";
+		$prefixTerm = "{$search}%";
+		$best = Event::query()
+			->orderByRaw('CASE WHEN title LIKE ? THEN 0 WHEN title LIKE ? THEN 1 ELSE 2 END', [$prefixTerm, $likeTerm])
+			->orderByDesc('created_at')
+			->where(function($q) use ($likeTerm){
+				$q->where('title','like',$likeTerm)
+				  ->orWhere('speaker','like',$likeTerm)
+				  ->orWhere('location','like',$likeTerm);
+			})
+			->first();
+		if ($best) {
+			return redirect()->route('events.show', $best);
+		}
+
+		// Fallback to listing with querystring so user sees filtered results
+		return redirect()->route('events.index', ['search' => $search]);
 	}
 
 	public function show(Event $event, Request $request)
