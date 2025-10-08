@@ -24,6 +24,14 @@ Route::get('/course-detail', function () {
     return view('course.detail');
 })->name('course.detail');
 
+Route::get('/course-quiz', function () {
+    return view('course.quiz.intro');
+})->name('course.quiz.intro');
+
+Route::get('/course-quiz-start', function () {
+    return view('course.quiz.start');
+})->name('course.quiz.start');
+
 
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
