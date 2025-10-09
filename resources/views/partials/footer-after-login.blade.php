@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-</head>
 <style>
     .footer-section {
         background: var(--primary-dark);
@@ -84,8 +76,7 @@
     }
 </style>
 
-<body>
-    <div class="footer-section">
+<div class="footer-section">
         <div class="footer-cta">
             <h4 class="text-center mb-3">Siap Memulai Perjalanan Belajarmu?</h4>
             <h6 class="text-center mb-4 footer-subtitle">
@@ -114,6 +105,3 @@
             </div>
         </div>
     </div>
-</body>
-
-</html>
