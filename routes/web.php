@@ -18,19 +18,18 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
-// Landing page: jika sudah login arahkan ke dashboard
 Route::get('/', function(){
-    if(auth()->check()) {
+    if(Auth::check()) {
         return redirect()->route('dashboard');
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
 
-
-// Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
-    $user = auth()->user();
-    $already = $user && $user->eventRegistrations()->where('event_id',$event->id)->exists();
+    $user = Auth::user();
+    $already = $user && EventRegistration::where('user_id', $user->id)
+        ->where('event_id', $event->id)
+        ->exists();
     if($already){
         return redirect()->route('events.show',$event)->with('info','Anda sudah terdaftar.');
     }
@@ -164,4 +163,4 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
     });
-}); 
+});
