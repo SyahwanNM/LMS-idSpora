@@ -61,10 +61,11 @@
 
                     <!-- Description -->
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                        <textarea name="description" id="description" rows="4" 
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('description') border-red-500 @enderror"
-                                  placeholder="Describe what this course covers">{{ old('description', $course->description) }}</textarea>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="bi bi-file-text me-1"></i>Description
+                        </label>
+                        <textarea name="description" id="description" class="form-control" rows="8">{{ old('description', $course->description) }}</textarea>
+                        <div class="form-text">Gunakan editor di bawah untuk membuat deskripsi yang menarik dengan format yang kaya.</div>
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -164,4 +165,259 @@
         </div>
     </main>
 </div>
+
+<!-- CKEditor 5 CDN -->
+<script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    ClassicEditor
+        .create(document.querySelector('#description'), {
+            toolbar: {
+                items: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', '|',
+                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                    'bulletedList', 'numberedList', 'todoList', '|',
+                    'outdent', 'indent', '|',
+                    'alignment', '|',
+                    'link', 'blockQuote', 'insertTable', '|',
+                    'imageUpload', 'mediaEmbed', '|',
+                    'code', 'codeBlock', '|',
+                    'horizontalLine', '|',
+                    'undo', 'redo', '|',
+                    'removeFormat'
+                ],
+                shouldNotGroupWhenFull: true
+            },
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                    { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' }
+                ]
+            },
+            fontSize: {
+                options: [
+                    9, 11, 13, 'default', 17, 19, 21
+                ],
+                supportAllValues: true
+            },
+            fontFamily: {
+                options: [
+                    'default',
+                    'Arial, Helvetica, sans-serif',
+                    'Courier New, Courier, monospace',
+                    'Georgia, serif',
+                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                    'Tahoma, Geneva, sans-serif',
+                    'Times New Roman, Times, serif',
+                    'Trebuchet MS, Helvetica, sans-serif',
+                    'Verdana, Geneva, sans-serif'
+                ],
+                supportAllValues: true
+            },
+            fontColor: {
+                colors: [
+                    { color: 'hsl(0, 0%, 0%)', label: 'Black' },
+                    { color: 'hsl(0, 0%, 30%)', label: 'Dim grey' },
+                    { color: 'hsl(0, 0%, 60%)', label: 'Grey' },
+                    { color: 'hsl(0, 0%, 90%)', label: 'Light grey' },
+                    { color: 'hsl(0, 0%, 100%)', label: 'White', hasBorder: true },
+                    { color: 'hsl(0, 75%, 60%)', label: 'Red' },
+                    { color: 'hsl(30, 75%, 60%)', label: 'Orange' },
+                    { color: 'hsl(60, 75%, 60%)', label: 'Yellow' },
+                    { color: 'hsl(90, 75%, 60%)', label: 'Light green' },
+                    { color: 'hsl(120, 75%, 60%)', label: 'Green' },
+                    { color: 'hsl(150, 75%, 60%)', label: 'Aquamarine' },
+                    { color: 'hsl(180, 75%, 60%)', label: 'Turquoise' },
+                    { color: 'hsl(210, 75%, 60%)', label: 'Light blue' },
+                    { color: 'hsl(240, 75%, 60%)', label: 'Blue' },
+                    { color: 'hsl(270, 75%, 60%)', label: 'Purple' }
+                ]
+            },
+            fontBackgroundColor: {
+                colors: [
+                    { color: 'hsl(0, 75%, 60%)', label: 'Red' },
+                    { color: 'hsl(30, 75%, 60%)', label: 'Orange' },
+                    { color: 'hsl(60, 75%, 60%)', label: 'Yellow' },
+                    { color: 'hsl(90, 75%, 60%)', label: 'Light green' },
+                    { color: 'hsl(120, 75%, 60%)', label: 'Green' },
+                    { color: 'hsl(150, 75%, 60%)', label: 'Aquamarine' },
+                    { color: 'hsl(180, 75%, 60%)', label: 'Turquoise' },
+                    { color: 'hsl(210, 75%, 60%)', label: 'Light blue' },
+                    { color: 'hsl(240, 75%, 60%)', label: 'Blue' },
+                    { color: 'hsl(270, 75%, 60%)', label: 'Purple' },
+                    { color: 'hsl(0, 0%, 0%)', label: 'Black' },
+                    { color: 'hsl(0, 0%, 30%)', label: 'Dim grey' },
+                    { color: 'hsl(0, 0%, 60%)', label: 'Grey' },
+                    { color: 'hsl(0, 0%, 90%)', label: 'Light grey' },
+                    { color: 'hsl(0, 0%, 100%)', label: 'White', hasBorder: true }
+                ]
+            },
+            alignment: {
+                options: ['left', 'center', 'right', 'justify']
+            },
+            table: {
+                contentToolbar: [
+                    'tableColumn', 'tableRow', 'mergeTableCells',
+                    'tableProperties', 'tableCellProperties'
+                ]
+            },
+            image: {
+                toolbar: [
+                    'imageTextAlternative', 'toggleImageCaption', 'imageStyle:inline',
+                    'imageStyle:block', 'imageStyle:side'
+                ]
+            },
+            link: {
+                decorators: {
+                    addTargetToExternalLinks: true,
+                    defaultProtocol: 'https://',
+                    toggleDownloadable: {
+                        mode: 'manual',
+                        label: 'Downloadable',
+                        attributes: {
+                            download: 'file'
+                        }
+                    }
+                }
+            },
+            placeholder: 'Tulis deskripsi course yang menarik dengan format yang kaya...'
+        })
+        .then(editor => {
+            window.editor = editor;
+            
+            // Sync with textarea on form submit
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const textarea = document.querySelector('#description');
+                    textarea.value = editor.getData();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error initializing CKEditor:', error);
+        });
+});
+</script>
+
+<style>
+/* CKEditor 5 Custom Styling */
+.ck-editor__editable {
+    min-height: 300px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ck-editor__main {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.ck-editor__editable {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.ck-editor__editable:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ck-toolbar {
+    border: 1px solid #d1d5db;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: #f9fafb;
+}
+
+.ck-toolbar__separator {
+    background: #d1d5db;
+}
+
+.ck-button {
+    color: #374151;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+.ck-button:hover {
+    background: #e5e7eb;
+}
+
+.ck-button.ck-on {
+    background: #3b82f6;
+    color: white;
+}
+
+.ck-button.ck-on:hover {
+    background: #2563eb;
+}
+
+.ck-dropdown__button {
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+}
+
+.ck-dropdown__button:hover {
+    background: #f3f4f6;
+}
+
+.ck-editor__editable img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.ck-editor__editable iframe {
+    max-width: 100%;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* CKEditor 5 Dropdown Styling */
+.ck-dropdown__panel {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ck-list__item {
+    padding: 8px 12px !important;
+    border-radius: 4px !important;
+}
+
+.ck-list__item:hover {
+    background-color: #f8f9fa !important;
+}
+
+.ck-list__item.ck-on {
+    background-color: #007bff !important;
+    color: white !important;
+}
+
+/* Custom form styling */
+.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+</style>
 @endsection

@@ -110,18 +110,39 @@
         </div>
 
         <div class="kanan">
-            <form action="{{ route('new-password') }}l" method="get">
-                <h3>Verifikasi</h3>
+            <h3>Verifikasi</h3>
+            
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-                <form>
-                    <div class="mb-3">
-                        <h6>Masukkan Kode Verifikasi</h6>
-                        <input type="text" class="form-control" required>
-                    </div>
+            @if (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
 
-                    <button type="submit" href="{{ route('new-password') }}" class="btn-register">Kirim</button>
+            <form action="{{ route('verifikasi.verify') }}" method="post">
+                @csrf
+                <div class="mb-3">
+                    <h6>Masukkan Kode Verifikasi</h6>
+                    <input type="text" name="verification_code" class="form-control" value="{{ old('verification_code') }}" 
+                           placeholder="000000" maxlength="6" required>
+                    <small class="text-muted">Kode verifikasi telah dikirim ke email Anda</small>
+                </div>
 
-                </form>
+                <button type="submit" class="btn-register">Verifikasi</button>
+            </form>
+            
+            <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
+                <a href="{{ route('forgot-password') }}" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kirim Ulang Kode</a>
+            </div>
         </div>
     </div>
 </body>
