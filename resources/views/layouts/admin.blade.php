@@ -7,28 +7,63 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 </head>
 <body>
-    <!-- Modern Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200 mb-4">
-        <div class="container py-3 d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <a href="{{ route('dashboard') }}" class="me-3 text-decoration-none">
-                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div>
-                    <span class="fs-4 fw-bold text-dark">@yield('title', 'Admin')</span>
-                    <div class="text-muted small">LMS Admin Panel</div>
+    <!-- Enhanced Admin Navbar -->
+    <header class="shadow-sm mb-4">
+        <nav class="navbar navbar-expand-lg navbar-light" style="background:linear-gradient(90deg,#ffffff 0%,#f8fafc 100%); border-bottom:1px solid #e5e7eb;">
+            <div class="container">
+                <div class="d-flex align-items-center me-3">
+                    <a href="{{ route('admin.dashboard') }}" class="d-flex align-items-center text-decoration-none me-2">
+                        <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="logo" style="height:32px;" class="me-2">
+                    </a>
+                    <div class="d-none d-md-block">
+                        <span class="fw-semibold text-dark" style="font-size:1.05rem;">Admin Panel</span>
+                        <div class="text-muted small">@yield('title','Manajemen')</div>
+                    </div>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav" aria-controls="adminNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="adminNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active fw-semibold' : '' }}" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.courses.*') ? 'active fw-semibold' : '' }}" href="{{ route('admin.courses.index') }}"><i class="bi bi-journal-bookmark me-1"></i>Courses</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.events.*') ? 'active fw-semibold' : '' }}" href="{{ route('admin.events.index') }}"><i class="bi bi-calendar-event me-1"></i>Events</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active fw-semibold' : '' }}" href="{{ route('admin.users.index') }}"><i class="bi bi-people me-1"></i>Users</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.reports') ? 'active fw-semibold' : '' }}" href="{{ route('admin.reports') }}"><i class="bi bi-graph-up me-1"></i>Reports</a></li>
+                    </ul>
+                    <ul class="navbar-nav mb-2 mb-lg-0 align-items-lg-center" style="gap:.65rem;">
+                        <li class="nav-item d-none d-lg-block">
+                            <a href="{{ route('landing-page') }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-up-right me-1"></i>Public Site</a>
+                        </li>
+                        <li class="nav-item d-none d-lg-block">
+                            <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-house-door me-1"></i>User Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{{ route('logout') }}" method="POST" class="d-inline">@csrf
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-3">
-                <a class="btn btn-outline-primary" href="{{ route('dashboard') }}">Dashboard</a>
-                <form action="{{ route('logout') }}" method="POST" class="d-inline">@csrf
-                    <button class="btn btn-outline-danger" type="submit">Logout</button>
-                </form>
+        </nav>
+    </header>
+    {{-- Quick Actions Scrollable Bar (override with @section('admin_quick_actions') if needed) --}}
+    @hasSection('admin_quick_actions')
+        <div class="admin-quick-actions-wrapper">@yield('admin_quick_actions')</div>
+    @else
+        <div class="admin-quick-actions-wrapper">
+            <div class="admin-quick-actions-scroll" role="navigation" aria-label="Quick actions" tabindex="0">
+                <a href="{{ route('admin.courses.create') }}" class="qa-btn"><i class="bi bi-plus-circle me-1"></i>New Course</a>
+                <a href="{{ route('admin.events.create') }}" class="qa-btn"><i class="bi bi-calendar-plus me-1"></i>New Event</a>
+                <a href="{{ route('admin.users.create') }}" class="qa-btn"><i class="bi bi-person-plus me-1"></i>New User</a>
+                <a href="{{ route('admin.courses.index') }}" class="qa-btn"><i class="bi bi-grid me-1"></i>All Courses</a>
+                <a href="{{ route('admin.events.index') }}" class="qa-btn"><i class="bi bi-calendar-event me-1"></i>All Events</a>
+                <a href="{{ route('admin.users.index') }}" class="qa-btn"><i class="bi bi-people me-1"></i>All Users</a>
+                <a href="{{ route('admin.reports') }}" class="qa-btn"><i class="bi bi-graph-up me-1"></i>Reports</a>
             </div>
         </div>
-    </header>
+    @endif
     <div class="container">
         @yield('content')
     </div>
@@ -66,6 +101,7 @@
                         <li class="mb-2"><a href="{{ route('admin.dashboard') }}" class="text-white-50 text-decoration-none small">Dashboard</a></li>
                         <li class="mb-2"><a href="{{ route('admin.courses.index') }}" class="text-white-50 text-decoration-none small">Manage Courses</a></li>
                         <li class="mb-2"><a href="{{ route('admin.events.index') }}" class="text-white-50 text-decoration-none small">Manage Events</a></li>
+                        <li class="mb-2"><a href="{{ route('admin.users.index') }}" class="text-white-50 text-decoration-none small">Manage Users</a></li>
                         <li class="mb-2"><a href="{{ route('admin.reports') }}" class="text-white-50 text-decoration-none small">Analytics</a></li>
                         <li class="mb-2"><a href="{{ route('landing-page') }}" class="text-white-50 text-decoration-none small">Public Site</a></li>
                     </ul>
@@ -112,6 +148,29 @@
     </footer>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .navbar-nav .nav-link {position:relative;}
+        .navbar-nav .nav-link.active {color:#0d6efd !important;}
+        .navbar-nav .nav-link.active:after {
+            content:"";position:absolute;left:8px;right:8px;bottom:0;height:3px;border-radius:3px;background:#0d6efd;
+        }
+        .admin-quick-actions-wrapper {background:#ffffff;border-bottom:1px solid #e5e7eb;}
+        .admin-quick-actions-scroll {display:flex;gap:.65rem;overflow-x:auto;padding:.55rem 1rem;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch; position:relative;}
+        .admin-quick-actions-scroll::-webkit-scrollbar {height:6px;}
+        .admin-quick-actions-scroll::-webkit-scrollbar-track {background:transparent;}
+        .admin-quick-actions-scroll::-webkit-scrollbar-thumb {background:#d1d5db;border-radius:20px;}
+        .qa-btn {scroll-snap-align:start;flex:0 0 auto;display:inline-flex;align-items:center;font-size:.75rem;font-weight:500;line-height:1;padding:.5rem .85rem;border:1px solid #e5e7eb;border-radius:30px;background:#f8fafc;text-decoration:none;color:#374151;transition:all .18s ease;white-space:nowrap;}
+        .qa-btn:hover {background:#0d6efd;color:#fff;border-color:#0d6efd;}
+        .qa-btn:active {transform:scale(.95);}    
+        @media (max-width: 576px){
+            .qa-btn {font-size:.7rem;padding:.45rem .75rem;}
+        }
+        .admin-quick-actions-wrapper {position:relative;}
+        .admin-quick-actions-wrapper:before, .admin-quick-actions-wrapper:after {content:"";position:absolute;top:0;bottom:0;width:40px;pointer-events:none;z-index:2;}
+        .admin-quick-actions-wrapper:before {left:0;background:linear-gradient(90deg,#fff 0%,rgba(255,255,255,0));}
+        .admin-quick-actions-wrapper:after {right:0;background:linear-gradient(-90deg,#fff 0%,rgba(255,255,255,0));}
+        .admin-quick-actions-scroll:focus-visible {outline:2px solid #0d6efd;outline-offset:2px;}
+    </style>
     @yield('scripts')
 </body>
 </html>
