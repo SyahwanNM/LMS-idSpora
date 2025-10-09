@@ -32,6 +32,9 @@ Route::get('/course-quiz-start', function () {
     return view('course.quiz.start');
 })->name('course.quiz.start');
 
+Route::get('/course-quiz-result', function () {
+    return view('course.quiz.result');
+})->name('course.quiz.result');
 
 // Public routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
