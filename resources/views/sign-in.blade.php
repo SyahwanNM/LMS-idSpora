@@ -216,6 +216,13 @@
 
       <form action="{{ route('login') }}" method="POST">
         @csrf
+    @php
+      // Pastikan nilai redirect tetap ada setelah error validasi
+      $redirectTarget = old('redirect', request('redirect'));
+    @endphp
+    @if(!empty($redirectTarget))
+      <input type="hidden" name="redirect" value="{{ $redirectTarget }}">
+    @endif
         @if ($errors->any())
           <div class="alert alert-danger">
             <ul class="mb-0">
@@ -264,10 +271,10 @@
 
       <div class="garis">atau</div>
 
-      <button class="btn-google">
+      <a href="{{ route('auth.google', array_filter(['redirect' => $redirectTarget ?? null])) }}" class="btn-google" style="text-decoration:none;">
         <img src="{{ asset('aset/logo-google.png') }}" alt="logo google">
-        Google
-      </button>
+        Login dengan Google
+      </a>
 
       <div class="text-login">
         Belum punya akun? <a href="{{ route('register') }}">Daftar</a>

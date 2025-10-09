@@ -64,12 +64,29 @@
                                 </div>
 
                                 <div class="mb-4">
+                                    <label for="terms_and_conditions" class="form-label fw-semibold">
+                                        <i class="bi bi-shield-check me-1"></i>Terms and Conditions <span class="text-muted">(Opsional)</span>
+                                    </label>
+                                    <textarea name="terms_and_conditions" id="terms_and_conditions" class="form-control" rows="6">{{ old('terms_and_conditions', $event->terms_and_conditions) }}</textarea>
+                                    <div class="form-text">Syarat dan ketentuan yang akan ditampilkan pada halaman detail event.</div>
+                                </div>
+
+                                <div class="mb-4">
                                     <label for="location" class="form-label fw-semibold">
                                         <i class="bi bi-geo-alt me-1"></i>Lokasi <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="location" id="location" class="form-control form-control-lg" 
                                            required value="{{ old('location', $event->location) }}" 
                                            placeholder="Lokasi event (contoh: Jakarta, Online, dll)">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="whatsapp_link" class="form-label fw-semibold">
+                                        <i class="bi bi-whatsapp me-1"></i>Link WhatsApp Grup <span class="text-muted">(Opsional)</span>
+                                    </label>
+                                    <input type="url" name="whatsapp_link" id="whatsapp_link" class="form-control" 
+                                           value="{{ old('whatsapp_link', $event->whatsapp_link) }}" placeholder="https://chat.whatsapp.com/… atau https://wa.me/…">
+                                    <div class="form-text">Link grup atau kontak WhatsApp untuk peserta setelah mendaftar.</div>
                                 </div>
                             </div>
 
@@ -353,6 +370,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize CKEditor 5
+    // Description editor
     ClassicEditor
         .create(document.querySelector('#description'), {
             toolbar: {
@@ -472,19 +490,43 @@ document.addEventListener('DOMContentLoaded', function() {
             placeholder: 'Tulis deskripsi event yang menarik dengan format yang kaya...'
         })
         .then(editor => {
-            window.editor = editor;
+            window.editorDescription = editor;
             
             // Sync with textarea on form submit
             const form = document.getElementById('eventForm');
             if (form) {
                 form.addEventListener('submit', function() {
                     const textarea = document.querySelector('#description');
-                    textarea.value = editor.getData();
+                    textarea.value = window.editorDescription.getData();
                 });
             }
         })
         .catch(error => {
             console.error('Error initializing CKEditor:', error);
+        });
+
+    // Terms and Conditions editor
+    ClassicEditor
+        .create(document.querySelector('#terms_and_conditions'), {
+            toolbar: { items: [
+                'heading', '|', 'bold', 'italic', 'underline', '|',
+                'bulletedList', 'numberedList', '|', 'link', 'blockQuote', '|',
+                'undo', 'redo', '|', 'removeFormat'
+            ], shouldNotGroupWhenFull: true },
+            placeholder: 'Tulis syarat dan ketentuan event...'
+        })
+        .then(editor => {
+            window.editorTerms = editor;
+            const form = document.getElementById('eventForm');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const tnc = document.querySelector('#terms_and_conditions');
+                    tnc.value = window.editorTerms.getData();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error initializing CKEditor for Terms:', error);
         });
 
     // Image preview functionality
@@ -509,11 +551,18 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Form submission started');
         
         // Sync CKEditor data to textarea before validation
-        if (window.editor) {
+        if (window.editorDescription) {
             const textarea = document.querySelector('#description');
             if (textarea) {
-                textarea.value = window.editor.getData();
-                console.log('CKEditor data synced to textarea');
+                textarea.value = window.editorDescription.getData();
+                console.log('CKEditor description synced to textarea');
+            }
+        }
+        if (window.editorTerms) {
+            const tnc = document.querySelector('#terms_and_conditions');
+            if (tnc) {
+                tnc.value = window.editorTerms.getData();
+                console.log('CKEditor terms synced to textarea');
             }
         }
         
