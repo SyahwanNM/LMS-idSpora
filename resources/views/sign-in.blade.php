@@ -214,7 +214,7 @@
     <div class="kanan">
       <h3>Masuk</h3>
 
-      <form action="{{ route('login') }}" method="POST">
+      <form action="{{ route('auth') }}" method="POST">
         @csrf
         @if ($errors->any())
           <div class="alert alert-danger">
@@ -259,7 +259,7 @@
           <a href="{{ route('forgot-password') }}">
             Lupa Kata Sandi?</a>
         </div>
-        <button type="submit" class="btn-register">Masuk</button>
+        <button type="submit" class="btn-register">Kirim Kode OTP</button>
       </form>
 
       <div class="garis">atau</div>

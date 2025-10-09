@@ -10,6 +10,10 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 
+Route::get('/auth', function () {
+    return view('auth');
+})->name('auth');
+
 Route::get('/', function () {
     return view('landing-page');
 })->name('landing-page');
