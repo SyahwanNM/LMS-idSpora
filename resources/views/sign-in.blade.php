@@ -214,7 +214,7 @@
     <div class="kanan">
       <h3>Masuk</h3>
 
-      <form action="{{ route('auth') }}" method="POST">
+      <form action="{{ route('login') }}" method="POST">
         @csrf
     @php
       // Pastikan nilai redirect tetap ada setelah error validasi
@@ -266,7 +266,7 @@
           <a href="{{ route('forgot-password') }}">
             Lupa Kata Sandi?</a>
         </div>
-        <button type="submit" class="btn-register">Kirim Kode OTP</button>
+        <button type="submit" class="btn-register">Masuk</button>
       </form>
 
       <div class="garis">atau</div>

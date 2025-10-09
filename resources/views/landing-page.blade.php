@@ -68,267 +68,267 @@
         <div class="testimoni-container">
             <button class="nav-btn nav-btn-left" id="prevBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+                    <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
                 </svg>
             </button>
-            
+
             <div class="testimoni-slider" id="testimoniSlider">
                 <div class="testimoni-track" id="testimoniTrack">
                     <!-- Review Set 1 -->
                     <div class="testimoni-slide active">
-                    <ul class="reviews">
-                        <!-- Card 1 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        <ul class="reviews">
+                            <!-- Card 1 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                     </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 2 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 2 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                     </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 3 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Ahmad Jani</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 3 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Ahmad Jani</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
+                                            diterapkan di pekerjaan. Recommended banget!</p>
                                     </div>
-                                    <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
-                                        diterapkan di pekerjaan. Recommended banget!</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 4 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Vero Glorify</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 4 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Vero Glorify</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
+                                            basic sampai advanced semua ada.</p>
                                     </div>
-                                    <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
-                                        basic sampai advanced semua ada.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 5 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Agnes Mauaja</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 5 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Agnes Mauaja</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
+                                            dengan lebih baik. Terima kasih Idspora!</p>
                                     </div>
-                                    <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
-                                        dengan lebih baik. Terima kasih Idspora!</p>
                                 </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+                            </li>
+                        </ul>
+                    </div>
 
                     <!-- Review Set 2 -->
                     <div class="testimoni-slide">
-                    <ul class="reviews">
-                        <!-- Card 5 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Agnes Mauaja</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                        <ul class="reviews">
+                            <!-- Card 5 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Agnes Mauaja</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
+                                            dengan lebih baik. Terima kasih Idspora!</p>
                                     </div>
-                                    <p class="review-text">Kursus Business Analysis membantu saya memahami proses bisnis
-                                        dengan lebih baik. Terima kasih Idspora!</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 4 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Vero Glorify</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 4 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Vero Glorify</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
+                                            basic sampai advanced semua ada.</p>
                                     </div>
-                                    <p class="review-text">Python untuk Data Science di sini sangat comprehensive. Dari
-                                        basic sampai advanced semua ada.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 3 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Ahmad Jani</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 3 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Ahmad Jani</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
+                                            diterapkan di pekerjaan. Recommended banget!</p>
                                     </div>
-                                    <p class="review-text">Materi UI/UX Design sangat praktis dan langsung bisa
-                                        diterapkan di pekerjaan. Recommended banget!</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 2 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 2 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                     </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                 </div>
-                            </div>
-                        </li>
+                            </li>
 
-                        <!-- Card 1 -->
-                        <li>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="reviewer">
-                                        <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                            alt="Profile">
-                                        <h6 class="reviewer-name">Sarah Sechan</h6>
-                                    </div>
-                                    <div class="stars" aria-label="5 stars">
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            <!-- Card 1 -->
+                            <li>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="reviewer">
+                                            <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
+                                                alt="Profile">
+                                            <h6 class="reviewer-name">Sarah Sechan</h6>
+                                        </div>
+                                        <div class="stars" aria-label="5 stars">
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                                                 fill="currentColor" viewBox="0 0 16 16">
                                                 <path
                                                     d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                            </svg>
-                                        @endfor
+                                                </svg>
+                                                @endfor
+                                        </div>
+                                        <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
+                                            Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                     </div>
-                                    <p class="review-text">Kursus React idSpora ini sangat lengkap dan mudah dipahami.
-                                        Instrukturnya berpengalaman dan selalu siap membantu.</p>
                                 </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            
+
             <button class="nav-btn nav-btn-right" id="nextBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
                 </svg>
             </button>
         </div>
@@ -374,9 +374,9 @@
                 <article class="course-card">
                     <div class="thumb-wrapper">
                         @if($course->image)
-                            <img class="thumb" src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <img class="thumb" src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         @else
-                            <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         @endif
                         <div class="badge-save-group" style="gap:12px;">
                             <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
@@ -392,8 +392,8 @@
                     <div class="inner">
                         <h5 class="title">{{ $course->name }}</h5>
                         <p class="desc">{{ Str::limit(strip_tags($course->description), 80) }}</p>
-                        <div class="tags"> 
-                            <span class="tag">{{ $course->category->name ?? 'No Category' }}</span> 
+                        <div class="tags">
+                            <span class="tag">{{ $course->category->name ?? 'No Category' }}</span>
                             <span class="tag">{{ $course->duration }}h</span>
                             <div class="meta" style="margin-left:auto; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
@@ -410,7 +410,7 @@
                                 <span>4.8</span>
                             </div>
                         </div>
-                        <div class="author"> 
+                        <div class="author">
                             <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2" alt="Profile">
                             <h6 class="mb-0" style="font-size:13px; font-weight:500;">idSpora Team</h6>
                             <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
@@ -426,9 +426,9 @@
                         <div class="price-row">
                             <div class="price-col">
                                 @if((int)$course->price === 0)
-                                    <span class="price-now price-free" aria-label="Gratis">FREE</span>
+                                <span class="price-now price-free" aria-label="Gratis">FREE</span>
                                 @else
-                                    <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                                 @endif
                             </div>
                             <button class="btn-enroll">Enroll Now</button>
@@ -441,7 +441,7 @@
                 <div class="text-center py-5">
                     <h5 class="mb-3">Belum ada kursus tersedia</h5>
                     <p class="text-muted">Kursus akan segera hadir!</p>
-                    </div>
+                </div>
             </li>
             @endforelse
         </ul>
@@ -460,22 +460,22 @@
             <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
                     @if($event->image)
-                        <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
+                    <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
                     @else
-                        <img class="event-poster-img" src="https://via.placeholder.com/600x800/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}">
+                    <img class="event-poster-img" src="https://via.placeholder.com/600x800/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}">
                     @endif
                     <button class="save-btn save-btn--event" aria-label="Save event" type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M2 2v13.5l6-3 6 3V2z" />
                         </svg>
                     </button>
-                   
+
                 </div>
 
                 <div class="card-body">
                     <h4>{{ $event->title }}</h4>
                     <div class="tags">
-                        <span class="tag">Event</span> 
+                        <span class="tag">Event</span>
                         <span class="tag">{{ $event->speaker }}</span>
                     </div>
                     <p class="desc-event">{{ Str::limit(strip_tags($event->description), 80) }}</p>
@@ -501,10 +501,10 @@
                         </div>
                     </div>
                     @php
-                        $datePart = $event->event_date ? $event->event_date->format('Y-m-d') : '';
-                        // event_time cast H:i; ensure we get string H:i
-                        $timePart = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '00:00';
-                        $isoDateTime = $datePart ? $datePart.'T'.$timePart.':00' : '';
+                    $datePart = $event->event_date ? $event->event_date->format('Y-m-d') : '';
+                    // event_time cast H:i; ensure we get string H:i
+                    $timePart = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '00:00';
+                    $isoDateTime = $datePart ? $datePart.'T'.$timePart.':00' : '';
                     @endphp
                     <div class="countdown-row" data-event-datetime="{{ $isoDateTime }}">
                         <span class="cd-part cd-days">00</span><small>d</small>
@@ -515,27 +515,27 @@
                     <div class="price-row">
                         <div class="price-col">
                             @php
-                                $finalEventPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
+                            $finalEventPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
                             @endphp
                             @if((int)$finalEventPrice === 0)
-                                @if($event->hasDiscount() && (int)$event->price > 0)
-                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                @endif
-                                <span class="price-now price-free" aria-label="Gratis">FREE</span>
+                            @if($event->hasDiscount() && (int)$event->price > 0)
+                            <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                            @endif
+                            <span class="price-now price-free" aria-label="Gratis">FREE</span>
                             @else
-                                @if($event->hasDiscount())
-                                    <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                    <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
-                                @else
-                                    <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
-                                @endif
+                            @if($event->hasDiscount())
+                            <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                            <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
+                            @else
+                            <span class="price-now">Rp{{ number_format($finalEventPrice, 0, ',', '.') }}</span>
+                            @endif
                             @endif
                         </div>
                         @auth
-                            <button class="btn-register" type="button" onclick="window.location='{{ route('events.show', $event->id) }}'">Daftar Sekarang</button>
+                        <a href="{{ route('events.show', $event->id) }}" class="btn-register" role="button">Daftar Sekarang</a>
                         @endauth
                         @guest
-                            <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}" data-redirect="{{ route('events.show', $event->id) }}">Daftar Sekarang</button>
+                        <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}" data-redirect="{{ route('events.show', $event->id) }}">Daftar Sekarang</button>
                         @endguest
                     </div>
                 </div>
@@ -565,8 +565,8 @@
                     <div class="d-flex align-items-start gap-3">
                         <div class="flex-shrink-0" style="width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#eef2ff;color:#4f46e5;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                                <path fill="#fff" d="M8.93 6.588a.5.5 0 0 0-.832-.374L5.5 8.293V9.5a.5.5 0 0 0 .5.5h.793l2.105-2.105a.5.5 0 0 0 .032-.707z"/>
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                <path fill="#fff" d="M8.93 6.588a.5.5 0 0 0-.832-.374L5.5 8.293V9.5a.5.5 0 0 0 .5.5h.793l2.105-2.105a.5.5 0 0 0 .032-.707z" />
                             </svg>
                         </div>
                         <div>
@@ -585,75 +585,78 @@
     @endguest
 
     <script>
-    document.addEventListener('DOMContentLoaded', function(){
-        let pendingRedirect = null;
-        function showLoginRequired(){
-            const modalEl = document.getElementById('loginRequiredModal');
-            if(window.bootstrap && modalEl){
-                const m = new bootstrap.Modal(modalEl);
-                m.show();
-                animateModal(modalEl);
-            } else {
-                createAnimatedLoginPrompt();
-            }
-            // Update login link with redirect if available
-            const link = document.getElementById('loginRedirectLink');
-            if(link){
-                if(pendingRedirect){
-                    const enc = encodeURIComponent(pendingRedirect);
-                    // Tambahkan redirect hanya untuk halaman publik (bukan admin)
-                    if(!pendingRedirect.startsWith('/admin')){
-                        link.href = `${link.getAttribute('href').split('?')[0]}?redirect=${enc}`;
+        document.addEventListener('DOMContentLoaded', function() {
+            let pendingRedirect = null;
+
+            function showLoginRequired() {
+                const modalEl = document.getElementById('loginRequiredModal');
+                if (window.bootstrap && modalEl) {
+                    const m = new bootstrap.Modal(modalEl);
+                    m.show();
+                    animateModal(modalEl);
+                } else {
+                    createAnimatedLoginPrompt();
+                }
+                // Update login link with redirect if available
+                const link = document.getElementById('loginRedirectLink');
+                if (link) {
+                    if (pendingRedirect) {
+                        const enc = encodeURIComponent(pendingRedirect);
+                        // Tambahkan redirect hanya untuk halaman publik (bukan admin)
+                        if (!pendingRedirect.startsWith('/admin')) {
+                            link.href = `${link.getAttribute('href').split('?')[0]}?redirect=${enc}`;
+                        } else {
+                            link.href = link.getAttribute('href').split('?')[0];
+                        }
                     } else {
+                        // fallback remove param
                         link.href = link.getAttribute('href').split('?')[0];
                     }
-                } else {
-                    // fallback remove param
-                    link.href = link.getAttribute('href').split('?')[0];
                 }
             }
-        }
 
-        // Existing buttons
-        const needLoginButtons = document.querySelectorAll('.need-login');
-        needLoginButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                pendingRedirect = btn.getAttribute('data-redirect') || null;
-                showLoginRequired();
-            });
-        });
-
-        // Entire card clickable (guest only)
-        const loginCards = document.querySelectorAll('.login-required-card[data-requires-login="true"]');
-        loginCards.forEach(card => {
-            card.addEventListener('click', (e) => {
-                if(e.target.closest('.need-login') || e.target.closest('.save-btn')) return;
-                pendingRedirect = card.getAttribute('data-redirect') || null;
-                showLoginRequired();
-            });
-            card.addEventListener('keydown', (e)=>{
-                if(e.key === 'Enter' || e.key === ' '){
+            // Existing buttons
+            const needLoginButtons = document.querySelectorAll('.need-login');
+            needLoginButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
                     e.preventDefault();
+                    pendingRedirect = btn.getAttribute('data-redirect') || null;
+                    showLoginRequired();
+                });
+            });
+
+            // Entire card clickable (guest only)
+            const loginCards = document.querySelectorAll('.login-required-card[data-requires-login="true"]');
+            loginCards.forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.need-login') || e.target.closest('.save-btn')) return;
                     pendingRedirect = card.getAttribute('data-redirect') || null;
                     showLoginRequired();
-                }
+                });
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        pendingRedirect = card.getAttribute('data-redirect') || null;
+                        showLoginRequired();
+                    }
+                });
             });
         });
-    });
 
-    function animateModal(modalEl){
-        const dialog = modalEl.querySelector('.modal-dialog');
-        if(!dialog) return;
-        dialog.classList.add('modal-animate-in');
-        dialog.addEventListener('animationend', ()=> dialog.classList.remove('modal-animate-in'), {once:true});
-    }
+        function animateModal(modalEl) {
+            const dialog = modalEl.querySelector('.modal-dialog');
+            if (!dialog) return;
+            dialog.classList.add('modal-animate-in');
+            dialog.addEventListener('animationend', () => dialog.classList.remove('modal-animate-in'), {
+                once: true
+            });
+        }
 
-    function createAnimatedLoginPrompt(){
-        if(document.querySelector('.login-fallback-overlay')) return;
-        const overlay = document.createElement('div');
-        overlay.className = 'login-fallback-overlay';
-        overlay.innerHTML = `
+        function createAnimatedLoginPrompt() {
+            if (document.querySelector('.login-fallback-overlay')) return;
+            const overlay = document.createElement('div');
+            overlay.className = 'login-fallback-overlay';
+            overlay.innerHTML = `
             <div class="login-fallback-card" role="dialog" aria-modal="true" aria-label="Butuh Login">
                 <button type="button" class="close-fallback" aria-label="Tutup">&times;</button>
                 <div class="icon-wrap">
@@ -669,69 +672,266 @@
                     <a href="{{ route('login') }}" class="btn btn-primary btn-sm flex-grow-1">Login Sekarang</a>
                 </div>
             </div>`;
-        document.body.appendChild(overlay);
-        requestAnimationFrame(()=> overlay.classList.add('show'));
-        overlay.addEventListener('click', (e)=>{
-            if(e.target.classList.contains('login-fallback-overlay') || e.target.classList.contains('close-fallback')){
-                overlay.classList.remove('show');
-                overlay.classList.add('closing');
-                setTimeout(()=> overlay.remove(), 320);
-            }
-        });
-    }
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => overlay.classList.add('show'));
+            overlay.addEventListener('click', (e) => {
+                if (e.target.classList.contains('login-fallback-overlay') || e.target.classList.contains('close-fallback')) {
+                    overlay.classList.remove('show');
+                    overlay.classList.add('closing');
+                    setTimeout(() => overlay.remove(), 320);
+                }
+            });
+        }
     </script>
     <style>
-    /* Modal animation enhancement */
-    #loginRequiredModal .modal-dialog { animation-duration:.65s; animation-fill-mode:both; }
-    .modal-animate-in { animation: modalPop .65s cubic-bezier(.16,.8,.24,1); }
-    @keyframes modalPop {0%{transform:translateY(28px) scale(.9);opacity:0;}50%{transform:translateY(-4px) scale(1.01);}70%{transform:translateY(0) scale(.998);}100%{transform:translateY(0) scale(1);opacity:1;}}
+        /* Modal animation enhancement */
+        #loginRequiredModal .modal-dialog {
+            animation-duration: .65s;
+            animation-fill-mode: both;
+        }
 
-    /* Fallback overlay (when Bootstrap JS absent) */
-    .login-fallback-overlay {position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(17,24,39,.38);backdrop-filter:blur(4px);opacity:0;transition:opacity .3s ease;z-index:1200;}
-    .login-fallback-overlay.show {opacity:1;}
-    .login-fallback-overlay.closing {opacity:0;}
-    .login-fallback-card {width:100%;max-width:340px;background:#fff;border-radius:20px;padding:1.4rem 1.3rem 1.6rem;box-shadow:0 20px 40px -16px rgba(0,0,0,.25),0 4px 10px -2px rgba(0,0,0,.12);position:relative;animation:fallbackCardIn .6s cubic-bezier(.16,.8,.24,1);text-align:center;}
-    @keyframes fallbackCardIn {0%{transform:translateY(28px) scale(.9);opacity:0;}55%{transform:translateY(-6px) scale(1.02);}75%{transform:translateY(0) scale(.995);}100%{transform:translateY(0) scale(1);opacity:1;}}
-    .login-fallback-card h5 {font-weight:600;letter-spacing:.3px;}
-    .login-fallback-card .icon-wrap {width:72px;height:72px;border-radius:24px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;position:relative;}
-    .login-fallback-card .icon-wrap .pulse {animation:pulseRing 2s ease-out infinite;}
-    @keyframes pulseRing {0%{transform:scale(.6);opacity:.55;}70%{transform:scale(1);opacity:0;}100%{opacity:0;}}
-    .login-fallback-card .draw-check {stroke-dasharray:40;stroke-dashoffset:40;animation:drawCheck 1s ease forwards .35s;}
-    @keyframes drawCheck {to{stroke-dashoffset:0;}}
-    .login-fallback-card .close-fallback {position:absolute;top:6px;right:10px;background:none;border:none;font-size:1.35rem;line-height:1;color:#888;cursor:pointer;transition:color .2s, transform .2s;}
-    .login-fallback-card .close-fallback:hover {color:#111;transform:scale(1.1);} 
-    @media (max-width:520px){.login-fallback-card{margin:0 1rem;border-radius:18px;}}
-    /* Adjust event card image size & spacing */
-    .event-list .card-event .event-poster {position:relative; height: 340px; /* increased from previous ~200-260 */}
-    .event-list .card-event .event-poster-img {width:100%; height:100%; object-fit:cover;}
-    /* Slightly larger grid items vertically */
-    .event-list {row-gap:34px;}
-    /* If card body needs more top separation from image */
-    .event-list .card-event .card-body {padding-top:18px;}
-    @media (max-width: 768px){
-        .event-list .card-event .event-poster {height:280px;}
-    }
-    .login-required-card {cursor:pointer;}
-    .login-required-card:focus {outline:2px solid #4f46e5; outline-offset:2px;}
-    /* FREE price styling */
-    .price-free { 
-        color:#15803d; 
-        font-weight:600; 
-        letter-spacing:.5px; 
-        background:#dcfce7; 
-        padding:4px 10px; 
-        border-radius:30px; 
-        font-size:.82rem; 
-        display:inline-block; 
-        line-height:1.05; 
-        box-shadow:0 0 0 1px #bbf7d0 inset; 
-    }
-    /* In-card countdown */
-    .countdown-row {margin:12px 0 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:.65rem; letter-spacing:.5px;}
-    .countdown-row .cd-part {background:#1e293b; color:#f1f5f9; padding:4px 6px; border-radius:6px; font-weight:600; font-size:.75rem; min-width:34px; text-align:center; display:inline-block; box-shadow:0 2px 4px -2px rgba(0,0,0,.25);} 
-    .countdown-row small {font-size:.6rem; margin-left:-2px; margin-right:4px; color:#475569; font-weight:500;}
-    .countdown-row.is-live .cd-part {background:#16a34a;} 
-    .countdown-row.is-live small {color:#15803d;} 
+        .modal-animate-in {
+            animation: modalPop .65s cubic-bezier(.16, .8, .24, 1);
+        }
+
+        @keyframes modalPop {
+            0% {
+                transform: translateY(28px) scale(.9);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translateY(-4px) scale(1.01);
+            }
+
+            70% {
+                transform: translateY(0) scale(.998);
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Fallback overlay (when Bootstrap JS absent) */
+        .login-fallback-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(17, 24, 39, .38);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity .3s ease;
+            z-index: 1200;
+        }
+
+        .login-fallback-overlay.show {
+            opacity: 1;
+        }
+
+        .login-fallback-overlay.closing {
+            opacity: 0;
+        }
+
+        .login-fallback-card {
+            width: 100%;
+            max-width: 340px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 1.4rem 1.3rem 1.6rem;
+            box-shadow: 0 20px 40px -16px rgba(0, 0, 0, .25), 0 4px 10px -2px rgba(0, 0, 0, .12);
+            position: relative;
+            animation: fallbackCardIn .6s cubic-bezier(.16, .8, .24, 1);
+            text-align: center;
+        }
+
+        @keyframes fallbackCardIn {
+            0% {
+                transform: translateY(28px) scale(.9);
+                opacity: 0;
+            }
+
+            55% {
+                transform: translateY(-6px) scale(1.02);
+            }
+
+            75% {
+                transform: translateY(0) scale(.995);
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .login-fallback-card h5 {
+            font-weight: 600;
+            letter-spacing: .3px;
+        }
+
+        .login-fallback-card .icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 24px;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .login-fallback-card .icon-wrap .pulse {
+            animation: pulseRing 2s ease-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0% {
+                transform: scale(.6);
+                opacity: .55;
+            }
+
+            70% {
+                transform: scale(1);
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .login-fallback-card .draw-check {
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            animation: drawCheck 1s ease forwards .35s;
+        }
+
+        @keyframes drawCheck {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .login-fallback-card .close-fallback {
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.35rem;
+            line-height: 1;
+            color: #888;
+            cursor: pointer;
+            transition: color .2s, transform .2s;
+        }
+
+        .login-fallback-card .close-fallback:hover {
+            color: #111;
+            transform: scale(1.1);
+        }
+
+        @media (max-width:520px) {
+            .login-fallback-card {
+                margin: 0 1rem;
+                border-radius: 18px;
+            }
+        }
+
+        /* Adjust event card image size & spacing */
+        .event-list .card-event .event-poster {
+            position: relative;
+            height: 340px;
+            /* increased from previous ~200-260 */
+        }
+
+        .event-list .card-event .event-poster-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Slightly larger grid items vertically */
+        .event-list {
+            row-gap: 34px;
+        }
+
+        /* If card body needs more top separation from image */
+        .event-list .card-event .card-body {
+            padding-top: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .event-list .card-event .event-poster {
+                height: 280px;
+            }
+        }
+
+        .login-required-card {
+            cursor: pointer;
+        }
+
+        .login-required-card:focus {
+            outline: 2px solid #4f46e5;
+            outline-offset: 2px;
+        }
+
+        /* FREE price styling */
+        .price-free {
+            color: #15803d;
+            font-weight: 600;
+            letter-spacing: .5px;
+            background: #dcfce7;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: .82rem;
+            display: inline-block;
+            line-height: 1.05;
+            box-shadow: 0 0 0 1px #bbf7d0 inset;
+        }
+
+        /* In-card countdown */
+        .countdown-row {
+            margin: 12px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            font-size: .65rem;
+            letter-spacing: .5px;
+        }
+
+        .countdown-row .cd-part {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 4px 6px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: .75rem;
+            min-width: 34px;
+            text-align: center;
+            display: inline-block;
+            box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .25);
+        }
+
+        .countdown-row small {
+            font-size: .6rem;
+            margin-left: -2px;
+            margin-right: 4px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .countdown-row.is-live .cd-part {
+            background: #16a34a;
+        }
+
+        .countdown-row.is-live small {
+            color: #15803d;
+        }
     </style>
 
     <section class="partner">
@@ -753,90 +953,94 @@
             const slides = document.querySelectorAll('.testimoni-slide');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
-            
+
             let currentSlide = 0;
             let autoSlideInterval;
-            
+
             // Function to show specific slide
             function showSlide(index) {
                 slides.forEach((slide, i) => {
                     slide.classList.toggle('active', i === index);
                 });
-                
+
                 // Smooth transition
                 track.style.transform = `translateX(-${index * 100}%)`;
             }
-            
+
             // Function to go to next slide
             function nextSlide() {
                 currentSlide = (currentSlide + 1) % slides.length;
                 showSlide(currentSlide);
             }
-            
+
             // Function to go to previous slide
             function prevSlide() {
                 currentSlide = (currentSlide - 1 + slides.length) % slides.length;
                 showSlide(currentSlide);
             }
-            
+
             // Auto slide every 8 seconds
             function startAutoSlide() {
                 autoSlideInterval = setInterval(nextSlide, 8000);
             }
-            
+
             // Stop auto slide
             function stopAutoSlide() {
                 clearInterval(autoSlideInterval);
             }
-            
+
             // Event listeners for navigation buttons
             nextBtn.addEventListener('click', function() {
                 stopAutoSlide();
                 nextSlide();
                 startAutoSlide();
             });
-            
+
             prevBtn.addEventListener('click', function() {
                 stopAutoSlide();
                 prevSlide();
                 startAutoSlide();
             });
-            
+
             // Pause auto slide on hover (area slider & nav buttons)
             const pauseTargets = [slider, prevBtn, nextBtn];
             pauseTargets.forEach(el => {
                 el.addEventListener('mouseenter', stopAutoSlide);
                 el.addEventListener('mouseleave', startAutoSlide);
             });
-            
+
             // Initialize
             showSlide(0);
             startAutoSlide();
         });
 
         // In-card event countdowns
-        document.addEventListener('DOMContentLoaded', function(){
+        document.addEventListener('DOMContentLoaded', function() {
             const rows = document.querySelectorAll('.countdown-row[data-event-datetime]');
-            if(!rows.length) return;
-            function pad(n){return n.toString().padStart(2,'0');}
-            function update(){
+            if (!rows.length) return;
+
+            function pad(n) {
+                return n.toString().padStart(2, '0');
+            }
+
+            function update() {
                 const now = Date.now();
                 rows.forEach(r => {
-                    if(r.classList.contains('is-live')) return;
+                    if (r.classList.contains('is-live')) return;
                     const dt = r.getAttribute('data-event-datetime');
-                    if(!dt) return;
+                    if (!dt) return;
                     let target = new Date(dt);
-                    if(isNaN(target.getTime())) target = new Date(dt+'Z');
+                    if (isNaN(target.getTime())) target = new Date(dt + 'Z');
                     const diff = target.getTime() - now;
-                    if(diff <= 0){
+                    if (diff <= 0) {
                         r.classList.add('is-live');
                         r.innerHTML = '<span class="cd-part" style="min-width:auto;padding:4px 10px;">LIVE</span>';
                         return;
                     }
-                    const d = Math.floor(diff/86400000);
-                    const h = Math.floor((diff%86400000)/3600000);
-                    const m = Math.floor((diff%3600000)/60000);
-                    const s = Math.floor((diff%60000)/1000);
+                    const d = Math.floor(diff / 86400000);
+                    const h = Math.floor((diff % 86400000) / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
                     r.querySelector('.cd-days').textContent = pad(d);
                     r.querySelector('.cd-hours').textContent = pad(h);
                     r.querySelector('.cd-mins').textContent = pad(m);
@@ -844,38 +1048,38 @@
                 });
             }
             update();
-            setInterval(update,1000);
+            setInterval(update, 1000);
         });
-        
+
         // Scroll reveal animation
         function reveal() {
             var reveals = document.querySelectorAll('.reveal');
-            
+
             for (var i = 0; i < reveals.length; i++) {
                 var windowHeight = window.innerHeight;
                 var elementTop = reveals[i].getBoundingClientRect().top;
                 var elementVisible = 150;
-                
+
                 if (elementTop < windowHeight - elementVisible) {
                     reveals[i].classList.add('active');
                 }
             }
         }
-        
+
         // Add reveal class to sections
         document.addEventListener('DOMContentLoaded', function() {
             const sections = document.querySelectorAll('.kursus-pelatihan, .testimoni-section, .partner, .footer-section');
             sections.forEach(section => {
                 section.classList.add('reveal');
             });
-            
+
             // Initial reveal check
             reveal();
         });
-        
+
         // Listen for scroll events
         window.addEventListener('scroll', reveal);
-        
+
         // Parallax effect for hero section
         window.addEventListener('scroll', function() {
             const scrolled = window.pageYOffset;
@@ -887,27 +1091,146 @@
         });
     </script>
     <style>
-    /* Testimoni slider 5-card layout & transition */
-    .testimoni-container {position:relative; max-width:1280px; margin:0 auto; padding:0 40px;}
-    .testimoni-slider {overflow:hidden; width:100%;}
-    .testimoni-track {display:flex; width:100%; transition:transform .7s cubic-bezier(.16,.8,.24,1);}
-    .testimoni-slide {flex:0 0 100%; padding:4px 4px 10px;}
-    .testimoni-slide .reviews {display:flex; gap:18px; list-style:none; padding:0; margin:0;}
-    .testimoni-slide .reviews li {flex:1 0 calc((100% - 72px)/5); max-width:calc((100% - 72px)/5);} /* 72px = 18*4 gaps */
-    .testimoni-slide .card {height:100%; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px -6px rgba(0,0,0,.12); transition:box-shadow .25s, transform .25s; background:#fff;}
-    .testimoni-slide .card:hover {box-shadow:0 12px 28px -10px rgba(0,0,0,.18); transform:translateY(-4px);} 
-    .testimoni-slide .reviewer {display:flex; align-items:center; gap:10px; margin-bottom:10px;}
-    .testimoni-slide .reviewer img {width:48px; height:48px; object-fit:cover; border-radius:14px;}
-    .testimoni-slide .stars {display:flex; gap:2px; margin-bottom:8px;}
-    .testimoni-slide .review-text {font-size:.8rem; line-height:1.35; color:#444; margin:0;}
-    .nav-btn {position:absolute; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; border:1px solid #d1d5db; background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 6px 18px -6px rgba(0,0,0,.18); transition:background .25s, transform .25s, box-shadow .25s; z-index:5;}
-    .nav-btn:hover {background:#f3f4f6; transform:translateY(-50%) translateY(-3px);} 
-    .nav-btn:active {transform:translateY(-50%);} 
-    .nav-btn-left {left:6px;} 
-    .nav-btn-right {right:6px;} 
-    @media (max-width:1024px){ .testimoni-container {padding:0 28px;} }
-    @media (max-width:820px){ .testimoni-slide .reviews li {flex:1 0 calc((100% - 36px)/3); max-width:calc((100% - 36px)/3);} /* 3 per view */ }
-    @media (max-width:560px){ .testimoni-slide .reviews li {flex:1 0 calc((100% - 18px)/2); max-width:calc((100% - 18px)/2);} .nav-btn{display:none;} }
+        /* Testimoni slider 5-card layout & transition */
+        .testimoni-container {
+            position: relative;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        .testimoni-slider {
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .testimoni-track {
+            display: flex;
+            width: 100%;
+            transition: transform .7s cubic-bezier(.16, .8, .24, 1);
+        }
+
+        .testimoni-slide {
+            flex: 0 0 100%;
+            padding: 4px 4px 10px;
+        }
+
+        .testimoni-slide .reviews {
+            display: flex;
+            gap: 18px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .testimoni-slide .reviews li {
+            flex: 1 0 calc((100% - 72px)/5);
+            max-width: calc((100% - 72px)/5);
+        }
+
+        /* 72px = 18*4 gaps */
+        .testimoni-slide .card {
+            height: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 14px -6px rgba(0, 0, 0, .12);
+            transition: box-shadow .25s, transform .25s;
+            background: #fff;
+        }
+
+        .testimoni-slide .card:hover {
+            box-shadow: 0 12px 28px -10px rgba(0, 0, 0, .18);
+            transform: translateY(-4px);
+        }
+
+        .testimoni-slide .reviewer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .testimoni-slide .reviewer img {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 14px;
+        }
+
+        .testimoni-slide .stars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 8px;
+        }
+
+        .testimoni-slide .review-text {
+            font-size: .8rem;
+            line-height: 1.35;
+            color: #444;
+            margin: 0;
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 18px -6px rgba(0, 0, 0, .18);
+            transition: background .25s, transform .25s, box-shadow .25s;
+            z-index: 5;
+        }
+
+        .nav-btn:hover {
+            background: #f3f4f6;
+            transform: translateY(-50%) translateY(-3px);
+        }
+
+        .nav-btn:active {
+            transform: translateY(-50%);
+        }
+
+        .nav-btn-left {
+            left: 6px;
+        }
+
+        .nav-btn-right {
+            right: 6px;
+        }
+
+        @media (max-width:1024px) {
+            .testimoni-container {
+                padding: 0 28px;
+            }
+        }
+
+        @media (max-width:820px) {
+            .testimoni-slide .reviews li {
+                flex: 1 0 calc((100% - 36px)/3);
+                max-width: calc((100% - 36px)/3);
+            }
+
+            /* 3 per view */
+        }
+
+        @media (max-width:560px) {
+            .testimoni-slide .reviews li {
+                flex: 1 0 calc((100% - 18px)/2);
+                max-width: calc((100% - 18px)/2);
+            }
+
+            .nav-btn {
+                display: none;
+            }
+        }
     </style>
 </body>
 
