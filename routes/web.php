@@ -19,6 +19,9 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 
 // Landing page: jika sudah login arahkan ke dashboard
+Route::get('/auth', function () {
+    return view('/auth');
+});
 Route::get('/', function () {
     if (Auth::check()) {
         return redirect()->route('dashboard');
@@ -26,19 +29,15 @@ Route::get('/', function () {
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
 
-
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
-Route::get('/payment/{event}', function (Event $event) {
-    $user = Auth::user();
-    $already = $user?->eventRegistrations()
-                    ->where('event_id', $event->id)
-                    ->exists() ?? false;
-
-    if ($already) {
-        return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
+Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
+    $user = auth()->user();
+    $already = $user && $user->eventRegistrations()->where('event_id',$event->id)->exists();
+    if($already){
+        return redirect()->route('events.show',$event)->with('info','Anda sudah terdaftar.');
     }
     return view('payment', compact('event'));
-})->middleware('auth')->name('payment');
+})->name('payment');
 
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
