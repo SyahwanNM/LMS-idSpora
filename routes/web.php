@@ -19,13 +19,15 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 
 // Landing page: jika sudah login arahkan ke dashboard
-Route::get('/', function(){
-    if(auth()->check()) {
+Route::get('/auth', function () {
+    return view('/auth');
+});
+Route::get('/', function () {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
-
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
@@ -74,6 +76,11 @@ Route::middleware(['guest'])->group(function () {
     // Social auth (Google)
     Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
+    // Login OTP
+    Route::get('/login/verify-otp', [AuthController::class, 'showLoginOtpForm'])->name('login.otp');
+    Route::post('/login/verify-otp', [AuthController::class, 'verifyLoginOtp'])->name('login.otp.verify');
+    Route::post('/login/resend-otp', [AuthController::class, 'resendLoginOtp'])->name('login.otp.resend');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -151,6 +158,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
+    Route::get('/course-quiz-result', function () {
+    return view('course.quiz.result');
+    })->name('course.quiz.result');
+
+    Route::get('/course-quiz', function () {
+    return view('course.quiz.intro');
+})->name('course.quiz.intro');
+
+Route::get('/course-quiz-start', function () {
+    return view('course.quiz.start');
+})->name('course.quiz.start');
+
+
+
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::resource('admin/events', \App\Http\Controllers\EventController::class, [
             'names' => [
@@ -164,4 +185,4 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
     });
-}); 
+});

@@ -44,32 +44,40 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
-        $credentials = $request->only('email', 'password');
-        $remember = $request->has('remember');
-
-        if (Auth::attempt($credentials, $remember)) {
-            $request->session()->regenerate();
-
-            $user = Auth::user();
-
-            // Admin SELALU diarahkan ke dashboard admin (abaikan redirect intent publik)
-            if (strcasecmp($user->role, 'admin') === 0) {
-                // Gunakan flash key khusus agar dashboard hanya menampilkan notifikasi login sekali
-                return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
-            }
-
-            // Untuk user biasa, gunakan parameter redirect (jika valid) atau intended() fallback
-            $safeRedirect = $this->resolveSafeRedirect($request);
-            if ($safeRedirect) {
-                return redirect($safeRedirect)->with('success', 'Login berhasil!');
-            }
-            // intended akan bekerja jika sebelumnya ada guard yang menyimpan url.intended; jika tidak fallback ke /dashboard
-            return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
+        // Validasi kredensial secara manual untuk memulai OTP 2FA tanpa langsung login
+        $user = User::where('email', $request->email)->first();
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return redirect()->back()
+                ->withErrors(['email' => 'Email atau kata sandi salah'])
+                ->withInput($request->except('password'));
         }
 
-        return redirect()->back()
-            ->withErrors(['email' => 'Email atau kata sandi salah'])
-            ->withInput($request->except('password'));
+        // Generate OTP 6 digit, kadaluarsa 10 menit
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // Hapus OTP lama yang belum dipakai untuk email ini
+        \App\Models\LoginOtp::where('email', $user->email)->where('is_used', false)->delete();
+        \App\Models\LoginOtp::create([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(10),
+            'is_used' => false,
+        ]);
+
+        // Simpan sesi pending login
+        $request->session()->put('login_otp_user_id', $user->id);
+        $request->session()->put('login_otp_email', $user->email);
+        $request->session()->put('login_otp_redirect', $this->resolveSafeRedirect($request));
+
+        // Kirim email OTP
+        try {
+            Mail::to($user->email)->send(new \App\Mail\LoginOtpMail($code, $user->name, 10));
+        } catch (\Throwable $e) {
+            \Log::error('Login OTP mail failed: '.$e->getMessage());
+            return redirect()->back()->withErrors(['email' => 'Gagal mengirim kode OTP. Coba lagi.'])->withInput($request->except('password'));
+        }
+
+        return redirect()->route('login.otp')->with('success', 'Kode OTP telah dikirim ke email Anda.');
     }
 
     public function register(Request $request)
@@ -279,6 +287,86 @@ class AuthController extends Controller
 
         return redirect()->route('login')
             ->with('success', 'Password berhasil direset. Silakan login dengan password baru.');
+    }
+
+    // ===== Login OTP (2FA) =====
+    public function showLoginOtpForm(Request $request)
+    {
+        if (!$request->session()->has('login_otp_user_id')) {
+            return redirect()->route('login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
+        }
+        $email = $request->session()->get('login_otp_email');
+        $masked = $email ? preg_replace('/(^.).*(@.*$)/', '$1***$2', $email) : '';
+        // Gunakan tampilan auth.blade.php sebagai halaman verifikasi OTP
+        return view('auth', ['maskedEmail' => $masked]);
+    }
+
+    public function verifyLoginOtp(Request $request)
+    {
+        $request->validate([
+            'code' => ['required','string','size:6']
+        ], [
+            'code.required' => 'Kode OTP harus diisi',
+            'code.size' => 'Kode OTP harus 6 digit',
+        ]);
+        $email = $request->session()->get('login_otp_email');
+        $userId = $request->session()->get('login_otp_user_id');
+        if(!$email || !$userId){
+            return redirect()->route('login')->withErrors(['email' => 'Sesi OTP tidak ditemukan.']);
+        }
+        $otp = \App\Models\LoginOtp::where('email', $email)
+            ->where('code', $request->code)
+            ->where('is_used', false)
+            ->latest()
+            ->first();
+        if(!$otp || $otp->isExpired()){
+            return back()->withErrors(['code' => 'Kode OTP tidak valid atau sudah kadaluarsa']);
+        }
+        $otp->update(['is_used' => true]);
+        // Login user
+        Auth::loginUsingId($userId, true);
+        // Bersihkan sesi OTP
+        $redirect = $request->session()->pull('login_otp_redirect');
+        $request->session()->forget(['login_otp_user_id','login_otp_email']);
+
+        $user = Auth::user();
+        if (strcasecmp($user->role ?? '', 'admin') === 0) {
+            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+        }
+        if ($redirect) {
+            return redirect($redirect)->with('success', 'Login berhasil!');
+        }
+        return redirect()->intended('/dashboard')->with('success','Login berhasil!');
+    }
+
+    public function resendLoginOtp(Request $request)
+    {
+        $email = $request->session()->get('login_otp_email');
+        $userId = $request->session()->get('login_otp_user_id');
+        if(!$email || !$userId){
+            return redirect()->route('login')->withErrors(['email' => 'Sesi OTP tidak ditemukan.']);
+        }
+        $user = User::find($userId);
+        if(!$user){
+            return redirect()->route('login')->withErrors(['email' => 'Pengguna tidak ditemukan.']);
+        }
+        // Regenerate code
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        \App\Models\LoginOtp::where('email', $email)->where('is_used', false)->delete();
+        \App\Models\LoginOtp::create([
+            'user_id' => $user->id,
+            'email' => $email,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(10),
+            'is_used' => false,
+        ]);
+        try {
+            Mail::to($email)->send(new \App\Mail\LoginOtpMail($code, $user->name, 10));
+        } catch (\Throwable $e) {
+            \Log::error('Resend OTP mail failed: '.$e->getMessage());
+            return back()->withErrors(['code' => 'Gagal mengirim ulang kode OTP.']);
+        }
+        return back()->with('success','Kode OTP baru telah dikirim.');
     }
 
     /**
