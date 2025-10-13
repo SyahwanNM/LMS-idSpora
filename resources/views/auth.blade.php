@@ -66,7 +66,7 @@
 
         .kanan h3 {
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         .form-control {
@@ -225,7 +225,7 @@
         </div>
 
         <div class="kanan">
-            <h3>Verifikasi OTP</h3>
+            <h3>Verifikasi</h3>
 
             @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
@@ -240,26 +240,26 @@
             </div>
             @endif
 
-            <p class="hint">Kami telah mengirimkan kode ke email: <b>{{ $maskedEmail ?? '' }}</b>. Kode berlaku 10 menit.</p>
+            <p class="hint">Kami telah mengirimkan kode ke email Anda: <b>{{ $maskedEmail ?? '' }}</b>. Kode berlaku 10 menit.</p>
 
             <form action="{{ route('login.otp.verify') }}" method="POST">
                 @csrf
                 <div class="mb-3">
-                    <h6>Kode OTP</h6>
-                    <input type="text" name="code" class="form-control" inputmode="numeric" pattern="[0-9]{6}"
-                        maxlength="6" placeholder="Masukkan 6 digit" required>
+                    <h6>Masukkan Kode Verifikasi</h6>
+                    <input type="text" name="code" class="form-control" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+                    <small class="text-white">Kode verifikasi telah dikirim ke email Anda</small>
                 </div>
                 <button type="submit" class="btn-register">Verifikasi</button>
             </form>
 
-            <form id="resendForm" action="{{ route('login.otp.resend') }}" method="POST" class="mt-2">
-                @csrf
-                <div class="kirim-ulang">
-                    <button type="submit" id="resendBtn" class="btn btn-link p-0 kirim-ulang-teks">Kirim ulang kode?</button>
-                </div>
+            <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
+                <form id="resendForm" action="{{ route('login.otp.resend') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" id="resendBtn" class="btn btn-link p-0" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kirim Ulang Kode</button>
+                </form>
                 <div class="cooldown" id="cooldownText">Tunggu <span id="sec">60</span> detik untuk kirim ulang</div>
                 <div class="hint mt-1" id="resendStatus" style="display:none;"></div>
-            </form>
+            </div>
         </div>
     </div>
 
