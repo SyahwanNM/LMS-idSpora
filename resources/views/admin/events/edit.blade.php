@@ -56,6 +56,37 @@
                                 </div>
 
                                 <div class="mb-4">
+                                    <label for="materi" class="form-label fw-semibold">
+                                        <i class="bi bi-journal-text me-1"></i>Materi <span class="text-muted">(Opsional)</span>
+                                    </label>
+                                    <select name="materi" id="materi" class="form-select form-select-lg">
+                                        <option value="">- Pilih Materi -</option>
+                                        @php
+                                            $materiOptions = [
+                                                'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management','Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer','Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                            ];
+                                            $materiValue = old('materi', $event->materi);
+                                        @endphp
+                                        @foreach($materiOptions as $opt)
+                                            <option value="{{ $opt }}" {{ $materiValue === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="jenis" class="form-label fw-semibold">
+                                        <i class="bi bi-diagram-3 me-1"></i>Jenis <span class="text-muted">(Opsional)</span>
+                                    </label>
+                                    <select name="jenis" id="jenis" class="form-select form-select-lg">
+                                        <option value="">- Pilih Jenis -</option>
+                                        @php $jenisValue = old('jenis', $event->jenis); @endphp
+                                        @foreach(['Workshop','Seminar','Webinar'] as $opt)
+                                            <option value="{{ $opt }}" {{ $jenisValue === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="mb-4">
                                     <label for="description" class="form-label fw-semibold">
                                         <i class="bi bi-file-text me-1"></i>Deskripsi Event <span class="text-danger">*</span>
                                     </label>

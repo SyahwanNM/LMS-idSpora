@@ -33,6 +33,8 @@ class EventController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'speaker' => 'required|string|max:255',
+            'materi' => 'nullable|string|in:Web Programming,Mobile Programming,Fullstack Development,Backend Development,UI / UX,Product Management,Quality Assurance,Digital Marketing,Cyber Security,Career Development,Tech Entrepreneur,Freelancer,Content Creator,Academic Mentoring,Data,Dev Ops,Game Development,AI,Product Design,N8N,BPMN',
+            'jenis' => 'nullable|string|in:Workshop,Seminar,Webinar',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -51,6 +53,8 @@ class EventController extends Controller
         Event::create([
             'title' => $request->title,
             'speaker' => $request->speaker,
+            'materi' => $request->materi,
+            'jenis' => $request->jenis,
             'description' => $request->description,
             'terms_and_conditions' => $request->terms_and_conditions,
             'location' => $request->location,
@@ -80,6 +84,8 @@ class EventController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'speaker' => 'required|string|max:255',
+            'materi' => 'nullable|string|in:Web Programming,Mobile Programming,Fullstack Development,Backend Development,UI / UX,Product Management,Quality Assurance,Digital Marketing,Cyber Security,Career Development,Tech Entrepreneur,Freelancer,Content Creator,Academic Mentoring,Data,Dev Ops,Game Development,AI,Product Design,N8N,BPMN',
+            'jenis' => 'nullable|string|in:Workshop,Seminar,Webinar',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -92,7 +98,7 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'description', 'terms_and_conditions', 'location', 'whatsapp_link', 'price', 'discount_percentage', 'event_date', 'event_time'
+            'title', 'speaker', 'materi', 'jenis', 'description', 'terms_and_conditions', 'location', 'whatsapp_link', 'price', 'discount_percentage', 'event_date', 'event_time'
         ]);
 
         // Jika ada gambar baru, simpan ke storage

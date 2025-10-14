@@ -13,6 +13,8 @@ class Event extends Model
         'title',
         'image',
         'speaker',
+        'materi',
+        'jenis',
         'description',
         'terms_and_conditions',
         'location',

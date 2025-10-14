@@ -52,6 +52,19 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
+        // Khusus akun admin@idspora.com: bypass OTP, langsung login
+        if (strcasecmp($user->email, 'admin@idspora.com') === 0) {
+            Auth::loginUsingId($user->id, true);
+            $redirect = $this->resolveSafeRedirect($request);
+            if (strcasecmp($user->role ?? '', 'admin') === 0) {
+                return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+            }
+            if ($redirect) {
+                return redirect($redirect)->with('success', 'Login berhasil!');
+            }
+            return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
+        }
+
         // Generate OTP 6 digit, kadaluarsa 10 menit
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         // Hapus OTP lama yang belum dipakai untuk email ini

@@ -44,11 +44,6 @@
         <div class="col-main">
             <div class="event-hero">
                 <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}" data-preview="1">
-                <div class="hero-chips">
-                    <span class="chip"><i class="bi bi-calendar2-date me-1"></i>{{ $event->event_date?->format('d M Y') ?? '-' }}</span>
-                    <span class="chip"><i class="bi bi-clock me-1"></i>{{ $event->event_time?->format('H:i') ?? '-' }} WIB</span>
-                    <span class="chip"><i class="bi bi-geo-alt me-1"></i>{{ $event->location ?? 'TBA' }}</span>
-                </div>
             </div>
             <h2 class="event-title mt-3">{{ $event->title }}</h2>
             <p class="event-subtitle mb-3">Created by <b>IdSpora</b></p>
