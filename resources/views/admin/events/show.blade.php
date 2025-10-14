@@ -65,10 +65,28 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="d-flex align-items-center">
+                                            <i class="bi bi-journal-text text-secondary me-2"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Materi</small>
+                                                <strong>{{ $event->materi ?? '-' }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
                                             <i class="bi bi-geo-alt-fill text-success me-2"></i>
                                             <div>
                                                 <small class="text-muted d-block">Lokasi</small>
                                                 <strong>{{ $event->location }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-diagram-3 text-dark me-2"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Jenis</small>
+                                                <strong>{{ $event->jenis ?? '-' }}</strong>
                                             </div>
                                         </div>
                                     </div>

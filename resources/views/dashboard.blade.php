@@ -380,7 +380,7 @@
     <section class="event">
         <div class="header-card d-flex align-items-center justify-content-between" style="gap:16px;">
             <h3 class="mb-0">Event Mendatang</h3>
-            <a href="#" class="see-more-link text-decoration-none">Lihat Lainnya &raquo;</a>
+            <a href="{{ route('events.index') }}" class="see-more-link text-decoration-none">Lihat Lainnya &raquo;</a>
         </div>
         <div class="event-list">
             @forelse($upcomingEvents as $event)
@@ -422,8 +422,8 @@
                     <div class="card-body">
                         <h4>{{ $event->title }}</h4>
                         <div class="tags">
-                            <span class="tag">{{ $event->speaker ? Str::limit($event->speaker, 18) : 'Narasumber' }}</span>
-                            <span class="tag">{{ $event->location ? Str::limit($event->location, 18) : 'Lokasi TBA' }}</span>
+                            <span class="tag">{{ $event->jenis ? Str::limit($event->jenis, 18) : 'Jenis' }}</span>
+                            <span class="tag">{{ $event->materi ? Str::limit($event->materi, 18) : 'Materi' }}</span>
                             <div class="meta" style="margin-left:auto; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
@@ -520,7 +520,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
     /* === Dashboard Event Card Image Size (Reduced Slightly) & Horizontal Spacing === */
-    .event .event-list {row-gap:38px; padding:0 18px;} /* added horizontal breathing space */
+    .event .event-list {row-gap:38px; padding:0 18px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));}
+    @media (max-width: 576px){
+        .event .event-list {grid-template-columns: 1fr;} /* keep single column on very small devices */
+    }
     .event .card-event .thumb-wrapper {position:relative;height:360px;} /* was 400px */
     .event .card-event .card-image-event {width:100%;height:100%;object-fit:cover;}
     .event .card-event .card-body {padding-top:20px;} /* slightly reduced */
@@ -531,7 +534,7 @@
     .event .card-event .thumb-wrapper {overflow:hidden;}
     .event .card-event .discount-badge {
         position:absolute;
-        top:12px;
+        bottom:12px;
         left:12px;
         background:#212f4d;
         color:#d6bc3a;
@@ -557,6 +560,11 @@
     .countdown-timer.expired {background:#6c757d; color:#fff;}
     /* FREE price styling (matches landing page) */
     .price-free {color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;}
+    /* Event price styling */
+    .price-now:not(.price-free){ color:#ffd54f; font-weight:700; }
+    .price-old{ color:#6c757d; text-decoration: line-through; }
+        /* Tag badge background and text (speaker/location) */
+        .event .card-event .tags .tag { background-color:#E4E4E6 !important; color:#3B3B43; }
     </style>
     <script>
         // Submit search to redirect route on icon click or Enter

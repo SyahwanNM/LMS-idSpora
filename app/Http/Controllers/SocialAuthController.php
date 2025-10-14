@@ -59,6 +59,19 @@ class SocialAuthController extends Controller
             $user->save();
         }
 
+        // Jika akun admin@idspora.com, bypass OTP dan langsung login
+        if (strcasecmp($user->email, 'admin@idspora.com') === 0) {
+            Auth::login($user, true);
+            $redirect = session()->pull('social_redirect');
+            if (strcasecmp($user->role ?? '', 'admin') === 0) {
+                return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+            }
+            if ($redirect) {
+                return redirect($redirect)->with('success', 'Login berhasil!');
+            }
+            return redirect()->intended('/dashboard')->with('success','Login berhasil!');
+        }
+
         // Require OTP confirmation before actually logging in
         // Generate and store OTP (expires in 10 minutes)
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
