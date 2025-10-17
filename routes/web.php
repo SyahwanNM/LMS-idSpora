@@ -78,8 +78,8 @@ Route::middleware(['guest'])->group(function () {
     Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
     // Login OTP
-    Route::get('/login/verify-otp', [AuthController::class, 'showLoginOtpForm'])->name('login.otp');
-    Route::post('/login/verify-otp', [AuthController::class, 'verifyLoginOtp'])->name('login.otp.verify');
+    Route::get('/auth', [AuthController::class, 'showLoginOtpForm'])->name('login.otp');
+    Route::post('/auth', [AuthController::class, 'verifyLoginOtp'])->name('login.otp.verify');
     Route::post('/login/resend-otp', [AuthController::class, 'resendLoginOtp'])->name('login.otp.resend');
 });
 
