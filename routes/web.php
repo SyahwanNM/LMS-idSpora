@@ -18,6 +18,10 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
+Route::get('/detail-event-registered', function () {
+    return view('/detail-event-registered');
+});
+
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/auth', function () {
     return view('/auth');

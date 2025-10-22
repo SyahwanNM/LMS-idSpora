@@ -334,7 +334,7 @@
             });
         }
         update();
-        setInterval(update, 60000); // update every minute sufficient for minute resolution
+        setInterval(update, 60000);
     })();
     </script>
 </body>
