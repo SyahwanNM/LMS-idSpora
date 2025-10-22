@@ -62,12 +62,11 @@
                     </div>
                 </div>
                 
-
                 <div class="dropdown">
                     <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" 
                             data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;"
                             onclick="toggleUserDropdown()">
-                         <img src="{{ optional(Auth::user())->avatar_url ?? asset('images/default-avatar.png') }}"
+                        <img src="{{ Auth::user()->avatar_url }}"
                             alt="Avatar" class="rounded-circle me-2"
                             style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
                         <span class="text-white">{{ Auth::user()->name }}</span>

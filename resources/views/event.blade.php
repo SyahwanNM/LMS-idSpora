@@ -27,6 +27,8 @@
         section.event .header-card {margin-bottom:28px;}
         /* Lower the main heading relative to filter dropdowns */
         section.event .header-card h3 {margin-top:14px;}
+        /* Ensure event titles in listing are visible (override global .event-title {color:white}) */
+        .event .card-event .event-title { color:#212529; margin-left:0; font-weight:600; }
     /* Discount badge styling (moved to bottom-left) */
     .event .card-event .thumb-wrapper {overflow:hidden;}
     .event .card-event .discount-badge {position:absolute; bottom:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:13px; font-weight:600; padding:6px 10px 5px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;}
@@ -478,19 +480,25 @@
     });
     </script>
     <script>
-    // Countdown script (hari jam menit) for event listing
+    // Countdown script (hari jam menit detik) for event listing
     (function(){
+        function pad(n){ return n < 10 ? '0'+n : String(n); }
         function formatDiff(totalSec){
             if(totalSec <= 0) return 'Dimulai';
             let sec = totalSec;
             const days = Math.floor(sec/86400); sec%=86400;
             const hours = Math.floor(sec/3600); sec%=3600;
-            const minutes = Math.floor(sec/60);
-            if(minutes === 0 && hours === 0 && days === 0) return '< 1 menit';
+            const minutes = Math.floor(sec/60); sec%=60;
+            const seconds = sec;
             const parts = [];
             if(days > 0) parts.push(days + ' hari');
             if(hours > 0 || days > 0) parts.push(hours + ' jam');
-            parts.push(minutes + ' menit');
+            // Show mm:ss when under 1 hour; otherwise show minutes only
+            if(days === 0 && hours === 0){
+                parts.push(pad(minutes) + ':' + pad(seconds));
+            } else {
+                parts.push(minutes + ' menit');
+            }
             return parts.join(' ');
         }
         function update(){
@@ -507,8 +515,9 @@
                 el.textContent = formatDiff(diff);
             });
         }
+        // Initial paint and 1s interval for smoother countdown, esp. near start time
         update();
-        setInterval(update, 60000); /
+        setInterval(update, 1000);
     })();
     </script>
 </body>
