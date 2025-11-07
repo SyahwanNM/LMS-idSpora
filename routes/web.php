@@ -18,6 +18,21 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
+Route::get('/admin/detail-event', function () {
+    return view('/admin/detail-event');
+});
+
+Route::get('/admin/report', function () {
+    return view('/admin/report');
+});
+
+Route::get('/admin/add-users', function () {
+    return view('/admin/add-users');
+});
+
+Route::get('/admin/add-event', function () {
+    return view('/admin/add-event');
+});
 Route::get('/detail-event-registered', function () {
     return view('/detail-event-registered');
 });
