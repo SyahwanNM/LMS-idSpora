@@ -375,7 +375,19 @@
                                         <input type="text" class="form-control" id="lokasi" placeholder="Masukkan Lokasi">
                                     </div>
                                     <div class="mb-3">
-                                        <label for="harga" class="form-label">Harga</label>
+                                        <label for="harga" class="form-label">Harga Sebelum Diskon</label>
+                                        <input type="text" class="form-control" id="harga" placeholder="Masukkan Harga">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="harga" class="form-label">Diskon</label>
+                                        <input type="text" class="form-control" id="harga" placeholder="Masukkan Harga">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="harga" class="form-label">Jangka Waktu Diskon</label>
+                                        <input type="date" class="form-control" id="harga" placeholder="Masukkan Jangka Waktu">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="harga" class="form-label"> Sesudah Diskon</label>
                                         <input type="text" class="form-control" id="harga" placeholder="Masukkan Harga">
                                     </div>
                                     <div class="mb-3">
