@@ -103,7 +103,9 @@
 </head>
 
 <body>
-    <img class="back" src="aset/back.png" alt="">
+    <a href="{{ route('login') }}" aria-label="Kembali ke Login">
+        <img class="back" src="{{ asset('aset/back.png') }}" alt="Kembali">
+    </a>
     <div class="main-container">
         <div class="kiri">
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">

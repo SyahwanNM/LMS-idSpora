@@ -140,6 +140,7 @@
                 </div>
                 <div class="icon">📄</div>
             </div>
+            <div id="pending-payment-banner" style="display:none;margin-top:10px;padding:8px;border-radius:6px;background:#fff4e5;color:#7a4b00;font-size:13px;">You have a pending payment — klik "Bayar" untuk melanjutkan pembayaran yang tertunda.</div>
             <button type="submit" class="btn-pay mt-2" disabled>@if(isset($event) && $isFree) Daftar Gratis @else Bayar @endif</button>
         </div>
         </form>
@@ -157,9 +158,26 @@ document.addEventListener('DOMContentLoaded', function(){
     const dial = form.querySelector('select[name="dial_code"]');
     const wa = form.querySelector('input[name="whatsapp"]');
     const btn = form.querySelector('.btn-pay');
+    const emailInput = form.querySelector('input[name="email"]');
     // Gunakan harga final (setelah diskon) untuk menentukan free vs paid
     const isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
     const eventId = @json($event->id ?? null);
+    const pendingKey = `pending_payment_event_${eventId}`;
+    const pendingBanner = document.getElementById('pending-payment-banner');
+
+    // Check for pending payment and show banner if within 15 minutes
+    (function checkPendingBanner(){
+        try{
+            const raw = localStorage.getItem(pendingKey);
+            if(!raw){ if(pendingBanner) pendingBanner.style.display = 'none'; return; }
+            const obj = JSON.parse(raw);
+            if(!obj || !obj.ts || !obj.order_id){ localStorage.removeItem(pendingKey); if(pendingBanner) pendingBanner.style.display = 'none'; return; }
+            const age = Date.now() - (obj.ts || 0);
+            const FIFTEEN_MIN = 15 * 60 * 1000;
+            if(age <= FIFTEEN_MIN){ if(pendingBanner){ pendingBanner.style.display = 'block'; pendingBanner.innerText = 'Anda memiliki pembayaran tertunda — klik "Bayar" untuk melanjutkan pembayaran yang dipilih (berlaku 15 menit).'; } }
+            else { localStorage.removeItem(pendingKey); if(pendingBanner) pendingBanner.style.display = 'none'; }
+        }catch(_e){ if(pendingBanner) pendingBanner.style.display = 'none'; }
+    })();
 
     function isValidPhone(val){ return /^[0-9]{6,15}$/.test(val.trim()); }
 
@@ -177,6 +195,14 @@ document.addEventListener('DOMContentLoaded', function(){
         dial.addEventListener(evt, validate);
         wa.addEventListener(evt, validate);
     });
+
+    function buildPhone(){
+        const dialVal = (dial.value || '').trim();
+        let waVal = (wa.value || '').trim();
+        waVal = waVal.replace(/[^0-9]/g,'');
+        if(waVal.startsWith('0')) waVal = waVal.substring(1);
+        return `${dialVal}${waVal}`;
+    }
 
     form.addEventListener('submit', async function(e){
         e.preventDefault();
@@ -215,10 +241,36 @@ document.addEventListener('DOMContentLoaded', function(){
         // Paid event: get snap token then open snap
         try{
             btn.disabled = true;
-            const tokenRes = await fetch(`/payment/${eventId}/snap-token`, { headers: { 'Accept':'application/json' } });
+            // Support resuming an existing pending payment: store pending order id in localStorage
+            const pendingKey = `pending_payment_event_${eventId}`;
+            const url = new URL(`${window.location.origin}/payment/${eventId}/snap-token`);
+            url.searchParams.set('phone', buildPhone());
+            url.searchParams.set('name', fullName.value.trim());
+            if(emailInput && emailInput.value) url.searchParams.set('email', emailInput.value.trim());
+
+            // If there is a pending order id saved, request a resume token for that order
+            try {
+                const pendingRaw = localStorage.getItem(pendingKey);
+                if (pendingRaw) {
+                    const pendingObj = JSON.parse(pendingRaw);
+                    if (pendingObj && pendingObj.order_id && pendingObj.ts) {
+                        const age = Date.now() - (pendingObj.ts || 0);
+                        const FIFTEEN_MIN = 15 * 60 * 1000;
+                        if (age <= FIFTEEN_MIN) {
+                            url.searchParams.set('order_id', pendingObj.order_id);
+                        } else {
+                            // expired: remove pending marker so backend creates a fresh order
+                            try { localStorage.removeItem(pendingKey); } catch(_e){}
+                        }
+                    }
+                }
+            } catch (_e) { /* ignore JSON errors */ }
+
+            const tokenRes = await fetch(url.toString(), { headers: { 'Accept':'application/json' } });
             const data = await tokenRes.json();
+
+            // If backend indicates a free flow, treat as free
             if(data && data.free){
-                // Backend mendeteksi harga final 0 → perlakukan sebagai free
                 const res = await fetch(`/events/${eventId}/register`, {
                     method: 'POST', headers: { 'Content-Type':'application/json','X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),'Accept':'application/json' }, body: JSON.stringify({})
                 });
@@ -227,14 +279,22 @@ document.addEventListener('DOMContentLoaded', function(){
                 alert(rj.message || 'Gagal mendaftar.');
                 return;
             }
+
             const snapToken = data?.snapToken;
+            // If server returned an order id for pending payment, persist it so user can resume later
+            if (data && data.order_id) {
+                try { localStorage.setItem(pendingKey, JSON.stringify({ order_id: data.order_id, ts: Date.now() })); } catch (_e){}
+            }
+
             if(!snapToken){
                 const msg = data?.message || 'Snap token not found';
                 throw new Error(msg);
             }
+
             window.snap.pay(snapToken, {
                 onSuccess: async function(result){
-                    // Confirm to server and create registration
+                    // Clear pending marker on success and confirm to server
+                    try{ localStorage.removeItem(pendingKey); } catch(_e){}
                     try{
                         await fetch(`/payment/${eventId}/finalize`, {
                             method: 'POST',
@@ -249,14 +309,25 @@ document.addEventListener('DOMContentLoaded', function(){
                     window.location = `/events/${eventId}`;
                 },
                 onPending: function(result){
-                    // Allow user to continue later; redirect to detail
+                    // Keep pending marker so user can continue; redirect to detail
+                    try{ localStorage.removeItem(pendingKey); } catch(_e){}
                     window.location = `/events/${eventId}`;
                 },
                 onError: function(result){
                     alert('Pembayaran gagal. Silakan coba lagi.');
                 },
                 onClose: function(){
-                    // User closed popup, keep on payment page
+                    // User closed popup. Keep pending order in localStorage so clicking "Bayar" resumes.
+                    // Optionally inform the user to continue their pending payment.
+                    try{
+                        const pendingRaw = localStorage.getItem(pendingKey);
+                        if (pendingRaw) {
+                            // show a subtle notice (non-blocking)
+                            setTimeout(()=>{
+                                alert('Pembayaran belum selesai. Klik tombol Bayar untuk melanjutkan metode pembayaran yang dipilih.');
+                            }, 200);
+                        }
+                    } catch(_e){}
                 }
             });
         }catch(err){
