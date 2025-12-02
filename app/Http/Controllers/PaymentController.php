@@ -28,6 +28,14 @@ class PaymentController extends Controller
         $this->configureMidtrans();
 
         $user = Auth::user();
+        // Accept phone/name/email overrides from request (e.g., WhatsApp number from payment form)
+        $reqPhone = trim((string) $request->input('phone', ''));
+        $reqName = trim((string) $request->input('name', ''));
+        $reqEmail = trim((string) $request->input('email', ''));
+        // Sanitize phone to allow only + and digits
+        if ($reqPhone !== '') {
+            $reqPhone = preg_replace('/[^0-9\+]/', '', $reqPhone) ?? '';
+        }
         // Determine price (respect discount if exists)
         $price = method_exists($event, 'hasDiscount') && $event->hasDiscount()
             ? ($event->discounted_price ?? $event->price)
@@ -55,14 +63,18 @@ class PaymentController extends Controller
                 'name' => Str::limit($event->title, 50),
             ]],
             'customer_details' => [
-                'first_name' => $user?->name ?? 'Guest',
-                'email' => $user?->email ?? 'guest@example.com',
+                'first_name' => $reqName !== '' ? $reqName : ($user?->name ?? 'Guest'),
+                'email' => $reqEmail !== '' ? $reqEmail : ($user?->email ?? 'guest@example.com'),
+                // Use WhatsApp number from form if provided
+                'phone' => $reqPhone !== '' ? $reqPhone : null,
             ],
             'callbacks' => [
                 // Optional redirect callback after payment
                 'finish' => url('/payment/finish'),
             ],
         ];
+        // Remove nulls from customer_details to avoid Midtrans validation issues
+        $params['customer_details'] = array_filter($params['customer_details'], function($v){ return !is_null($v) && $v !== ''; });
 
         // Create payment row in DB (pending)
         Payment::create([

@@ -107,7 +107,7 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
         <form id="logoutRealForm" action="{{ route('logout') }}" method="POST" class="d-inline">
             @csrf
-            <button type="button" id="confirmLogoutBtn" class="btn btn-danger">Ya, Logout</button>
+            <button type="submit" id="confirmLogoutBtn" class="btn btn-danger">Ya, Logout</button>
         </form>
             </div>
         </div>
@@ -157,27 +157,40 @@ document.addEventListener('DOMContentLoaded', function() {
 let logoutModalInstance;
 function openLogoutModal(){
     const modalEl = document.getElementById('logoutConfirmModal');
-    if (!logoutModalInstance) {
-        logoutModalInstance = new bootstrap.Modal(modalEl);
+    // If Bootstrap JS is available, show modal; otherwise, fallback to direct submit
+    if (window.bootstrap && typeof bootstrap.Modal === 'function' && modalEl) {
+        if (!logoutModalInstance) {
+            try { logoutModalInstance = new bootstrap.Modal(modalEl); } catch (_e) { logoutModalInstance = null; }
+        }
+        if (logoutModalInstance) { logoutModalInstance.show(); return; }
     }
-    logoutModalInstance.show();
+    // Fallback: submit immediately if modal cannot be shown
+    const form = document.getElementById('logoutRealForm');
+    if(form){ form.submit(); }
 }
 
-// Pre-logout toast + submit
+// Pre-logout toast + success animation, then submit with slight delay
 document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('confirmLogoutBtn');
     const form = document.getElementById('logoutRealForm');
-    if(btn && form){
-        btn.addEventListener('click', () => {
-            // Prevent double click
-            if(btn.disabled) return;
-            btn.disabled = true;
-            showLogoutSuccessState();
-            showInstantLogoutToast(); // tetap tampilkan toast kecil di pojok
-            // delay supaya animasi check terlihat
-            setTimeout(()=> form.submit(), 900);
-        });
+    if(!btn || !form) return;
+
+    function performAnimatedLogout(e){
+        // Prevent immediate navigation to let animation play
+        if(e) e.preventDefault();
+        if(form.dataset.submitting === '1') return; // guard double-submit
+        form.dataset.submitting = '1';
+        btn.disabled = true;
+        try { showLogoutSuccessState(); } catch(_e){}
+        try { showInstantLogoutToast(); } catch(_e){}
+        setTimeout(() => {
+            try { form.submit(); } catch(_e) { form.removeAttribute('data-submitting'); btn.disabled = false; }
+        }, 900);
     }
+
+    // Intercept both click and submit to be safe
+    btn.addEventListener('click', performAnimatedLogout);
+    form.addEventListener('submit', performAnimatedLogout);
 });
 
 function showInstantLogoutToast(){

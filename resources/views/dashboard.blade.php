@@ -422,8 +422,12 @@
                     <div class="card-body">
                         <h4>{{ $event->title }}</h4>
                         <div class="tags">
-                            <span class="tag">{{ $event->jenis ? Str::limit($event->jenis, 18) : 'Jenis' }}</span>
-                            <span class="tag">{{ $event->materi ? Str::limit($event->materi, 18) : 'Materi' }}</span>
+                            @if(!empty($event->jenis))
+                                <span class="tag">{{ Str::limit(trim($event->jenis), 18) }}</span>
+                            @endif
+                            @if(!empty($event->materi))
+                                <span class="tag">{{ Str::limit(trim($event->materi), 18) }}</span>
+                            @endif
                             <div class="meta" style="margin-left:auto; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
@@ -490,29 +494,24 @@
 
     <section class="pelatihan">
         <div class="section-title">
-            <h3>Jenis Pelatihan</h3>
-            <h6>Pilih kategori yang sesuai dengan minat dan kebutuhan Anda</h6>
+            <h3>Jenis & Materi Pelatihan</h3>
+            <h6>Data diambil otomatis dari event yang tersedia</h6>
         </div>
-
         <ul class="kategori-list">
-            <li>
-                <div class="kategori-item">Artificial Intelligence</div>
-            </li>
-            <li>
-                <div class="kategori-item">Machine Learning</div>
-            </li>
-            <li>
-                <div class="kategori-item">Mental Health</div>
-            </li>
-            <li>
-                <div class="kategori-item">Digital Marketing</div>
-            </li>
-            <li>
-                <div class="kategori-item">Graphic Design</div>
-            </li>
-            <li>
-                <div class="kategori-item wide">Business</div>
-            </li>
+            @php $hasAny = false; @endphp
+            @foreach(($jenisList ?? []) as $jenis)
+                @php $hasAny = true; @endphp
+                <li><div class="kategori-item">{{ $jenis }}</div></li>
+            @endforeach
+            @foreach(($materiList ?? []) as $materi)
+                @php $hasAny = true; @endphp
+                <li><div class="kategori-item">{{ $materi }}</div></li>
+            @endforeach
+            @if(!$hasAny)
+                <li style="grid-column:1/-1;">
+                    <div class="kategori-item">Belum ada data jenis/materi event.</div>
+                </li>
+            @endif
         </ul>
     </section>
 

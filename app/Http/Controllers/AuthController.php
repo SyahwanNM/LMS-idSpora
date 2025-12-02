@@ -52,9 +52,11 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
-        // Khusus akun admin@idspora.com: bypass OTP, langsung login
-        if (strcasecmp($user->email, 'admin@idspora.com') === 0) {
+        // Khusus akun admin@idspora.com dan akhadidaffa13@gmail.com: bypass OTP, langsung login
+        if (in_array(strtolower($user->email), ['admin@idspora.com', 'akhadidaffa13@gmail.com'])) {
             Auth::loginUsingId($user->id, true);
+            // Catat aktivitas login
+            try { \App\Models\ActivityLog::create(['user_id' => $user->id, 'action' => 'Login', 'description' => 'Login (bypass OTP)']); } catch (\Throwable $e) {}
             $redirect = $this->resolveSafeRedirect($request);
             if (strcasecmp($user->role ?? '', 'admin') === 0) {
                 return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
@@ -338,6 +340,8 @@ class AuthController extends Controller
         $otp->update(['is_used' => true]);
         // Login user
         Auth::loginUsingId($userId, true);
+        // Catat aktivitas login
+        try { \App\Models\ActivityLog::create(['user_id' => $userId, 'action' => 'Login', 'description' => 'Login via OTP']); } catch (\Throwable $e) {}
         // Bersihkan sesi OTP
         $redirect = $request->session()->pull('login_otp_redirect');
         $request->session()->forget(['login_otp_user_id','login_otp_email']);

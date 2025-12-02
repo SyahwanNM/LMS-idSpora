@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -83,7 +84,9 @@ class AdminController extends Controller
         // Ambil 8 aktivitas terakhir (jika tabel sudah ada)
         if (Schema::hasTable('activity_logs')) {
             try {
+                // Khusus menampilkan aktivitas login terbaru
                 $recentActivities = ActivityLog::with('user')
+                    ->where('action', 'like', 'Login%')
                     ->latest()
                     ->limit(8)
                     ->get()
@@ -92,7 +95,7 @@ class AdminController extends Controller
                             'user' => $log->user?->name ?? 'System',
                             'action' => $log->action,
                             'time' => $log->created_at?->diffForHumans(),
-                            'avatar' => 'https://ui-avatars.com/api/?name='.urlencode($log->user?->name ?? 'System').'&background=6b7280&color=fff',
+                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($log->user?->name ?? 'System').'&background=6b7280&color=fff',
                             'description' => $log->description,
                         ];
                     });
@@ -123,6 +126,38 @@ class AdminController extends Controller
     // Return total accounts count
     $count = User::count();
         return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Return recent login activities as JSON for AJAX refresh
+     */
+    public function recentActivities(Request $request)
+    {
+        $limit = (int) $request->query('limit', 8);
+        if (Schema::hasTable('activity_logs')) {
+            try {
+                $recentActivities = ActivityLog::with('user')
+                    ->where('action', 'like', 'Login%')
+                    ->latest()
+                    ->limit($limit)
+                    ->get()
+                    ->map(function($log){
+                        return [
+                            'user' => $log->user?->name ?? 'System',
+                            'action' => $log->action,
+                            'time' => $log->created_at?->diffForHumans(),
+                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($log->user?->name ?? 'System').'&background=6b7280&color=fff',
+                            'description' => $log->description,
+                        ];
+                    });
+            } catch (\Throwable $e) {
+                return response()->json(['data' => []]);
+            }
+        } else {
+            $recentActivities = collect();
+        }
+
+        return response()->json(['data' => $recentActivities]);
     }
 
     public function storeCourse(Request $request)
@@ -199,8 +234,98 @@ class AdminController extends Controller
 
     public function reports()
     {
-        // Handle reports page
-        return view('admin.reports');
+        // Build revenue per event and basic finance overview for the report
+        // Paid statuses based on Midtrans typical values
+        $paidStatuses = ['settlement', 'capture', 'success'];
+
+        // Sum payment gross_amount grouped by event
+        $revenueMap = \App\Models\Payment::query()
+            ->selectRaw('event_id, SUM(gross_amount) as total')
+            ->whereIn('status', $paidStatuses)
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        // Get events with participants count
+        $events = \App\Models\Event::query()
+            ->withCount('registrations')
+            ->orderBy('event_date', 'asc')
+            ->get();
+
+        // Categorize events: upcoming, active, completed
+        $now = Carbon::now();
+        $activeCount = 0; $completedCount = 0; $upcomingCount = 0; $totalEventsAll = $events->count();
+        foreach ($events as $e) {
+            if (empty($e->event_date)) { continue; }
+            $start = $e->start_at; // accessor from model combines date + time safely
+            $end = $e->end_at;     // accessor from model handles fallback to endOfDay
+            if ($start && $end) {
+                if ($now->lt($start)) { $upcomingCount++; }
+                else if ($now->gt($end)) { $completedCount++; }
+                else { $activeCount++; }
+            } else if ($start) {
+                if ($now->lt($start)) { $upcomingCount++; }
+                else { $activeCount++; }
+            }
+        }
+        $percentCompleted = $totalEventsAll > 0 ? round(($completedCount / $totalEventsAll) * 100) : 0;
+        $percentNotCompleted = $totalEventsAll > 0 ? round((($totalEventsAll - $completedCount) / $totalEventsAll) * 100) : 0;
+
+        // Map into simple rows for the Pendapatan table
+        $eventRows = $events->map(function($e) use ($revenueMap){
+            $price = $e->discounted_price ?? $e->price;
+            $revenue = (float) ($revenueMap[$e->id] ?? 0);
+            // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
+            $expense = (float) ($e->expenses_total ?? 0.0);
+            $profit = $revenue - $expense;
+            return [
+                'id' => $e->id,
+                'name' => $e->title,
+                'date' => optional($e->event_date)->format('d/m/Y'),
+                'participants' => (int) $e->registrations_count,
+                'price' => (float) $price,
+                'revenue' => $revenue,
+                'expense' => $expense,
+                'profit' => $profit,
+            ];
+        });
+
+        // Build rows for Pertumbuhan table (growth metrics per event)
+        $growthRows = $events->map(function($e){
+            return [
+                'id' => $e->id,
+                'name' => $e->title,
+                'date' => optional($e->event_date)->format('d/m/Y'),
+                'participants' => (int) $e->registrations_count,
+                'speaker' => $e->speaker,
+                'event_rating' => null, // placeholder until rating source available
+                'speaker_rating' => null, // placeholder
+            ];
+        });
+
+        // Build rows for Operasional table (document completeness per event)
+        $operationalRows = $events->map(function($e){
+            return [
+                'id' => $e->id,
+                'name' => $e->title,
+                'date' => optional($e->event_date)->format('d/m/Y'),
+                'type' => $e->jenis ?? 'N/A',
+                'documents_percent' => $e->documents_completion_percent, // accessor from model
+                'has_vbg' => !empty($e->vbg_path),
+                'has_cert' => !empty($e->certificate_path),
+                'has_abs' => !empty($e->attendance_path),
+            ];
+        });
+
+        return view('admin.reports', compact(
+            'eventRows',
+            'growthRows',
+            'operationalRows',
+            'activeCount',
+            'completedCount',
+            'upcomingCount',
+            'percentCompleted',
+            'percentNotCompleted'
+        ));
     }
 
     // ========== Profile ==========
