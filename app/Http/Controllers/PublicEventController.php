@@ -109,8 +109,8 @@ class PublicEventController extends Controller
 			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
 		}
 		$event->is_registered = $isRegistered;
-		// Jika sudah terdaftar: tetap tampilkan halaman detail (tidak redirect ke payment)
-		return view('events.detail', compact('event'));
+		// Tampilkan halaman detail menggunakan tampilan "detail-event-registered"
+		return view('detail-event-registered', compact('event'));
 	}
 
 	public function ticket(Event $event, Request $request)

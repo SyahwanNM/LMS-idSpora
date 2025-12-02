@@ -29,7 +29,7 @@
         input[type=file].form-control { padding:7px 14px; }
         .avatar-wrap { display:flex; align-items:center; gap:18px; margin-bottom:20px; }
         .avatar-ring { width:88px; height:88px; border-radius:50%; overflow:hidden; position:relative; background:linear-gradient(135deg,#ffffff22,#ffffff05); border:2px solid rgba(255,255,255,.35); box-shadow:0 4px 14px -2px rgba(0,0,0,.5); }
-        .avatar-ring img { width:100%; height:100%; object-fit:cover; display:block; }
+        .avatar-ring img { width:100%; height:100%; object-fit:cover; display:block; transition:.25s transform; }
         .avatar-hint { font-size:11px; line-height:1.4; opacity:.7; }
         .btn-register { background:var(--accent); border:none; color:#fff; font-weight:600; width:100%; padding:13px 18px; border-radius:14px; margin-top:4px; font-size:15px; letter-spacing:.3px; box-shadow:0 6px 18px -4px rgba(244,164,66,.55); transition:.25s background,.25s transform,.25s box-shadow; }
         .btn-register:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 10px 24px -6px rgba(244,164,66,.65); }
@@ -50,6 +50,11 @@
         .back-btn:hover { transform:translateX(-4px); }
         @media (max-width: 960px){ .layout { gap:28px; } .signup-card { padding:34px 30px 30px; } }
         @media (max-width: 680px){ body { padding:20px 14px; } .signup-card { padding:32px 24px 28px; } .avatar-ring { width:76px; height:76px; } }
+        /* Cropper circular adjustments */
+        .modal-crop .modal-dialog { max-width:480px; }
+        .cropper-view-box, .cropper-face { border-radius:50% !important; }
+        .btn-crop-confirm { background:var(--accent); border:none; color:#fff; font-weight:600; padding:10px 20px; border-radius:12px; }
+        .btn-crop-confirm:hover { background:var(--accent-hover); }
     </style>
 </head>
 
@@ -91,7 +96,7 @@
                     </div>
                     <div style="flex:1;">
                         <h6 class="label">Foto Profil (opsional)</h6>
-                        <input type="file" accept="image/*" name="avatar" class="form-control @error('avatar') is-invalid @enderror" onchange="previewAvatar(event)">
+                        <input type="file" accept="image/*" name="avatar" class="form-control @error('avatar') is-invalid @enderror" onchange="openCropper(event)">
                         <div class="avatar-hint">JPG / PNG / WEBP, maksimal 2MB.</div>
                         @error('avatar')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -133,14 +138,77 @@
         </div>
     </div>
 </body>
-
+    <!-- Modal Cropper -->
+    <div class="modal fade modal-crop" id="avatarCropperModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background:#1f1830; border:1px solid var(--border); border-radius:20px;">
+                <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,.12);">
+                    <h5 class="modal-title" style="color:#fff;">Atur Foto Profil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="min-height:360px; display:flex; flex-direction:column; gap:14px;">
+                    <div style="flex:1; position:relative;">
+                        <img id="cropperSource" alt="Crop Source" style="max-width:100%; display:block;">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center" style="gap:10px; flex-wrap:wrap;">
+                        <div class="btn-group" role="group" aria-label="Kontrol Zoom">
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="cropperZoom(0.1)">Zoom +</button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="cropperZoom(-0.1)">Zoom -</button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="cropperRotate(90)">Rotate 90°</button>
+                        </div>
+                        <button type="button" class="btn-crop-confirm" onclick="applyCroppedAvatar()">Simpan</button>
+                    </div>
+                    <small style="opacity:.65; font-size:11px;">Geser / pinch (mobile) untuk menyesuaikan posisi gambar dalam lingkaran.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+<link href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet" />
 <script>
-function previewAvatar(e){
+let cropperInstance = null; let originalFileInput = null;
+function openCropper(e){
     const file = e.target.files[0];
-    if(!file) return; const img = document.getElementById('avatarPreview');
-    if(!img) return; const reader = new FileReader();
-    reader.onload = ev => { img.src = ev.target.result; };
+    if(!file) return;
+    originalFileInput = e.target;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const img = document.getElementById('cropperSource');
+        img.src = ev.target.result;
+        const modalEl = document.getElementById('avatarCropperModal');
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+        setTimeout(()=>{
+            if(cropperInstance){ cropperInstance.destroy(); }
+            cropperInstance = new Cropper(img, {
+                aspectRatio:1,
+                viewMode:1,
+                dragMode:'move',
+                autoCropArea:1,
+                background:false,
+                responsive:true,
+                movable:true,
+                zoomable:true,
+                rotatable:true,
+            });
+        },250);
+    };
     reader.readAsDataURL(file);
+}
+function cropperZoom(delta){ if(cropperInstance){ cropperInstance.zoom(delta); } }
+function cropperRotate(deg){ if(cropperInstance){ cropperInstance.rotate(deg); } }
+function applyCroppedAvatar(){
+    if(!cropperInstance || !originalFileInput) return;
+    const canvas = cropperInstance.getCroppedCanvas({ width:400, height:400, imageSmoothingQuality:'high' });
+    canvas.toBlob(blob => {
+        const file = new File([blob], 'avatar-cropped.png', { type:'image/png' });
+        const dt = new DataTransfer(); dt.items.add(file); originalFileInput.files = dt.files;
+        const preview = document.getElementById('avatarPreview');
+        preview.src = canvas.toDataURL('image/png');
+        const modalEl = document.getElementById('avatarCropperModal');
+        const bsModal = bootstrap.Modal.getInstance(modalEl); bsModal.hide();
+    }, 'image/png', 0.92);
 }
 </script>
 

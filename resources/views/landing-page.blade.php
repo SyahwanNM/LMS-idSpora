@@ -455,8 +455,9 @@
             <h3>Event & Webinar</h3>
             <h6>Jadwal event dan webinar terbaru dari idSpora</h6>
         </div>
+        {{-- Gunakan langsung $upcomingEvents dari controller (sudah scope active: termasuk yang sedang berlangsung, mengecualikan yang selesai) --}}
         <div class="event-list">
-            @forelse($featuredEvents as $event)
+            @forelse($upcomingEvents as $event)
             <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
                     @if($event->image)
@@ -538,12 +539,18 @@
                             <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}" data-redirect="{{ route('events.show', $event->id) }}">Daftar Sekarang</button>
                         @endguest
                     </div>
+                    @if($event->hasDiscount() && $event->discount_percentage > 0 && $event->discount_until && $event->discount_until->isFuture())
+                        <div class="discount-info" aria-label="Diskon aktif {{ $event->discount_percentage }}% sampai {{ $event->discount_until->format('d M Y') }}">
+                            <span class="badge-discount">Diskon {{ $event->discount_percentage }}%</span>
+                            <small class="discount-until">Sampai {{ $event->discount_until->format('d M Y') }}</small>
+                        </div>
+                    @endif
                 </div>
             </div>
             @empty
-            <div class="text-center py-5">
-                <h5 class="mb-3">Belum ada event tersedia</h5>
-                <p class="text-muted">Event akan segera hadir!</p>
+            <div class="text-center py-5" style="text-align:center;">
+                <h5 class="mb-3">Belum ada event yang berlangsung</h5>
+                <p class="text-muted">Semua event telah selesai atau belum dijadwalkan.</p>
             </div>
             @endforelse
         </div>
@@ -708,6 +715,9 @@
     .event-list {row-gap:34px;}
     /* If card body needs more top separation from image */
     .event-list .card-event .card-body {padding-top:18px;}
+    .event-list .card-event .discount-info {margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+    .event-list .card-event .badge-discount {background:#dc2626; color:#fff; padding:4px 10px; border-radius:4px; font-size:13px; font-weight:600; letter-spacing:.5px;}
+    .event-list .card-event .discount-until {color:#6b7280; font-size:12px;}
     @media (max-width: 768px){
         .event-list .card-event .event-poster {height:280px;}
     }

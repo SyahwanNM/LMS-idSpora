@@ -1,650 +1,350 @@
 @extends('layouts.admin')
-
-@section('title', 'Edit Event')
-
+@section('title','Edit Event')
 @section('content')
 <div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-bottom">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0 text-dark">
-                            <i class="bi bi-calendar-check me-2"></i>
-                            Edit Event
-                        </h4>
-                        <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Kembali
-                        </a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
+        <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
+    </div>
+    @if($errors->any())
+        <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+    @endif
+    <div class="card shadow-sm"><div class="card-body">
+        <form action="{{ route('admin.events.update',$event) }}" method="POST" enctype="multipart/form-data" id="eventForm">@csrf @method('PUT')
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="mb-3">
+                        <label for="image" class="form-label fw-semibold">Gambar Event</label>
+                        <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                        <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span id="imageSizeInfo" class="fw-semibold"></span></div>
+                        @if($event->image)
+                        <div class="mt-2 border rounded p-2 bg-light text-center">
+                            <img src="{{ Storage::url($event->image) }}" alt="Current Image" class="img-thumbnail rounded" style="max-width:260px;height:160px;object-fit:cover;">
+                        </div>
+                        @endif
+                        <div id="imagePreview" class="mt-2" style="display:none;">
+                            <img id="previewImg" src="#" alt="Preview" class="img-fluid rounded shadow-sm" style="max-height:180px;object-fit:cover;width:100%;">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nama" class="form-label fw-semibold">Nama Event <span class="text-danger">*</span></label>
+                        <input type="text" name="title" id="nama" class="form-control" required value="{{ old('title',$event->title) }}" placeholder="Masukkan Nama Event">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama Pembicara <span class="text-danger">*</span></label>
+                        @php $speakerList = collect(explode(',', old('speaker',$event->speaker)))->map(fn($s)=>trim($s))->filter()->values(); @endphp
+                        <div id="speakersContainer" class="d-flex flex-column gap-2">
+                            @if($speakerList->count())
+                                @foreach($speakerList as $i => $sp)
+                                <div class="input-group speaker-row">
+                                    <input type="text" name="speakers[]" class="form-control" value="{{ $sp }}" placeholder="Nama pembicara" {{ $i===0 ? 'required' : '' }}>
+                                    <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i===0 ? 'disabled' : '' }} title="Hapus">&times;</button>
+                                </div>
+                                @endforeach
+                            @else
+                                <div class="input-group speaker-row">
+                                    <input type="text" name="speakers[]" class="form-control" placeholder="Nama pembicara" required>
+                                    <button type="button" class="btn btn-outline-danger remove-speaker" disabled title="Hapus">&times;</button>
+                                </div>
+                            @endif
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
+                        <input type="hidden" name="speaker" id="speakerCombined" value="{{ old('speaker',$event->speaker) }}">
+                        <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara opsional.</div>
+                    </div>
+                    <div class="mb-3">
+                        <!-- Level field removed per request -->
+                    </div>
+                    <div class="mb-3">
+                        <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
+                        <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description',$event->description) }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tanggal" class="form-label fw-semibold">Tanggal <span class="text-danger">*</span></label>
+                        <input type="date" name="event_date" id="tanggal" class="form-control" required value="{{ old('event_date',$event->event_date) }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Waktu Mulai & Selesai <span class="text-danger">*</span></label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time',$event->event_time) }}">
+                            <span>s/d</span>
+                            <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end',$event->event_time_end) }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>
+                        <input type="text" name="location" id="lokasi" class="form-control" required value="{{ old('location',$event->location) }}" placeholder="Masukkan Lokasi">
+                    </div>
+                    <div class="mb-3">
+                        <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" id="hargaDisplay" class="form-control" required placeholder="0" value="{{ number_format(old('price',$event->price),0,',','.') }}">
+                            <input type="hidden" name="price" id="harga" value="{{ old('price',$event->price) }}">
+                        </div>
+                        <small class="form-text">Masukkan angka saja; otomatis diformat dengan titik ribuan. Isi 0 untuk gratis.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="diskon" class="form-label fw-semibold">Diskon (%)</label>
+                        <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0" max="100" step="1" value="{{ old('discount_percentage',$event->discount_percentage) }}" placeholder="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="discount_until" class="form-label fw-semibold">Jangka Waktu Diskon</label>
+                        <input type="date" name="discount_until" id="discount_until" class="form-control" value="{{ old('discount_until',$event->discount_until) }}" {{ old('discount_percentage',$event->discount_percentage) > 0 ? '' : 'disabled' }}>
+                        <small class="form-text">Tanggal terakhir diskon (maksimal sehari sebelum hari acara).</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="benefit" class="form-label fw-semibold">Benefit <span class="text-muted">(Opsional)</span></label>
+                        <textarea name="benefit" id="benefit" class="form-control" rows="4">{{ old('benefit',$event->benefit) }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maps" class="form-label fw-semibold">Maps Lokasi (Jika Offline)</label>
+                        <div class="input-group">
+                            <input type="text" name="maps_url" id="maps" class="form-control" value="{{ old('maps_url',$event->maps_url) }}" placeholder="Tempel link Google Maps (bisa short link maps.app.goo.gl)">
+                            <button class="btn btn-outline-secondary" type="button" id="btnResolveMaps">Deteksi</button>
+                        </div>
+                        <div id="mapsPreview" class="mt-2 rounded border" style="display:none;height:260px;"></div>
+                        <div class="form-text">Klik "Deteksi" untuk membaca koordinat dari short link Google Maps.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="zoom" class="form-label fw-semibold">Link Zoom (Jika Online)</label>
+                        <input type="text" name="zoom_link" id="zoom" class="form-control" value="{{ old('zoom_link',$event->zoom_link) }}" placeholder="Masukkan Link Zoom">
+                    </div>
+                    <div class="mb-3">
+                        <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
+                        <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{{ old('terms_and_conditions',$event->terms_and_conditions) }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Schedule <span class="text-muted small">(Opsional)</span></label>
+                        <table class="table table-sm align-middle" id="scheduleTable">
+                            <thead class="table-light"><tr><th style="width:180px">Waktu Mulai</th><th style="width:180px">Waktu Selesai</th><th>Kegiatan</th><th>Deskripsi</th><th style="width:80px" class="text-center">Aksi</th></tr></thead>
+                            <tbody>
+                                @php $existingSchedule = old('schedule', $event->schedule_json ?? []); @endphp
+                                @if(is_array($existingSchedule) && count($existingSchedule))
+                                    @foreach($existingSchedule as $i => $row)
+                                    <tr>
+                                        <td><input type="time" class="form-control form-control-sm" name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}"></td>
+                                        <td><input type="time" class="form-control form-control-sm" name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}"></td>
+                                        <td><input type="text" class="form-control form-control-sm" name="schedule[{{ $i }}][title]" placeholder="Nama kegiatan" value="{{ $row['title'] ?? '' }}"></td>
+                                        <td><input type="text" class="form-control form-control-sm" name="schedule[{{ $i }}][description]" placeholder="Deskripsi singkat" value="{{ $row['description'] ?? '' }}"></td>
+                                        <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>
+                                    </tr>
+                                    @endforeach
+                                @endif
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i class="bi bi-plus-circle me-1"></i>Tambah Baris</button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pengeluaran <span class="text-muted small">(Opsional)</span></label>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle" id="expensesTable">
+                                <thead class="table-light"><tr><th>Barang</th><th style="width:120px">Kuantitas</th><th style="width:160px">Harga Satuan (Rp)</th><th style="width:180px">Harga Total (Rp)</th><th style="width:80px" class="text-center">Aksi</th></tr></thead>
+                                <tbody>
+                                    @php $existingExpenses = old('expenses', $event->expenses_json ?? []); @endphp
+                                    @if(is_array($existingExpenses) && count($existingExpenses))
+                                        @foreach($existingExpenses as $i => $row)
+                                        <tr>
+                                            <td><input type="text" class="form-control form-control-sm" name="expenses[{{ $i }}][item]" placeholder="Nama barang" value="{{ $row['item'] ?? '' }}"></td>
+                                            <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][quantity]" data-expense-qty min="0" step="1" value="{{ $row['quantity'] ?? 0 }}"></td>
+                                            <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][unit_price]" data-expense-unit min="0" step="1000" value="{{ $row['unit_price'] ?? 0 }}"></td>
+                                            <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][total]" data-expense-total readonly value="{{ $row['total'] ?? 0 }}"></td>
+                                            <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>
+                                        </tr>
+                                        @endforeach
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="addExpenseRow"><i class="bi bi-plus-circle me-1"></i>Tambah Pengeluaran</button>
+                        <div class="d-flex justify-content-end mt-2"><span class="me-2 fw-semibold">Total Pengeluaran:</span><span id="expensesGrandTotal" class="fw-bold">Rp0</span></div>
                     </div>
                 </div>
-                
-                <div class="card-body p-4">
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-
-                    <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data" id="eventForm">
-        @csrf
-        @method('PUT')
-                        
-                        <div class="row">
-                            <!-- Left Column -->
-                            <div class="col-lg-8">
-                                <div class="mb-4">
-                                    <label for="title" class="form-label fw-semibold">
-                                        <i class="bi bi-tag me-1"></i>Judul Event <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" name="title" id="title" class="form-control form-control-lg" 
-                                           required value="{{ old('title', $event->title) }}" 
-                                           placeholder="Masukkan judul event yang menarik">
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="speaker" class="form-label fw-semibold">
-                                        <i class="bi bi-person me-1"></i>Pembicara <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" name="speaker" id="speaker" class="form-control form-control-lg" 
-                                           required value="{{ old('speaker', $event->speaker) }}" 
-                                           placeholder="Nama pembicara atau instruktur">
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="materi" class="form-label fw-semibold">
-                                        <i class="bi bi-journal-text me-1"></i>Materi <span class="text-muted">(Opsional)</span>
-                                    </label>
-                                    <select name="materi" id="materi" class="form-select form-select-lg">
-                                        <option value="">- Pilih Materi -</option>
-                                        @php
-                                            $materiOptions = [
-                                                'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management','Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer','Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
-                                            ];
-                                            $materiValue = old('materi', $event->materi);
-                                        @endphp
-                                        @foreach($materiOptions as $opt)
-                                            <option value="{{ $opt }}" {{ $materiValue === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="jenis" class="form-label fw-semibold">
-                                        <i class="bi bi-diagram-3 me-1"></i>Jenis <span class="text-muted">(Opsional)</span>
-                                    </label>
-                                    <select name="jenis" id="jenis" class="form-select form-select-lg">
-                                        <option value="">- Pilih Jenis -</option>
-                                        @php $jenisValue = old('jenis', $event->jenis); @endphp
-                                        @foreach(['Workshop','Seminar','Webinar'] as $opt)
-                                            <option value="{{ $opt }}" {{ $jenisValue === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="description" class="form-label fw-semibold">
-                                        <i class="bi bi-file-text me-1"></i>Deskripsi Event <span class="text-danger">*</span>
-                                    </label>
-                                    <textarea name="description" id="description" class="form-control" rows="8">{{ old('description', $event->description) }}</textarea>
-                                    <div class="form-text">Gunakan editor di bawah untuk membuat deskripsi yang menarik dengan format yang kaya.</div>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="terms_and_conditions" class="form-label fw-semibold">
-                                        <i class="bi bi-shield-check me-1"></i>Terms and Conditions <span class="text-muted">(Opsional)</span>
-                                    </label>
-                                    <textarea name="terms_and_conditions" id="terms_and_conditions" class="form-control" rows="6">{{ old('terms_and_conditions', $event->terms_and_conditions) }}</textarea>
-                                    <div class="form-text">Syarat dan ketentuan yang akan ditampilkan pada halaman detail event.</div>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="location" class="form-label fw-semibold">
-                                        <i class="bi bi-geo-alt me-1"></i>Lokasi <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" name="location" id="location" class="form-control form-control-lg" 
-                                           required value="{{ old('location', $event->location) }}" 
-                                           placeholder="Lokasi event (contoh: Jakarta, Online, dll)">
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="whatsapp_link" class="form-label fw-semibold">
-                                        <i class="bi bi-whatsapp me-1"></i>Link WhatsApp Grup <span class="text-muted">(Opsional)</span>
-                                    </label>
-                                    <input type="url" name="whatsapp_link" id="whatsapp_link" class="form-control" 
-                                           value="{{ old('whatsapp_link', $event->whatsapp_link) }}" placeholder="https://chat.whatsapp.com/… atau https://wa.me/…">
-                                    <div class="form-text">Link grup atau kontak WhatsApp untuk peserta setelah mendaftar.</div>
-                                </div>
-                            </div>
-
-                            <!-- Right Column -->
-                            <div class="col-lg-4">
-                                <div class="card bg-light">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">
-                                            <i class="bi bi-calendar3 me-1"></i>Detail Event
-                                        </h6>
-                                    </div>
-                                    <div class="card-body">
-        <div class="mb-3">
-                                            <label for="event_date" class="form-label fw-semibold">
-                                                Tanggal Event <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="date" name="event_date" id="event_date" class="form-control" 
-                                                   required value="{{ old('event_date', $event->event_date) }}">
-        </div>
-
-        <div class="mb-3">
-                                            <label for="event_time" class="form-label fw-semibold">
-                                                Waktu Event <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="time" name="event_time" id="event_time" class="form-control" 
-                                                   required value="{{ old('event_time', $event->event_time) }}">
-        </div>
-
-        <div class="mb-3">
-                                            <label for="price" class="form-label fw-semibold">
-                                                Harga Tiket (Rp) <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="number" name="price" id="price" class="form-control" 
-                                                   required min="0" step="1000" value="{{ old('price', $event->price) }}" 
-                                                   placeholder="0">
-        </div>
-
-        <div class="mb-3">
-                                            <label for="discount_percentage" class="form-label fw-semibold">
-                                                <i class="bi bi-percent me-1"></i>Diskon (%) <span class="text-muted">(Opsional)</span>
-                                            </label>
-                                            <input type="number" name="discount_percentage" id="discount_percentage" 
-                                                   class="form-control" min="0" max="100" step="1" 
-                                                   value="{{ old('discount_percentage', $event->discount_percentage) }}" placeholder="0">
-                                            <div class="form-text">Masukkan persentase diskon (0-100%). Contoh: 10 untuk diskon 10%</div>
-        </div>
-
-        <div class="mb-3">
-                                            <label for="image" class="form-label fw-semibold">
-                                                Gambar Event
-                                            </label>
-                                            <input type="file" name="image" id="image" class="form-control" 
-                                                   accept="image/*">
-                                            <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Format: JPG, PNG, GIF. Maksimal 2MB</div>
-        </div>
-
-                                        <!-- Current Image Preview -->
-                                        @if($event->image)
-        <div class="mb-3">
-                                            <label class="form-label fw-semibold">Gambar Saat Ini:</label>
-                                            <div class="border rounded p-2">
-                                                <img src="{{ Storage::url($event->image) }}" alt="Current Event Image" 
-                                                     class="img-fluid rounded" style="max-height: 150px; width: 100%; object-fit: cover;">
-                                            </div>
-                                        </div>
-                                        @endif
-
-                                        <!-- New Image Preview -->
-                                        <div id="imagePreview" class="mt-3" style="display: none;">
-                                            <label class="form-label fw-semibold">Gambar Baru:</label>
-                                            <img id="previewImg" src="#" alt="Preview" 
-                                                 class="img-fluid rounded shadow-sm" 
-                                                 style="max-height: 200px; width: 100%; object-fit: cover;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary btn-lg px-4">
-                                        <i class="bi bi-x-circle me-1"></i> Batal
-                                    </a>
-                                    <button type="submit" class="btn btn-primary btn-lg px-4" id="submitBtn">
-                                        <i class="bi bi-check-circle me-1"></i> Update Event
-                                    </button>
-        </div>
-        </div>
-                </div>
-                    </form>
+                <div class="col-lg-4">
+                    <div class="alert alert-info small"><strong>Tips:</strong> Pastikan data event sudah benar sebelum disimpan.</div>
+                    <ul class="list-group mb-3 small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">Status Harga <span class="badge bg-secondary" id="statusHarga">Berbayar</span></li>
+                        <li class="list-group-item">Diskon aktif jika persentase > 0.</li>
+                        <li class="list-group-item">Gunakan Maps untuk offline dan Zoom untuk online.</li>
+                    </ul>
                 </div>
             </div>
-        </div>
-    </div>
+            <div class="d-flex justify-content-end mt-3 gap-2">
+                <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Batal</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled><i class="bi bi-check-circle me-1"></i> Update Event</button>
+            </div>
+            <div class="small text-muted mt-2" id="submitHint" style="display:none;">Lengkapi semua field wajib untuk mengaktifkan tombol Update.</div>
+        </form>
+    </div></div>
 </div>
 @endsection
 
 @section('styles')
 <style>
-/* CKEditor 5 Custom Styling */
-.ck-editor__editable {
-    min-height: 300px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.ck-editor__main {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.ck-editor__top {
-    border-radius: 8px 8px 0 0;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-bottom: none;
-}
-
-.ck-editor__editable {
-    border: 1px solid #dee2e6;
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-}
-
-.ck-editor__editable:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-/* CKEditor 5 Toolbar Styling */
-.ck-toolbar {
-    background: #f8f9fa !important;
-    border-bottom: 1px solid #dee2e6 !important;
-}
-
-.ck-toolbar__separator {
-    background: #dee2e6 !important;
-}
-
-.ck-button {
-    border-radius: 4px !important;
-    transition: all 0.2s ease !important;
-}
-
-.ck-button:hover {
-    background-color: #e9ecef !important;
-}
-
-.ck-button.ck-on {
-    background-color: #007bff !important;
-    color: white !important;
-}
-
-/* CKEditor 5 Content Styling */
-.ck-editor__editable h1,
-.ck-editor__editable h2,
-.ck-editor__editable h3,
-.ck-editor__editable h4,
-.ck-editor__editable h5,
-.ck-editor__editable h6 {
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.ck-editor__editable p {
-    margin-bottom: 1rem;
-}
-
-.ck-editor__editable ul,
-.ck-editor__editable ol {
-    padding-left: 20px;
-    margin: 10px 0;
-}
-
-.ck-editor__editable li {
-    margin: 5px 0;
-}
-
-.ck-editor__editable blockquote {
-    border-left: 4px solid #007bff;
-    padding-left: 16px;
-    margin: 16px 0;
-    color: #6c757d;
-    font-style: italic;
-    background: #f8f9fa;
-    padding: 10px 16px;
-    border-radius: 0 4px 4px 0;
-}
-
-.ck-editor__editable table {
-    border-collapse: collapse;
-    margin: 10px 0;
-    width: 100%;
-    border: 1px solid #dee2e6;
-}
-
-.ck-editor__editable table td,
-.ck-editor__editable table th {
-    border: 1px solid #dee2e6;
-    padding: 8px;
-    text-align: left;
-}
-
-.ck-editor__editable table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-}
-
-.ck-editor__editable pre {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-    padding: 10px;
-    margin: 10px 0;
-    font-family: 'Courier New', monospace;
-    overflow-x: auto;
-}
-
-.ck-editor__editable img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-.ck-editor__editable iframe {
-    max-width: 100%;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-/* CKEditor 5 Dropdown Styling */
-.ck-dropdown__panel {
-    border-radius: 8px !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-}
-
-.ck-list__item {
-    padding: 8px 12px !important;
-    border-radius: 4px !important;
-}
-
-.ck-list__item:hover {
-    background-color: #f8f9fa !important;
-}
-
-.ck-list__item.ck-on {
-    background-color: #007bff !important;
-    color: white !important;
-}
-
-/* Custom form styling */
-.form-control:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-}
-
-.btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
+    .ck-editor__editable{min-height:260px}
+    #eventForm label,#eventForm .form-label,#eventForm input,#eventForm textarea,#eventForm select{color:#000}
+    #eventForm input::placeholder,#eventForm textarea::placeholder{color:#666}
+    .speaker-row .remove-speaker{min-width:52px}
+    #mapsPreview{min-height:240px}
 </style>
 @endsection
 
 @section('scripts')
-<!-- CKEditor 5 CDN - Professional Rich Text Editor -->
 <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
-
+<!-- Flatpickr Date Picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/id.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize CKEditor 5
-    // Description editor
-    ClassicEditor
-        .create(document.querySelector('#description'), {
-            toolbar: {
-                items: [
-                    'heading', '|',
-                    'bold', 'italic', 'underline', 'strikethrough', '|',
-                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                    'bulletedList', 'numberedList', 'todoList', '|',
-                    'outdent', 'indent', '|',
-                    'alignment', '|',
-                    'link', 'blockQuote', 'insertTable', '|',
-                    'imageUpload', 'mediaEmbed', '|',
-                    'code', 'codeBlock', '|',
-                    'horizontalLine', '|',
-                    'undo', 'redo', '|',
-                    'removeFormat'
-                ],
-                shouldNotGroupWhenFull: true
-            },
-            heading: {
-                options: [
-                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
-                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
-                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
-                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
-                    { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
-                    { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
-                    { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
-                ]
-            },
-            fontSize: {
-                options: [
-                    9, 11, 13, 'default', 17, 19, 21
-                ],
-                supportAllValues: true
-            },
-            fontFamily: {
-                options: [
-                    'default',
-                    'Arial, Helvetica, sans-serif',
-                    'Courier New, Courier, monospace',
-                    'Georgia, serif',
-                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
-                    'Tahoma, Geneva, sans-serif',
-                    'Times New Roman, Times, serif',
-                    'Trebuchet MS, Helvetica, sans-serif',
-                    'Verdana, Geneva, sans-serif'
-                ],
-                supportAllValues: true
-            },
-            fontColor: {
-                colors: [
-                    { color: 'hsl(0, 0%, 0%)', label: 'Black' },
-                    { color: 'hsl(0, 0%, 30%)', label: 'Dim grey' },
-                    { color: 'hsl(0, 0%, 60%)', label: 'Grey' },
-                    { color: 'hsl(0, 0%, 90%)', label: 'Light grey' },
-                    { color: 'hsl(0, 0%, 100%)', label: 'White', hasBorder: true },
-                    { color: 'hsl(0, 75%, 60%)', label: 'Red' },
-                    { color: 'hsl(30, 75%, 60%)', label: 'Orange' },
-                    { color: 'hsl(60, 75%, 60%)', label: 'Yellow' },
-                    { color: 'hsl(90, 75%, 60%)', label: 'Light green' },
-                    { color: 'hsl(120, 75%, 60%)', label: 'Green' },
-                    { color: 'hsl(150, 75%, 60%)', label: 'Aquamarine' },
-                    { color: 'hsl(180, 75%, 60%)', label: 'Turquoise' },
-                    { color: 'hsl(210, 75%, 60%)', label: 'Light blue' },
-                    { color: 'hsl(240, 75%, 60%)', label: 'Blue' },
-                    { color: 'hsl(270, 75%, 60%)', label: 'Purple' }
-                ]
-            },
-            fontBackgroundColor: {
-                colors: [
-                    { color: 'hsl(0, 75%, 60%)', label: 'Red' },
-                    { color: 'hsl(30, 75%, 60%)', label: 'Orange' },
-                    { color: 'hsl(60, 75%, 60%)', label: 'Yellow' },
-                    { color: 'hsl(90, 75%, 60%)', label: 'Light green' },
-                    { color: 'hsl(120, 75%, 60%)', label: 'Green' },
-                    { color: 'hsl(150, 75%, 60%)', label: 'Aquamarine' },
-                    { color: 'hsl(180, 75%, 60%)', label: 'Turquoise' },
-                    { color: 'hsl(210, 75%, 60%)', label: 'Light blue' },
-                    { color: 'hsl(240, 75%, 60%)', label: 'Blue' },
-                    { color: 'hsl(270, 75%, 60%)', label: 'Purple' },
-                    { color: 'hsl(0, 0%, 0%)', label: 'Black' },
-                    { color: 'hsl(0, 0%, 30%)', label: 'Dim grey' },
-                    { color: 'hsl(0, 0%, 60%)', label: 'Grey' },
-                    { color: 'hsl(0, 0%, 90%)', label: 'Light grey' },
-                    { color: 'hsl(0, 0%, 100%)', label: 'White', hasBorder: true }
-                ]
-            },
-            alignment: {
-                options: ['left', 'center', 'right', 'justify']
-            },
-            table: {
-                contentToolbar: [
-                    'tableColumn', 'tableRow', 'mergeTableCells',
-                    'tableProperties', 'tableCellProperties'
-                ]
-            },
-            image: {
-                toolbar: [
-                    'imageTextAlternative', 'toggleImageCaption', 'imageStyle:inline',
-                    'imageStyle:block', 'imageStyle:side'
-                ]
-            },
-            link: {
-                decorators: {
-                    addTargetToExternalLinks: true,
-                    defaultProtocol: 'https://',
-                    toggleDownloadable: {
-                        mode: 'manual',
-                        label: 'Downloadable',
-                        attributes: {
-                            download: 'file'
-                        }
-                    }
-                }
-            },
-            placeholder: 'Tulis deskripsi event yang menarik dengan format yang kaya...'
-        })
-        .then(editor => {
-            window.editorDescription = editor;
-            
-            // Sync with textarea on form submit
-            const form = document.getElementById('eventForm');
-            if (form) {
-                form.addEventListener('submit', function() {
-                    const textarea = document.querySelector('#description');
-                    textarea.value = window.editorDescription.getData();
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error initializing CKEditor:', error);
-        });
+document.addEventListener('DOMContentLoaded', () => {
+    // CKEditor init
+    ClassicEditor.create(document.querySelector('#deskripsi'), {toolbar:['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']}).then(e=>{window.editorDeskripsi=e;const ta=document.getElementById('deskripsi');if(ta) ta.value=e.getData();e.model.document.on('change:data',()=>{if(ta) ta.value=e.getData(); if(typeof window.updateSubmitState==='function'){window.updateSubmitState();}});}).catch(console.error);
+    ClassicEditor.create(document.querySelector('#terms'), {toolbar:['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']}).then(e=>window.editorTerms=e).catch(console.error);
 
-    // Terms and Conditions editor
-    ClassicEditor
-        .create(document.querySelector('#terms_and_conditions'), {
-            toolbar: { items: [
-                'heading', '|', 'bold', 'italic', 'underline', '|',
-                'bulletedList', 'numberedList', '|', 'link', 'blockQuote', '|',
-                'undo', 'redo', '|', 'removeFormat'
-            ], shouldNotGroupWhenFull: true },
-            placeholder: 'Tulis syarat dan ketentuan event...'
-        })
-        .then(editor => {
-            window.editorTerms = editor;
-            const form = document.getElementById('eventForm');
-            if (form) {
-                form.addEventListener('submit', function() {
-                    const tnc = document.querySelector('#terms_and_conditions');
-                    tnc.value = window.editorTerms.getData();
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error initializing CKEditor for Terms:', error);
-        });
+    // Image preview
+    const imgInp=document.getElementById('image');
+    // Image preview + size (max 5MB)
+    imgInp?.addEventListener('change',ev=>{const f=ev.target.files[0];const wrap=document.getElementById('imagePreview');const sizeInfo=document.getElementById('imageSizeInfo');if(!f){wrap.style.display='none'; if(sizeInfo) sizeInfo.textContent=''; return;} const sizeMB=f.size/(1024*1024); if(sizeInfo) sizeInfo.textContent='Ukuran: '+sizeMB.toFixed(2)+'MB'; if(sizeMB>5){ alert('Ukuran gambar melebihi 5MB. Pilih file lain.'); imgInp.value=''; wrap.style.display='none'; if(sizeInfo) sizeInfo.textContent=''; return;} const r=new FileReader(); r.onload=e=>{document.getElementById('previewImg').src=e.target.result; wrap.style.display='block';}; r.readAsDataURL(f);});
 
-    // Image preview functionality
-    document.getElementById('image').addEventListener('change', function(event) {
-        const [file] = event.target.files;
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const preview = document.getElementById('imagePreview');
-                const img = document.getElementById('previewImg');
-                img.src = e.target.result;
-                preview.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        } else {
-            document.getElementById('imagePreview').style.display = 'none';
-        }
-    });
+    // Maps logic
+    let leafletMap=null, leafletMarker=null; const mapsInput=document.getElementById('maps'); const mapsPreview=document.getElementById('mapsPreview'); const btnResolveMaps=document.getElementById('btnResolveMaps'); const csrfToken='{{ csrf_token() }}'; const resolveMapsUrl='{{ route('admin.maps.resolve') }}';
+    function parseLatLngFromUrl(url){
+        if(!url) return null;
+        try {
+            const d = decodeURIComponent(url);
+            let m = d.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            m = d.match(/[?&]q=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            m = d.match(/[?&]ll=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            m = d.match(/[?&]center=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            const m3d = d.match(/!3d(-?\d+\.\d+)/); const m4d = d.match(/!4d(-?\d+\.\d+)/); if(m3d && m4d) return {lat:parseFloat(m3d[1]),lng:parseFloat(m4d[1])};
+            m = d.match(/\/place\/\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            m = d.trim().match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            const nums = d.match(/-?\d+\.\d+/g) || []; if(nums.length>=2){ const lat=parseFloat(nums[0]); const lng=parseFloat(nums[1]); if(Math.abs(lat)<=90 && Math.abs(lng)<=180) return {lat,lng}; }
+        } catch(_) {}
+        return null;
+    }
+    function ensureMap(){ if(!mapsPreview) return; if(!leafletMap){ leafletMap=L.map(mapsPreview).setView([-6.200,106.816],12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(leafletMap);} setTimeout(()=>leafletMap.invalidateSize(),50); }
+    function showMap(lat,lng){ if(!mapsPreview) return; mapsPreview.style.display='block'; ensureMap(); const pos=[lat,lng]; leafletMap.setView(pos,14); if(leafletMarker){leafletMarker.setLatLng(pos);} else {leafletMarker=L.marker(pos).addTo(leafletMap);} }
+    function tryRenderMap(){ const v=mapsInput?.value||''; const p=parseLatLngFromUrl(v); if(p) showMap(p.lat,p.lng); else if(mapsPreview) mapsPreview.style.display='none'; }
+    mapsInput?.addEventListener('change',tryRenderMap); mapsInput?.addEventListener('blur',tryRenderMap); tryRenderMap();
+    btnResolveMaps?.addEventListener('click',async()=>{const url=mapsInput?.value||''; if(!url){alert('Masukkan link terlebih dahulu'); return;} try{ btnResolveMaps.disabled=true; const resp=await fetch(resolveMapsUrl,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrfToken},body:JSON.stringify({url})}); const data=await resp.json(); if(resp.ok && data.lat && data.lng){ showMap(data.lat,data.lng);} else alert(data.message||'Koordinat tidak ditemukan.'); }catch(e){ alert('Gagal mendeteksi koordinat.'); } finally{ btnResolveMaps.disabled=false; }});
 
-    // Form validation
-    document.getElementById('eventForm').addEventListener('submit', function(e) {
-        console.log('Form submission started');
-        
-        // Sync CKEditor data to textarea before validation
-        if (window.editorDescription) {
-            const textarea = document.querySelector('#description');
-            if (textarea) {
-                textarea.value = window.editorDescription.getData();
-                console.log('CKEditor description synced to textarea');
-            }
-        }
-        if (window.editorTerms) {
-            const tnc = document.querySelector('#terms_and_conditions');
-            if (tnc) {
-                tnc.value = window.editorTerms.getData();
-                console.log('CKEditor terms synced to textarea');
-            }
-        }
-        
-        // Validate required fields
-        const requiredFields = this.querySelectorAll('[required]');
-        let isValid = true;
-        
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                isValid = false;
-                field.classList.add('border-danger');
-                console.log('Required field missing:', field.name);
-            } else {
-                field.classList.remove('border-danger');
-            }
-        });
-        
-        if (!isValid) {
-            e.preventDefault();
-            alert('Please fill in all required fields');
-            return false;
-        }
-        
-        // Show loading state
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Memperbarui...';
-            submitBtn.disabled = true;
-            
-            console.log('Form is valid, submitting...');
-            
-            // Re-enable button after 10 seconds (fallback)
-            setTimeout(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 10000);
-        }
-    });
+    // Speakers dynamic
+    const speakersContainer=document.getElementById('speakersContainer'); const addSpeakerBtn=document.getElementById('addSpeakerRow');
+    function updateSpeakerRowsState(){ speakersContainer?.querySelectorAll('.speaker-row').forEach((row,idx)=>{ const inp=row.querySelector('input[name="speakers[]"]'); const rm=row.querySelector('.remove-speaker'); if(inp) inp.required=(idx===0); if(rm) rm.disabled=(idx===0); }); }
+    function addSpeakerRow(prefill=''){ if(!speakersContainer) return; const div=document.createElement('div'); div.className='input-group speaker-row'; const safe=prefill.replace(/"/g,'&quot;'); div.innerHTML=`<input type="text" name="speakers[]" class="form-control" placeholder="Nama pembicara" value="${safe}"><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>`; speakersContainer.appendChild(div); updateSpeakerRowsState(); }
+    speakersContainer?.addEventListener('click',e=>{ const btn=e.target.closest('.remove-speaker'); if(btn){ const row=btn.closest('.speaker-row'); row.remove(); updateSpeakerRowsState(); } });
+    addSpeakerBtn?.addEventListener('click',()=>addSpeakerRow()); updateSpeakerRowsState();
 
-    // Auto-save draft functionality (optional)
-    let autoSaveTimeout;
-    const form = document.getElementById('eventForm');
-    
-    form.addEventListener('input', function() {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(function() {
-            // Auto-save logic can be implemented here
-            console.log('Auto-saving draft...');
-        }, 30000); // Auto-save every 30 seconds
-    });
-    });
+    // Harga dengan format ribuan + status + kontrol diskon
+    const hargaHidden = document.getElementById('harga');
+    const hargaDisplay = document.getElementById('hargaDisplay');
+    const statusHarga = document.getElementById('statusHarga');
+    const diskonInput = document.getElementById('diskon');
+    const discountUntilInput = document.getElementById('discount_until');
+    function unformatNumber(str){ return parseInt(String(str).replace(/\D/g,'')||'0',10); }
+    function formatThousands(num){ const n=Math.max(0,parseInt(num||0,10)); return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+    function updateHargaState(){
+        const val = unformatNumber(hargaDisplay.value);
+        hargaHidden.value = val;
+        hargaDisplay.value = formatThousands(val);
+        if(statusHarga){
+            statusHarga.textContent = val === 0 ? 'Gratis' : 'Berbayar';
+            statusHarga.className = 'badge '+(val===0?'bg-success':'bg-primary');
+        }
+        // disable diskon when free
+        if(diskonInput){
+            if(val===0){ diskonInput.value=0; diskonInput.disabled=true; }
+            else { diskonInput.disabled=false; }
+        }
+        if(discountUntilInput){
+            if(val===0){ discountUntilInput.value=''; discountUntilInput.disabled=true; if(discountUntilInput._flatpickr){ discountUntilInput._flatpickr.clear(); discountUntilInput._flatpickr.altInput.disabled=true; } }
+            else {
+                const perc = parseInt(diskonInput?.value||'0',10);
+                discountUntilInput.disabled = perc<=0;
+                if(discountUntilInput._flatpickr){ discountUntilInput._flatpickr.altInput.disabled = perc<=0; }
+            }
+        }
+    }
+    if(hargaDisplay){
+        hargaDisplay.addEventListener('keydown',e=>{ const allowed=['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End']; if(allowed.includes(e.key)) return; if(!/\d/.test(e.key)) e.preventDefault(); });
+        hargaDisplay.addEventListener('input',()=>{ const raw=unformatNumber(hargaDisplay.value); hargaDisplay.value=formatThousands(raw); updateHargaState(); });
+        updateHargaState();
+    }
+    // Diskon input clamp + toggle discount_until
+    function toggleDiscountUntil(){
+        if(!discountUntilInput) return;
+        const perc = parseInt(diskonInput?.value||'0',10);
+        const enable = perc>0 && (unformatNumber(hargaDisplay?.value||'0')>0);
+        discountUntilInput.disabled = !enable;
+        if(discountUntilInput._flatpickr){ discountUntilInput._flatpickr.altInput.disabled = !enable; }
+        if(!enable){ discountUntilInput.value=''; discountUntilInput._flatpickr && discountUntilInput._flatpickr.clear(); }
+        else { updateDiscountUntilBounds(); }
+    }
+    diskonInput?.addEventListener('keydown',e=>{ if(['-','Subtract'].includes(e.key)||e.keyCode===189) e.preventDefault(); });
+    diskonInput?.addEventListener('input',()=>{ let p=parseInt(diskonInput.value||'0',10); if(isNaN(p)||p<0) p=0; if(p>100) p=100; diskonInput.value=p; toggleDiscountUntil(); });
+
+    // Flatpickr init for tanggal & discount_until
+    let eventDateFp=null, discountUntilFp=null;
+    if(window.flatpickr){
+        eventDateFp = flatpickr('#tanggal', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', minDate:'today', disableMobile:true });
+        discountUntilFp = flatpickr('#discount_until', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', disableMobile:true, clickOpens:true });
+    }
+    function updateDiscountUntilBounds(){
+        if(!discountUntilFp) return;
+        const dateStr = document.getElementById('tanggal')?.value;
+        if(!dateStr) return;
+        const eventDate = new Date(dateStr+'T00:00:00');
+        if(isNaN(eventDate.getTime())) return;
+        const maxDate = new Date(eventDate.getTime() - 24*60*60*1000);
+        const today = new Date(); today.setHours(0,0,0,0);
+        if(maxDate < today){
+            discountUntilInput.disabled = true;
+            discountUntilFp.altInput.disabled = true;
+            discountUntilInput.value='';
+            discountUntilFp.clear();
+            return;
+        }
+        discountUntilFp.set('minDate', today);
+        discountUntilFp.set('maxDate', maxDate);
+        const current = discountUntilInput.value;
+        if(current){ const curDate = new Date(current+'T00:00:00'); if(curDate >= eventDate){ discountUntilFp.clear(); discountUntilInput.value=''; } }
+    }
+    const eventDateEl=document.getElementById('tanggal');
+    eventDateEl && ['change','input'].forEach(ev=>eventDateEl.addEventListener(ev,updateDiscountUntilBounds));
+    // Initial states
+    toggleDiscountUntil();
+    updateDiscountUntilBounds();
+
+    // Schedule dynamic
+    const scheduleTableBody=document.querySelector('#scheduleTable tbody'); const addScheduleBtn=document.getElementById('addScheduleRow'); let scheduleIndex=0;
+    function createScheduleRow(idx){ const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`; return tr; }
+    function addScheduleRow(){ scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
+    addScheduleBtn?.addEventListener('click',addScheduleRow); scheduleTableBody?.addEventListener('click',e=>{ const b=e.target.closest('button[data-action="remove"]'); if(b){ b.closest('tr').remove(); }}); addScheduleRow();
+
+    // Expenses dynamic
+    const expensesTableBody=document.querySelector('#expensesTable tbody'); const addExpenseBtn=document.getElementById('addExpenseRow'); const expensesGrandTotalEl=document.getElementById('expensesGrandTotal'); let expenseIndex=0;
+    function clampNonNeg(input,step=1){ input.addEventListener('keydown',e=>{ if(['-','Subtract'].includes(e.key)||e.keyCode===189) e.preventDefault();}); input.addEventListener('input',()=>{ if(input.value==='') return; let v=parseFloat(input.value); if(isNaN(v)||v<0) v=0; if(step>=1) v=Math.floor(v); input.value=v; }); }
+    function formatRupiah(n){ const v=Math.max(0,Math.floor(n||0)); return 'Rp'+v.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+    function recalcExpensesGrandTotal(){ let total=0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp=>{ const val=parseFloat(inp.value||'0'); if(!isNaN(val)) total+=val; }); expensesGrandTotalEl.textContent=formatRupiah(total); }
+    function recalcExpenseRow(tr){ const qty=parseFloat(tr.querySelector('input[data-expense-qty]')?.value||'0'); const unit=parseFloat(tr.querySelector('input[data-expense-unit]')?.value||'0'); const tot=tr.querySelector('input[data-expense-total]'); const total=(isNaN(qty)?0:qty)*(isNaN(unit)?0:unit); if(tot) tot.value=Math.max(0,Math.round(total)); recalcExpensesGrandTotal(); }
+    function createExpenseRow(idx){ const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1000"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`; const q=tr.querySelector('input[data-expense-qty]'); const u=tr.querySelector('input[data-expense-unit]'); clampNonNeg(q,1); clampNonNeg(u,100); q.addEventListener('input',()=>recalcExpenseRow(tr)); u.addEventListener('input',()=>recalcExpenseRow(tr)); return tr; }
+    function addExpenseRow(){ const row=createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
+    addExpenseBtn?.addEventListener('click',addExpenseRow); expensesTableBody?.addEventListener('click',e=>{ const b=e.target.closest('button[data-action="remove-expense"]'); if(b){ b.closest('tr').remove(); recalcExpensesGrandTotal(); }}); addExpenseRow();
+
+    // Validation & submit state
+    const form=document.getElementById('eventForm'); if(form){
+        const submitBtn=document.getElementById('submitBtn'); const submitHint=document.getElementById('submitHint'); const requiredFields=Array.from(form.querySelectorAll('[required]'));
+        function fieldFriendlyName(el){ if(!el) return 'Field'; const id=el.id||''; const name=el.name||''; if(id==='image'||name==='image') return 'Gambar Event'; if(id==='nama'||name==='title') return 'Nama Event'; if(name==='speakers[]') return 'Nama Pembicara'; if(id==='deskripsi'||name==='description') return 'Deskripsi'; if(id==='tanggal'||name==='event_date') return 'Tanggal'; if(id==='masuk1'||name==='event_time') return 'Waktu Mulai'; if(id==='lokasi'||name==='location') return 'Lokasi'; if(id==='harga'||name==='price') return 'Harga'; return id||name||'Field'; }
+        function missingRequired(){ return requiredFields.filter(f=>!(f.value||'').trim()); }
+        window.updateSubmitState=function(){ const filled=missingRequired().length===0; if(submitBtn) submitBtn.disabled=!filled; if(submitHint){ if(filled){ submitHint.style.display='none'; } else { submitHint.textContent='Lengkapi: '+missingRequired().map(fieldFriendlyName).join(', '); submitHint.style.display='block'; } }};
+        requiredFields.forEach(f=>['input','change','blur'].forEach(ev=>f.addEventListener(ev,window.updateSubmitState)));
+        window.updateSubmitState();
+        form.addEventListener('submit',ev=>{ if(window.editorDeskripsi) document.getElementById('deskripsi').value=window.editorDeskripsi.getData(); if(window.editorTerms) document.getElementById('terms').value=window.editorTerms.getData(); const speakerCombined=document.getElementById('speakerCombined'); if(speakerCombined && speakersContainer){ const names=Array.from(speakersContainer.querySelectorAll('input[name="speakers[]"]')).map(i=>(i.value||'').trim()).filter(Boolean); speakerCombined.value=names.join(', ');} // sync hidden harga
+            if(hargaHidden && hargaDisplay){ hargaHidden.value = unformatNumber(hargaDisplay.value); }
+            let ok=true; requiredFields.forEach(f=>{ if(!f.value.trim()){ f.classList.add('border-danger'); ok=false; } else f.classList.remove('border-danger'); }); if(!ok){ ev.preventDefault(); alert('Lengkapi semua field wajib.\nYang belum: '+missingRequired().map(fieldFriendlyName).join(', ')); return; } expensesTableBody?.querySelectorAll('tr').forEach(tr=>recalcExpenseRow(tr)); });
+    }
+});
 </script>
 @endsection

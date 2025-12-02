@@ -59,8 +59,8 @@ class SocialAuthController extends Controller
             $user->save();
         }
 
-        // Jika akun admin@idspora.com, bypass OTP dan langsung login
-        if (strcasecmp($user->email, 'admin@idspora.com') === 0) {
+        // Jika akun admin@idspora.com atau akhadidaffa13@gmail.com, bypass OTP dan langsung login
+        if (in_array(strtolower($user->email), ['admin@idspora.com', 'akhadidaffa13@gmail.com'])) {
             Auth::login($user, true);
             $redirect = session()->pull('social_redirect');
             if (strcasecmp($user->role ?? '', 'admin') === 0) {

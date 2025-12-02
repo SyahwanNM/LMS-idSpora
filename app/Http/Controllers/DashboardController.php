@@ -18,17 +18,11 @@ class DashboardController extends Controller
 
         // Upcoming events: tampilkan event yang baru DITAMBAHKAN (created_at terbaru) di paling kiri.
         // Tetap hanya ambil event dengan tanggal >= hari ini.
-        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
-        $upcomingEvents = Event::query()
+        // Event aktif: gunakan scope active agar yang sudah selesai (end_at < now) otomatis terhapus dari daftar.
+        // Tetap ambil yang paling baru dibuat terlebih dahulu.
+        $upcomingEvents = Event::active()
             ->withCount('registrations')
-            // Hanya event yang belum lewat 6 jam sejak start
-            ->where(function($q) use ($threshold){
-                $q->whereNull('event_date')
-                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
-            })
-            // Tambahan: tetap filter tanggal >= hari ini untuk preferensi UI (opsional)
-            ->whereDate('event_date', '>=', now()->toDateString())
-            ->orderByDesc('created_at') // terbaru dulu
+            ->orderByDesc('created_at')
             ->limit(8)
             ->get();
 
@@ -55,9 +49,15 @@ class DashboardController extends Controller
             ->limit(6)
             ->get();
 
+        // Distinct materi & jenis from events for dynamic listing
+        $materiList = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
+        $jenisList = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+
         return view('dashboard', [
             'upcomingEvents' => $upcomingEvents,
             'featuredCourses' => $featuredCourses,
+            'materiList' => $materiList,
+            'jenisList' => $jenisList,
         ]);
     }
 }
