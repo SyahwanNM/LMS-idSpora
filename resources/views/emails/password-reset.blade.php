@@ -353,7 +353,7 @@
             </div>
             
             <div class="message">
-                Kami menerima permintaan untuk mereset password akun Anda di LMS IdSPora. Untuk melanjutkan proses reset password, silakan gunakan kode verifikasi berikut:
+                Kami menerima permintaan untuk mereset password akun Anda di LMS IdSpora. Untuk melanjutkan proses reset password, silakan gunakan kode verifikasi berikut:
             </div>
             
             <div class="code-section" style="margin: 40px 0; text-align: center;">
@@ -407,7 +407,7 @@
                 <a href="https://idspora.com/privacy" target="_blank" style="color: #f4a442; text-decoration: none; font-size: 14px; font-weight: 500;">Privacy Policy</a>
             </div>
             <div class="copyright" style="color: #9ca3af; font-size: 11px; margin-top: 15px;">
-                © {{ date('Y') }} LMS IdSPora. All rights reserved.
+                © {{ date('Y') }} LMS IdSpora. All rights reserved.
             </div>
         </div>
     </div>

@@ -107,7 +107,7 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
         <form id="logoutRealForm" action="{{ route('logout') }}" method="POST" class="d-inline">
             @csrf
-            <button type="button" id="confirmLogoutBtn" class="btn btn-danger">Ya, Logout</button>
+            <button type="submit" id="confirmLogoutBtn" class="btn btn-danger">Ya, Logout</button>
         </form>
             </div>
         </div>
@@ -157,27 +157,40 @@ document.addEventListener('DOMContentLoaded', function() {
 let logoutModalInstance;
 function openLogoutModal(){
     const modalEl = document.getElementById('logoutConfirmModal');
-    if (!logoutModalInstance) {
-        logoutModalInstance = new bootstrap.Modal(modalEl);
+    // If Bootstrap JS is available, show modal; otherwise, fallback to direct submit
+    if (window.bootstrap && typeof bootstrap.Modal === 'function' && modalEl) {
+        if (!logoutModalInstance) {
+            try { logoutModalInstance = new bootstrap.Modal(modalEl); } catch (_e) { logoutModalInstance = null; }
+        }
+        if (logoutModalInstance) { logoutModalInstance.show(); return; }
     }
-    logoutModalInstance.show();
+    // Fallback: submit immediately if modal cannot be shown
+    const form = document.getElementById('logoutRealForm');
+    if(form){ form.submit(); }
 }
 
-// Pre-logout toast + submit
+// Pre-logout toast + success animation, then submit with slight delay
 document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('confirmLogoutBtn');
     const form = document.getElementById('logoutRealForm');
-    if(btn && form){
-        btn.addEventListener('click', () => {
-            // Prevent double click
-            if(btn.disabled) return;
-            btn.disabled = true;
-            showLogoutSuccessState();
-            showInstantLogoutToast(); // tetap tampilkan toast kecil di pojok
-            // delay supaya animasi check terlihat
-            setTimeout(()=> form.submit(), 900);
-        });
+    if(!btn || !form) return;
+
+    function performAnimatedLogout(e){
+        // Prevent immediate navigation to let animation play
+        if(e) e.preventDefault();
+        if(form.dataset.submitting === '1') return; // guard double-submit
+        form.dataset.submitting = '1';
+        btn.disabled = true;
+        try { showLogoutSuccessState(); } catch(_e){}
+        try { showInstantLogoutToast(); } catch(_e){}
+        setTimeout(() => {
+            try { form.submit(); } catch(_e) { form.removeAttribute('data-submitting'); btn.disabled = false; }
+        }, 900);
     }
+
+    // Intercept both click and submit to be safe
+    btn.addEventListener('click', performAnimatedLogout);
+    form.addEventListener('submit', performAnimatedLogout);
 });
 
 function showInstantLogoutToast(){
@@ -446,6 +459,121 @@ function showLogoutSuccessState(){
     // Start polling after slight delay to allow page to render
     setTimeout(pollAndPopup, 1200);
     pollingTimer = setInterval(pollAndPopup, 20000); // every 20s
+})();
+</script>
+
+<script>
+// Auto-logout on long inactivity or when tab was closed for a long period
+(function(){
+    const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 menit (atur sesuai kebutuhan)
+    const KEY_LAST_ACTIVE = 'lms:lastActiveAt';
+    const KEY_LAST_HIDDEN = 'lms:lastHiddenAt';
+    const LOGOUT_URL = '{{ route('logout') }}';
+    const SIGNIN_URL = '{{ route('login') }}';
+    const CSRF = '{{ csrf_token() }}';
+    let logoutTriggered = false;
+
+    function now(){ return Date.now(); }
+
+    function markActive(){
+        try{ localStorage.setItem(KEY_LAST_ACTIVE, String(now())); }catch(_e){}
+    }
+
+    function recordHidden(){
+        try{ localStorage.setItem(KEY_LAST_HIDDEN, String(now())); }catch(_e){}
+    }
+
+    function getMsSince(ts){
+        const t = parseInt(ts || '0', 10); return t ? (now() - t) : 0;
+    }
+
+    function createSessionModal(){
+        let el = document.getElementById('sessionExpiredModal');
+        if(el) return el;
+        el = document.createElement('div');
+        el.id = 'sessionExpiredModal';
+        el.className = 'modal fade';
+        el.tabIndex = -1;
+        el.setAttribute('aria-hidden','true');
+        el.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning-subtle">
+                        <h5 class="modal-title">Sesi Anda Berakhir</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-1">Anda telah keluar karena tidak ada aktivitas untuk waktu yang lama.</p>
+                        <small class="text-muted">Anda akan diarahkan ke halaman login.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="${SIGNIN_URL}" class="btn btn-primary">Ke Halaman Login</a>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(el);
+        return el;
+    }
+
+    function showSessionEndedPopup(){
+        const el = createSessionModal();
+        try {
+            const modal = new bootstrap.Modal(el, {backdrop:'static', keyboard:false});
+            modal.show();
+        } catch(_e) {
+            // Fallback
+            alert('Sesi Anda berakhir. Anda akan diarahkan ke halaman login.');
+        }
+    }
+
+    function doLogoutAndNotify(){
+        if(logoutTriggered) return; logoutTriggered = true;
+        // Try to logout on server (ignore errors), then show popup and redirect
+        fetch(LOGOUT_URL, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF, 'X-Requested-With':'XMLHttpRequest', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
+            credentials: 'same-origin'
+        }).finally(()=>{
+            showSessionEndedPopup();
+            setTimeout(()=> { window.location.href = SIGNIN_URL; }, 1800);
+        });
+    }
+
+    // Initial marks
+    markActive();
+
+    // Activity listeners
+    ['mousemove','keydown','scroll','click','touchstart'].forEach(evt => {
+        window.addEventListener(evt, markActive, { passive: true });
+    });
+
+    // Visibility tracking (tab close or background)
+    document.addEventListener('visibilitychange', () => {
+        if(document.hidden){
+            recordHidden();
+        } else {
+            // When returning, if hidden duration exceeded, logout
+            const hiddenAt = localStorage.getItem(KEY_LAST_HIDDEN);
+            if(hiddenAt){
+                const hiddenMs = getMsSince(hiddenAt);
+                if(hiddenMs > IDLE_LIMIT_MS){
+                    doLogoutAndNotify();
+                }
+            }
+        }
+    });
+
+    // Also record on unload
+    window.addEventListener('beforeunload', recordHidden);
+
+    // Periodic idle check (in case tab stays open)
+    setInterval(() => {
+        if(logoutTriggered) return;
+        const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
+        const idleMs = getMsSince(lastActive);
+        if(idleMs > IDLE_LIMIT_MS){
+            doLogoutAndNotify();
+        }
+    }, 15000); // check every 15s
 })();
 </script>
 

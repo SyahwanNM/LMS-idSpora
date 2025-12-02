@@ -18,14 +18,41 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
+Route::get('/admin/detail-event', function () {
+    return view('/admin/detail-event');
+});
+
+Route::get('/admin/report', function () {
+    // Legacy path -> redirect to controller-powered reports so the view gets data
+    return redirect()->route('admin.reports');
+});
+
+Route::get('/admin/add-users', function () {
+    return view('/admin/add-users');
+});
+
+// Serve Add Event at a friendly URL using the canonical create form (auth+admin)
+Route::middleware(['auth','admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
+// History (finished events)
+Route::middleware(['auth','admin'])->get('/admin/events/history', [EventController::class, 'history'])->name('admin.events.history');
+
+// Detail event (registered) view should receive Event from DB
+Route::middleware('auth')->get('/detail-event-registered/{event}', function (Event $event) {
+    // Load feedbacks for display on the event detail page
+    $feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
+    return view('detail-event-registered', compact('event', 'feedbacks'));
+})->name('events.registered.detail');
+
 // Landing page: jika sudah login arahkan ke dashboard
-Route::get('/', function(){
-    if(auth()->check()) {
+Route::get('/auth', function () {
+    return view('/auth');
+});
+Route::get('/', function () {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
-
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
@@ -48,11 +75,16 @@ Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('mid
 
 // Event routes now require authentication to view & register
 Route::middleware('auth')->group(function(){
+    // Feedback AJAX route
+    Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
     Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
     Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
         // Redirect search to the best-matching event detail (exact title match preferred)
         Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
     Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
+    // Form-based (non-AJAX) free registration & feedback submission
+    Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
+    Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
@@ -74,6 +106,11 @@ Route::middleware(['guest'])->group(function () {
     // Social auth (Google)
     Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+
+    // Login OTP
+    Route::get('/auth', [AuthController::class, 'showLoginOtpForm'])->name('login.otp');
+    Route::post('/auth', [AuthController::class, 'verifyLoginOtp'])->name('login.otp.verify');
+    Route::post('/login/resend-otp', [AuthController::class, 'resendLoginOtp'])->name('login.otp.resend');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -93,9 +130,13 @@ Route::middleware(['auth'])->group(function () {
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        // Recent activities AJAX (returns latest login activities)
+        Route::get('/admin/recent-activities', [AdminController::class, 'recentActivities'])->name('admin.recent-activities');
+        // Note: Removed temporary '/admin/dashboard/create' shortcut; use admin.events.create or admin.events.index directly
         Route::get('/admin/active-users-count', [AdminController::class, 'activeUsersCount'])->name('admin.active-users-count');
     Route::get('/admin/export', [AdminController::class, 'exportData'])->name('admin.export');
-        Route::post('/admin/events', [AdminController::class, 'storeEvent'])->name('admin.events.store');
+    // The resource route below defines admin.events.store handled by EventController@store
+    // Removed legacy conflicting route to prevent route name collision
         Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
     Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
     Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
@@ -127,7 +168,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/courses/{course}/modules/{module}/edit', [ModuleController::class, 'edit'])->name('admin.courses.modules.edit');
         Route::put('/admin/courses/{course}/modules/{module}', [ModuleController::class, 'update'])->name('admin.courses.modules.update');
         Route::delete('/admin/courses/{course}/modules/{module}', [ModuleController::class, 'destroy'])->name('admin.courses.modules.destroy');
-        Route::post('/admin/courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])->name('admin.courses.modules.reorder');
+    Route::post('/admin/courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])->name('admin.courses.modules.reorder');
+
+    // Event document uploads (admin)
+    Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+    // Utility: resolve Google Maps short links to lat/lng
+    Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
         
         // Quiz management routes
         Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');
@@ -151,11 +197,26 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
+    Route::get('/course-quiz-result', function () {
+    return view('course.quiz.result');
+    })->name('course.quiz.result');
+
+    Route::get('/course-quiz', function () {
+    return view('course.quiz.intro');
+})->name('course.quiz.intro');
+
+Route::get('/course-quiz-start', function () {
+    return view('course.quiz.start');
+})->name('course.quiz.start');
+
+
+
     Route::middleware(['auth', 'admin'])->group(function () {
+        // Remove the default create route; use /admin/add-event (named admin.add-event) instead
         Route::resource('admin/events', \App\Http\Controllers\EventController::class, [
+            'except' => ['create'],
             'names' => [
                 'index' => 'admin.events.index',
-                'create' => 'admin.events.create',
                 'store' => 'admin.events.store',
                 'show' => 'admin.events.show',
                 'edit' => 'admin.events.edit',
@@ -164,4 +225,4 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
     });
-}); 
+});

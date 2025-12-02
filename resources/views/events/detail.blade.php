@@ -17,9 +17,7 @@
         <a href="{{ route('events.index') }}">Event</a>
         <p>/</p>
         <a class="active" href="#">{{ Str::limit($event->title,50) }}</a>
-    </div>
-    @php 
-        $hasDiscount = $event->hasDiscount();
+    {{-- Deprecated: This view is no longer used. See PublicEventController@show which now renders `detail-event-registered`. --}}
         $isFree = (int)$event->price === 0;
         $finalPrice = $hasDiscount ? $event->discounted_price : $event->price;
         $daysLeft = null;
@@ -43,12 +41,7 @@
     <div class="event-detail-grid">
         <div class="col-main">
             <div class="event-hero">
-                <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}">
-                <div class="hero-chips">
-                    <span class="chip"><i class="bi bi-calendar2-date me-1"></i>{{ $event->event_date?->format('d M Y') ?? '-' }}</span>
-                    <span class="chip"><i class="bi bi-clock me-1"></i>{{ $event->event_time?->format('H:i') ?? '-' }} WIB</span>
-                    <span class="chip"><i class="bi bi-geo-alt me-1"></i>{{ $event->location ?? 'TBA' }}</span>
-                </div>
+                <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}" data-preview="1">
             </div>
             <h2 class="event-title mt-3">{{ $event->title }}</h2>
             <p class="event-subtitle mb-3">Created by <b>IdSpora</b></p>
@@ -60,49 +53,13 @@
                     <li class="nav-item" role="presentation">
                          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tnc" type="button" role="tab">Terms & Conditions</button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        @php $locked = !($event->is_registered ?? false); @endphp
-                        <button class="nav-link wa-tab d-inline-flex align-items-center {{ $locked ? 'disabled opacity-75' : '' }}" data-bs-toggle="tab" data-bs-target="#tab-schedule" type="button" role="tab" {{ $locked ? 'aria-disabled=true' : '' }}>
-                            @if($locked)
-                                <i class="bi bi-lock-fill me-1"></i>
-                            @else
-                                <i class="bi bi-whatsapp me-1"></i>
-                            @endif
-                            Link WhatsApp
-                        </button>
-                    </li>
+                    
                 </ul>
                 <div class="tab-content p-3">
                     <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
                         <div class="event-description-rich">{!! $cleanDescription !!}</div>
                     </div>
-                    <div class="tab-pane fade" id="tab-schedule" role="tabpanel">
-                        @php $waLink = $event->whatsapp_link ?? null; @endphp
-                        @auth
-                            @if(!$event->is_registered)
-                                <div class="alert alert-warning d-flex align-items-center" role="alert">
-                                    <i class="bi bi-lock-fill me-2"></i>
-                                    <div>Fitur ini terkunci. Daftar event terlebih dahulu untuk mengakses link WhatsApp.</div>
-                                </div>
-                            @else
-                                @if($waLink)
-                                    <a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-success d-inline-flex align-items-center gap-2">
-                                        <i class="bi bi-whatsapp"></i>
-                                        Buka Link WhatsApp
-                                    </a>
-                                    <p class="small text-muted mt-2 mb-0">Link ini hanya dapat diakses oleh peserta terdaftar.</p>
-                                @else
-                                    <p class="text-muted mb-0">Link WhatsApp belum disediakan oleh admin.</p>
-                                @endif
-                            @endif
-                        @endauth
-                        @guest
-                            <div class="alert alert-info d-flex align-items-center" role="alert">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <div>Silakan login dan daftar event untuk membuka link WhatsApp.</div>
-                            </div>
-                        @endguest
-                    </div>
+                    
                     <div class="tab-pane fade" id="tab-tnc" role="tabpanel">
                         @if(!empty(trim($cleanTnc)))
                             <div class="event-tnc-rich">{!! $cleanTnc !!}</div>
@@ -221,7 +178,7 @@
     .event-description-rich li, .event-tnc-rich li{margin:.25rem 0}
         .event-hero{position:relative;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px -18px rgba(0,0,0,.2),0 4px 12px -4px rgba(0,0,0,.08)}
         .event-hero img{display:block;width:100%;height:360px;object-fit:cover}
-        .hero-chips{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
+    .hero-chips{position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap; pointer-events: none;}
         .hero-chips .chip{background:rgba(15,23,42,.82);color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;backdrop-filter:saturate(180%) blur(8px)}
     .event-title{font-size:24px;font-weight:700}
     .event-subtitle{margin-top:2px;color:#64748b}
@@ -275,6 +232,15 @@
             transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
         }
         a.save:hover { filter: brightness(0.98); transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(0,0,0,.25); }
+        /* Save button text in yellow for button variant */
+        button.save { color: #f4c430 !important; font-weight: 700; }
+        /* Image preview affordance */
+        .event-hero img[data-preview="1"]{ cursor: zoom-in; }
+        /* Modal tweaks for image preview */
+        .modal.image-preview .modal-content{ background: rgba(0,0,0,.92); border: 0; }
+        .modal.image-preview .modal-body{ padding: 0; display:flex; align-items:center; justify-content:center; }
+        .modal.image-preview img{ max-width: 100%; max-height: 85vh; object-fit: contain; }
+    .modal.image-preview .preview-close{ position:absolute; top:10px; right:12px; z-index:2; filter: invert(1) grayscale(1); }
         @media (max-width: 992px){
             .event-detail-grid{grid-template-columns:1fr}
             .sidebar-card{position:static}
@@ -334,7 +300,50 @@
             tick();
             const timer = setInterval(tick,1000);
         })();
+        // Image preview handler
+        (function(){
+            const img = document.querySelector('.event-hero img[data-preview="1"]');
+            if(!img) return;
+            img.addEventListener('click', ()=>{
+                const modalEl = document.getElementById('imagePreviewModal');
+                const target = document.getElementById('previewImg');
+                if(!modalEl || !target) return;
+                const src = img.getAttribute('src');
+                if(!src) return;
+                target.src = src;
+                if(window.bootstrap){
+                    const m = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true });
+                    m.show();
+                } else {
+                    modalEl.classList.add('show');
+                    modalEl.style.display = 'block';
+                }
+            });
+            // Fallback close when Bootstrap isn't present
+            const closeBtn = document.querySelector('#imagePreviewModal .preview-close');
+            closeBtn?.addEventListener('click', ()=>{
+                const modalEl = document.getElementById('imagePreviewModal');
+                if(window.bootstrap){
+                    const m = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    m.hide();
+                } else if(modalEl){
+                    modalEl.classList.remove('show');
+                    modalEl.style.display = 'none';
+                }
+            });
+        })();
     </script>
+    <!-- Image Preview Modal -->
+    <div class="modal fade image-preview" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="btn-close btn-close-white preview-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <img id="previewImg" alt="Preview {{ $event->title }}">
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Success Modal -->
     <div id="successOverlay" class="success-overlay" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="success-modal">
