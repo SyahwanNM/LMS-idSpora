@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function(){
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
+    Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
     Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');

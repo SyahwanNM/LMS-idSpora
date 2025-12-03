@@ -81,4 +81,29 @@ class EventParticipationController extends Controller
         $registration->save();
         return redirect()->back()->with('success','Terima kasih atas feedback Anda!');
     }
+
+    public function submitAttendance(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if(!$user){
+            return redirect()->back()->with('error','Login diperlukan.');
+        }
+        $registration = EventRegistration::where('event_id',$event->id)->where('user_id',$user->id)->first();
+        if(!$registration || $registration->status !== 'active'){
+            return redirect()->back()->with('error','Anda belum terdaftar.');
+        }
+        // Pastikan event sudah selesai
+        $eventDate = $event->event_date ? Carbon::parse($event->event_date) : null;
+        $endTime = $event->event_time_end ? Carbon::parse($event->event_date.' '.$event->event_time_end) : ($eventDate ? $eventDate->copy()->endOfDay() : null);
+        if(!$endTime || Carbon::now()->lte($endTime)){
+            return redirect()->back()->with('error','Event belum selesai, attendance belum dapat dikirim.');
+        }
+        $data = $request->validate([
+            'attended' => 'required|in:yes,no',
+        ]);
+        $registration->attendance_status = $data['attended'];
+        $registration->attended_at = Carbon::now();
+        $registration->save();
+        return redirect()->back()->with('success','Attendance berhasil disimpan.');
+    }
 }

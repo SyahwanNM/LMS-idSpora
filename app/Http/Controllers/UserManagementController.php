@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
@@ -35,10 +36,22 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255','unique:users,email'],
-            'password' => ['required','string','min:6'],
+            'password' => ['required','string','min:6','confirmed'],
             'role' => ['required', Rule::in(['admin','user'])],
+            'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
         ]);
         $data['password'] = Hash::make($data['password']);
+        // Handle avatar upload (optional)
+        if($request->hasFile('avatar')){
+            $file = $request->file('avatar');
+            $filename = uniqid('ava_').'.'.$file->getClientOriginalExtension();
+            // Ensure directory exists and store via public disk so files appear under public/storage/avatars
+            if(!Storage::disk('public')->exists('avatars')){
+                Storage::disk('public')->makeDirectory('avatars');
+            }
+            Storage::disk('public')->putFileAs('avatars', $file, $filename);
+            $data['avatar'] = $filename;
+        }
         User::create($data);
         return redirect()->route('admin.users.index')->with('success','User created');
     }
@@ -55,11 +68,29 @@ class UserManagementController extends Controller
             'email' => ['required','email','max:255', Rule::unique('users','email')->ignore($user->id)],
             'password' => ['nullable','string','min:6'],
             'role' => ['required', Rule::in(['admin','user'])],
+            'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
         ]);
         if(!empty($data['password'])){
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
+        }
+        // Handle avatar upload and remove old file if local
+        if($request->hasFile('avatar')){
+            $file = $request->file('avatar');
+            $filename = uniqid('ava_').'.'.$file->getClientOriginalExtension();
+            if(!Storage::disk('public')->exists('avatars')){
+                Storage::disk('public')->makeDirectory('avatars');
+            }
+            Storage::disk('public')->putFileAs('avatars', $file, $filename);
+            // Delete old local avatar if exists and not an external URL
+            if($user->avatar && !str_starts_with($user->avatar, 'http')){
+                $oldPath = 'avatars/'.$user->avatar;
+                if(Storage::disk('public')->exists($oldPath)){
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+            $data['avatar'] = $filename;
         }
         $user->update($data);
         return redirect()->route('admin.users.index')->with('success','User updated');
