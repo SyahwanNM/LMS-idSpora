@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Trainer - Full Prototype v3</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <style>
+        /* == 1. Konfigurasi Dasar (Root & Reset) == */
+        :root {
+            --c-primary: #006AFF; /* Biru yang profesional dan ramah */
+            --c-primary-dark: #0052cc;
+            --c-primary-light: #e6f0ff;
+            --c-bg: #f4f7f6; /* Latar belakang abu-abu sangat muda */
+            --c-white: #ffffff;
+            --c-text: #222222;
+            --c-text-light: #555555;
+            --c-border: #dfe4e8;
+            --c-green: #28a745;
+            --c-red: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--c-bg);
+            color: var(--c-text);
+            line-height: 1.6;
+        }
+
+        /* == 2. Layout Utama (Sidebar + Konten) == */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* == 3. Sidebar (Navigasi) == */
+        .sidebar {
+            width: 240px;
+            background-color: var(--c-white);
+            border-right: 1px solid var(--c-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--c-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--c-primary);
+        }
+
+        .sidebar-nav {
+            flex-grow: 1;
+            padding: 16px;
+        }
+
+        .nav-list {
+            list-style: none;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            text-decoration: none;
+            color: var(--c-text-light);
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link i {
+            width: 20px;
+        }
+
+        .nav-link:hover {
+            background-color: var(--c-bg);
+            color: var(--c-primary);
+        }
+
+        .nav-link.active {
+            background-color: var(--c-primary-light);
+            color: var(--c-primary);
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--c-border);
+        }
+
+        .profile-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 8px;
+            color: var(--c-text);
+        }
+        .profile-link:hover {
+            background-color: var(--c-bg);
+        }
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--c-primary);
+            color: var(--c-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        .profile-name {
+            font-weight: 500;
+        }
+
+        /* == 4. Konten Utama == */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .topbar {
+            background-color: var(--c-white);
+            border-bottom: 1px solid var(--c-border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #topbar-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        #mobile-menu-toggle {
+            display: none; /* Hanya tampil di mobile */
+            font-size: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .content-area {
+            padding: 24px;
+        }
+
+        /* Sembunyikan semua halaman by default */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out; /* Animasi halus */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+
+        /* == 5. Komponen UI Umum == */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Responsif */
+            gap: 10px;
+        }
+
+        .card {
+            background-color: var(--c-white);
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--c-border);
+        }
+
+        .card-header h2 {
+            font-size: 18px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--c-border);
+            background-color: var(--c-bg);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Tombol (Buttons) */
+        .btn {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--c-primary);
+            color: var(--c-white);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--c-primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--c-white);
+            color: var(--c-text-light);
+            border: 1px solid var(--c-border);
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--c-bg);
+            color: var(--c-text);
+        }
+
+        .btn-danger-outline {
+             background-color: transparent;
+             color: var(--c-red);
+             border: none;
+             font-size: 14px;
+             padding: 6px 10px; /* Samakan padding */
+        }
+        .btn-danger-outline:hover:not(:disabled) {
+            text-decoration: underline;
+        }
+
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        /* State disabled untuk tombol */
+         .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+         }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--c-border);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .form-help-text {
+            font-size: 13px;
+            color: var(--c-text-light);
+            background-color: var(--c-bg);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        /* Tabel & Tabel Responsif */
+        .table-wrapper {
+            overflow-x: auto; /* Kunci tabel responsif */
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--c-border);
+            white-space: nowrap; /* Cegah teks wrap */
+        }
+        .table th {
+            background-color: var(--c-bg);
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--c-text-light);
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            background-color: #eee;
+        }
+        .status-draft { background-color: #fef3c7; color: #92400e; } /* Kuning */
+        .status-published { background-color: #d1fae5; color: #065f46; } /* Hijau */
+        .status-review { background-color: #DBEAFE; color: #1E40AF; } /* Biru */
+
+        /* == 6. Modal (Pop-up) == */
+        .modal {
+            display: none; /* Sembunyi by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+             animation: fadeInModal 0.3s ease-in-out;
+        }
+         @keyframes fadeInModal {
+             from { opacity: 0; }
+             to { opacity: 1; }
+         }
+        .modal.active {
+            display: flex;
+        }
+        .modal-box {
+            background-color: var(--c-white);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            animation: scaleInModal 0.3s ease-in-out forwards;
+        }
+         @keyframes scaleInModal {
+             from { transform: scale(0.95); opacity: 0; }
+             to { transform: scale(1); opacity: 1; }
+         }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--c-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            font-size: 18px;
+        }
+        .modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--c-text-light);
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--c-border);
+            background-color: var(--c-bg);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* == 7. Halaman Editor Kursus (Fase 2) == */
+        .course-editor-header {
+            padding: 16px;
+            background-color: var(--c-white);
+            border: 1px solid var(--c-border);
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Agar responsif */
+            gap: 10px;
+        }
+
+        .editor-tabs {
+            border-bottom: 1px solid var(--c-border);
+            background-color: var(--c-white);
+            overflow-x: auto; /* Agar tab responsif */
+            white-space: nowrap;
+        }
+        .tab-button {
+            padding: 14px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--c-text-light);
+            border-bottom: 3px solid transparent;
+            display: inline-block; /* Agar bisa scroll horizontal */
+        }
+        .tab-button.active {
+            color: var(--c-primary);
+            border-bottom-color: var(--c-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Editor Kurikulum (Monster UI) */
+        #curriculum-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .curriculum-section {
+            background-color: var(--c-white);
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            overflow: hidden; /* Agar border radius konsisten */
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px; /* Lebih compact */
+            border-bottom: 1px solid var(--c-border);
+            background-color: var(--c-bg); /* Header beda warna */
+        }
+        .section-header input {
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            margin-right: 10px; /* Jarak dari tombol hapus */
+            background: transparent; /* Transparan */
+        }
+        .lesson-list {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 50px; /* Area minimal biar tidak aneh kalau kosong */
+        }
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: var(--c-bg);
+            border: 1px solid var(--c-border); /* Tambah border tipis */
+        }
+        .lesson-item-title {
+            flex-grow: 1;
+        }
+        .section-footer {
+            padding: 12px 16px; /* Lebih compact */
+            border-top: 1px solid var(--c-border);
+            background-color: var(--c-bg);
+        }
+
+        /* Upload Video (Monster Teknis UI) */
+        .video-uploader {
+            text-align: center;
+        }
+        #video-drop-area {
+            border: 2px dashed var(--c-border);
+            border-radius: 8px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #video-drop-area.active {
+            border-color: var(--c-primary);
+            background-color: var(--c-primary-light);
+        }
+        #video-progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: var(--c-border);
+            border-radius: 5px;
+            margin-top: 16px;
+            overflow: hidden;
+            display: none; /* Tampil saat upload */
+        }
+        #video-progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--c-primary);
+            transition: width 0.3s ease;
+        }
+        #video-upload-status {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        /* == 8. CSS HALAMAN BARU (Q&A & Analytics) == */
+
+        /* Q&A Page */
+        .qa-container {
+            display: flex;
+            height: calc(100vh - 200px); /* Ketinggian dinamis */
+            min-height: 400px; /* Tinggi minimum */
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            background-color: var(--c-white);
+            overflow: hidden;
+        }
+        .qa-list-panel {
+            width: 300px;
+            border-right: 1px solid var(--c-border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .qa-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--c-border);
+            flex-shrink: 0; /* Agar tab tidak mengecil */
+        }
+        .qa-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            font-size: 14px; /* Kecilkan sedikit */
+        }
+        .qa-tab.active {
+            color: var(--c-primary);
+            border-bottom-color: var(--c-primary);
+        }
+        .qa-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .qa-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--c-border);
+            cursor: pointer;
+        }
+        .qa-item:hover {
+            background-color: var(--c-bg);
+        }
+        .qa-item.active {
+            background-color: var(--c-primary-light);
+        }
+        .qa-item-header {
+            font-weight: 600;
+            font-size: 14px; /* Konsisten */
+            display: flex; /* Untuk badge dijawab */
+            justify-content: space-between;
+        }
+         .qa-item-answered-badge {
+            color: var(--c-green);
+            font-size: 12px;
+            font-weight: normal;
+         }
+        .qa-item-snippet {
+            font-size: 14px;
+            color: var(--c-text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 4px 0;
+        }
+        .qa-item-course {
+            font-size: 12px;
+            color: var(--c-primary);
+        }
+
+        .qa-detail-panel {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .qa-detail-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--c-border);
+            background-color: var(--c-bg);
+            flex-shrink: 0;
+        }
+         .qa-detail-header h3 {
+            font-size: 16px; /* Lebih kecil */
+         }
+         .qa-detail-header small {
+            font-size: 13px;
+         }
+        .qa-detail-body {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .qa-reply-area {
+            padding: 20px;
+            border-top: 1px solid var(--c-border);
+            flex-shrink: 0;
+        }
+
+        /* Analytics Page */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Auto fit */
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background-color: var(--c-white);
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .kpi-label {
+            font-size: 14px;
+            color: var(--c-text-light);
+        }
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--c-bg);
+            border: 1px solid var(--c-border);
+            border-radius: 8px;
+            color: var(--c-text-light);
+            font-weight: 500;
+        }
+
+        /* == 9. Responsif == */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--c-border);
+                flex-direction: row;
+                justify-content: space-between;
+                position: sticky; /* Sticky di mobile */
+                top: 0;
+                z-index: 1001; /* Di atas konten */
+            }
+            .sidebar-header {
+                border-bottom: none;
+                padding: 16px;
+            }
+            .sidebar-nav {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 250px;
+                height: 100%;
+                background-color: var(--c-white);
+                padding: 16px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1010;
+                flex-grow: 0;
+                border-right: 1px solid var(--c-border);
+                display: flex; /* Aktifkan flex */
+                flex-direction: column; /* Susun vertikal */
+            }
+            .sidebar.mobile-active .sidebar-nav {
+                transform: translateX(0);
+            }
+            .sidebar-footer {
+                display: block; /* Tampilkan di menu mobile */
+                margin-top: auto; /* Dorong ke bawah */
+            }
+
+
+            #mobile-menu-toggle {
+                display: block;
+                padding: 16px;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-box {
+                width: 95%;
+            }
+
+            /* Responsive Halaman Baru */
+             .analytics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Lebih kecil lagi */
+            }
+            .qa-container {
+                flex-direction: column;
+                height: auto; /* Tinggi otomatis di mobile */
+                min-height: 0; /* Hapus min-height */
+            }
+            .qa-list-panel {
+                width: 100%;
+                max-height: 250px; /* Batasi tinggi list */
+                border-right: none;
+                border-bottom: 1px solid var(--c-border);
+            }
+        }
+
+        /* CSS KHUSUS ALUR BARU (EVENT) */
+        #event-detail-poster {
+            width: 100%;
+            max-height: 250px; /* Batasi tinggi poster di modal */
+            object-fit: contain; /* Agar tidak terdistorsi */
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid var(--c-border);
+            margin-bottom: 16px;
+            background-color: #eee; /* Background jika gambar gagal load */
+        }
+        #event-detail-link-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        #event-detail-link-wrapper input {
+            background-color: var(--c-bg); /* Tampak read-only */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-logo"><i class="fa-solid fa-graduation-cap"></i> Portal Trainer</span>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-link active" data-page="page-my-courses"><i class="fa-solid fa-video"></i> My Courses</a></li>
+                    <li><a href="#" class="nav-link" data-page="page-my-events"><i class="fa-solid fa-calendar-star"></i> My Events</a></li>
+                    <li><a href="#" class="nav-link" data-page="page-qa"><i class="fa-solid fa-comments"></i> Q&A</a></li>
+                    <li><a href="#" class="nav-link" data-page="page-analytics"><i class="fa-solid fa-chart-line"></i> Analytics</a></li>
+                </ul>
+                 <div class="sidebar-footer">
+                    <a href="#" class="profile-link">
+                        <div class="profile-avatar">TR</div>
+                        <span class="profile-name">Trainer Satu</span>
+                    </a>
+                </div>
+            </nav>
+            <button id="mobile-menu-toggle"><i class="fa-solid fa-bars"></i></button>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <h1 id="topbar-title">My Courses</h1>
+                 <div>
+                    <button class="btn btn-secondary btn-sm"><i class="fa-regular fa-bell"></i></button>
+                    <button class="btn btn-secondary btn-sm"><i class="fa-regular fa-user"></i></button>
+                 </div>
+            </header>
+            <div class="content-area">
+
+                <section class="page active" id="page-my-courses">
+                    <div class="page-header">
+                        <h2>Kelola Kursus Anda</h2>
+                        <button class="btn btn-primary" id="btn-goto-create-course">
+                            <i class="fa-solid fa-plus"></i> Buat Kursus Baru
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-wrapper">
+                                <table class="table" id="courses-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Judul Kursus</th>
+                                            <th>Status</th>
+                                            <th>Pelajaran</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Belajar Laravel dari Nol</strong></td>
+                                            <td><span class="status-badge status-published">Published</span></td>
+                                            <td>24 Pelajaran</td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm btn-goto-edit-kurikulum"><i class="fa-solid fa-pen-to-square"></i> Edit Kurikulum</button>
+                                                <button class="btn btn-secondary btn-sm btn-goto-edit-info"><i class="fa-solid fa-gear"></i> Pengaturan</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Mastering React 18</strong></td>
+                                            <td><span class="status-badge status-draft">Draft</span></td>
+                                            <td>8 Pelajaran</td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm btn-goto-edit-kurikulum"><i class="fa-solid fa-pen-to-square"></i> Edit Kurikulum</button>
+                                                <button class="btn btn-secondary btn-sm btn-goto-edit-info"><i class="fa-solid fa-gear"></i> Pengaturan</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Vue JS Fundamental</strong></td>
+                                            <td><span class="status-badge status-review">In Review</span></td>
+                                            <td>15 Pelajaran</td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm btn-goto-edit-kurikulum"><i class="fa-solid fa-pen-to-square"></i> Edit Kurikulum</button>
+                                                <button class="btn btn-secondary btn-sm btn-goto-edit-info"><i class="fa-solid fa-gear"></i> Pengaturan</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-my-events">
+                    <div class="page-header">
+                        <h2>Kelola Event Anda</h2>
+                        <button class="btn btn-primary btn-open-modal" data-modal="modal-event-request" id="btn-request-event-baru">
+                            <i class="fa-solid fa-plus"></i> Ajukan Event Baru
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-wrapper">
+                                <table class="table" id="events-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Judul Event</th>
+                                            <th>Jadwal</th>
+                                            <th>Status Ajuan</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr data-event-id="event-1">
+                                            <td><strong>Live Coding: Project Laravel</strong></td>
+                                            <td>28 Okt 2025, 19:00</td>
+                                            <td><span class="status-badge status-published">Disetujui</span></td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm btn-open-modal" data-modal="modal-event-detail">
+                                                    <i class="fa-solid fa-eye"></i> Lihat Detail
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr data-event-id="event-2">
+                                            <td><strong>Bedah Tuntas React Server Components</strong></td>
+                                            <td>1 Nov 2025, 10:00</td>
+                                            <td><span class="status-badge status-draft">Menunggu Persetujuan</span></td>
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm btn-edit-event" data-modal="modal-event-request" data-title="Bedah Tuntas React Server Components" data-date="2025-11-01T10:00" data-desc="Diskusi mendalam tentang RSC...">
+                                                    <i class="fa-solid fa-pen"></i> Edit Ajuan
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-qa">
+                    <div class="page-header">
+                        <h2>Pusat Q&A</h2>
+                    </div>
+                    <div class="qa-container">
+                        <div class="qa-list-panel">
+                            <div class="qa-tabs">
+                                <button class="qa-tab active" data-filter="unanswered">Belum Dijawab</button>
+                                <button class="qa-tab" data-filter="all">Semua</button>
+                            </div>
+                            <div class="qa-list" id="qa-list">
+                                </div>
+                        </div>
+                        <div class="qa-detail-panel">
+                            <div class="qa-detail-header">
+                                <h3 id="qa-detail-title">Pilih pertanyaan</h3>
+                                <small id="qa-detail-meta">Pilih pertanyaan dari daftar di sebelah kiri.</small>
+                            </div>
+                            <div class="qa-detail-body" id="qa-detail-body">
+                                <p>Detail pertanyaan akan muncul di sini.</p>
+                            </div>
+                            <div class="qa-reply-area">
+                                <div class="form-group">
+                                    <label class="form-label">Tulis Balasan Anda:</label>
+                                    <textarea class="form-textarea" id="qa-reply-textarea" placeholder="Tulis jawaban Anda di sini..." disabled></textarea>
+                                </div>
+                                <button class="btn btn-primary" id="btn-send-reply" disabled>
+                                    <i class="fa-solid fa-paper-plane"></i> Kirim Balasan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-analytics">
+                    <div class="page-header">
+                        <h2>Analytics</h2>
+                    </div>
+                    <div class="analytics-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Siswa</div>
+                            <div class="kpi-value">1,482</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Rating Rata-rata</div>
+                            <div class="kpi-value">4.8 <span style="color: #f59e0b;">★</span></div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Pendaftar (30 Hari)</div>
+                            <div class="kpi-value">105</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Pendapatan</div>
+                            <div class="kpi-value">Rp 12.5Jt</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h2>Pendaftaran Siswa (6 Bulan Terakhir)</h2></div>
+                        <div class="card-body"><div class="chart-placeholder">(Simulasi Grafik Area)</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h2>Performa Kursus</h2></div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-wrapper">
+                                <table class="table">
+                                    <thead><tr><th>Kursus</th><th>Siswa</th><th>Rating</th></tr></thead>
+                                    <tbody>
+                                        <tr><td>Belajar Laravel dari Nol</td><td>820</td><td>4.9 ★</td></tr>
+                                        <tr><td>Mastering React 18</td><td>662</td><td>4.7 ★</td></tr>
+                                        <tr><td>Vue JS Fundamental</td><td>105</td><td>4.6 ★</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-course-editor">
+                    <div class="course-editor-header">
+                        <div>
+                            <button class="btn btn-secondary btn-sm" id="btn-back-to-courses">
+                                <i class="fa-solid fa-arrow-left"></i> Kembali
+                            </button>
+                            <h2 style="margin-top: 10px; font-size: 24px;" id="course-editor-title">Editor Kursus</h2>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" id="btn-save-draft">Simpan sebagai Draft</button>
+                            <button class="btn btn-primary" id="btn-submit-review">Kirim untuk Review</button>
+                        </div>
+                    </div>
+                    <nav class="editor-tabs">
+                        <button class="tab-button active" data-tab="tab-info-dasar">1. Informasi Dasar</button>
+                        <button class="tab-button" data-tab="tab-kurikulum">2. Editor Kurikulum</button>
+                        <button class="tab-button" data-tab="tab-publikasi">3. Pengaturan & Publikasi</button>
+                    </nav>
+                    <div class="tab-content active" id="tab-info-dasar">
+                        <div class="card" style="border-radius: 0 0 8px 8px; border-top: none;">
+                            <div class="card-body" style="max-width: 800px;">
+                                <div class="form-group">
+                                    <label for="course-title-input" class="form-label">Judul Kursus</label>
+                                    <input type="text" id="course-title-input" class="form-input" placeholder="Contoh: Belajar Laravel dari Nol">
+                                </div>
+                                <div class="form-group">
+                                    <label for="course-desc" class="form-label">Deskripsi Kursus</label>
+                                    <textarea id="course-desc" class="form-textarea" placeholder="Jelaskan tentang kursus ini untuk calon siswa..."></textarea>
+                                </div>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="course-category" class="form-label">Kategori</label>
+                                        <select id="course-category" class="form-select">
+                                            <option>Programming</option>
+                                            <option>Desain</option>
+                                            <option>Bisnis</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Level</label>
+                                        <div>
+                                            <input type="radio" id="level-beginner" name="level" value="Beginner" checked> <label for="level-beginner">Beginner</label>
+                                            <input type="radio" id="level-intermediate" name="level" value="Intermediate" style="margin-left: 10px;"> <label for="level-intermediate">Intermediate</label>
+                                            <input type="radio" id="level-advanced" name="level" value="Advanced" style="margin-left: 10px;"> <label for="level-advanced">Advanced</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="course-thumbnail" class="form-label">Thumbnail Kursus (Cover)</label>
+                                    <input type="file" id="course-thumbnail" class="form-input" accept="image/png, image/jpeg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="tab-kurikulum">
+                        <div class="card" style="border-radius: 0 0 8px 8px; border-top: none;">
+                            <div class="card-body">
+                                <button class="btn btn-primary" id="btn-add-section">
+                                    <i class="fa-solid fa-plus"></i> Tambah Bab (Section)
+                                </button>
+                                <div id="curriculum-list" style="margin-top: 20px;">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content" id="tab-publikasi">
+                         <div class="card" style="border-radius: 0 0 8px 8px; border-top: none;">
+                            <div class="card-body"><h2>Pengaturan & Publikasi</h2><p>Opsi harga, sertifikat, dll.</p></div>
+                         </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="modal-event-request">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="event-request-modal-title">Ajukan Event Baru</h2>
+                <button class="modal-close-btn" data-modal="modal-event-request">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="event-edit-id"> <div class="form-group">
+                    <label for="event-title-input" class="form-label">Judul Event</label>
+                    <input type="text" id="event-title-input" class="form-input" placeholder="Contoh: Live Coding Project...">
+                </div>
+                <div class="form-group">
+                    <label for="event-desc-input" class="form-label">Deskripsi Singkat</label>
+                    <textarea id="event-desc-input" class="form-textarea" placeholder="Jelaskan singkat event ini..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="event-date-input" class="form-label">Tanggal & Jam</label>
+                    <input type="datetime-local" id="event-date-input" class="form-input">
+                </div>
+                <p class="form-help-text">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Tim kami akan meninjau ajuan ini. Jika disetujui, kami akan membuatkan poster profesional dan menyediakan link streaming (Zoom/GMeet) untuk Anda.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close-btn" data-modal="modal-event-request">Batal</button>
+                <button class="btn btn-primary" id="btn-submit-event-request">Ajukan Event</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-event-detail">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Detail Event (Disetujui)</h2>
+                <button class="modal-close-btn" data-modal="modal-event-detail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Event Anda telah disetujui! Berikut adalah detail dan link yang perlu Anda gunakan.</p>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label class="form-label">Poster Event (Dibuat oleh Tim)</label>
+                    <img id="event-detail-poster" src="https://via.placeholder.com/600x300.png?text=Poster+Event+Anda+Dibuat+Tim" alt="Poster Event">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Judul Event</label>
+                    <input type="text" class="form-input" value="Live Coding: Project Laravel" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Link Streaming (Dari Tim)</label>
+                    <div id="event-detail-link-wrapper">
+                        <input type="text" class="form-input" id="event-link-copy" value="https://zoom.us/j/123456789" readonly>
+                        <button class="btn btn-secondary" onclick="copyEventLink()"><i class="fa-solid fa-copy"></i> Salin</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary modal-close-btn" data-modal="modal-event-detail">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal" id="modal-lesson">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="lesson-modal-title">Tambah Pelajaran Baru</h2>
+                <button class="modal-close-btn" data-modal="modal-lesson">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="lesson-edit-id"> <div class="form-group">
+                    <label for="lesson-title-input" class="form-label">Judul Pelajaran</label>
+                    <input type="text" id="lesson-title-input" class="form-input" placeholder="Contoh: 1.1 - Instalasi Composer">
+                </div>
+                <div class="form-group video-uploader">
+                    <label class="form-label">Materi Video</label>
+                    <input type="file" id="video-file-input" accept="video/mp4,video/mov" hidden>
+                    <div id="video-drop-area">
+                        <i class="fa-solid fa-upload" style="font-size: 30px; color: #888;"></i>
+                        <p>Seret file video ke sini, atau <b>klik untuk memilih file</b>.</p>
+                        <small>Maks 1GB. Format .mp4 atau .mov</small>
+                    </div>
+                    <div id="video-progress-bar">
+                        <div id="video-progress-fill"></div>
+                    </div>
+                    <div id="video-upload-status"></div>
+                </div>
+                <div class="form-group">
+                    <label for="lesson-files" class="form-label">File Lampiran (Opsional)</label>
+                    <input type="file" id="lesson-files" class="form-input" placeholder="Upload .zip atau .pdf">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close-btn" data-modal="modal-lesson">Batal</button>
+                <button class="btn btn-primary" id="btn-save-lesson">Simpan Pelajaran</button>
+            </div>
+        </div>
+    </div>
+
+    <template id="template-section">
+        <div class="curriculum-section">
+            <div class="section-header">
+                <input type="text" class="form-input section-title-input" placeholder="Contoh: Bab 1 - Instalasi & Setup">
+                <button class="btn-danger-outline btn-sm btn-delete-section"><i class="fa-solid fa-trash"></i> Hapus Bab</button>
+            </div>
+            <div class="lesson-list"></div>
+            <div class="section-footer">
+                <button class="btn btn-secondary btn-sm btn-add-lesson" data-modal="modal-lesson">
+                    <i class="fa-solid fa-plus"></i> Tambah Pelajaran
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-lesson">
+        <div class="lesson-item" data-id="temp-id"> <i class="fa-solid fa-video" style="color: var(--c-text-light);"></i>
+            <span class="lesson-item-title">1.1 - Judul Pelajaran</span>
+            <button class="btn btn-secondary btn-sm btn-edit-lesson" style="padding: 2px 6px;" data-modal="modal-lesson"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-danger-outline btn-sm btn-delete-lesson" style="padding: 2px 6px;"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    </template>
+
+
+    <script>
+    // Fungsi baru untuk menyalin link event
+    function copyEventLink() {
+        const linkInput = document.getElementById("event-link-copy");
+        linkInput.select();
+        try {
+            document.execCommand("copy");
+            alert("Link streaming telah disalin!");
+        } catch (err) {
+            alert("Gagal menyalin link. Coba salin manual.");
+            console.error('Gagal menyalin: ', err);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const app = document.getElementById("app");
+        const sidebar = document.getElementById("sidebar");
+        const topbarTitle = document.getElementById("topbar-title");
+        const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+
+        // === 1. LOGIKA NAVIGASI Halaman ===
+        function showPage(pageId) {
+            document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) targetPage.classList.add("active");
+
+            const activeLink = document.querySelector(`.nav-link[data-page="${pageId}"]`);
+            if (activeLink) {
+                topbarTitle.textContent = activeLink.textContent.trim();
+                document.querySelectorAll(".nav-link").forEach(link => link.classList.remove("active"));
+                activeLink.classList.add("active");
+            }
+             // Reset state Q&A jika pindah halaman lain
+             if (pageId !== 'page-qa') {
+                 resetQADetail();
+             }
+        }
+        document.querySelectorAll(".nav-link").forEach(link => {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                const pageId = this.getAttribute("data-page");
+                showPage(pageId);
+                sidebar.classList.remove("mobile-active");
+            });
+        });
+
+        // === 2. LOGIKA MODAL ===
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if(modal) modal.classList.add("active");
+        }
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if(modal) modal.classList.remove("active");
+            // Reset form event saat ditutup
+            if (modalId === 'modal-event-request') resetEventRequestForm();
+            if (modalId === 'modal-lesson') resetUploadForm();
+        }
+        document.querySelectorAll(".btn-open-modal").forEach(button => {
+            button.addEventListener("click", function() { openModal(this.getAttribute("data-modal")); });
+        });
+        document.querySelectorAll(".modal-close-btn").forEach(button => {
+            button.addEventListener("click", function() { closeModal(this.getAttribute("data-modal")); });
+        });
+        document.querySelectorAll(".modal").forEach(modal => {
+            modal.addEventListener("click", function(e) { if (e.target === this) closeModal(this.id); });
+        });
+
+        // === 3. LOGIKA RESPONSIVE ===
+        mobileMenuToggle.addEventListener("click", () => sidebar.classList.toggle("mobile-active"));
+
+        // === 4. NAVIGASI ANTAR HALAMAN KURSUS ===
+        const pageMyCourses = document.getElementById("page-my-courses");
+        const pageCourseEditor = document.getElementById("page-course-editor");
+        const courseEditorTitle = document.getElementById("course-editor-title");
+
+        document.getElementById("btn-goto-create-course").addEventListener("click", () => {
+            pageMyCourses.classList.remove("active");
+            pageCourseEditor.classList.add("active");
+            courseEditorTitle.textContent = "Buat Kursus Baru";
+            topbarTitle.textContent = "Editor Kursus";
+             document.getElementById('course-title-input').value = '';
+             document.getElementById('course-desc').value = '';
+             document.getElementById('curriculum-list').innerHTML = '';
+            showTab('tab-info-dasar');
+        });
+        document.getElementById("btn-back-to-courses").addEventListener("click", () => showPage("page-my-courses"));
+
+        // Listener untuk tombol Edit Info/Kurikulum di tabel kursus
+        document.getElementById('courses-table').addEventListener('click', (e) => {
+            const button = e.target.closest('.btn-goto-edit-info, .btn-goto-edit-kurikulum');
+            if (!button) return;
+
+            const courseTitle = button.closest('tr').querySelector('td:first-child strong').textContent;
+            const targetTab = button.classList.contains('btn-goto-edit-info') ? 'tab-info-dasar' : 'tab-kurikulum';
+
+            pageMyCourses.classList.remove("active");
+            pageCourseEditor.classList.add("active");
+            courseEditorTitle.textContent = `Editor: ${courseTitle}`;
+            topbarTitle.textContent = "Editor Kursus";
+
+             if(targetTab === 'tab-info-dasar'){
+                  document.getElementById('course-title-input').value = courseTitle;
+                  document.getElementById('course-desc').value = `Deskripsi untuk ${courseTitle}...`;
+             }
+             if(targetTab === 'tab-kurikulum'){
+                  document.getElementById('curriculum-list').innerHTML = '';
+                  const dummySection = sectionTemplate.content.cloneNode(true);
+                  dummySection.querySelector('.section-title-input').value = `Bab 1 - ${courseTitle}`;
+                  const dummyLesson = lessonTemplate.content.cloneNode(true);
+                   const dummyLessonItem = dummyLesson.querySelector('.lesson-item');
+                   const lessonId = `lesson-${Date.now()}`;
+                   dummyLessonItem.dataset.id = lessonId;
+                  dummyLessonItem.querySelector('.lesson-item-title').textContent = '1.1 - Pelajaran Contoh';
+                  dummySection.querySelector('.lesson-list').appendChild(dummyLesson);
+                  document.getElementById('curriculum-list').appendChild(dummySection);
+             }
+            showTab(targetTab);
+        });
+
+        // Tombol simpan draft & submit review
+         document.getElementById("btn-save-draft").addEventListener("click", () => alert("Kursus disimpan sebagai draft (simulasi)"));
+         document.getElementById("btn-submit-review").addEventListener("click", () => {
+            if(confirm("Anda yakin ingin mengirim kursus ini untuk direview?")){
+                 alert("Kursus dikirim untuk review (simulasi)");
+                 // Simulasi: Tambah kursus baru ke tabel dengan status In Review
+                 const title = document.getElementById('course-title-input').value || "Kursus Baru Tanpa Judul";
+                 const coursesTableBody = document.getElementById('courses-table').querySelector('tbody');
+                 const newRowHTML = `
+                     <tr>
+                        <td><strong>${title}</strong></td>
+                        <td><span class="status-badge status-review">In Review</span></td>
+                        <td>0 Pelajaran</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm btn-goto-edit-kurikulum"><i class="fa-solid fa-pen-to-square"></i> Edit Kurikulum</button>
+                            <button class="btn btn-secondary btn-sm btn-goto-edit-info"><i class="fa-solid fa-gear"></i> Pengaturan</button>
+                        </td>
+                     </tr>
+                 `;
+                 coursesTableBody.insertAdjacentHTML('beforeend', newRowHTML);
+                 showPage("page-my-courses");
+            }
+         });
+
+
+        // === 5. LOGIKA TAB (Course Editor) ===
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabContents = document.querySelectorAll(".tab-content");
+        function showTab(tabId) {
+            tabContents.forEach(content => content.classList.remove("active"));
+            document.getElementById(tabId)?.classList.add("active");
+            tabButtons.forEach(button => {
+                button.classList.remove("active");
+                if (button.getAttribute("data-tab") === tabId) button.classList.add("active");
+            });
+        }
+        tabButtons.forEach(button => {
+            button.addEventListener("click", function() { showTab(this.getAttribute("data-tab")); });
+        });
+
+        // === 6. LOGIKA EDITOR KURIKULUM (Bab & Pelajaran) ===
+        const curriculumList = document.getElementById("curriculum-list");
+        const sectionTemplate = document.getElementById("template-section");
+        const lessonTemplate = document.getElementById("template-lesson");
+        const lessonModal = document.getElementById('modal-lesson');
+        const lessonModalTitle = document.getElementById('lesson-modal-title');
+        const lessonTitleInput = document.getElementById('lesson-title-input');
+        const lessonEditIdInput = document.getElementById('lesson-edit-id');
+        const saveLessonBtn = document.getElementById("btn-save-lesson");
+
+        // Tambah Bab
+        document.getElementById("btn-add-section").addEventListener("click", () => {
+            const newSection = sectionTemplate.content.cloneNode(true);
+            curriculumList.appendChild(newSection);
+        });
+
+        // Event delegation untuk tombol di dalam kurikulum
+        curriculumList.addEventListener("click", function(e) {
+            const target = e.target;
+            const btnAddLesson = target.closest(".btn-add-lesson");
+            const btnDeleteSection = target.closest(".btn-delete-section");
+            const btnEditLesson = target.closest(".btn-edit-lesson");
+            const btnDeleteLesson = target.closest(".btn-delete-lesson");
+
+            if (btnAddLesson) {
+                lessonModalTitle.textContent = "Tambah Pelajaran Baru";
+                saveLessonBtn.textContent = "Simpan Pelajaran";
+                lessonEditIdInput.value = "";
+                app.dataset.activeLessonListRef = btnAddLesson.closest(".curriculum-section").querySelector(".lesson-list");
+                resetUploadForm();
+                openModal('modal-lesson');
+            }
+            else if (btnDeleteSection) {
+                if (confirm("Anda yakin ingin menghapus Bab ini beserta semua pelajarannya?")) {
+                    btnDeleteSection.closest(".curriculum-section").remove();
+                }
+            }
+            else if (btnEditLesson) {
+                 const lessonItem = btnEditLesson.closest('.lesson-item');
+                 const lessonId = lessonItem.dataset.id;
+                 const lessonTitle = lessonItem.querySelector('.lesson-item-title').textContent;
+                 lessonModalTitle.textContent = "Edit Pelajaran";
+                 saveLessonBtn.textContent = "Simpan Perubahan";
+                 lessonTitleInput.value = lessonTitle;
+                 lessonEditIdInput.value = lessonId;
+                 resetUploadForm();
+                 openModal('modal-lesson');
+            }
+            else if (btnDeleteLesson) {
+                if (confirm("Anda yakin ingin menghapus pelajaran ini?")) {
+                    btnDeleteLesson.closest(".lesson-item").remove();
+                }
+            }
+        });
+
+        // Simpan Pelajaran (dari Modal 2)
+        saveLessonBtn.addEventListener("click", function() {
+            const lessonTitle = lessonTitleInput.value.trim() || "Pelajaran Baru";
+            const lessonId = lessonEditIdInput.value;
+
+            if (lessonId) {
+                // Edit
+                const existingLessonItem = curriculumList.querySelector(`.lesson-item[data-id="${lessonId}"]`);
+                if (existingLessonItem) {
+                    existingLessonItem.querySelector(".lesson-item-title").textContent = lessonTitle;
+                    alert("Pelajaran diperbarui (simulasi)");
+                } else {
+                    console.error("Edit error: Item not found", lessonId);
+                    alert("Gagal memperbarui: Item tidak ditemukan.");
+                }
+            } else {
+                // Tambah Baru
+                const newLesson = lessonTemplate.content.cloneNode(true);
+                const newLessonItem = newLesson.querySelector('.lesson-item');
+                const newLessonId = 'lesson-' + Date.now();
+                newLessonItem.dataset.id = newLessonId;
+                newLessonItem.querySelector(".lesson-item-title").textContent = lessonTitle;
+
+                const targetListElement = app.dataset.activeLessonListRef;
+                 if (targetListElement && targetListElement instanceof HTMLElement) {
+                      targetListElement.appendChild(newLesson);
+                      alert("Pelajaran baru ditambahkan (simulasi)");
+                 } else {
+                      console.error("Add error: Target list invalid", targetListElement);
+                      alert("Gagal menambahkan pelajaran: Tidak ada Bab aktif/valid.");
+                 }
+            }
+            closeModal('modal-lesson');
+        });
+
+        // === 7. LOGIKA UPLOAD VIDEO (Simulasi) ===
+        const dropArea = document.getElementById("video-drop-area");
+        const fileInput = document.getElementById("video-file-input");
+        const progressBar = document.getElementById("video-progress-bar");
+        const progressFill = document.getElementById("video-progress-fill");
+        const uploadStatus = document.getElementById("video-upload-status");
+
+        dropArea.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", function() { if (this.files && this.files[0]) simulateUpload(this.files[0]); });
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => dropArea.addEventListener(evt, preventDefaults, false));
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        ['dragenter', 'dragover'].forEach(evt => dropArea.addEventListener(evt, () => dropArea.classList.add('active'), false));
+        ['dragleave', 'drop'].forEach(evt => dropArea.addEventListener(evt, () => dropArea.classList.remove('active'), false));
+        dropArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files && files[0]) { fileInput.files = files; simulateUpload(files[0]); }
+        }, false);
+
+        let uploadInterval = null;
+        function simulateUpload(file) {
+             if (uploadInterval) clearInterval(uploadInterval);
+            saveLessonBtn.disabled = true;
+            saveLessonBtn.textContent = "Mengupload...";
+            progressBar.style.display = "block";
+            uploadStatus.textContent = `Mengupload ${file.name}... (Simulasi)`;
+            uploadStatus.style.color = "var(--c-text)";
+            progressFill.style.width = "0%";
+
+            let progress = 0;
+            uploadInterval = setInterval(() => {
+                progress += 10;
+                progressFill.style.width = progress + "%";
+                if (progress >= 100) {
+                    clearInterval(uploadInterval);
+                    uploadInterval = null;
+                    uploadStatus.textContent = `✔ ${file.name} Berhasil diupload.`;
+                    uploadStatus.style.color = "var(--c-green)";
+                    saveLessonBtn.disabled = false;
+                    saveLessonBtn.textContent = lessonEditIdInput.value ? "Simpan Perubahan" : "Simpan Pelajaran";
+                }
+            }, 200);
+        }
+        function resetUploadForm() {
+             if (uploadInterval) clearInterval(uploadInterval);
+             uploadInterval = null;
+            fileInput.value = "";
+            progressBar.style.display = "none";
+            progressFill.style.width = "0%";
+            uploadStatus.textContent = "";
+            uploadStatus.style.color = "var(--c-text)";
+            lessonTitleInput.value = "";
+            lessonEditIdInput.value = "";
+            saveLessonBtn.disabled = false;
+            saveLessonBtn.textContent = "Simpan Pelajaran";
+        }
+
+        // === 8. LOGIKA EVENT (Ajukan & Edit) ===
+        const eventRequestModal = document.getElementById('modal-event-request');
+        const eventRequestTitle = document.getElementById('event-request-modal-title');
+        const eventTitleInput = document.getElementById('event-title-input');
+        const eventDescInput = document.getElementById('event-desc-input');
+        const eventDateInput = document.getElementById('event-date-input');
+        const eventEditIdInput = document.getElementById('event-edit-id');
+        const submitEventBtn = document.getElementById('btn-submit-event-request');
+        const eventsTableBody = document.getElementById('events-table').querySelector('tbody');
+
+        document.getElementById('btn-request-event-baru').addEventListener('click', () => {
+             eventRequestTitle.textContent = "Ajukan Event Baru";
+             submitEventBtn.textContent = "Ajukan Event";
+             eventEditIdInput.value = "";
+             resetEventRequestForm();
+        });
+
+        document.getElementById('events-table').addEventListener('click', (e) => {
+            const editButton = e.target.closest('.btn-edit-event');
+            if (!editButton) return;
+            const row = editButton.closest('tr');
+            const title = editButton.dataset.title || row.querySelector('td:first-child strong').textContent;
+            const date = editButton.dataset.date || "";
+            const desc = editButton.dataset.desc || "";
+            const eventId = row.dataset.eventId;
+
+            eventRequestTitle.textContent = "Edit Ajuan Event";
+            submitEventBtn.textContent = "Simpan Perubahan";
+            eventEditIdInput.value = eventId;
+            eventTitleInput.value = title;
+            eventDateInput.value = date;
+            eventDescInput.value = desc;
+            openModal('modal-event-request');
+        });
+
+        submitEventBtn.addEventListener('click', () => {
+            const eventId = eventEditIdInput.value;
+            const title = eventTitleInput.value.trim() || "Event Baru";
+            const desc = eventDescInput.value.trim();
+            const dateValue = eventDateInput.value;
+            let formattedDate = "Tanggal belum diatur";
+             if (dateValue) {
+                  const dateObj = new Date(dateValue);
+                   if (!isNaN(dateObj)) {
+                        formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                   }
+             }
+
+            if (eventId) {
+                // Edit
+                 const rowToUpdate = eventsTableBody.querySelector(`tr[data-event-id="${eventId}"]`);
+                 if(rowToUpdate){
+                      rowToUpdate.querySelector('td:nth-child(1) strong').textContent = title;
+                      rowToUpdate.querySelector('td:nth-child(2)').textContent = formattedDate;
+                       const editBtn = rowToUpdate.querySelector('.btn-edit-event');
+                       if(editBtn) {
+                           editBtn.dataset.title = title;
+                           editBtn.dataset.date = dateValue;
+                           editBtn.dataset.desc = desc;
+                       }
+                      alert("Ajuan event diperbarui (simulasi)");
+                 } else {
+                     console.error("Event Edit Error: Row not found", eventId);
+                     alert("Gagal memperbarui: Event tidak ditemukan.");
+                 }
+            } else {
+                // Tambah Baru
+                 const newEventId = "event-" + Date.now();
+                const newRowHTML = `
+                    <tr data-event-id="${newEventId}">
+                        <td><strong>${title}</strong></td>
+                        <td>${formattedDate}</td>
+                        <td><span class="status-badge status-draft">Menunggu Persetujuan</span></td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm btn-edit-event" data-modal="modal-event-request" data-title="${title}" data-date="${dateValue}" data-desc="${desc}">
+                                <i class="fa-solid fa-pen"></i> Edit Ajuan
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                eventsTableBody.insertAdjacentHTML('beforeend', newRowHTML);
+                alert("Event baru diajukan (simulasi)");
+            }
+            closeModal('modal-event-request');
+        });
+
+        function resetEventRequestForm() {
+             eventTitleInput.value = '';
+             eventDescInput.value = '';
+             eventDateInput.value = '';
+             // Hanya reset ID jika tidak dalam mode edit
+             if (!eventEditIdInput.value) {
+                eventEditIdInput.value = '';
+             }
+             // Reset judul modal & tombol hanya jika tidak dalam mode edit
+             if(!eventEditIdInput.value) {
+                eventRequestTitle.textContent = "Ajukan Event Baru";
+                submitEventBtn.textContent = "Ajukan Event";
+             }
+        }
+
+
+        // === 9. LOGIKA HALAMAN Q&A ===
+        const qaList = document.getElementById('qa-list');
+        const qaDetailTitle = document.getElementById('qa-detail-title');
+        const qaDetailMeta = document.getElementById('qa-detail-meta');
+        const qaDetailBody = document.getElementById('qa-detail-body');
+        const qaReplyTextarea = document.getElementById('qa-reply-textarea');
+        const qaTabs = document.querySelectorAll('.qa-tab');
+        const btnSendReply = document.getElementById('btn-send-reply');
+
+        // Data dummy Q&A (lebih terstruktur)
+        let qaData = {
+            1: { id: 1, name: "Budi Santoso", course: "Belajar Laravel dari Nol", title: "Bagaimana cara deploy ke Vercel?", body: "<p>Halo kak,</p><p>Saya sudah selesai mengikuti kursus, tapi saya bingung bagaimana cara deploy project Laravel saya ke Vercel. Apakah ada tutorialnya? Terima kasih.</p>", answered: false },
+            2: { id: 2, name: "Siti Aminah", course: "Mastering React 18", title: "Apa bedanya state dan props?", body: "<p>Masih bingung kak bedanya state sama props di React. Bisa dijelaskan lagi?</p>", answered: false },
+            3: { id: 3, name: "Eko", course: "Belajar Laravel dari Nol", title: "Error saat migrasi database...", body: "<p>Saya dapat error 'connection refused' saat coba `php artisan migrate`. Padahal .env sudah benar. Kenapa ya?</p>", answered: false },
+            4: { id: 4, name: "Dewi", course: "Belajar Laravel dari Nol", title: "Tentang Eloquent Relationship", body: "<p>Sudah dijawab, ini contoh saja.</p>", answered: true }
+        };
+
+        // Fungsi render Q&A List
+        function renderQAList(filter = 'unanswered') {
+            qaList.innerHTML = '';
+            let firstItemId = null;
+            Object.values(qaData).forEach((item, index) => { // Iterasi pakai values
+                 if (filter === 'all' || (filter === 'unanswered' && !item.answered)) {
+                      const isActive = index === 0; // Item pertama selalu aktif saat render ulang
+                      const itemHTML = `
+                        <div class="qa-item ${isActive ? 'active' : ''}" data-id="${item.id}">
+                            <div class="qa-item-header">
+                                ${item.name}
+                                ${item.answered ? '<span class="qa-item-answered-badge">(Dijawab)</span>' : ''}
+                            </div>
+                            <div class="qa-item-snippet">${item.title}</div>
+                            <div class="qa-item-course">${item.course}</div>
+                        </div>
+                      `;
+                      qaList.insertAdjacentHTML('beforeend', itemHTML);
+                      if (isActive) {
+                           firstItemId = item.id; // Simpan ID item pertama
+                      }
+                 }
+            });
+            // Update detail dengan item pertama ATAU reset jika list kosong
+             if (firstItemId) {
+                 updateQADetail(firstItemId);
+             } else {
+                 resetQADetail();
+             }
+        }
+
+        // Fungsi update Q&A Detail
+        function updateQADetail(qaId) {
+             const data = qaData[qaId];
+             if (data) {
+                qaDetailTitle.textContent = data.title;
+                qaDetailMeta.innerHTML = `Dari: <b>${data.name}</b> di <b>${data.course}</b>`;
+                qaDetailBody.innerHTML = data.body;
+                qaReplyTextarea.value = '';
+                // Aktifkan area reply
+                qaReplyTextarea.disabled = false;
+                btnSendReply.disabled = false;
+
+                // Update status aktif di list
+                qaList.querySelectorAll('.qa-item').forEach(i => i.classList.remove('active'));
+                 const activeItem = qaList.querySelector(`.qa-item[data-id="${qaId}"]`);
+                 if(activeItem) activeItem.classList.add('active');
+            } else {
+                 resetQADetail(); // Jika data tidak ditemukan
+            }
+        }
+
+        // Fungsi reset Q&A Detail Panel
+        function resetQADetail(){
+            qaDetailTitle.textContent = "Tidak Ada Pertanyaan";
+            qaDetailMeta.textContent = "Pilih pertanyaan dari daftar di sebelah kiri atau filter mungkin kosong.";
+            qaDetailBody.innerHTML = "";
+            qaReplyTextarea.value = '';
+            qaReplyTextarea.disabled = true; // Nonaktifkan reply
+            btnSendReply.disabled = true;
+            qaList.querySelectorAll('.qa-item').forEach(i => i.classList.remove('active')); // Hapus semua aktif
+        }
+
+
+        // Event delegation untuk klik item Q&A
+        qaList.addEventListener('click', (e) => {
+            const item = e.target.closest('.qa-item');
+            if (item) updateQADetail(item.dataset.id);
+        });
+
+        // Tombol Kirim Balasan
+        btnSendReply.addEventListener('click', () => {
+             if (qaReplyTextarea.value.trim() === '') {
+                  alert("Silakan tulis balasan Anda terlebih dahulu.");
+                  return;
+             }
+             const activeItemId = qaList.querySelector('.qa-item.active')?.dataset.id;
+             if(activeItemId) {
+                 qaData[activeItemId].answered = true; // Tandai sudah dijawab di data
+                 alert("Balasan terkirim (simulasi)");
+                 qaReplyTextarea.value = ''; // Kosongkan setelah dikirim
+
+                 // Render ulang list jika sedang di tab 'unanswered'
+                 if (document.querySelector('.qa-tab.active')?.dataset.filter === 'unanswered') {
+                      renderQAList('unanswered');
+                 } else {
+                      // Jika di tab 'all', cukup update tampilan itemnya
+                     const itemElement = qaList.querySelector(`.qa-item[data-id="${activeItemId}"] .qa-item-header`);
+                     if(itemElement && !itemElement.querySelector('.qa-item-answered-badge')) { // Cek jika badge belum ada
+                          itemElement.insertAdjacentHTML('beforeend', ' <span class="qa-item-answered-badge">(Dijawab)</span>');
+                     }
+                      // Nonaktifkan reply setelah dijawab? (Opsional)
+                      // qaReplyTextarea.disabled = true;
+                      // btnSendReply.disabled = true;
+                 }
+             } else {
+                 alert("Pilih pertanyaan yang ingin dibalas terlebih dahulu.");
+             }
+        });
+
+        // Ganti tab Q&A
+         qaTabs.forEach(tab => {
+             tab.addEventListener('click', function() {
+                  qaTabs.forEach(t => t.classList.remove('active'));
+                  this.classList.add('active');
+                  renderQAList(this.dataset.filter); // Render ulang list sesuai filter
+             });
+         });
+
+        // Inisialisasi: Tampilkan halaman pertama & render Q&A awal
+        showPage("page-my-courses");
+        renderQAList('unanswered'); // Render Q&A saat load, filter 'unanswered'
+
+    });
+    </script>
+
+</body>
+</html>

@@ -1429,14 +1429,13 @@ label {
 
 .container-detail {
     display: grid;
-    /* Make right column genuinely wider */
-    grid-template-columns: 2fr 1.25fr; /* total 3.25 units, right ≈ 38.5% */
-    gap: 38px;
-    width: 100%;
-    max-width: 1320px; /* allow a bit more total width so right card can breathe */
-    margin: 0 auto;
-    padding: 0 30px;
-    margin-bottom: 50px;
+    grid-template-columns: 3fr 1fr; 
+    gap: 40px;                      
+    width: 100%;                   
+    max-width: 1400px;             
+    margin: 0 auto;                
+    padding: 0 30px; 
+    margin-bottom: 50px;              
 }
 
 @media (max-width: 992px) {
@@ -1503,14 +1502,11 @@ label {
 
 .kanan {
     border: solid #f4c430 2px;
-    padding: 24px 26px 22px;
-    border-radius: 12px;
-    box-shadow: 0 0 10px 8px rgba(0,0,0,0.07);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
     width: 100%;
-    max-width: 560px; /* increased width */
-    align-self: start;
-    max-height: 100%;
-    margin-left: 0; /* remove shift */
+    max-width: 400px;
 }
 
 .price-text {
@@ -1648,43 +1644,6 @@ label {
     margin-top: 20px;
     padding: 10px;
     width: 100%;
-    border-radius: 10px;
-    color:#1f1d15; /* pastikan teks terlihat */
-    font-weight:600;
-    transition:background-color .2s, box-shadow .2s, transform .15s;
-}
-
-/* Hover / focus / active states untuk meningkatkan visibilitas dan menghindari teks hilang */
-.enroll:hover,
-.enroll:focus {
-    background-color:#e0b326; /* sedikit lebih gelap */
-    color:#1f1d15;
-    outline:none;
-    box-shadow:0 0 0 3px rgba(244,196,48,0.35);
-}
-.enroll:active {
-    background-color:#cfa31d; /* lebih gelap saat ditekan */
-    transform:translateY(1px);
-    color:#1f1d15;
-}
-.enroll:disabled {
-    opacity:.65;
-    cursor:not-allowed;
-}
-
-.enroll.cek-tiket-btn {
-    text-decoration: none;
-    color: #000; /* sama seperti default text button Daftar Sekarang */
-    font-weight: 600;
-}
-.enroll.cek-tiket-btn:hover {
-    filter: brightness(0.95);
-}
-
-/* Rounded corners for Cek Tiket / Kode & Save buttons */
-.enroll.cek-tiket-btn,
-.save {
-    border-radius: 10px;
 }
 
 .save {
@@ -1746,13 +1705,6 @@ label {
 
 .share-box {
     margin-top: 30px;
-}
-
-/* Pastikan tidak ada margin ekstra di bawah share agar card berakhir di sini */
-
-/* Jika konten kanan nanti lebih panjang dari layar kecil, izinkan scroll internal */
-@media (max-width: 992px) {
-    .kanan { max-height: none; }
 }
 
 .box-copy {
