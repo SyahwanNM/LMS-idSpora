@@ -19,8 +19,11 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 
 // Landing page: jika sudah login arahkan ke dashboard
-Route::get('/', function(){
-    if(auth()->check()) {
+Route::get('/auth', function () {
+    return view('/auth');
+});
+Route::get('/', function () {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
@@ -175,4 +178,4 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
     });
-}); 
+});
