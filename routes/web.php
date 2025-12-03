@@ -54,6 +54,37 @@ Route::get('/', function () {
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
 
+Route::get('/modul-course', function () {
+    return view('modul-course');
+})->name('modul-course');
+
+Route::get('/aturan-kuis', function () {
+    return view('aturan-kuis');
+})->name('aturan-kuis');
+
+Route::get('/payment-course', function () {
+    return view('payment-course');
+})->name('payment-course');
+
+Route::get('/detail-course', function () {
+    return view('detail-course');
+})->name('detail-course');
+
+Route::get('/quiz1-course', function () {
+    return view('quiz1-course');
+})->name('quiz1-course');
+
+// ...existing code...
+Route::get('/quiz-course', function () {
+    return view('quiz-course');
+})->name('quiz-course');
+// ...existing code...
+
+Route::get('/latihan-course', function () {
+    return view('latihan-course');
+})->name('latihan-course');
+
+
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
     $user = auth()->user();

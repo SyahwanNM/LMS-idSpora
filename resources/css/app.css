@@ -1889,6 +1889,799 @@ label {
     }
 }
 
+/*DASHBOARD COURSE*/
+.gambar_dashboard_course{
+    width: 1800px;
+    
+}
+
+/*DETAIL COURSE*/
+.link_back_detail_course{
+    display: flex;
+    margin-left: 10px;
+}
+.link_back_detail_course a{
+    text-decoration: none;
+    color: white;
+}
+.link_back_detail_course p{
+    color: white;
+}
+.header_detail_course{
+    background-color: #252346;
+    margin-top: 10px;
+    padding: 30px;
+    
+}
+.course_kuning{
+    background-color: #FFD33B;
+    padding: 5px;
+    border-radius: 8px;
+    margin-left: 10px;
+}
+.by_grey{
+    color: grey;
+}
+.idspora_putih{
+    color: white;
+}
+.teks_header_course{
+    color: white;
+    width: 35%;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+.deskripsi_program_course{
+    display: flex;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+.deskripsi_program_course p{
+    color: white;
+    margin-left: 5px;
+    margin-right: 20px;
+}
+.deskripsi_program_course svg{
+    color: #FFD33B;
+    margin-top: 2px;
+}
+
+.tab_container_course {
+  width: 92%;
+  padding: 20px;
+  border-radius: 20px;
+  background-color: white;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  margin-left: 45px;
+  margin-top: 20px;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  padding: 15px 0;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+  font-weight: 500;
+  border-bottom: 3px solid transparent;
+  transition: 0.3s;
+}
+
+.tab.active {
+  color: #000;
+  border-bottom: 3px solid #ffce38; /* warna kuning seperti pada gambar */
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.7em;
+  background: #F8FAFC;
+}
+
+.tab-content.active {
+  display: block;
+  background: #F8FAFC;
+}
+.dropdown_syllabus {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.syllabus_item {
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);;
+}
+.syllabus_scroll {
+  max-height: 380px; 
+  overflow-y: auto;
+  padding-right: 5px;
+}
+.syllabus_scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.syllabus_scroll::-webkit-scrollbar-thumb {
+  background: #c8baba;
+  border-radius: 8px;
+}
+
+.syllabus_scroll::-webkit-scrollbar-track {
+  background: #f0e8e8;
+}
+
+.syllabus_judul {
+  width: 100%;
+  padding: 15px 20px;
+  background-color: #ffffff;
+  border: none;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.syllabus_judul svg{
+    margin-left: 470px;
+}
+
+.syllabus_judul::after {
+  content: "▾";
+  font-size: 18px;
+  transition: 0.3s;
+}
+
+.syllabus_judul.active::after {
+  transform: rotate(180deg);
+}
+
+.syllabus_content {
+  max-height: 0;
+  overflow: hidden;
+  background: white;
+  padding: 0 20px;
+  transition: max-height 0.3s ease;
+}
+
+.syllabus_content p {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  margin: 0;
+}
+
+.syllabus_content p:last-child {
+  border-bottom: none;
+}
+.rating_card{
+    background-color: white;
+    border: solid 2px #A1A5B3;
+    padding: 30px;
+    border-radius: 20px;
+   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    margin-top: 30px;
+}
+.stars_rating_card svg{
+    color: #FFD33B;
+}
+.rating_card p{
+    margin-top: 10px;
+}
+.scroll_rating_card{
+  max-height: 380px; 
+  overflow-y: auto;
+  padding-right: 5px;
+}
+.scroll_rating_card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll_rating_card::-webkit-scrollbar-thumb {
+  background: #c8baba;
+  border-radius: 8px;
+}
+
+.scroll_rating_card::-webkit-scrollbar-track {
+  background: #f0e8e8;
+}
+
+.box_luar_detail_course {
+    display: flex; 
+    margin-bottom: 50px;
+    gap: 20px;
+}
+.box_kiri_detail_course {
+    flex: 2; 
+    background: #F8FAFC;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    margin-top: 30px;
+    margin-left: 30px;
+    padding: 20px;
+
+}
+
+.box_kanan_detail_course {
+    flex: 1; 
+    background-color: white;
+    border: solid 2px #FFD33B;
+    margin-top: 30px;
+    border-radius: 10px; 
+    margin-right: 60px;
+    padding: 30px;
+}
+
+.video_course {
+    width: 92%;
+    height: 500px;
+    margin-left: 50px;
+    border-radius: 20px;
+    margin-top: 30px;
+}
+
+
+.harga_detail_course{
+    display: flex;
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+.harga_detail_kiri p{
+    color: #6C6C6C;
+    text-decoration: line-through;
+    margin: 0px;
+}
+.tanggal_diskon_detail_course{
+    display: flex;
+    gap: 10px;
+}
+.tanggal_diskon_detail_course p{
+    color: #FF0000;
+    margin: 0px;
+    text-decoration: none;
+    margin-top: -2px;
+    width: 200px;
+    
+}
+.harga_detail_kanan p{
+    background-color: #252346;
+    color: #FFD33B;
+    padding: 10px;
+    margin-left: 250px;
+    margin-top: 40px;
+    width: 80px;
+}
+.info_detail_course{
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+.info_detail_card{
+    margin-top: 40px;
+    margin-bottom: 10px;
+}
+.info_kiri_detail_course{
+    display: flex;
+    gap: 10px;
+}
+.info_kiri_detail_course p{
+    margin-top: -2px;
+}
+.box_button_detail_course{
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.button_enroll_now{
+   background-color: #FFD33B;
+   color: white;
+   border: none;
+   padding: 10px;
+   width: 100%;
+   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+
+}
+.button_save{
+   background-color: #252346;
+   color: #ffce38;
+   border: none;
+   padding: 10px;
+   width: 100%;
+   margin-top: 15px;
+   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+
+}
+.box_button_detail_course{
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+.box_button_detail_course p{
+    margin-top: 10px;
+    width: 70%;
+}
+.benefit_course{
+    display: flex;
+    gap: 10px;
+
+}
+.benefit_course p{
+    margin-top: -2px;
+}
+.box_benefit_course h5{
+    margin-top: 40px;
+}
+.box_benefit_course{
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+.share_course{
+    display: flex;
+    gap: 10px;
+    background-color: #F5F7FA;
+    padding: 10px;
+    width: 60%;
+}
+.share_course svg{
+    margin-left: 15px;
+    margin-top: 10px;
+}
+.share_course p{
+    margin-top: 8px;
+}
+.box_share_course{
+    margin-top: 30px;
+    margin-bottom: 50px;
+}
+.ulasan_course textarea{
+    width: 95%;
+    padding: 10px;
+    height: 150px;
+    border-radius: 10px;
+}
+.ulasan_course{
+    margin-left: 50px;
+    margin-top: 30px;
+}
+.ulasan_course button{
+    background-color: #ffce38;
+    padding: 10px;
+    width: 95%;
+    border-radius: 20px;
+    color: white;
+    border: none;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    margin-top: 10px;
+}
+
+/*PAYMENT COURSE*/
+.link_back_payment_course{
+    display: flex;
+    margin-left: 30px;
+    margin-top: 50px;
+}
+.link_back_payment_course a{
+    text-decoration: none;
+    color: grey;
+}
+.link_back_payment_course p{
+    color: grey;
+}
+.biodata_payment_course{
+    display: flex;
+    background-color: white;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    width: 90%;
+    margin-left: 30px;
+    border-radius: 20px;
+    margin-top: 20px;
+    
+}
+.box_kiri_biodata{
+    margin-left: 30px;
+    padding: 30px;
+    margin-bottom: 100px;
+   
+}
+.box_kiri_biodata h5{
+    margin-top: 50px;
+}
+.info_biodata{
+    display: flex;
+    gap: 10px;
+    margin-top: -12px;
+}
+.info_biodata p{
+    color: red;
+}
+.info_biodata svg{
+    margin-top: 20px;
+}
+.whatsapp_biodata{
+    display: flex;
+    gap: 10px;
+}
+.kolom_input_biodata{
+    border: 2px solid #FFD33B;
+    border-radius: 5px;
+    padding: 8px;
+    width: 1000px; 
+}
+
+.input_nomor {
+    width: 810px; 
+    height: 40px;
+    border: 2px solid #FFD33B;
+    border-radius: 5px;
+}
+
+.input_biodata p {
+    margin-top: 20px;
+    margin-bottom: 5px;
+}
+
+.whatsapp_biodata {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.btn_nomor{
+    background-color: white;
+    border: solid 2px #FFD33B;
+    padding: 5px;
+    border-radius: 5px;
+    width: 188px;
+}
+.radio_input_box{
+    display: flex;
+    gap: 30px;
+}
+.radio_input{
+    display: flex;
+    gap: 5px;
+}
+.radio_input p{
+    margin-top: 3px;
+}
+
+.box_kanan_biodata{
+    width: 450px;
+    height: 440px;
+    margin-top: 30px;
+    border-radius: 20px;
+    margin-bottom: 50px;
+}
+.box_biodata{
+    background-color: #DFECF6;
+    padding: 10px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+}
+.box_kanan_biodata h4{
+    margin-left: 20px;
+    margin-top: -30px;
+}
+
+.box_kanan_biodata h3{
+    margin-left: 20px;
+    margin-top: 30px;
+}
+.box_event_payment img{
+    width: 200px;
+    height: 150px;
+    border-radius: 10px;
+    margin-left: 20px;
+    margin-top: 20px;
+}
+.box_event_payment{
+    display: flex;
+    width: 70px;
+}
+.judul_event h4{
+    margin-top: 5px;
+}
+.penyelenggara{
+    color: grey;
+    margin-left: 20px;
+    margin-top: 10px;
+    font-size: larger;
+    margin: 0px;
+    margin-left: 20px;
+}
+.harga_judul_event{
+    color: green;
+    margin-left: 20px;
+    margin-top: 10px;
+    font-size: x-large;
+    margin: 0px;
+    margin-left: 20px;
+}
+.line_payment{
+    border-bottom: solid 2px #000000;
+    margin-top: 20px;
+}
+
+.harga_teks_payment{
+    display: flex;
+    margin-top: 50px;
+}
+.harga_teks_payment svg{
+    margin-top: 30px;
+    margin-left: 160px;
+}
+.teks_payment p{
+    margin-top: 20px;
+    margin-bottom: 30px;
+    margin-left: 30px;
+}
+.teks_payment h4{
+    margin-left: 30px;
+    margin-bottom: 50px;
+}
+.btn_bayar_payment{
+    background-color: #FFD33B;
+    padding: 15px;
+    width: 100%;
+    border: none;
+    margin-top: 20px;
+}
+
+/*MODUL*/
+.box_modul_luar{
+   margin-top: 10px;
+   display: flex;
+}
+.box_modul_kiri{
+    background-color: white;
+    width: 550px;
+    padding: 50px 10px 0px 50px;
+    height: 1100px;
+    
+}
+
+.box_modul_kanan{
+    background-color: white;
+    border: solid 2px #ffd33b;
+    margin-top: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    height: fit-content;
+    width: 65%;
+    margin-left: 45px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+
+}
+.box_luar_deskripsi_modul{
+    margin-left: 60px;
+    margin-top: 30px;
+}
+.box_deskripsi_modul{
+    background-color: white;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    width: 95%;
+    border-radius: 20px;
+    padding: 30px;
+    border: 2px solid #FFD33B;
+    margin-top: 25px;
+    margin-bottom: 50px;
+}
+.next_kanan_modul{
+    display: flex;
+    background-color: #FFD33B;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    width: 150px;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    height: 70px;
+    align-self: flex-end;   
+    margin-right: 30px;    
+    margin-bottom: 30px;  
+
+}
+.next_kanan_modul svg{
+    margin-top: 7px;
+}
+.next_kanan_modul p{
+    margin-left: 15px;
+}
+
+/*ATURAN*/
+.box_aturan_luar{
+   margin-top: 10px;
+   display: flex;
+}
+.box_aturan_kiri{
+    background-color: white;
+    width: 750px;
+    padding: 50px 10px 0px 50px;
+    height: 1400px;
+    
+}
+.accordion-box {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.accordion-item {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    padding: 20px;
+}
+
+.accordion-header {
+    font-size: 20px;
+    font-weight: 500;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.accordion-header .arrow {
+    transition: 0.3s;
+}
+
+.accordion-item.active .arrow {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    margin-top: 20px;
+    display: none;
+    font-size: 18px;
+}
+
+.accordion-content p {
+    margin: 10px 0;
+}
+
+.accordion-item.active .accordion-content {
+    display: block;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+}
+
+.box_aturan_kanan{
+    background-color: white;
+    border: solid 2px #ffd33b;
+    margin-top: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    height: fit-content;
+    width: 90%;
+    margin-left: 45px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    padding: 40px;
+
+}
+.box_deskripsi_aturan_kuis h3{
+    font-weight: 600;
+    margin-top: 20px;
+}
+.box_deskripsi_aturan_kuis > ol > li{
+    width: 60%;
+    font-size: 20px;
+}
+.box_deskripsi_aturan_kuis p{
+    font-size: 20px;
+}
+.start_kanan{
+    display: flex;
+    background-color: #FFD33B;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    width: 150px;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    height: 70px;
+    align-self: flex-end;   
+    margin-right: 30px;    
+    margin-bottom: 30px; 
+}
+.start_kanan svg{
+    margin-top: 7px;
+}
+.start_kanan p{
+    margin-left: 15px;
+}
+.riwayat_tabel{
+    width: 70%;
+}
+.riwayat_tabel th{
+    font-size: 20px;
+    font-weight: 500;
+}
+.riwayat_tabel tr{
+    border-bottom: solid 2px #FFD33B;
+    text-align: center;
+}
+
+.tanggal_table{
+    text-align: left;
+    margin-top: 10px;
+    margin-left: 50px;
+}
+.not_pass{
+    background-color: E24646;
+    border-radius: 5px;
+    color: white;
+    border: #FFD33B 1px solid;
+    height: 40px;
+    width: 90px;
+}
+.details_kuis{
+    background-color: #A1A5B3;
+    border-radius: 5px;
+    color: white;
+    border: none;
+    height: 40px;
+}
+.passed{
+    background-color: #27AE60;
+    border-radius: 5px;
+    color: white;
+    border: #FFD33B 1px solid;
+    height: 40px;
+    width: 90px;
+}
+.riwayat_tabel{
+    margin-left: 50px;
+    margin-top: 50px;
+}
+.riwayat_aturan_kuis h1{
+    font-weight: 600;
+}
+.next_kanan_aturan{
+    display: flex;
+    background-color: #FFD33B;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    width: 150px;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    height: 70px; 
+    margin-right: 30px;    
+    margin-bottom: 30px;  
+    margin-left: 950px;
+    margin-top: 50px;
+}
+.next_kanan_aturan svg{
+    margin-top: 7px;
+}
+.next_kanan_aturan p{
+    margin-left: 15px;
+}
+
+
 /*DETAIL EVENT REGISTER*/
 .container-ungu {
     background-color: #252346;
