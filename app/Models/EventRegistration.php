@@ -10,6 +10,8 @@ class EventRegistration extends Model
         'user_id',
         'event_id',
         'status',
+        'attendance_status',
+        'attended_at',
         'registration_code',
         'certificate_number',
         'certificate_issued_at',
@@ -20,6 +22,7 @@ class EventRegistration extends Model
     protected $casts = [
         'certificate_issued_at' => 'datetime',
         'feedback_submitted_at' => 'datetime',
+        'attended_at' => 'datetime',
     ];
 
     public function user(){

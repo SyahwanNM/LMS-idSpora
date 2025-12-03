@@ -198,15 +198,7 @@
                         </svg>
                         <p>Add To Calender</p>
                     </button>
-                    @if($isRegisteredTop)
-                        <button type="button" class="" data-bs-toggle="modal" data-bs-target="#registrationModal" style="margin-top:8px; color:#fff;">
-                            <svg class="ikon-calender-event" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5" />
-                                <path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" />
-                            </svg>
-                            <p style="color:#fff;">Lihat Detail Registrasi</p>
-                        </button>
-                    @endif
+                    {{-- Tombol "Lihat Detail Registrasi" dihapus sesuai permintaan --}}
                 @else
                     <button class="" disabled title="Tanggal/waktu belum tersedia" style="opacity:.6;cursor:not-allowed;">
                         <svg class="ikon-calender-event" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
@@ -234,17 +226,7 @@
                 }
                 $tanggalLbl = $startDate ? $startDate->format('d F Y') : null;
             @endphp
-            <div class="d-flex flex-wrap align-items-center gap-2 small">
-                @if($manageAction)
-                    <span class="badge px-2 py-1 {{ $manageAction==='create' ? 'bg-success' : 'bg-primary' }}">Kelola Event: {{ ucfirst($manageAction) }}</span>
-                @endif
-                @if($statusLbl)
-                    <span class="badge px-2 py-1 bg-secondary">Status: {{ $statusLbl }}</span>
-                @endif
-                @if($tanggalLbl)
-                    <span class="badge px-2 py-1 bg-light text-dark">Tanggal: {{ $tanggalLbl }}</span>
-                @endif
-            </div>
+            <p class="small text-white mb-0">{{ isset($event) && !empty($event->short_description) ? $event->short_description : '' }}</p>
         </div>
     </div>
     <div class="detail-box">
@@ -256,30 +238,40 @@
                 $isRegistered = $registration && $registration->status === 'active';
                 $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
                 $parseEventTime = function($date, $raw) {
-                    if(empty($raw)) return null;
-                    if($raw instanceof \Carbon\Carbon) return $raw;
+                    if (empty($raw)) return null;
+                    if ($raw instanceof \Carbon\Carbon) return $raw;
                     $rawStr = trim((string)$raw);
-                    // If time field already contains a date portion, parse directly
-                    if(preg_match('/\d{4}-\d{2}-\d{2}/', $rawStr)) {
-                        try { return \Carbon\Carbon::parse($rawStr); } catch (\Throwable $e) { return null; }
+                    // Normalize local notations like "14.30" -> "14:30" and trim timezone labels
+                    $norm = preg_replace('/\s*(WIB|WITA|WIT)\s*$/i', '', $rawStr);
+                    if (preg_match('/^\d{1,2}\.\d{2}$/', $norm)) {
+                        $norm = str_replace('.', ':', $norm);
                     }
-                    if($date){
+                    // If includes date part already, parse directly
+                    if (preg_match('/\d{4}-\d{2}-\d{2}/', $norm)) {
+                        try { return \Carbon\Carbon::parse($norm); } catch (\Throwable $e) { return null; }
+                    }
+                    // Combine with date when available
+                    if ($date) {
                         $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string)$date;
-                        try { return \Carbon\Carbon::parse($dateStr.' '.$rawStr); } catch (\Throwable $e) { return null; }
+                        try { return \Carbon\Carbon::parse($dateStr.' '.$norm); } catch (\Throwable $e) { return null; }
                     }
-                    try { return \Carbon\Carbon::parse($rawStr); } catch (\Throwable $e) { return null; }
+                    // Fallback parse
+                    try { return \Carbon\Carbon::parse($norm); } catch (\Throwable $e) { return null; }
                 };
                 $startTime = isset($event) ? $parseEventTime($eventDate, $event->event_time) : null;
                 $endTime = isset($event) ? $parseEventTime($eventDate, $event->event_time_end) : null;
                 if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
                 if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
                 $nowTs = \Carbon\Carbon::now();
-                $isAttended = $isRegistered && $endTime && $nowTs->gt($endTime);
+                // Event selesai (untuk membuka form attendance/feedback)
+                $eventFinished = $endTime && $nowTs->gt($endTime);
+                // Attendance dianggap selesai jika user sudah submit attendance (menggunakan attendance_status)
+                $attendanceSubmitted = $registration && !empty($registration->attendance_status);
                 $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
                 $hasCertificate = $registration && $registration->certificate_issued_at;
                 $stepStates = [
                     'Registered' => $isRegistered,
-                    'Attended' => $isAttended,
+                    'Attended' => $attendanceSubmitted,
                     'Feedback' => $hasFeedback,
                     'Certificate' => $hasCertificate,
                 ];
@@ -468,7 +460,7 @@
             <div class="share">
                 <h6 class="share-title">Share this event:</h6>
                 <div class="share-list">
-                    @if($isRegistered && $isAttended && !$hasFeedback)
+                    @if($isRegistered && $eventFinished && !$hasFeedback)
                         
                     @elseif($hasFeedback)
                        
@@ -627,28 +619,39 @@
             </div>
         </div>
     </div>
-    <!-- Attendance / Feedback Modal -->
+    <!-- Attendance Modal -->
     <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Attendance & Feedback</h5>
+                    <h5 class="modal-title">Attendance Form</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    @if($isRegistered && $isAttended && !$hasFeedback)
-                        <form method="POST" action="{{ route('events.feedback', $event->id) }}">
+                    @if($isRegistered && $eventFinished && !$attendanceSubmitted)
+                        <form method="POST" action="{{ route('events.attendance', $event->id) }}">
                             @csrf
                             <div class="mb-3">
-                                <label class="form-label">Your Feedback</label>
-                                <textarea name="feedback_text" class="form-control" rows="4" required placeholder="Tell us about your experience"></textarea>
+                                <label class="form-label fw-semibold attendance-question-label">Apakah Anda hadir pada event ini?</label>
+                                <style>
+                                    .attendance-option-label { color: #000 !important; }
+                                    .attendance-question-label { color: #000 !important; }
+                                </style>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="attended" id="attendedYes" value="yes" required>
+                                    <label class="form-check-label attendance-option-label" for="attendedYes">Hadir</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="attended" id="attendedNo" value="no" required>
+                                    <label class="form-check-label attendance-option-label" for="attendedNo">Tidak Hadir</label>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Submit Feedback</button>
+                            <button type="submit" class="btn btn-primary w-100">Kirim Attendance</button>
                         </form>
-                    @elseif($hasFeedback)
-                        <p class="text-success">Feedback submitted. Thank you!</p>
+                    @elseif($attendanceSubmitted)
+                        <p class="text-success">Attendance tersimpan. Terima kasih!</p>
                     @else
-                        <p class="text-muted">Form locked until event completes.</p>
+                        <p class="text-muted">Form attendance akan dibuka setelah event selesai.</p>
                     @endif
                 </div>
             </div>
@@ -712,7 +715,7 @@
                 @endif
             </div>
 
-            <div class="resource-card {{ ($isRegistered && $isAttended && !$hasFeedback) ? '' : 'locked' }}">
+            <div class="resource-card {{ ($isRegistered && $eventFinished && !$hasFeedback) ? '' : 'locked' }}">
                 <div class="img-resource">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-check" viewBox="0 0 16 16">
                         <path d="M10.854 7.854a.5.5 0 0 0-.708-.708L7.5 9.793 6.354 8.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z" />
@@ -722,7 +725,7 @@
                 <div class="resource-value">
                     <h6>Attendance Form</h6>
                     <p>
-                        @if($isRegistered && $isAttended && !$hasFeedback)
+                        @if($isRegistered && $eventFinished && !$hasFeedback)
                             Please submit your attendance & feedback
                         @elseif($hasFeedback)
                             Attendance submitted
@@ -731,7 +734,7 @@
                         @endif
                     </p>
                 </div>
-                @if($isRegistered && $isAttended && !$hasFeedback)
+                @if($isRegistered && $eventFinished && !$hasFeedback)
                     <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#attendanceModal" style="border:none;background:transparent;padding:0;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
@@ -881,8 +884,11 @@
             </div>
             @php
                 // Determine if feedback submission UI should be shown:
-                // show only when user is registered, event is attended/finished, and user hasn't submitted feedback yet
-                $canSubmitFeedback = isset($isRegistered) && $isRegistered && isset($isAttended) && $isAttended && isset($hasFeedback) && !$hasFeedback;
+                // Only when user is registered, event is finished, attendance submitted, and no feedback yet
+                $canSubmitFeedback = isset($isRegistered) && $isRegistered
+                    && isset($eventFinished) && $eventFinished
+                    && isset($attendanceSubmitted) && $attendanceSubmitted
+                    && isset($hasFeedback) && !$hasFeedback;
             @endphp
             <div class="add-rating bg-white rounded p-3 flex-grow-1 d-flex flex-column justify-content-between ms-auto {{ $canSubmitFeedback ? '' : 'locked' }}" style="min-width:320px;max-width:760px;">
                 <h5 class="mb-2">Share your feedback</h5>
@@ -910,8 +916,8 @@
                 @else
                     {{-- overlay message instead of blurring the card --}}
                     @php
-                        $lockedMsg = 'Feedback akan dibuka setelah event selesai.';
-                        if(!isset($isRegistered) || !$isRegistered) $lockedMsg = 'Feedback tersedia setelah Anda terdaftar dan event selesai.';
+                        $lockedMsg = 'Feedback akan dibuka setelah event selesai dan Anda mengisi attendance.';
+                        if(!isset($isRegistered) || !$isRegistered) $lockedMsg = 'Feedback tersedia setelah Anda terdaftar, event selesai, dan attendance dikirim.';
                         if(isset($hasFeedback) && $hasFeedback) $lockedMsg = 'Anda sudah mengirim feedback. Terima kasih!';
                     @endphp
                     <div class="locked-overlay">{{ $lockedMsg }}</div>
