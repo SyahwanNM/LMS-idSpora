@@ -18,6 +18,36 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
+
+Route::get('/modul-course', function () {
+    return view('modul-course');
+})->name('modul-course');
+
+Route::get('/aturan-kuis', function () {
+    return view('aturan-kuis');
+})->name('aturan-kuis');
+
+Route::get('/payment-course', function () {
+    return view('payment-course');
+})->name('payment-course');
+
+Route::get('/detail-course', function () {
+    return view('detail-course');
+})->name('detail-course');
+
+Route::get('/quiz1-course', function () {
+    return view('quiz1-course');
+})->name('quiz1-course');
+
+// ...existing code...
+Route::get('/quiz-course', function () {
+    return view('quiz-course');
+})->name('quiz-course');
+// ...existing code...
+
+Route::get('/latihan-course', function () {
+    return view('latihan-course');
+})->name('latihan-course');
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
 });
@@ -43,37 +73,6 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
 
-
-Route::get('/modul-course', function () {
-    return view('modul-course');
-})->name('modul-course');
-
-Route::get('/aturan-kuis', function () {
-    return view('aturan-kuis');
-})->name('aturan-kuis');
-
-Route::get('/payment-course', function () {
-    return view('payment-course');
-})->name('payment-course');
-
-Route::get('/detail-course', function () {
-    return view('detail-course');
-})->name('detail-course');
-
-Route::get('/quiz1-course', function () {
-    return view('quiz1-course');
-})->name('quiz1-course');
-
-// ...existing code...
-Route::get('/quiz-course', function () {
-    return view('quiz-course');
-})->name('quiz-course');
-// ...existing code...
-
-Route::get('/latihan-course', function () {
-    return view('latihan-course');
-})->name('latihan-course');
-
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/auth', function () {
     return view('/auth');
@@ -84,37 +83,6 @@ Route::get('/', function () {
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
-
-Route::get('/modul-course', function () {
-    return view('modul-course');
-})->name('modul-course');
-
-Route::get('/aturan-kuis', function () {
-    return view('aturan-kuis');
-})->name('aturan-kuis');
-
-Route::get('/payment-course', function () {
-    return view('payment-course');
-})->name('payment-course');
-
-Route::get('/detail-course', function () {
-    return view('detail-course');
-})->name('detail-course');
-
-Route::get('/quiz1-course', function () {
-    return view('quiz1-course');
-})->name('quiz1-course');
-
-// ...existing code...
-Route::get('/quiz-course', function () {
-    return view('quiz-course');
-})->name('quiz-course');
-// ...existing code...
-
-Route::get('/latihan-course', function () {
-    return view('latihan-course');
-})->name('latihan-course');
-
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
@@ -147,6 +115,7 @@ Route::middleware('auth')->group(function(){
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
+    Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
     Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
