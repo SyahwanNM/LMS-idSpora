@@ -53,6 +53,7 @@ class EventController extends Controller
             // Relax validation so new dynamic materi/jenis values allowed
             'materi' => 'nullable|string|max:255',
             'jenis' => 'nullable|string|max:100',
+            'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -128,6 +129,7 @@ class EventController extends Controller
             'manage_action' => $request->manage_action,
             'materi' => $request->materi,
             'jenis' => $request->jenis,
+            'short_description' => $request->short_description,
             'description' => $request->description,
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
@@ -190,6 +192,7 @@ class EventController extends Controller
             'manage_action' => 'required|in:manage,create',
             'materi' => 'nullable|string|max:255',
             'jenis' => 'nullable|string|max:100',
+            'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -218,7 +221,7 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'description', 'benefit', 'terms_and_conditions',
+            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'short_description', 'description', 'benefit', 'terms_and_conditions',
             'location', 'maps_url', 'latitude', 'longitude', 'zoom_link', 'price', 'discount_percentage', 'discount_until',
             'event_date', 'event_time', 'event_time_end'
         ]);
@@ -289,7 +292,7 @@ class EventController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.events.index')->with('success', 'Event berhasil diupdate!');
+        return redirect()->route('admin.add-event')->with('success', 'Event berhasil diupdate!');
     }
 
     public function destroy(Event $event)

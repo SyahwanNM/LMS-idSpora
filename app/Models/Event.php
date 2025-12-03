@@ -18,6 +18,7 @@ class Event extends Model
         'speaker',
         'materi',
         'jenis',
+        'short_description',
         'description',
         'terms_and_conditions',
         'location',

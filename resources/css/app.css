@@ -2020,6 +2020,7 @@ label {
     width: 82%;
     margin-left: 75px;
     margin-top: 25px;
+    position: relative; /* anchor for absolute elements */
 }
 .progress-box h5 {
     margin-top: 15px;
@@ -2027,19 +2028,25 @@ label {
     margin-bottom: 50px;
 }
 .progress-line {
-    background-color: #f4c430;
-    color: white;
-    height: 6px;
-    width: 500px;
-    margin-left: 100px;
-    position: absolute;
-    margin-top: 15px;
+    /* Hidden in favor of per-step connectors to ensure the bar touches circles */
+    display: none;
 }
 .progress-steps {
     display: flex;
     justify-content: space-between;
     position: relative;
     z-index: 2;
+}
+.progress-steps::before{
+    content: '';
+    position: absolute;
+    top: 20px; /* vertical center of 40px circles */
+    left: 12.5%; /* from center of first step */
+    right: 12.5%; /* to center of last step */
+    height: 6px;
+    background-color: #f4c430; /* yellow bar */
+    z-index: 1; /* behind circles */
+    transform: translateY(-3px); /* fine-tune alignment */
 }
 
 .step {
@@ -2056,6 +2063,8 @@ label {
     align-items: center;
     justify-content: center;
     margin: 0 auto;
+    position: relative;
+    z-index: 2;
 }
 .step .circle p {
     margin: 0;
@@ -2074,6 +2083,23 @@ label {
     margin-top: 15px;
     margin-left: 10px;
 }
+
+/* Connector lines between steps that are completed */
+.progress-steps .step { position: relative; }
+.progress-steps .step::after {
+    content: '';
+    position: absolute;
+    top: 20px; /* vertical center of 40px circle */
+    left: 50%; /* start from center of this step */
+    width: 100%; /* reach center of next step */
+    height: 6px;
+    background-color: #f4c430;
+    z-index: 1; /* below circles */
+    display: none;
+    transform: translateY(-3px); /* fine-tune alignment */
+}
+.progress-steps .step.active::after { display: block; }
+.progress-steps .step:last-child::after { display: none; }
 .info-price-box {
     display: flex;
     align-items: center;
