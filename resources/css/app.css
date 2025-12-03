@@ -2682,6 +2682,7 @@ hr {
 }
 
 
+<<<<<<< HEAD
 /*DETAIL EVENT REGISTER*/
 .container-ungu {
     background-color: #252346;
@@ -4064,6 +4065,8 @@ input[type="time"] {
     font-size: smaller;
 }
 
+=======
+>>>>>>> de8862800db374a4c0f1b6a97ea79764728336ac
 /*FOOTER*/
 .footer-section {
     background: var(--primary-dark);
