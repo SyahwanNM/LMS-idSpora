@@ -19,9 +19,9 @@ class AdminMiddleware
             return redirect()->route('login')->with('error', 'Anda harus login terlebih dahulu.');
         }
 
-        // Only allow admin role AND the designated admin email
+        // Only allow admin role
         $user = auth()->user();
-        if ($user->role !== 'admin' || strtolower($user->email) !== 'admin@idspora.com') {
+        if ($user->role !== 'admin') {
             return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman admin.');
         }
 

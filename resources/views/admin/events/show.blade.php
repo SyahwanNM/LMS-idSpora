@@ -61,7 +61,10 @@
                             <!-- Event Details -->
                         <div class="col-lg-8">
                             <div class="mb-4">
-                                <h2 class="text-dark mb-3">{{ $event->title }}</h2>
+                                <h2 class="text-dark mb-2">{{ $event->title }}</h2>
+                                @if(!empty($event->short_description))
+                                <p class="text-muted mb-3">{{ $event->short_description }}</p>
+                                @endif
                                 
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
@@ -248,7 +251,20 @@
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-2"><i class="bi bi-gift me-2"></i>Benefit</h6>
-                                <div class="small">{!! nl2br(e($event->benefit)) !!}</div>
+                                @php
+                                    $raw = $event->benefit ?? '';
+                                    $parts = preg_split('/\|\s*|\r\n|\n/', $raw);
+                                    $items = array_values(array_filter(array_map('trim', (array)$parts), function($s){ return $s !== ''; }));
+                                @endphp
+                                @if(count($items))
+                                    <ul class="mb-0 ps-3 small">
+                                        @foreach($items as $b)
+                                            <li>{{ $b }}</li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <div class="small">{!! nl2br(e($event->benefit)) !!}</div>
+                                @endif
                             </div>
                         </div>
                         @endif
