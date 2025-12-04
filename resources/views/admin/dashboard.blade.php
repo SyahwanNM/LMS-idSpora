@@ -130,15 +130,15 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button" class="btn w-100 btn-outline-primary d-flex flex-column align-items-center py-3" onclick="location.href='{{ route('admin.courses.create') }}'">
-                                <i class="bi bi-plus-circle-fill fs-4 mb-1"></i>
-                                <small class="fw-semibold">Add Course</small>
+                            <button type="button" class="btn w-100 btn-outline-primary d-flex flex-column align-items-center py-3" onclick="location.href='#'">
+                                <i class="bi bi-people-fill fs-4 mb-1"></i>
+                                <small class="fw-semibold">Manage Reseller</small>
                             </button>
                         </div>
                         <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button" class="btn w-100 btn-outline-purple d-flex flex-column align-items-center py-3" onclick="location.href='{{ route('admin.add-event') }}'" title="Create new event">
-                                <i class="bi bi-calendar-plus-fill fs-4 mb-1"></i>
-                                <small class="fw-semibold">Add Event</small>
+                            <button type="button" class="btn w-100 btn-outline-purple d-flex flex-column align-items-center py-3" onclick="location.href='#'">
+                                <i class="bi bi-person-badge-fill fs-4 mb-1"></i>
+                                <small class="fw-semibold">Manage Trainer</small>
                             </button>
                         </div>
                         <div class="col-6 col-md-4 col-lg-3">
@@ -154,15 +154,9 @@
                             </button>
                         </div>
                         <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button" class="btn w-100 btn-outline-secondary d-flex flex-column align-items-center py-3" onclick="location.href='{{ route('admin.users.index') }}'">
-                                <i class="bi bi-people fs-4 mb-1"></i>
-                                <small class="fw-semibold">Manage Users</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button" class="btn w-100 btn-outline-success d-flex flex-column align-items-center py-3" onclick="location.href='{{ route('admin.reports') }}'">
-                                <i class="bi bi-graph-up fs-4 mb-1"></i>
-                                <small class="fw-semibold">Analytics</small>
+                            <button type="button" class="btn w-100 btn-outline-success d-flex flex-column align-items-center py-3" onclick="location.href='#'">
+                                <i class="bi bi-cash-stack fs-4 mb-1"></i>
+                                <small class="fw-semibold">Manage Finance</small>
                             </button>
                         </div>
                     </div>
