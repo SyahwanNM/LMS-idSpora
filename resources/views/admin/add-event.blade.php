@@ -34,9 +34,11 @@
             <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
         @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Kelola Event</h4>
+            <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
                 <a href="{{ route('admin.events.history') }}" class="btn btn-outline-secondary"><i class="bi bi-clock-history"></i> History</a>
+                <a href="{{ route('admin.reports') }}" class="btn btn-outline-primary"><i class="bi bi-graph-up-arrow"></i> Report</a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
