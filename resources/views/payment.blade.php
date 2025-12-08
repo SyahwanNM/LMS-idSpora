@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
@@ -345,3 +346,5 @@ document.addEventListener('DOMContentLoaded', function(){
     .btn-pay:disabled {opacity:.55; cursor:not-allowed; filter:grayscale(.15);} 
     .btn-pay.btn-disabled:hover {background:inherit;}
 </style>
+=======
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13

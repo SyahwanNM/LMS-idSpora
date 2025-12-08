@@ -517,7 +517,11 @@
         }
         // Initial paint and 1s interval for smoother countdown, esp. near start time
         update();
+<<<<<<< HEAD
         setInterval(update, 1000);
+=======
+        setInterval(update, 60000);
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
     })();
     </script>
 </body>

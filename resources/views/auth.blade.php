@@ -1,10 +1,18 @@
+<<<<<<< HEAD
+=======
+</html>
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>Verifikasi OTP</title>
+=======
+    <title>Sign Up</title>
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -154,9 +162,15 @@
 
         .kirim-ulang a:hover {
             text-decoration: underline;
+<<<<<<< HEAD
         }
 
         .kirim-ulang-teks:hover {
+=======
+    
+        }
+        .kirim-ulang-teks:hover{
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
             color: #f4a442;
             text-decoration: none;
         }
@@ -203,6 +217,7 @@
             color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
         }
+<<<<<<< HEAD
 
         .hint {
             color: #cbd5e1;
@@ -214,10 +229,13 @@
             font-size: 13px;
             display: none;
         }
+=======
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
     </style>
 </head>
 
 <body>
+<<<<<<< HEAD
     <a href="{{ route('login') }}"><img class="back" src="{{ asset('aset/back.png') }}" alt="Kembali"></a>
     <div class="main-container">
         <div class="kiri">
@@ -339,5 +357,31 @@
         })();
     </script>
 </body>
+=======
+
+    <body>
+        <img class="back" src="aset/back.png" alt="Kembali">
+        <div class="main-container">
+            <div class="kiri">
+                <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
+            </div>
+
+            <div class="kanan">
+                <h3>Verifikasi</h3>
+
+                <form action="#" method="get">
+                    <div class="mb-3">
+                        <h6>Kode Otp</h6>
+                        <input type="email" class="form-control" required>
+                    </div>
+                    <div class="kirim-ulang">
+                        <a class="kirim-ulang-teks">Kirim ulang kode?</a>
+                    </div>
+                    <button type="submit" class="btn-register">Verifikasi</button>
+                </form>
+            </div>
+        </div>
+    </body>
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
 
 </html>
