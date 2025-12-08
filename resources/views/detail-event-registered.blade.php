@@ -502,92 +502,7 @@
             </div>
         </div>
     </div>
-    <div class="desc-box">
-        <nav>
-            <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true">Overview</button>
-                <button class="nav-event nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Schedule</button>
-                <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Terms & Condition</button>
-                <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
-                    @if($hasCertificate && $event->certificate_path)
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </a>
-                    @else
-                        <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="lock-bi bi-lock" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3" />
-                            </svg>
-                        </span>
-                    @endif
-                </span>
-            </div>
-            <div class="tab-content" id="nav-tabContent">
-                <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab" tabindex="0">
-                    {!! $event->description ?? '' !!}
-                </div>
-                <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab" tabindex="0">
-                    <div class="scroll-schedule-box">
-                        <div class="schedule-box">
-                        <h6 class="title-schedule">Event Schedule</h6>
-                        @php
-                            $items = collect();
-                            if(isset($event)){
-                                if($event->relationLoaded('scheduleItems')){
-                                    $items = $event->scheduleItems;
-                                } else {
-                                    // prefer DB relation ordered by start if available
-                                    try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
-                                }
-                                if($items->isEmpty() && is_array($event->schedule_json)){
-                                    $items = collect($event->schedule_json)->map(function($row){
-                                        return (object) [
-                                            'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
-                                            'end' => $row['end'] ?? ($row['time_end'] ?? null),
-                                            'title' => $row['title'] ?? ($row['activity'] ?? ''),
-                                            'description' => $row['description'] ?? ($row['desc'] ?? ''),
-                                        ];
-                                    });
-                                }
-                            }
-                            $formatTime = function($t){
-                                if(empty($t)) return null;
-                                try { return \Carbon\Carbon::parse($t)->format('H.i'); } catch (\Throwable $e) { return is_string($t) ? $t : null; }
-                            };
-                        @endphp
-                        @forelse($items as $idx => $it)
-                            @php
-                                $start = $formatTime($it->start ?? null);
-                                $end = $formatTime($it->end ?? null);
-                                $timeStr = trim(($start ?: '') . ($end ? ' - '.$end : ''));
-                                if($timeStr) $timeStr .= ' WIB';
-                            @endphp
-                            <div class="schedule-item-box">
-                                <div class="schedule-line"></div>
-                                <div class="schedule-item">
-                                    <p class="time">{{ $timeStr ?: '-' }}</p>
-                                    <p class="activity">{{ $it->title ?? '' }}</p>
-                                    <p class="desc">{{ $it->description ?? '' }}</p>
-                                </div>
-                            </div>
-                            <br>
-                        @empty
-                            <p class="text-muted" style="margin-left:30px;">Schedule will be announced.</p>
-                        @endforelse
-                        </div>
-                    </div>
-                </div>
-                <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
-                    <h6 class="mb-3 mt-2">Terms & Condition</h6>
-                    <div class="terms-content" style="margin-top: 10px;">
-                        {!! $event->terms_and_conditions ?? '' !!}
-                    </div>
-                </div>
-            </div>
-        </div>
+    
     <!-- Registration Modal -->
     <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -625,7 +540,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Attendance Form</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close"  style="cursor:pointer;" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     @if($isRegistered && $eventFinished && !$attendanceSubmitted)
@@ -657,7 +572,6 @@
             </div>
         </div>
     </div>
-    <!-- Map Modal -->
     <div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -746,7 +660,42 @@
                 @endif
             </div>
 
-            <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+            <div class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
+                <div class="img-resource">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-award" viewBox="0 0 16 16">
+                        <path d="M9.669.864 8 0 6.331.864l-1.858.282-.842 1.68-1.337 1.32L2.6 6l-.306 1.854 1.337 1.32.842 1.68 1.858.282L8 12l1.669-.864 1.858-.282.842-1.68 1.337-1.32L13.4 6l.306-1.854-1.337-1.32-.842-1.68zm1.196 1.193.684 1.365 1.086 1.072L12.387 6l.248 1.506-1.086 1.072-.684 1.365-1.51.229L8 10.874l-1.355-.702-1.51-.229-.684-1.365-1.086-1.072L3.614 6l-.25-1.506 1.087-1.072.684-1.365 1.51-.229L8 1.126l1.356.702z" />
+                        <path d="M4 11.794V16l4-1 4 1v-4.206l-2.018.306L8 13.126 6.018 12.1z" />
+                    </svg>
+                </div>
+                
+                <div class="resource-value">
+                    <h6>Certificate</h6>
+                    @php
+                        // Show certificate availability only when user registered and has submitted feedback (post-event)
+                        // $isRegistered and $hasFeedback are computed earlier in the view
+                    @endphp
+                    @if(isset($isRegistered) && $isRegistered)
+                        @if(isset($hasFeedback) && $hasFeedback)
+                            @if(!empty($event->certificate_path))
+                                <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
+                            @else
+                                <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
+                            @endif
+                        @else
+                            <p>Available after you submit feedback for this event.</p>
+                        @endif
+                    @else
+                        <p>Available after event completion.</p>
+                    @endif
+                </div>
+                @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
+                    <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
+                @else
+                    <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
+                @endif
+            </div>
+          
+        <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
                 @if(isset($event) && $event->type === 'online' && !empty($event->zoom_link))
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
@@ -801,139 +750,178 @@
                     @endif
                 @endif
             </div>
+        <div class="resource-card">
+            <div class="img-resource">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                </svg>
+            </div>
+            <div class="resource-value" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                <h6>Feedback and Ratings</h6>
+                <p>Please fill out your feedback for this event</p>
+            </div>
 
-            <div class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
-                <div class="img-resource">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-award" viewBox="0 0 16 16">
-                        <path d="M9.669.864 8 0 6.331.864l-1.858.282-.842 1.68-1.337 1.32L2.6 6l-.306 1.854 1.337 1.32.842 1.68 1.858.282L8 12l1.669-.864 1.858-.282.842-1.68 1.337-1.32L13.4 6l.306-1.854-1.337-1.32-.842-1.68zm1.196 1.193.684 1.365 1.086 1.072L12.387 6l.248 1.506-1.086 1.072-.684 1.365-1.51.229L8 10.874l-1.355-.702-1.51-.229-.684-1.365-1.086-1.072L3.614 6l-.25-1.506 1.087-1.072.684-1.365 1.51-.229L8 1.126l1.356.702z" />
-                        <path d="M4 11.794V16l4-1 4 1v-4.206l-2.018.306L8 13.126 6.018 12.1z" />
-                    </svg>
-                </div>
-                <div class="resource-value">
-                    <h6>Certificate</h6>
-                    @php
-                        // Show certificate availability only when user registered and has submitted feedback (post-event)
-                        // $isRegistered and $hasFeedback are computed earlier in the view
-                    @endphp
-                    @if(isset($isRegistered) && $isRegistered)
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            @if(!empty($event->certificate_path))
-                                <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
-                            @else
-                                <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
-                            @endif
-                        @else
-                            <p>Available after you submit feedback for this event.</p>
-                        @endif
-                    @else
-                        <p>Available after event completion.</p>
-                    @endif
-                </div>
-                @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
-                    <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
-                @else
-                    <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                @endif
+            <a class="link-share" href="#" target="_blank">
+                <svg width="18" height="18" fill="currentColor">
+                    <path d="M8.636 3.5a.5.5..." />
+                </svg>
+            </a>
             </div>
         </div>
     </div>
-    <div class="feedback-box">
-        <h4 class="mb-3">Feedback & Reviews</h4>
-        {{-- Ensure $feedbacks is available even if route didn't pass it (fallback) --}}
-        @php
-            if(!isset($feedbacks)){
-                try {
-                    $feedbacks = \App\Models\Feedback::with('user')
-                        ->where('event_id', $event->id)
-                        ->orderBy('created_at','desc')
-                        ->get();
-                } catch (\Throwable $e) {
-                    $feedbacks = collect();
-                }
-            }
-        @endphp
+    <div class="modal fade" id="feedbackModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
 
-        {{-- Debug information removed: feedbacks are now shown in the UI without debug overlay. --}}
-        <div class="d-flex flex-wrap gap-4 align-items-stretch">
-            <div class="bg-light rounded p-3 flex-grow-1 d-flex flex-column me-md-4" style="min-width:320px;max-width:600px;">
-                <h6 class="mb-2">Participant Ratings</h6>
-                <div class="average-rating-box mb-3 flex-grow-1">
-                    <div class="scroll-review-box">
-                        @if(isset($feedbacks) && $feedbacks->isNotEmpty())
-                            @foreach($feedbacks as $fb)
-                                <div class="average-rating" style="margin-left:16px; margin-bottom:12px;">
-                                    <div class="stars-event">
-                                        @for($i=1;$i<=5;$i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="{{ $i <= $fb->rating ? '#FFD600' : 'gray' }}" style="margin-right:2px;vertical-align:middle;" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21c.54.32 1.22-.14 1.04-.76l-1.64-5.34 4.1-3.73c.47-.43.21-1.23-.4-1.31l-5.38-.47-2.12-5.09c-.24-.58-1.06-.58-1.3 0l-2.12 5.09-5.38.47c-.61.08-.87.88-.4 1.31l4.1 3.73-1.64 5.34c-.18.62.5 1.08 1.04.76L12 17.27z"/></svg>
-                                        @endfor
-                                    </div>
-                                    <div style="margin-top:4px;">
-                                        <p style="margin:4px 0 2px 0;">{{ strlen($fb->comment) > 300 ? e(substr($fb->comment,0,300)) . '...' : e($fb->comment) }}</p>
-                                        <span style="font-size:13px;color:#888;">{{ optional($fb->user)->name ?? 'User' }} — {{ $fb->created_at ? $fb->created_at->diffForHumans() : '' }}</span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <div id="no-feedback-placeholder" style="color:#888; font-size:15px; padding:16px 8px; display:flex; align-items:center; justify-content:center; min-height:120px; width:100%;">
-                                <span>Belum ada feedback di event ini.</span>
-                                <b style="margin-left:8px;">Jadilah yang pertama</b>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @php
-                // Determine if feedback submission UI should be shown:
-                // Only when user is registered, event is finished, attendance submitted, and no feedback yet
-                $canSubmitFeedback = isset($isRegistered) && $isRegistered
-                    && isset($eventFinished) && $eventFinished
-                    && isset($attendanceSubmitted) && $attendanceSubmitted
-                    && isset($hasFeedback) && !$hasFeedback;
-            @endphp
-            <div class="add-rating bg-white rounded p-3 flex-grow-1 d-flex flex-column justify-content-between ms-auto {{ $canSubmitFeedback ? '' : 'locked' }}" style="min-width:320px;max-width:760px;">
-                <h5 class="mb-2">Share your feedback</h5>
-                @if($canSubmitFeedback)
-                    <div class="add-stars mb-2" id="event-rating">
-                        @for ($i = 1; $i <= 5; $i++)
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="stars-bi bi-star-fill" data-value="{{ $i }}" viewBox="0 0 24 24" style="cursor:pointer;pointer-events:auto;transition:color 0.2s; color:gray;">
-                                <path d="M12 17.27L18.18 21c.54.32 1.22-.14 1.04-.76l-1.64-5.34 4.1-3.73c.47-.43.21-1.23-.4-1.31l-5.38-.47-2.12-5.09c-.24-.58-1.06-.58-1.3 0l-2.12 5.09-5.38.47c-.61.08-.87.88-.4 1.31l4.1 3.73-1.64 5.34c-.18.62.5 1.08 1.04.76L12 17.27z"/>
+      <div class="modal-header">
+        <h5 class="modal-title">Event Feedback</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form action="#" method="POST">
+            @csrf
+             <div class="feedback-group">
+    <p>For Speaker</p>
+    <div class="stars" data-target="speakerRating">
+      ★★★★★
+    </div>
+  </div>
+
+  <div class="feedback-group">
+    <p>For Event</p>
+    <div class="stars" data-target="eventRating">
+      ★★★★★
+    </div>
+  </div>
+
+  <div class="feedback-group">
+    <p>For Committee</p>
+    <div class="stars" data-target="committeeRating">
+      ★★★★★
+    </div>
+  </div>
+
+            <h5>Share Your Feedback</h5>
+            <textarea name="feedback" class="form-control" rows="4" required></textarea>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="desc-box">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true">Overview</button>
+                <button class="nav-event nav-link" id="nav-profile-tab" data-bs-toggle="tab" data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile" aria-selected="false">Schedule</button>
+                <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Terms & Condition</button>
+                <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
+                    @if($hasCertificate && $event->certificate_path)
+                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
                             </svg>
-                        @endfor
-                    </div>
-                    <textarea id="feedback-text" type="text" class="form-control mb-2" placeholder="Write your thoughts..."></textarea>
-                    <!-- Confirmation will be requested via dialog on submit -->
-                    <div class="mb-2">
-                        <h6 class="mb-1">Share rating speaker</h6>
-                        <div class="add-stars" id="speaker-rating">
-                            @for ($i = 1; $i <= 5; $i++)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="stars-bi bi-star-fill" data-value="{{ $i }}" viewBox="0 0 24 24" style="cursor:pointer;pointer-events:auto;transition:color 0.2s; color:gray;">
-                                    <path d="M12 17.27L18.18 21c.54.32 1.22-.14 1.04-.76l-1.64-5.34 4.1-3.73c.47-.43.21-1.23-.4-1.31l-5.38-.47-2.12-5.09c-.24-.58-1.06-.58-1.3 0l-2.12 5.09-5.38.47c-.61.08-.87.88-.4 1.31l4.1 3.73-1.64 5.34c-.18.62.5 1.08 1.04.76L12 17.27z"/>
-                                </svg>
-                            @endfor
+                        </a>
+                    @else
+                        <span class="link-share" style="opacity:.4; cursor:not-allowed;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="lock-bi bi-lock" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3" />
+                            </svg>
+                        </span>
+                    @endif
+                </span>
+            </div>
+            <div class="tab-content" id="nav-tabContent">
+                <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab" tabindex="0">
+                    {!! $event->description ?? '' !!}
+                </div>
+                <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab" tabindex="0">
+                    <div class="scroll-schedule-box">
+                        <div class="schedule-box">
+                        <h6 class="title-schedule">Event Schedule</h6>
+                        @php
+                            $items = collect();
+                            if(isset($event)){
+                                if($event->relationLoaded('scheduleItems')){
+                                    $items = $event->scheduleItems;
+                                } else {
+                                    // prefer DB relation ordered by start if available
+                                    try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
+                                }
+                                if($items->isEmpty() && is_array($event->schedule_json)){
+                                    $items = collect($event->schedule_json)->map(function($row){
+                                        return (object) [
+                                            'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                                            'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                                            'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                                            'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                                        ];
+                                    });
+                                }
+                            }
+                            $formatTime = function($t){
+                                if(empty($t)) return null;
+                                try { return \Carbon\Carbon::parse($t)->format('H.i'); } catch (\Throwable $e) { return is_string($t) ? $t : null; }
+                            };
+                        @endphp
+                        @forelse($items as $idx => $it)
+                            @php
+                                $start = $formatTime($it->start ?? null);
+                                $end = $formatTime($it->end ?? null);
+                                $timeStr = trim(($start ?: '') . ($end ? ' - '.$end : ''));
+                                if($timeStr) $timeStr .= ' WIB';
+                            @endphp
+                            <div class="schedule-item-box">
+                                <div class="schedule-line"></div>
+                                <div class="schedule-item">
+                                    <p class="time">{{ $timeStr ?: '-' }}</p>
+                                    <p class="activity">{{ $it->title ?? '' }}</p>
+                                    <p class="desc">{{ $it->description ?? '' }}</p>
+                                </div>
+                            </div>
+                            <br>
+                        @empty
+                            <p class="text-muted" style="margin-left:30px;">Schedule will be announced.</p>
+                        @endforelse
                         </div>
                     </div>
-                    <button id="submit-feedback-btn" class="btn btn-primary align-self-end mt-auto" disabled>Submit Feedback</button>
-                @else
-                    {{-- overlay message instead of blurring the card --}}
-                    @php
-                        $lockedMsg = 'Feedback akan dibuka setelah event selesai dan Anda mengisi attendance.';
-                        if(!isset($isRegistered) || !$isRegistered) $lockedMsg = 'Feedback tersedia setelah Anda terdaftar, event selesai, dan attendance dikirim.';
-                        if(isset($hasFeedback) && $hasFeedback) $lockedMsg = 'Anda sudah mengirim feedback. Terima kasih!';
-                    @endphp
-                    <div class="locked-overlay">{{ $lockedMsg }}</div>
-                    {{-- keep a small inline message for accessibility/fallback --}}
-                    @if(!isset($isRegistered) || !$isRegistered)
-                        
-                    @elseif(isset($hasFeedback) && $hasFeedback)
-                        <p class="text-success">Anda sudah mengirim feedback. Terima kasih!</p>
-                    @else
-                        <p class="text-muted feedback-locked-msg">Feedback akan dibuka setelah event selesai.</p>
-                    @endif
-                @endif
+                </div>
+                <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
+                    <h6 class="mb-3 mt-2">Terms & Condition</h6>
+                    <div class="terms-content" style="margin-top: 10px;">
+                        {!! $event->terms_and_conditions ?? '' !!}
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    
     <script>
+  document.querySelectorAll(".stars").forEach(starContainer => {
+    const target = starContainer.getAttribute("data-target");
+
+    starContainer.innerHTML = "";
+    for (let i = 1; i <= 5; i++) {
+      const span = document.createElement("span");
+      span.textContent = "★";
+      span.dataset.value = i;
+
+      span.addEventListener("click", () => {
+        starContainer.querySelectorAll("span").forEach(s => {
+          s.classList.toggle("selected", s.dataset.value <= i);
+        });
+      });
+
+      starContainer.appendChild(span);
+    }
+  });
+
         document.addEventListener('DOMContentLoaded', () => {
             // --- Feedback dynamic submit ---
             const submitBtn = document.getElementById('submit-feedback-btn');
