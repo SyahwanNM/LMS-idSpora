@@ -815,7 +815,7 @@
         const mapsPreview = document.getElementById('mapsPreview');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
-    const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
+    const resolveMapsUrl = "{{ route('admin.maps.resolve') }}";
         function parseLatLngFromUrl(url){
             if(!url) return null;
             try {
@@ -1480,10 +1480,6 @@
             console.warn('[EventForm] Form element not found.');
         }
 
-        @if($errors->any())
-            if (window.bootstrap) { new bootstrap.Modal(document.getElementById('addEventModal')).show(); }
-        @endif
-
         // Flatpickr date picker initialization (Indonesian locale)
         if(window.flatpickr){
             flatpickr('#tanggal', {
@@ -1608,6 +1604,11 @@
         });
     });
     </script>
+    @if($errors->any())
+    <script>
+        if (window.bootstrap) { new bootstrap.Modal(document.getElementById('addEventModal')).show(); }
+    </script>
+    @endif
     <script>
     // enable tooltips for doc status icons
     document.addEventListener('DOMContentLoaded', function() {
