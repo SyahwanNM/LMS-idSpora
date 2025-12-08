@@ -3304,7 +3304,7 @@ input[type="time"] {
 }
 
 .footer-section::before {
-    content: "";
+    content-detail: "";
     position: absolute;
     top: 0;
     left: 0;

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 
+=======
+@include("partials.navbar-admin-event")
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
 <!DOCTYPE html>
 <html lang="en">
 

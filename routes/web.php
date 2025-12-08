@@ -23,14 +23,19 @@ Route::get('/admin/detail-event', function () {
 });
 
 Route::get('/admin/report', function () {
+<<<<<<< HEAD
     // Legacy path -> redirect to controller-powered reports so the view gets data
     return redirect()->route('admin.reports');
+=======
+    return view('/admin/report');
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
 });
 
 Route::get('/admin/add-users', function () {
     return view('/admin/add-users');
 });
 
+<<<<<<< HEAD
 // Serve Add Event at a friendly URL using the canonical create form (auth+admin)
 Route::middleware(['auth','admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
 // History (finished events)
@@ -42,6 +47,14 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     $feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
+=======
+Route::get('/admin/add-event', function () {
+    return view('/admin/add-event');
+});
+Route::get('/detail-event-registered', function () {
+    return view('/detail-event-registered');
+});
+>>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
 
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/auth', function () {
