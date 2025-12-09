@@ -298,8 +298,11 @@ class EventController extends Controller
     public function destroy(Event $event)
     {
         $event->delete();
-        // After deletion, redirect to our custom add-event page (resource create is removed)
-        return redirect()->route('admin.add-event')->with('success', 'Event berhasil dihapus!');
+        // Redirect back to history page if the user came from there; otherwise to add-event
+        $prev = url()->previous();
+        $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
+        $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
+        return redirect($route)->with('success', 'Event berhasil dihapus!');
     }
 
     // Public registration (AJAX)
