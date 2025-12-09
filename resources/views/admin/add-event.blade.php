@@ -744,6 +744,8 @@
         .manage-action-create:before { border-left-color:#0f5d2c; }
         .manage-action-manage { background:linear-gradient(135deg,#0d6efd,#3b82f6); }
         .manage-action-manage:before { border-left-color:#093d94; }
+        /* Ensure delete confirmation text is black */
+        #deleteEventModal .form-check-label { color: #000 !important; }
     </style>
     @endsection
     @section('scripts')

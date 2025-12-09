@@ -2270,6 +2270,7 @@ label {
 .desc-box {
     margin-top: 50px;
     margin-left: 70px;
+    margin-bottom: 100px;
     background-color: white;
     width: 90%;
     border-radius: 10px;
@@ -2363,10 +2364,11 @@ label {
 }
 .participant-resources {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     justify-content: center;
     max-width: 900px;
+    margin-left: 200px;
 }
 
 .resource-card {
@@ -2414,87 +2416,91 @@ label {
     text-decoration: none;
     color: black;
 }
-.feedback-box {
-    background-color: white;
-    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
-    padding: 20px;
-    margin-top: 50px;
-    margin-left: 70px;
-    border-radius: 20px;
-    width: 90%;
-    height: 550px;
-    margin-bottom: 100px;
+.feedback-group{
+      width: 420px;
+  padding: 22px;
+  background: white;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
-.feedback-box h5 {
-    margin-top: 30px;
-    margin-left: 30px;
+.feedback-modal {
+  width: 420px;
+  padding: 22px;
+  background: white;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
-.feedback-box h6 {
-    margin-left: 30px;
+
+.feedback-modal h2 {
+  font-size: 22px;
+  margin-bottom: 16px;
 }
-.rating-card {
-    display: flex;
+
+.feedback-modal h3 {
+  margin: 22px 0 8px;
+  font-size: 18px;
+  font-weight: 600;
 }
-.average-rating {
-    border: solid grey 2px;
-    border-radius: 20px;
-    padding: 20px;
-    margin-top: 10px;
-    width: 75%;
-    margin-left: 25px;
+
+.feedback-group {
+  margin-bottom: 20px;
 }
-.average-rating p {
-    font-size: small;
-    margin-bottom: 0px;
-    margin-top: 10px;
+
+.feedback-group label {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 6px;
 }
-.average-rating span {
-    font-size: small;
-    color: grey;
-    margin-top: 10px;
+
+.stars {
+  font-size: 26px;
+  letter-spacing: 4px;
+  cursor: pointer;
+  color: #bdbdbd;
+  user-select: none;
 }
-.scroll-review-box {
-    max-height: 380px;
-    overflow-y: auto;
-    padding-right: 10px;
-    margin-top: 15px;
+
+.stars.active span,
+.stars span.selected {
+  color: gold;
 }
-.scroll-review-box::-webkit-scrollbar {
-    width: 6px;
+
+textarea {
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 12px;
+  font-size: 14px;
+  resize: none;
 }
-.add-rating {
-    border: solid grey 1px;
-    border-radius: 20px;
-    padding: 20px;
-    margin-top: 25px;
-    width: 100%;
-    margin-left: -100px;
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }
-.add-rating h5 {
-    margin-top: 10px;
-    margin-bottom: 10px;
+
+.btn-outline {
+  padding: 10px 18px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
 }
-.add-stars {
-    margin-left: 30px;
+
+.btn-fill {
+  padding: 10px 20px;
+  background: #FFD43B;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
 }
-.add-rating textarea {
-    width: 90%;
-    height: 130px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-top: 20px;
-    margin-left: 30px;
-}
-.add-rating button {
-    background-color: #e4e4e6;
-    border: none;
-    padding: 15px 20px;
-    margin-top: 20px;
-    margin-left: 30px;
-    width: 90%;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
-}
+
 
 /*ADMIN-MANAGE EVENTS*/
 .box-manage {
@@ -3306,7 +3312,7 @@ input[type="time"] {
 }
 
 .footer-section::before {
-    content: "";
+    content-detail: "";
     position: absolute;
     top: 0;
     left: 0;

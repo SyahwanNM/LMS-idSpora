@@ -11,6 +11,8 @@ class Feedback extends Model
         'event_id',
         'user_id',
         'rating',
+        'speaker_rating',
+        'committee_rating',
         'comment',
     ];
 
