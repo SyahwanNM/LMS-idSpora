@@ -70,10 +70,9 @@
                                     <td>{{ $event->documents_completion_percent }}%</td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-sm btn-outline-secondary">Detail</a>
-                                        <form action="{{ route('admin.events.destroy',$event) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus event ini secara permanen?');">
-                                            @csrf @method('DELETE')
-                                            <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
-                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteHistoryModal" data-event-id="{{ $event->id }}" data-event-title="{{ $event->title }}" data-event-image="{{ $event->image ? Storage::url($event->image) : '' }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -105,6 +104,59 @@ document.addEventListener('DOMContentLoaded', function(){
             });
         }, 150);
     });
+        // Delete confirmation modal wiring
+        const modalEl = document.getElementById('deleteHistoryModal');
+        if (modalEl) {
+                modalEl.addEventListener('show.bs.modal', function (ev) {
+                        const btn = ev.relatedTarget;
+                        const id = btn?.getAttribute('data-event-id');
+                        const title = btn?.getAttribute('data-event-title') || 'Event';
+                        const img = btn?.getAttribute('data-event-image');
+                        const nameEl = modalEl.querySelector('#deleteHistoryName');
+                        const imgWrap = modalEl.querySelector('#deleteHistoryImageWrapper');
+                        const imgEl = modalEl.querySelector('#deleteHistoryImage');
+                        const formEl = modalEl.querySelector('#deleteHistoryForm');
+                        if (nameEl) nameEl.textContent = title;
+                        if (img && imgEl && imgWrap) { imgEl.src = img; imgWrap.style.display = 'block'; } else if (imgWrap) { imgWrap.style.display = 'none'; }
+                        if (formEl && id) { formEl.action = `{{ url('/admin/events') }}/${id}`; }
+                        // disable confirm until checkbox checked
+                        const confirmBtn = modalEl.querySelector('#deleteHistoryConfirmBtn');
+                        const cb = modalEl.querySelector('#deleteHistoryConfirm');
+                        if (confirmBtn) confirmBtn.disabled = !(cb && cb.checked);
+                        if (cb && confirmBtn) {
+                                cb.addEventListener('change', function(){ confirmBtn.disabled = !this.checked; }, { once: true });
+                        }
+                });
+        }
 });
 </script>
+<!-- Centered delete confirmation modal -->
+<div class="modal fade" id="deleteHistoryModal" tabindex="-1" aria-labelledby="deleteHistoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mb-0" id="deleteHistoryLabel">Hapus Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center mb-2">Konfirmasi penghapusan event ini dari history.</p>
+                <div class="p-2 rounded border bg-light text-center"><i class="bi bi-calendar-event me-1"></i> <strong id="deleteHistoryName">Event</strong></div>
+                <div id="deleteHistoryImageWrapper" class="mt-3 text-center" style="display:none;">
+                        <img id="deleteHistoryImage" src="" alt="Gambar Event" class="img-fluid rounded shadow-sm" style="max-height:200px;object-fit:cover;">
+                </div>
+                <div class="form-check mt-3 d-flex justify-content-center">
+                    <input class="form-check-input me-2" type="checkbox" value="1" id="deleteHistoryConfirm">
+                    <label class="form-check-label text-dark" style="color:#000 !important;" for="deleteHistoryConfirm">Saya yakin menghapus event ini secara permanen.</label>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-center">
+                <form id="deleteHistoryForm" action="#" method="POST" class="d-inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-danger" id="deleteHistoryConfirmBtn" disabled>Hapus</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

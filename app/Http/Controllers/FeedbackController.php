@@ -48,6 +48,10 @@ class FeedbackController extends Controller
 
         try {
             $registration->feedback_submitted_at = Carbon::now();
+            // Unlock certificate immediately after feedback
+            if (empty($registration->certificate_issued_at)) {
+                $registration->certificate_issued_at = Carbon::now();
+            }
             $registration->save();
         } catch (\Throwable $e) {
             // non-blocking: we still return success, but log could be added
