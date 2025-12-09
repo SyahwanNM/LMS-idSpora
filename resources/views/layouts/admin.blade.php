@@ -27,7 +27,7 @@
                     @if(!(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')))
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                     @endif
-                    <li class="nav-item"><a class="nav-link {{ (request()->routeIs('admin.events.*') || request()->routeIs('admin.add-event')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a></li>
+                    {{-- Manage Event link removed from navbar per request --}}
                     <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Users</a></li>
                     {{-- Report menu moved into Kelola Event page per request --}}
                 </ul>
