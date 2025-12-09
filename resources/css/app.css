@@ -2416,6 +2416,14 @@ label {
     text-decoration: none;
     color: black;
 }
+.feedback-group{
+      width: 420px;
+  padding: 22px;
+  background: white;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
 .feedback-modal {
   width: 420px;
   padding: 22px;

@@ -3,34 +3,37 @@
 <html lang="en">
 
 <head>
-            <style>
-                .stars-bi {
-                    transition: color 0.2s, transform 0.18s;
-                    color: gray;
-                }
-                .stars-bi.active {
-                    color: #FFD600 !important;
-                }
-                .stars-bi.hovered {
-                    transform: scale(1.22) rotate(-8deg) !important;
-                    filter: drop-shadow(0 2px 6px #FFD600cc) !important;
-                    z-index: 2 !important;
-                }
-            </style>
-        <style>
-            .stars-bi {
-                transition: color 0.2s, transform 0.18s;
-            }
-            .add-stars .stars-bi.hovered,
-            .add-stars .stars-bi.hovered:focus {
-                transform: scale(1.22) rotate(-8deg) !important;
-                color: #FFD600 !important;
-                filter: drop-shadow(0 2px 6px #FFD600cc) !important;
-                z-index: 2 !important;
-                transition: color 0.2s !important;
-                transition-property: color, transform, filter !important;
-            }
-        </style>
+    <style>
+        .stars-bi {
+            transition: color 0.2s, transform 0.18s;
+            color: gray;
+        }
+
+        .stars-bi.active {
+            color: #FFD600 !important;
+        }
+
+        .stars-bi.hovered {
+            transform: scale(1.22) rotate(-8deg) !important;
+            filter: drop-shadow(0 2px 6px #FFD600cc) !important;
+            z-index: 2 !important;
+        }
+    </style>
+    <style>
+        .stars-bi {
+            transition: color 0.2s, transform 0.18s;
+        }
+
+        .add-stars .stars-bi.hovered,
+        .add-stars .stars-bi.hovered:focus {
+            transform: scale(1.22) rotate(-8deg) !important;
+            color: #FFD600 !important;
+            filter: drop-shadow(0 2px 6px #FFD600cc) !important;
+            z-index: 2 !important;
+            transition: color 0.2s !important;
+            transition-property: color, transform, filter !important;
+        }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -42,47 +45,113 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         /* Make the top navy section flush to the very top */
-        html, body { margin: 0; padding: 0; }
-        .container-ungu { margin-top: 0 !important; }
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .container-ungu {
+            margin-top: 0 !important;
+        }
+
         /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-        .container-ungu .link-box { padding-top: 80px; }
-        @media (max-width: 576px){
-            .container-ungu .link-box { padding-top: 64px; }
+        .container-ungu .link-box {
+            padding-top: 80px;
         }
+
+        @media (max-width: 576px) {
+            .container-ungu .link-box {
+                padding-top: 64px;
+            }
+        }
+
         /* Add breathing space inside tab panes (Overview, etc.) */
-        .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
-        @media (max-width: 576px){
-            .desc-box .tab-content .tab-pane { padding: 12px 14px 18px; }
+        .desc-box .tab-content .tab-pane {
+            padding: 16px 20px 24px;
         }
+
+        @media (max-width: 576px) {
+            .desc-box .tab-content .tab-pane {
+                padding: 12px 14px 18px;
+            }
+        }
+
         /* Reduce padding specifically for Terms & Condition tab (stronger override) */
-        .desc-box .tab-content #nav-contact { padding: 4px 8px 0 !important; margin-bottom: 0 !important; }
-        /* If the pane uses .terms-box as card wrapper, tighten it too */
-        .desc-box .terms-box { padding: 4px 8px 0 !important; margin: 0 !important; }
-        /* Remove any extra bottom space inside terms content */
-        .desc-box .tab-content #nav-contact .terms-content { margin-bottom: 0 !important; padding-bottom: 0 !important; }
-        .desc-box .tab-content #nav-contact h6 { margin-top: 4px !important; margin-bottom: 6px !important; }
-        .desc-box .tab-content #nav-contact .terms-content { margin-top: 4px !important; }
-        @media (max-width: 576px){
-            .desc-box .tab-content #nav-contact { padding: 4px 8px 0 !important; }
+        .desc-box .tab-content #nav-contact {
+            padding: 4px 8px 0 !important;
+            margin-bottom: 0 !important;
         }
+
+        /* If the pane uses .terms-box as card wrapper, tighten it too */
+        .desc-box .terms-box {
+            padding: 4px 8px 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Remove any extra bottom space inside terms content */
+        .desc-box .tab-content #nav-contact .terms-content {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        .desc-box .tab-content #nav-contact h6 {
+            margin-top: 4px !important;
+            margin-bottom: 6px !important;
+        }
+
+        .desc-box .tab-content #nav-contact .terms-content {
+            margin-top: 4px !important;
+        }
+
+        @media (max-width: 576px) {
+            .desc-box .tab-content #nav-contact {
+                padding: 4px 8px 0 !important;
+            }
+        }
+
         /* Align Facebook icon baseline with other share icons */
-        .share .share-list .bi-facebook { position: relative; top: -1px; }
+        .share .share-list .bi-facebook {
+            position: relative;
+            top: -1px;
+        }
+
         /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
-        .resource-card.locked { opacity: 0.6; }
-        .resource-card.locked .img-resource svg { opacity: 0.6; }
-        .resource-card.locked .resource-value { color: #6c757d; }
-        .resource-card.locked .link-share { pointer-events: none; opacity: 0.6; }
+        .resource-card.locked {
+            opacity: 0.6;
+        }
+
+        .resource-card.locked .img-resource svg {
+            opacity: 0.6;
+        }
+
+        .resource-card.locked .resource-value {
+            color: #6c757d;
+        }
+
+        .resource-card.locked .link-share {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
         /* Feedback card: do NOT blur when locked, instead show an overlay message */
-        .add-rating.locked { opacity: 1 !important; filter: none !important; position: relative; }
+        .add-rating.locked {
+            opacity: 1 !important;
+            filter: none !important;
+            position: relative;
+        }
+
         .add-rating.locked .locked-overlay {
             position: absolute;
             inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.55); /* semi-transparent overlay */
+            background: rgba(255, 255, 255, 0.55);
+            /* semi-transparent overlay */
             -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px); /* blur the content behind */
+            backdrop-filter: blur(6px);
+            /* blur the content behind */
             font-weight: 600;
             color: #6c757d;
             text-align: center;
@@ -90,13 +159,22 @@
             pointer-events: none;
             z-index: 2;
         }
+
         /* Remove border/edge line for the feedback card */
-        .add-rating { border: none !important; box-shadow: none !important; }
-        .add-rating .scroll-review-box { border: none !important; }
+        .add-rating {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .add-rating .scroll-review-box {
+            border: none !important;
+        }
+
         /* When locked, heading should appear blurred and not selectable/copyable */
-        .add-rating.locked > h5 {
+        .add-rating.locked>h5 {
             position: relative;
-            z-index: 3; /* keep above overlay for consistent placement */
+            z-index: 3;
+            /* keep above overlay for consistent placement */
             filter: blur(2px);
             color: #6c757d;
             -webkit-user-select: none;
@@ -105,25 +183,89 @@
             user-select: none;
             pointer-events: none;
         }
+
         /* Small upward nudge for locked feedback messages (kept for non-overlay fallback) */
-        .feedback-locked-msg { margin-top: -8px; }
+        .feedback-locked-msg {
+            margin-top: -8px;
+        }
+
         /* Hide lock padlock icons site-local in this view */
-        svg[class*="bi-lock"], svg.lock-bi, .lock-icon { display: none !important; }
+        svg[class*="bi-lock"],
+        svg.lock-bi,
+        .lock-icon {
+            display: none !important;
+        }
+
         /* Align Book Seat and Save buttons: same width and style */
         /* Vertical button stack: Book Seat above, Save below */
-        .booksave-row { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
-        .booksave-row .bookseat, .booksave-row .save, .bookseat, .save {
-            display:block; width:100%; text-align:center; padding:12px 16px; border-radius:6px; font-weight:600; text-decoration:none; box-sizing:border-box;
+        .booksave-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
         }
-        .bookseat { background:#f5c400; color:#111; border:none; order:1; }
-        .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
-        .save { background:#1f2235; color:#ffd400; border:none; order:2; }
+
+        .booksave-row .bookseat,
+        .booksave-row .save,
+        .bookseat,
+        .save {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+
+        .bookseat {
+            background: #f5c400;
+            color: #111;
+            border: none;
+            order: 1;
+        }
+
+        .bookseat[disabled],
+        .bookseat.disabled {
+            background: #ddd;
+            color: #666;
+        }
+
+        .save {
+            background: #1f2235;
+            color: #ffd400;
+            border: none;
+            order: 2;
+        }
+
         /* Remove responsive horizontal override; keep vertical layout on all sizes */
         /* Price + info tidy */
-        .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
-        .price-free { color:#16a34a; font-weight:700; letter-spacing:.3px; }
-        .info-item .label-event { display:block; font-weight:600; color:#6b7280; margin-bottom:2px; }
-        .info-item .isi-event { display:block; color:#111827; font-weight:600; }
+        .price-box>span {
+            color: #6b7280;
+            text-decoration: line-through;
+            display: inline-block;
+            min-height: 20px;
+        }
+
+        .price-free {
+            color: #16a34a;
+            font-weight: 700;
+            letter-spacing: .3px;
+        }
+
+        .info-item .label-event {
+            display: block;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+
+        .info-item .isi-event {
+            display: block;
+            color: #111827;
+            font-weight: 600;
+        }
     </style>
 
 </head>
@@ -143,88 +285,88 @@
             </div>
             <div class="add-calender">
                 @php
-                    // Build Google Calendar URL with event info
-                    $tz = config('app.timezone', 'Asia/Jakarta');
-                    $titleCal = isset($event) && !empty($event->title) ? $event->title : 'Event';
-                    $descRaw = isset($event) && !empty($event->description) ? strip_tags($event->description) : 'idSpora Event';
-                    $eventPageUrl = url()->current();
-                    $detailsCal = trim($descRaw . "\n\nMore info: " . $eventPageUrl);
-                    // Compute local start/end times safely (similar to logic used below)
-                    $eventDateTop = isset($event) && !empty($event->event_date) ? (\Carbon\Carbon::parse($event->event_date)) : null;
-                    $parseEvtTimeTop = function($date, $raw) {
-                        if (empty($raw)) return null;
-                        if ($raw instanceof \Carbon\Carbon) return $raw;
-                        $rawStr = trim((string)$raw);
-                        if (preg_match('/\d{4}-\d{2}-\d{2}/', $rawStr)) {
-                            try { return \Carbon\Carbon::parse($rawStr); } catch (\Throwable $e) { return null; }
-                        }
-                        if ($date) {
-                            $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string)$date;
-                            try { return \Carbon\Carbon::parse($dateStr.' '.$rawStr); } catch (\Throwable $e) { return null; }
-                        }
-                        try { return \Carbon\Carbon::parse($rawStr); } catch (\Throwable $e) { return null; }
-                    };
-                    $startTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time ?? null) : null;
-                    $endTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time_end ?? null) : null;
-                    if (!$startTop && $eventDateTop) { $startTop = $eventDateTop->copy()->startOfDay(); }
-                    if (!$endTop && $eventDateTop) { $endTop = $eventDateTop->copy()->endOfDay(); }
-                    // Prepare UTC date range for Google Calendar
-                    $startUtcStr = $startTop ? $startTop->copy()->utc()->format('Ymd\THis\Z') : null;
-                    $endUtcStr = $endTop ? $endTop->copy()->utc()->format('Ymd\THis\Z') : ($startTop ? $startTop->copy()->utc()->addHour()->format('Ymd\THis\Z') : null);
-                    $datesParam = ($startUtcStr && $endUtcStr) ? ($startUtcStr . '/' . $endUtcStr) : null;
-                    $gcalBase = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
-                    $gcalParams = [
-                        'text' => $titleCal,
-                        'dates' => $datesParam,
-                        'details' => $detailsCal,
-                        'location' => isset($event) && !empty($event->location) ? $event->location : '',
-                        'ctz' => $tz,
-                    ];
-                    $gcalQuery = collect($gcalParams)
-                        ->filter(fn($v) => !is_null($v) && $v !== '')
-                        ->map(function($v, $k){ return $k . '=' . urlencode($v); })
-                        ->implode('&');
-                    $gcalUrl = $gcalBase . '&' . $gcalQuery;
-                    // Determine registration state for top buttons
-                    $authUserTop = Auth::user();
-                    $registrationTop = isset($event) && $authUserTop ? $event->registrations()->where('user_id',$authUserTop->id)->first() : null;
-                    $isRegisteredTop = $registrationTop && $registrationTop->status === 'active';
+                // Build Google Calendar URL with event info
+                $tz = config('app.timezone', 'Asia/Jakarta');
+                $titleCal = isset($event) && !empty($event->title) ? $event->title : 'Event';
+                $descRaw = isset($event) && !empty($event->description) ? strip_tags($event->description) : 'idSpora Event';
+                $eventPageUrl = url()->current();
+                $detailsCal = trim($descRaw . "\n\nMore info: " . $eventPageUrl);
+                // Compute local start/end times safely (similar to logic used below)
+                $eventDateTop = isset($event) && !empty($event->event_date) ? (\Carbon\Carbon::parse($event->event_date)) : null;
+                $parseEvtTimeTop = function($date, $raw) {
+                if (empty($raw)) return null;
+                if ($raw instanceof \Carbon\Carbon) return $raw;
+                $rawStr = trim((string)$raw);
+                if (preg_match('/\d{4}-\d{2}-\d{2}/', $rawStr)) {
+                try { return \Carbon\Carbon::parse($rawStr); } catch (\Throwable $e) { return null; }
+                }
+                if ($date) {
+                $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string)$date;
+                try { return \Carbon\Carbon::parse($dateStr.' '.$rawStr); } catch (\Throwable $e) { return null; }
+                }
+                try { return \Carbon\Carbon::parse($rawStr); } catch (\Throwable $e) { return null; }
+                };
+                $startTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time ?? null) : null;
+                $endTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time_end ?? null) : null;
+                if (!$startTop && $eventDateTop) { $startTop = $eventDateTop->copy()->startOfDay(); }
+                if (!$endTop && $eventDateTop) { $endTop = $eventDateTop->copy()->endOfDay(); }
+                // Prepare UTC date range for Google Calendar
+                $startUtcStr = $startTop ? $startTop->copy()->utc()->format('Ymd\THis\Z') : null;
+                $endUtcStr = $endTop ? $endTop->copy()->utc()->format('Ymd\THis\Z') : ($startTop ? $startTop->copy()->utc()->addHour()->format('Ymd\THis\Z') : null);
+                $datesParam = ($startUtcStr && $endUtcStr) ? ($startUtcStr . '/' . $endUtcStr) : null;
+                $gcalBase = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+                $gcalParams = [
+                'text' => $titleCal,
+                'dates' => $datesParam,
+                'details' => $detailsCal,
+                'location' => isset($event) && !empty($event->location) ? $event->location : '',
+                'ctz' => $tz,
+                ];
+                $gcalQuery = collect($gcalParams)
+                ->filter(fn($v) => !is_null($v) && $v !== '')
+                ->map(function($v, $k){ return $k . '=' . urlencode($v); })
+                ->implode('&');
+                $gcalUrl = $gcalBase . '&' . $gcalQuery;
+                // Determine registration state for top buttons
+                $authUserTop = Auth::user();
+                $registrationTop = isset($event) && $authUserTop ? $event->registrations()->where('user_id',$authUserTop->id)->first() : null;
+                $isRegisteredTop = $registrationTop && $registrationTop->status === 'active';
                 @endphp
                 @if(!empty($datesParam))
-                    <button class="" type="button" onclick="window.open('{{ $gcalUrl }}','_blank')" title="Add to Google Calendar">
-                        <svg class="ikon-calender-event" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
-                            <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7" />
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                        </svg>
-                        <p>Add To Calender</p>
-                    </button>
-                    {{-- Tombol "Lihat Detail Registrasi" dihapus sesuai permintaan --}}
+                <button class="" type="button" onclick="window.open('{{ $gcalUrl }}','_blank')" title="Add to Google Calendar">
+                    <svg class="ikon-calender-event" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
+                        <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7" />
+                        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                    </svg>
+                    <p>Add To Calender</p>
+                </button>
+                {{-- Tombol "Lihat Detail Registrasi" dihapus sesuai permintaan --}}
                 @else
-                    <button class="" disabled title="Tanggal/waktu belum tersedia" style="opacity:.6;cursor:not-allowed;">
-                        <svg class="ikon-calender-event" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
-                            <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7" />
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                        </svg>
-                        <p>Add To Calender</p>
-                    </button>
+                <button class="" disabled title="Tanggal/waktu belum tersedia" style="opacity:.6;cursor:not-allowed;">
+                    <svg class="ikon-calender-event" xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
+                        <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7" />
+                        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                    </svg>
+                    <p>Add To Calender</p>
+                </button>
                 @endif
             </div>
         </div>
         <div class="event-title">
             <h4 class="mb-2">{{ isset($event) ? $event->title : 'Event' }}</h4>
             @php
-                // Label: Kelola Event (manage/create), Status Event (upcoming/ongoing/finished), Tanggal
-                $manageAction = isset($event) && !empty($event->manage_action) ? strtolower($event->manage_action) : null;
-                $startDate = isset($event) && !empty($event->event_date) ? (\Carbon\Carbon::parse($event->event_date)) : null;
-                $endDate = $startDate; // if no explicit end, use start
-                $nowLbl = \Carbon\Carbon::now();
-                $statusLbl = null;
-                if($startDate){
-                    if($nowLbl->lt($startDate)) $statusLbl = 'Segera Hadir';
-                    elseif($nowLbl->isSameDay($startDate)) $statusLbl = 'Berlangsung';
-                    elseif($nowLbl->gt($startDate)) $statusLbl = 'Telah Selesai';
-                }
-                $tanggalLbl = $startDate ? $startDate->format('d F Y') : null;
+            // Label: Kelola Event (manage/create), Status Event (upcoming/ongoing/finished), Tanggal
+            $manageAction = isset($event) && !empty($event->manage_action) ? strtolower($event->manage_action) : null;
+            $startDate = isset($event) && !empty($event->event_date) ? (\Carbon\Carbon::parse($event->event_date)) : null;
+            $endDate = $startDate; // if no explicit end, use start
+            $nowLbl = \Carbon\Carbon::now();
+            $statusLbl = null;
+            if($startDate){
+            if($nowLbl->lt($startDate)) $statusLbl = 'Segera Hadir';
+            elseif($nowLbl->isSameDay($startDate)) $statusLbl = 'Berlangsung';
+            elseif($nowLbl->gt($startDate)) $statusLbl = 'Telah Selesai';
+            }
+            $tanggalLbl = $startDate ? $startDate->format('d F Y') : null;
             @endphp
             <p class="small text-white mb-0">{{ isset($event) && !empty($event->short_description) ? $event->short_description : '' }}</p>
         </div>
@@ -233,109 +375,109 @@
         <div class="detail-box-left">
             <img src="{{ isset($event) && !empty($event->image) ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ isset($event) ? $event->title : 'Gambar Event' }}">
             @php
-                $authUser = Auth::user();
-                $registration = isset($event) && $authUser ? $event->registrations()->where('user_id',$authUser->id)->first() : null;
-                $isRegistered = $registration && $registration->status === 'active';
-                $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
-                $parseEventTime = function($date, $raw) {
-                    if (empty($raw)) return null;
-                    if ($raw instanceof \Carbon\Carbon) return $raw;
-                    $rawStr = trim((string)$raw);
-                    // Normalize local notations like "14.30" -> "14:30" and trim timezone labels
-                    $norm = preg_replace('/\s*(WIB|WITA|WIT)\s*$/i', '', $rawStr);
-                    if (preg_match('/^\d{1,2}\.\d{2}$/', $norm)) {
-                        $norm = str_replace('.', ':', $norm);
-                    }
-                    // If includes date part already, parse directly
-                    if (preg_match('/\d{4}-\d{2}-\d{2}/', $norm)) {
-                        try { return \Carbon\Carbon::parse($norm); } catch (\Throwable $e) { return null; }
-                    }
-                    // Combine with date when available
-                    if ($date) {
-                        $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string)$date;
-                        try { return \Carbon\Carbon::parse($dateStr.' '.$norm); } catch (\Throwable $e) { return null; }
-                    }
-                    // Fallback parse
-                    try { return \Carbon\Carbon::parse($norm); } catch (\Throwable $e) { return null; }
-                };
-                $startTime = isset($event) ? $parseEventTime($eventDate, $event->event_time) : null;
-                $endTime = isset($event) ? $parseEventTime($eventDate, $event->event_time_end) : null;
-                if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-                if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
-                $nowTs = \Carbon\Carbon::now();
-                // Event selesai (untuk membuka form attendance/feedback)
-                $eventFinished = $endTime && $nowTs->gt($endTime);
-                // Attendance dianggap selesai jika user sudah submit attendance (menggunakan attendance_status)
-                $attendanceSubmitted = $registration && !empty($registration->attendance_status);
-                $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
-                $hasCertificate = $registration && $registration->certificate_issued_at;
-                $stepStates = [
-                    'Registered' => $isRegistered,
-                    'Attended' => $attendanceSubmitted,
-                    'Feedback' => $hasFeedback,
-                    'Certificate' => $hasCertificate,
-                ];
+            $authUser = Auth::user();
+            $registration = isset($event) && $authUser ? $event->registrations()->where('user_id',$authUser->id)->first() : null;
+            $isRegistered = $registration && $registration->status === 'active';
+            $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
+            $parseEventTime = function($date, $raw) {
+            if (empty($raw)) return null;
+            if ($raw instanceof \Carbon\Carbon) return $raw;
+            $rawStr = trim((string)$raw);
+            // Normalize local notations like "14.30" -> "14:30" and trim timezone labels
+            $norm = preg_replace('/\s*(WIB|WITA|WIT)\s*$/i', '', $rawStr);
+            if (preg_match('/^\d{1,2}\.\d{2}$/', $norm)) {
+            $norm = str_replace('.', ':', $norm);
+            }
+            // If includes date part already, parse directly
+            if (preg_match('/\d{4}-\d{2}-\d{2}/', $norm)) {
+            try { return \Carbon\Carbon::parse($norm); } catch (\Throwable $e) { return null; }
+            }
+            // Combine with date when available
+            if ($date) {
+            $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string)$date;
+            try { return \Carbon\Carbon::parse($dateStr.' '.$norm); } catch (\Throwable $e) { return null; }
+            }
+            // Fallback parse
+            try { return \Carbon\Carbon::parse($norm); } catch (\Throwable $e) { return null; }
+            };
+            $startTime = isset($event) ? $parseEventTime($eventDate, $event->event_time) : null;
+            $endTime = isset($event) ? $parseEventTime($eventDate, $event->event_time_end) : null;
+            if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+            if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+            $nowTs = \Carbon\Carbon::now();
+            // Event selesai (untuk membuka form attendance/feedback)
+            $eventFinished = $endTime && $nowTs->gt($endTime);
+            // Attendance dianggap selesai jika user sudah submit attendance (menggunakan attendance_status)
+            $attendanceSubmitted = $registration && !empty($registration->attendance_status);
+            $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
+            $hasCertificate = $registration && $registration->certificate_issued_at;
+            $stepStates = [
+            'Registered' => $isRegistered,
+            'Attended' => $attendanceSubmitted,
+            'Feedback' => $hasFeedback,
+            'Certificate' => $hasCertificate,
+            ];
             @endphp
             <div class="progress-box">
                 <h5>Your Progress</h5>
                 <div class="progress-line">&nbsp;</div>
                 <div class="progress-steps">
                     @foreach($stepStates as $label => $done)
-                        @php
-                            // Determine if this is the current step (first not done after previous done ones)
-                            $previousAllDone = collect($stepStates)->takeWhile(fn($v,$k) => $k !== $label)->every(fn($v) => $v);
-                            $current = !$done && $previousAllDone;
-                        @endphp
-                        <div class="step {{ $done ? 'active' : ($current ? 'current' : 'disabled') }}">
-                            <div class="circle">
-                                @if($done)
-                                    <p>✔</p>
-                                @elseif($current)
-                                    <p>●</p>
-                                @else
-                                    <p>○</p>
-                                @endif
-                            </div>
-                            <p>{{ $label }}</p>
+                    @php
+                    // Determine if this is the current step (first not done after previous done ones)
+                    $previousAllDone = collect($stepStates)->takeWhile(fn($v,$k) => $k !== $label)->every(fn($v) => $v);
+                    $current = !$done && $previousAllDone;
+                    @endphp
+                    <div class="step {{ $done ? 'active' : ($current ? 'current' : 'disabled') }}">
+                        <div class="circle">
+                            @if($done)
+                            <p>✔</p>
+                            @elseif($current)
+                            <p>●</p>
+                            @else
+                            <p>○</p>
+                            @endif
                         </div>
+                        <p>{{ $label }}</p>
+                    </div>
                     @endforeach
                 </div>
             </div>
         </div>
         <div class="detail-box-right">
             @php
-                $eventObj = isset($event) ? $event : null;
-                $now = \Carbon\Carbon::now();
-                $hasActiveDiscount = $eventObj && ($eventObj->discount_percentage > 0) && $eventObj->discount_until && $now->lte($eventObj->discount_until);
-                $basePrice = $eventObj ? (float) $eventObj->price : 0;
-                $finalPrice = $hasActiveDiscount ? (float) $eventObj->discounted_price : $basePrice;
-                $discountMsg = null;
-                if ($hasActiveDiscount) {
-                    $startOfToday = $now->copy()->startOfDay();
-                    $end = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
-                    $endOfDiscountDay = $end->copy();
-                    $diffDaysInt = (int) $startOfToday->diffInDays($endOfDiscountDay, false);
-                    if ($diffDaysInt > 1) {
-                        $discountMsg = $diffDaysInt . ' Days left at this price!';
-                    } elseif ($diffDaysInt === 1) {
-                        $discountMsg = '1 Day left at this price!';
-                    } else {
-                        $discountMsg = null; // hide when 0 or expired
-                    }
-                }
+            $eventObj = isset($event) ? $event : null;
+            $now = \Carbon\Carbon::now();
+            $hasActiveDiscount = $eventObj && ($eventObj->discount_percentage > 0) && $eventObj->discount_until && $now->lte($eventObj->discount_until);
+            $basePrice = $eventObj ? (float) $eventObj->price : 0;
+            $finalPrice = $hasActiveDiscount ? (float) $eventObj->discounted_price : $basePrice;
+            $discountMsg = null;
+            if ($hasActiveDiscount) {
+            $startOfToday = $now->copy()->startOfDay();
+            $end = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
+            $endOfDiscountDay = $end->copy();
+            $diffDaysInt = (int) $startOfToday->diffInDays($endOfDiscountDay, false);
+            if ($diffDaysInt > 1) {
+            $discountMsg = $diffDaysInt . ' Days left at this price!';
+            } elseif ($diffDaysInt === 1) {
+            $discountMsg = '1 Day left at this price!';
+            } else {
+            $discountMsg = null; // hide when 0 or expired
+            }
+            }
             @endphp
             <div class="info-price-box">
                 @php $isFreeNow = ((int) $finalPrice) === 0; @endphp
                 <div class="price-box">
                     <span>
                         @if($hasActiveDiscount && $basePrice > 0)
-                            Rp.{{ number_format($basePrice, 0, ',', '.') }}
+                        Rp.{{ number_format($basePrice, 0, ',', '.') }}
                         @endif
                     </span>
                     @if($isFreeNow)
-                        <h5 class="price-free">GRATIS!</h5>
+                    <h5 class="price-free">GRATIS!</h5>
                     @else
-                        <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
+                    <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
                     @endif
                     @if($hasActiveDiscount && $discountMsg)
                     <div class="diskon-time">
@@ -373,24 +515,24 @@
                     <div class="info-text">
                         <span class="label-event">Time</span>
                         @php
-                            $formatTimeOnly = function($raw){
-                                if(empty($raw)) return null;
-                                if($raw instanceof \Carbon\Carbon) return $raw->format('H.i');
-                                $s = trim((string)$raw);
-                                try { return \Carbon\Carbon::parse($s)->format('H.i'); } catch (\Throwable $e) {
-                                    if(preg_match('/^(\d{1,2}):(\d{2})$/',$s)) return str_replace(':','.', $s);
-                                    return null;
-                                }
-                            };
-                            $startT = isset($event) ? $formatTimeOnly($event->event_time) : null;
-                            $endT = isset($event) ? $formatTimeOnly($event->event_time_end) : null;
-                            if($startT && $endT){
-                                $timeRange = $startT . ' – ' . $endT . ' WIB';
-                            } elseif($startT){
-                                $timeRange = $startT . ' WIB';
-                            } else {
-                                $timeRange = '-';
-                            }
+                        $formatTimeOnly = function($raw){
+                        if(empty($raw)) return null;
+                        if($raw instanceof \Carbon\Carbon) return $raw->format('H.i');
+                        $s = trim((string)$raw);
+                        try { return \Carbon\Carbon::parse($s)->format('H.i'); } catch (\Throwable $e) {
+                        if(preg_match('/^(\d{1,2}):(\d{2})$/',$s)) return str_replace(':','.', $s);
+                        return null;
+                        }
+                        };
+                        $startT = isset($event) ? $formatTimeOnly($event->event_time) : null;
+                        $endT = isset($event) ? $formatTimeOnly($event->event_time_end) : null;
+                        if($startT && $endT){
+                        $timeRange = $startT . ' – ' . $endT . ' WIB';
+                        } elseif($startT){
+                        $timeRange = $startT . ' WIB';
+                        } else {
+                        $timeRange = '-';
+                        }
                         @endphp
                         <span class="isi-event">{{ $timeRange }}</span>
                     </div>
@@ -416,27 +558,27 @@
             </div>
             <hr>
             @php
-                $isFree = false;
-                if(isset($event)){
-                    $hasDiscountLocal = method_exists($event,'hasDiscount') ? $event->hasDiscount() : false;
-                    $finalPriceLocal = $hasDiscountLocal ? ($event->discounted_price ?? $event->price) : $event->price;
-                    $isFree = ((int)($finalPriceLocal ?? 0)) === 0;
-                }
+            $isFree = false;
+            if(isset($event)){
+            $hasDiscountLocal = method_exists($event,'hasDiscount') ? $event->hasDiscount() : false;
+            $finalPriceLocal = $hasDiscountLocal ? ($event->discounted_price ?? $event->price) : $event->price;
+            $isFree = ((int)($finalPriceLocal ?? 0)) === 0;
+            }
             @endphp
             <div class="booksave-row">
-            @if(!$isRegistered)
+                @if(!$isRegistered)
                 @if($isFree)
-                    <form method="POST" action="{{ route('events.register.form', $event->id) }}" style="display:inline; width:100%;">
-                        @csrf
-                        <button class="bookseat" type="submit">Book Seat</button>
-                    </form>
+                <form method="POST" action="{{ route('events.register.form', $event->id) }}" style="display:inline; width:100%;">
+                    @csrf
+                    <button class="bookseat" type="submit">Book Seat</button>
+                </form>
                 @else
-                    <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
+                <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
                 @endif
-            @else
+                @else
                 <button class="bookseat" disabled>Seat Booked</button>
-            @endif
-            <button class="save">Save</button>
+                @endif
+                <button class="save">Save</button>
             </div>
             <hr>
             <div class="include-box">
@@ -444,16 +586,16 @@
                     <h6 style="color:#000; margin: 0 0 8px 2px;">Benefit Event</h6>
                     <ul class="event-benefit-list" style="margin-bottom:0;">
                         @if(!empty($event->benefit))
-                            @foreach(explode('|', $event->benefit) as $benefit)
-                                <li>{{ trim($benefit) }}</li>
-                            @endforeach
+                        @foreach(explode('|', $event->benefit) as $benefit)
+                        <li>{{ trim($benefit) }}</li>
+                        @endforeach
                         @else
-                            <li>No benefits listed.</li>
+                        <li>No benefits listed.</li>
                         @endif
                     </ul>
 
 
-                    
+
                 </div>
             </div>
             <hr>
@@ -461,20 +603,20 @@
                 <h6 class="share-title">Share this event:</h6>
                 <div class="share-list">
                     @if($isRegistered && $eventFinished && !$hasFeedback)
-                        
+
                     @elseif($hasFeedback)
-                       
+
                     @else
-                        <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-lock" viewBox="0 0 16 16">
-                                <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2" />
-                            </svg>
-                        </span>
+                    <span class="link-share" style="opacity:.4; cursor:not-allowed;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-lock" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2" />
+                        </svg>
+                    </span>
                     @endif
 
                     <a id="fbShare" class="share-item" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-facebook" viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M12 2.04V.5H9.75C8.26.5 7.5 1.5 7.5 2.83V4H6v2h1.5v6H10V6h1.5l.5-2H10V2.83C10 2.2 10.4 2 11 2H13v.04z"/>
+                            <path d="M12 2.04V.5H9.75C8.26.5 7.5 1.5 7.5 2.83V4H6v2h1.5v6H10V6h1.5l.5-2H10V2.83C10 2.2 10.4 2 11 2H13v.04z" />
                         </svg>
                     </a>
 
@@ -486,10 +628,10 @@
 
                     <a id="emailShare" href="#" class="share-item">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-envelope" viewBox="0 0 16 16">
-                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8z"/>
-                            <path d="M0 4.697v7.104l5.803-3.482z"/>
-                            <path d="M6.761 8.83 0 12.803V14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.197l-6.761-3.973-1.239.744z"/>
-                            <path d="M10.197 8.32 16 4.697v7.104z"/>
+                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8z" />
+                            <path d="M0 4.697v7.104l5.803-3.482z" />
+                            <path d="M6.761 8.83 0 12.803V14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.197l-6.761-3.973-1.239.744z" />
+                            <path d="M10.197 8.32 16 4.697v7.104z" />
                         </svg>
                     </a>
 
@@ -502,7 +644,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Registration Modal -->
     <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -513,22 +655,22 @@
                 </div>
                 <div class="modal-body">
                     @if($isRegistered && $authUser)
-                        <form>
-                            <div class="mb-3">
-                                <label class="form-label">Name</label>
-                                <input type="text" class="form-control" value="{{ $authUser->name }}" disabled>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="text" class="form-control" value="{{ $authUser->email }}" disabled>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Registration Code</label>
-                                <input type="text" class="form-control" value="{{ $registration->registration_code ?? 'Pending assignment' }}" disabled>
-                            </div>
-                        </form>
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" value="{{ $authUser->name }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="text" class="form-control" value="{{ $authUser->email }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Registration Code</label>
+                            <input type="text" class="form-control" value="{{ $registration->registration_code ?? 'Pending assignment' }}" disabled>
+                        </div>
+                    </form>
                     @else
-                        <p class="text-muted">You are not registered yet.</p>
+                    <p class="text-muted">You are not registered yet.</p>
                     @endif
                 </div>
             </div>
@@ -540,33 +682,38 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Attendance Form</h5>
-                    <button type="button" class="btn-close"  style="cursor:pointer;" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" style="cursor:pointer;" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     @if($isRegistered && $eventFinished && !$attendanceSubmitted)
-                        <form method="POST" action="{{ route('events.attendance', $event->id) }}">
-                            @csrf
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold attendance-question-label">Apakah Anda hadir pada event ini?</label>
-                                <style>
-                                    .attendance-option-label { color: #000 !important; }
-                                    .attendance-question-label { color: #000 !important; }
-                                </style>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="attended" id="attendedYes" value="yes" required>
-                                    <label class="form-check-label attendance-option-label" for="attendedYes">Hadir</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="attended" id="attendedNo" value="no" required>
-                                    <label class="form-check-label attendance-option-label" for="attendedNo">Tidak Hadir</label>
-                                </div>
+                    <form method="POST" action="{{ route('events.attendance', $event->id) }}">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold attendance-question-label">Apakah Anda hadir pada event ini?</label>
+                            <style>
+                                .attendance-option-label {
+                                    color: #000 !important;
+                                }
+
+                                .attendance-question-label {
+                                    color: #000 !important;
+                                }
+                            </style>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="attended" id="attendedYes" value="yes" required>
+                                <label class="form-check-label attendance-option-label" for="attendedYes">Hadir</label>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Kirim Attendance</button>
-                        </form>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="attended" id="attendedNo" value="no" required>
+                                <label class="form-check-label attendance-option-label" for="attendedNo">Tidak Hadir</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Kirim Attendance</button>
+                    </form>
                     @elseif($attendanceSubmitted)
-                        <p class="text-success">Attendance tersimpan. Terima kasih!</p>
+                    <p class="text-success">Attendance tersimpan. Terima kasih!</p>
                     @else
-                        <p class="text-muted">Form attendance akan dibuka setelah event selesai.</p>
+                    <p class="text-muted">Form attendance akan dibuka setelah event selesai.</p>
                     @endif
                 </div>
             </div>
@@ -581,20 +728,20 @@
                 </div>
                 <div class="modal-body">
                     @if($isRegistered)
-                        @if(!empty($event->maps_url))
-                            <div class="text-center">
-                                <img src="{{ Storage::url($event->maps_url) }}" alt="Map" style="max-width:100%; height:auto; border:1px solid #eee; border-radius:8px;" />
-                            </div>
-                        @elseif(!empty($event->latitude) && !empty($event->longitude))
-                            <iframe width="100%" height="400" style="border:0" loading="lazy" allowfullscreen
-                                referrerpolicy="no-referrer-when-downgrade"
-                                src="https://www.google.com/maps/embed/v1/view?key=YOUR_GOOGLE_MAPS_KEY&center={{ $event->latitude }},{{ $event->longitude }}&zoom=15">
-                            </iframe>
-                        @else
-                            <p class="text-muted">Map not available.</p>
-                        @endif
+                    @if(!empty($event->maps_url))
+                    <div class="text-center">
+                        <img src="{{ Storage::url($event->maps_url) }}" alt="Map" style="max-width:100%; height:auto; border:1px solid #eee; border-radius:8px;" />
+                    </div>
+                    @elseif(!empty($event->latitude) && !empty($event->longitude))
+                    <iframe width="100%" height="400" style="border:0" loading="lazy" allowfullscreen
+                        referrerpolicy="no-referrer-when-downgrade"
+                        src="https://www.google.com/maps/embed/v1/view?key=YOUR_GOOGLE_MAPS_KEY&center={{ $event->latitude }},{{ $event->longitude }}&zoom=15">
+                    </iframe>
                     @else
-                        <p class="text-muted">Register to view the map.</p>
+                    <p class="text-muted">Map not available.</p>
+                    @endif
+                    @else
+                    <p class="text-muted">Register to view the map.</p>
                     @endif
                 </div>
             </div>
@@ -608,7 +755,7 @@
             <div class="resource-card {{ (!empty($event->vbg_path) && $isRegistered) ? '' : 'locked' }}">
                 <div class="img-resource">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-image" viewBox="0 0 16 16">
-                        <path d="M14.002 3H2c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 1v.217l-3.106 3.106a.5.5 0 0 1-.707 0L7.5 5.207l-4.5 4.5V4h11zm-12 8V9.707l3.646-3.647a.5.5 0 0 1 .708 0l2.647 2.646 3.646-3.646a.5.5 0 0 1 .708 0L15 8.293V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/>
+                        <path d="M14.002 3H2c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 1v.217l-3.106 3.106a.5.5 0 0 1-.707 0L7.5 5.207l-4.5 4.5V4h11zm-12 8V9.707l3.646-3.647a.5.5 0 0 1 .708 0l2.647 2.646 3.646-3.646a.5.5 0 0 1 .708 0L15 8.293V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
                     </svg>
                 </div>
                 <div class="resource-value">
@@ -616,16 +763,16 @@
                     <p>@if(!empty($event->vbg_path) && $isRegistered) Download your event background @else Not available @endif</p>
                 </div>
                 @if(!empty($event->vbg_path) && $isRegistered)
-                    <a class="link-share" href="{{ Storage::url($event->vbg_path) }}" download>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
-                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                            <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                        </svg>
-                    </a>
+                <a class="link-share" href="{{ Storage::url($event->vbg_path) }}" download>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
+                        <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
+                    </svg>
+                </a>
                 @else
-                    <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;">
-                        
-                    </span>
+                <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;">
+
+                </span>
                 @endif
             </div>
 
@@ -640,23 +787,23 @@
                     <h6>Attendance Form</h6>
                     <p>
                         @if($isRegistered && $eventFinished && !$hasFeedback)
-                            Please submit your attendance & feedback
+                        Please submit your attendance & feedback
                         @elseif($hasFeedback)
-                            Attendance submitted
+                        Attendance submitted
                         @else
-                            Available after event completion
+                        Available after event completion
                         @endif
                     </p>
                 </div>
                 @if($isRegistered && $eventFinished && !$hasFeedback)
-                    <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#attendanceModal" style="border:none;background:transparent;padding:0;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                        </svg>
-                    </button>
+                <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#attendanceModal" style="border:none;background:transparent;padding:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    </svg>
+                </button>
                 @else
-                    <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                 @endif
             </div>
 
@@ -667,153 +814,153 @@
                         <path d="M4 11.794V16l4-1 4 1v-4.206l-2.018.306L8 13.126 6.018 12.1z" />
                     </svg>
                 </div>
-                
+
                 <div class="resource-value">
                     <h6>Certificate</h6>
                     @php
-                        // Show certificate availability only when user registered and has submitted feedback (post-event)
-                        // $isRegistered and $hasFeedback are computed earlier in the view
+                    // Show certificate availability only when user registered and has submitted feedback (post-event)
+                    // $isRegistered and $hasFeedback are computed earlier in the view
                     @endphp
                     @if(isset($isRegistered) && $isRegistered)
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            @if(!empty($event->certificate_path))
-                                <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
-                            @else
-                                <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
-                            @endif
-                        @else
-                            <p>Available after you submit feedback for this event.</p>
-                        @endif
+                    @if(isset($hasFeedback) && $hasFeedback)
+                    @if(!empty($event->certificate_path))
+                    <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
                     @else
-                        <p>Available after event completion.</p>
+                    <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
+                    @endif
+                    @else
+                    <p>Available after you submit feedback for this event.</p>
+                    @endif
+                    @else
+                    <p>Available after event completion.</p>
                     @endif
                 </div>
                 @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
-                    <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
+                <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
                 @else
-                    <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
+                <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
                 @endif
-            </div>
-          
-        <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
-                @if(isset($event) && $event->type === 'online' && !empty($event->zoom_link))
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z"/>
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Link Zoom</h6>
-                        <p>Available for registered participants</p>
-                    </div>
-                    <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                        </svg>
-                    </a>
-                @else
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
-                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
-                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>{{ (!empty($event->zoom_link) ? 'Link Zoom' : 'Location Map') }}</h6>
-                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
-                    </div>
-                    @php
-                        $mapLink = '';
-                        if(isset($event)){
-                            if(!empty($event->maps_url)){
-                                $maps = trim($event->maps_url);
-                                if (\Illuminate\Support\Str::startsWith($maps, ['http://','https://','//'])) {
-                                    $mapLink = $maps;
-                                } else {
-                                    try { $mapLink = Storage::url($maps); } catch (\Throwable $e) { $mapLink = $maps; }
-                                }
-                            } elseif(!empty($event->latitude) && !empty($event->longitude)) {
-                                $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
-                            }
-                        }
-                    @endphp
-                    @if($isRegistered)
-                        <a class="link-share" href="{{ (!empty($event->zoom_link) ? $event->zoom_link : ($mapLink ?: '#')) }}" target="_blank" rel="noopener">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </a>
-                    @else
-                        
-                    @endif
-                @endif
-            </div>
-        <div class="resource-card">
-            <div class="img-resource">
-               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
-                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
-                </svg>
-            </div>
-            <div class="resource-value" data-bs-toggle="modal" data-bs-target="#feedbackModal">
-                <h6>Feedback and Ratings</h6>
-                <p>Please fill out your feedback for this event</p>
             </div>
 
-            <a class="link-share" href="#" target="_blank">
-                <svg width="18" height="18" fill="currentColor">
-                    <path d="M8.636 3.5a.5.5..." />
-                </svg>
-            </a>
+            <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                @if(isset($event) && $event->type === 'online' && !empty($event->zoom_link))
+                <div class="img-resource">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z" />
+                    </svg>
+                </div>
+                <div class="resource-value">
+                    <h6>Link Zoom</h6>
+                    <p>Available for registered participants</p>
+                </div>
+                <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    </svg>
+                </a>
+                @else
+                <div class="img-resource">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
+                        <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
+                        <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+                    </svg>
+                </div>
+                <div class="resource-value">
+                    <h6>{{ (!empty($event->zoom_link) ? 'Link Zoom' : 'Location Map') }}</h6>
+                    <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                </div>
+                @php
+                $mapLink = '';
+                if(isset($event)){
+                if(!empty($event->maps_url)){
+                $maps = trim($event->maps_url);
+                if (\Illuminate\Support\Str::startsWith($maps, ['http://','https://','//'])) {
+                $mapLink = $maps;
+                } else {
+                try { $mapLink = Storage::url($maps); } catch (\Throwable $e) { $mapLink = $maps; }
+                }
+                } elseif(!empty($event->latitude) && !empty($event->longitude)) {
+                $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
+                }
+                }
+                @endphp
+                @if($isRegistered)
+                <a class="link-share" href="{{ (!empty($event->zoom_link) ? $event->zoom_link : ($mapLink ?: '#')) }}" target="_blank" rel="noopener">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    </svg>
+                </a>
+                @else
+
+                @endif
+                @endif
+            </div>
+            <div class="resource-card">
+                <div class="img-resource">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                    </svg>
+                </div>
+                <div class="resource-value" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                    <h6>Feedback and Ratings</h6>
+                    <p>Please fill out your feedback for this event</p>
+                </div>
+
+                <a class="link-share" href="#" target="_blank">
+                    <svg width="18" height="18" fill="currentColor">
+                        <path d="M8.636 3.5a.5.5..." />
+                    </svg>
+                </a>
             </div>
         </div>
     </div>
     <div class="modal fade" id="feedbackModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
 
-      <div class="modal-header">
-        <h5 class="modal-title">Event Feedback</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Event Feedback</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-      <div class="modal-body">
-        <form action="#" method="POST">
-            @csrf
-             <div class="feedback-group">
-    <p>For Speaker</p>
-    <div class="stars" data-target="speakerRating">
-      ★★★★★
+                <div class="modal-body">
+                    <form action="#" method="POST">
+                        @csrf
+                        <div class="feedback-group">
+                            <p>For Speaker</p>
+                            <div class="stars" data-target="speakerRating">
+                                ★★★★★
+                            </div>
+                        </div>
+
+                        <div class="feedback-group">
+                            <p>For Event</p>
+                            <div class="stars" data-target="eventRating">
+                                ★★★★★
+                            </div>
+                        </div>
+
+                        <div class="feedback-group">
+                            <p>For Committee</p>
+                            <div class="stars" data-target="committeeRating">
+                                ★★★★★
+                            </div>
+                        </div>
+
+                        <h5>Share Your Feedback</h5>
+                        <textarea name="feedback" class="form-control" rows="4" required></textarea>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <div class="feedback-group">
-    <p>For Event</p>
-    <div class="stars" data-target="eventRating">
-      ★★★★★
-    </div>
-  </div>
-
-  <div class="feedback-group">
-    <p>For Committee</p>
-    <div class="stars" data-target="committeeRating">
-      ★★★★★
-    </div>
-  </div>
-
-            <h5>Share Your Feedback</h5>
-            <textarea name="feedback" class="form-control" rows="4" required></textarea>
-        </form>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button class="btn btn-primary">Submit</button>
-      </div>
-    </div>
-  </div>
-</div>
 
     <div class="desc-box">
         <nav>
@@ -823,18 +970,18 @@
                 <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab" data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact" aria-selected="false">Terms & Condition</button>
                 <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
                     @if($hasCertificate && $event->certificate_path)
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </a>
+                    <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                        </svg>
+                    </a>
                     @else
-                        <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="lock-bi bi-lock" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3" />
-                            </svg>
-                        </span>
+                    <span class="link-share" style="opacity:.4; cursor:not-allowed;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="lock-bi bi-lock" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3" />
+                        </svg>
+                    </span>
                     @endif
                 </span>
             </div>
@@ -845,38 +992,38 @@
                 <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab" tabindex="0">
                     <div class="scroll-schedule-box">
                         <div class="schedule-box">
-                        <h6 class="title-schedule">Event Schedule</h6>
-                        @php
+                            <h6 class="title-schedule">Event Schedule</h6>
+                            @php
                             $items = collect();
                             if(isset($event)){
-                                if($event->relationLoaded('scheduleItems')){
-                                    $items = $event->scheduleItems;
-                                } else {
-                                    // prefer DB relation ordered by start if available
-                                    try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
-                                }
-                                if($items->isEmpty() && is_array($event->schedule_json)){
-                                    $items = collect($event->schedule_json)->map(function($row){
-                                        return (object) [
-                                            'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
-                                            'end' => $row['end'] ?? ($row['time_end'] ?? null),
-                                            'title' => $row['title'] ?? ($row['activity'] ?? ''),
-                                            'description' => $row['description'] ?? ($row['desc'] ?? ''),
-                                        ];
-                                    });
-                                }
+                            if($event->relationLoaded('scheduleItems')){
+                            $items = $event->scheduleItems;
+                            } else {
+                            // prefer DB relation ordered by start if available
+                            try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
+                            }
+                            if($items->isEmpty() && is_array($event->schedule_json)){
+                            $items = collect($event->schedule_json)->map(function($row){
+                            return (object) [
+                            'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                            'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                            'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                            'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                            ];
+                            });
+                            }
                             }
                             $formatTime = function($t){
-                                if(empty($t)) return null;
-                                try { return \Carbon\Carbon::parse($t)->format('H.i'); } catch (\Throwable $e) { return is_string($t) ? $t : null; }
+                            if(empty($t)) return null;
+                            try { return \Carbon\Carbon::parse($t)->format('H.i'); } catch (\Throwable $e) { return is_string($t) ? $t : null; }
                             };
-                        @endphp
-                        @forelse($items as $idx => $it)
+                            @endphp
+                            @forelse($items as $idx => $it)
                             @php
-                                $start = $formatTime($it->start ?? null);
-                                $end = $formatTime($it->end ?? null);
-                                $timeStr = trim(($start ?: '') . ($end ? ' - '.$end : ''));
-                                if($timeStr) $timeStr .= ' WIB';
+                            $start = $formatTime($it->start ?? null);
+                            $end = $formatTime($it->end ?? null);
+                            $timeStr = trim(($start ?: '') . ($end ? ' - '.$end : ''));
+                            if($timeStr) $timeStr .= ' WIB';
                             @endphp
                             <div class="schedule-item-box">
                                 <div class="schedule-line"></div>
@@ -887,9 +1034,9 @@
                                 </div>
                             </div>
                             <br>
-                        @empty
+                            @empty
                             <p class="text-muted" style="margin-left:30px;">Schedule will be announced.</p>
-                        @endforelse
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -900,27 +1047,27 @@
                     </div>
                 </div>
             </div>
-        </div>
-    
+    </div>
+
     <script>
-  document.querySelectorAll(".stars").forEach(starContainer => {
-    const target = starContainer.getAttribute("data-target");
+        document.querySelectorAll(".stars").forEach(starContainer => {
+            const target = starContainer.getAttribute("data-target");
 
-    starContainer.innerHTML = "";
-    for (let i = 1; i <= 5; i++) {
-      const span = document.createElement("span");
-      span.textContent = "★";
-      span.dataset.value = i;
+            starContainer.innerHTML = "";
+            for (let i = 1; i <= 5; i++) {
+                const span = document.createElement("span");
+                span.textContent = "★";
+                span.dataset.value = i;
 
-      span.addEventListener("click", () => {
-        starContainer.querySelectorAll("span").forEach(s => {
-          s.classList.toggle("selected", s.dataset.value <= i);
+                span.addEventListener("click", () => {
+                    starContainer.querySelectorAll("span").forEach(s => {
+                        s.classList.toggle("selected", s.dataset.value <= i);
+                    });
+                });
+
+                starContainer.appendChild(span);
+            }
         });
-      });
-
-      starContainer.appendChild(span);
-    }
-  });
 
         document.addEventListener('DOMContentLoaded', () => {
             // --- Feedback dynamic submit ---
@@ -1008,6 +1155,7 @@
 
             const modalEl = document.getElementById('feedback-confirm-modal');
             let feedbackConfirmModal = null;
+
             function ensureModalInitialized() {
                 if (feedbackConfirmModal) return;
                 if (modalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
@@ -1017,7 +1165,9 @@
                     const modalCheckbox = modalEl.querySelector('#confirm-eval');
                     if (modalBtn) modalBtn.disabled = !(modalCheckbox && modalCheckbox.checked);
                     if (modalCheckbox && modalBtn) {
-                        modalCheckbox.addEventListener('change', function() { modalBtn.disabled = !this.checked; });
+                        modalCheckbox.addEventListener('change', function() {
+                            modalBtn.disabled = !this.checked;
+                        });
                     }
                 }
             }
@@ -1066,7 +1216,9 @@
                         return;
                     }
                     // close modal
-                    try { feedbackConfirmModal.hide(); } catch (e) {}
+                    try {
+                        feedbackConfirmModal.hide();
+                    } catch (e) {}
                     performFeedbackSubmit(true);
                 });
             }
@@ -1076,57 +1228,57 @@
                 submitBtn.disabled = true;
                 submitBtn.innerText = 'Saving...';
                 fetch('/feedback/store', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        event_id: @json($event->id),
-                        rating: eventRating,
-                        speaker_rating: speakerRating,
-                        comment: text,
-                        agreed_guidelines: !!agreed
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            event_id: @json($event -> id),
+                            rating: eventRating,
+                            speaker_rating: speakerRating,
+                            comment: text,
+                            agreed_guidelines: !!agreed
+                        })
                     })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = 'Submit Feedback';
-                    if (data.success) {
-                        // After submit, show the "no feedback" placeholder again (user wants moderation flow)
-                        const scrollBox = document.querySelector('.scroll-review-box');
-                        if (scrollBox) {
-                            // Move or restore the placeholder node
-                            const noFeedbackPlaceholder = document.getElementById('no-feedback-placeholder');
-                            // Clear any rendered feedback items
-                            scrollBox.innerHTML = '';
-                            if (noFeedbackPlaceholder) {
-                                noFeedbackPlaceholder.style.display = 'flex';
-                                scrollBox.appendChild(noFeedbackPlaceholder);
-                            } else {
-                                // Fallback: insert the text placeholder
-                                const ph = document.createElement('div');
-                                ph.id = 'no-feedback-placeholder';
-                                ph.style = 'color:#888; font-size:15px; padding:16px 8px; display:flex; align-items:center; justify-content:center; min-height:120px; width:100%;';
-                                ph.innerHTML = '<span>Belum ada feedback di event ini.</span><b style="margin-left:8px;">Jadilah yang pertama</b>';
-                                scrollBox.appendChild(ph);
+                    .then(res => res.json())
+                    .then(data => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = 'Submit Feedback';
+                        if (data.success) {
+                            // After submit, show the "no feedback" placeholder again (user wants moderation flow)
+                            const scrollBox = document.querySelector('.scroll-review-box');
+                            if (scrollBox) {
+                                // Move or restore the placeholder node
+                                const noFeedbackPlaceholder = document.getElementById('no-feedback-placeholder');
+                                // Clear any rendered feedback items
+                                scrollBox.innerHTML = '';
+                                if (noFeedbackPlaceholder) {
+                                    noFeedbackPlaceholder.style.display = 'flex';
+                                    scrollBox.appendChild(noFeedbackPlaceholder);
+                                } else {
+                                    // Fallback: insert the text placeholder
+                                    const ph = document.createElement('div');
+                                    ph.id = 'no-feedback-placeholder';
+                                    ph.style = 'color:#888; font-size:15px; padding:16px 8px; display:flex; align-items:center; justify-content:center; min-height:120px; width:100%;';
+                                    ph.innerHTML = '<span>Belum ada feedback di event ini.</span><b style="margin-left:8px;">Jadilah yang pertama</b>';
+                                    scrollBox.appendChild(ph);
+                                }
                             }
+                            feedbackText.value = '';
+                            eventRating = 0;
+                            speakerRating = 0;
+                            eventStars.forEach(s => s.classList.remove('active'));
+                            speakerStars.forEach(s => s.classList.remove('active'));
+                        } else {
+                            alert(data.message || 'Gagal menyimpan feedback.');
                         }
-                        feedbackText.value = '';
-                        eventRating = 0;
-                        speakerRating = 0;
-                        eventStars.forEach(s => s.classList.remove('active'));
-                        speakerStars.forEach(s => s.classList.remove('active'));
-                    } else {
-                        alert(data.message || 'Gagal menyimpan feedback.');
-                    }
-                })
-                .catch(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = 'Submit Feedback';
-                    alert('Gagal menyimpan feedback.');
-                });
+                    })
+                    .catch(() => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = 'Submit Feedback';
+                        alert('Gagal menyimpan feedback.');
+                    });
             }
         });
         // NOTE: Removed duplicate generic rating handlers.
@@ -1136,12 +1288,13 @@
     </script>
     <!-- Ensure Bootstrap JS is available for modals (lazy-load if missing) -->
     <script>
-        (function(){
+        (function() {
             try {
                 if (!window.bootstrap || typeof window.bootstrap.Modal !== 'function') {
                     var s = document.createElement('script');
                     s.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
-                    s.defer = true; s.crossOrigin = 'anonymous';
+                    s.defer = true;
+                    s.crossOrigin = 'anonymous';
                     document.body.appendChild(s);
                 }
             } catch (_e) {}
