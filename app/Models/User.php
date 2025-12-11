@@ -54,6 +54,11 @@ class User extends Authenticatable
         return $this->hasMany(EventRegistration::class);
     }
 
+    public function savedEvents()
+    {
+        return $this->belongsToMany(Event::class, 'user_saved_events', 'user_id', 'event_id')->withTimestamps();
+    }
+
     /**
      * Accessor unified URL avatar (gunakan jika di view: Auth::user()->avatar_url)
      */
