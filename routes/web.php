@@ -93,6 +93,24 @@ Route::middleware('auth')->group(function(){
     // Certificate (event) - show & download (H+4 logic inside controller)
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');
+
+    // User profile simple view
+    Route::get('/profile', function(){
+        return view('profile.index');
+    })->name('profile.index');
+
+    // Save/unsave event
+    Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
+        $user = $request->user();
+        if(!$user){ return response()->json(['success'=>false,'message'=>'Unauthorized'], 401); }
+        $exists = \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->exists();
+        if($exists){
+            \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->delete();
+            return response()->json(['success'=>true,'saved'=>false]);
+        }
+        \DB::table('user_saved_events')->insert(['user_id'=>$user->id,'event_id'=>$event->id,'created_at'=>now(),'updated_at'=>now()]);
+        return response()->json(['success'=>true,'saved'=>true]);
+    })->name('events.save');
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
 
@@ -103,6 +121,9 @@ Route::middleware(['guest'])->group(function () {
 
     Route::get('/sign-up', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/sign-up', [AuthController::class, 'register'])->name('register.post');
+
+    // Resend OTP for registration verification
+    Route::post('/register/resend-otp', [AuthController::class, 'resendRegisterOtp'])->name('register.otp.resend');
 
     // Social auth (Google)
     Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');

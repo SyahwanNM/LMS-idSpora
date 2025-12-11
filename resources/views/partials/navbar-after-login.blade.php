@@ -68,6 +68,8 @@
                             onclick="toggleUserDropdown()">
                         <img src="{{ Auth::user()->avatar_url }}"
                             alt="Avatar" class="rounded-circle me-2"
+                            referrerpolicy="no-referrer"
+                            onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';"
                             style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
                         <span class="text-white">{{ Auth::user()->name }}</span>
                         <svg class="ms-2" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
@@ -76,7 +78,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" id="userDropdownMenu" aria-labelledby="userDropdown" style="display: none;">
                         <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.index') }}">Profile</a></li>
                         <li><a class="dropdown-item" href="#">Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                                                 <li>

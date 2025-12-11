@@ -107,8 +107,21 @@
             }
             /* Small upward nudge for locked feedback messages (kept for non-overlay fallback) */
             .feedback-locked-msg { margin-top: -8px; }
-            /* Hide lock padlock icons site-local in this view */
-            svg[class*="bi-lock"], svg.lock-bi, .lock-icon { display: none !important; }
+            /* Show a lock icon when a resource is locked */
+            .resource-card .img-resource { position: relative; }
+            .resource-card.locked .img-resource::after {
+                content: '';
+                position: absolute;
+                right: -6px;
+                bottom: -6px;
+                width: 18px;
+                height: 18px;
+                opacity: .8;
+                filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
+                background-repeat: no-repeat;
+                background-size: 18px 18px;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' class='bi bi-lock' viewBox='0 0 16 16'><path d='M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m0 4a1 1 0 0 1 1 1v2H7V6a1 1 0 0 1 1-1'/></svg>");
+            }
             /* Align Book Seat and Save buttons: same width and style */
             /* Vertical button stack: Book Seat above, Save below */
             .booksave-row { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
@@ -440,7 +453,7 @@
                 @else
                     <button class="bookseat" disabled>Seat Booked</button>
                 @endif
-                <button class="save">Save</button>
+                <button class="save" id="saveEventBtn" data-event-id="{{ $event->id }}">Save</button>
                 </div>
                 <hr>
                 <div class="include-box">
@@ -754,7 +767,7 @@
                         @endif
                     @endif
                 </div>
-            <div class="resource-card">
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}">
                 <div class="img-resource">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
                         <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
@@ -765,12 +778,16 @@
                     <p>Please fill out your feedback for this event</p>
                 </div>
 
-                <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#feedbackModal" title="Open" style="border: none; background: transparent; padding: 0; margin: 0;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                    </svg>
-                </button>
+                @if($isRegistered && $attendanceSubmitted)
+                    <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#feedbackModal" title="Open" style="border: none; background: transparent; padding: 0; margin: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                        </svg>
+                    </button>
+                @else
+                    <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
+                @endif
                 </div>
             </div>
         </div>
@@ -1136,6 +1153,30 @@
                         document.body.appendChild(s);
                     }
                 } catch (_e) {}
+            })();
+        </script>
+        <script>
+            // Save/Unsave event handler
+            (function(){
+                const btn = document.getElementById('saveEventBtn');
+                if(!btn) return;
+                btn.addEventListener('click', function(){
+                    const id = this.dataset.eventId;
+                    this.disabled = true;
+                    const original = this.textContent;
+                    this.textContent = 'Saving...';
+                    fetch('{{ route('events.save', $event) }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With':'XMLHttpRequest' }
+                    })
+                    .then(r=>r.json())
+                    .then(({success, saved})=>{
+                        if(success){ this.textContent = saved ? 'Saved' : 'Save'; }
+                        else { this.textContent = original; }
+                    })
+                    .catch(()=>{ this.textContent = original; })
+                    .finally(()=>{ this.disabled = false; });
+                });
             })();
         </script>
     </body>

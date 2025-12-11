@@ -1,4 +1,4 @@
-@include('partials.navbar-before-login')
+@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,17 +44,70 @@
 <body>
     <section>
         <div class="biodata">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtMBIDmu_hrilaIEg7wH9_nbdS4JnjhI8Vpw&s" alt="">
-            <h4>Zayn Malik</h4>
+            <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
+                 referrerpolicy="no-referrer"
+                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';">
+            <h4>{{ Auth::user()->name }}</h4>
+            <h6>{{ Auth::user()->email }}</h6>
 
-            <button>
-                
-            </button>
-            <h6>zaynmalik@gmail.com</h6>
-            <h2>Biodata</h2>
-            <p>Name: </p>
-            <p>Email: </p>
-            <p>Role: </p>
+            <h2 class="mt-3">Biodata</h2>
+            <p>Name: {{ Auth::user()->name }}</p>
+            <p>Email: {{ Auth::user()->email }}</p>
+            <p>Role: {{ Auth::user()->role ?? 'user' }}</p>
+
+            <hr>
+            <h2 class="mt-3">Event Yang Didaftarkan</h2>
+            @php($regs = Auth::user()->eventRegistrations()->with('event')->latest()->get())
+            @if($regs->isEmpty())
+                <p class="text-muted">Belum ada event yang didaftarkan.</p>
+            @else
+                <ul style="list-style:none; padding-left:0;">
+                    @foreach($regs as $reg)
+                        <li style="margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <div>
+                                    <strong>{{ $reg->event?->title ?? 'Event' }}</strong>
+                                    <div class="text-muted" style="font-size:12px;">
+                                        {{ optional($reg->event)->date_start ? optional($reg->event)->date_start->format('d M Y') : '' }}
+                                        @if(optional($reg->event)->location)
+                                            • {{ $reg->event->location }}
+                                        @endif
+                                    </div>
+                                </div>
+                                @if($reg->event)
+                                    <a href="{{ route('events.show', $reg->event) }}" class="btn btn-sm btn-primary">Lihat Detail</a>
+                                @endif
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+
+            <hr>
+            <h2 class="mt-3">Event Tersimpan</h2>
+            @php($saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get())
+            @if($saved->isEmpty())
+                <p class="text-muted">Belum ada event yang disimpan.</p>
+            @else
+                <ul style="list-style:none; padding-left:0;">
+                    @foreach($saved as $ev)
+                        <li style="margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between;">
+                                <div>
+                                    <strong>{{ $ev->title ?? 'Event' }}</strong>
+                                    <div class="text-muted" style="font-size:12px;">
+                                        {{ $ev->event_date ? \Carbon\Carbon::parse($ev->event_date)->format('d M Y') : '' }}
+                                        @if($ev->location)
+                                            • {{ $ev->location }}
+                                        @endif
+                                    </div>
+                                </div>
+                                <a href="{{ route('events.show', $ev) }}" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </div>
     </section>
 </body>
