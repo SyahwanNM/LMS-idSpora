@@ -116,12 +116,22 @@
                 </div>
                 <div class="form-group">
                     <h6 class="label">Kata Sandi</h6>
-                    <input type="password" autocomplete="new-password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+                    <div class="input-group">
+                        <input type="password" autocomplete="new-password" name="password" id="passwordInput" class="form-control @error('password') is-invalid @enderror" required aria-describedby="passwordHelp">
+                        <button class="btn btn-outline-light" type="button" id="togglePassword" style="border-radius: 12px;">Show</button>
+                    </div>
+                    <small id="passwordHelp" class="text-warning d-block mt-2">
+                        Minimal 8 karakter, mengandung huruf besar, angka, dan simbol.
+                    </small>
+                    <div id="passwordErrors" class="invalid-feedback" style="display:none;"></div>
                     @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="form-group" style="margin-bottom:26px;">
                     <h6 class="label">Konfirmasi Kata Sandi</h6>
-                    <input type="password" autocomplete="new-password" name="password_confirmation" class="form-control" required>
+                    <div class="input-group">
+                        <input type="password" autocomplete="new-password" name="password_confirmation" id="passwordConfirmInput" class="form-control" required>
+                        <button class="btn btn-outline-light" type="button" id="togglePasswordConfirm" style="border-radius: 12px;">Show</button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-register">Daftar</button>
@@ -210,6 +220,51 @@ function applyCroppedAvatar(){
         const bsModal = bootstrap.Modal.getInstance(modalEl); bsModal.hide();
     }, 'image/png', 0.92);
 }
+</script>
+
+<script>
+// Password show/hide toggles
+(() => {
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordConfirmInput = document.getElementById('passwordConfirmInput');
+    const togglePassword = document.getElementById('togglePassword');
+    const togglePasswordConfirm = document.getElementById('togglePasswordConfirm');
+    function toggleType(input, btn){
+        if(!input || !btn) return;
+        const isPwd = input.getAttribute('type') === 'password';
+        input.setAttribute('type', isPwd ? 'text' : 'password');
+        btn.textContent = isPwd ? 'Hide' : 'Show';
+    }
+    togglePassword?.addEventListener('click', () => toggleType(passwordInput, togglePassword));
+    togglePasswordConfirm?.addEventListener('click', () => toggleType(passwordConfirmInput, togglePasswordConfirm));
+})();
+
+// Client-side password policy validation
+(() => {
+    const input = document.getElementById('passwordInput');
+    const errorsBox = document.getElementById('passwordErrors');
+    if(!input || !errorsBox) return;
+    const rules = [
+        { test: v => v.length >= 8, msg: 'Minimal 8 karakter' },
+        { test: v => /[A-Z]/.test(v), msg: 'Mengandung huruf besar (A-Z)' },
+        { test: v => /[0-9]/.test(v), msg: 'Mengandung angka (0-9)' },
+        { test: v => /[^A-Za-z0-9]/.test(v), msg: 'Mengandung tanda baca/simbol' },
+    ];
+    function validate(){
+        const val = input.value || '';
+        const fails = rules.filter(r => !r.test(val)).map(r => r.msg);
+        if(fails.length){
+            errorsBox.style.display = '';
+            errorsBox.innerHTML = 'Syarat kata sandi: ' + fails.join(', ') + '.';
+            input.classList.add('is-invalid');
+        } else {
+            errorsBox.style.display = 'none';
+            errorsBox.innerHTML = '';
+            input.classList.remove('is-invalid');
+        }
+    }
+    input.addEventListener('input', validate);
+})();
 </script>
 
 </html>
