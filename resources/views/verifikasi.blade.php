@@ -150,9 +150,12 @@
             </form>
             
             <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
-                <form action="{{ route('register.otp.resend') }}" method="post" style="display:inline;">
+                <form id="resendForm" action="{{ route('register.otp.resend') }}" method="post" style="display:inline;">
                     @csrf
-                    <button type="submit" class="btn btn-link p-0" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kirim Ulang Kode</button>
+                    <button id="resendBtn" type="submit" class="btn btn-link p-0" style="color: #f4a442; font-weight: bold; text-decoration: none;">
+                        Kirim Ulang Kode
+                    </button>
+                    <!-- Hitung mundur dihapus sesuai permintaan -->
                 </form>
             </div>
 

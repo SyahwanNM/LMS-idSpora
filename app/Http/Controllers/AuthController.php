@@ -126,7 +126,7 @@ class AuthController extends Controller
                 'expires_at' => Carbon::now()->addMinutes(15),
                 'is_used' => false,
             ]);
-            Mail::to($request->email)->send(new PasswordResetMail($verificationCode, $request->name));
+            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, 15));
         } catch (\Throwable $e) {
             \Log::error('Send registration verification failed: ' . $e->getMessage());
         }
@@ -219,6 +219,15 @@ class AuthController extends Controller
 
     public function resendRegisterOtp(Request $request)
     {
+        // Cooldown 60 detik untuk kirim ulang
+        $last = $request->session()->get('register_otp_last_resend_at');
+        if ($last) {
+            $diff = now()->diffInSeconds($last);
+            if ($diff < 60) {
+                $remaining = 60 - $diff;
+                return back()->withErrors(['error' => "Tunggu $remaining detik untuk kirim ulang kode."]);
+            }
+        }
         $email = $request->session()->get('register_verify_email');
         if (!$email) {
             return redirect()->route('register')->withErrors(['email' => 'Sesi verifikasi tidak ditemukan. Silakan daftar ulang.']);
@@ -235,7 +244,9 @@ class AuthController extends Controller
                 'is_used' => false,
             ]);
             $name = ($request->session()->get('register_payload')['name'] ?? 'Pengguna');
-            Mail::to($email)->send(new PasswordResetMail($code, $name));
+            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, 15));
+            // Set cooldown start
+            $request->session()->put('register_otp_last_resend_at', now());
             return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
         } catch (\Throwable $e) {
             \Log::error('Resend registration verification failed: '.$e->getMessage());
@@ -308,13 +319,17 @@ class AuthController extends Controller
         // Mark token as used
         $resetToken->update(['is_used' => true]);
 
+        // Simpan token ke sesi non-flash agar tidak hilang
+        $request->session()->put('token', $resetToken->token);
+
         return redirect()->route('new-password')
-            ->with('success', 'Kode verifikasi berhasil')
-            ->with('token', $resetToken->token);
+            ->with('success', 'Kode verifikasi berhasil');
     }
 
-    public function showNewPassword()
+    public function showNewPassword(Request $request)
     {
+        // Pastikan token tetap ada di sesi (jika datang via flash/redirect)
+        try { $request->session()->keep('token'); } catch (\Throwable $e) {}
         return view('new-password');
     }
 
