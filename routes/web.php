@@ -98,6 +98,25 @@ Route::middleware('auth')->group(function(){
     // Certificate (event) - show & download (H+4 logic inside controller)
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');
+
+    // User profile
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+
+    // Save/unsave event
+    Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
+        $user = $request->user();
+        if(!$user){ return response()->json(['success'=>false,'message'=>'Unauthorized'], 401); }
+        $exists = \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->exists();
+        if($exists){
+            \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->delete();
+            return response()->json(['success'=>true,'saved'=>false]);
+        }
+        \DB::table('user_saved_events')->insert(['user_id'=>$user->id,'event_id'=>$event->id,'created_at'=>now(),'updated_at'=>now()]);
+        return response()->json(['success'=>true,'saved'=>true]);
+    })->name('events.save');
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
 
@@ -108,6 +127,9 @@ Route::middleware(['guest'])->group(function () {
 
     Route::get('/sign-up', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/sign-up', [AuthController::class, 'register'])->name('register.post');
+
+    // Resend OTP for registration verification
+    Route::post('/register/resend-otp', [AuthController::class, 'resendRegisterOtp'])->name('register.otp.resend');
 
     // Social auth (Google)
     Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
@@ -230,5 +252,10 @@ Route::get('/course-quiz-start', function () {
                 'destroy' => 'admin.events.destroy',
             ]
         ]);
+        // Certificate management
+        Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates.index');
+        Route::get('/admin/certificates/{event}/edit', [\App\Http\Controllers\CertificateController::class, 'edit'])->name('admin.certificates.edit');
+        Route::put('/admin/certificates/{event}', [\App\Http\Controllers\CertificateController::class, 'update'])->name('admin.certificates.update');
+        Route::get('/admin/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CertificateController::class, 'generateMassal'])->name('admin.certificates.generate-massal');
     });
 });

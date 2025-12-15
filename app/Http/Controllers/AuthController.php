@@ -71,7 +71,12 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => [
+                'required','string','min:8','confirmed',
+                'regex:/[A-Z]/',        // at least one uppercase letter
+                'regex:/[0-9]/',        // at least one digit
+                'regex:/[^A-Za-z0-9]/', // at least one symbol
+            ],
             'avatar' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'name.required' => 'Nama lengkap harus diisi',
@@ -79,8 +84,9 @@ class AuthController extends Controller
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
             'password.required' => 'Kata sandi harus diisi',
-            'password.min' => 'Kata sandi minimal 6 karakter',
+            'password.min' => 'Kata sandi minimal 8 karakter',
             'password.confirmed' => 'Konfirmasi kata sandi tidak cocok',
+            'password.regex' => 'Kata sandi harus mengandung huruf besar, angka, dan tanda baca',
             'avatar.image' => 'File avatar harus berupa gambar',
             'avatar.mimes' => 'Format avatar harus jpg, jpeg, png, atau webp',
             'avatar.max' => 'Ukuran avatar maks 2MB',
@@ -91,27 +97,43 @@ class AuthController extends Controller
                 ->withErrors($validator)
                 ->withInput($request->except('password', 'password_confirmation'));
         }
-
+        // Simpan avatar (jika ada) namun JANGAN buat user sebelum verifikasi
         $avatarFileName = null;
         if ($request->hasFile('avatar')) {
-            // Simpan di disk public (storage/app/public/avatars) dengan folder "avatars"
-            $storedPath = $request->file('avatar')->store('avatars', 'public'); // hasil: avatars/namafile.ext
-            // Simpan hanya nama file (atau bisa simpan full path; accessor kita mendukung kasus tanpa slash)
+            $storedPath = $request->file('avatar')->store('avatars', 'public');
             $avatarFileName = basename($storedPath);
         }
 
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'user',
-            'avatar' => $avatarFileName,
+        // Simpan payload pendaftaran di sesi
+        session([
+            'register_payload' => [
+                'name' => $request->name,
+                'email' => $request->email,
+                'password_hash' => Hash::make($request->password),
+                'avatar' => $avatarFileName,
+            ],
         ]);
 
-        // Jangan auto-login. Minta user login manual agar konsisten dengan requirement.
-        return redirect()->route('login')
-            ->with('success', 'Registrasi berhasil! Silakan login menggunakan email & kata sandi yang baru dibuat.')
-            ->withInput(['email' => $request->email]);
+        // Kirim kode verifikasi menggunakan PasswordResetToken + PasswordResetMail
+        try {
+            $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $token = Str::random(64);
+            PasswordResetToken::where('email', $request->email)->delete();
+            PasswordResetToken::create([
+                'email' => $request->email,
+                'token' => $token,
+                'verification_code' => $verificationCode,
+                'expires_at' => Carbon::now()->addMinutes(15),
+                'is_used' => false,
+            ]);
+            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, 15));
+        } catch (\Throwable $e) {
+            \Log::error('Send registration verification failed: ' . $e->getMessage());
+        }
+
+        return redirect()->route('verifikasi')
+            ->with('success', 'Registrasi berhasil! Kode verifikasi telah dikirim ke email Anda.')
+            ->with('register_verify_email', $request->email);
     }
 
     public function logout(Request $request)
@@ -188,9 +210,48 @@ class AuthController extends Controller
         }
     }
 
-    public function showVerification()
+    public function showVerification(Request $request)
     {
+        // Pastikan flash data email pendaftaran tetap tersedia untuk request berikutnya (verify/resend)
+        try { $request->session()->keep('register_verify_email'); } catch (\Throwable $e) {}
         return view('verifikasi');
+    }
+
+    public function resendRegisterOtp(Request $request)
+    {
+        // Cooldown 60 detik untuk kirim ulang
+        $last = $request->session()->get('register_otp_last_resend_at');
+        if ($last) {
+            $diff = now()->diffInSeconds($last);
+            if ($diff < 60) {
+                $remaining = 60 - $diff;
+                return back()->withErrors(['error' => "Tunggu $remaining detik untuk kirim ulang kode."]);
+            }
+        }
+        $email = $request->session()->get('register_verify_email');
+        if (!$email) {
+            return redirect()->route('register')->withErrors(['email' => 'Sesi verifikasi tidak ditemukan. Silakan daftar ulang.']);
+        }
+        try {
+            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $token = Str::random(64);
+            PasswordResetToken::where('email', $email)->delete();
+            PasswordResetToken::create([
+                'email' => $email,
+                'token' => $token,
+                'verification_code' => $code,
+                'expires_at' => Carbon::now()->addMinutes(15),
+                'is_used' => false,
+            ]);
+            $name = ($request->session()->get('register_payload')['name'] ?? 'Pengguna');
+            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, 15));
+            // Set cooldown start
+            $request->session()->put('register_otp_last_resend_at', now());
+            return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
+        } catch (\Throwable $e) {
+            \Log::error('Resend registration verification failed: '.$e->getMessage());
+            return back()->withErrors(['error' => 'Gagal mengirim ulang kode verifikasi.']);
+        }
     }
 
     public function verifyCode(Request $request)
@@ -208,6 +269,44 @@ class AuthController extends Controller
                 ->withInput($request->only('verification_code'));
         }
 
+        // Jika berasal dari alur pendaftaran, verifikasi via PasswordResetToken lalu buat user
+        $registerEmail = $request->input('register_email') ?: $request->session()->get('register_verify_email');
+        if ($registerEmail) {
+            $resetToken = PasswordResetToken::where('email', $registerEmail)
+                ->where('verification_code', $request->verification_code)
+                ->where('is_used', false)
+                ->first();
+            if (!$resetToken || $resetToken->isExpired()) {
+                return redirect()->back()->withErrors(['verification_code' => 'Kode verifikasi tidak valid atau sudah kadaluarsa']);
+            }
+            $payload = $request->session()->get('register_payload');
+            if (!$payload || ($payload['email'] ?? null) !== $registerEmail) {
+                return redirect()->route('register')->withErrors(['email' => 'Sesi pendaftaran tidak ditemukan. Silakan daftar ulang.']);
+            }
+            $user = User::where('email', $registerEmail)->first();
+            if (!$user) {
+                $user = User::create([
+                    'name' => $payload['name'],
+                    'email' => $payload['email'],
+                    'password' => $payload['password_hash'],
+                    'role' => 'user',
+                    'avatar' => $payload['avatar'] ?? null,
+                    'email_verified_at' => now(),
+                ]);
+            } else {
+                if (is_null($user->email_verified_at)) {
+                    $user->email_verified_at = now();
+                    $user->save();
+                }
+            }
+            $resetToken->update(['is_used' => true]);
+            $request->session()->forget(['register_verify_email','register_payload']);
+            return redirect()->route('login')
+                ->with('success', 'Email berhasil diverifikasi! Silakan login.')
+                ->withInput(['email' => $user->email]);
+        }
+
+        // Default: verifikasi reset password via PasswordResetToken
         $resetToken = PasswordResetToken::where('verification_code', $request->verification_code)
             ->where('is_used', false)
             ->first();
@@ -220,25 +319,35 @@ class AuthController extends Controller
         // Mark token as used
         $resetToken->update(['is_used' => true]);
 
+        // Simpan token ke sesi non-flash agar tidak hilang
+        $request->session()->put('token', $resetToken->token);
+
         return redirect()->route('new-password')
-            ->with('success', 'Kode verifikasi berhasil')
-            ->with('token', $resetToken->token);
+            ->with('success', 'Kode verifikasi berhasil');
     }
 
-    public function showNewPassword()
+    public function showNewPassword(Request $request)
     {
+        // Pastikan token tetap ada di sesi (jika datang via flash/redirect)
+        try { $request->session()->keep('token'); } catch (\Throwable $e) {}
         return view('new-password');
     }
 
     public function resetPassword(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'password' => 'required|string|min:6|confirmed',
+            'password' => [
+                'required','string','min:8','confirmed',
+                'regex:/[A-Z]/',        // at least one uppercase letter
+                'regex:/[0-9]/',        // at least one digit
+                'regex:/[^A-Za-z0-9]/', // at least one symbol
+            ],
             'token' => 'required|string',
         ], [
             'password.required' => 'Password harus diisi',
-            'password.min' => 'Password minimal 6 karakter',
+            'password.min' => 'Password minimal 8 karakter',
             'password.confirmed' => 'Konfirmasi password tidak cocok',
+            'password.regex' => 'Password harus mengandung huruf besar, angka, dan tanda baca',
         ]);
 
         if ($validator->fails()) {
@@ -309,6 +418,12 @@ class AuthController extends Controller
             return back()->withErrors(['code' => 'Kode OTP tidak valid atau sudah kadaluarsa']);
         }
         $otp->update(['is_used' => true]);
+        // Mark email as verified on first successful OTP (for Google-first-login scenario)
+        $userToVerify = \App\Models\User::find($userId);
+        if ($userToVerify && is_null($userToVerify->email_verified_at)) {
+            $userToVerify->email_verified_at = now();
+            $userToVerify->save();
+        }
         // Login user
         Auth::loginUsingId($userId, true);
         // Catat aktivitas login
