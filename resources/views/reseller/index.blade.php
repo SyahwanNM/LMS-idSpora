@@ -17,7 +17,7 @@
 
 <body>
     <div class="hero-box" aria-hidden="true"></div>
-    <main class="container-xxl pt-5 mt-5">
+    <main class="container-xxl pt-5 mt-4">
         <!-- Navbar -->
         {{-- <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4 rounded-4 p-2 mt-3 navbar-bg">
             <div class="container-fluid">
@@ -58,8 +58,8 @@
             <div class="card mb-4 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-bullseye icon-lg"></i>
-                        <div class="ms-5">
+                        <i class="bi bi-bullseye fs-1 text-warning"></i>
+                        <div class="ms-2">
                             <h5 class="card-title mb-0">Target Komisi Bulan Ini</h5>
                             <p class="card-text">Kamu sudah mencapai 80% dari target!</p>
                         </div>
@@ -81,8 +81,8 @@
 
             <!-- Cards Section -->
             <div class="row row-cols-1 row-cols-md-4 mb-4">
-                <div class="col mb-4">
-                    <div class="card h-100">
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary mb-1">Total Referrals</h6>
@@ -101,8 +101,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="col mb-4">
-                    <div class="card h-100">
+                
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Pending Earnings</h6>
@@ -117,8 +118,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col mb-4">
-                    <div class="card h-100">
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Total Earnings</h6>
@@ -132,8 +133,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col mb-4">
-                    <div class="card h-100">
+                <div class="col">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Conversion Rate</h6>
@@ -152,47 +153,47 @@
 
 
             <!-- Referral Tools Section -->
-            <div class="card mb-4">
+            <div class="card mb-4 border-0 shadow-sm rounded-4">
                 <div class="card-body mt-3 mb-2">
                     <h5 class="card-title mb-0">Referrals Tools</h5>
-                    <div class="row row-cols-1 row-cols-md-3 g-4 mt-1">
-                        <div class="col-lg-4">
-                            <label for="referralCode"
-                                class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2">Referral
-                                Code</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="referralCode" value="616ja03095" readonly>
-                                <button class="btn btn-warning" type="button" title="Copy code">
-                                    <i class="bi bi-clipboard"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <label for="referralLink"
-                                class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2">Referral
-                                Link</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="referralLink"
-                                    value="https://idspora.com/course/?ref=616ja03095" readonly>
-                                <button class="btn btn-warning" type="button" title="Copy link">
-                                    <i class="bi bi-link-45deg"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <label for="referralCaption"
-                                class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2">Copy
-                                Caption for
-                                Broadcast</label>
-                            <div class="input-group">
-                                <textarea class="form-control" id="referralCaption" rows="2"
-                                    readonly>Join IdSpora and unlock exclusive events! Use my referral link to get started: https://idspora...</textarea>
-                                <button class="btn btn-warning" type="button" title="Copy caption">
-                                    <i class="bi bi-clipboard"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="row g-4 mt-1 align-items-end">
+    <div class="col-lg-4">
+        <label for="referralCode" class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
+            Referral Code
+        </label>
+        <div class="input-group">
+            <input type="text" class="form-control bg-light" id="referralCode" value="616ja03095" readonly>
+            <button class="btn btn-warning text-white" type="button" onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
+                <i class="bi bi-clipboard"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <label for="referralLink" class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
+            Referral Link
+        </label>
+        <div class="input-group">
+            <input type="text" class="form-control bg-light" id="referralLink" value="https://idspora.com/course/?ref=616ja03095" readonly>
+            <button class="btn btn-warning text-white" type="button" onclick="copyToClipboard(this, 'referralLink')" title="Copy link">
+                <i class="bi bi-clipboard"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <label for="referralCaption" class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
+            Broadcast Caption
+        </label>
+        <div class="input-group">
+            <input type="text" class="form-control bg-light text-truncate" id="referralCaption" 
+                   value="Join IdSpora and unlock exclusive events! Use my referral link to get started: https://idspora..." readonly>
+            <button class="btn btn-warning text-white" type="button" onclick="copyToClipboard(this, 'referralCaption')" title="Copy caption">
+                <i class="bi bi-clipboard"></i>
+            </button>
+        </div>
+    </div>
+</div>
                     <hr>
                     <h5 class="card-title mb-0 py-">How It Works</h5>
                     <div class="row row-cols-1 row-cols-md-3 g-4 mt-1">
@@ -221,21 +222,21 @@
             <!-- End of Referral Tools Section -->
 
             <!-- Recent Referrals Table-->
-            <div class="card mb-4">
+            <div class="card mb-4 border-0 shadow-sm rounded-4">
                 <div class="card-body mt-3 mb-2">
-                    <h5 class="card-title mb-1">Riwayat Komisi Terbaru</h5>
+                    <h5 class="card-title mb-1 fw-semibold">Riwayat Komisi Terbaru</h5>
                     <p class="text-muted-sm mb-4">Detail transaksi dan komisi yang Anda peroleh
                     </p>
                     <div class="table-responsive">
                         <table class="table align-middle text-center table-hover">
                             <thead>
                                 <tr>
-                                    <th class="fw-semibold">Tanggal</th>
-                                    <th class="fw-semibold">Nama Pembeli</th>
-                                    <th class="fw-semibold">Kursus / Event</th>
-                                    <th class="fw-semibold">Jumlah Pembelian</th>
-                                    <th class="fw-semibold">Komisi</th>
-                                    <th class="fw-semibold">Status</th>
+                                    <th class="fw-semibold small">Tanggal</th>
+                                    <th class="fw-semibold small">Nama Pembeli</th>
+                                    <th class="fw-semibold small">Kursus / Event</th>
+                                    <th class="fw-semibold small">Jumlah Pembelian</th>
+                                    <th class="fw-semibold small">Komisi</th>
+                                    <th class="fw-semibold small">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -245,7 +246,7 @@
                                     <td>Workshop Figma 101</td>
                                     <td>Rp200.000</td>
                                     <td class="fw-semibold text-success">Rp25.000</td>
-                                    <td><span class="badge bg-success px-3 py-2">Dibayar</span></td>
+                                    <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span></td>
                                 </tr>
                                 <tr>
                                     <td>27 Nov 2025</td>
@@ -253,7 +254,7 @@
                                     <td>Workshop SLR & Bibliometrik</td>
                                     <td>Rp200.000</td>
                                     <td class="fw-semibold text-success">Rp25.000</td>
-                                    <td><span class="badge bg-success px-3 py-2">Dibayar</span></td>
+                                    <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span></td>
                                 </tr>
                                 <tr>
                                     <td>26 Nov 2025</td>
@@ -261,7 +262,7 @@
                                     <td>Workshop Web Design vol 2</td>
                                     <td>Rp500.000</td>
                                     <td class="fw-semibold text-success">Rp40.000</td>
-                                    <td><span class="badge bg-warning text-dark px-3 py-2">Menunggu</span></td>
+                                    <td class="text-center"><span class="badge bg-warning bg-opacity-10 text-warning px-4 py-2 rounded-pill">Menunggu</span></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -271,11 +272,11 @@
             <!-- End Recent Referrals Table -->
 
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-6 mb-4">
 
 
                     {{-- Peringkat Reseller Bulan Ini --}}
-                    <div class="card rounded-4 mb-4 h-100">
+                    <div class="card rounded-4 mb-4 h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body p-4">
                             <h5 class="fw-semibold">Peringkat Reseller Bulan Ini</h5>
                             <p class="text-muted mb-4">Top 3 reseller dengan performa terbaik</p>
@@ -287,7 +288,7 @@
                                     <div class="d-flex align-items-center">
                                         <div class="me-3 fw-bold text-warning fs-5">#1</div>
                                         <div>
-                                            <div class="fw-semibold">Stephanie A. Tarigan</div>
+                                            <div class="fw-semibold small">Stephanie A. Tarigan</div>
                                             <small class="text-muted">245 referrals</small>
                                         </div>
                                     </div>
@@ -302,7 +303,7 @@
                                     <div class="d-flex align-items-center">
                                         <div class="me-3 fw-bold text-secondary fs-5">#2</div>
                                         <div>
-                                            <div class="fw-semibold">Vero Glorify S.</div>
+                                            <div class="fw-semibold small">Vero Glorify S.</div>
                                             <small class="text-muted">198 referrals</small>
                                         </div>
                                     </div>
@@ -317,7 +318,7 @@
                                     <div class="d-flex align-items-center">
                                         <div class="me-3 fw-bold text-secondary fs-5">#3</div>
                                         <div>
-                                            <div class="fw-semibold">Tayo Wenas</div>
+                                            <div class="fw-semibold small">Tayo Wenas</div>
                                             <small class="text-muted">100 referrals</small>
                                         </div>
                                     </div>
@@ -332,7 +333,7 @@
                                     <div class="d-flex align-items-center">
                                         <div class="me-3 fw-bold text-warning fs-5">#50</div>
                                         <div>
-                                            <div class="fw-semibold">You (Sutupani)</div>
+                                            <div class="fw-semibold small">You (Sutupani)</div>
                                             <small class="text-muted">10 referrals</small>
                                         </div>
                                     </div>
@@ -347,9 +348,9 @@
                     </div>
                     <!-- End of Peringkat Reseller Bulan Ini -->
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-4">
                     <!-- Sistem Tingkat (Tiers) Section -->
-                    <div class="card rounded-4 mb-4 h-100">
+                    <div class="card rounded-4 mb-4 h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body p-4">
 
                             <h5 class="fw-semibold">Sistem Tingkat (Tiers)</h5>
@@ -357,10 +358,10 @@
                                     class="fw-bold text-warning">Bronze</span>
                             </p>
 
-                            <div class="row text-center mb-4">
+                            <div class="row text-center mb-2">
 
                                 <div class="col-md-4 mb-3">
-                                    <div class="border rounded-3 p-3">
+                                    <div class="border rounded-3 p-3 h-100 border-warning shadow-sm">
                                         <h6 class="fw-bold text-warning">Bronze</h6>
                                         <p class="mb-1">0-50 referrals</p>
                                         <small class="text-muted">Komisi: 10%</small>
@@ -368,7 +369,7 @@
                                 </div>
 
                                 <div class="col-md-4 mb-3">
-                                    <div class="border rounded-3 p-3">
+                                    <div class="border rounded-3 p-3 h-100">
                                         <h6 class="fw-bold text-secondary">Silver</h6>
                                         <p class="mb-1">51-150 referrals</p>
                                         <small class="text-muted">Komisi: 12%</small>
@@ -376,7 +377,7 @@
                                 </div>
 
                                 <div class="col-md-4 mb-3">
-                                    <div class="border rounded-3 p-3">
+                                    <div class="border rounded-3 p-3 h-100">
                                         <h6 class="fw-bold text-warning">Gold</h6>
                                         <p class="mb-1">151+ referrals</p>
                                         <small class="text-muted">Komisi: 15%</small>
@@ -506,10 +507,31 @@
 
 
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-        crossorigin="anonymous"></script>
+    <script>
+    function copyToClipboard(button, elementId) {
+        // 1. Ambil teks dan copy
+        var copyText = document.getElementById(elementId);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); // Untuk support mobile
+        navigator.clipboard.writeText(copyText.value);
+
+        // 2. Logika Ubah Icon (Clipboard -> Checklist -> Clipboard)
+        var icon = button.querySelector('i'); // Ambil elemen ikon di dalam tombol
+        
+        // Simpan class asli (bi-clipboard)
+        var originalClass = "bi bi-clipboard";
+        // Class untuk checklist
+        var successClass = "bi bi-check-lg"; // Bootstrap icon checklist tebal
+
+        // Ubah ikon jadi checklist
+        icon.className = successClass;
+
+        // Kembalikan ke ikon awal setelah 2 detik (2000ms)
+        setTimeout(function() {
+            icon.className = originalClass;
+        }, 2000);
+    }
+</script>
 </body>
 
 </html>
