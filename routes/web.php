@@ -94,10 +94,11 @@ Route::middleware('auth')->group(function(){
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');
 
-    // User profile simple view
-    Route::get('/profile', function(){
-        return view('profile.index');
-    })->name('profile.index');
+    // User profile
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
     // Save/unsave event
     Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
@@ -246,5 +247,10 @@ Route::get('/course-quiz-start', function () {
                 'destroy' => 'admin.events.destroy',
             ]
         ]);
+        // Certificate management
+        Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates.index');
+        Route::get('/admin/certificates/{event}/edit', [\App\Http\Controllers\CertificateController::class, 'edit'])->name('admin.certificates.edit');
+        Route::put('/admin/certificates/{event}', [\App\Http\Controllers\CertificateController::class, 'update'])->name('admin.certificates.update');
+        Route::get('/admin/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CertificateController::class, 'generateMassal'])->name('admin.certificates.generate-massal');
     });
 });
