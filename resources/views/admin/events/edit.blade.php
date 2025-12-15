@@ -227,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Image preview + size (max 5MB)
     imgInp?.addEventListener('change',ev=>{const f=ev.target.files[0];const wrap=document.getElementById('imagePreview');const sizeInfo=document.getElementById('imageSizeInfo');if(!f){wrap.style.display='none'; if(sizeInfo) sizeInfo.textContent=''; return;} const sizeMB=f.size/(1024*1024); if(sizeInfo) sizeInfo.textContent='Ukuran: '+sizeMB.toFixed(2)+'MB'; if(sizeMB>5){ alert('Ukuran gambar melebihi 5MB. Pilih file lain.'); imgInp.value=''; wrap.style.display='none'; if(sizeInfo) sizeInfo.textContent=''; return;} const r=new FileReader(); r.onload=e=>{document.getElementById('previewImg').src=e.target.result; wrap.style.display='block';}; r.readAsDataURL(f);});
 
+
     // Maps logic
     let leafletMap=null, leafletMarker=null; const mapsInput=document.getElementById('maps'); const mapsPreview=document.getElementById('mapsPreview'); const btnResolveMaps=document.getElementById('btnResolveMaps'); const csrfToken='{{ csrf_token() }}'; const resolveMapsUrl='{{ route('admin.maps.resolve') }}';
     function parseLatLngFromUrl(url){
