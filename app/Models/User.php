@@ -24,6 +24,9 @@ class User extends Authenticatable
         'role',
         'google_id',
         'avatar',
+        'phone',
+        'website',
+        'bio',
     ];
 
     /**
@@ -57,6 +60,11 @@ class User extends Authenticatable
     public function savedEvents()
     {
         return $this->belongsToMany(Event::class, 'user_saved_events', 'user_id', 'event_id')->withTimestamps();
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
     }
 
     /**

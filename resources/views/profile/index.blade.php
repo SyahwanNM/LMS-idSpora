@@ -1,114 +1,674 @@
-@include("partials.navbar-after-login")
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Saya - idSPORA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        * {
+            font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        /* Background same as dashboard */
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            padding-top: 70px;
+        }
+        
+        /* Ensure navbar is visible and on top */
+        .navbar {
+            z-index: 1050 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+        }
+        
+        .navbar-gradient {
+            background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Ensure navbar elements are visible */
+        .navbar-gradient .navbar-brand,
+        .navbar-gradient .nav-link,
+        .navbar-gradient .navbar-text {
+            color: #fff !important;
+        }
+        
+        .navbar-gradient .nav-link:hover,
+        .navbar-gradient .nav-link:focus {
+            color: #ffe8b3 !important;
+        }
+        
+        .navbar-gradient .nav-link.active {
+            font-weight: 600;
+            color: #ffe8b3 !important;
+        }
+        
+        /* Notification and user dropdown */
+        #notifBtn,
+        #userDropdown {
+            color: white !important;
+        }
+        
+        #notifBtn:hover,
+        #userDropdown:hover {
+            color: #ffe8b3 !important;
+        }
+        
+        /* Search bar */
+        .navbar .form-control {
+            color: white !important;
+        }
+        
+        .navbar .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        /* Ensure navbar container is visible */
+        .navbar .container-fluid {
+            display: flex !important;
+            visibility: visible !important;
+        }
+        
+        /* Ensure all navbar elements are visible */
+        .navbar-brand,
+        .navbar-nav,
+        .navbar-collapse {
+            display: flex !important;
+            visibility: visible !important;
+        }
+        
+        /* Navbar Responsive */
+        @media (max-width: 991px) {
+            .navbar-brand {
+                margin-left: 15px !important;
+            }
+            .navbar-brand img {
+                max-width: 60px !important;
+            }
+            .navbar .form-control {
+                width: 100% !important;
+                margin: 0.5rem 0 !important;
+            }
+            .navbar-nav {
+                flex-direction: column !important;
+                width: 100%;
+                margin: 0.5rem 0 !important;
+            }
+            .navbar-nav .nav-item {
+                margin: 0.25rem 0 !important;
+                width: 100%;
+            }
+            .navbar-collapse {
+                padding: 1rem 0;
+            }
+            #notifBtn,
+            #userDropdown {
+                margin: 0.5rem 0 !important;
+            }
+            .d-flex.align-items-center.ms-3 {
+                flex-direction: column !important;
+                width: 100%;
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+            }
+        }
+        
+        /* Card styling with light background */
+        .glass-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+        }
+        
+        .glass-sidebar {
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+            z-index: 1000;
+            width: 280px;
+        }
+        
+        /* Main content with sidebar offset */
+        .main-content-with-sidebar {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            body {
+                padding-top: 70px;
+            }
+            .flex.min-h-screen {
+                flex-direction: column;
+            }
+            .glass-sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                top: 0;
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+                padding: 1.25rem;
+            }
+            .main-content-with-sidebar {
+                margin-left: 0;
+                margin-top: 0;
+                padding: 1.5rem;
+            }
+            .search-bar {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            .flex.min-h-screen {
+                flex-direction: column;
+            }
+            .glass-sidebar {
+                width: 100%;
+                padding: 1rem;
+            }
+            .glass-sidebar .search-bar {
+                margin-bottom: 1rem;
+            }
+            .main-content-with-sidebar {
+                padding: 1rem;
+            }
+            .glass-card {
+                padding: 1.5rem !important;
+            }
+            .glass-card h1 {
+                font-size: 1.75rem !important;
+            }
+            .glass-card h2 {
+                font-size: 1.5rem !important;
+            }
+            .profile-img-wrapper img {
+                width: 80px !important;
+                height: 80px !important;
+            }
+            .flex.items-start.space-x-6 {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .flex.items-start.space-x-6 > * {
+                margin-bottom: 1rem;
+            }
+            .grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+            .menu-item {
+                padding: 0.75rem !important;
+            }
+            .menu-item .w-10 {
+                width: 2rem !important;
+                height: 2rem !important;
+            }
+            .menu-item .font-semibold {
+                font-size: 0.875rem !important;
+            }
+            .menu-item .text-xs {
+                font-size: 0.75rem !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .glass-card {
+                padding: 1rem !important;
+            }
+            .glass-card h1 {
+                font-size: 1.5rem !important;
+            }
+            .profile-img-wrapper img {
+                width: 60px !important;
+                height: 60px !important;
+            }
+            .premium-badge {
+                font-size: 0.625rem !important;
+                padding: 0.25rem 0.75rem !important;
+            }
+        }
+        
+        /* Input styling with light theme */
+        .neu-input {
+            background: white;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .neu-input:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+            outline: none;
+        }
+        
+        /* Premium Gold Accent */
+        .gold-accent {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+        }
+        
+        .gold-accent:hover {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        /* Sidebar Menu Item - Minimalist & Professional */
+        .menu-item {
+            transition: all 0.2s ease;
+            color: #374151;
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .menu-item:hover {
+            background: #f9fafb;
+        }
+        
+        .menu-item.active {
+            background: #f3f4f6;
+            border-left: 3px solid #1e293b;
+        }
+        
+        .menu-item.active .menu-icon {
+            color: #1e293b;
+        }
+        
+        .menu-item.active .font-semibold {
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        .menu-item .font-semibold {
+            color: #111827;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .menu-item .text-xs {
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+        
+        .menu-icon {
+            color: #6b7280;
+            font-size: 18px;
+            transition: color 0.2s ease;
+        }
+        
+        .menu-item:hover .menu-icon {
+            color: #1e293b;
+        }
+        
+        .menu-chevron {
+            color: #9ca3af;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .menu-item:hover .menu-chevron {
+            color: #6b7280;
+            transform: translateX(2px);
+        }
+        
+        .menu-item.active .menu-chevron {
+            color: #1e293b;
+        }
+        
+        /* Premium Badge */
+        .premium-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+        }
+        
+        /* Profile Image Overlay */
+        .profile-img-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .profile-img-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: rgba(30, 27, 75, 0.9);
+            border-radius: 50%;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid rgba(251, 191, 36, 0.5);
+        }
+        
+        .profile-img-overlay:hover {
+            background: rgba(234, 179, 8, 0.9);
+            transform: scale(1.1);
+        }
+        
+        /* Search Bar - Minimalist */
+        .search-bar {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .search-bar:focus-within {
+            background: white;
+            border-color: #d1d5db;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .search-bar input {
+            color: #111827;
+            font-size: 14px;
+        }
+        
+        .search-bar input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .search-bar i {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        /* Event Card */
+        .event-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+        
+        .event-card:hover {
+            background: #f9fafb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .event-card .font-semibold {
+            color: #111827;
+        }
+        
+        .event-card .text-gray-400 {
+            color: #6b7280;
+        }
+        
+        /* Smooth Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
 </head>
-<style>
-    .biodata {
-        max-width: 450px;
-        margin: 20px auto auto 20px;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        background-color: #f9f9f9;
-    }
-
-    .biodata img {
-        display: block;
-        margin: 10px auto 20px;
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .biodata h4{
-        text-align: center;
-        margin-bottom: 1px;
-        font-size: 18px;
-        color: #000;
-    }
-
-    .biodata h6{
-        text-align: center;
-        margin-bottom: 15px;
-        font-size: 15px;
-        color: #333;
-    }
-</style>
 <body>
-    <section>
-        <div class="biodata">
-            <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
-                 referrerpolicy="no-referrer"
-                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';">
-            <h4>{{ Auth::user()->name }}</h4>
-            <h6>{{ Auth::user()->email }}</h6>
-
-            <h2 class="mt-3">Biodata</h2>
-            <p>Name: {{ Auth::user()->name }}</p>
-            <p>Email: {{ Auth::user()->email }}</p>
-            <p>Role: {{ Auth::user()->role ?? 'user' }}</p>
-
-            <hr>
-            <h2 class="mt-3">Event Yang Didaftarkan</h2>
-            @php($regs = Auth::user()->eventRegistrations()->with('event')->latest()->get())
-            @if($regs->isEmpty())
-                <p class="text-muted">Belum ada event yang didaftarkan.</p>
-            @else
-                <ul style="list-style:none; padding-left:0;">
-                    @foreach($regs as $reg)
-                        <li style="margin-bottom:12px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between;">
-                                <div>
-                                    <strong>{{ $reg->event?->title ?? 'Event' }}</strong>
-                                    <div class="text-muted" style="font-size:12px;">
-                                        {{ optional($reg->event)->date_start ? optional($reg->event)->date_start->format('d M Y') : '' }}
-                                        @if(optional($reg->event)->location)
-                                            • {{ $reg->event->location }}
-                                        @endif
-                                    </div>
-                                </div>
-                                @if($reg->event)
-                                    <a href="{{ route('events.show', $reg->event) }}" class="btn btn-sm btn-primary">Lihat Detail</a>
-                                @endif
+    @include("partials.navbar-after-login")
+    
+    <div class="flex min-h-screen">
+        <!-- Sidebar - Minimalist & Professional -->
+        <aside class="glass-sidebar p-5 flex flex-col">
+            <!-- Search Bar -->
+            <div class="search-bar px-3 py-2.5 flex items-center space-x-2.5 mb-6">
+                <i class="bi bi-search menu-icon"></i>
+                <input 
+                    type="text" 
+                    placeholder="Cari..." 
+                    class="bg-transparent border-none outline-none flex-1"
+                >
+            </div>
+            
+            <!-- Menu Items -->
+            <nav class="flex-1">
+                <a href="{{ route('profile.index') }}" class="menu-item flex items-center justify-between px-3 py-2.5 group {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <div class="flex items-center space-x-3">
+                        <i class="bi bi-person menu-icon"></i>
+                        <div>
+                            <div class="font-semibold">Profile</div>
+                            <div class="text-xs">Informasi pribadi</div>
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-right menu-chevron"></i>
+                </a>
+                
+                <a href="{{ route('profile.events') }}" class="menu-item flex items-center justify-between px-3 py-2.5 group {{ request()->routeIs('profile.events') ? 'active' : '' }}">
+                    <div class="flex items-center space-x-3">
+                        <i class="bi bi-calendar-check menu-icon"></i>
+                        <div>
+                            <div class="font-semibold">History Event</div>
+                            <div class="text-xs">Event yang diikuti</div>
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-right menu-chevron"></i>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
+            <div class="max-w-6xl mx-auto fade-in">
+                <!-- Profile Information Card -->
+                <div class="glass-card rounded-2xl p-8 shadow-2xl mb-8">
+                    <h1 class="text-3xl font-bold mb-8" style="color: #111827;">Informasi Profil</h1>
+                    
+                    <!-- Profile Header -->
+                    <div class="flex items-start space-x-6 mb-8 pb-8 border-b" style="border-color: #e5e7eb;">
+                        <div class="profile-img-wrapper">
+                            <img 
+                                src="{{ Auth::user()->avatar_url }}" 
+                                alt="Profile" 
+                                class="w-24 h-24 rounded-full object-cover border-4 border-yellow-400 shadow-lg"
+                                referrerpolicy="no-referrer"
+                                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=fbbf24&color=1e1b4b&size=128';"
+                            >
+                            <div class="profile-img-overlay" style="background: rgba(251, 191, 36, 0.9); border-color: #fbbf24;">
+                                <i class="bi bi-camera text-white text-lg"></i>
                             </div>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-
-            <hr>
-            <h2 class="mt-3">Event Tersimpan</h2>
-            @php($saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get())
-            @if($saved->isEmpty())
-                <p class="text-muted">Belum ada event yang disimpan.</p>
-            @else
-                <ul style="list-style:none; padding-left:0;">
-                    @foreach($saved as $ev)
-                        <li style="margin-bottom:12px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between;">
-                                <div>
-                                    <strong>{{ $ev->title ?? 'Event' }}</strong>
-                                    <div class="text-muted" style="font-size:12px;">
-                                        {{ $ev->event_date ? \Carbon\Carbon::parse($ev->event_date)->format('d M Y') : '' }}
-                                        @if($ev->location)
-                                            • {{ $ev->location }}
-                                        @endif
-                                    </div>
-                                </div>
-                                <a href="{{ route('events.show', $ev) }}" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-bold mb-2" style="color: #111827;">{{ Auth::user()->name }}</h2>
+                            <p class="mb-3" style="color: #6b7280;">{{ Auth::user()->email }}</p>
+                            <span class="premium-badge inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-gray-900">
+                                {{ ucfirst(Auth::user()->role ?? 'user') }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Success Message -->
+                    @if(session('success'))
+                        <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
+                            <p class="text-green-800 text-sm font-medium">{{ session('success') }}</p>
+                        </div>
+                    @endif
+                    
+                    <!-- Biodata Section -->
+                    <div class="mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold" style="color: #111827;">Biodata</h2>
+                            <a 
+                                href="{{ route('profile.edit') }}"
+                                class="gold-accent px-5 py-2.5 rounded-xl text-gray-900 font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
+                            >
+                                <i class="bi bi-pencil"></i>
+                                <span>Edit Profile</span>
+                            </a>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4" style="color: #374151;">
+                            <div>
+                                <span style="color: #9ca3af;">Nama:</span>
+                                <span class="ml-2 font-medium">{{ Auth::user()->name }}</span>
                             </div>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
-    </section>
+                            <div>
+                                <span style="color: #9ca3af;">Email:</span>
+                                <span class="ml-2 font-medium">{{ Auth::user()->email }}</span>
+                            </div>
+                            @if(Auth::user()->phone)
+                            <div>
+                                <span style="color: #9ca3af;">Telepon:</span>
+                                <span class="ml-2 font-medium">{{ Auth::user()->phone }}</span>
+                            </div>
+                            @endif
+                            @if(Auth::user()->website)
+                            <div>
+                                <span style="color: #9ca3af;">Website:</span>
+                                <a href="{{ Auth::user()->website }}" target="_blank" class="ml-2 font-medium text-blue-600 hover:underline">{{ Auth::user()->website }}</a>
+                            </div>
+                            @endif
+                            <div>
+                                <span style="color: #9ca3af;">Event yang Diikuti:</span>
+                                <span class="ml-2 font-medium">{{ $eventsCount ?? 0 }} event</span>
+                            </div>
+                            <div>
+                                <span style="color: #9ca3af;">Course yang Diikuti:</span>
+                                <span class="ml-2 font-medium">{{ $coursesCount ?? 0 }} course</span>
+                            </div>
+                            @if(Auth::user()->bio)
+                            <div class="md:col-span-2">
+                                <span style="color: #9ca3af;">Bio:</span>
+                                <p class="ml-2 font-medium mt-1">{{ Auth::user()->bio }}</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Events Section -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Registered Events -->
+                    <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                        <h2 class="text-xl font-bold mb-4 flex items-center" style="color: #111827;">
+                            <i class="bi bi-calendar-check mr-2" style="color: #fbbf24;"></i>
+                            Event Yang Didaftarkan
+                        </h2>
+                        @php($regs = Auth::user()->eventRegistrations()->with('event')->latest()->get())
+                        @if($regs->isEmpty())
+                            <p class="text-sm" style="color: #6b7280;">Belum ada event yang didaftarkan.</p>
+                        @else
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                @foreach($regs as $reg)
+                                    <div class="event-card rounded-xl p-4">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $reg->event?->title ?? 'Event' }}</h3>
+                                                <div class="text-xs text-gray-400 space-y-1">
+                                                    @if($reg->event?->date_start)
+                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $reg->event->date_start->format('d M Y') }}</div>
+                                                    @endif
+                                                    @if($reg->event?->location)
+                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $reg->event->location }}</div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @if($reg->event)
+                                            <a href="{{ route('events.show', $reg->event) }}" class="gold-accent px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900 ml-3 whitespace-nowrap" style="text-decoration: none;">
+                                                Detail
+                                            </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <!-- Saved Events -->
+                    <div class="glass-card rounded-2xl p-6 shadow-2xl">
+                        <h2 class="text-xl font-bold mb-4 flex items-center" style="color: #111827;">
+                            <i class="bi bi-bookmark-star mr-2" style="color: #fbbf24;"></i>
+                            Event Tersimpan
+                        </h2>
+                        @php($saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get())
+                        @if($saved->isEmpty())
+                            <p class="text-sm" style="color: #6b7280;">Belum ada event yang disimpan.</p>
+                        @else
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                @foreach($saved as $ev)
+                                    <div class="event-card rounded-xl p-4">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $ev->title ?? 'Event' }}</h3>
+                                                <div class="text-xs text-gray-400 space-y-1">
+                                                    @if($ev->event_date)
+                                                        <div><i class="bi bi-calendar mr-1"></i>{{ \Carbon\Carbon::parse($ev->event_date)->format('d M Y') }}</div>
+                                                    @endif
+                                                    @if($ev->location)
+                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $ev->location }}</div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <a href="{{ route('events.show', $ev) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition ml-3 whitespace-nowrap" style="border-color: #d1d5db; color: #374151; text-decoration: none;" onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='transparent'">
+                                                Detail
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Smooth scroll and animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Menu item active state
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if(this.href && !this.href.includes('#')) {
+                        return true;
+                    }
+                    e.preventDefault();
+                    menuItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        });
+        
+        // Avatar preview function
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
 </body>
 </html>
