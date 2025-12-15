@@ -68,6 +68,8 @@
                             onclick="toggleUserDropdown()">
                         <img src="{{ Auth::user()->avatar_url }}"
                             alt="Avatar" class="rounded-circle me-2"
+                            referrerpolicy="no-referrer"
+                            onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';"
                             style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
                         <span class="text-white">{{ Auth::user()->name }}</span>
                         <svg class="ms-2" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
@@ -76,7 +78,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" id="userDropdownMenu" aria-labelledby="userDropdown" style="display: none;">
                         <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.index') }}">Profile</a></li>
                         <li><a class="dropdown-item" href="#">Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                                                 <li>
@@ -656,6 +658,89 @@ function showLogoutSuccessState(){
 .navbar-gradient .nav-link:focus { color: #ffe8b3 !important; }
 /* Only active link shows underline */
 .navbar-gradient .nav-link.active { font-weight:600; }
+
+/* Navbar Responsive Styles */
+@media (max-width: 991px) {
+    .navbar-brand {
+        margin-left: 15px !important;
+    }
+    .navbar-brand img {
+        max-width: 60px !important;
+    }
+    .navbar .container-fluid {
+        padding: 0.5rem 0 !important;
+    }
+    .navbar .form-control {
+        width: 100% !important;
+        margin: 0.5rem 0 !important;
+        font-size: 14px !important;
+    }
+    .navbar-nav {
+        flex-direction: column !important;
+        width: 100%;
+        margin: 0.5rem 0 !important;
+        padding: 0 1rem;
+    }
+    .navbar-nav .nav-item {
+        margin: 0.25rem 0 !important;
+        width: 100%;
+    }
+    .navbar-nav .nav-link {
+        padding: 0.5rem 0 !important;
+        width: 100%;
+    }
+    .navbar-collapse {
+        padding: 1rem 0;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 0.5rem;
+        margin: 0.5rem 1rem;
+    }
+    .navbar-toggler {
+        margin-right: 15px;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+    form.d-flex {
+        width: 100%;
+        margin: 0.5rem 0 !important;
+        padding: 0 1rem;
+    }
+    .d-flex.align-items-center.ms-3 {
+        flex-direction: column !important;
+        width: 100%;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        padding: 0 1rem;
+    }
+    #notifBtn,
+    #userDropdown {
+        margin: 0.5rem 0 !important;
+        width: 100%;
+        justify-content: flex-start;
+    }
+    #userDropdown img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    #userDropdown span {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand {
+        margin-left: 10px !important;
+    }
+    .navbar-brand img {
+        max-width: 50px !important;
+    }
+    .navbar-toggler {
+        padding: 0.25rem 0.5rem;
+        font-size: 1rem;
+    }
+}
 .navbar-gradient .nav-link.active::after { width:70%; left:15%; }
 @media (hover: none) { .navbar-gradient .nav-link::after { display:none; } }
 </style>

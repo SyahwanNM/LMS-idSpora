@@ -14,6 +14,8 @@ class Event extends Model
         'image',
         'vbg_path',
         'certificate_path',
+        'certificate_logo',
+        'certificate_signature',
         'attendance_path',
         'speaker',
         'materi',
@@ -50,6 +52,8 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'certificate_logo' => 'array',
+        'certificate_signature' => 'array',
     ];
 
     /**

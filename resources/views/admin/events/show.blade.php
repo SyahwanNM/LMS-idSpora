@@ -420,6 +420,51 @@
                     </div>
                     @endif
 
+                    <!-- Certificate Generation Section -->
+                    @php
+                        $registrationsCount = $event->registrations()->count();
+                    @endphp
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="border rounded p-4 {{ $registrationsCount > 0 ? 'bg-light' : 'bg-warning-subtle' }}">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="text-dark mb-2"><i class="bi bi-award me-2"></i>Kelola Sertifikat</h6>
+                                        <p class="text-muted small mb-0">
+                                            @if($registrationsCount > 0)
+                                                Generate sertifikat untuk semua peserta yang terdaftar pada event ini. 
+                                                Total peserta: <strong>{{ $registrationsCount }}</strong> orang.
+                                            @else
+                                                <span class="text-warning-emphasis">Belum ada peserta yang terdaftar pada event ini.</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                    @if($event->certificate_logo || $event->certificate_signature)
+                                    <div class="text-end">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Logo & TTD Terpasang</span>
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @if($registrationsCount > 0)
+                                    <a href="{{ route('admin.certificates.generate-massal', $event) }}" class="btn btn-success" onclick="return confirm('Apakah Anda yakin ingin generate sertifikat untuk semua {{ $registrationsCount }} peserta? Proses ini mungkin memakan waktu beberapa saat.')">
+                                        <i class="bi bi-download me-1"></i> Generate Semua Sertifikat (ZIP)
+                                    </a>
+                                    @endif
+                                    <a href="{{ route('admin.events.edit', $event) }}#certificate-settings" class="btn btn-outline-primary">
+                                        <i class="bi bi-gear me-1"></i> Pengaturan Logo & Tanda Tangan
+                                    </a>
+                                </div>
+                                @if(!$event->certificate_logo && !$event->certificate_signature)
+                                <div class="alert alert-info mt-3 mb-0 small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Tips:</strong> Upload logo dan tanda tangan di halaman Edit Event untuk membuat sertifikat lebih profesional.
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="row mt-4">
                         <div class="col-12">
