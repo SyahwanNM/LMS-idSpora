@@ -1,4 +1,5 @@
-@include ('partials.navbar-after-login')
+{{-- @include ('partials.navbar-after-login') --}}
+@include ('partials.navbar-before-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -55,7 +56,7 @@
 
         <div class="container-xl">
             <!-- Card for Target Komisi Bulan Ini -->
-            <div class="card mb-4 border-0 shadow-sm rounded-4">
+            {{-- <div class="card mb-4 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-bullseye fs-1 text-warning"></i>
@@ -75,12 +76,47 @@
                         <p class="card-text">Rp 10.000.000</p>
                     </div>
                 </div>
-            </div>
+            </div> --}}
             <!-- End of Card for Target Komisi Bulan Ini -->
 
+<!-- Withdraw Section -->
+<div class="card mb-4 border-0 shadow-sm rounded-4">
+    <div class="card-body p-4">
+        <h5 class="mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-cash-coin text-warning fs-1"></i>
+            <span class="ms-2">Withdraw Komisi</span>
+        </h5>
+
+        <div class="row g-4 align-items-center">
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <small class="text-muted">Saldo Bisa Ditarik</small>
+                    <h3 class="text-success mb-0">Rp 1.200.000</h3>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100 bg-light">
+                    <small class="text-muted">Saldo Pending</small>
+                    <h3 class="text-warning mb-0">Rp 640.000</h3>
+                </div>
+            </div>
+
+            <div class="col-md-4 text-end">
+                <button class="btn btn-warning rounded-pill px-4 py-2">
+                    <i class="bi bi-wallet2 me-1"></i>
+                    Tarik Komisi
+                </button>
+                <div class="small text-muted mt-2">
+                    Minimal penarikan Rp 50.000
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
             <!-- Cards Section -->
-            <div class="row row-cols-1 row-cols-md-4 mb-4">
+            <div class="row row-cols-1 row-cols-md-3 mb-4">
                 <div class="col">
                     <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body d-flex justify-content-between align-items-center">
@@ -101,28 +137,11 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="col">
                     <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="card-title text-body-secondary">Pending Earnings</h6>
-                                <h3 class="card-title">Rp 1.840.000</h3>
-                                <p class="card-text text-warning mb-0">Menunggu Verifikasi</p>
-                            </div>
-                            <i class="bi bi-wallet fs-1 text-warning"></i>
-                        </div>
-
-                        <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: 09:40:05 WIB</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary">Total Earnings</h6>
+                                <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
                                 <h3 class="card-title">Rp 5.000.000</h3>
                                 <p class="card-text text-success mb-0">+Rp 520k bulan ini</p>
                             </div>
@@ -195,7 +214,7 @@
     </div>
 </div>
                     <hr>
-                    <h5 class="card-title mb-0 py-">How It Works</h5>
+                    <h5 class="card-title mb-0">How It Works</h5>
                     <div class="row row-cols-1 row-cols-md-3 g-4 mt-1">
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-share-fill fs-1 mb-2 text-warning"></i><br>
@@ -405,7 +424,7 @@
 
 
 
-            <div class="card rounded-4 mb-4">
+            <div class="card rounded-4 mb-4 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <h6 class="fw-semibold mb-3">
                         <i class="bi bi-question-circle text-warning me-1"></i>
@@ -506,7 +525,7 @@
 
 
 
-
+@include ('partials.footer-before-login')
     <script>
     function copyToClipboard(button, elementId) {
         // 1. Ambil teks dan copy
