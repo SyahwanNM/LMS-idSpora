@@ -92,6 +92,13 @@
                     <span>Kelola Customer</span>
                     <div class="nav-indicator"></div>
                 </a>
+                <a class="nav-link crm-nav-item {{ request()->routeIs('admin.crm.feedback.*') ? 'active' : '' }}" href="{{ route('admin.crm.feedback.index') }}">
+                    <div class="nav-icon-wrapper">
+                        <i class="bi bi-chat-left-text"></i>
+                    </div>
+                    <span>Feedback Analysis</span>
+                    <div class="nav-indicator"></div>
+                </a>
             </nav>
         </div>
     </aside>
