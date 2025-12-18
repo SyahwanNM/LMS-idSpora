@@ -1,18 +1,17 @@
-@extends('layouts.admin')
+@extends('layouts.crm')
 
 @section('title', 'Pengaturan Sertifikat - ' . $event->title)
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-0 text-dark"><i class="bi bi-award me-2"></i>Pengaturan Sertifikat</h4>
-            <p class="text-muted small mb-0">Event: <strong>{{ $event->title }}</strong></p>
-        </div>
-        <a href="{{ route('admin.certificates.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Kembali ke Kelola Sertifikat
-        </a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 text-dark fw-semibold"><i class="bi bi-award me-2"></i>Pengaturan Sertifikat</h4>
+        <p class="text-muted small mb-0">Event: <strong>{{ $event->title }}</strong></p>
     </div>
+    <a href="{{ route('admin.crm.certificates.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+</div>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -51,7 +50,7 @@
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <form action="{{ route('admin.certificates.update', $event) }}" method="POST" enctype="multipart/form-data" id="certificateForm">
+                    <form action="{{ route('admin.crm.certificates.update', $event) }}" method="POST" enctype="multipart/form-data" id="certificateForm">
                         @csrf
                         @method('PUT')
                         
@@ -150,7 +149,7 @@
                         </div>
 
                         <div class="d-flex justify-content-end gap-2 mt-4 pt-4 border-top">
-                            <a href="{{ route('admin.certificates.index') }}" class="btn btn-outline-secondary">
+                            <a href="{{ route('admin.crm.certificates.index') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i> Batal
                             </a>
                             <button type="submit" class="btn btn-primary">

@@ -1,18 +1,14 @@
-@extends('layouts.admin')
+@extends('layouts.crm')
 
-@section('title', 'Kelola Sertifikat')
+@section('title', 'Generate Sertifikat')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="mb-0 text-dark"><i class="bi bi-award me-2"></i>Kelola Sertifikat</h4>
-            <p class="text-muted small mb-0">Generate dan kelola sertifikat untuk semua event. Fokus pada pengaturan logo, tanda tangan, dan generate sertifikat.</p>
-        </div>
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
-        </a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 text-dark fw-semibold"><i class="bi bi-award me-2"></i>Generate Sertifikat</h4>
+        <p class="text-muted small mb-0">Generate dan kelola sertifikat untuk semua event. Fokus pada pengaturan logo, tanda tangan, dan generate sertifikat.</p>
     </div>
+</div>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -152,7 +148,7 @@
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
                                             @if($registrationsCount > 0 && $isFinished)
-                                                <a href="{{ route('admin.certificates.generate-massal', $event) }}" 
+                                                <a href="{{ route('admin.crm.certificates.generate-massal', $event) }}" 
                                                    class="btn btn-success generate-cert-btn" 
                                                    data-bs-toggle="tooltip" 
                                                    title="Generate Sertifikat ({{ $registrationsCount }} peserta)"
@@ -173,7 +169,7 @@
                                                     <i class="bi bi-info-circle me-1"></i> Tidak Ada Peserta
                                                 </span>
                                             @endif
-                                            <a href="{{ route('admin.certificates.edit', $event) }}" 
+                                            <a href="{{ route('admin.crm.certificates.edit', $event) }}" 
                                                class="btn btn-outline-primary"
                                                data-bs-toggle="tooltip"
                                                title="Pengaturan Logo & Tanda Tangan Sertifikat">
