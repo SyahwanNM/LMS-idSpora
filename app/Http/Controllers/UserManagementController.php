@@ -12,15 +12,13 @@ class UserManagementController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query();
+        // Only show admin accounts and allow filtering
+        $query = User::where('role', 'admin');
         if($search = $request->get('q')){
             $query->where(function($q) use ($search){
                 $q->where('name','like',"%{$search}%")
                   ->orWhere('email','like',"%{$search}%");
             });
-        }
-        if($role = $request->get('role')){
-            $query->where('role',$role);
         }
         $users = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
         return view('admin.users.index', compact('users'));
@@ -37,9 +35,11 @@ class UserManagementController extends Controller
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','string','min:6','confirmed'],
-            'role' => ['required', Rule::in(['admin','user'])],
+            'role' => ['required', Rule::in(['admin'])],
             'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
         ]);
+        // Force role to admin
+        $data['role'] = 'admin';
         $data['password'] = Hash::make($data['password']);
         // Handle avatar upload (optional)
         if($request->hasFile('avatar')){
@@ -67,9 +67,11 @@ class UserManagementController extends Controller
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255', Rule::unique('users','email')->ignore($user->id)],
             'password' => ['nullable','string','min:6'],
-            'role' => ['required', Rule::in(['admin','user'])],
+            'role' => ['required', Rule::in(['admin'])],
             'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
         ]);
+        // Force role to admin
+        $data['role'] = 'admin';
         if(!empty($data['password'])){
             $data['password'] = Hash::make($data['password']);
         } else {
