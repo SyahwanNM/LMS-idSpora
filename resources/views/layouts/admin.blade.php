@@ -28,9 +28,9 @@
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                     @endif
                     {{-- Manage Event link removed from navbar per request --}}
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Users</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.certificates.*') ? 'active' : '' }}" href="{{ route('admin.certificates.index') }}"><i class="bi bi-award me-1"></i>Kelola Sertifikat</a></li>
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts</a></li>
                     {{-- Report menu moved into Kelola Event page per request --}}
+                    {{-- Certificate management moved to CRM --}}
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
