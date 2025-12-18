@@ -17,6 +17,8 @@ class FeedbackController extends Controller
         $request->validate([
             'event_id' => 'required|exists:events,id',
             'rating' => 'required|integer|min:1|max:5',
+            'speaker_rating' => 'nullable|integer|min:1|max:5',
+            'committee_rating' => 'nullable|integer|min:1|max:5',
             'comment' => 'required|string',
         ]);
         $userId = Auth::id();
@@ -43,6 +45,8 @@ class FeedbackController extends Controller
             'event_id' => $request->event_id,
             'user_id' => $userId,
             'rating' => $request->rating,
+            'speaker_rating' => $request->speaker_rating ?? null,
+            'committee_rating' => $request->committee_rating ?? null,
             'comment' => $request->comment,
         ]);
 

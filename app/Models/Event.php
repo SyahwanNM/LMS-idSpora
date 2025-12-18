@@ -109,6 +109,11 @@ class Event extends Model
         return $this->hasMany(EventExpense::class);
     }
 
+    public function feedbacks()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
     public function getStartAtAttribute(): ?Carbon
     {
         if(empty($this->event_date)) return null;
