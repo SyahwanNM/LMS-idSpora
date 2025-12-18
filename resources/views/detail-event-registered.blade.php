@@ -248,7 +248,7 @@
         </div>
         <div class="detail-box">
             <div class="detail-box-left">
-                <img src="{{ isset($event) && !empty($event->image) ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ isset($event) ? $event->title : 'Gambar Event' }}">
+                <img src="{{ isset($event) && $event->image_url ? $event->image_url : asset('aset/event.png') }}" alt="{{ isset($event) ? $event->title : 'Gambar Event' }}" onerror="this.src='{{ asset('aset/event.png') }}'">
                 @php
                     $authUser = Auth::user();
                     $registration = isset($event) && $authUser ? $event->registrations()->where('user_id',$authUser->id)->first() : null;

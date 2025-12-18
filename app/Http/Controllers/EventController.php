@@ -83,6 +83,16 @@ class EventController extends Controller
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
+        
+        // Normalize path (remove 'storage/' prefix if exists)
+        // Method store() returns path like 'events/filename.png' (relative to public disk)
+        // We ensure it's stored as 'events/filename.png' in database
+        $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+        
+        // Ensure path starts with 'events/' for consistency
+        if (!str_starts_with($imagePath, 'events/')) {
+            $imagePath = 'events/' . basename($imagePath);
+        }
 
         // Normalisasi schedule
         $rawSchedule = $request->input('schedule', []);
@@ -267,7 +277,26 @@ class EventController extends Controller
 
         // Jika ada gambar baru, simpan ke storage
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('events', 'public');
+            $imagePath = $request->file('image')->store('events', 'public');
+            // Normalize path (remove 'storage/' prefix if exists)
+            // Method store() returns path like 'events/filename.png' (relative to public disk)
+            // We ensure it's stored as 'events/filename.png' in database
+            $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+            
+            // Ensure path starts with 'events/' for consistency
+            if (!str_starts_with($imagePath, 'events/')) {
+                $imagePath = 'events/' . basename($imagePath);
+            }
+            
+            $data['image'] = $imagePath;
+            
+            // Delete old image if exists
+            if($event->image && !str_starts_with($event->image, 'http')) {
+                $oldPath = str_replace('storage/', '', $event->image);
+                if(\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+            }
         }
 
         $event->update($data);

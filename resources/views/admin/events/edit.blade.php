@@ -19,7 +19,7 @@
                         <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span id="imageSizeInfo" class="fw-semibold"></span></div>
                         @if($event->image)
                         <div class="mt-2 border rounded p-2 bg-light text-center">
-                            <img src="{{ Storage::url($event->image) }}" alt="Current Image" class="img-thumbnail rounded" style="max-width:260px;height:160px;object-fit:cover;">
+                            <img src="{{ $event->image_url }}" alt="Current Image" class="img-thumbnail rounded" style="max-width:260px;height:160px;object-fit:cover;" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         </div>
                         @endif
                         <div id="imagePreview" class="mt-2" style="display:none;">

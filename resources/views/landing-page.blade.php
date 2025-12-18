@@ -460,10 +460,10 @@
             @forelse($upcomingEvents as $event)
             <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
-                    @if($event->image)
-                        <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
+                    @if($event->image_url)
+                        <img class="event-poster-img" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
                     @else
-                        <img class="event-poster-img" src="https://via.placeholder.com/600x800/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}">
+                        <img class="event-poster-img" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
                     @endif
                     <button class="save-btn save-btn--event" aria-label="Save event" type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

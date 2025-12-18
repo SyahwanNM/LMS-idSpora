@@ -146,15 +146,15 @@ class CertificateController extends Controller
         if(!empty($data)){
             try {
                 $event->update($data);
-                return redirect()->route('admin.certificates.index')->with('success', 'Pengaturan sertifikat berhasil diperbarui!');
+                return redirect()->route('admin.crm.certificates.index')->with('success', 'Pengaturan sertifikat berhasil diperbarui!');
             } catch(\Exception $e) {
                 \Log::error('Error updating certificate settings: ' . $e->getMessage());
-                return redirect()->route('admin.certificates.edit', $event)
+                return redirect()->route('admin.crm.certificates.edit', $event)
                     ->with('error', 'Terjadi kesalahan saat menyimpan pengaturan. Silakan coba lagi.');
             }
         }
 
-        return redirect()->route('admin.certificates.edit', $event)->with('info', 'Tidak ada perubahan yang disimpan.');
+        return redirect()->route('admin.crm.certificates.edit', $event)->with('info', 'Tidak ada perubahan yang disimpan.');
     }
 
     /**
@@ -364,7 +364,7 @@ class CertificateController extends Controller
         $registrations = $event->registrations()->with('user')->get();
         
         if($registrations->isEmpty()){
-            return redirect()->route('admin.events.show', $event)
+            return redirect()->route('admin.crm.certificates.index')
                 ->with('error', 'Tidak ada peserta yang terdaftar untuk event ini.');
         }
 
@@ -454,7 +454,7 @@ class CertificateController extends Controller
             // Cleanup
             array_map('unlink', glob($tempDir . '/*'));
             rmdir($tempDir);
-            return redirect()->route('admin.events.show', $event)
+            return redirect()->route('admin.crm.certificates.index')
                 ->with('error', 'Gagal menghasilkan sertifikat.');
         }
 
