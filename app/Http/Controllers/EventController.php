@@ -83,7 +83,7 @@ class EventController extends Controller
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
-        
+
         // Normalize path (remove 'storage/' prefix if exists)
         // Method store() returns path like 'events/filename.png' (relative to public disk)
         // We ensure it's stored as 'events/filename.png' in database

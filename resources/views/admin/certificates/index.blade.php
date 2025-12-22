@@ -3,12 +3,12 @@
 @section('title', 'Generate Sertifikat')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
         <h4 class="mb-0 text-dark fw-semibold"><i class="bi bi-award me-2"></i>Generate Sertifikat</h4>
-        <p class="text-muted small mb-0">Generate dan kelola sertifikat untuk semua event. Fokus pada pengaturan logo, tanda tangan, dan generate sertifikat.</p>
+            <p class="text-muted small mb-0">Generate dan kelola sertifikat untuk semua event. Fokus pada pengaturan logo, tanda tangan, dan generate sertifikat.</p>
+        </div>
     </div>
-</div>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">

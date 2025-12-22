@@ -114,8 +114,8 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="fw-semibold">{{ $registration->event->title }}</div>
-                                            <small class="text-muted">{{ $registration->event->event_date ? \Carbon\Carbon::parse($registration->event->event_date)->format('d M Y') : '-' }}</small>
+                                            <div class="fw-semibold">{{ $registration->event?->title ?? 'Event tidak ditemukan' }}</div>
+                                            <small class="text-muted">{{ $registration->event?->event_date ? \Carbon\Carbon::parse($registration->event->event_date)->format('d M Y') : '-' }}</small>
                                         </td>
                                         <td>
                                             <small>{{ $registration->created_at->format('d M Y H:i') }}</small>
