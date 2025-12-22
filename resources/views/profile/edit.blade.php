@@ -179,6 +179,66 @@
         }
         
         @media (max-width: 768px) {
+            .glass-card {
+                padding: 1.5rem !important;
+            }
+            
+            .glass-card h1 {
+                font-size: 1.75rem !important;
+            }
+            
+            .profile-img-wrapper {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                margin-bottom: 1rem;
+            }
+            
+            .flex.items-start.space-x-6 {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .flex.items-start.space-x-6 > * {
+                margin-bottom: 1rem;
+            }
+            
+            .country-code-wrapper {
+                width: 100% !important;
+            }
+            
+            .flex.gap-3 {
+                flex-direction: column;
+                gap: 0.75rem !important;
+            }
+            
+            #input-phone {
+                width: 100%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .glass-card {
+                padding: 1rem !important;
+            }
+            
+            .glass-card h1 {
+                font-size: 1.5rem !important;
+            }
+            
+            .country-code-select {
+                font-size: 0.875rem;
+                padding: 0.65rem 2.25rem 0.65rem 0.875rem !important;
+            }
+            
+            .neu-input {
+                font-size: 0.9rem;
+                padding: 0.75rem 1rem !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
             body {
                 padding-top: 70px;
             }
@@ -370,6 +430,41 @@
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
+
+        /* Country Code Dropdown Styling */
+        .country-code-wrapper {
+            position: relative;
+        }
+
+        .country-code-select {
+            padding: 0.75rem 2.5rem 0.75rem 1rem !important;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 4L6 8L10 4' stroke='%23374151' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.875rem center;
+            background-size: 12px;
+            cursor: pointer;
+        }
+
+        .country-code-select:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+            outline: none;
+        }
+
+        .country-code-select option {
+            padding: 0.5rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .country-code-wrapper {
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -447,7 +542,7 @@
                     @csrf
                     
                     <!-- Avatar Upload -->
-                    <div>
+                    <div id="field-avatar">
                         <label class="block text-sm font-semibold mb-2" style="color: #374151;">
                             Foto Profil
                         </label>
@@ -485,13 +580,14 @@
                     </div>
                     
                     <!-- Name -->
-                    <div>
+                    <div id="field-name">
                         <label class="block text-sm font-semibold mb-2" style="color: #374151;">
                             Nama Lengkap <span class="text-red-500">*</span>
                         </label>
                         <input 
                             type="text" 
                             name="name" 
+                            id="input-name"
                             value="{{ old('name', $user->name) }}"
                             class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
                             style="color: #111827;"
@@ -501,13 +597,14 @@
                     </div>
                     
                     <!-- Email -->
-                    <div>
+                    <div id="field-email">
                         <label class="block text-sm font-semibold mb-2" style="color: #374151;">
                             Email <span class="text-red-500">*</span>
                         </label>
                         <input 
                             type="email" 
                             name="email" 
+                            id="input-email"
                             value="{{ old('email', $user->email) }}"
                             class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
                             style="color: #111827;"
@@ -517,42 +614,66 @@
                     </div>
                     
                     <!-- Phone -->
-                    <div>
+                    <div id="field-phone">
                         <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Nomor Telepon
+                            Nomor Telepon <span class="text-red-500">*</span>
                         </label>
+                        <div class="flex gap-3">
+                            <!-- Country Code Dropdown -->
+                            <div style="flex-shrink: 0; width: 150px;" class="country-code-wrapper">
+                                <select 
+                                    name="phone_country_code" 
+                                    id="phone-country-code"
+                                    class="neu-input country-code-select w-full rounded-xl focus:outline-none transition-all @error('phone') border-red-300 @enderror"
+                                    style="color: #111827;"
+                                >
+                                    <option value="+62" {{ old('phone_country_code', $user->phone_country_code ?? '+62') == '+62' ? 'selected' : '' }}>🇮🇩 +62 (ID)</option>
+                                    <option value="+60" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+60' ? 'selected' : '' }}>🇲🇾 +60 (MY)</option>
+                                    <option value="+65" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+65' ? 'selected' : '' }}>🇸🇬 +65 (SG)</option>
+                                    <option value="+1" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+1' ? 'selected' : '' }}>🇺🇸 +1 (US)</option>
+                                    <option value="+44" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+44' ? 'selected' : '' }}>🇬🇧 +44 (GB)</option>
+                                    <option value="+61" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+61' ? 'selected' : '' }}>🇦🇺 +61 (AU)</option>
+                                    <option value="+86" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+86' ? 'selected' : '' }}>🇨🇳 +86 (CN)</option>
+                                    <option value="+81" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+81' ? 'selected' : '' }}>🇯🇵 +81 (JP)</option>
+                                    <option value="+82" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+82' ? 'selected' : '' }}>🇰🇷 +82 (KR)</option>
+                                    <option value="+66" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+66' ? 'selected' : '' }}>🇹🇭 +66 (TH)</option>
+                                    <option value="+84" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+84' ? 'selected' : '' }}>🇻🇳 +84 (VN)</option>
+                                    <option value="+63" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+63' ? 'selected' : '' }}>🇵🇭 +63 (PH)</option>
+                                    <option value="+91" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+91' ? 'selected' : '' }}>🇮🇳 +91 (IN)</option>
+                                </select>
+                            </div>
+                            <!-- Phone Number Input -->
+                            <div style="flex: 1;">
                         <input 
                             type="tel" 
-                            name="phone" 
-                            value="{{ old('phone', $user->phone ?? '') }}"
-                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
+                                    name="phone_number" 
+                                    id="input-phone"
+                                    value="{{ old('phone_number', $user->phone_number ?? '') }}"
+                                    class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all @error('phone') border-red-300 @enderror"
                             style="color: #111827;"
-                            placeholder="+62 812 3456 7890"
+                                    placeholder="812 3456 7890"
+                                    maxlength="15"
+                                    inputmode="numeric"
                         >
                     </div>
-                    
-                    <!-- Website -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Website/Portofolio
-                        </label>
-                        <input 
-                            type="url" 
-                            name="website" 
-                            value="{{ old('website', $user->website ?? '') }}"
-                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
-                            style="color: #111827;"
-                            placeholder="https://yourwebsite.com"
-                        >
+                        </div>
+                        @error('phone')
+                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs mt-2" style="color: #6b7280;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Masukkan nomor tanpa kode negara (contoh: <strong>812 3456 7890</strong> untuk Indonesia)
+                        </p>
                     </div>
                     
                     <!-- Bio -->
-                    <div>
+                    <div id="field-bio">
                         <label class="block text-sm font-semibold mb-2" style="color: #374151;">
                             Bio
                         </label>
                         <textarea 
                             name="bio"
+                            id="input-bio"
                             rows="4"
                             class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none resize-none transition-all"
                             style="color: #111827;"
@@ -634,6 +755,93 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+        // Phone number formatting
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('input-phone');
+            const countryCodeSelect = document.getElementById('phone-country-code');
+            
+            if (phoneInput) {
+                // Format phone number saat input (hanya angka dengan spasi untuk readability)
+                phoneInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/[^0-9]/g, '');
+                    
+                    // Format dengan spasi untuk readability (3-4-4 pattern)
+                    let formatted = value.replace(/(\d{3})(\d{4})(\d{0,4})/, function(match, p1, p2, p3) {
+                        if (p3) {
+                            return p1 + ' ' + p2 + ' ' + p3;
+                        } else if (p2) {
+                            return p1 + ' ' + p2;
+                        }
+                        return p1;
+                    });
+                    
+                    e.target.value = formatted;
+                });
+                
+                // Hapus leading zero saat blur
+                phoneInput.addEventListener('blur', function(e) {
+                    let value = e.target.value.replace(/[^0-9]/g, '');
+                    value = value.replace(/^0+/, ''); // Hapus leading zero
+                    
+                    // Format ulang
+                    let formatted = value.replace(/(\d{3})(\d{4})(\d{0,4})/, function(match, p1, p2, p3) {
+                        if (p3) {
+                            return p1 + ' ' + p2 + ' ' + p3;
+                        } else if (p2) {
+                            return p1 + ' ' + p2;
+                        }
+                        return p1;
+                    });
+                    
+                    e.target.value = formatted;
+                });
+            }
+        });
+
+        // Deep-link to field based on query parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const focusField = urlParams.get('focus');
+            
+            if (focusField) {
+                // Map field names to input IDs
+                const fieldMap = {
+                    'name': 'input-name',
+                    'email': 'input-email',
+                    'phone': 'input-phone',
+                    'avatar': 'avatarInput',
+                    'bio': 'input-bio'
+                };
+                
+                const inputId = fieldMap[focusField];
+                if (inputId) {
+                    const inputElement = document.getElementById(inputId);
+                    if (inputElement) {
+                        // Scroll to field
+                        const fieldDiv = document.getElementById('field-' + focusField);
+                        if (fieldDiv) {
+                            fieldDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        
+                        // Focus on input after a short delay
+                        setTimeout(function() {
+                            inputElement.focus();
+                            
+                            // Highlight the field
+                            inputElement.style.border = '2px solid #fbbf24';
+                            inputElement.style.boxShadow = '0 0 0 3px rgba(251, 191, 36, 0.2)';
+                            
+                            // Remove highlight after 3 seconds
+                            setTimeout(function() {
+                                inputElement.style.border = '';
+                                inputElement.style.boxShadow = '';
+                            }, 3000);
+                        }, 300);
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
