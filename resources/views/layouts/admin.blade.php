@@ -94,7 +94,7 @@
                 });
             });
         }
-    });
+        });
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(90deg,#6f42c1 0%, #a855f7 100%);}    
