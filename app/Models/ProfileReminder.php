@@ -1,53 +1,30 @@
 <?php
 
-namespace App\Mail;
+namespace App\Models;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class EventCompletionMail extends Mailable
+class ProfileReminder extends Model
 {
-    use Queueable, SerializesModels;
+    protected $fillable = [
+        'user_id',
+        'last_shown_at',
+        'dismiss_count',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'last_shown_at' => 'datetime',
+        'dismiss_count' => 'integer',
+        'is_active' => 'boolean',
+    ];
 
     /**
-     * Create a new message instance.
+     * Relasi ke User
      */
-    public function __construct()
+    public function user(): BelongsTo
     {
-        //
-    }
-
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject: 'Event Completion Mail',
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'view.name',
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        return $this->belongsTo(User::class);
     }
 }

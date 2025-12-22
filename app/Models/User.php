@@ -72,6 +72,7 @@ class User extends Authenticatable
     {
         return $this->hasOne(ProfileReminder::class);
     }
+
     /**
      * Accessor unified URL avatar (gunakan jika di view: Auth::user()->avatar_url)
      */
@@ -105,6 +106,7 @@ class User extends Authenticatable
         $color = 'ffffff';
         return 'https://ui-avatars.com/api/?name=' . urlencode($name) . "&background={$bg}&color={$color}&format=png";
     }
+
     /**
      * Hitung persentase kelengkapan profile
      * Field yang dihitung: name, email, phone, avatar, bio (soft mandatory)
