@@ -18,36 +18,6 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
-
-Route::get('/modul-course', function () {
-    return view('modul-course');
-})->name('modul-course');
-
-Route::get('/aturan-kuis', function () {
-    return view('aturan-kuis');
-})->name('aturan-kuis');
-
-Route::get('/payment-course', function () {
-    return view('payment-course');
-})->name('payment-course');
-
-Route::get('/detail-course', function () {
-    return view('detail-course');
-})->name('detail-course');
-
-Route::get('/quiz1-course', function () {
-    return view('quiz1-course');
-})->name('quiz1-course');
-
-// ...existing code...
-Route::get('/quiz-course', function () {
-    return view('quiz-course');
-})->name('quiz-course');
-// ...existing code...
-
-Route::get('/latihan-course', function () {
-    return view('latihan-course');
-})->name('latihan-course');
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
 });
@@ -83,6 +53,52 @@ Route::get('/', function () {
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
+
+// punya dini
+Route::get('/modul-course', function () {
+    return view('modul-course');
+})->name('modul-course');
+
+Route::get('/aturan-kuis', function () {
+    return view('aturan-kuis');
+})->name('aturan-kuis');
+
+Route::get('/payment-course', function () {
+    return view('payment-course');
+})->name('payment-course');
+
+Route::get('/detail-course', function () {
+    return view('detail-course');
+})->name('detail-course');
+
+Route::get('/quiz1-course', function () {
+    return view('quiz1-course');
+})->name('quiz1-course');
+
+// ...existing code...
+Route::get('/quiz-course', function () {
+    return view('quiz-course');
+})->name('quiz-course');
+Route::get('/hasil-course', function () {
+    return view('hasil-course');
+})->name('hasil-course');
+Route::get('/admin/course-builder', function () {
+    return view('admin/course-builder');
+})->name('admin/course-builder');
+Route::get('/admin/add-course', function () {
+    return view('admin/add-course');
+})->name('admin/add-course');
+Route::get('/admin/view-modul-course', function () {
+    return view('admin/view-modul-course');
+})->name('admin/view-modul-course');
+Route::get('/admin/add-pdf-module', function () {
+    return view('admin/add-pdf-module');
+})->name('add-pdf-module');
+Route::get('/admin/report', function () {
+    return view('admin/report');
+})->name('report');
+
+
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
@@ -257,3 +273,4 @@ Route::get('/course-quiz-start', function () {
         ]);
     });
 });
+
