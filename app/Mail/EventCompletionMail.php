@@ -1,89 +1,53 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Mail;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use App\Services\ProfileReminderService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
 
-class ProfileReminderController extends Controller
+class EventCompletionMail extends Mailable
 {
-    protected $reminderService;
+    use Queueable, SerializesModels;
 
-    public function __construct(ProfileReminderService $reminderService)
+    /**
+     * Create a new message instance.
+     */
+    public function __construct()
     {
-        $this->reminderService = $reminderService;
+        //
     }
 
     /**
-     * Cek status reminder untuk user yang sedang login
-     * 
-     * @return \Illuminate\Http\JsonResponse
+     * Get the message envelope.
      */
-    public function check()
+    public function envelope(): Envelope
     {
-        $user = Auth::user();
-        
-        if (!$user) {
-            return response()->json([
-                'should_show' => false,
-                'message' => 'User not authenticated',
-            ], 401);
-        }
-
-        // Debug: Log user info
-        Log::info('Profile Reminder Check', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'user_role' => $user->role,
-            'completion' => $user->getProfileCompletionPercentage(),
-            'is_complete' => $user->isProfileComplete(),
-        ]);
-
-        $reminderData = $this->reminderService->getReminderData($user);
-
-        if (!$reminderData) {
-            Log::info('Reminder data is null - should not show');
-            return response()->json([
-                'should_show' => false,
-                'message' => 'Reminder tidak perlu ditampilkan',
-                'debug' => [
-                    'completion' => $user->getProfileCompletionPercentage(),
-                    'is_complete' => $user->isProfileComplete(),
-                ],
-            ]);
-        }
-
-        // Tandai sebagai sudah ditampilkan
-        $this->reminderService->markAsShown($user);
-
-        Log::info('Reminder should be shown', $reminderData);
-
-        return response()->json($reminderData);
+        return new Envelope(
+            subject: 'Event Completion Mail',
+        );
     }
 
     /**
-     * Dismiss reminder (user menutup reminder)
-     * 
-     * @return \Illuminate\Http\JsonResponse
+     * Get the message content definition.
      */
-    public function dismiss()
+    public function content(): Content
     {
-        $user = Auth::user();
-        
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User not authenticated',
-            ], 401);
-        }
+        return new Content(
+            view: 'view.name',
+        );
+    }
 
-        $this->reminderService->dismissReminder($user);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reminder dismissed',
-        ]);
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
     }
 }
