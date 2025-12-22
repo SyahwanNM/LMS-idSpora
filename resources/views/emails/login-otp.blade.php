@@ -49,7 +49,7 @@
         <div class="header" style="background: linear-gradient(135deg, #f59e0b 0%, #a855f7 100%); padding: 40px 30px; text-align: center; color: white; position: relative;">
             <div class="logo" style="margin: 0 auto 20px; text-align: center; position: relative; z-index: 1;">
                 <div class="logo-text" style="font-size: 32px; font-weight: bold; text-align: center; line-height: 1; display: inline-block;">
-                    <span class="logo-id" style="color: #f4a442; font-weight: bold;">Id</span><span class="logo-spora" style="color: #51376C; font-weight: bold;">SPora</span>
+                    <span class="logo-id" style="color: #f4a442; font-weight: bold;">Id</span><span class="logo-spora" style="color: #51376C; font-weight: bold;">Spora</span>
                 </div>
             </div>
             <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 10px; position: relative; z-index: 1; color: white; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);">LMS IdSpora</h1>

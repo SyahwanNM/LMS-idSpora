@@ -203,16 +203,66 @@
 
             <form action="{{ route('new-password.reset') }}" method="post">
                 @csrf
-                <input type="hidden" name="token" value="{{ session('token') }}">
+                <input type="hidden" name="token" value="{{ session('token') ?? request('token') }}">
                 
                 <div class="mb-3">
                     <h6>Password Baru</h6>
-                    <input type="password" name="password" class="form-control" required>
+                    <div class="input-group">
+                        <input id="reset-password" type="password" name="password" class="form-control" required>
+                        <button type="button" class="btn btn-outline-light" id="toggle-reset-password" aria-label="Tampilkan/Sembunyikan kata sandi" style="border-color: rgba(255,255,255,0.4); display:flex; align-items:center;">
+                            <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M3 3l18 18"/>
+                                <path d="M10.58 10.58a3 3 0 104.24 4.24"/>
+                                <path d="M7.11 7.11C4.6 8.55 3 12 3 12s4 8 9 8c2.03 0 3.88-.73 5.37-1.88"/>
+                                <path d="M20.89 16.89C21.4 16.02 22 14.9 22 12c0 0-4-8-10-8-1.22 0-2.36.23-3.43.62"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="pw-checklist" style="margin-top:8px; font-size:13px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="chk-len" class="badge" style="background-color: rgba(255,255,255,0.2);">✗</span>
+                            <span>Minimal 8 karakter</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <span id="chk-upper" class="badge" style="background-color: rgba(255,255,255,0.2);">✗</span>
+                            <span>Ada huruf besar (A-Z)</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <span id="chk-digit" class="badge" style="background-color: rgba(255,255,255,0.2);">✗</span>
+                            <span>Ada angka (0-9)</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <span id="chk-symbol" class="badge" style="background-color: rgba(255,255,255,0.2);">✗</span>
+                            <span>Ada simbol (tanda baca)</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="mb-3">
                     <h6>Konfirmasi Password</h6>
-                    <input type="password" name="password_confirmation" class="form-control" required>
+                    <div class="input-group">
+                        <input id="reset-password-confirm" type="password" name="password_confirmation" class="form-control" required>
+                        <button type="button" class="btn btn-outline-light" id="toggle-reset-password-confirm" aria-label="Tampilkan/Sembunyikan konfirmasi" style="border-color: rgba(255,255,255,0.4); display:flex; align-items:center;">
+                            <svg id="icon-eye2" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg id="icon-eye-slash2" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M3 3l18 18"/>
+                                <path d="M10.58 10.58a3 3 0 104.24 4.24"/>
+                                <path d="M7.11 7.11C4.6 8.55 3 12 3 12s4 8 9 8c2.03 0 3.88-.73 5.37-1.88"/>
+                                <path d="M20.89 16.89C21.4 16.02 22 14.9 22 12c0 0-4-8-10-8-1.22 0-2.36.23-3.43.62"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-2" style="font-size:13px;">
+                        <span id="chk-match" class="badge" style="background-color: rgba(255,255,255,0.2);">✗</span>
+                        <span>Konfirmasi harus sama</span>
+                    </div>
                 </div>
                 
                 <button type="submit" class="btn-register">Reset Password</button>
@@ -226,3 +276,68 @@
 </body>
 
 </html>
+<script>
+    (function(){
+        const pw = document.getElementById('reset-password');
+        const pwc = document.getElementById('reset-password-confirm');
+        const eye = document.getElementById('icon-eye');
+        const eyeSlash = document.getElementById('icon-eye-slash');
+        const eye2 = document.getElementById('icon-eye2');
+        const eyeSlash2 = document.getElementById('icon-eye-slash2');
+        const btn = document.getElementById('toggle-reset-password');
+        const btn2 = document.getElementById('toggle-reset-password-confirm');
+        const chkLen = document.getElementById('chk-len');
+        const chkUpper = document.getElementById('chk-upper');
+        const chkDigit = document.getElementById('chk-digit');
+        const chkSymbol = document.getElementById('chk-symbol');
+        const chkMatch = document.getElementById('chk-match');
+
+        function setBadge(el, ok){
+            if(!el) return;
+            el.textContent = ok ? '✓' : '✗';
+            el.style.backgroundColor = ok ? '#51cf66' : 'rgba(255,255,255,0.2)';
+            el.style.color = ok ? '#0b3d0b' : '#ffffff';
+        }
+        function checkPolicy(val){
+            const hasLen = val.length >= 8;
+            const hasUpper = /[A-Z]/.test(val);
+            const hasDigit = /[0-9]/.test(val);
+            const hasSymbol = /[^A-Za-z0-9]/.test(val);
+            setBadge(chkLen, hasLen);
+            setBadge(chkUpper, hasUpper);
+            setBadge(chkDigit, hasDigit);
+            setBadge(chkSymbol, hasSymbol);
+            return hasLen && hasUpper && hasDigit && hasSymbol;
+        }
+
+        function checkMatch(){
+            const ok = pw.value === pwc.value && pwc.value.length > 0;
+            setBadge(chkMatch, ok);
+            return ok;
+        }
+
+        if (pw) {
+            pw.addEventListener('input', function(){ checkPolicy(pw.value); checkMatch(); });
+        }
+        if (pwc) {
+            pwc.addEventListener('input', function(){ checkMatch(); });
+        }
+
+        if (btn && pw && eye && eyeSlash) {
+            btn.addEventListener('click', function(){
+                const isHidden = pw.type === 'password';
+                pw.type = isHidden ? 'text' : 'password';
+                eye.style.display = isHidden ? 'none' : '';
+                eyeSlash.style.display = isHidden ? '' : 'none';
+            });
+        }
+        if (btn2 && pwc && eye2 && eyeSlash2) {
+            btn2.addEventListener('click', function(){
+                const isHidden = pwc.type === 'password';
+                pwc.type = isHidden ? 'text' : 'password';
+                eye2.style.display = isHidden ? 'none' : '';
+                eyeSlash2.style.display = isHidden ? '' : 'none';
+            });
+        }
+    })();
+</script>

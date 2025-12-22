@@ -24,10 +24,13 @@
             </button>
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link {{ (request()->routeIs('admin.events.*') || request()->routeIs('admin.add-event')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Users</a></li>
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">Report</a></li>
+                    @if(!(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')))
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                    @endif
+                    {{-- Manage Event link removed from navbar per request --}}
+                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts</a></li>
+                    {{-- Report menu moved into Kelola Event page per request --}}
+                    {{-- Certificate management moved to CRM --}}
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
@@ -47,9 +50,9 @@
                                 <li><hr class="dropdown-divider"></li>
                             @endif
                             <li>
-                                <form id="adminLogoutForm" action="{{ route('logout') }}" method="POST" class="m-0">
+                                <form action="{{ route('logout') }}" method="POST" class="m-0">
                                     @csrf
-                                    <button type="button" id="openAdminLogoutModal" class="dropdown-item small text-danger" data-bs-toggle="modal" data-bs-target="#adminLogoutModal">
+                                    <button type="submit" class="dropdown-item small text-danger">
                                         <i class="bi bi-box-arrow-right me-1"></i>Logout
                                     </button>
                                 </form>
@@ -92,39 +95,6 @@
             });
         }
     });
-        // Admin Logout Modal logic
-        document.addEventListener('DOMContentLoaded', function(){
-            if(!window.bootstrap) return;
-            const openBtn = document.getElementById('openAdminLogoutModal');
-            const modalEl = document.getElementById('adminLogoutModal');
-            if(!openBtn || !modalEl) return;
-            const modal = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: true, keyboard: true });
-            // Ensure profile dropdown hides to avoid z-index overlap with modal
-            const ddTrigger = document.getElementById('adminProfileDropdown');
-            const ddInstance = ddTrigger ? bootstrap.Dropdown.getOrCreateInstance(ddTrigger, { autoClose: 'outside', display: 'static' }) : null;
-            openBtn.addEventListener('click', function(e){
-                e.preventDefault();
-                e.stopPropagation();
-                try { ddInstance?.hide(); } catch(_) {}
-                setTimeout(()=> modal.show(), 120);
-            });
-            const confirmBtn = document.getElementById('adminLogoutConfirmBtn');
-            const checkbox = document.getElementById('adminLogoutCheckbox');
-            const form = document.getElementById('adminLogoutForm');
-            function sync(){ if(confirmBtn) confirmBtn.disabled = !checkbox?.checked; }
-            // Reset state each time modal is shown
-            modalEl.addEventListener('show.bs.modal', function(){
-                if(checkbox){ checkbox.checked = false; }
-                sync();
-            });
-            checkbox?.addEventListener('change', sync);
-            sync();
-            confirmBtn?.addEventListener('click', function(){
-                confirmBtn.classList.add('tapped');
-                try { showAdminLogoutSuccessState(); } catch(_e){}
-                setTimeout(()=>{ form?.submit(); }, 900);
-            });
-        });
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(90deg,#6f42c1 0%, #a855f7 100%);}    
@@ -170,83 +140,6 @@
     body { padding-top: 78px; }
     @media (max-width: 991.98px){ body { padding-top: 66px; } }
     </style>
-    <!-- Admin Logout Confirmation Modal (modern + animated) -->
-    <div class="modal fade" id="adminLogoutModal" tabindex="-1" aria-labelledby="adminLogoutLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content modal-modern position-relative">
-                <span class="gradient-ring" aria-hidden="true"></span>
-                <div class="modal-header border-0">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="icon-pill logout-pulse"><i class="bi bi-box-arrow-right fs-4"></i></div>
-                        <div>
-                            <h5 class="modal-title mb-0" id="adminLogoutLabel">Konfirmasi Logout</h5>
-                            <small class="text-muted">Anda akan mengakhiri sesi admin</small>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body pt-0">
-                    <p class="mb-3">Apakah Anda yakin ingin keluar sekarang?</p>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="1" id="adminLogoutCheckbox">
-                        <label class="form-check-label text-dark" for="adminLogoutCheckbox">Saya yakin ingin logout.</label>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" id="adminLogoutConfirmBtn" class="btn btn-danger confirm-danger-btn" disabled>
-                        <i class="bi bi-box-arrow-right me-1"></i> Logout
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <style>
-    /* Modern modal look (shared) */
-    .modal-modern{border:0;border-radius:18px;background:rgba(255,255,255,0.92);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);box-shadow:0 20px 40px rgba(0,0,0,.18),0 8px 18px rgba(0,0,0,.08);overflow:hidden}
-    .gradient-ring{position:absolute;inset:-2px;border-radius:20px;padding:2px;background:linear-gradient(135deg,#6366f1,#ef4444,#f59e0b,#10b981);background-size:300% 300%;animation:hue-shift 6s ease infinite;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-    @keyframes hue-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-    .icon-pill{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#faf5ff);color:#6d28d9;box-shadow:inset 0 0 0 1px rgba(109,40,217,.25)}
-    .logout-pulse{animation:pulse 1.4s ease-in-out infinite}
-    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-    .confirm-danger-btn{background:#dc2626;border-color:#dc2626}
-    .confirm-danger-btn:hover{background:#b91c1c;border-color:#b91c1c}
-    #adminLogoutConfirmBtn.tapped{transform:scale(.98)}
-    /* Force logout confirmation label text to black */
-    #adminLogoutModal .form-check-label { color:#000 !important; }
-    </style>
-    <style>
-    /* Animated check for logout success */
-    .check-anim { width:88px; height:88px; display:block; margin:0 auto; }
-    .check-anim .circle { fill: none; stroke: #10b981; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray: 201; stroke-dashoffset: 201; animation: drawCircle .6s ease forwards; }
-    .check-anim .check { fill: none; stroke: #10b981; stroke-width:4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray: 60; stroke-dashoffset: 60; animation: drawCheck .5s .45s ease forwards; }
-    @keyframes drawCircle { to { stroke-dashoffset: 0; } }
-    @keyframes drawCheck { to { stroke-dashoffset: 0; } }
-    .logout-success-feedback p { margin-top: 10px; font-weight:600; }
-    </style>
-
-    <script>
-    // Replace modal body with animated success state during logout
-    function showAdminLogoutSuccessState(){
-        const modalEl = document.getElementById('adminLogoutModal');
-        if(!modalEl) return;
-        const body = modalEl.querySelector('.modal-body');
-        const footer = modalEl.querySelector('.modal-footer');
-        if(footer) footer.style.display='none';
-        if(body){
-            body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
-            body.innerHTML = `
-                <div class="logout-success-feedback text-center">
-                    <svg class="check-anim" viewBox="0 0 72 72" aria-hidden="true">
-                        <circle class="circle" cx="36" cy="36" r="32"></circle>
-                        <path class="check" d="M22 36.5 32 46 50 27"></path>
-                    </svg>
-                    <p class="mb-0">Berhasil logout</p>
-                    <small class="text-muted">Mengalihkan...</small>
-                </div>`;
-        }
-    }
-    </script>
     @yield('scripts')
 </body>
 </html>

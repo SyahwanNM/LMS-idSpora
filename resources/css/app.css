@@ -2110,6 +2110,27 @@ label {
   overflow-y: auto;
   padding-right: 5px;
 }
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+}
+.progress-steps::before{
+    content: '';
+    position: absolute;
+    top: 20px; /* vertical center of 40px circles */
+    left: 12.5%; /* from center of first step */
+    right: 12.5%; /* to center of last step */
+    height: 6px;
+    background-color: #f4c430; /* yellow bar */
+    z-index: 1; /* behind circles */
+    transform: translateY(-3px); /* fine-tune alignment */
+}
+
+.step {
+    text-align: center;
+    width: 25%;
 .scroll_rating_card::-webkit-scrollbar {
   width: 8px;
 }
@@ -2127,6 +2148,8 @@ label {
     display: flex; 
     margin-bottom: 50px;
     gap: 20px;
+    position: relative;
+    z-index: 2;
 }
 .box_kiri_detail_course {
     flex: 2; 
@@ -3727,7 +3750,7 @@ hr {
 }
 
 .footer-section::before {
-    content: "";
+    content-detail: "";
     position: absolute;
     top: 0;
     left: 0;
