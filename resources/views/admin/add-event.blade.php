@@ -4,14 +4,41 @@
 
 @section('content')
 <div class="container-fluid py-4">
-        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+        {{-- Success Toast Popup --}}
+        @if(session('success'))
+            <div aria-live="polite" aria-atomic="true" class="position-relative">
+                <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+                    <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    try{
+                        var el = document.getElementById('eventUpdatedToast');
+                        if(window.bootstrap && el){
+                            var t = new bootstrap.Toast(el);
+                            t.show();
+                        }
+                    }catch(e){}
+                });
+            </script>
+        @endif
         @if($errors->any())
             <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
         @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Kelola Event</h4>
+            <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
                 <a href="{{ route('admin.events.history') }}" class="btn btn-outline-secondary"><i class="bi bi-clock-history"></i> History</a>
+                <a href="{{ route('admin.reports') }}" class="btn btn-outline-primary"><i class="bi bi-graph-up-arrow"></i> Report</a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
@@ -464,6 +491,12 @@
                                     </select>
                                 </div>
                                 <!-- Level field removed per request -->
+                                <!-- Penjelasan Singkat (maks 40 kata) -->
+                                <div class="mb-3">
+                                    <label for="short_desc" class="form-label fw-semibold">Penjelasan Singkat <span class="text-danger">*</span></label>
+                                    <textarea name="short_description" id="short_desc" class="form-control" rows="3" required placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description') }}</textarea>
+                                    <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40 kata</small>
+                                </div>
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
                                     <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
@@ -711,6 +744,8 @@
         .manage-action-create:before { border-left-color:#0f5d2c; }
         .manage-action-manage { background:linear-gradient(135deg,#0d6efd,#3b82f6); }
         .manage-action-manage:before { border-left-color:#093d94; }
+        /* Ensure delete confirmation text is black */
+        #deleteEventModal .form-check-label { color: #000 !important; }
     </style>
     @endsection
     @section('scripts')
@@ -1324,6 +1359,18 @@
                     if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; }
                     else { f.classList.remove('border-danger'); }
                 });
+                // Validate short description max 40 words
+                const shortDescEl = document.getElementById('short_desc');
+                if(shortDescEl){
+                    const words = (shortDescEl.value || '').trim().split(/\s+/).filter(Boolean);
+                    if(words.length > 40){
+                        ok = false;
+                        shortDescEl.classList.add('border-danger');
+                        alert('Penjelasan singkat maksimal 40 kata. Saat ini: ' + words.length + ' kata.');
+                    } else {
+                        shortDescEl.classList.remove('border-danger');
+                    }
+                }
                 if (!ok) {
                     // Build list of missing required fields for clearer feedback
                     const requiredSet = Array.from(form.querySelectorAll('[required]'));
@@ -1335,6 +1382,7 @@
                         if(id === 'nama' || name === 'title') return 'Nama Event';
                         if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
                         if(id === 'level' || name === 'level') return 'Level';
+                        if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
                         if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
                         if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
                         if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
@@ -1364,6 +1412,7 @@
                 if(id === 'nama' || name === 'title') return 'Nama Event';
                 if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
                 if(id === 'level' || name === 'level') return 'Level';
+                if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
                 if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
                 if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
                 if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
@@ -1380,14 +1429,21 @@
             // expose globally so CKEditor init can call it even if defined later
             window.updateSubmitState = function updateSubmitState(){
                 const filled = allRequiredFilled();
-                if(submitBtn){ submitBtn.disabled = !filled; }
+                // Extra rule: short description must be <= 40 words
+                const sdEl = document.getElementById('short_desc');
+                const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
+                const overLimit = sdEl ? sdWords > 40 : false;
+                if(submitBtn){ submitBtn.disabled = (!filled || overLimit); }
                 if(submitHint){
-                    if(filled){
-                        submitHint.style.display = 'none';
-                    } else {
+                    if(!filled){
                         const missingList = missingRequired().map(fieldFriendlyName);
                         submitHint.textContent = 'Lengkapi: ' + missingList.join(', ');
                         submitHint.style.display = 'block';
+                    } else if(overLimit){
+                        submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';
+                        submitHint.style.display = 'block';
+                    } else {
+                        submitHint.style.display = 'none';
                     }
                 }
             }
@@ -1406,6 +1462,22 @@
             }
             // Initial state
             updateSubmitState();
+
+            // Live word count for short description (max 40 words)
+            const shortDescEl = document.getElementById('short_desc');
+            const shortDescCountEl = document.getElementById('shortDescCount');
+            function updateShortDescCount(){
+                if(!shortDescEl || !shortDescCountEl) return;
+                const words = (shortDescEl.value || '').trim().split(/\s+/).filter(Boolean);
+                shortDescCountEl.textContent = words.length;
+                if(words.length > 40){
+                    shortDescCountEl.classList.add('text-danger');
+                } else {
+                    shortDescCountEl.classList.remove('text-danger');
+                }
+            }
+            ['input','change','blur'].forEach(evName => shortDescEl?.addEventListener(evName, () => { updateShortDescCount(); updateSubmitState(); }));
+            updateShortDescCount();
         } else {
             console.warn('[EventForm] Form element not found.');
         }

@@ -67,9 +67,29 @@ class EventParticipationController extends Controller
         if(!$registration || $registration->status !== 'active'){
             return redirect()->back()->with('error','Anda belum terdaftar.');
         }
-        // Pastikan event sudah selesai
+        // Pastikan event sudah selesai (robust parsing for time fields)
         $eventDate = $event->event_date ? Carbon::parse($event->event_date) : null;
-        $endTime = $event->event_time_end ? Carbon::parse($event->event_date.' '.$event->event_time_end) : ($eventDate ? $eventDate->copy()->endOfDay() : null);
+        $parseEventTime = function($date, $raw){
+            if(empty($raw)) return null;
+            if($raw instanceof Carbon) return $raw;
+            $s = trim((string)$raw);
+            // Strip trailing timezone labels
+            $s = preg_replace('/\s*(WIB|WITA|WIT)\s*$/i','',$s);
+            // Normalize 14.30 -> 14:30
+            if(preg_match('/^\d{1,2}\.\d{2}$/',$s)) $s = str_replace('.',':',$s);
+            // If already contains a date, parse directly
+            if(preg_match('/\d{4}-\d{2}-\d{2}/',$s)){
+                try { return Carbon::parse($s); } catch(\Throwable $e){ return null; }
+            }
+            // Combine with provided date
+            if($date){
+                $dateStr = $date instanceof Carbon ? $date->format('Y-m-d') : (string)$date;
+                try { return Carbon::parse($dateStr.' '.$s); } catch(\Throwable $e){ return null; }
+            }
+            try { return Carbon::parse($s); } catch(\Throwable $e){ return null; }
+        };
+        $endTime = $parseEventTime($eventDate, $event->event_time_end);
+        if(!$endTime && $eventDate){ $endTime = $eventDate->copy()->endOfDay(); }
         if(!$endTime || Carbon::now()->lte($endTime)){
             return redirect()->back()->with('error','Event belum selesai, feedback belum dapat dikirim.');
         }
@@ -78,7 +98,52 @@ class EventParticipationController extends Controller
         ]);
         $registration->feedback_text = $data['feedback_text'];
         $registration->feedback_submitted_at = Carbon::now();
+        // Issue certificate immediately after feedback submitted
+        if (empty($registration->certificate_issued_at)) {
+            $registration->certificate_issued_at = Carbon::now();
+        }
         $registration->save();
-        return redirect()->back()->with('success','Terima kasih atas feedback Anda!');
+        return redirect()->back()->with('success','Terima kasih atas feedback Anda! Sertifikat telah terbuka.');
+    }
+
+    public function submitAttendance(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if(!$user){
+            return redirect()->back()->with('error','Login diperlukan.');
+        }
+        $registration = EventRegistration::where('event_id',$event->id)->where('user_id',$user->id)->first();
+        if(!$registration || $registration->status !== 'active'){
+            return redirect()->back()->with('error','Anda belum terdaftar.');
+        }
+        // Pastikan event sudah selesai
+        $eventDate = $event->event_date ? Carbon::parse($event->event_date) : null;
+        $parseEventTime = function($date, $raw){
+            if(empty($raw)) return null;
+            if($raw instanceof Carbon) return $raw;
+            $s = trim((string)$raw);
+            $s = preg_replace('/\s*(WIB|WITA|WIT)\s*$/i','',$s);
+            if(preg_match('/^\d{1,2}\.\d{2}$/',$s)) $s = str_replace('.',':',$s);
+            if(preg_match('/\d{4}-\d{2}-\d{2}/',$s)){
+                try { return Carbon::parse($s); } catch(\Throwable $e){ return null; }
+            }
+            if($date){
+                $dateStr = $date instanceof Carbon ? $date->format('Y-m-d') : (string)$date;
+                try { return Carbon::parse($dateStr.' '.$s); } catch(\Throwable $e){ return null; }
+            }
+            try { return Carbon::parse($s); } catch(\Throwable $e){ return null; }
+        };
+        $endTime = $parseEventTime($eventDate, $event->event_time_end);
+        if(!$endTime && $eventDate){ $endTime = $eventDate->copy()->endOfDay(); }
+        if(!$endTime || Carbon::now()->lte($endTime)){
+            return redirect()->back()->with('error','Event belum selesai, attendance belum dapat dikirim.');
+        }
+        $data = $request->validate([
+            'attended' => 'required|in:yes,no',
+        ]);
+        $registration->attendance_status = $data['attended'];
+        $registration->attended_at = Carbon::now();
+        $registration->save();
+        return redirect()->back()->with('success','Attendance berhasil disimpan.');
     }
 }

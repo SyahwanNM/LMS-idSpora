@@ -39,15 +39,16 @@
                                         <span class="ribbon-text">{{ strtoupper($event->manage_action) }}</span>
                                     </div>
                                 @endif
-                                @if($event->image)
+                                @if($event->image_url)
                                     <figure class="event-image-figure mb-0" data-bs-toggle="modal" data-bs-target="#imagePreviewModal" style="cursor:zoom-in;">
-                                        <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" 
-                                             class="img-fluid rounded shadow-sm event-main-image">
+                                        <img src="{{ $event->image_url }}" alt="{{ $event->title }}" 
+                                             class="img-fluid rounded shadow-sm event-main-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                         <figcaption class="event-image-overlay small">
                                             <i class="bi bi-arrows-fullscreen me-1"></i> Klik untuk perbesar
                                         </figcaption>
                                     </figure>
-                                @else
+                                @endif
+                                @if(!$event->image_url)
                                     <div class="bg-light rounded d-flex align-items-center justify-content-center no-image-block">
                                         <div class="text-center text-muted">
                                             <i class="bi bi-image" style="font-size: 3rem;"></i>
@@ -420,6 +421,51 @@
                     </div>
                     @endif
 
+                    <!-- Certificate Generation Section -->
+                    @php
+                        $registrationsCount = $event->registrations()->count();
+                    @endphp
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="border rounded p-4 {{ $registrationsCount > 0 ? 'bg-light' : 'bg-warning-subtle' }}">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="text-dark mb-2"><i class="bi bi-award me-2"></i>Kelola Sertifikat</h6>
+                                        <p class="text-muted small mb-0">
+                                            @if($registrationsCount > 0)
+                                                Generate sertifikat untuk semua peserta yang terdaftar pada event ini. 
+                                                Total peserta: <strong>{{ $registrationsCount }}</strong> orang.
+                                            @else
+                                                <span class="text-warning-emphasis">Belum ada peserta yang terdaftar pada event ini.</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                    @if($event->certificate_logo || $event->certificate_signature)
+                                    <div class="text-end">
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Logo & TTD Terpasang</span>
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @if($registrationsCount > 0)
+                                    <a href="{{ route('admin.certificates.generate-massal', $event) }}" class="btn btn-success" onclick="return confirm('Apakah Anda yakin ingin generate sertifikat untuk semua {{ $registrationsCount }} peserta? Proses ini mungkin memakan waktu beberapa saat.')">
+                                        <i class="bi bi-download me-1"></i> Generate Semua Sertifikat (ZIP)
+                                    </a>
+                                    @endif
+                                    <a href="{{ route('admin.events.edit', $event) }}#certificate-settings" class="btn btn-outline-primary">
+                                        <i class="bi bi-gear me-1"></i> Pengaturan Logo & Tanda Tangan
+                                    </a>
+                                </div>
+                                @if(!$event->certificate_logo && !$event->certificate_signature)
+                                <div class="alert alert-info mt-3 mb-0 small">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <strong>Tips:</strong> Upload logo dan tanda tangan di halaman Edit Event untuk membuat sertifikat lebih profesional.
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Action Buttons -->
                     <div class="row mt-4">
                         <div class="col-12">
@@ -552,7 +598,7 @@
             </div>
             <div class="modal-body pt-2">
                 <div class="image-preview-container">
-                        <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" class="preview-full-image" id="previewFullImage">
+                        <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="preview-full-image" id="previewFullImage" onerror="this.src='{{ asset('aset/poster.png') }}'">
                 </div>
             </div>
             <div class="modal-footer justify-content-between py-2 border-0">
@@ -561,7 +607,7 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZoomIn"><i class="bi bi-zoom-in"></i></button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZoomOut"><i class="bi bi-zoom-out"></i></button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetZoom"><i class="bi bi-aspect-ratio"></i></button>
-                        <a href="{{ Storage::url($event->image) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Buka Tab</a>
+                        <a href="{{ $event->image_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Buka Tab</a>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>

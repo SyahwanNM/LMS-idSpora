@@ -53,6 +53,7 @@ class EventController extends Controller
             // Relax validation so new dynamic materi/jenis values allowed
             'materi' => 'nullable|string|max:255',
             'jenis' => 'nullable|string|max:100',
+            'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -82,6 +83,16 @@ class EventController extends Controller
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
+        
+        // Normalize path (remove 'storage/' prefix if exists)
+        // Method store() returns path like 'events/filename.png' (relative to public disk)
+        // We ensure it's stored as 'events/filename.png' in database
+        $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+        
+        // Ensure path starts with 'events/' for consistency
+        if (!str_starts_with($imagePath, 'events/')) {
+            $imagePath = 'events/' . basename($imagePath);
+        }
 
         // Normalisasi schedule
         $rawSchedule = $request->input('schedule', []);
@@ -128,6 +139,7 @@ class EventController extends Controller
             'manage_action' => $request->manage_action,
             'materi' => $request->materi,
             'jenis' => $request->jenis,
+            'short_description' => $request->short_description,
             'description' => $request->description,
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
@@ -190,6 +202,7 @@ class EventController extends Controller
             'manage_action' => 'required|in:manage,create',
             'materi' => 'nullable|string|max:255',
             'jenis' => 'nullable|string|max:100',
+            'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -218,7 +231,7 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'description', 'benefit', 'terms_and_conditions',
+            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'short_description', 'description', 'benefit', 'terms_and_conditions',
             'location', 'maps_url', 'latitude', 'longitude', 'zoom_link', 'price', 'discount_percentage', 'discount_until',
             'event_date', 'event_time', 'event_time_end'
         ]);
@@ -264,7 +277,26 @@ class EventController extends Controller
 
         // Jika ada gambar baru, simpan ke storage
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('events', 'public');
+            $imagePath = $request->file('image')->store('events', 'public');
+            // Normalize path (remove 'storage/' prefix if exists)
+            // Method store() returns path like 'events/filename.png' (relative to public disk)
+            // We ensure it's stored as 'events/filename.png' in database
+            $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+            
+            // Ensure path starts with 'events/' for consistency
+            if (!str_starts_with($imagePath, 'events/')) {
+                $imagePath = 'events/' . basename($imagePath);
+            }
+            
+            $data['image'] = $imagePath;
+            
+            // Delete old image if exists
+            if($event->image && !str_starts_with($event->image, 'http')) {
+                $oldPath = str_replace('storage/', '', $event->image);
+                if(\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+            }
         }
 
         $event->update($data);
@@ -289,14 +321,17 @@ class EventController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.events.index')->with('success', 'Event berhasil diupdate!');
+        return redirect()->route('admin.add-event')->with('success', 'Event berhasil diupdate!');
     }
 
     public function destroy(Event $event)
     {
         $event->delete();
-        // After deletion, redirect to our custom add-event page (resource create is removed)
-        return redirect()->route('admin.add-event')->with('success', 'Event berhasil dihapus!');
+        // Redirect back to history page if the user came from there; otherwise to add-event
+        $prev = url()->previous();
+        $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
+        $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
+        return redirect($route)->with('success', 'Event berhasil dihapus!');
     }
 
     // Public registration (AJAX)

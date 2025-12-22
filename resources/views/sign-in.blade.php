@@ -249,7 +249,23 @@
         </div>
         <div class="mb-3">
           <h6>Kata Sandi</h6>
-          <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+          <div class="input-group">
+            <input id="signin-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+            <button type="button" class="btn btn-outline-light" id="toggle-password" aria-label="Tampilkan/Sembunyikan kata sandi" style="border-color: rgba(255,255,255,0.4); display:flex; align-items:center;">
+              <!-- Eye icon (Heroicons-style) -->
+              <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <!-- Eye-off icon (Heroicons-style) -->
+              <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M3 3l18 18"/>
+                <path d="M10.58 10.58a3 3 0 104.24 4.24"/>
+                <path d="M7.11 7.11C4.6 8.55 3 12 3 12s4 8 9 8c2.03 0 3.88-.73 5.37-1.88"/>
+                <path d="M20.89 16.89C21.4 16.02 22 14.9 22 12c0 0-4-8-10-8-1.22 0-2.36.23-3.43.62"/>
+              </svg>
+            </button>
+          </div>
           @error('password')
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
@@ -284,3 +300,19 @@
 </body>
 
 </html>
+<script>
+  (function(){
+    const input = document.getElementById('signin-password');
+    const btn = document.getElementById('toggle-password');
+    const eye = document.getElementById('icon-eye');
+    const eyeSlash = document.getElementById('icon-eye-slash');
+    if (input && btn && eye && eyeSlash) {
+      btn.addEventListener('click', function(){
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        eye.style.display = isHidden ? 'none' : '';
+        eyeSlash.style.display = isHidden ? '' : 'none';
+      });
+    }
+  })();
+</script>

@@ -103,7 +103,9 @@
 </head>
 
 <body>
-    <img class="back" src="aset/back.png" alt="">
+    <a href="{{ route('register') }}" title="Kembali ke Daftar Akun">
+        <img class="back" src="{{ asset('aset/back.png') }}" alt="Kembali">
+    </a>
     <div class="main-container">
         <div class="kiri">
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
@@ -134,15 +136,30 @@
                     <h6>Masukkan Kode Verifikasi</h6>
                     <input type="text" name="verification_code" class="form-control" value="{{ old('verification_code') }}" 
                            placeholder="000000" maxlength="6" required>
-                    <small class="text-white">Kode verifikasi telah dikirim ke email Anda</small>
+                    <small class="text-white">
+                        Kode verifikasi telah dikirim ke email Anda
+                        @php($regEmail = session('register_verify_email'))
+                        @if($regEmail)
+                            ({{ preg_replace('/(^.).*(@.*$)/', '$1***$2', $regEmail) }})
+                            <input type="hidden" name="register_email" value="{{ $regEmail }}">
+                        @endif
+                    </small>
                 </div>
 
                 <button type="submit" class="btn-register">Verifikasi</button>
             </form>
             
             <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
-                <a href="{{ route('forgot-password') }}" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kirim Ulang Kode</a>
+                <form id="resendForm" action="{{ route('register.otp.resend') }}" method="post" style="display:inline;">
+                    @csrf
+                    <button id="resendBtn" type="submit" class="btn btn-link p-0" style="color: #f4a442; font-weight: bold; text-decoration: none;">
+                        Kirim Ulang Kode
+                    </button>
+                    <!-- Hitung mundur dihapus sesuai permintaan -->
+                </form>
             </div>
+
+            
         </div>
     </div>
 </body>
