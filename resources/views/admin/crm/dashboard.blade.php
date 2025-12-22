@@ -165,7 +165,7 @@
                             </div>
                         @endforeach
                     </div>
-                @else
+                @elsea
                     <div class="text-center py-4">
                         <i class="bi bi-calendar-x" style="font-size: 2rem; color: #ccc;"></i>
                         <p class="text-muted mt-3 small">Belum ada event</p>
@@ -176,4 +176,3 @@
     </div>
 </div>
 @endsection
-

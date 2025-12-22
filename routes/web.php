@@ -146,6 +146,10 @@ Route::middleware('auth')->group(function(){
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
     Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
 
+    // Profile Reminder API
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
+
     // Save/unsave event
     Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
         $user = $request->user();
