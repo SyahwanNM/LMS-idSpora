@@ -52,26 +52,25 @@
                             0
                         </span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" id="notificationDropdown" 
-                        aria-labelledby="notifBtn" style="display: none; min-width: 300px; max-width: 350px; max-height: 400px; overflow-y: auto;">
-                        <li>
-                            <h6 class="dropdown-header d-flex justify-content-between align-items-center">
-                                <span>Notifikasi</span>
-                                <button class="btn btn-sm btn-link text-primary p-0" onclick="markAllAsRead(); return false;" style="font-size: 0.75rem; text-decoration: none;">
-                                    Tandai semua dibaca
-                                </button>
-                            </h6>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li id="notificationList">
+                    <div class="dropdown-menu dropdown-menu-end shadow notification-dropdown" id="notificationDropdown" 
+                        aria-labelledby="notifBtn" style="display: none; min-width: 350px; max-width: 400px; padding: 0; border: none;">
+                        <!-- Header -->
+                        <div class="notification-header d-flex justify-content-between align-items-center px-3 py-2" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                            <span id="notificationStatus" class="text-muted" style="font-size: 0.875rem;">Memuat...</span>
+                            <button class="btn btn-sm mark-read-btn" onclick="markAllAsRead(); return false;" style="background-color: #ffc107; color: #333; border: none; border-radius: 6px; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 500;">
+                                Tandai terbaca
+                            </button>
+                        </div>
+                        <!-- Notification List -->
+                        <div id="notificationList" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
                             <div class="px-3 py-4 text-center text-muted">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 0.5rem;">
                                     <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 8 9h6.46l-3.05-3.812A.5.5 0 0 0 11.02 5H4.98zm9.954 5H8.854l.147-.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L8.854 12h5.08a.5.5 0 0 0 .496-.563l-1-8a.5.5 0 0 0-.496-.437H4.98a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 9h4.932l.5 4z"/>
                                 </svg>
                                 <p class="mt-2 mb-0 small">Tidak ada notifikasi</p>
                             </div>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- User Profile Dropdown -->
@@ -149,11 +148,13 @@ function toggleNotificationDropdown() {
 function loadNotifications() {
     const notificationList = document.getElementById('notificationList');
     const badge = document.getElementById('notificationBadge');
+    const notificationStatus = document.getElementById('notificationStatus');
     
     if (!notificationList) return;
     
     // Show loading state
     notificationList.innerHTML = '<div class="px-3 py-3 text-center text-muted"><small>Memuat...</small></div>';
+    if (notificationStatus) notificationStatus.textContent = 'Memuat...';
     
     fetch('{{ route("notifications.index") }}', {
         method: 'GET',
@@ -175,6 +176,16 @@ function loadNotifications() {
             }
         }
         
+        // Update status text
+        if (notificationStatus) {
+            const unreadCount = data.unread || 0;
+            if (unreadCount === 0) {
+                notificationStatus.textContent = 'Semua telah dibaca';
+            } else {
+                notificationStatus.textContent = `${unreadCount} belum dibaca`;
+            }
+        }
+        
         // Update notification list
         if (data.items && data.items.length > 0) {
             let html = '';
@@ -182,13 +193,16 @@ function loadNotifications() {
                 const isRead = item.read_at !== null;
                 const url = item.url || '#';
                 html += `
-                    <a class="dropdown-item notification-item ${isRead ? '' : 'fw-semibold'}" href="${url}" data-id="${item.id}" style="padding: 0.75rem 1rem; ${isRead ? 'opacity: 0.8;' : ''}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div class="flex-grow-1 me-2">
-                                <div class="small mb-1">${escapeHtml(item.title)}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(item.message || '')}</div>
-                            </div>
-                            <small class="text-muted" style="white-space: nowrap; font-size: 0.7rem;">${item.time_ago || ''}</small>
+                    <a class="notification-item" href="${url}" data-id="${item.id}" style="display: flex; padding: 1rem; border-bottom: 1px solid #e9ecef; text-decoration: none; color: inherit; background-color: white; transition: background-color 0.2s;">
+                        <div class="notification-icon" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background-color: #ffd54f; display: flex; align-items: center; justify-content: center; margin-right: 0.875rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white" viewBox="0 0 16 16">
+                                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                            </svg>
+                        </div>
+                        <div class="notification-content" style="flex-grow: 1; min-width: 0;">
+                            <div class="notification-title" style="font-weight: 600; color: #333; margin-bottom: 0.25rem; font-size: 0.875rem;">${escapeHtml(item.title)}</div>
+                            <div class="notification-message" style="color: #666; margin-bottom: 0.5rem; font-size: 0.875rem; line-height: 1.4;">${escapeHtml(item.message || '')}</div>
+                            <div class="notification-time" style="color: #999; font-size: 0.75rem;">${item.time_ago || ''}</div>
                         </div>
                     </a>
                 `;
@@ -196,7 +210,7 @@ function loadNotifications() {
             notificationList.innerHTML = html;
         } else {
             notificationList.innerHTML = `
-                <div class="px-3 py-4 text-center text-muted">
+                <div class="px-3 py-4 text-center text-muted" style="background-color: #f8f9fa;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 0.5rem;">
                         <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 8 9h6.46l-3.05-3.812A.5.5 0 0 0 11.02 5H4.98zm9.954 5H8.854l.147-.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L8.854 12h5.08a.5.5 0 0 0 .496-.563l-1-8a.5.5 0 0 0-.496-.437H4.98a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 9h4.932l.5 4z"/>
                     </svg>
@@ -208,6 +222,7 @@ function loadNotifications() {
     .catch(error => {
         console.error('Error loading notifications:', error);
         notificationList.innerHTML = '<div class="px-3 py-3 text-center text-danger"><small>Gagal memuat notifikasi</small></div>';
+        if (notificationStatus) notificationStatus.textContent = 'Error';
     });
 }
 
@@ -578,32 +593,56 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 /* Notification dropdown styles */
-#notificationDropdown {
+.notification-dropdown {
     position: absolute;
     top: 100%;
     right: 0;
     z-index: 1000;
-    min-width: 300px;
-    max-width: 350px;
-    max-height: 400px;
-    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-#notificationDropdown .dropdown-item {
-    white-space: normal;
-    border-bottom: 1px solid #f0f0f0;
+.notification-header {
+    border-radius: 8px 8px 0 0;
 }
 
-#notificationDropdown .dropdown-item:last-child {
+.notification-item {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.notification-item:last-child {
     border-bottom: none;
 }
 
-#notificationDropdown .dropdown-item:hover {
-    background-color: #f8f9fa;
+.notification-item:hover {
+    background-color: #f0f0f0 !important;
 }
 
-#notificationDropdown .notification-item {
-    transition: background-color 0.2s;
+.mark-read-btn:hover {
+    background-color: #ffb300 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.mark-read-btn:active {
+    transform: translateY(0);
+}
+
+#notificationList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notificationList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#notificationList::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#notificationList::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 #notifBtn {
