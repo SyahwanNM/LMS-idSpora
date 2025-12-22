@@ -188,4 +188,3 @@ class ProfileController extends Controller
         return view('profile.events', compact('registrations'));
     }
 }
-
