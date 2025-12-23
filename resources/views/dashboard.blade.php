@@ -399,8 +399,8 @@
                 @endphp
                 <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
-                        @if($event->image)
-                            <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
+                        @if($event->image_url)
+                            <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         @else
                             <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
                         @endif

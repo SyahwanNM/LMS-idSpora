@@ -30,6 +30,10 @@
         .avatar-wrap { display:flex; align-items:center; gap:18px; margin-bottom:20px; }
         .avatar-ring { width:88px; height:88px; border-radius:50%; overflow:hidden; position:relative; background:linear-gradient(135deg,#ffffff22,#ffffff05); border:2px solid rgba(255,255,255,.35); box-shadow:0 4px 14px -2px rgba(0,0,0,.5); }
         .avatar-ring img { width:100%; height:100%; object-fit:cover; display:block; transition:.25s transform; }
+        .avatar-actions { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; pointer-events:none; }
+        .avatar-actions .btn-icon { pointer-events:auto; background:rgba(0,0,0,.35); color:#fff; border:none; border-radius:999px; display:flex; align-items:center; justify-content:center; width:28px; height:28px; margin-bottom:6px; backdrop-filter:blur(6px); box-shadow:0 4px 10px -3px rgba(0,0,0,.6); }
+        .avatar-actions .btn-icon + .btn-icon { margin-left:6px; }
+        .btn-icon svg { width:18px; height:18px; }
         .avatar-hint { font-size:11px; line-height:1.4; opacity:.7; }
         .btn-register { background:var(--accent); border:none; color:#fff; font-weight:600; width:100%; padding:13px 18px; border-radius:14px; margin-top:4px; font-size:15px; letter-spacing:.3px; box-shadow:0 6px 18px -4px rgba(244,164,66,.55); transition:.25s background,.25s transform,.25s box-shadow; }
         .btn-register:hover { background:var(--accent-hover); transform:translateY(-2px); box-shadow:0 10px 24px -6px rgba(244,164,66,.65); }
@@ -93,10 +97,18 @@
                 <div class="avatar-wrap">
                     <div class="avatar-ring">
                         <img id="avatarPreview" src="{{ asset('aset/profile.png') }}" alt="Preview">
+                        <div class="avatar-actions">
+                            <button type="button" class="btn-icon" title="Pilih gambar" onclick="triggerAvatarFile()">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 7h3l2-2h6l2 2h3v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+                            </button>
+                            <button type="button" class="btn-icon" title="Atur ulang/crop" onclick="openCropperFromPreview()">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 3h6v6M3 9V3h6M3 15v6h6M15 21h6v-6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 8l8 8"/></svg>
+                            </button>
+                        </div>
                     </div>
                     <div style="flex:1;">
                         <h6 class="label">Foto Profil (opsional)</h6>
-                        <input type="file" accept="image/*" name="avatar" class="form-control @error('avatar') is-invalid @enderror" onchange="openCropper(event)">
+                        <input id="avatarFileInput" type="file" accept="image/*" name="avatar" class="form-control @error('avatar') is-invalid @enderror" onchange="openCropper(event)">
                         <div class="avatar-hint">JPG / PNG / WEBP, maksimal 2MB.</div>
                         @error('avatar')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -116,12 +128,44 @@
                 </div>
                 <div class="form-group">
                     <h6 class="label">Kata Sandi</h6>
-                    <input type="password" autocomplete="new-password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+                    <div class="input-group">
+                        <input type="password" autocomplete="new-password" name="password" id="passwordInput" class="form-control @error('password') is-invalid @enderror" required aria-describedby="passwordHelp">
+                        <button class="btn btn-outline-light" type="button" id="togglePassword" aria-label="Tampilkan/Sembunyikan kata sandi" style="border-radius: 12px; display:flex; align-items:center;">
+                            <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M3 3l18 18"/>
+                                <path d="M10.58 10.58a3 3 0 104.24 4.24"/>
+                                <path d="M7.11 7.11C4.6 8.55 3 12 3 12s4 8 9 8c2.03 0 3.88-.73 5.37-1.88"/>
+                                <path d="M20.89 16.89C21.4 16.02 22 14.9 22 12c0 0-4-8-10-8-1.22 0-2.36.23-3.43.62"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <small id="passwordHelp" class="text-warning d-block mt-2">
+                        Minimal 8 karakter, mengandung huruf besar, angka, dan simbol.
+                    </small>
+                    <div id="passwordErrors" class="invalid-feedback" style="display:none;"></div>
                     @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="form-group" style="margin-bottom:26px;">
                     <h6 class="label">Konfirmasi Kata Sandi</h6>
-                    <input type="password" autocomplete="new-password" name="password_confirmation" class="form-control" required>
+                    <div class="input-group">
+                        <input type="password" autocomplete="new-password" name="password_confirmation" id="passwordConfirmInput" class="form-control" required>
+                        <button class="btn btn-outline-light" type="button" id="togglePasswordConfirm" aria-label="Tampilkan/Sembunyikan konfirmasi" style="border-radius: 12px; display:flex; align-items:center;">
+                            <svg id="icon-eye2" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg id="icon-eye-slash2" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                                <path d="M3 3l18 18"/>
+                                <path d="M10.58 10.58a3 3 0 104.24 4.24"/>
+                                <path d="M7.11 7.11C4.6 8.55 3 12 3 12s4 8 9 8c2.03 0 3.88-.73 5.37-1.88"/>
+                                <path d="M20.89 16.89C21.4 16.02 22 14.9 22 12c0 0-4-8-10-8-1.22 0-2.36.23-3.43.62"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-register">Daftar</button>
@@ -196,6 +240,33 @@ function openCropper(e){
     };
     reader.readAsDataURL(file);
 }
+function triggerAvatarFile(){
+    const input = document.getElementById('avatarFileInput');
+    input?.click();
+}
+function openCropperFromPreview(){
+    const imgSrc = document.getElementById('avatarPreview')?.src;
+    if(!imgSrc) return;
+    const img = document.getElementById('cropperSource');
+    img.src = imgSrc;
+    const modalEl = document.getElementById('avatarCropperModal');
+    const bsModal = new bootstrap.Modal(modalEl);
+    bsModal.show();
+    setTimeout(()=>{
+        if(cropperInstance){ cropperInstance.destroy(); }
+        cropperInstance = new Cropper(img, {
+            aspectRatio:1,
+            viewMode:1,
+            dragMode:'move',
+            autoCropArea:1,
+            background:false,
+            responsive:true,
+            movable:true,
+            zoomable:true,
+            rotatable:true,
+        });
+    },250);
+}
 function cropperZoom(delta){ if(cropperInstance){ cropperInstance.zoom(delta); } }
 function cropperRotate(deg){ if(cropperInstance){ cropperInstance.rotate(deg); } }
 function applyCroppedAvatar(){
@@ -210,6 +281,63 @@ function applyCroppedAvatar(){
         const bsModal = bootstrap.Modal.getInstance(modalEl); bsModal.hide();
     }, 'image/png', 0.92);
 }
+</script>
+
+<script>
+// Password show/hide toggles with eye icons
+(() => {
+    const pw = document.getElementById('passwordInput');
+    const pwc = document.getElementById('passwordConfirmInput');
+    const btn = document.getElementById('togglePassword');
+    const btn2 = document.getElementById('togglePasswordConfirm');
+    const eye = document.getElementById('icon-eye');
+    const eyeSlash = document.getElementById('icon-eye-slash');
+    const eye2 = document.getElementById('icon-eye2');
+    const eyeSlash2 = document.getElementById('icon-eye-slash2');
+    if (btn && pw && eye && eyeSlash) {
+        btn.addEventListener('click', function(){
+            const isHidden = pw.type === 'password';
+            pw.type = isHidden ? 'text' : 'password';
+            eye.style.display = isHidden ? 'none' : '';
+            eyeSlash.style.display = isHidden ? '' : 'none';
+        });
+    }
+    if (btn2 && pwc && eye2 && eyeSlash2) {
+        btn2.addEventListener('click', function(){
+            const isHidden = pwc.type === 'password';
+            pwc.type = isHidden ? 'text' : 'password';
+            eye2.style.display = isHidden ? 'none' : '';
+            eyeSlash2.style.display = isHidden ? '' : 'none';
+        });
+    }
+})();
+
+// Client-side password policy validation
+(() => {
+    const input = document.getElementById('passwordInput');
+    const errorsBox = document.getElementById('passwordErrors');
+    if(!input || !errorsBox) return;
+    const rules = [
+        { test: v => v.length >= 8, msg: 'Minimal 8 karakter' },
+        { test: v => /[A-Z]/.test(v), msg: 'Mengandung huruf besar (A-Z)' },
+        { test: v => /[0-9]/.test(v), msg: 'Mengandung angka (0-9)' },
+        { test: v => /[^A-Za-z0-9]/.test(v), msg: 'Mengandung tanda baca/simbol' },
+    ];
+    function validate(){
+        const val = input.value || '';
+        const fails = rules.filter(r => !r.test(val)).map(r => r.msg);
+        if(fails.length){
+            errorsBox.style.display = '';
+            errorsBox.innerHTML = 'Syarat kata sandi: ' + fails.join(', ') + '.';
+            input.classList.add('is-invalid');
+        } else {
+            errorsBox.style.display = 'none';
+            errorsBox.innerHTML = '';
+            input.classList.remove('is-invalid');
+        }
+    }
+    input.addEventListener('input', validate);
+})();
 </script>
 
 </html>

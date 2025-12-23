@@ -159,6 +159,12 @@
                                 <small class="fw-semibold">Manage Finance</small>
                             </button>
                         </div>
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <button type="button" class="btn w-100 btn-outline-danger d-flex flex-column align-items-center py-3" onclick="location.href='{{ route('admin.crm.dashboard') }}'">
+                                <i class="bi bi-diagram-3 fs-4 mb-1"></i>
+                                <small class="fw-semibold">CRM</small>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

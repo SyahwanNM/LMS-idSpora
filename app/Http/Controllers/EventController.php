@@ -84,6 +84,16 @@ class EventController extends Controller
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
 
+        // Normalize path (remove 'storage/' prefix if exists)
+        // Method store() returns path like 'events/filename.png' (relative to public disk)
+        // We ensure it's stored as 'events/filename.png' in database
+        $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+        
+        // Ensure path starts with 'events/' for consistency
+        if (!str_starts_with($imagePath, 'events/')) {
+            $imagePath = 'events/' . basename($imagePath);
+        }
+
         // Normalisasi schedule
         $rawSchedule = $request->input('schedule', []);
         $scheduleRows = [];
@@ -267,7 +277,26 @@ class EventController extends Controller
 
         // Jika ada gambar baru, simpan ke storage
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('events', 'public');
+            $imagePath = $request->file('image')->store('events', 'public');
+            // Normalize path (remove 'storage/' prefix if exists)
+            // Method store() returns path like 'events/filename.png' (relative to public disk)
+            // We ensure it's stored as 'events/filename.png' in database
+            $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+            
+            // Ensure path starts with 'events/' for consistency
+            if (!str_starts_with($imagePath, 'events/')) {
+                $imagePath = 'events/' . basename($imagePath);
+            }
+            
+            $data['image'] = $imagePath;
+            
+            // Delete old image if exists
+            if($event->image && !str_starts_with($event->image, 'http')) {
+                $oldPath = str_replace('storage/', '', $event->image);
+                if(\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+            }
         }
 
         $event->update($data);
@@ -298,8 +327,11 @@ class EventController extends Controller
     public function destroy(Event $event)
     {
         $event->delete();
-        // After deletion, redirect to our custom add-event page (resource create is removed)
-        return redirect()->route('admin.add-event')->with('success', 'Event berhasil dihapus!');
+        // Redirect back to history page if the user came from there; otherwise to add-event
+        $prev = url()->previous();
+        $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
+        $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
+        return redirect($route)->with('success', 'Event berhasil dihapus!');
     }
 
     // Public registration (AJAX)

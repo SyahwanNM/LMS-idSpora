@@ -41,7 +41,7 @@
     <div class="event-detail-grid">
         <div class="col-main">
             <div class="event-hero">
-                <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}" data-preview="1">
+                <img src="{{ $event->image_url ?? asset('aset/event.png') }}" alt="{{ $event->title }}" data-preview="1" onerror="this.src='{{ asset('aset/event.png') }}'">
             </div>
             <h2 class="event-title mt-3">{{ $event->title }}</h2>
             <p class="event-subtitle mb-3">Created by <b>IdSpora</b></p>
