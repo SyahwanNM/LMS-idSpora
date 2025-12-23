@@ -170,7 +170,7 @@ END FUNCTION
 ## 5. Best Practices
 
 ### 1. **Rate Limiting**
-- Reminder maksimal 1x per hari untuk menghindari spama
+- Reminder maksimal 1x per hari untuk menghindari spam
 - Dismiss maksimal 2x sebelum reminder nonaktif
 
 ### 2. **User Experience**
@@ -237,3 +237,4 @@ END FUNCTION
 - [ ] Progress bar menampilkan percentage yang benar
 - [ ] Dismiss button berfungsi
 - [ ] Reminder auto-deactivate setelah profile update ≥ 80%
+
