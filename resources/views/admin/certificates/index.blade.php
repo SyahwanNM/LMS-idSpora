@@ -5,12 +5,9 @@
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-        <h4 class="mb-0 text-dark fw-semibold"><i class="bi bi-award me-2"></i>Pengaturan Sertifikat</h4>
-            <p class="text-muted small mb-0">Event: <strong>{{ $event->title }}</strong></p>
+        <h4 class="mb-0 text-dark fw-semibold"><i class="bi bi-award me-2"></i>Generate Sertifikat</h4>
+            <p class="text-muted small mb-0">Generate dan kelola sertifikat untuk semua event. Fokus pada pengaturan logo, tanda tangan, dan generate sertifikat.</p>
         </div>
-    <a href="{{ route('admin.crm.certificates.index') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Kembali
-        </a>
     </div>
 
     @if(session('success'))
