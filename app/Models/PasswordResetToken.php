@@ -7,7 +7,11 @@ use Carbon\Carbon;
 
 class PasswordResetToken extends Model
 {
+    protected $table = 'password_reset_tokens';
     public $timestamps = true;
+    protected $primaryKey = 'email';
+    public $incrementing = false;
+    protected $keyType = 'string';
     
     protected $fillable = [
         'email',

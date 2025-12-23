@@ -95,7 +95,7 @@
             <div class="ticket-header">Order Detail</div>
             <div class="ticket-content">
                 @if(isset($event))
-                    <img src="{{ $event->image ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ $event->title }}">
+                    <img src="{{ $event->image_url ?? asset('aset/event.png') }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/event.png') }}'">
                 @else
                     <img src="{{ asset('aset/event.png') }}" alt="Event">
                 @endif

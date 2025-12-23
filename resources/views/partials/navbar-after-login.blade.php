@@ -5,7 +5,8 @@
                 style="max-width:80px; height:auto;">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+            aria-controls="navbarSupportedContent">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse align-items-center" id="navbarSupportedContent">
@@ -38,50 +39,67 @@
                 </div>
             </form>
             <div class="d-flex align-items-center ms-3 position-relative" style="margin-right: 30px;">
-                <button id="notifBtn" type="button" class="btn p-0 text-white position-relative" aria-haspopup="true" aria-expanded="false" style="background:none;border:none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bell me-3"
-                        viewBox="0 0 16 16">
-                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6" />
-                    </svg>
-                    <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size:10px;">0</span>
-                </button>
-
-                <div id="notifDropdown" class="notif-dropdown shadow-lg">
-                    <div class="notif-head d-flex align-items-center justify-content-between">
-                        <strong>Notifikasi</strong>
-                        <div class="d-flex align-items-center">
-                            <span id="notifHeaderText" class="small text-muted me-2">Tidak ada notifikasi baru</span>
-                            <button class="btn btn-sm d-inline-flex align-items-center" id="markAllReadBtn">
-                                <i class="bi bi-check2-all me-1"></i>
-                                <span> Tandai terbaca</span>
+                <!-- Notification Dropdown -->
+                <div class="dropdown me-3">
+                    <button class="btn position-relative" type="button" id="notifBtn" 
+                            style="background: none; border: none; color: white; padding: 0.5rem;"
+                            onclick="toggleNotificationDropdown()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block;">
+                            <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-1.203-3.92L10 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
+                        </svg>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                              id="notificationBadge" style="display: none; font-size: 0.65rem; padding: 0.25em 0.5em;">
+                            0
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow notification-dropdown" id="notificationDropdown" 
+                        aria-labelledby="notifBtn" style="display: none; min-width: 350px; max-width: 400px; padding: 0; border: none;">
+                        <!-- Header -->
+                        <div class="notification-header d-flex justify-content-between align-items-center px-3 py-2" style="background-color: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                            <span id="notificationStatus" class="text-muted" style="font-size: 0.875rem;">Memuat...</span>
+                            <button class="btn btn-sm mark-read-btn" onclick="markAllAsRead(); return false;" style="background-color: #ffc107; color: #333; border: none; border-radius: 6px; padding: 0.25rem 0.75rem; font-size: 0.75rem; font-weight: 500;">
+                                Tandai terbaca
                             </button>
                         </div>
-                    </div>
-                    <div id="notifList" class="notif-list">
-                        <div class="text-muted small py-3 px-2">Memuat...</div>
+                        <!-- Notification List -->
+                        <div id="notificationList" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                            <div class="px-3 py-4 text-center text-muted">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 0.5rem;">
+                                    <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 8 9h6.46l-3.05-3.812A.5.5 0 0 0 11.02 5H4.98zm9.954 5H8.854l.147-.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L8.854 12h5.08a.5.5 0 0 0 .496-.563l-1-8a.5.5 0 0 0-.496-.437H4.98a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 9h4.932l.5 4z"/>
+                                </svg>
+                                <p class="mt-2 mb-0 small">Tidak ada notifikasi</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
+<<<<<<< HEAD
                  
+=======
+                <!-- User Profile Dropdown -->
+>>>>>>> 3da338a2240103cc508814e2f418517251b43c1b
                 <div class="dropdown">
-                    <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" 
-                            data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;"
+                    <button class="btn d-flex align-items-center" type="button" id="userDropdown" 
+                            style="background: none; border: none; color: white; padding: 0.25rem 0.5rem;"
                             onclick="toggleUserDropdown()">
                         <img src="{{ optional(Auth::user())->avatar_url ?? asset('images/default-avatar.png') }}"
                             alt="Avatar" class="rounded-circle me-2"
+                            referrerpolicy="no-referrer"
+                            onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';"
                             style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
-                        <span class="text-white">{{ Auth::user()->name }}</span>
-                        <svg class="ms-2" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
+                        <span class="text-white d-none d-md-inline">{{ Auth::user()->name }}</span>
+                        <svg class="ms-2 d-none d-md-inline" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
                             <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
                         </svg>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" id="userDropdownMenu" aria-labelledby="userDropdown" style="display: none;">
-                        <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
                         <li><hr class="dropdown-divider"></li>
                                                 <li>
-                                                        <button type="button" class="dropdown-item" onclick="openLogoutModal()">Logout</button>
+                            <button type="button" class="dropdown-item text-danger" onclick="openLogoutModal()">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </button>
                                                 </li>
                     </ul>
                 </div>
@@ -91,6 +109,7 @@
 </nav>
 
 @include('partials.flash')
+@include('partials.profile-reminder-banner')
 
 <!-- Logout Confirmation Modal -->
 <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmLabel" aria-hidden="true">
@@ -116,6 +135,156 @@
 </div>
 
 <script>
+// Notification Dropdown Functionality
+function toggleNotificationDropdown() {
+    const dropdown = document.getElementById('notificationDropdown');
+    
+    if (dropdown) {
+        if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+            dropdown.style.display = 'block';
+            loadNotifications();
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+}
+
+function loadNotifications() {
+    const notificationList = document.getElementById('notificationList');
+    const badge = document.getElementById('notificationBadge');
+    const notificationStatus = document.getElementById('notificationStatus');
+    
+    if (!notificationList) return;
+    
+    // Show loading state
+    notificationList.innerHTML = '<div class="px-3 py-3 text-center text-muted"><small>Memuat...</small></div>';
+    if (notificationStatus) notificationStatus.textContent = 'Memuat...';
+    
+    fetch('{{ route("notifications.index") }}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update badge
+        if (badge) {
+            if (data.unread > 0) {
+                badge.textContent = data.unread > 99 ? '99+' : data.unread;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        // Update status text
+        if (notificationStatus) {
+            const unreadCount = data.unread || 0;
+            if (unreadCount === 0) {
+                notificationStatus.textContent = 'Semua telah dibaca';
+            } else {
+                notificationStatus.textContent = `${unreadCount} belum dibaca`;
+            }
+        }
+        
+        // Update notification list
+        if (data.items && data.items.length > 0) {
+            let html = '';
+            data.items.forEach(item => {
+                const isRead = item.read_at !== null;
+                const url = item.url || '#';
+                html += `
+                    <a class="notification-item" href="${url}" data-id="${item.id}" style="display: flex; padding: 1rem; border-bottom: 1px solid #e9ecef; text-decoration: none; color: inherit; background-color: white; transition: background-color 0.2s;">
+                        <div class="notification-icon" style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background-color: #ffd54f; display: flex; align-items: center; justify-content: center; margin-right: 0.875rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white" viewBox="0 0 16 16">
+                                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                            </svg>
+                        </div>
+                        <div class="notification-content" style="flex-grow: 1; min-width: 0;">
+                            <div class="notification-title" style="font-weight: 600; color: #333; margin-bottom: 0.25rem; font-size: 0.875rem;">${escapeHtml(item.title)}</div>
+                            <div class="notification-message" style="color: #666; margin-bottom: 0.5rem; font-size: 0.875rem; line-height: 1.4;">${escapeHtml(item.message || '')}</div>
+                            <div class="notification-time" style="color: #999; font-size: 0.75rem;">${item.time_ago || ''}</div>
+                        </div>
+                    </a>
+                `;
+            });
+            notificationList.innerHTML = html;
+        } else {
+            notificationList.innerHTML = `
+                <div class="px-3 py-4 text-center text-muted" style="background-color: #f8f9fa;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 0.5rem;">
+                        <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 8 9h6.46l-3.05-3.812A.5.5 0 0 0 11.02 5H4.98zm9.954 5H8.854l.147-.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L8.854 12h5.08a.5.5 0 0 0 .496-.563l-1-8a.5.5 0 0 0-.496-.437H4.98a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 9h4.932l.5 4z"/>
+                    </svg>
+                    <p class="mt-2 mb-0 small">Tidak ada notifikasi</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading notifications:', error);
+        notificationList.innerHTML = '<div class="px-3 py-3 text-center text-danger"><small>Gagal memuat notifikasi</small></div>';
+        if (notificationStatus) notificationStatus.textContent = 'Error';
+    });
+}
+
+function markAllAsRead() {
+    fetch('{{ route("notifications.markAllRead") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            // Reload notifications
+            loadNotifications();
+        }
+    })
+    .catch(error => {
+        console.error('Error marking notifications as read:', error);
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load notification count on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const badge = document.getElementById('notificationBadge');
+    if (badge) {
+        fetch('{{ route("notifications.index") }}', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.unread > 0) {
+                badge.textContent = data.unread > 99 ? '99+' : data.unread;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notification count:', error);
+        });
+    }
+});
+
 // User Dropdown Functionality
 function toggleUserDropdown() {
     const dropdown = document.getElementById('userDropdownMenu');
@@ -132,15 +301,23 @@ function toggleUserDropdown() {
     }
 }
 
-// Close dropdown when clicking outside
+// Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
-    const dropdown = document.getElementById('userDropdownMenu');
-    const button = document.getElementById('userDropdown');
-    const arrow = document.getElementById('dropdownArrow');
+    const userDropdown = document.getElementById('userDropdownMenu');
+    const userButton = document.getElementById('userDropdown');
+    const userArrow = document.getElementById('dropdownArrow');
+    const notifDropdown = document.getElementById('notificationDropdown');
+    const notifButton = document.getElementById('notifBtn');
     
-    if (dropdown && button && !button.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    // Close user dropdown
+    if (userDropdown && userButton && !userButton.contains(e.target) && !userDropdown.contains(e.target)) {
+        userDropdown.style.display = 'none';
+        if (userArrow) userArrow.style.transform = 'rotate(0deg)';
+    }
+    
+    // Close notification dropdown
+    if (notifDropdown && notifButton && !notifButton.contains(e.target) && !notifDropdown.contains(e.target)) {
+        notifDropdown.style.display = 'none';
     }
 });
 
@@ -249,218 +426,35 @@ function showLogoutSuccessState(){
 </script>
 
 <script>
-// Notifications dropdown logic with animations
-(function(){
-    const btn = document.getElementById('notifBtn');
-    const panel = document.getElementById('notifDropdown');
-    const badge = document.getElementById('notifBadge');
-    const list = document.getElementById('notifList');
-    const markAllBtn = document.getElementById('markAllReadBtn');
-    const headerText = document.getElementById('notifHeaderText');
-    let prevUnread = 0;
-    // track seen notification IDs across polls to avoid duplicate popups
-    const seenKey = 'notifSeenIds';
-    let seenIds = new Set();
-    try{ seenIds = new Set(JSON.parse(sessionStorage.getItem(seenKey) || '[]')); }catch(_e){ seenIds = new Set(); }
-
-    function persistSeen(){
-        try {
-            const arr = Array.from(seenIds).slice(-200); // cap
-            sessionStorage.setItem(seenKey, JSON.stringify(arr));
-        } catch(_e){}
-    }
-
-    function showInstantToast(opts, anchorEl){
-        const { title = 'Notifikasi', message = '', type = 'success', url = null } = opts || {};
-        const toast = document.createElement('div');
-        toast.className = `flash-toast ${type === 'error' ? 'flash-error' : 'flash-success'}`;
-        toast.setAttribute('role','status');
-        toast.innerHTML = `
-            <div class="flash-icon">
-                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
-                </svg>
-            </div>
-            <div class="flash-body">
-                <div class="flash-title">${title}</div>
-                <div class="flash-message">${message}</div>
-            </div>
-            <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
-            <div class="flash-progress" style="animation-duration: 3.6s"></div>`;
-        if(url){
-            toast.style.cursor = 'pointer';
-            toast.addEventListener('click', (e)=>{
-                // allow closing via X without navigation
-                if(e.target && (e.target.closest('.flash-close'))) return;
-                window.location.href = url;
-            });
-        }
-        if(anchorEl){
-            toast.style.position = 'fixed';
-            toast.style.zIndex = '2141';
-            toast.style.maxWidth = '360px';
-            toast.style.visibility = 'hidden';
-            document.body.appendChild(toast);
-            // position near bell icon (below and slightly to the left)
-            const r = anchorEl.getBoundingClientRect();
-            const tw = toast.offsetWidth;
-            const th = toast.offsetHeight;
-            const pad = 10;
-            const gap = 8; // distance between bell and toast
-            let top = r.bottom + pad;
-            // Place toast so its right edge is gap px to the left of bell's left edge
-            let left = Math.min(Math.max(r.left + gap - tw, pad), window.innerWidth - tw - pad);
-            // Prevent off-screen bottom
-            if(top + th > window.innerHeight - pad){ top = Math.max(pad, r.top - th - pad); }
-            toast.style.top = `${top}px`;
-            toast.style.right = 'auto';
-            toast.style.left = `${left}px`;
-            toast.style.visibility = '';
-            requestAnimationFrame(()=> toast.classList.add('show'));
-        } else {
-            // fallback to global container
-            let container = document.querySelector('.flash-toast-container');
-            if(!container){
-                container = document.createElement('div');
-                container.className = 'flash-toast-container';
-                container.setAttribute('aria-live','polite');
-                container.setAttribute('aria-atomic','true');
-                document.body.appendChild(container);
-            }
-            container.appendChild(toast);
-            requestAnimationFrame(()=> toast.classList.add('show'));
-        }
-        const closeBtn = toast.querySelector('.flash-close');
-        if(closeBtn){
-            closeBtn.addEventListener('click', (ev)=> { ev.stopPropagation(); toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400); });
-        }
-        setTimeout(()=> { toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400); }, 3400);
-    }
-
-    function applyStaggerAnimations(){
-        const items = list.querySelectorAll('.notif-item');
-        items.forEach((el, idx)=>{
-            el.style.setProperty('--delay', `${idx*40}ms`);
-            el.classList.add('anim-in');
+// Ensure Bootstrap collapse works properly for mobile menu
+document.addEventListener('DOMContentLoaded', function() {
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    const navbarCollapse = document.querySelector('#navbarSupportedContent');
+    
+    if (navbarToggler && navbarCollapse) {
+        // Listen for Bootstrap collapse events
+        navbarCollapse.addEventListener('show.bs.collapse', function () {
+            navbarToggler.setAttribute('aria-expanded', 'true');
         });
-    }
-
-    function load(){
-        fetch('{{ route('notifications.index') }}', {headers:{'X-Requested-With':'XMLHttpRequest'}})
-            .then(r=>r.json()).then(({items,unread})=>{
-                // badge
-                if(unread > (prevUnread||0)){
-                    badge.classList.add('badge-bump');
-                    setTimeout(()=> badge.classList.remove('badge-bump'), 320);
-                }
-                prevUnread = unread;
-                badge.classList.toggle('d-none', !unread);
-                badge.textContent = unread;
-
-                // header info text beside the button
-                if(headerText){
-                    if(unread > 0){
-                        headerText.textContent = `${unread} belum dibaca`;
-                        headerText.classList.remove('text-success');
-                    } else if(items.length > 0){
-                        headerText.textContent = 'Semua telah dibaca';
-                        headerText.classList.add('text-success');
-                    } else {
-                        headerText.textContent = 'Tidak ada notifikasi';
-                        headerText.classList.remove('text-success');
+        
+        navbarCollapse.addEventListener('hide.bs.collapse', function () {
+            navbarToggler.setAttribute('aria-expanded', 'false');
+        });
+        
+        // Close dropdown when clicking on nav links in mobile
+        const navLinks = navbarCollapse.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+                    if (bsCollapse) {
+                        bsCollapse.hide();
                     }
                 }
-
-                if(!items.length){ list.innerHTML = '<div class="text-muted small py-3 px-2">Tidak ada notifikasi</div>'; return; }
-                list.innerHTML = items.map(n => `
-                    <a href="${n.url ?? '#'}" class="notif-item ${n.read_at ? '' : 'unread'}">
-                        <div class="notif-icon">
-                            <svg width="18" height="18" viewBox="0 0 16 16" fill="${n.read_at ? '#0ea5e9' : '#f59e0b'}" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="fw-semibold d-flex align-items-center gap-2">${n.title} ${n.read_at ? '' : '<span class="notif-dot"></span>'}</div>
-                            ${n.message ? `<div class="small text-muted">${n.message}</div>` : ''}
-                            <div class="notif-time">${n.time_ago ?? ''}</div>
-                        </div>
-                    </a>`).join('');
-                // stagger in
-                requestAnimationFrame(applyStaggerAnimations);
-            }).catch(()=>{ list.innerHTML = '<div class="text-danger small py-3 px-2">Gagal memuat notifikasi</div>'; });
-    }
-
-    function openPanel(){
-        if(!panel.classList.contains('open')){
-            panel.classList.add('open');
-            load();
-        }
-    }
-    function closePanel(){ panel.classList.remove('open'); }
-    function togglePanel(){ panel.classList.contains('open') ? closePanel() : openPanel(); }
-
-    btn?.addEventListener('click', (e)=>{ e.stopPropagation(); togglePanel(); });
-    document.addEventListener('click', (e)=>{ if(panel && !panel.contains(e.target) && !btn.contains(e.target)) closePanel(); });
-        markAllBtn?.addEventListener('click', ()=>{
-            if(markAllBtn.disabled) return;
-            const original = markAllBtn.innerHTML;
-            markAllBtn.disabled = true;
-            markAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Memproses...';
-            fetch('{{ route('notifications.markAllRead') }}', {method:'POST', headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}','X-Requested-With':'XMLHttpRequest'}})
-                .then(()=>{
-                    badge.classList.add('d-none');
-                    // animate unread -> read
-                    list.querySelectorAll('.notif-item.unread').forEach(el=>{
-                        el.classList.remove('unread');
-                        const dot = el.querySelector('.notif-dot');
-                        if(dot) dot.remove();
-                    });
-                    if(headerText){ headerText.textContent = 'Semua telah dibaca'; headerText.classList.add('text-success'); }
-                })
-                .finally(()=>{
-                    markAllBtn.disabled = false;
-                    markAllBtn.innerHTML = original;
                 });
         });
-
-    // Background polling to auto-popup new notifications (e.g., payment/registration success)
-    let pollingTimer = null;
-    function pollAndPopup(){
-        fetch('{{ route('notifications.index') }}', {headers:{'X-Requested-With':'XMLHttpRequest'}})
-            .then(r=>r.json())
-            .then(({items, unread}) => {
-                // Update badge and header text even when panel closed
-                badge.classList.toggle('d-none', !unread);
-                badge.textContent = unread || 0;
-                if(headerText){
-                    if(unread > 0){ headerText.textContent = `${unread} belum dibaca`; headerText.classList.remove('text-success'); }
-                    else if(items.length > 0){ headerText.textContent = 'Semua telah dibaca'; headerText.classList.add('text-success'); }
-                    else { headerText.textContent = 'Tidak ada notifikasi'; headerText.classList.remove('text-success'); }
-                }
-                // Find new unread notifications not seen before
-                const newbies = (items || []).filter(n => !n.read_at && n.id && !seenIds.has(n.id));
-                // Only popup at most 2 per poll to avoid spam
-                const badgeEl = document.getElementById('notifBadge');
-                const badgeVisible = badgeEl && !badgeEl.classList.contains('d-none') && badgeEl.offsetWidth > 0 && badgeEl.offsetHeight > 0;
-                const anchor = (badgeVisible ? badgeEl : (btn || document.getElementById('notifBtn') || document.querySelector('#notifBtn')));
-                newbies.slice(0,2).forEach(n => {
-                    seenIds.add(n.id);
-                    showInstantToast({
-                        type: 'success',
-                        title: n.title || 'Notifikasi Baru',
-                        message: n.message || 'Klik untuk melihat detail notifikasi ini.',
-                        url: n.url || null,
-                    }, anchor);
-                });
-                if(newbies.length){ persistSeen(); }
-            })
-            .catch(()=>{});
     }
-
-    // Start polling after slight delay to allow page to render
-    setTimeout(pollAndPopup, 1200);
-    pollingTimer = setInterval(pollAndPopup, 20000); // every 20s
-})();
+});
 </script>
 
 <script>
@@ -602,36 +596,81 @@ function showLogoutSuccessState(){
     background-color: #f8f9fa;
 }
 
+/* Notification dropdown styles */
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notification-header {
+    border-radius: 8px 8px 0 0;
+}
+
+.notification-item {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f0f0f0 !important;
+}
+
+.mark-read-btn:hover {
+    background-color: #ffb300 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.mark-read-btn:active {
+    transform: translateY(0);
+}
+
+#notificationList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notificationList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#notificationList::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#notificationList::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#notifBtn {
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+#notifBtn:hover {
+    color: #ffe8b3 !important;
+}
+
+#notificationBadge {
+    font-size: 0.65rem;
+    padding: 0.25em 0.5em;
+    min-width: 18px;
+    text-align: center;
+}
+
 /* Logout success animation */
 .logout-success-feedback .check-anim { display:block; }
 .logout-success-feedback .circle { stroke-dasharray: 201; stroke-dashoffset:201; animation: draw-circle .55s ease-out forwards; }
 .logout-success-feedback .check { stroke-dasharray: 40; stroke-dashoffset:40; animation: draw-check .35s ease-out .45s forwards; }
 @keyframes draw-circle { to { stroke-dashoffset:0; } }
 @keyframes draw-check { to { stroke-dashoffset:0; } }
-</style>
-<style>
-/* Notifications dropdown styling + animations */
-.notif-dropdown{ position:absolute; right:-6px; top:120%; width:320px; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:10px; z-index:2140; box-shadow:0 14px 34px -18px rgba(2,6,23,.35), 0 6px 16px -8px rgba(2,6,23,.18); opacity:0; transform: translateY(8px); visibility:hidden; pointer-events:none; transition: opacity .18s ease, transform .18s ease, visibility .18s; }
-.notif-dropdown.open{ opacity:1; transform: translateY(0); visibility:visible; pointer-events:auto; }
-.notif-head{ padding:10px 12px; border-bottom:1px solid #f0f0f0; }
-.notif-list{ max-height:360px; overflow:auto; }
-.notif-item{ display:flex; gap:10px; padding:10px 12px; border-bottom:1px solid #f6f6f6; text-decoration:none; color:#111; border-left:3px solid transparent; opacity:0; transform: translateY(6px); transition: background-color .25s ease, border-color .25s ease; }
-.notif-item.anim-in{ animation: notifSlideIn .22s ease var(--delay, 0ms) forwards; }
-.notif-item:hover{ background:#f9fafb; }
-.notif-item.unread{ background:#fffdf5; border-left-color:#f59e0b; }
-.notif-icon{ width:34px; height:34px; border-radius:50%; background:#e9f5ff; display:flex; align-items:center; justify-content:center; }
-.notif-item.unread .notif-icon{ background:#fff7e6; }
-.notif-time{ color:#6b7280; font-size:12px; }
-.notif-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow:0 0 0 0 rgba(245,158,11,.6); animation: pulse 1.6s ease infinite; }
-.badge-bump{ animation:bump .28s ease; }
-@keyframes notifSlideIn{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform: translateY(0);} }
-@keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(245,158,11,.6);} 70%{ box-shadow:0 0 0 10px rgba(245,158,11,0);} 100%{ box-shadow:0 0 0 0 rgba(245,158,11,0);} }
-@keyframes bump{ 0%{ transform: scale(1);} 40%{ transform: scale(1.15);} 100%{ transform: scale(1);} }
-
-/* Mark all read button theme: navy bg, yellow text */
-#markAllReadBtn{ background:#252346; color:#F4C430; border-color:#252346; }
-#markAllReadBtn:hover{ filter:brightness(1.08); color:#F4C430; }
-#markAllReadBtn:disabled{ opacity:.75; cursor:not-allowed; }
 </style>
 <style>
 /* Enhanced navbar hover + active indicator (logged-in) */
@@ -657,6 +696,175 @@ function showLogoutSuccessState(){
 .navbar-gradient .nav-link:focus { color: #ffe8b3 !important; }
 /* Only active link shows underline */
 .navbar-gradient .nav-link.active { font-weight:600; }
+
+/* Navbar Responsive Styles */
+@media (max-width: 991px) {
+    .navbar {
+        min-height: 70px;
+    }
+    
+    .navbar-brand {
+        margin-left: 15px !important;
+    }
+    
+    .navbar-brand img {
+        max-width: 60px !important;
+    }
+    
+    .navbar .container-fluid {
+        padding: 0.5rem 0 !important;
+        flex-wrap: wrap;
+    }
+    
+    .navbar-toggler {
+        margin-right: 15px;
+        border-color: rgba(255, 255, 255, 0.3);
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .navbar-toggler:focus {
+        box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+    }
+    
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+    
+    .navbar-collapse {
+        width: 100%;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 0.5rem;
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+    
+    .navbar-nav {
+        flex-direction: column !important;
+        width: 100%;
+        margin: 0 !important;
+        padding: 0;
+    }
+    
+    .navbar-nav .nav-item {
+        margin: 0.25rem 0 !important;
+        width: 100%;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1rem !important;
+        width: 100%;
+        border-radius: 0.375rem;
+        transition: background-color 0.2s;
+    }
+    
+    .navbar-nav .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    form.d-flex {
+        width: 100%;
+        margin: 0.75rem 0 !important;
+        padding: 0;
+        order: 2;
+    }
+    
+    form.d-flex .position-relative {
+        width: 100%;
+    }
+    
+    .navbar .form-control {
+        width: 100% !important;
+        margin: 0 !important;
+        font-size: 14px !important;
+        padding: 0.5rem 1rem 0.5rem 2.5rem !important;
+    }
+    
+    .d-flex.align-items-center.ms-3 {
+        flex-direction: row !important;
+        width: 100%;
+        margin: 0.75rem 0 0 0 !important;
+        padding: 0;
+        justify-content: flex-end;
+        order: 3;
+    }
+    
+    #notifBtn {
+        margin-right: 0.5rem !important;
+        padding: 0.5rem !important;
+    }
+    
+    #userDropdown {
+        margin: 0 !important;
+        padding: 0.25rem 0.5rem !important;
+        width: auto !important;
+        justify-content: flex-end;
+    }
+    
+    #notificationDropdown {
+        right: 0 !important;
+        left: auto !important;
+        margin-top: 0.5rem;
+        max-width: 90vw;
+    }
+    
+    #userDropdown img {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    #userDropdownMenu {
+        position: absolute !important;
+        right: 0 !important;
+        left: auto !important;
+        margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand {
+        margin-left: 10px !important;
+    }
+    
+    .navbar-brand img {
+        max-width: 50px !important;
+    }
+    
+    .navbar-toggler {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .navbar-collapse {
+        margin-left: 0.25rem;
+        margin-right: 0.25rem;
+        padding: 0.75rem;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.625rem 0.75rem !important;
+        font-size: 0.9rem;
+    }
+    
+    form.d-flex {
+        margin: 0.5rem 0 !important;
+    }
+    
+    #userDropdown {
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    #userDropdown img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    #userDropdownMenu {
+        min-width: 180px;
+        font-size: 0.9rem;
+    }
+}
 .navbar-gradient .nav-link.active::after { width:70%; left:15%; }
 @media (hover: none) { .navbar-gradient .nav-link::after { display:none; } }
 </style>
