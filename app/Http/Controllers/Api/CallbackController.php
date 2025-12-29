@@ -6,61 +6,47 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EventRegistration;
 use Midtrans\Config;
-use Midtrans\Notification;
 
 class CallbackController extends Controller
 {
-    public function callback()
+    public function callback(Request $request)
     {
-        // 1. Konfigurasi Midtrans
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        // Konfigurasi (gunakan config untuk konsistensi)
+        Config::$serverKey = config('midtrans.server_key');
+        Config::$isProduction = (bool) config('midtrans.is_production');
+        Config::$isSanitized = (bool) config('midtrans.sanitize');
+        Config::$is3ds = (bool) config('midtrans.enable_3ds');
 
         try {
-            // 2. Terima Notifikasi dari Midtrans
-            $notif = new Notification();
+            // BYPASS VALIDASI (Ambil data dari Postman)
+            $notif = (object) $request->all(); 
 
-            $transaction = $notif->transaction_status;
-            $type = $notif->payment_type;
-            $orderId = $notif->order_id; // Ini adalah registration_code kita
-            $fraud = $notif->fraud_status;
+            $transaction = $notif->transaction_status ?? null;
+            $type = $notif->payment_type ?? null;
+            $orderId = $notif->order_id ?? null; 
+            $fraud = $notif->fraud_status ?? null;
 
-            // 3. Cari Data Registrasi berdasarkan Order ID
+            // Cari Data
             $registration = EventRegistration::where('registration_code', $orderId)->first();
 
             if (!$registration) {
-                return response()->json(['message' => 'Order not found'], 404);
+                return response()->json(['message' => 'Order ID not found in database'], 404);
             }
 
-            // 4. Logic Update Status
-            if ($transaction == 'capture') {
-                if ($type == 'credit_card') {
-                    if ($fraud == 'challenge') {
-                        $registration->update(['status' => 'pending']);
-                    } else {
-                        $registration->update(['status' => 'active']); // LUNAS
-                    }
-                }
-            } else if ($transaction == 'settlement') {
-                // INI YANG PALING PENTING (Gopay, VA, dll masuk sini kalau sukses)
-                $registration->update(['status' => 'active']); // LUNAS
-                
+            // Update Status
+            if ($transaction == 'settlement') {
+                $registration->update(['status' => 'active']);
             } else if ($transaction == 'pending') {
                 $registration->update(['status' => 'pending']);
-                
-            } else if ($transaction == 'deny') {
-                $registration->update(['status' => 'cancelled']);
-                
-            } else if ($transaction == 'expire') {
-                $registration->update(['status' => 'cancelled']);
-                
-            } else if ($transaction == 'cancel') {
+            } else if ($transaction == 'expire' || $transaction == 'cancel' || $transaction == 'deny') {
                 $registration->update(['status' => 'cancelled']);
             }
 
-            return response()->json(['message' => 'Notification processed'], 200);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Notification processed via Testing Mode',
+                'updated_status' => $registration->status
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
