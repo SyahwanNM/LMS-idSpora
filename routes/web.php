@@ -43,6 +43,51 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
 
+// punya dini
+Route::get('/modul-course', function () {
+    return view('modul-course');
+})->name('modul-course');
+
+Route::get('/aturan-kuis', function () {
+    return view('aturan-kuis');
+})->name('aturan-kuis');
+
+Route::get('/payment-course', function () {
+    return view('payment-course');
+})->name('payment-course');
+
+Route::get('/detail-course', function () {
+    return view('detail-course');
+})->name('detail-course');
+
+Route::get('/quiz1-course', function () {
+    return view('quiz1-course');
+})->name('quiz1-course');
+
+// ...existing code...
+Route::get('/quiz-course', function () {
+    return view('quiz-course');
+})->name('quiz-course');
+Route::get('/hasil-course', function () {
+    return view('hasil-course');
+})->name('hasil-course');
+Route::get('admin/course-builder', function () {
+    return view('admin/course-builder');
+})->name('admin/course-builder');
+// Legacy Add Course page (standalone view)
+Route::get('/admin/add-course', function () {
+    return view('admin/add-course');
+})->name('admin.add-course');
+Route::get('/admin/view-modul-course', function () {
+    return view('admin/view-modul-course');
+})->name('admin/view-modul-course');
+Route::get('/admin/add-pdf-module', function () {
+    return view('admin/add-pdf-module');
+})->name('add-pdf-module');
+Route::get('/admin/report', function () {
+    return view('admin/report');
+})->name('report');
+
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
 Route::get('/storage/{path}', function ($path) {
@@ -114,6 +159,14 @@ Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController:
 
 // Midtrans notification webhook (no auth)
 Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('midtrans.notify');
+
+// Optional finish redirect target from Snap callbacks to avoid 404 after payment
+Route::get('/payment/finish', function(){
+    return redirect()->route('dashboard')->with('success','Pembayaran sedang diproses.');
+})->name('payment.finish');
+
+// Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
+Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
 
 // Event routes now require authentication to view & register
 Route::middleware('auth')->group(function(){

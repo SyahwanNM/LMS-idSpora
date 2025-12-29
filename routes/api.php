@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\CallbackController;
 // Route Khusus untuk Midtrans (Jangan dikasih Middleware Auth!)
 Route::post('/midtrans-callback', [CallbackController::class, 'callback']);
 
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::get ('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);

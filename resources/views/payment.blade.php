@@ -142,6 +142,21 @@
             </div>
             <div id="pending-payment-banner" style="display:none;margin-top:10px;padding:8px;border-radius:6px;background:#fff4e5;color:#7a4b00;font-size:13px;">You have a pending payment — klik "Bayar" untuk melanjutkan pembayaran yang tertunda.</div>
             <button type="submit" class="btn-pay mt-2" disabled>@if(isset($event) && $isFree) Daftar Gratis @else Bayar @endif</button>
+            @if(isset($event) && !$isFree)
+            <div class="mt-2" style="font-size:12px;color:#6b7280;">
+                QRIS gagal dipindai? <a href="#" id="btnQrisFallback" style="text-decoration:underline;">Coba QRIS Mode Alternatif</a>
+            </div>
+            <div id="qrisFallbackBox" style="display:none;margin-top:10px;padding:12px;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc;">
+                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+                    <img id="qrisFallbackImg" src="" alt="QRIS" style="width:240px;height:240px;display:none;background:#fff;border:1px solid #e5e7eb;border-radius:6px;"/>
+                    <div style="flex:1;min-width:220px;">
+                        <div id="qrisFallbackInfo" style="font-size:13px;color:#374151;">Menghasilkan QRIS alternatif…</div>
+                        <div id="qrisFallbackString" style="display:none;margin-top:8px;word-break:break-all;font-size:11px;color:#6b7280;"></div>
+                        <div style="margin-top:8px;font-size:12px;color:#6b7280;">Scan gambar ini dengan Midtrans QRIS Sandbox Simulator dalam 15 menit.</div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
         </form>
     </div>
@@ -282,8 +297,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
             const snapToken = data?.snapToken;
             // If server returned an order id for pending payment, persist it so user can resume later
-            if (data && data.order_id) {
-                try { localStorage.setItem(pendingKey, JSON.stringify({ order_id: data.order_id, ts: Date.now() })); } catch (_e){}
+            if (data && (data.orderId || data.order_id)) {
+                const oid = data.orderId || data.order_id;
+                try { localStorage.setItem(pendingKey, JSON.stringify({ order_id: oid, ts: Date.now() })); } catch (_e){}
             }
 
             if(!snapToken){
@@ -339,6 +355,35 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 
     validate();
+
+    // QRIS Core API fallback (generates QR string + PNG)
+    const btnQrisFallback = document.getElementById('btnQrisFallback');
+    if(btnQrisFallback && !isFree && eventId){
+        btnQrisFallback.addEventListener('click', async function(ev){
+            ev.preventDefault();
+            const box = document.getElementById('qrisFallbackBox');
+            const img = document.getElementById('qrisFallbackImg');
+            const info = document.getElementById('qrisFallbackInfo');
+            const str = document.getElementById('qrisFallbackString');
+            if(box) box.style.display = 'block';
+            if(info) info.textContent = 'Menghasilkan QRIS alternatif…';
+            try{
+                const res = await fetch(`/payment/${eventId}/qris-core`, { headers: { 'Accept':'application/json' }});
+                const data = await res.json();
+                if(data.qr_png){
+                    if(img){ img.src = data.qr_png; img.style.display = 'block'; }
+                    if(info){ info.textContent = 'QRIS alternatif siap. Scan menggunakan Midtrans QRIS Sandbox Simulator.'; }
+                } else if(data.qr_string){
+                    if(str){ str.style.display='block'; str.textContent = data.qr_string; }
+                    if(info){ info.textContent = 'Salin QR content di bawah ke simulator QRIS.'; }
+                } else {
+                    if(info){ info.textContent = 'Gagal menghasilkan QRIS alternatif.'; }
+                }
+            }catch(err){
+                if(info){ info.textContent = 'Terjadi kesalahan saat membuat QRIS alternatif.'; }
+            }
+        });
+    }
 });
 </script>
 <style>
