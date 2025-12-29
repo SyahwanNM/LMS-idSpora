@@ -13,7 +13,7 @@
 </head>
 
 <body>
-    @include("partials.navbar-admin-course")
+    @include("partials.navbar-admin-course-bootstrap")
     <div class="box_luar_report">
         <h1 class="judul_report">Laporan EduPlatform Admin</h1>
         <p class="keterangan_judul">Berikut adalah laporan course.</p>

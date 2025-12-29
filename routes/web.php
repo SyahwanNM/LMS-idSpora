@@ -74,9 +74,10 @@ Route::get('/hasil-course', function () {
 Route::get('admin/course-builder', function () {
     return view('admin/course-builder');
 })->name('admin/course-builder');
+// Legacy Add Course page (standalone view)
 Route::get('/admin/add-course', function () {
     return view('admin/add-course');
-})->name('admin/add-course');
+})->name('admin.add-course');
 Route::get('/admin/view-modul-course', function () {
     return view('admin/view-modul-course');
 })->name('admin/view-modul-course');
