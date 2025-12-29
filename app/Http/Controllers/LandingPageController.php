@@ -23,7 +23,13 @@ class LandingPageController extends Controller
             ->limit(4)
             ->get();
 
+        // Ambil sampai 3 event untuk hero carousel (gambar poster event)
+        $carouselEvents = Event::active()
+            ->orderByDesc('created_at')
+            ->limit(3)
+            ->get();
+
         // View membutuhkan variabel $upcomingEvents untuk menampilkan daftar event.
-        return view('landing-page', compact('featuredCourses', 'upcomingEvents'));
+        return view('landing-page', compact('featuredCourses', 'upcomingEvents', 'carouselEvents'));
     }
 }
