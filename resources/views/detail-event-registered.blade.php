@@ -832,14 +832,14 @@
         
         <!-- Feedback & Reviews Section (Hidden by default) -->
         @if($isRegistered && $attendanceSubmitted)
-        <div id="feedbackSection" style="display: none; margin-top: 1.5rem; margin-left: auto; margin-right: auto; max-width: 900px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
-            <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+        <div id="feedbackSection" style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
+            <div class="d-flex justify-content-between align-items-center" style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
                 <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
-                <button type="button" onclick="toggleFeedbackSection()" aria-label="Close" style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='transparent'">
+                <button type="button" onclick="toggleFeedbackSection()" aria-label="Close" style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='transparent'">
                     <span style="line-height: 1;">&times;</span>
                 </button>
             </div>
-            <div class="row g-0" style="min-height: 300px;">
+            <div class="row g-0" style="margin-top: 20px; min-height: 300px;">
                 <!-- Left Column: Participant Ratings -->
                 <div class="col-md-6" style="background-color: #f8f9fa; padding: 1rem; border-right: 1px solid #e9ecef;">
                     <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Participant Ratings</h6>
@@ -1220,25 +1220,6 @@
                         submitBtn.disabled = false;
                         submitBtn.innerText = 'Submit Feedback';
                         if (data.success) {
-                            // After submit, show the "no feedback" placeholder again (user wants moderation flow)
-                            const scrollBox = document.querySelector('.scroll-review-box');
-                            if (scrollBox) {
-                                // Move or restore the placeholder node
-                                const noFeedbackPlaceholder = document.getElementById('no-feedback-placeholder');
-                                // Clear any rendered feedback items
-                                scrollBox.innerHTML = '';
-                                if (noFeedbackPlaceholder) {
-                                    noFeedbackPlaceholder.style.display = 'flex';
-                                    scrollBox.appendChild(noFeedbackPlaceholder);
-                                } else {
-                                    // Fallback: insert the text placeholder
-                                    const ph = document.createElement('div');
-                                    ph.id = 'no-feedback-placeholder';
-                                    ph.style = 'color:#888; font-size:15px; padding:16px 8px; display:flex; align-items:center; justify-content:center; min-height:120px; width:100%;';
-                                    ph.innerHTML = '<span>Belum ada feedback di event ini.</span><b style="margin-left:8px;">Jadilah yang pertama</b>';
-                                    scrollBox.appendChild(ph);
-                                }
-                            }
                             // Show success message
                             alert('Feedback berhasil dikirim! Terima kasih atas feedback Anda.');
                             
@@ -1256,14 +1237,8 @@
                             // Store state before reload
                             sessionStorage.setItem('feedbackSectionOpen', 'true');
                             setTimeout(() => {
-                                location.reload();
+                                window.location.reload();
                             }, 500);
-                            try {
-                                const fbModalEl = document.getElementById('feedbackModal');
-                                if (fbModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
-                                    bootstrap.Modal.getInstance(fbModalEl)?.hide();
-                                }
-                            } catch(e) {}
                         } else {
                             alert(data.message || 'Gagal menyimpan feedback.');
                         }
