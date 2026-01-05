@@ -24,6 +24,43 @@
                 .add-stars .stars-bi.hovered,
                 .add-stars .stars-bi.hovered:focus {
                     transform: scale(1.22) rotate(-8deg) !important;
+
+            // Free event registration via AJAX (avoid ticket redirect, stay on detail page)
+            (function(){
+                const freeBtn = document.getElementById('bookFreeBtn');
+                if(!freeBtn) return;
+                freeBtn.addEventListener('click', function(){
+                    const original = this.textContent;
+                    this.disabled = true;
+                    this.textContent = 'Registering...';
+                    fetch('{{ route('events.register', $event) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(async (r) => {
+                        // On success, server redirects back; for XHR, read text
+                        if (r.ok) {
+                            // Reload to reflect registered state
+                            window.location.reload();
+                        } else {
+                            const t = await r.text();
+                            alert('Gagal mendaftar: '+t);
+                            this.disabled = false;
+                            this.textContent = original;
+                        }
+                    })
+                    .catch(() => {
+                        alert('Gagal mendaftar.');
+                        this.disabled = false;
+                        this.textContent = original;
+                    });
+                });
+            })();
                     color: #FFD600 !important;
                     filter: drop-shadow(0 2px 6px #FFD600cc) !important;
                     z-index: 2 !important;
@@ -317,9 +354,21 @@
                     $endTime = isset($event) ? $parseEventTime($eventDate, $event->event_time_end) : null;
                     if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
                     if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
-                    $nowTs = \Carbon\Carbon::now();
-                    // Event selesai (untuk membuka form attendance/feedback)
-                    $eventFinished = $endTime && $nowTs->gt($endTime);
+                    // Ensure parsed times align with the event date to avoid mis-parsing
+                    if ($startTime && $eventDate && !$startTime->isSameDay($eventDate)) {
+                        $startTime = $eventDate->copy()->startOfDay();
+                    }
+                    if ($endTime && $eventDate && !$endTime->isSameDay($eventDate)) {
+                        $endTime = $eventDate->copy()->endOfDay();
+                    }
+                    $nowTs = \Carbon\Carbon::now(config('app.timezone'));
+                    // Event status flags
+                    $eventStarted = false;
+                    $eventFinished = false;
+                    if ($eventDate) {
+                        $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
+                        $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
+                    }
                     // Attendance dianggap selesai jika user sudah submit attendance (menggunakan attendance_status)
                     $attendanceSubmitted = $registration && !empty($registration->attendance_status);
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
@@ -360,22 +409,35 @@
             <div class="detail-box-right">
                 @php
                     $eventObj = isset($event) ? $event : null;
-                    $now = \Carbon\Carbon::now();
-                    $hasActiveDiscount = $eventObj && ($eventObj->discount_percentage > 0) && $eventObj->discount_until && $now->lte($eventObj->discount_until);
-                    $basePrice = $eventObj ? (float) $eventObj->price : 0;
-                    $finalPrice = $hasActiveDiscount ? (float) $eventObj->discounted_price : $basePrice;
+                    $nowTs = \Carbon\Carbon::now();
+                    // Event states
+                    // Finished if now is after the event end time (or end of event day if time end missing)
+                    $eventFinished = false;
+                    // Started if now is equal/after start time
+                    $eventStarted = false;
+                    if ($eventDate) {
+                        $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
+                        $eventStarted = $nowTs->gte($startTime ? $startTime : $eventDate->copy()->startOfDay());
+                    }
+                    // Pricing state
+                    $hasActiveDiscount = false;
+                    $basePrice = $eventObj ? (float) ($eventObj->price ?? 0) : 0.0;
+                    $finalPrice = $basePrice;
                     $discountMsg = null;
-                    if ($hasActiveDiscount) {
-                        $startOfToday = $now->copy()->startOfDay();
-                        $end = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
-                        $endOfDiscountDay = $end->copy();
-                        $diffDaysInt = (int) $startOfToday->diffInDays($endOfDiscountDay, false);
-                        if ($diffDaysInt > 1) {
-                            $discountMsg = $diffDaysInt . ' Days left at this price!';
-                        } elseif ($diffDaysInt === 1) {
-                            $discountMsg = '1 Day left at this price!';
-                        } else {
-                            $discountMsg = null; // hide when 0 or expired
+                    if ($eventObj && !empty($eventObj->discount_percentage) && !empty($eventObj->discount_until)) {
+                        $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
+                        $hasActiveDiscount = ($eventObj->discount_percentage > 0) && $nowTs->lte($discountUntil);
+                        if ($hasActiveDiscount) {
+                            $finalPrice = (float) ($eventObj->discounted_price ?? $basePrice);
+                            $startOfToday = $nowTs->copy()->startOfDay();
+                            $diffDaysInt = (int) $startOfToday->diffInDays($discountUntil, false);
+                            if ($diffDaysInt > 1) {
+                                $discountMsg = $diffDaysInt . ' Days left at this price!';
+                            } elseif ($diffDaysInt === 1) {
+                                $discountMsg = '1 Day left at this price!';
+                            } else {
+                                $discountMsg = null;
+                            }
                         }
                     }
                 @endphp
@@ -479,20 +541,30 @@
                     }
                 @endphp
                 <div class="booksave-row">
-                @if(!$isRegistered)
-                    @if($isFree)
-                        <form method="POST" action="{{ route('events.register.form', $event->id) }}" style="display:inline; width:100%;">
-                            @csrf
-                            <button class="bookseat" type="submit">Book Seat</button>
-                        </form>
-                    @else
-                        <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
-                    @endif
-                @else
-                    <button class="bookseat" disabled>Seat Booked</button>
-                @endif
-                <button class="save" id="saveEventBtn" data-event-id="{{ $event->id }}">Save</button>
-                </div>
+                        @php
+                            // Show Book Seat when user not registered and event not finished
+                            // Allow booking only before the event starts
+                            $canRegister = (!$isRegistered) && (!$eventStarted);
+                        @endphp
+                        @if($canRegister)
+                            @if($isFree)
+                                <button type="button" id="bookFreeBtn" class="bookseat">Book Seat</button>
+                            @else
+                                <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
+                            @endif
+                        @else
+                            @if(!$isRegistered && $eventFinished)
+                                <button class="bookseat" disabled>Event Telah Selesai</button>
+                            @elseif(!$isRegistered && $eventStarted)
+                                <button class="bookseat" disabled>Event Sudah Dimulai</button>
+                            @elseif($isRegistered)
+                                <button class="bookseat" disabled>Seat Booked</button>
+                            @else
+                                <button class="bookseat" disabled>Unavailable</button>
+                            @endif
+                        @endif
+                        <button class="save" id="saveEventBtn" data-event-id="{{ $event->id }}">Save</button>
+                    </div>
                 <hr>
                 <div class="include-box">
                     <div class="include-title">
@@ -581,6 +653,12 @@
                                     <label class="form-label">Registration Code</label>
                                     <input type="text" class="form-control" value="{{ $registration->registration_code ?? 'Pending assignment' }}" disabled>
                                 </div>
+                                @if(isset($event) && strtolower((string)$event->type) === 'offline')
+                                <div class="mb-3">
+                                    <label class="form-label">Attendance Code (Unique)</label>
+                                    <input type="text" class="form-control" value="{{ $registration->attendance_code ?? 'Generating...' }}" disabled>
+                                </div>
+                                @endif
                             </form>
                         @else
                             <p class="text-muted">You are not registered yet.</p>
@@ -589,6 +667,7 @@
                 </div>
             </div>
         </div>
+        
         <!-- Attendance Modal -->
         <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -598,31 +677,23 @@
                         <button type="button" class="btn-close"  style="cursor:pointer;" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @if($isRegistered && $eventFinished && !$attendanceSubmitted)
-                            <form method="POST" action="{{ route('events.attendance', $event->id) }}">
+                       <div class="modal-body">
+                            <form method="POST" action="{{ route('events.attendance', $event) }}"> 
                                 @csrf
+        
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold attendance-question-label">Apakah Anda hadir pada event ini?</label>
-                                    <style>
-                                        .attendance-option-label { color: #000 !important; }
-                                        .attendance-question-label { color: #000 !important; }
-                                    </style>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="attended" id="attendedYes" value="yes" required>
-                                        <label class="form-check-label attendance-option-label" for="attendedYes">Hadir</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="attended" id="attendedNo" value="no" required>
-                                        <label class="form-check-label attendance-option-label" for="attendedNo">Tidak Hadir</label>
-                                    </div>
+                                    <label for="inputKode" class="label-kode">Masukkan Kode</label>
+                                    <input type="text" class="form-control input-kode" id="inputKode" name="unique_code" placeholder="Kode Kehadiran" required>
+            
+                                    <div class="note-text"> * kode kehadiran didapatkan dari panitia kegiatan pada saat acara</div>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100">Kirim Attendance</button>
+
+                                <button type="submit" class="btn btn-primary w-100 btn-submit-attendance">
+                                Kirim Attendance
+                                </button>
+
                             </form>
-                        @elseif($attendanceSubmitted)
-                            <p class="text-success">Attendance tersimpan. Terima kasih!</p>
-                        @else
-                            <p class="text-muted">Form attendance akan dibuka setelah event selesai.</p>
-                        @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -694,9 +765,9 @@
                     <div class="resource-value">
                         <h6>Attendance Form</h6>
                         <p>
-                            @if($isRegistered && $eventFinished && !$hasFeedback)
+                            @if($isRegistered && $eventFinished && !$attendanceSubmitted)
                                 Please submit your attendance & feedback
-                            @elseif($hasFeedback)
+                            @elseif($attendanceSubmitted)
                                 Attendance submitted
                             @else
                                 Available after event completion
@@ -832,14 +903,14 @@
         
         <!-- Feedback & Reviews Section (Hidden by default) -->
         @if($isRegistered && $attendanceSubmitted)
-        <div id="feedbackSection" style="display: none; margin-top: 1.5rem; margin-left: auto; margin-right: auto; max-width: 900px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
-            <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-bottom: 1px solid #e9ecef; background-color: #f8f9fa;">
+        <div id="feedbackSection" style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
+            <div class="d-flex justify-content-between align-items-center" style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
                 <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
-                <button type="button" onclick="toggleFeedbackSection()" aria-label="Close" style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='transparent'">
+                <button type="button" onclick="toggleFeedbackSection()" aria-label="Close" style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='transparent'">
                     <span style="line-height: 1;">&times;</span>
                 </button>
             </div>
-            <div class="row g-0" style="min-height: 300px;">
+            <div class="row g-0" style="margin-top: 20px; min-height: 300px;">
                 <!-- Left Column: Participant Ratings -->
                 <div class="col-md-6" style="background-color: #f8f9fa; padding: 1rem; border-right: 1px solid #e9ecef;">
                     <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Participant Ratings</h6>
@@ -1010,7 +1081,7 @@
                             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, 100);
                     } else {
-                        section.style.display = 'none';
+                        section.style.display = 'none';a
                     }
                 }
             }
@@ -1220,25 +1291,6 @@
                         submitBtn.disabled = false;
                         submitBtn.innerText = 'Submit Feedback';
                         if (data.success) {
-                            // After submit, show the "no feedback" placeholder again (user wants moderation flow)
-                            const scrollBox = document.querySelector('.scroll-review-box');
-                            if (scrollBox) {
-                                // Move or restore the placeholder node
-                                const noFeedbackPlaceholder = document.getElementById('no-feedback-placeholder');
-                                // Clear any rendered feedback items
-                                scrollBox.innerHTML = '';
-                                if (noFeedbackPlaceholder) {
-                                    noFeedbackPlaceholder.style.display = 'flex';
-                                    scrollBox.appendChild(noFeedbackPlaceholder);
-                                } else {
-                                    // Fallback: insert the text placeholder
-                                    const ph = document.createElement('div');
-                                    ph.id = 'no-feedback-placeholder';
-                                    ph.style = 'color:#888; font-size:15px; padding:16px 8px; display:flex; align-items:center; justify-content:center; min-height:120px; width:100%;';
-                                    ph.innerHTML = '<span>Belum ada feedback di event ini.</span><b style="margin-left:8px;">Jadilah yang pertama</b>';
-                                    scrollBox.appendChild(ph);
-                                }
-                            }
                             // Show success message
                             alert('Feedback berhasil dikirim! Terima kasih atas feedback Anda.');
                             
@@ -1256,14 +1308,8 @@
                             // Store state before reload
                             sessionStorage.setItem('feedbackSectionOpen', 'true');
                             setTimeout(() => {
-                                location.reload();
+                                window.location.reload();
                             }, 500);
-                            try {
-                                const fbModalEl = document.getElementById('feedbackModal');
-                                if (fbModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
-                                    bootstrap.Modal.getInstance(fbModalEl)?.hide();
-                                }
-                            } catch(e) {}
                         } else {
                             alert(data.message || 'Gagal menyimpan feedback.');
                         }
@@ -1314,6 +1360,49 @@
                     })
                     .catch(()=>{ this.textContent = original; })
                     .finally(()=>{ this.disabled = false; });
+                });
+            })();
+        </script>
+        <script>
+            // Free event booking via AJAX: redirect to ticket page
+            (function(){
+                const btn = document.getElementById('bookFreeBtn');
+                if(!btn) return;
+                btn.addEventListener('click', function(){
+                    const original = this.textContent;
+                    this.disabled = true;
+                    this.textContent = 'Processing...';
+                    fetch('{{ route('events.register', $event) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(r => r.json())
+                    .then(({status, redirect, message, button_text}) => {
+                        if (redirect) {
+                            window.location.href = redirect;
+                            return;
+                        }
+                        if (status === 'ok' || status === 'already') {
+                            this.textContent = button_text || 'Seat Booked';
+                            this.disabled = true;
+                        } else if (status === 'payment_required' && redirect) {
+                            window.location.href = redirect;
+                        } else {
+                            this.textContent = original;
+                        }
+                    })
+                    .catch(() => {
+                        this.textContent = original;
+                    })
+                    .finally(() => {
+                        // keep disabled only if booked; otherwise re-enable
+                        if (this.textContent === original) this.disabled = false;
+                    });
                 });
             })();
         </script>

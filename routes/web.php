@@ -27,9 +27,17 @@ Route::get('/admin/report', function () {
     return redirect()->route('admin.reports');
 });
 
-Route::get('/admin/add-users', function () {
-    return view('/admin/add-users');
-});
+Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
+    // Pull non-admin users with event participations for the Manage User table and view modal
+    $users = \App\Models\User::with(['eventRegistrations' => function($q){
+            $q->with('event')->orderBy('created_at','desc');
+        }])
+        ->select('id','name','email','phone','profession','institution','avatar','created_at')
+        ->where('role', '!=', 'admin')
+        ->orderBy('name')
+        ->get();
+    return view('/admin/add-users', compact('users'));
+})->name('admin.add-users');
 
 // Serve Add Event at a friendly URL using the canonical create form (auth+admin)
 Route::middleware(['auth','admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
