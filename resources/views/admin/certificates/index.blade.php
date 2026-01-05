@@ -1,6 +1,6 @@
 @extends('layouts.crm')
 
-@section('title', 'Pengaturan Sertifikat - ' . $event->title)
+@section('title', 'Generate Sertifikat')
 
 @section('content')
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,13 +17,6 @@
         </div>
     @endif
 
-    @if(session('info'))
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <i class="bi bi-info-circle me-2"></i>{{ session('info') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}
@@ -31,154 +24,209 @@
         </div>
     @endif
 
-    @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-circle me-2"></i>
-            <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form action="{{ route('admin.crm.certificates.update', $event) }}" method="POST" enctype="multipart/form-data" id="certificateForm">
-                        @csrf
-                        @method('PUT')
-                        
-                        <div class="mb-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <i class="bi bi-award text-primary me-2" style="font-size: 1.2rem;"></i>
-                                <h6 class="fw-semibold mb-0">Logo & Tanda Tangan Sertifikat</h6>
-                            </div>
-                            <p class="text-muted small mb-4">Upload logo dan tanda tangan yang akan digunakan pada sertifikat event ini. Anda dapat upload lebih dari satu logo dan tanda tangan. Semua logo akan ditampilkan di bagian atas sertifikat dengan ukuran yang sama, sedangkan semua tanda tangan akan ditampilkan di bagian bawah.</p>
-                            
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <label for="certificate_logo" class="form-label fw-semibold">
-                                        <i class="bi bi-image me-1"></i>Logo Sertifikat (Bisa Multiple)
-                                    </label>
-                                    <input type="file" name="certificate_logo[]" id="certificate_logo" class="form-control" accept="image/*" multiple>
-                                    <div class="form-text small text-muted">Format: PNG/JPG, maksimal 2MB per file. Pilih beberapa file untuk upload multiple logo.</div>
-                                    
-                                    @php
-                                        $logos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []);
-                                    @endphp
-                                    @if(count($logos) > 0)
-                                    <div class="mt-3">
-                                        <div class="small text-muted mb-2">Logo yang sudah diupload ({{ count($logos) }}):</div>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            @foreach($logos as $logo)
-                                            @php
-                                                $logoPath = str_replace('storage/', '', $logo);
-                                                $logoUrl = Storage::url($logoPath);
-                                            @endphp
-                                            <div class="position-relative border rounded p-2 bg-light" style="width:120px;">
-                                                <img src="{{ $logoUrl }}" alt="Logo" class="img-thumbnail rounded mb-1" style="width:100px;height:60px;object-fit:contain;" onerror="this.src='{{ asset('aset/profile.png') }}'">
-                                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="width:24px;height:24px;padding:0;font-size:12px;" onclick="deleteLogo('{{ $logo }}', this)" title="Hapus">
-                                                    <i class="bi bi-x"></i>
-                                                </button>
-                                                <input type="hidden" name="delete_logos[]" id="delete_logo_{{ str_replace(['/', '\\', '.', '-'], '_', $logo) }}" value="">
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @else
-                                    <div class="mt-3 p-3 border rounded bg-light text-center">
-                                        <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                        <div class="small text-muted mt-2">Belum ada logo</div>
-                                    </div>
-                                    @endif
-                                    
-                                    <div id="logoPreview" class="mt-3" style="display:none;">
-                                        <div class="small text-muted mb-2">Preview logo baru:</div>
-                                        <div id="logoPreviewContainer" class="d-flex flex-wrap gap-2"></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="certificate_signature" class="form-label fw-semibold">
-                                        <i class="bi bi-pen me-1"></i>Tanda Tangan Sertifikat (Bisa Multiple)
-                                    </label>
-                                    <input type="file" name="certificate_signature[]" id="certificate_signature" class="form-control" accept="image/*" multiple>
-                                    <div class="form-text small text-muted">Format: PNG/JPG, maksimal 2MB per file. Pilih beberapa file untuk upload multiple tanda tangan.</div>
-                                    
-                                    @php
-                                        $signatures = is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : []);
-                                    @endphp
-                                    @if(count($signatures) > 0)
-                                    <div class="mt-3">
-                                        <div class="small text-muted mb-2">Tanda tangan yang sudah diupload ({{ count($signatures) }}):</div>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            @foreach($signatures as $signature)
-                                            @php
-                                                $sigPath = str_replace('storage/', '', $signature);
-                                                $sigUrl = Storage::url($sigPath);
-                                            @endphp
-                                            <div class="position-relative border rounded p-2 bg-light" style="width:120px;">
-                                                <img src="{{ $sigUrl }}" alt="Signature" class="img-thumbnail rounded mb-1" style="width:100px;height:60px;object-fit:contain;" onerror="this.src='{{ asset('aset/profile.png') }}'">
-                                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" style="width:24px;height:24px;padding:0;font-size:12px;" onclick="deleteSignature('{{ $signature }}', this)" title="Hapus">
-                                                    <i class="bi bi-x"></i>
-                                                </button>
-                                                <input type="hidden" name="delete_signatures[]" id="delete_signature_{{ str_replace(['/', '\\', '.', '-'], '_', $signature) }}" value="">
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    @else
-                                    <div class="mt-3 p-3 border rounded bg-light text-center">
-                                        <i class="bi bi-pen text-muted" style="font-size: 2rem;"></i>
-                                        <div class="small text-muted mt-2">Belum ada tanda tangan</div>
-                                    </div>
-                                    @endif
-                                    
-                                    <div id="signaturePreview" class="mt-3" style="display:none;">
-                                        <div class="small text-muted mb-2">Preview tanda tangan baru:</div>
-                                        <div id="signaturePreviewContainer" class="d-flex flex-wrap gap-2"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-4 pt-4 border-top">
-                            <a href="{{ route('admin.crm.certificates.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i> Batal
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i> Simpan Perubahan
-                            </button>
-                        </div>
-                    </form>
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted fw-semibold">Cari Event</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="eventSearch" class="form-control" placeholder="Cari nama event...">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small text-muted fw-semibold">Status Sertifikat</label>
+                    <select id="certificateStatusFilter" class="form-select">
+                        <option value="all">Semua Status</option>
+                        <option value="ready">Siap Generate</option>
+                        <option value="configured">Sudah Dikonfigurasi</option>
+                        <option value="not-configured">Belum Dikonfigurasi</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted fw-semibold">&nbsp;</label>
+                    <button type="button" id="clearFilters" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle me-1"></i> Reset Filter
+                    </button>
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-2"></i>Informasi</h6>
-                    <div class="mb-3">
-                        <small class="text-muted d-block mb-1">Nama Event</small>
-                        <strong>{{ $event->title }}</strong>
+    </div>
+
+    <!-- Events List -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if($events->count() > 0)
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nama Event</th>
+                                <th>Jumlah Peserta</th>
+                                <th>Status Konfigurasi</th>
+                                <th>Status Generate</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTableBody">
+                            @foreach($events as $event)
+                                @php
+                                    $registrationsCount = $event->registrations_count ?? $event->registrations()->count();
+                                    $hasLogo = !empty($event->certificate_logo);
+                                    $hasSignature = !empty($event->certificate_signature);
+                                    $isConfigured = $hasLogo || $hasSignature;
+                                    $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+                                    $isFinished = false;
+                                    $eventStatus = 'unknown';
+                                    if($eventDate) {
+                                        $certificateReadyDate = $eventDate->copy()->addDays(3);
+                                        $isFinished = $certificateReadyDate->isPast();
+                                        if($eventDate->isPast()) {
+                                            $eventStatus = 'finished';
+                                        } elseif($eventDate->isFuture()) {
+                                            $eventStatus = 'upcoming';
+                                        } else {
+                                            $eventStatus = 'ongoing';
+                                        }
+                                    }
+                                    $status = 'not-configured';
+                                    if($isConfigured) {
+                                        $status = $isFinished ? 'ready' : 'configured';
+                                    }
+                                @endphp
+                                <tr class="event-row" 
+                                    data-title="{{ strtolower($event->title) }}"
+                                    data-status="{{ $status }}"
+                                    data-event-status="{{ $eventStatus }}">
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ $event->title }}</div>
+                                    </td>
+                                    <td>
+                                        @if($registrationsCount > 0)
+                                            <span class="badge bg-primary">{{ $registrationsCount }} peserta</span>
+                                        @else
+                                            <span class="badge bg-secondary">0 peserta</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($isConfigured)
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                @if($hasLogo && $hasSignature)
+                                                    Lengkap
+                                                @elseif($hasLogo)
+                                                    Logo Saja
+                                                @else
+                                                    TTD Saja
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                Belum Ada
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($registrationsCount > 0)
+                                            @if($isFinished)
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Siap Generate
+                                                </span>
+                                            @else
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-clock me-1"></i>Menunggu H+3
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-dash-circle me-1"></i>Tidak Ada Peserta
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            @if($registrationsCount > 0 && $isFinished)
+                                                <a href="{{ route('admin.crm.certificates.generate-massal', $event) }}" 
+                                                   class="btn btn-success generate-cert-btn" 
+                                                   data-bs-toggle="tooltip" 
+                                                   title="Generate Sertifikat ({{ $registrationsCount }} peserta)"
+                                                   data-count="{{ $registrationsCount }}"
+                                                   onclick="return handleGenerateClick(this, {{ $registrationsCount }})">
+                                                    <i class="bi bi-download me-1"></i> Generate
+                                                </a>
+                                            @elseif($registrationsCount > 0 && !$isFinished)
+                                                <span class="btn btn-outline-secondary btn-sm" 
+                                                      data-bs-toggle="tooltip" 
+                                                      title="Sertifikat dapat di-generate setelah H+3 dari tanggal event">
+                                                    <i class="bi bi-clock me-1"></i> Belum Waktunya
+                                                </span>
+                                            @else
+                                                <span class="btn btn-outline-secondary btn-sm" 
+                                                      data-bs-toggle="tooltip" 
+                                                      title="Belum ada peserta yang terdaftar">
+                                                    <i class="bi bi-info-circle me-1"></i> Tidak Ada Peserta
+                                                </span>
+                                            @endif
+                                            <a href="{{ route('admin.crm.certificates.edit', $event) }}" 
+                                               class="btn btn-outline-primary"
+                                               data-bs-toggle="tooltip"
+                                               title="Pengaturan Logo & Tanda Tangan Sertifikat">
+                                                <i class="bi bi-gear me-1"></i> Pengaturan
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    {{ $events->links() }}
+                </div>
+            @else
+                <div class="text-center py-5">
+                    <i class="bi bi-award" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">Belum ada event untuk dikelola sertifikatnya.</p>
+                    <a href="{{ route('admin.add-event') }}" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle me-1"></i> Buat Event Baru
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="card shadow-sm mt-4 border-info">
+        <div class="card-body">
+            <h6 class="text-info mb-3"><i class="bi bi-info-circle me-2"></i>Informasi Penting</h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-gear-fill text-primary me-2 mt-1"></i>
+                        <div>
+                            <strong>Pengaturan Logo & TTD</strong>
+                            <p class="small text-muted mb-0">Upload logo dan tanda tangan di halaman Edit Event untuk membuat sertifikat lebih profesional.</p>
+                        </div>
                     </div>
-                    @if($event->event_date)
-                    <div class="mb-3">
-                        <small class="text-muted d-block mb-1">Tanggal Event</small>
-                        <strong>{{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</strong>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-clock-fill text-warning me-2 mt-1"></i>
+                        <div>
+                            <strong>Waktu Generate</strong>
+                            <p class="small text-muted mb-0">Sertifikat dapat di-generate setelah H+3 (3 hari) dari tanggal event berlangsung.</p>
+                        </div>
                     </div>
-                    @endif
-                    <div class="mb-3">
-                        <small class="text-muted d-block mb-1">Jumlah Peserta</small>
-                        <strong>{{ $event->registrations()->count() }} peserta</strong>
-                    </div>
-                    <hr>
-                    <div class="alert alert-info small mb-0">
-                        <strong>Tips:</strong> Gunakan logo dengan latar belakang transparan (PNG) untuk hasil terbaik. Tanda tangan sebaiknya dalam format PNG dengan latar belakang transparan. Semua logo dan tanda tangan akan ditampilkan dengan ukuran yang sama pada sertifikat.
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-download-fill text-success me-2 mt-1"></i>
+                        <div>
+                            <strong>Generate Massal</strong>
+                            <p class="small text-muted mb-0">Generate semua sertifikat sekaligus dalam format ZIP untuk kemudahan distribusi.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -190,107 +238,67 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Certificate logo preview (multiple)
-    const logoInp = document.getElementById('certificate_logo');
-    logoInp?.addEventListener('change', function(ev) {
-        const files = Array.from(ev.target.files);
-        const wrap = document.getElementById('logoPreview');
-        const container = document.getElementById('logoPreviewContainer');
-        
-        if(!files || files.length === 0) {
-            wrap.style.display = 'none';
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        files.forEach((f, index) => {
-            const sizeMB = f.size / (1024 * 1024);
-            if(sizeMB > 2) {
-                alert(`Logo ${index + 1} melebihi 2MB. File akan diabaikan.`);
-                return;
-            }
-            
-            const r = new FileReader();
-            r.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'border rounded p-2 bg-light';
-                div.style.width = '120px';
-                div.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview" class="img-thumbnail rounded mb-1" style="width:100px;height:60px;object-fit:contain;">
-                    <div class="small text-muted">Logo ${index + 1}</div>
-                `;
-                container.appendChild(div);
-            };
-            r.readAsDataURL(f);
+    const searchInput = document.getElementById('eventSearch');
+    const certStatusFilter = document.getElementById('certificateStatusFilter');
+    const clearBtn = document.getElementById('clearFilters');
+    const rows = Array.from(document.querySelectorAll('.event-row'));
+
+    function filterRows() {
+        const searchTerm = (searchInput.value || '').toLowerCase().trim();
+        const certStatus = certStatusFilter.value;
+
+        rows.forEach(row => {
+            const title = (row.getAttribute('data-title') || '').toLowerCase();
+            const rowCertStatus = row.getAttribute('data-status');
+
+            const matchSearch = searchTerm === '' || title.includes(searchTerm);
+            const matchCertStatus = certStatus === 'all' || rowCertStatus === certStatus;
+
+            row.style.display = (matchSearch && matchCertStatus) ? '' : 'none';
         });
-        
-        if(container.children.length > 0) {
-            wrap.style.display = 'block';
-        }
+    }
+
+    searchInput?.addEventListener('input', filterRows);
+    certStatusFilter?.addEventListener('change', filterRows);
+    clearBtn?.addEventListener('click', function() {
+        searchInput.value = '';
+        certStatusFilter.value = 'all';
+        filterRows();
     });
 
-    // Certificate signature preview (multiple)
-    const sigInp = document.getElementById('certificate_signature');
-    sigInp?.addEventListener('change', function(ev) {
-        const files = Array.from(ev.target.files);
-        const wrap = document.getElementById('signaturePreview');
-        const container = document.getElementById('signaturePreviewContainer');
-        
-        if(!files || files.length === 0) {
-            wrap.style.display = 'none';
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        files.forEach((f, index) => {
-            const sizeMB = f.size / (1024 * 1024);
-            if(sizeMB > 2) {
-                alert(`Tanda tangan ${index + 1} melebihi 2MB. File akan diabaikan.`);
-                return;
-            }
-            
-            const r = new FileReader();
-            r.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'border rounded p-2 bg-light';
-                div.style.width = '120px';
-                div.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview" class="img-thumbnail rounded mb-1" style="width:100px;height:60px;object-fit:contain;">
-                    <div class="small text-muted">TTD ${index + 1}</div>
-                `;
-                container.appendChild(div);
-            };
-            r.readAsDataURL(f);
-        });
-        
-        if(container.children.length > 0) {
-            wrap.style.display = 'block';
-        }
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 });
 
-function deleteLogo(logoPath, btn) {
-    if(confirm('Hapus logo ini?')) {
-        const inputId = 'delete_logo_' + logoPath.replace(/[\/\\\.\-]/g, '_');
-        const input = document.getElementById(inputId);
-        if(input) {
-            input.value = logoPath;
-        }
-        btn.closest('.position-relative').style.display = 'none';
+// Handle generate certificate click with loading state
+function handleGenerateClick(btn, count) {
+    if(!confirm(`Generate sertifikat untuk ${count} peserta? Proses ini mungkin memakan waktu beberapa saat.`)) {
+        return false;
     }
-}
-
-function deleteSignature(sigPath, btn) {
-    if(confirm('Hapus tanda tangan ini?')) {
-        const inputId = 'delete_signature_' + sigPath.replace(/[\/\\\.\-]/g, '_');
-        const input = document.getElementById(inputId);
-        if(input) {
-            input.value = sigPath;
-        }
-        btn.closest('.position-relative').style.display = 'none';
-    }
+    
+    // Show loading state
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+    btn.classList.add('disabled');
+    
+    // If user navigates away, restore button (though this won't execute if navigation happens)
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('disabled');
+    }, 30000); // Restore after 30 seconds if still on page
+    
+    return true;
 }
 </script>
+<style>
+.generate-cert-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+</style>
 @endsection
