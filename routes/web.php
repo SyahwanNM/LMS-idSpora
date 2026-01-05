@@ -189,7 +189,7 @@ Route::middleware('auth')->group(function(){
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
-    Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
+    // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationsController::class,'markAllRead'])->name('notifications.markAllRead');
