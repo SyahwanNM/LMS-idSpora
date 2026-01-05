@@ -134,8 +134,8 @@
         }
         
         .glass-sidebar {
-            background: white;
-            border-right: 1px solid #e5e7eb;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-right: none;
             position: fixed;
             top: 70px;
             left: 0;
@@ -143,6 +143,17 @@
             overflow-y: auto;
             z-index: 1000;
             width: 280px;
+        }
+        
+        .sidebar-header {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
         
         /* Main content with sidebar offset */
@@ -165,16 +176,12 @@
                 height: auto;
                 top: 0;
                 border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-                padding: 1.25rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
             .main-content-with-sidebar {
                 margin-left: 0;
                 margin-top: 0;
                 padding: 1.5rem;
-            }
-            .search-bar {
-                margin-bottom: 1rem;
             }
         }
         
@@ -315,46 +322,56 @@
             }
         }
         
-        /* Sidebar Menu Item Hover */
+        /* Sidebar Menu Item - Matching Navbar Gradient */
         .menu-item {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            color: #374151;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            margin: 0.5rem 1rem;
+            padding: 0.875rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            position: relative;
         }
         
         .menu-item:hover {
-            background: #f9fafb;
-            transform: translateX(4px);
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .menu-item.active {
-            background: #fef3c7;
-            border-left: 3px solid #fbbf24;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1e1b4b;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         
-        .menu-item .font-semibold {
-            color: #111827;
+        .menu-item.active .menu-icon {
+            color: #1e1b4b;
         }
         
-        .menu-item .text-gray-400 {
-            color: #6b7280;
+        .menu-item .menu-text {
+            color: inherit;
+            font-size: 14px;
+            font-weight: 500;
         }
         
-        /* Search Bar - Minimalist */
-        .search-bar {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            transition: all 0.2s ease;
+        .menu-icon {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 20px;
+            transition: color 0.3s ease;
+            width: 24px;
+            text-align: center;
         }
         
-        .search-bar:focus-within {
-            background: white;
-            border-color: #d1d5db;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        .menu-item:hover .menu-icon {
+            color: rgba(255, 255, 255, 0.9);
         }
         
-        .search-bar input {
-            color: #111827;
+        .menu-item.active .menu-icon {
+            color: white;
+        }
             font-size: 14px;
         }
         
@@ -471,40 +488,23 @@
     @include("partials.navbar-after-login")
     
     <div class="flex min-h-screen">
-        <!-- Sidebar - Minimalist & Professional -->
-        <aside class="glass-sidebar p-5 flex flex-col">
-            <!-- Search Bar -->
-            <div class="search-bar px-3 py-2.5 flex items-center space-x-2.5 mb-6">
-                <i class="bi bi-search menu-icon"></i>
-                <input 
-                    type="text" 
-                    placeholder="Cari..." 
-                    class="bg-transparent border-none outline-none flex-1"
-                >
+        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
+        <aside class="glass-sidebar flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                MENU NAVIGASI
             </div>
             
             <!-- Menu Items -->
-            <nav class="flex-1">
-                <a href="{{ route('profile.index') }}" class="menu-item flex items-center justify-between px-3 py-2.5 group {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <div class="flex items-center space-x-3">
-                        <i class="bi bi-person menu-icon"></i>
-                        <div>
-                            <div class="font-semibold">Profile</div>
-                            <div class="text-xs">Informasi pribadi</div>
-                        </div>
-                    </div>
-                    <i class="bi bi-chevron-right menu-chevron"></i>
+            <nav class="flex-1 py-4">
+                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <i class="bi bi-person menu-icon"></i>
+                    <span class="menu-text">Profile</span>
                 </a>
                 
-                <a href="{{ route('profile.events') }}" class="menu-item flex items-center justify-between px-3 py-2.5 group {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <div class="flex items-center space-x-3">
-                        <i class="bi bi-calendar-check menu-icon"></i>
-                        <div>
-                            <div class="font-semibold">History Event</div>
-                            <div class="text-xs">Event yang diikuti</div>
-                        </div>
-                    </div>
-                    <i class="bi bi-chevron-right menu-chevron"></i>
+                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-check menu-icon"></i>
+                    <span class="menu-text">History Event</span>
                 </a>
             </nav>
         </aside>
