@@ -39,6 +39,15 @@ class EventParticipationController extends Controller
             if(empty($registration->registration_code)){
                 $registration->registration_code = 'EVT'.$event->id.'-'.Str::upper(Str::random(6));
             }
+            // Generate per-user unique attendance code for offline events
+            if (strtolower((string)$event->type) === 'offline' && empty($registration->attendance_code)) {
+                // Format: AT-{eventId}-{userId}-{random}
+                $base = 'AT'.$event->id.'-'.$user->id.'-';
+                do {
+                    $code = $base.Str::upper(Str::random(6));
+                } while (EventRegistration::where('attendance_code', $code)->exists());
+                $registration->attendance_code = $code;
+            }
             $registration->save();
         });
         // Create a user notification for successful free registration
@@ -49,7 +58,8 @@ class EventParticipationController extends Controller
                     'type' => 'event_registration',
                     'title' => 'Pendaftaran Dikonfirmasi',
                     'message' => 'Pendaftaran "'.$event->title.'" telah dikonfirmasi.',
-                    'data' => [ 'url' => route('events.ticket', $event) ],
+                    // Redirect back to detail event instead of ticket page
+                    'data' => [ 'url' => route('events.registered.detail', $event) ],
                     'expires_at' => now()->addDays(14),
                 ]);
             } catch(\Throwable $e) { /* ignore notification errors */ }
@@ -138,10 +148,29 @@ class EventParticipationController extends Controller
         if(!$endTime || Carbon::now()->lte($endTime)){
             return redirect()->back()->with('error','Event belum selesai, attendance belum dapat dikirim.');
         }
-        $data = $request->validate([
-            'attended' => 'required|in:yes,no',
-        ]);
-        $registration->attendance_status = $data['attended'];
+        // If a unique_code is provided, validate and consume it (one-time)
+        if ($request->filled('unique_code')) {
+            $data = $request->validate([
+                'unique_code' => 'required|string',
+            ]);
+            if (empty($registration->attendance_code)) {
+                return redirect()->back()->with('error','Kode attendance belum tersedia.');
+            }
+            if (!hash_equals($registration->attendance_code, $data['unique_code'])) {
+                return redirect()->back()->with('error','Kode attendance tidak valid.');
+            }
+            if (!empty($registration->attendance_code_used_at)) {
+                return redirect()->back()->with('error','Kode attendance sudah digunakan.');
+            }
+            $registration->attendance_code_used_at = Carbon::now();
+            $registration->attendance_status = 'yes';
+        } else {
+            // Fallback: attended yes/no for non-code flows
+            $data = $request->validate([
+                'attended' => 'required|in:yes,no',
+            ]);
+            $registration->attendance_status = $data['attended'];
+        }
         $registration->attended_at = Carbon::now();
         $registration->save();
         return redirect()->back()->with('success','Attendance berhasil disimpan.');
