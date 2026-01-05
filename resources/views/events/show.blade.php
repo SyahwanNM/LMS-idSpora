@@ -12,10 +12,10 @@
 <div class="container py-5" style="margin-top:70px;">
     <div class="row">
         <div class="col-md-6 mb-4">
-            @if($event->image)
-                <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" class="img-fluid rounded shadow">
+            @if($event->image_url)
+                <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="img-fluid rounded shadow" onerror="this.src='{{ asset('aset/poster.png') }}'">
             @else
-                <img src="https://via.placeholder.com/800x500/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}" class="img-fluid rounded shadow">
+                <img src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}" class="img-fluid rounded shadow">
             @endif
         </div>
         <div class="col-md-6">

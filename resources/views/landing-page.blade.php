@@ -32,27 +32,35 @@
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active" data-bs-interval="10000">
-                    <img src="https://img.freepik.com/vektor-premium/live-concert-horizontal-banner-template_23-2150997973.jpg"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item" data-bs-interval="2000">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRt2J3i17I7bpToDbbrbL6ULzX8IPnF7JJXiQ&s"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item">
-                    <img src="https://img.freepik.com/free-psd/horizontal-banner-template-jazz-festival-club_23-2148979704.jpg"
-                        class="d-block" alt="...">
-                </div>
+                @php
+                    $slides = (isset($carouselEvents) && $carouselEvents->count() > 0)
+                        ? $carouselEvents->take(3)
+                        : (isset($upcomingEvents) ? $upcomingEvents->take(3) : collect());
+                @endphp
+                @if($slides->isEmpty())
+                    <div class="carousel-item active" data-bs-interval="10000">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
+                    </div>
+                    <div class="carousel-item" data-bs-interval="2000">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
+                    </div>
+                @else
+                    @foreach($slides as $idx => $ev)
+                        <div class="carousel-item {{ $idx === 0 ? 'active' : '' }}" data-bs-interval="{{ $idx === 0 ? 10000 : 2000 }}">
+                            <img src="{{ $ev->image_url ?: asset('aset/poster.png') }}" class="d-block" alt="{{ $ev->title }}">
+                        </div>
+                    @endforeach
+                @endif
             </div>
 
-            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="prev">
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Previous</span>
             </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="next">
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval" data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
             </button>
@@ -460,10 +468,10 @@
             @forelse($upcomingEvents as $event)
             <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
-                    @if($event->image)
-                        <img class="event-poster-img" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
+                    @if($event->image_url)
+                        <img class="event-poster-img" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
                     @else
-                        <img class="event-poster-img" src="https://via.placeholder.com/600x800/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}">
+                        <img class="event-poster-img" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
                     @endif
                     <button class="save-btn save-btn--event" aria-label="Save event" type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

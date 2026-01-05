@@ -48,6 +48,93 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
 
+// punya dini
+Route::get('/modul-course', function () {
+    return view('modul-course');
+})->name('modul-course');
+
+Route::get('/aturan-kuis', function () {
+    return view('aturan-kuis');
+})->name('aturan-kuis');
+
+Route::get('/payment-course', function () {
+    return view('payment-course');
+})->name('payment-course');
+
+Route::get('/detail-course', function () {
+    return view('detail-course');
+})->name('detail-course');
+
+Route::get('/quiz1-course', function () {
+    return view('quiz1-course');
+})->name('quiz1-course');
+
+// ...existing code...
+Route::get('/quiz-course', function () {
+    return view('quiz-course');
+})->name('quiz-course');
+Route::get('/hasil-course', function () {
+    return view('hasil-course');
+})->name('hasil-course');
+Route::get('admin/course-builder', function () {
+    return view('admin/course-builder');
+})->name('admin/course-builder');
+// Legacy Add Course page (standalone view)
+Route::get('/admin/add-course', function () {
+    return view('admin/add-course');
+})->name('admin.add-course');
+Route::get('/admin/view-modul-course', function () {
+    return view('admin/view-modul-course');
+})->name('admin/view-modul-course');
+Route::get('/admin/add-pdf-module', function () {
+    return view('admin/add-pdf-module');
+})->name('add-pdf-module');
+Route::get('/admin/report', function () {
+    return view('admin/report');
+})->name('report');
+
+// Serve storage files (fix 403 error on Windows/PHP built-in server)
+// This route serves files from storage when symlink doesn't work properly
+Route::get('/storage/{path}', function ($path) {
+    // Decode URL-encoded path
+    $path = urldecode($path);
+    
+    // Security: prevent directory traversal
+    if (str_contains($path, '..') || str_contains($path, "\0")) {
+        abort(403, 'Invalid path');
+    }
+    
+    // Get file path in storage
+    $filePath = storage_path('app/public/' . $path);
+    
+    // Check if file exists
+    if (!file_exists($filePath) || !is_file($filePath)) {
+        abort(404, 'File not found: ' . $path);
+    }
+    
+    // Get MIME type
+    $mimeType = mime_content_type($filePath);
+    if (!$mimeType) {
+        // Fallback MIME types based on extension
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'pdf' => 'application/pdf',
+        ];
+        $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
+    }
+    
+    return response()->file($filePath, [
+        'Content-Type' => $mimeType,
+        'Cache-Control' => 'public, max-age=31536000',
+        'Accept-Ranges' => 'bytes',
+    ]);
+})->where('path', '.*')->name('storage.serve');
+
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/auth', function () {
     return view('/auth');
@@ -78,6 +165,14 @@ Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController:
 // Midtrans notification webhook (no auth)
 Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('midtrans.notify');
 
+// Optional finish redirect target from Snap callbacks to avoid 404 after payment
+Route::get('/payment/finish', function(){
+    return redirect()->route('dashboard')->with('success','Pembayaran sedang diproses.');
+})->name('payment.finish');
+
+// Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
+Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
+
 // Event routes now require authentication to view & register
 Route::middleware('auth')->group(function(){
     // Feedback AJAX route
@@ -104,6 +199,14 @@ Route::middleware('auth')->group(function(){
     Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
     Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    
+    // Profile Reminder API
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
+
+    // Profile Reminder API
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
 
     // Save/unsave event
     Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
@@ -252,10 +355,38 @@ Route::get('/course-quiz-start', function () {
                 'destroy' => 'admin.events.destroy',
             ]
         ]);
-        // Certificate management
-        Route::get('/admin/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('admin.certificates.index');
-        Route::get('/admin/certificates/{event}/edit', [\App\Http\Controllers\CertificateController::class, 'edit'])->name('admin.certificates.edit');
-        Route::put('/admin/certificates/{event}', [\App\Http\Controllers\CertificateController::class, 'update'])->name('admin.certificates.update');
-        Route::get('/admin/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CertificateController::class, 'generateMassal'])->name('admin.certificates.generate-massal');
+        // CRM Routes
+        Route::prefix('admin/crm')->name('admin.crm.')->group(function () {
+            Route::get('/dashboard', [\App\Http\Controllers\CRMController::class, 'dashboard'])->name('dashboard');
+            
+            // Certificate management (moved to CRM)
+            Route::get('/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('certificates.index');
+            Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CertificateController::class, 'edit'])->name('certificates.edit');
+            Route::put('/certificates/{event}', [\App\Http\Controllers\CertificateController::class, 'update'])->name('certificates.update');
+            Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
+            
+            // Customer management
+            Route::get('/customers', [\App\Http\Controllers\CRMController::class, 'customers'])->name('customers.index');
+            Route::get('/customers/{customer}', [\App\Http\Controllers\CRMController::class, 'showCustomer'])->name('customers.show');
+            Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRMController::class, 'editCustomer'])->name('customers.edit');
+            Route::put('/customers/{customer}', [\App\Http\Controllers\CRMController::class, 'updateCustomer'])->name('customers.update');
+            
+            // Feedback Analysis
+            Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
+        });
+        
+        // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
+        Route::get('/admin/certificates', function() {
+            return redirect()->route('admin.crm.certificates.index');
+        })->name('admin.certificates.index');
+        Route::get('/admin/certificates/{event}/edit', function(\App\Models\Event $event) {
+            return redirect()->route('admin.crm.certificates.edit', $event);
+        })->name('admin.certificates.edit');
+        Route::put('/admin/certificates/{event}', function(\App\Models\Event $event) {
+            return redirect()->route('admin.crm.certificates.update', $event);
+        })->name('admin.certificates.update');
+        Route::get('/admin/events/{event}/certificates/generate-massal', function(\App\Models\Event $event) {
+            return redirect()->route('admin.crm.certificates.generate-massal', $event);
+        })->name('admin.certificates.generate-massal');
     });
 });

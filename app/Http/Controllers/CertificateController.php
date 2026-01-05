@@ -72,10 +72,10 @@ class CertificateController extends Controller
 
         // Handle certificate logo uploads (multiple)
         $existingLogos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []);
-        
-        // Delete old logos if requested
+            
+            // Delete old logos if requested
         if($request->has('delete_logos') && is_array($request->delete_logos)) {
-            foreach($request->delete_logos as $logoToDelete) {
+                foreach($request->delete_logos as $logoToDelete) {
                 if(!empty($logoToDelete)) {
                     // Normalize path
                     $logoPath = str_replace('storage/', '', $logoToDelete);
@@ -86,15 +86,15 @@ class CertificateController extends Controller
                 }
             }
             $hasChanges = true;
-        }
-        
-        // Add new logos
+            }
+            
+            // Add new logos
         if ($request->hasFile('certificate_logo')) {
             $newLogos = [];
             foreach($request->file('certificate_logo') as $logoFile) {
                 if($logoFile->isValid()) {
                     $newLogos[] = $logoFile->store('certificates', 'public');
-                }
+            }
             }
             if(!empty($newLogos)) {
                 $existingLogos = array_merge($existingLogos, $newLogos);
@@ -109,10 +109,10 @@ class CertificateController extends Controller
         // Handle certificate signature uploads (multiple)
         $existingSignatures = is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : []);
         $hasSigChanges = false;
-        
-        // Delete old signatures if requested
+            
+            // Delete old signatures if requested
         if($request->has('delete_signatures') && is_array($request->delete_signatures)) {
-            foreach($request->delete_signatures as $sigToDelete) {
+                foreach($request->delete_signatures as $sigToDelete) {
                 if(!empty($sigToDelete)) {
                     // Normalize path
                     $sigPath = str_replace('storage/', '', $sigToDelete);
@@ -123,15 +123,15 @@ class CertificateController extends Controller
                 }
             }
             $hasSigChanges = true;
-        }
-        
-        // Add new signatures
+            }
+            
+            // Add new signatures
         if ($request->hasFile('certificate_signature')) {
             $newSignatures = [];
             foreach($request->file('certificate_signature') as $sigFile) {
                 if($sigFile->isValid()) {
                     $newSignatures[] = $sigFile->store('certificates', 'public');
-                }
+            }
             }
             if(!empty($newSignatures)) {
                 $existingSignatures = array_merge($existingSignatures, $newSignatures);
@@ -145,16 +145,16 @@ class CertificateController extends Controller
 
         if(!empty($data)){
             try {
-                $event->update($data);
-                return redirect()->route('admin.certificates.index')->with('success', 'Pengaturan sertifikat berhasil diperbarui!');
+            $event->update($data);
+                return redirect()->route('admin.crm.certificates.index')->with('success', 'Pengaturan sertifikat berhasil diperbarui!');
             } catch(\Exception $e) {
                 \Log::error('Error updating certificate settings: ' . $e->getMessage());
-                return redirect()->route('admin.certificates.edit', $event)
+                return redirect()->route('admin.crm.certificates.edit', $event)
                     ->with('error', 'Terjadi kesalahan saat menyimpan pengaturan. Silakan coba lagi.');
             }
         }
 
-        return redirect()->route('admin.certificates.edit', $event)->with('info', 'Tidak ada perubahan yang disimpan.');
+        return redirect()->route('admin.crm.certificates.edit', $event)->with('info', 'Tidak ada perubahan yang disimpan.');
     }
 
     /**
@@ -288,20 +288,20 @@ class CertificateController extends Controller
         ];
 
         try {
-            $html = view('events.certificate-pdf', $data)->render();
+        $html = view('events.certificate-pdf', $data)->render();
             
-            $dompdf = new Dompdf();
-            $options = $dompdf->getOptions();
-            $options->setIsRemoteEnabled(true);
+        $dompdf = new Dompdf();
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
             $options->setIsHtml5ParserEnabled(true);
             $options->setChroot(public_path());
             $dompdf->setOptions($options);
             
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'landscape');
-            $dompdf->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
             
-            $filename = 'sertifikat-'.$event->id.'-'.$registration->id.'.pdf';
+        $filename = 'sertifikat-'.$event->id.'-'.$registration->id.'.pdf';
             $output = $dompdf->output();
             
             if(empty($output)) {
@@ -310,11 +310,11 @@ class CertificateController extends Controller
                     ->with('error', 'Gagal menghasilkan PDF sertifikat. Silakan coba lagi atau hubungi administrator.');
             }
 
-            $inline = $request->boolean('inline');
-            $disposition = $inline ? 'inline' : 'attachment';
+        $inline = $request->boolean('inline');
+        $disposition = $inline ? 'inline' : 'attachment';
             
             return response($output, 200, [
-                'Content-Type' => 'application/pdf',
+            'Content-Type' => 'application/pdf',
                 'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
                 'Content-Length' => strlen($output),
                 'Cache-Control' => 'no-cache, must-revalidate',
@@ -364,7 +364,7 @@ class CertificateController extends Controller
         $registrations = $event->registrations()->with('user')->get();
         
         if($registrations->isEmpty()){
-            return redirect()->route('admin.events.show', $event)
+            return redirect()->route('admin.crm.certificates.index')
                 ->with('error', 'Tidak ada peserta yang terdaftar untuk event ini.');
         }
 
@@ -454,7 +454,7 @@ class CertificateController extends Controller
             // Cleanup
             array_map('unlink', glob($tempDir . '/*'));
             rmdir($tempDir);
-            return redirect()->route('admin.events.show', $event)
+            return redirect()->route('admin.crm.certificates.index')
                 ->with('error', 'Gagal menghasilkan sertifikat.');
         }
 

@@ -1,25 +1,24 @@
 @extends('layouts.admin')
-@section('title','Kelola User')
+@section('title','Kelola Akun Admin')
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0">Kelola Akun</h5>
-    <a href="{{ route('admin.users.create') }}" class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Tambah User</a>
+    <div>
+        <h5 class="mb-0">Kelola Akun Admin</h5>
+        <small class="text-muted">Kelola akun administrator sistem. Untuk mengelola customer, gunakan menu CRM.</small>
+    </div>
+    <a href="{{ route('admin.users.create') }}" class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Tambah Admin</a>
 </div>
 @if(session('success'))<div class="alert alert-success py-2">{{ session('success') }}</div>@endif
 @if(session('error'))<div class="alert alert-danger py-2">{{ session('error') }}</div>@endif
 <form class="row g-2 mb-3" method="get" action="{{ route('admin.users.index') }}">
-    <div class="col-md-3">
-        <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Cari nama/email">
-    </div>
-    <div class="col-md-2">
-        <select name="role" class="form-select">
-            <option value="">Semua Role</option>
-            <option value="admin" @selected(request('role')==='admin')>Admin</option>
-            <option value="user" @selected(request('role')==='user')>User</option>
-        </select>
+    <div class="col-md-4">
+        <input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="Cari nama/email admin">
     </div>
     <div class="col-md-auto">
-        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search me-1"></i> Cari</button>
+        @if(request('q'))
+            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Reset</a>
+        @endif
     </div>
 </form>
 <div class="row g-3">
@@ -70,7 +69,10 @@
         </div>
     @empty
         <div class="col-12">
-            <div class="text-center text-muted py-4">Tidak ada user</div>
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-person-x" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="mt-3">Tidak ada akun admin ditemukan</p>
+            </div>
         </div>
     @endforelse
 </div>

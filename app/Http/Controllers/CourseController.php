@@ -23,6 +23,7 @@ class CourseController extends Controller
     public function create()
     {
         $categories = Category::all();
+        // Use the Tailwind-based Manage Courses create view
         return view('admin.courses.create', compact('categories'));
     }
 

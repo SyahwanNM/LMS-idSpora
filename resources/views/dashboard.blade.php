@@ -35,18 +35,27 @@
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active" data-bs-interval="10000">
-                    <img src="{{ asset('aset/ai.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item" data-bs-interval="2000">
-                    <img src="{{ asset('aset/ai2.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item">
-                    <img src="{{ asset('aset/ai3.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
+                @if(isset($upcomingEvents) && $upcomingEvents->count() > 0)
+                    @foreach($upcomingEvents->take(5) as $i => $evt)
+                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
+                            <img src="{{ $evt->image_url ? $evt->image_url : asset('aset/poster.png') }}"
+                                class="d-block" alt="{{ $evt->title ?? 'Event' }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
+                        </div>
+                    @endforeach
+                @else
+                    <div class="carousel-item active" data-bs-interval="10000">
+                        <img src="{{ asset('aset/ai.jpg') }}"
+                            class="d-block" alt="...">
+                    </div>
+                    <div class="carousel-item" data-bs-interval="2000">
+                        <img src="{{ asset('aset/ai2.jpg') }}"
+                            class="d-block" alt="...">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{{ asset('aset/ai3.jpg') }}"
+                            class="d-block" alt="...">
+                    </div>
+                @endif
             </div>
 
             <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
@@ -399,8 +408,8 @@
                 @endphp
                 <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
-                        @if($event->image)
-                            <img class="card-image-event" src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}">
+                        @if($event->image_url)
+                            <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         @else
                             <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
                         @endif

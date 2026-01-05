@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\EventRegistration;
+use App\Services\ProfileReminderService;
 use Carbon\Carbon;
 
 class ProfileController extends Controller
@@ -45,8 +46,75 @@ class ProfileController extends Controller
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6|confirmed',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'phone' => 'nullable|string|max:20',
-            'website' => 'nullable|url|max:255',
+            'phone_country_code' => 'required|string|in:+62,+60,+65,+1,+44,+61,+86,+81,+82,+66,+84,+63,+91',
+            'phone_number' => [
+                'required',
+                'string',
+                'max:15',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!empty($value)) {
+                        // Hapus semua karakter selain angka
+                        $cleaned = preg_replace('/[^0-9]/', '', $value);
+                        
+                        // Hapus leading zero
+                        $cleaned = ltrim($cleaned, '0');
+                        
+                        // Validasi panjang berdasarkan country code
+                        $countryCode = $request->input('phone_country_code', '+62');
+                        
+                        $minLength = 6;
+                        $maxLength = 15;
+                        
+                        // Set panjang minimum/maksimum berdasarkan country code
+                        switch ($countryCode) {
+                            case '+62': // Indonesia
+                                $minLength = 9;
+                                $maxLength = 12;
+                                break;
+                            case '+60': // Malaysia
+                            case '+65': // Singapore
+                            case '+66': // Thailand
+                            case '+84': // Vietnam
+                            case '+63': // Philippines
+                                $minLength = 8;
+                                $maxLength = 10;
+                                break;
+                            case '+1': // US/Canada
+                                $minLength = 10;
+                                $maxLength = 10;
+                                break;
+                            case '+44': // UK
+                                $minLength = 10;
+                                $maxLength = 10;
+                                break;
+                            case '+61': // Australia
+                                $minLength = 9;
+                                $maxLength = 9;
+                                break;
+                            case '+86': // China
+                                $minLength = 11;
+                                $maxLength = 11;
+                                break;
+                            case '+81': // Japan
+                                $minLength = 10;
+                                $maxLength = 11;
+                                break;
+                            case '+82': // South Korea
+                                $minLength = 9;
+                                $maxLength = 10;
+                                break;
+                            case '+91': // India
+                                $minLength = 10;
+                                $maxLength = 10;
+                                break;
+                        }
+                        
+                        if (strlen($cleaned) < $minLength || strlen($cleaned) > $maxLength) {
+                            $fail("Nomor telepon harus {$minLength}-{$maxLength} digit untuk kode negara {$countryCode}");
+                        }
+                    }
+                },
+            ],
             'bio' => 'nullable|string|max:1000',
         ]);
 
@@ -82,11 +150,27 @@ class ProfileController extends Controller
         }
         
         // Update additional fields
-        $user->phone = $validated['phone'] ?? null;
-        $user->website = $validated['website'] ?? null;
+        // Format phone number: gabungkan country code + number
+        if (!empty($validated['phone_number'])) {
+            $countryCode = $validated['phone_country_code'];
+            $phoneNumber = preg_replace('/[^0-9]/', '', $validated['phone_number']);
+            // Hapus leading zero
+            $phoneNumber = ltrim($phoneNumber, '0');
+            // Gabungkan: +62 + 81234567890 = +6281234567890
+            $user->phone = $countryCode . $phoneNumber;
+        } else {
+            $user->phone = null;
+        }
+        
         $user->bio = $validated['bio'] ?? null;
         
         $user->save();
+        
+        // Auto-deactivate reminder jika profile sudah lengkap
+        $reminderService = app(ProfileReminderService::class);
+        if ($user->isProfileComplete()) {
+            $reminderService->deactivateReminder($user);
+        }
         
         return redirect()->route('profile.edit')->with('success', 'Profil berhasil diperbarui!');
     }
@@ -104,4 +188,3 @@ class ProfileController extends Controller
         return view('profile.events', compact('registrations'));
     }
 }
-
