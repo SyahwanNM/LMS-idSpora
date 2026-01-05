@@ -228,6 +228,79 @@
                         </div>
                     </div>
 
+                    <!-- Registered Participants -->
+                    @php
+                        // Eager-load users for participant list
+                        try {
+                            $registrations = $event->registrations()->with('user')->latest()->get();
+                        } catch (\Throwable $e) {
+                            $registrations = collect();
+                        }
+                    @endphp
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Peserta Terdaftar</h6>
+                                        <span class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
+                                    </div>
+                                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="participantSearch" class="form-control" placeholder="Cari peserta (nama/email/kode)">
+                                    </div>
+                                </div>
+                                @if($registrations->count())
+                                <div class="table-responsive">
+                                    <table id="participantsTable" class="table table-sm table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:48px;">No</th>
+                                                <th style="width:220px;">Nama</th>
+                                                <th style="width:240px;">Email</th>
+                                                <th style="width:120px;">Status</th>
+                                                <th style="width:220px;">Kode Attendance</th>
+                                                <th style="width:180px;">Dipakai Pada</th>
+                                                <th style="width:160px;">Terdaftar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($registrations as $i => $reg)
+                                            <tr>
+                                                <td>{{ $i+1 }}</td>
+                                                <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
+                                                <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
+                                                <td>
+                                                    @php $st = strtolower((string)$reg->status); @endphp
+                                                    <span class="badge {{ $st==='active' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($reg->status ?? '-') }}</span>
+                                                </td>
+                                                <td>
+                                                    @if(!empty($reg->attendance_code))
+                                                        <code class="small">{{ $reg->attendance_code }}</code>
+                                                    @else
+                                                        <span class="text-muted">Belum ada</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if(!empty($reg->attendance_code_used_at))
+                                                        {{ $reg->attendance_code_used_at->format('d M Y H:i') }}
+                                                    @else
+                                                        <span class="text-muted">Belum dipakai</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @else
+                                <div class="alert alert-light border small mb-0">Belum ada peserta terdaftar.</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Location map and Benefit -->
                     <div class="row mt-3 g-3">
                         @if(!empty($event->latitude) && !empty($event->longitude))
@@ -675,6 +748,25 @@ document.addEventListener('DOMContentLoaded', function(){
         }).addTo(map);
         L.marker([lat, lng]).addTo(map).bindPopup(`{{ addslashes($event->title) }}`);
     }catch(e){ console.error(e); }
+});
+</script>
+<script>
+// Client-side filter for participants table
+document.addEventListener('DOMContentLoaded', function(){
+    var input = document.getElementById('participantSearch');
+    var table = document.getElementById('participantsTable');
+    if (!input || !table) return;
+    var tbody = table.querySelector('tbody');
+    input.addEventListener('input', function(){
+        var q = (this.value || '').toLowerCase().trim();
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
+            var name = (row.children[1]?.textContent || '').toLowerCase();
+            var email = (row.children[2]?.textContent || '').toLowerCase();
+            var code = (row.children[4]?.textContent || '').toLowerCase();
+            var match = !q || name.includes(q) || email.includes(q) || code.includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    });
 });
 </script>
 @endif

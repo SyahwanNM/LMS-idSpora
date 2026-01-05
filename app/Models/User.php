@@ -28,6 +28,8 @@ class User extends Authenticatable
         'phone',
         'website',
         'bio',
+        'profession',
+        'institution',
     ];
 
     /**

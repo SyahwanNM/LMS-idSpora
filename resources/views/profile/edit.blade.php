@@ -374,7 +374,7 @@
         }
             font-size: 14px;
         }
-        
+
         .search-bar input::placeholder {
             color: #9ca3af;
         }
@@ -666,6 +666,42 @@
                         </p>
                     </div>
                     
+                    <!-- Institution (Instansi) -->
+                    <div id="field-institution">
+                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
+                            Instansi
+                        </label>
+                        <input 
+                            type="text" 
+                            name="institution" 
+                            id="input-institution"
+                            value="{{ old('institution', $user->institution ?? '') }}"
+                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
+                            style="color: #111827;"
+                            placeholder="Masukkan nama instansi/perusahaan/sekolah"
+                        >
+                    </div>
+
+                    <!-- Profession -->
+                    <div id="field-profession">
+                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
+                            Profesi
+                        </label>
+                        <select
+                            name="profession"
+                            id="input-profession"
+                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
+                            style="color: #111827;"
+                        >
+                            <option value="" {{ old('profession', $user->profession ?? '') === '' ? 'selected' : '' }}>Pilih Profesi</option>
+                            <option value="Pelajar/Mahasiswa" {{ old('profession', $user->profession ?? '') === 'Pelajar/Mahasiswa' ? 'selected' : '' }}>Pelajar/Mahasiswa</option>
+                            <option value="Karyawan Swasta" {{ old('profession', $user->profession ?? '') === 'Karyawan Swasta' ? 'selected' : '' }}>Karyawan Swasta</option>
+                            <option value="ASN/PNS" {{ old('profession', $user->profession ?? '') === 'ASN/PNS' ? 'selected' : '' }}>ASN/PNS</option>
+                            <option value="Wirausaha" {{ old('profession', $user->profession ?? '') === 'Wirausaha' ? 'selected' : '' }}>Wirausaha</option>
+                            <option value="Lainnya" {{ old('profession', $user->profession ?? '') === 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                        </select>
+                    </div>
+
                     <!-- Bio -->
                     <div id="field-bio">
                         <label class="block text-sm font-semibold mb-2" style="color: #374151;">
