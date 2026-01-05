@@ -109,8 +109,10 @@ class PublicEventController extends Controller
 			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
 		}
 		$event->is_registered = $isRegistered;
+		// Load feedbacks for display on the event detail page
+		$feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
 		// Tampilkan halaman detail menggunakan tampilan "detail-event-registered"
-		return view('detail-event-registered', compact('event'));
+		return view('detail-event-registered', compact('event', 'feedbacks'));
 	}
 
 	public function ticket(Event $event, Request $request)
