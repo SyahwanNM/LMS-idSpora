@@ -354,7 +354,7 @@ class EventController extends Controller
                 'status' => 'already',
                 'message' => 'Sudah terdaftar',
                 'event_title' => $event->title,
-                'redirect' => route('events.ticket', $event)
+                'redirect' => route('events.show', $event)
             ]);
         }
         // Hitung final price (sesudah diskon bila ada)
@@ -402,7 +402,7 @@ class EventController extends Controller
             'message' => 'Berhasil daftar event (GRATIS)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.ticket', $event)
+            'redirect' => route('events.show', $event)
         ]);
     }
 
