@@ -109,6 +109,11 @@ class Event extends Model
         return $this->hasMany(EventExpense::class);
     }
 
+    public function feedbacks()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
     public function getStartAtAttribute(): ?Carbon
     {
         if(empty($this->event_date)) return null;
@@ -118,6 +123,56 @@ class Event extends Model
             $timeStr = $this->event_time instanceof Carbon ? $this->event_time->format('H:i:s') : (is_string($this->event_time) ? $this->event_time : '00:00:00');
         }
         try { return Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (\Throwable $ex) { return null; }
+    }
+
+    /**
+     * Get the image URL attribute.
+     * Ensures consistent URL generation for event images.
+     * Uses same approach as User avatar_url for consistency.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        $image = (string) ($this->image ?? '');
+        if ($image === '') {
+            return null;
+        }
+        
+        // External URL (e.g., from external source)
+        if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://')) {
+            return $image;
+        }
+        
+        // Normalize path - remove 'storage/' prefix if exists
+        $imagePath = ltrim(str_replace('storage/', '', $image), '/');
+        
+        // Extract filename from path
+        $filename = basename($imagePath);
+        
+        // Check if file exists in events folder (try multiple possible paths)
+        $possiblePaths = [
+            'events/' . $filename,  // events/filename.png
+            $imagePath,              // events/filename.png (if already has events/)
+            'events/' . $imagePath, // events/events/filename.png (if path already has events/)
+        ];
+        
+        // Remove duplicates
+        $possiblePaths = array_unique($possiblePaths);
+        
+        // Find first existing file
+        foreach ($possiblePaths as $path) {
+            $fullPath = storage_path('app/public/' . $path);
+            if (file_exists($fullPath) && is_file($fullPath)) {
+                // File exists, return URL
+                return asset('storage/' . $path);
+            }
+        }
+        
+        // File not found, but return URL anyway (browser will show broken image or fallback)
+        // This allows onerror handler in views to work
+        if (str_starts_with($imagePath, 'events/')) {
+            return asset('storage/' . $imagePath);
+        }
+        return asset('storage/events/' . $filename);
     }
 
     public function getEndAtAttribute(): ?Carbon

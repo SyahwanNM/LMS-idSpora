@@ -134,8 +134,8 @@
         }
         
         .glass-sidebar {
-            background: white;
-            border-right: 1px solid #e5e7eb;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-right: none;
             position: fixed;
             top: 70px;
             left: 0;
@@ -143,6 +143,17 @@
             overflow-y: auto;
             z-index: 1000;
             width: 280px;
+        }
+        
+        .sidebar-header {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
         
         /* Main content with sidebar offset */
@@ -173,28 +184,9 @@
                 margin-top: 0;
                 padding: 1.5rem;
             }
-            .search-bar {
-                margin-bottom: 1rem;
-            }
         }
         
         @media (max-width: 768px) {
-            body {
-                padding-top: 70px;
-            }
-            .flex.min-h-screen {
-                flex-direction: column;
-            }
-            .glass-sidebar {
-                width: 100%;
-                padding: 1rem;
-            }
-            .glass-sidebar .search-bar {
-                margin-bottom: 1rem;
-            }
-            .main-content-with-sidebar {
-                padding: 1rem;
-            }
             .glass-card {
                 padding: 1.5rem !important;
             }
@@ -210,7 +202,8 @@
             }
             .flex.items-start.space-x-6 {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: center;
+                text-align: center;
             }
             .flex.items-start.space-x-6 > * {
                 margin-bottom: 1rem;
@@ -232,14 +225,42 @@
             .menu-item .text-xs {
                 font-size: 0.75rem !important;
             }
+            
+            /* Profile Completion Widget Responsive */
+            .completion-card-compact {
+                padding: 1rem;
+            }
+            
+            .completion-content-compact {
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+            
+            .completion-icon-compact {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .completion-label-compact {
+                font-size: 0.75rem;
+            }
+            
+            .completion-percentage-compact {
+                font-size: 0.8rem;
+                min-width: 35px;
+            }
         }
         
-        @media (max-width: 480px) {
+        @media (max-width: 576px) {
             .glass-card {
                 padding: 1rem !important;
             }
             .glass-card h1 {
                 font-size: 1.5rem !important;
+            }
+            .glass-card h2 {
+                font-size: 1.25rem !important;
             }
             .profile-img-wrapper img {
                 width: 60px !important;
@@ -248,6 +269,42 @@
             .premium-badge {
                 font-size: 0.625rem !important;
                 padding: 0.25rem 0.75rem !important;
+            }
+            
+            /* Profile Completion Widget Mobile */
+            .completion-card-compact {
+                padding: 0.875rem;
+            }
+            
+            .completion-content-compact {
+                gap: 0.625rem;
+            }
+            
+            .completion-icon-compact {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+            
+            .completion-label-compact {
+                font-size: 0.7rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .completion-progress-track-compact {
+                height: 5px;
+            }
+            
+            .completion-percentage-compact {
+                font-size: 0.75rem;
+                min-width: 32px;
+            }
+            
+            .completion-link-compact,
+            .completion-check-compact {
+                width: 28px;
+                height: 28px;
+                font-size: 0.9rem;
             }
         }
         
@@ -276,67 +333,55 @@
             transform: translateY(-1px);
         }
         
-        /* Sidebar Menu Item - Minimalist & Professional */
+        /* Sidebar Menu Item - Matching Navbar Gradient */
         .menu-item {
-            transition: all 0.2s ease;
-            color: #374151;
-            border-radius: 8px;
-            margin-bottom: 4px;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            margin: 0.5rem 1rem;
+            padding: 0.875rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            position: relative;
         }
         
         .menu-item:hover {
-            background: #f9fafb;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .menu-item.active {
-            background: #f3f4f6;
-            border-left: 3px solid #1e293b;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1e1b4b;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
         
         .menu-item.active .menu-icon {
-            color: #1e293b;
+            color: #1e1b4b;
         }
         
-        .menu-item.active .font-semibold {
-            color: #1e293b;
-            font-weight: 600;
-        }
-        
-        .menu-item .font-semibold {
-            color: #111827;
+        .menu-item .menu-text {
+            color: inherit;
             font-size: 14px;
             font-weight: 500;
         }
         
-        .menu-item .text-xs {
-            color: #6b7280;
-            font-size: 12px;
-            margin-top: 2px;
-        }
-        
         .menu-icon {
-            color: #6b7280;
-            font-size: 18px;
-            transition: color 0.2s ease;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 20px;
+            transition: color 0.3s ease;
+            width: 24px;
+            text-align: center;
         }
         
         .menu-item:hover .menu-icon {
-            color: #1e293b;
+            color: rgba(255, 255, 255, 0.9);
         }
         
-        .menu-chevron {
-            color: #9ca3af;
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-        
-        .menu-item:hover .menu-chevron {
-            color: #6b7280;
-            transform: translateX(2px);
-        }
-        
-        .menu-item.active .menu-chevron {
-            color: #1e293b;
+        .menu-item.active .menu-icon {
+            color: white;
         }
         
         /* Premium Badge */
@@ -368,33 +413,6 @@
             transform: scale(1.1);
         }
         
-        /* Search Bar - Minimalist */
-        .search-bar {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-        
-        .search-bar:focus-within {
-            background: white;
-            border-color: #d1d5db;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-        
-        .search-bar input {
-            color: #111827;
-            font-size: 14px;
-        }
-        
-        .search-bar input::placeholder {
-            color: #9ca3af;
-        }
-        
-        .search-bar i {
-            color: #6b7280;
-            font-size: 14px;
-        }
         
         /* Event Card */
         .event-card {
@@ -432,46 +450,175 @@
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
+
+        /* Profile Completion Widget - Compact */
+        .profile-completion-widget-compact {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .completion-card-compact {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .completion-card-compact:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .completion-content-compact {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        .completion-icon-compact {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .completion-info-compact {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .completion-label-compact {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.375rem;
+        }
+
+        .completion-progress-compact {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .completion-progress-track-compact {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .completion-progress-fill-compact {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 6px;
+            transition: width 0.6s ease;
+            box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+        }
+
+        .completion-percentage-compact {
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 700;
+            min-width: 38px;
+            text-align: right;
+        }
+
+        .completion-link-compact {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .completion-link-compact:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(2px);
+            color: white;
+        }
+
+        .completion-check-compact {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fbbf24;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .completion-card-compact {
+                padding: 0.75rem;
+            }
+
+            .completion-icon-compact {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
+
+            .completion-label-compact {
+                font-size: 0.75rem;
+            }
+
+            .completion-percentage-compact {
+                font-size: 0.8rem;
+                min-width: 35px;
+            }
+        }
     </style>
 </head>
 <body>
     @include("partials.navbar-after-login")
     
     <div class="flex min-h-screen">
-        <!-- Sidebar - Minimalist & Professional -->
-        <aside class="glass-sidebar p-5 flex flex-col">
-            <!-- Search Bar -->
-            <div class="search-bar px-3 py-2.5 flex items-center space-x-2.5 mb-6">
-                <i class="bi bi-search menu-icon"></i>
-                <input 
-                    type="text" 
-                    placeholder="Cari..." 
-                    class="bg-transparent border-none outline-none flex-1"
-                >
+        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
+        <aside class="glass-sidebar flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                MENU NAVIGASI
             </div>
             
             <!-- Menu Items -->
-            <nav class="flex-1">
-                <a href="{{ route('profile.index') }}" class="menu-item flex items-center justify-between px-3 py-2.5 group {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <div class="flex items-center space-x-3">
-                        <i class="bi bi-person menu-icon"></i>
-                        <div>
-                            <div class="font-semibold">Profile</div>
-                            <div class="text-xs">Informasi pribadi</div>
-                        </div>
-                    </div>
-                    <i class="bi bi-chevron-right menu-chevron"></i>
+            <nav class="flex-1 py-4">
+                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <i class="bi bi-person menu-icon"></i>
+                    <span class="menu-text">Profile</span>
                 </a>
                 
-                <a href="{{ route('profile.events') }}" class="menu-item flex items-center justify-between px-3 py-2.5 group {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <div class="flex items-center space-x-3">
-                        <i class="bi bi-calendar-check menu-icon"></i>
-                        <div>
-                            <div class="font-semibold">History Event</div>
-                            <div class="text-xs">Event yang diikuti</div>
-                        </div>
-                    </div>
-                    <i class="bi bi-chevron-right menu-chevron"></i>
+                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
+                    <i class="bi bi-calendar-check menu-icon"></i>
+                    <span class="menu-text">History Event</span>
                 </a>
             </nav>
         </aside>
@@ -479,6 +626,35 @@
         <!-- Main Content -->
         <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
             <div class="max-w-6xl mx-auto fade-in">
+                <!-- Profile Completion Widget - Compact -->
+                <div class="profile-completion-widget-compact mb-4">
+                    <div class="completion-card-compact">
+                        <div class="completion-content-compact">
+                            <div class="completion-icon-compact">
+                                <i class="bi bi-person-check"></i>
+                            </div>
+                            <div class="completion-info-compact">
+                                <span class="completion-label-compact">Kelengkapan Profil</span>
+                                <div class="completion-progress-compact">
+                                    <div class="completion-progress-track-compact">
+                                        <div class="completion-progress-fill-compact" style="width: {{ Auth::user()->getProfileCompletionPercentage() }}%;"></div>
+                                    </div>
+                                    <span class="completion-percentage-compact">{{ Auth::user()->getProfileCompletionPercentage() }}%</span>
+                                </div>
+                            </div>
+                            @if(!Auth::user()->isProfileComplete())
+                            <a href="{{ route('profile.edit') }}" class="completion-link-compact" title="Lengkapi Profil">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                            @else
+                            <span class="completion-check-compact" title="Profil Lengkap">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Profile Information Card -->
                 <div class="glass-card rounded-2xl p-8 shadow-2xl mb-8">
                     <h1 class="text-3xl font-bold mb-8" style="color: #111827;">Informasi Profil</h1>
@@ -493,9 +669,6 @@
                                 referrerpolicy="no-referrer"
                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=fbbf24&color=1e1b4b&size=128';"
                             >
-                            <div class="profile-img-overlay" style="background: rgba(251, 191, 36, 0.9); border-color: #fbbf24;">
-                                <i class="bi bi-camera text-white text-lg"></i>
-                            </div>
                         </div>
                         <div class="flex-1">
                             <h2 class="text-2xl font-bold mb-2" style="color: #111827;">{{ Auth::user()->name }}</h2>
@@ -537,13 +710,7 @@
                             @if(Auth::user()->phone)
                             <div>
                                 <span style="color: #9ca3af;">Telepon:</span>
-                                <span class="ml-2 font-medium">{{ Auth::user()->phone }}</span>
-                            </div>
-                            @endif
-                            @if(Auth::user()->website)
-                            <div>
-                                <span style="color: #9ca3af;">Website:</span>
-                                <a href="{{ Auth::user()->website }}" target="_blank" class="ml-2 font-medium text-blue-600 hover:underline">{{ Auth::user()->website }}</a>
+                                <span class="ml-2 font-medium">{{ Auth::user()->formatted_phone ?? Auth::user()->phone }}</span>
                             </div>
                             @endif
                             <div>
@@ -671,4 +838,4 @@
         }
     </script>
 </body>
-</html>
+</html>w

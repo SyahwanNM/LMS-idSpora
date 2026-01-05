@@ -39,15 +39,16 @@
                                         <span class="ribbon-text">{{ strtoupper($event->manage_action) }}</span>
                                     </div>
                                 @endif
-                                @if($event->image)
+                                @if($event->image_url)
                                     <figure class="event-image-figure mb-0" data-bs-toggle="modal" data-bs-target="#imagePreviewModal" style="cursor:zoom-in;">
-                                        <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" 
-                                             class="img-fluid rounded shadow-sm event-main-image">
+                                        <img src="{{ $event->image_url }}" alt="{{ $event->title }}" 
+                                             class="img-fluid rounded shadow-sm event-main-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                         <figcaption class="event-image-overlay small">
                                             <i class="bi bi-arrows-fullscreen me-1"></i> Klik untuk perbesar
                                         </figcaption>
                                     </figure>
-                                @else
+                                @endif
+                                @if(!$event->image_url)
                                     <div class="bg-light rounded d-flex align-items-center justify-content-center no-image-block">
                                         <div class="text-center text-muted">
                                             <i class="bi bi-image" style="font-size: 3rem;"></i>
@@ -597,7 +598,7 @@
             </div>
             <div class="modal-body pt-2">
                 <div class="image-preview-container">
-                        <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" class="preview-full-image" id="previewFullImage">
+                        <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="preview-full-image" id="previewFullImage" onerror="this.src='{{ asset('aset/poster.png') }}'">
                 </div>
             </div>
             <div class="modal-footer justify-content-between py-2 border-0">
@@ -606,7 +607,7 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZoomIn"><i class="bi bi-zoom-in"></i></button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnZoomOut"><i class="bi bi-zoom-out"></i></button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetZoom"><i class="bi bi-aspect-ratio"></i></button>
-                        <a href="{{ Storage::url($event->image) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Buka Tab</a>
+                        <a href="{{ $event->image_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Buka Tab</a>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>

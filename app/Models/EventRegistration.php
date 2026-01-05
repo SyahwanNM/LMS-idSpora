@@ -17,6 +17,8 @@ class EventRegistration extends Model
         'certificate_issued_at',
         'feedback_text',
         'feedback_submitted_at',
+        'total_price', 
+        'payment_url',
     ];
 
     protected $casts = [

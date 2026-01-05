@@ -93,6 +93,44 @@
             /* Remove border/edge line for the feedback card */
             .add-rating { border: none !important; box-shadow: none !important; }
             .add-rating .scroll-review-box { border: none !important; }
+            
+            /* Feedback Modal Styling */
+            #feedbackModal .modal-content {
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 3px;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+            
+            .rating-card {
+                transition: box-shadow 0.2s;
+            }
+            
+            .rating-card:hover {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            
+            .stars-rating-input span {
+                display: inline-block;
+                font-size: 1.75rem;
+                line-height: 1;
+            }
             /* When locked, heading should appear blurred and not selectable/copyable */
             .add-rating.locked > h5 {
                 position: relative;
@@ -248,7 +286,7 @@
         </div>
         <div class="detail-box">
             <div class="detail-box-left">
-                <img src="{{ isset($event) && !empty($event->image) ? Storage::url($event->image) : asset('aset/event.png') }}" alt="{{ isset($event) ? $event->title : 'Gambar Event' }}">
+                <img src="{{ isset($event) && $event->image_url ? $event->image_url : asset('aset/event.png') }}" alt="{{ isset($event) ? $event->title : 'Gambar Event' }}" onerror="this.src='{{ asset('aset/event.png') }}'">
                 @php
                     $authUser = Auth::user();
                     $registration = isset($event) && $authUser ? $event->registrations()->where('user_id',$authUser->id)->first() : null;
@@ -779,7 +817,7 @@
                 </div>
 
                 @if($isRegistered && $attendanceSubmitted)
-                    <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#feedbackModal" title="Open" style="border: none; background: transparent; padding: 0; margin: 0;">
+                    <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
                             <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
@@ -791,52 +829,87 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="feedbackModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        
+        <!-- Feedback & Reviews Section (Hidden by default) -->
+        @if($isRegistered && $attendanceSubmitted)
+        <div id="feedbackSection" style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
+            <div class="d-flex justify-content-between align-items-center" style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
+                <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
+                <button type="button" onclick="toggleFeedbackSection()" aria-label="Close" style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='transparent'">
+                    <span style="line-height: 1;">&times;</span>
+                </button>
+            </div>
+            <div class="row g-0" style="margin-top: 20px; min-height: 300px;">
+                <!-- Left Column: Participant Ratings -->
+                <div class="col-md-6" style="background-color: #f8f9fa; padding: 1rem; border-right: 1px solid #e9ecef;">
+                    <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Participant Ratings</h6>
+                    <div id="participant-ratings-list" style="max-height: 250px; overflow-y: auto;">
+                        @if(isset($feedbacks) && $feedbacks->count() > 0)
+                            @foreach($feedbacks as $feedback)
+                                <div class="rating-card mb-2" style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 0.75rem;">
+                                    <div class="stars-rating mb-2">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $i <= ($feedback->rating ?? 0) ? '#FFD600' : '#e0e0e0' }}" viewBox="0 0 16 16" style="margin-right: 2px;">
+                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                            </svg>
+                                        @endfor
+                                    </div>
+                                    <p class="mb-1" style="color: #333; font-size: 0.85rem; line-height: 1.4;">{{ $feedback->comment }}</p>
+                                    <p class="mb-0" style="color: #999; font-size: 0.8rem;">-{{ $feedback->user->name ?? 'Anonymous' }}</p>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="text-center text-muted py-3">
+                                <p style="font-size: 0.85rem;">Belum ada rating dari peserta</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
 
-        <div class="modal-header">
-            <h5 class="modal-title">Event Feedback</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+                <!-- Right Column: Share Your Feedback -->
+                <div class="col-md-6" style="background-color: white; padding: 1rem;">
+                    <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
+                    <form action="#" method="POST" id="feedback-form">
+                        @csrf
+                        
+                        <!-- Event Rating -->
+                        <div class="mb-2">
+                            <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Event</label>
+                            <div class="stars-rating-input" data-target="eventRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
+                                <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                            </div>
+                        </div>
 
-        <div class="modal-body">
-            <form action="#" method="POST">
-                @csrf
-                <div class="feedback-group">
-        <p>For Speaker</p>
-        <div class="stars" data-target="speakerRating">
-        ★★★★★
-        </div>
-    </div>
+                        <!-- Speaker Rating -->
+                        <div class="mb-3">
+                            <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
+                            <div class="stars-rating-input" data-target="speakerRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
+                                <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                            </div>
+                        </div>
 
-    <div class="feedback-group">
-        <p>For Event</p>
-        <div class="stars" data-target="eventRating">
-        ★★★★★
-        </div>
-    </div>
+                        <!-- Feedback Text -->
+                        <div class="mb-3">
+                            <textarea id="feedback-text" name="feedback" class="form-control" rows="4" placeholder="Write your thoughts..." required style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
+                        </div>
 
-    <div class="feedback-group">
-        <p>For Committee</p>
-        <div class="stars" data-target="committeeRating">
-        ★★★★★
+                        <!-- Submit Button -->
+                        <button type="button" id="submit-feedback-btn" class="btn w-100 fw-semibold" style="background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                            Submit Feedback
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
-
-                            <h5>Share Your Feedback</h5>
-                            <textarea id="feedback-text" name="feedback" class="form-control" rows="4" required></textarea>
-                            <small class="text-muted d-block mt-2">Saya yakin bahwa feedback ini digunakan untuk keperluan evaluasi IdSpora. Lanjutkan?</small>
-            </form>
-        </div>
-
-        <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button id="submit-feedback-btn" class="btn btn-primary">Submit</button>
-        </div>
-        </div>
-    </div>
-    </div>
+        @endif
 
         <div class="desc-box">
             <nav>
@@ -926,34 +999,85 @@
             </div>
         
         <script>
-    // Initialize star widgets and selection behavior
-    document.querySelectorAll('.stars').forEach((starContainer) => {
-        const target = starContainer.getAttribute('data-target');
-        starContainer.innerHTML = '';
-        for (let i = 1; i <= 5; i++) {
-            const span = document.createElement('span');
-            span.textContent = '★';
-            span.dataset.value = String(i);
-            span.addEventListener('click', () => {
-                const val = parseInt(span.dataset.value, 10);
-                starContainer.querySelectorAll('span').forEach((s) => {
-                    const sVal = parseInt(s.dataset.value, 10);
-                    s.classList.toggle('selected', sVal <= val);
-                });
-            });
-            starContainer.appendChild(span);
-        }
-    });
+            // Toggle feedback section visibility
+            function toggleFeedbackSection() {
+                const section = document.getElementById('feedbackSection');
+                if (section) {
+                    if (section.style.display === 'none' || section.style.display === '') {
+                        section.style.display = 'block';
+                        // Smooth scroll to section
+                        setTimeout(() => {
+                            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                    } else {
+                        section.style.display = 'none';
+                    }
+                }
+            }
 
             document.addEventListener('DOMContentLoaded', () => {
+                // Check if feedback section should be open after reload
+                if (sessionStorage.getItem('feedbackSectionOpen') === 'true') {
+                    const section = document.getElementById('feedbackSection');
+                    if (section) {
+                        section.style.display = 'block';
+                        setTimeout(() => {
+                            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 300);
+                    }
+                    sessionStorage.removeItem('feedbackSectionOpen');
+                }
+                
+                // Initialize star rating inputs (outline stars that fill on click)
+                document.querySelectorAll('.stars-rating-input').forEach((starContainer) => {
+                    const target = starContainer.getAttribute('data-target');
+                    let selectedRating = 0;
+                    
+                    starContainer.querySelectorAll('span').forEach((star, index) => {
+                        const rating = index + 1;
+                        star.dataset.rating = rating;
+                        
+                        // Hover effect
+                        star.addEventListener('mouseenter', () => {
+                            starContainer.querySelectorAll('span').forEach((s, idx) => {
+                                s.textContent = idx < rating ? '★' : '☆';
+                                s.style.color = idx < rating ? '#FFD600' : '#ccc';
+                            });
+                        });
+                        
+                        star.addEventListener('mouseleave', () => {
+                            starContainer.querySelectorAll('span').forEach((s, idx) => {
+                                if (selectedRating > 0) {
+                                    s.textContent = idx < selectedRating ? '★' : '☆';
+                                    s.style.color = idx < selectedRating ? '#FFD600' : '#ccc';
+                                } else {
+                                    s.textContent = '☆';
+                                    s.style.color = '#ccc';
+                                }
+                            });
+                        });
+                        
+                        // Click to select
+                        star.addEventListener('click', () => {
+                            selectedRating = rating;
+                            starContainer.dataset.selectedRating = selectedRating;
+                            starContainer.querySelectorAll('span').forEach((s, idx) => {
+                                s.textContent = idx < rating ? '★' : '☆';
+                                s.style.color = idx < rating ? '#FFD600' : '#ccc';
+                            });
+                        });
+                    });
+                });
+
                 // --- Feedback dynamic submit ---
                 const submitBtn = document.getElementById('submit-feedback-btn');
                 const feedbackText = document.getElementById('feedback-text');
+                
                 // Helpers to read selected ratings from the UI
                 function getRatingByTarget(targetName){
-                    const cont = document.querySelector(`.stars[data-target="${targetName}"]`);
+                    const cont = document.querySelector(`.stars-rating-input[data-target="${targetName}"]`);
                     if(!cont) return 0;
-                    return cont.querySelectorAll('span.selected').length;
+                    return parseInt(cont.dataset.selectedRating || '0', 10);
                 }
 
                 function updateSubmitState() {
@@ -1075,7 +1199,6 @@
                     const text = feedbackText.value.trim();
                     const eventRatingNow = getRatingByTarget('eventRating');
                     const speakerRatingNow = getRatingByTarget('speakerRating');
-                    const committeeRatingNow = getRatingByTarget('committeeRating');
                     submitBtn.disabled = true;
                     submitBtn.innerText = 'Saving...';
                     fetch('/feedback/store', {
@@ -1088,7 +1211,6 @@
                             event_id: @json($event->id),
                             rating: eventRatingNow,
                             speaker_rating: speakerRatingNow,
-                            committee_rating: committeeRatingNow,
                             comment: text,
                             agreed_guidelines: !!agreed
                         })
@@ -1098,34 +1220,25 @@
                         submitBtn.disabled = false;
                         submitBtn.innerText = 'Submit Feedback';
                         if (data.success) {
-                            // After submit, show the "no feedback" placeholder again (user wants moderation flow)
-                            const scrollBox = document.querySelector('.scroll-review-box');
-                            if (scrollBox) {
-                                // Move or restore the placeholder node
-                                const noFeedbackPlaceholder = document.getElementById('no-feedback-placeholder');
-                                // Clear any rendered feedback items
-                                scrollBox.innerHTML = '';
-                                if (noFeedbackPlaceholder) {
-                                    noFeedbackPlaceholder.style.display = 'flex';
-                                    scrollBox.appendChild(noFeedbackPlaceholder);
-                                } else {
-                                    // Fallback: insert the text placeholder
-                                    const ph = document.createElement('div');
-                                    ph.id = 'no-feedback-placeholder';
-                                    ph.style = 'color:#888; font-size:15px; padding:16px 8px; display:flex; align-items:center; justify-content:center; min-height:120px; width:100%;';
-                                    ph.innerHTML = '<span>Belum ada feedback di event ini.</span><b style="margin-left:8px;">Jadilah yang pertama</b>';
-                                    scrollBox.appendChild(ph);
-                                }
-                            }
+                            // Show success message
+                            alert('Feedback berhasil dikirim! Terima kasih atas feedback Anda.');
+                            
+                            // Reset form
                             feedbackText.value = '';
-                            document.querySelectorAll('.stars span').forEach(s => s.classList.remove('selected'));
-                            // Close modal after successful submit
-                            try {
-                                const fbModalEl = document.getElementById('feedbackModal');
-                                if (fbModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
-                                    bootstrap.Modal.getInstance(fbModalEl)?.hide();
-                                }
-                            } catch(e) {}
+                            document.querySelectorAll('.stars-rating-input').forEach(container => {
+                                container.dataset.selectedRating = '0';
+                                container.querySelectorAll('span').forEach(s => {
+                                    s.textContent = '☆';
+                                    s.style.color = '#ccc';
+                                });
+                            });
+                            
+                            // Reload page to show new feedback (section will remain open)
+                            // Store state before reload
+                            sessionStorage.setItem('feedbackSectionOpen', 'true');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 500);
                         } else {
                             alert(data.message || 'Gagal menyimpan feedback.');
                         }
