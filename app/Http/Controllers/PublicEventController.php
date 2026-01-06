@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Carousel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -116,7 +117,13 @@ class PublicEventController extends Controller
 			});
 		}
 
-		return view('event', compact('events', 'locations'));
+		// Get carousel images for event page
+		$eventCarousels = Carousel::active()
+			->forLocation('event')
+			->orderBy('order')
+			->get();
+
+		return view('event', compact('events', 'locations', 'eventCarousels'));
 	}
 
 	public function searchRedirect(Request $request)
