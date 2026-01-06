@@ -7,11 +7,13 @@ use Illuminate\Support\Facades\Auth;
 use Midtrans\Config as MidtransConfig;
 use Midtrans\Snap;
 use Midtrans\Transaction;
+use Midtrans\CoreApi;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\Payment;
 use App\Models\UserNotification;
 use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class PaymentController extends Controller
 {
@@ -43,6 +45,9 @@ class PaymentController extends Controller
 
         $orderId = 'EVT-' . $event->id . '-' . now()->format('YmdHis') . '-' . Str::random(5);
 
+        // Ensure valid gross amount for QRIS & others (use IDR >= 1000 for reliability in sandbox)
+        $amountInt = max(1000, (int) round((float) $price));
+
         // If final price is 0 treat as free, don't call Midtrans
         if ((int)$price <= 0) {
             return response()->json([
@@ -54,11 +59,12 @@ class PaymentController extends Controller
         $params = [
             'transaction_details' => [
                 'order_id' => $orderId,
-                'gross_amount' => max(0, (int) $price),
+                'gross_amount' => $amountInt,
+                'currency' => 'IDR',
             ],
             'item_details' => [[
                 'id' => 'event-'.$event->id,
-                'price' => max(0, (int) $price),
+                'price' => $amountInt,
                 'quantity' => 1,
                 'name' => Str::limit($event->title, 50),
             ]],
@@ -67,6 +73,13 @@ class PaymentController extends Controller
                 'email' => $reqEmail !== '' ? $reqEmail : ($user?->email ?? 'guest@example.com'),
                 // Use WhatsApp number from form if provided
                 'phone' => $reqPhone !== '' ? $reqPhone : null,
+            ],
+            // Force-enable QRIS and commonly used channels for easier testing
+            'enabled_payments' => ['qris','bank_transfer','gopay','echannel','permata'],
+            // Keep QR valid long enough to scan on simulator
+            'expiry' => [
+                'unit' => 'minute',
+                'duration' => 15,
             ],
             'callbacks' => [
                 // Optional redirect callback after payment
@@ -81,7 +94,7 @@ class PaymentController extends Controller
             'user_id' => $user->id,
             'event_id' => $event->id,
             'order_id' => $orderId,
-            'gross_amount' => max(0,(int)$price),
+            'gross_amount' => $amountInt,
             'status' => 'pending',
         ]);
 
@@ -90,13 +103,21 @@ class PaymentController extends Controller
 
         // For free events, we could skip payment and directly mark as registered; let frontend handle free case
         try {
+            \Log::info('[Midtrans][snapToken] create', [
+                'order_id' => $orderId,
+                'amount' => $amountInt,
+                'enabled_payments' => $params['enabled_payments'] ?? null,
+            ]);
             $snapToken = Snap::getSnapToken($params);
             return response()->json([
                 'snapToken' => $snapToken,
                 'clientKey' => config('midtrans.client_key'),
+                // Return both camelCase and snake_case for compatibility with existing frontends
                 'orderId' => $orderId,
+                'order_id' => $orderId,
             ]);
         } catch (\Throwable $e) {
+            \Log::error('[Midtrans][snapToken] error', [ 'order_id' => $orderId, 'error' => $e->getMessage() ]);
             return response()->json([
                 'error' => 'midtrans_error',
                 'message' => $e->getMessage(),
@@ -260,5 +281,77 @@ class PaymentController extends Controller
             'payment_status' => $paymentStatus,
             'registered' => $registered,
         ]);
+    }
+
+    /**
+     * Fallback: Create QRIS via Core API and return QR string + PNG (base64) for manual scan.
+     */
+    public function qrisCore(Request $request, Event $event)
+    {
+        $this->configureMidtrans();
+        $user = Auth::user();
+        if(!$user){
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+        // Compute effective price
+        $price = (method_exists($event,'hasDiscount') && $event->hasDiscount()) ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0);
+        $amountInt = max(1000, (int) round((float) $price));
+
+        $orderId = 'QRC-' . $event->id . '-' . now()->format('YmdHis') . '-' . Str::random(5);
+
+        // Create pending payment row
+        Payment::create([
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+            'order_id' => $orderId,
+            'gross_amount' => $amountInt,
+            'status' => 'pending',
+        ]);
+        session(["midtrans_order_{$event->id}" => $orderId]);
+
+        $params = [
+            'payment_type' => 'qris',
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => $amountInt,
+            ],
+            'item_details' => [[
+                'id' => 'event-'.$event->id,
+                'price' => $amountInt,
+                'quantity' => 1,
+                'name' => Str::limit($event->title, 50),
+            ]],
+            'customer_details' => [
+                'first_name' => $user->name,
+                'email' => $user->email,
+            ],
+        ];
+
+        try{
+            \Log::info('[Midtrans][qrisCore] charge', ['order_id'=>$orderId,'amount'=>$amountInt]);
+            $res = CoreApi::charge($params);
+            $arr = json_decode(json_encode($res), true);
+            $qrString = $arr['qr_string'] ?? null;
+            $actions = $arr['actions'] ?? [];
+            $pngBase64 = null;
+            if($qrString){
+                try{
+                    $png = QrCode::format('png')->size(280)->margin(1)->generate($qrString);
+                    $pngBase64 = base64_encode($png);
+                }catch(\Throwable $e){ /* QR generation optional */ }
+            }
+            return response()->json([
+                'order_id' => $orderId,
+                'qr_string' => $qrString,
+                'qr_png' => $pngBase64 ? ('data:image/png;base64,'.$pngBase64) : null,
+                'actions' => $actions,
+            ]);
+        }catch(\Throwable $e){
+            \Log::error('[Midtrans][qrisCore] error', ['order_id'=>$orderId,'error'=>$e->getMessage()]);
+            return response()->json([
+                'error' => 'midtrans_qris_error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

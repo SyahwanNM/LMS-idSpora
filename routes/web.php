@@ -27,9 +27,17 @@ Route::get('/admin/report', function () {
     return redirect()->route('admin.reports');
 });
 
-Route::get('/admin/add-users', function () {
-    return view('/admin/add-users');
-});
+Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
+    // Pull non-admin users with event participations for the Manage User table and view modal
+    $users = \App\Models\User::with(['eventRegistrations' => function($q){
+            $q->with('event')->orderBy('created_at','desc');
+        }])
+        ->select('id','name','email','phone','profession','institution','avatar','created_at')
+        ->where('role', '!=', 'admin')
+        ->orderBy('name')
+        ->get();
+    return view('/admin/add-users', compact('users'));
+})->name('admin.add-users');
 
 // Serve Add Event at a friendly URL using the canonical create form (auth+admin)
 Route::middleware(['auth','admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
@@ -42,6 +50,51 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     $feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
+
+// punya dini
+Route::get('/modul-course', function () {
+    return view('modul-course');
+})->name('modul-course');
+
+Route::get('/aturan-kuis', function () {
+    return view('aturan-kuis');
+})->name('aturan-kuis');
+
+Route::get('/payment-course', function () {
+    return view('payment-course');
+})->name('payment-course');
+
+Route::get('/detail-course', function () {
+    return view('detail-course');
+})->name('detail-course');
+
+Route::get('/quiz1-course', function () {
+    return view('quiz1-course');
+})->name('quiz1-course');
+
+// ...existing code...
+Route::get('/quiz-course', function () {
+    return view('quiz-course');
+})->name('quiz-course');
+Route::get('/hasil-course', function () {
+    return view('hasil-course');
+})->name('hasil-course');
+Route::get('admin/course-builder', function () {
+    return view('admin/course-builder');
+})->name('admin/course-builder');
+// Legacy Add Course page (standalone view)
+Route::get('/admin/add-course', function () {
+    return view('admin/add-course');
+})->name('admin.add-course');
+Route::get('/admin/view-modul-course', function () {
+    return view('admin/view-modul-course');
+})->name('admin/view-modul-course');
+Route::get('/admin/add-pdf-module', function () {
+    return view('admin/add-pdf-module');
+})->name('add-pdf-module');
+Route::get('/admin/report', function () {
+    return view('admin/report');
+})->name('report');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
@@ -115,6 +168,14 @@ Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController:
 // Midtrans notification webhook (no auth)
 Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('midtrans.notify');
 
+// Optional finish redirect target from Snap callbacks to avoid 404 after payment
+Route::get('/payment/finish', function(){
+    return redirect()->route('dashboard')->with('success','Pembayaran sedang diproses.');
+})->name('payment.finish');
+
+// Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
+Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
+
 // Event routes now require authentication to view & register
 Route::middleware('auth')->group(function(){
     // Feedback AJAX route
@@ -128,7 +189,7 @@ Route::middleware('auth')->group(function(){
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
-    Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
+    // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationsController::class,'markAllRead'])->name('notifications.markAllRead');
@@ -142,6 +203,10 @@ Route::middleware('auth')->group(function(){
     Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     
+    // Profile Reminder API
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
+
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
     Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');

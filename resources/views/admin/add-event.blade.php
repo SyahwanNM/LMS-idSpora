@@ -1,7 +1,5 @@
 @extends('layouts.admin')
-
 @section('title', 'Kelola Event')
-
 @section('content')
 <div class="container-fluid py-4">
         {{-- Success Toast Popup --}}
@@ -33,12 +31,23 @@
         @if($errors->any())
             <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
         @endif
+        @if(session('statusFilter'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    try{
+                        var sel = document.getElementById('statusFilter');
+                        if(sel){
+                            sel.value = '{{ session('statusFilter') }}';
+                            sel.dispatchEvent(new Event('change'));
+                        }
+                    }catch(e){}
+                });
+            </script>
+        @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
                 <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
-                <a href="{{ route('admin.events.history') }}" class="btn btn-outline-secondary"><i class="bi bi-clock-history"></i> History</a>
-                <a href="{{ route('admin.reports') }}" class="btn btn-outline-primary"><i class="bi bi-graph-up-arrow"></i> Report</a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
@@ -815,6 +824,7 @@
     let leafletMap = null, leafletMarker = null;
         const mapsInput = document.getElementById('maps');
         const mapsPreview = document.getElementById('mapsPreview');
+        const zoomInput = document.getElementById('zoom');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
     const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
@@ -884,12 +894,37 @@
             if(p){ showMap(p.lat, p.lng); }
             else if(mapsPreview){ mapsPreview.style.display = 'none'; }
         }
+        // Mutually disable Maps vs Zoom link: choosing one disables the other
+        function syncOnlineOfflineInputs(){
+            const hasMaps = !!(mapsInput && mapsInput.value.trim());
+            const hasZoom = !!(zoomInput && zoomInput.value.trim());
+            if (hasMaps) {
+                if (zoomInput) zoomInput.disabled = true;
+                if (mapsInput) mapsInput.disabled = false;
+                if (btnResolveMaps) btnResolveMaps.disabled = false;
+            } else if (hasZoom) {
+                if (mapsInput) mapsInput.disabled = true;
+                if (btnResolveMaps) btnResolveMaps.disabled = true;
+                if (mapsPreview) mapsPreview.style.display = 'none';
+                if (zoomInput) zoomInput.disabled = false;
+            } else {
+                if (mapsInput) mapsInput.disabled = false;
+                if (zoomInput) zoomInput.disabled = false;
+                if (btnResolveMaps) btnResolveMaps.disabled = false;
+            }
+        }
         if(mapsInput){
-            mapsInput.addEventListener('change', tryRenderMap);
-            mapsInput.addEventListener('blur', tryRenderMap);
+            mapsInput.addEventListener('input', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('change', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('blur', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
             // initial (old() values)
             tryRenderMap();
         }
+        if(zoomInput){
+            ['input','change','blur'].forEach(ev => zoomInput.addEventListener(ev, syncOnlineOfflineInputs));
+        }
+        // Initial mutual-disable state
+        syncOnlineOfflineInputs();
         if(btnResolveMaps){
             btnResolveMaps.addEventListener('click', async () => {
                 const url = mapsInput?.value || '';
@@ -1288,7 +1323,7 @@
             tr.innerHTML = `
                 <td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1" value="" /></td>
-                <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1000" value="" /></td>
+                <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1" value="" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0" /></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
@@ -1304,7 +1339,8 @@
                 qtyInput.addEventListener('input', () => recalcExpenseRow(tr));
             }
             if (unitInput) {
-                clampNonNegativeNumberInput(unitInput, 100);
+                // Allow any integer price (e.g., 23333, 23500, etc.)
+                clampNonNegativeNumberInput(unitInput, 1);
                 unitInput.addEventListener('input', () => recalcExpenseRow(tr));
             }
 
