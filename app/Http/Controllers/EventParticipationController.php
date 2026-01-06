@@ -41,6 +41,22 @@ class EventParticipationController extends Controller
             }
             $registration->save();
         });
+        
+        // Add points for event registration (only if newly created or activated)
+        if($createdNewOrActivated){
+            try {
+                $pointsService = app(\App\Services\UserPointsService::class);
+                $pointsService->addEventPoints($user, $event, $registration);
+            } catch (\Throwable $e) {
+                // Log error but don't block registration
+                \Log::warning('Failed to add points for event registration', [
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
         // Create a user notification for successful free registration
         if($createdNewOrActivated){
             try{
@@ -103,6 +119,19 @@ class EventParticipationController extends Controller
             $registration->certificate_issued_at = Carbon::now();
         }
         $registration->save();
+        
+        // Add points for feedback
+        try {
+            $pointsService = app(\App\Services\UserPointsService::class);
+            $pointsService->addFeedbackPoints($user);
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to add points for feedback', [
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
         return redirect()->back()->with('success','Terima kasih atas feedback Anda! Sertifikat telah terbuka.');
     }
 

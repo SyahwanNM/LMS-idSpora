@@ -181,11 +181,46 @@ class ProfileController extends Controller
         
         // Get all event registrations with event details
         $registrations = EventRegistration::where('user_id', $user->id)
-            ->with('event')
+            ->with(['event', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('profile.events', compact('registrations'));
+        // Get all payments for this user
+        $payments = \App\Models\Payment::where('user_id', $user->id)
+            ->whereIn('status', ['capture', 'settlement'])
+            ->get()
+            ->keyBy('event_id');
+        
+        // Calculate total spending
+        $totalSpending = $payments->sum('gross_amount');
+        
+        // Count statistics
+        $totalEvents = $registrations->count();
+        $paidEvents = $registrations->filter(function($reg) {
+            return $reg->event && $reg->event->price > 0;
+        })->count();
+        $freeEvents = $totalEvents - $paidEvents;
+        $attendedEvents = $registrations->filter(function($reg) {
+            return !empty($reg->attendance_status);
+        })->count();
+        $certifiedEvents = $registrations->filter(function($reg) {
+            return !empty($reg->certificate_issued_at);
+        })->count();
+        $feedbackSubmitted = $registrations->filter(function($reg) {
+            return !empty($reg->feedback_submitted_at);
+        })->count();
+        
+        return view('profile.events', compact(
+            'registrations', 
+            'payments', 
+            'totalSpending',
+            'totalEvents',
+            'paidEvents',
+            'freeEvents',
+            'attendedEvents',
+            'certifiedEvents',
+            'feedbackSubmitted'
+        ));
     }
 }
 
