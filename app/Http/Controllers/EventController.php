@@ -377,6 +377,13 @@ class EventController extends Controller
             'status' => 'active',
             'registration_code' => 'EVT-'.strtoupper(uniqid())
         ]);
+        
+        // Add points for event registration
+        try {
+            $pointsService = app(\App\Services\UserPointsService::class);
+            $pointsService->addEventPoints($user, $event, $reg);
+        } catch (\Throwable $e) { /* ignore */ }
+        
         // Generate per-user unique attendance code so it's never NULL
         if (empty($reg->attendance_code)) {
             $base = 'AT'.$event->id.'-'.$user->id.'-';

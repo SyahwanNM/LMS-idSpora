@@ -495,6 +495,31 @@
                 MENU NAVIGASI
             </div>
             
+            <!-- Badge Display in Sidebar -->
+            @php
+                $user = Auth::user();
+                $badgeInfo = $user->badge_info;
+                $currentPoints = $user->points ?? 0;
+            @endphp
+            <div class="sidebar-badge" style="margin: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                        <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="color: white; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
+                            {{ $badgeInfo['name'] }}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="bi bi-star-fill" style="color: #FFD700; font-size: 0.75rem;"></i>
+                            <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.75rem; font-weight: 500;">
+                                {{ number_format($currentPoints, 0, ',', '.') }} Poin
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Menu Items -->
             <nav class="flex-1 py-4">
                 <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">

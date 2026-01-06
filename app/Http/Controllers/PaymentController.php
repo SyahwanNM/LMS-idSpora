@@ -170,12 +170,23 @@ class PaymentController extends Controller
         if(in_array($payment->status, ['capture','settlement'])){
             $exists = EventRegistration::where('user_id',$payment->user_id)->where('event_id',$payment->event_id)->exists();
             if(!$exists){
-                EventRegistration::create([
+                $reg = EventRegistration::create([
                     'user_id' => $payment->user_id,
                     'event_id' => $payment->event_id,
                     'status' => 'active',
                     'registration_code' => 'EVT-'.strtoupper(uniqid())
                 ]);
+                
+                // Add points for paid event registration
+                try {
+                    $user = \App\Models\User::find($payment->user_id);
+                    $ev = Event::find($payment->event_id);
+                    if($user && $ev) {
+                        $pointsService = app(\App\Services\UserPointsService::class);
+                        $pointsService->addEventPoints($user, $ev, $reg);
+                    }
+                } catch (\Throwable $e) { /* ignore */ }
+                
                 // Notification for paid registration
                 try{
                     $ev = Event::find($payment->event_id);
@@ -239,12 +250,19 @@ class PaymentController extends Controller
         if($isFree || in_array($paymentStatus, ['capture','settlement'])){
             $exists = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->exists();
             if(!$exists){
-                EventRegistration::create([
+                $reg = EventRegistration::create([
                     'user_id' => $user->id,
                     'event_id' => $event->id,
                     'status' => 'active',
                     'registration_code' => 'EVT-'.strtoupper(uniqid())
                 ]);
+                
+                // Add points for event registration
+                try {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addEventPoints($user, $event, $reg);
+                } catch (\Throwable $e) { /* ignore */ }
+                
                 try{
                     UserNotification::create([
                         'user_id' => $user->id,
