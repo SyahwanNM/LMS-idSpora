@@ -73,16 +73,12 @@
                     </div>
                 </div>
                 
-<<<<<<< HEAD
-                 
-=======
                 <!-- User Profile Dropdown -->
->>>>>>> 3da338a2240103cc508814e2f418517251b43c1b
                 <div class="dropdown">
                     <button class="btn d-flex align-items-center" type="button" id="userDropdown" 
                             style="background: none; border: none; color: white; padding: 0.25rem 0.5rem;"
                             onclick="toggleUserDropdown()">
-                        <img src="{{ optional(Auth::user())->avatar_url ?? asset('images/default-avatar.png') }}"
+                        <img src="{{ Auth::user()->avatar_url }}"
                             alt="Avatar" class="rounded-circle me-2"
                             referrerpolicy="no-referrer"
                             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';"

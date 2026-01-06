@@ -95,11 +95,11 @@ class EventController extends Controller
 
             // 5. JIKA BERBAYAR -> Panggil Midtrans
             if (!$isFree) {
-                // Setup Konfigurasi Midtrans
-                Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-                Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-                Config::$isSanitized = true;
-                Config::$is3ds = true;
+                // Setup Konfigurasi Midtrans (pakai config agar konsisten dgn web)
+                Config::$serverKey = config('midtrans.server_key');
+                Config::$isProduction = (bool) config('midtrans.is_production');
+                Config::$isSanitized = (bool) config('midtrans.sanitize');
+                Config::$is3ds = (bool) config('midtrans.enable_3ds');
 
                 // Siapkan Data Transaksi
                 $params = [
