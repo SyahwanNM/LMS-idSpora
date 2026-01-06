@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Carousel;
 use Illuminate\Http\Request;
 
 class PublicCourseController extends Controller
@@ -40,8 +41,14 @@ class PublicCourseController extends Controller
         $courses = $query->paginate(12)->withQueryString();
         // Sementara: pakai list yang sama sebagai featured agar variable tidak undefined.
         // Bisa diganti logika berbeda (misal: where('is_featured',true)->take(8)) nanti.
-        $featuredCourses = $courses; 
+        $featuredCourses = $courses;
 
-        return view('course.index', compact('courses','featuredCourses'));
+        // Get carousel images for course page
+        $courseCarousels = Carousel::active()
+            ->forLocation('course')
+            ->orderBy('order')
+            ->get();
+
+        return view('course.index', compact('courses','featuredCourses', 'courseCarousels'));
     }
 }
