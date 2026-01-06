@@ -26,4 +26,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     
     Route::post('/events/{id}/register', [EventController::class, 'register']);
+
+    // Disarankan tambahan endpoint untuk alur event
+    Route::get('/events/registrations', [EventController::class, 'listRegistrations']);
+    Route::get('/events/{id}/registration/status', [EventController::class, 'registrationStatus']);
+    Route::post('/events/{id}/payment', [EventController::class, 'createPayment']);
+    Route::post('/events/{id}/cancel', [EventController::class, 'cancelRegistration']);
 });
