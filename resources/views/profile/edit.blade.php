@@ -155,7 +155,7 @@
             text-transform: uppercase;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
-
+        
         /* Main content with sidebar offset */
         .main-content-with-sidebar {
             margin-left: 280px;
@@ -337,8 +337,8 @@
         }
         
         .menu-item:hover {
-          color: rgba(255, 255, 255, 0.9);
-          background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .menu-item.active {
@@ -351,13 +351,13 @@
             color: #1e1b4b;
         }
         
-       .menu-item .menu-text {
+        .menu-item .menu-text {
             color: inherit;
             font-size: 14px;
             font-weight: 500;
         }
         
-       .menu-icon {
+        .menu-icon {
             color: rgba(255, 255, 255, 0.7);
             font-size: 20px;
             transition: color 0.3s ease;
@@ -365,12 +365,13 @@
             text-align: center;
         }
         
-         .menu-item:hover .menu-icon {
+        .menu-item:hover .menu-icon {
             color: rgba(255, 255, 255, 0.9);
         }
         
         .menu-item.active .menu-icon {
             color: white;
+        }
             font-size: 14px;
         }
 
@@ -487,7 +488,7 @@
     @include("partials.navbar-after-login")
     
     <div class="flex min-h-screen">
-       <!-- Sidebar - Dark Theme with Purple Gradient Active -->
+        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
         <aside class="glass-sidebar flex flex-col">
             <!-- Sidebar Header -->
             <div class="sidebar-header">
@@ -495,17 +496,15 @@
             </div>
             
             <!-- Menu Items -->
-         <nav class="flex-1 py-4">
+            <nav class="flex-1 py-4">
                 <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
                     <i class="bi bi-person menu-icon"></i>
                     <span class="menu-text">Profile</span>
                 </a>
                 
-                
                 <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
                     <i class="bi bi-calendar-check menu-icon"></i>
                     <span class="menu-text">History Event</span>
-
                 </a>
             </nav>
         </aside>
