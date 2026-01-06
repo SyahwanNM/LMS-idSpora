@@ -285,6 +285,31 @@
                 MENU NAVIGASI
             </div>
             
+            <!-- Badge Display in Sidebar -->
+            @php
+                $user = Auth::user();
+                $badgeInfo = $user->badge_info;
+                $currentPoints = $user->points ?? 0;
+            @endphp
+            <div class="sidebar-badge" style="margin: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                        <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="color: white; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
+                            {{ $badgeInfo['name'] }}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="bi bi-star-fill" style="color: #FFD700; font-size: 0.75rem;"></i>
+                            <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.75rem; font-weight: 500;">
+                                {{ number_format($currentPoints, 0, ',', '.') }} Poin
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Menu Items -->
             <nav class="flex-1 py-4">
                 <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
@@ -308,6 +333,76 @@
                     <p class="text-sm" style="color: #6b7280;">Daftar event yang telah Anda ikuti</p>
                 </div>
                 
+                <!-- Track Record Statistics -->
+                @if($registrations->count() > 0)
+                <div class="glass-card rounded-2xl p-6 shadow-lg mb-6">
+                    <h2 class="text-xl font-bold mb-4" style="color: #111827;">
+                        <i class="bi bi-graph-up-arrow me-2" style="color: #667eea;"></i>Track Record
+                    </h2>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold text-blue-600 mb-1">Total Event</p>
+                                    <p class="text-2xl font-bold text-blue-900">{{ $totalEvents }}</p>
+                                </div>
+                                <i class="bi bi-calendar-event text-3xl text-blue-500"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold text-green-600 mb-1">Event Berbayar</p>
+                                    <p class="text-2xl font-bold text-green-900">{{ $paidEvents }}</p>
+                                </div>
+                                <i class="bi bi-credit-card text-3xl text-green-500"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold text-purple-600 mb-1">Event Gratis</p>
+                                    <p class="text-2xl font-bold text-purple-900">{{ $freeEvents }}</p>
+                                </div>
+                                <i class="bi bi-gift text-3xl text-purple-500"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold text-yellow-600 mb-1">Total Spending</p>
+                                    <p class="text-2xl font-bold text-yellow-900">Rp {{ number_format($totalSpending, 0, ',', '.') }}</p>
+                                </div>
+                                <i class="bi bi-wallet2 text-3xl text-yellow-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-4 pt-4 border-t" style="border-color: #e5e7eb;">
+                        <div class="text-center">
+                            <div class="flex items-center justify-center mb-2">
+                                <i class="bi bi-check-circle-fill text-2xl me-2" style="color: #22c55e;"></i>
+                                <span class="text-lg font-bold" style="color: #111827;">{{ $attendedEvents }}</span>
+                            </div>
+                            <p class="text-xs" style="color: #6b7280;">Event Dihadiri</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="flex items-center justify-center mb-2">
+                                <i class="bi bi-award-fill text-2xl me-2" style="color: #fbbf24;"></i>
+                                <span class="text-lg font-bold" style="color: #111827;">{{ $certifiedEvents }}</span>
+                            </div>
+                            <p class="text-xs" style="color: #6b7280;">Sertifikat Diperoleh</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="flex items-center justify-center mb-2">
+                                <i class="bi bi-chat-left-text-fill text-2xl me-2" style="color: #667eea;"></i>
+                                <span class="text-lg font-bold" style="color: #111827;">{{ $feedbackSubmitted }}</span>
+                            </div>
+                            <p class="text-xs" style="color: #6b7280;">Feedback Dikirim</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+                
                 <!-- Events List -->
                 @if($registrations->count() > 0)
                     <div class="space-y-4">
@@ -319,41 +414,76 @@
                                     $eventDate = \Carbon\Carbon::parse($event->event_date);
                                     $isCertificateReady = now()->greaterThanOrEqualTo($eventDate->copy()->addDays(3));
                                 }
+                                // Check if event is paid or free
+                                $isPaid = $event && $event->price > 0;
+                                $payment = isset($payments[$event->id ?? 0]) ? $payments[$event->id] : null;
+                                $amountPaid = $payment ? $payment->gross_amount : 0;
+                                $finalPrice = $event ? ($event->hasDiscount() ? $event->discounted_price : $event->price) : 0;
                             @endphp
                             <div class="glass-card rounded-2xl p-6 shadow-lg event-card">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
-                                        <div class="flex items-center space-x-3 mb-3">
+                                        <div class="flex items-center space-x-3 mb-3 flex-wrap">
                                             <h3 class="text-xl font-bold" style="color: #111827;">{{ $event->title ?? 'Event Tidak Ditemukan' }}</h3>
                                             <span class="badge-status {{ $registration->status }}">
                                                 {{ ucfirst($registration->status) }}
                                             </span>
+                                            @if($isPaid)
+                                                <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background: #fef3c7; color: #92400e;">
+                                                    <i class="bi bi-credit-card me-1"></i>Berbayar
+                                                </span>
+                                            @else
+                                                <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background: #dbeafe; color: #1e40af;">
+                                                    <i class="bi bi-gift me-1"></i>Gratis
+                                                </span>
+                                            @endif
                                         </div>
                                         
                                         @if($event)
                                             <div class="grid md:grid-cols-2 gap-4 mb-4" style="color: #6b7280;">
                                                 @if($event->event_date)
                                                     <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-calendar3"></i>
-                                                        <span>{{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</span>
+                                                        <i class="bi bi-calendar3" style="color: #667eea;"></i>
+                                                        <span><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</span>
+                                                    </div>
+                                                @endif
+                                                @if($event->event_time)
+                                                    <div class="flex items-center space-x-2">
+                                                        <i class="bi bi-clock" style="color: #667eea;"></i>
+                                                        <span><strong>Waktu:</strong> {{ \Carbon\Carbon::parse($event->event_time)->format('H:i') }} 
+                                                        @if($event->event_time_end)
+                                                            - {{ \Carbon\Carbon::parse($event->event_time_end)->format('H:i') }}
+                                                        @endif
+                                                        </span>
                                                     </div>
                                                 @endif
                                                 @if($event->location)
                                                     <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-geo-alt"></i>
-                                                        <span>{{ $event->location }}</span>
+                                                        <i class="bi bi-geo-alt" style="color: #667eea;"></i>
+                                                        <span><strong>Lokasi:</strong> {{ $event->location }}</span>
                                                     </div>
                                                 @endif
                                                 @if($registration->registration_code)
                                                     <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-ticket-perforated"></i>
-                                                        <span>Kode: {{ $registration->registration_code }}</span>
+                                                        <i class="bi bi-ticket-perforated" style="color: #667eea;"></i>
+                                                        <span><strong>Kode:</strong> {{ $registration->registration_code }}</span>
+                                                    </div>
+                                                @endif
+                                                @if($isPaid)
+                                                    <div class="flex items-center space-x-2">
+                                                        <i class="bi bi-currency-dollar" style="color: #fbbf24;"></i>
+                                                        <span><strong>Harga:</strong> Rp {{ number_format($finalPrice, 0, ',', '.') }}</span>
+                                                        @if($payment)
+                                                            <span class="text-xs px-2 py-1 rounded" style="background: #dcfce7; color: #166534;">
+                                                                <i class="bi bi-check-circle me-1"></i>Dibayar: Rp {{ number_format($amountPaid, 0, ',', '.') }}
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                 @endif
                                                 @if($registration->attended_at)
                                                     <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-check-circle"></i>
-                                                        <span>Hadir: {{ \Carbon\Carbon::parse($registration->attended_at)->format('d M Y H:i') }}</span>
+                                                        <i class="bi bi-check-circle-fill" style="color: #22c55e;"></i>
+                                                        <span><strong>Hadir:</strong> {{ \Carbon\Carbon::parse($registration->attended_at)->format('d M Y H:i') }}</span>
                                                     </div>
                                                 @endif
                                             </div>
@@ -366,10 +496,44 @@
                                 </div>
                                 
                                 <div class="flex items-center justify-between pt-4 border-t" style="border-color: #e5e7eb;">
-                                    <div>
+                                    <div class="flex items-center space-x-4 flex-wrap">
+                                        <!-- Status Indicators -->
+                                        <div class="flex items-center space-x-2">
+                                            @if($registration->attendance_status)
+                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #dcfce7; color: #166534;">
+                                                    <i class="bi bi-check-circle me-1"></i>Hadir
+                                                </span>
+                                            @else
+                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #fef2f2; color: #991b1b;">
+                                                    <i class="bi bi-x-circle me-1"></i>Belum Hadir
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            @if($registration->certificate_issued_at)
+                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #fef3c7; color: #92400e;">
+                                                    <i class="bi bi-award me-1"></i>Sertifikat
+                                                </span>
+                                            @else
+                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #f3f4f6; color: #6b7280;">
+                                                    <i class="bi bi-award me-1"></i>Belum Ada Sertifikat
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            @if($registration->feedback_submitted_at)
+                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #dbeafe; color: #1e40af;">
+                                                    <i class="bi bi-chat-left-text me-1"></i>Feedback Terkirim
+                                                </span>
+                                            @else
+                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #f3f4f6; color: #6b7280;">
+                                                    <i class="bi bi-chat-left-text me-1"></i>Belum Feedback
+                                                </span>
+                                            @endif
+                                        </div>
                                         @if($registration->certificate_number)
                                             <span class="text-xs" style="color: #6b7280;">
-                                                <i class="bi bi-award"></i> Sertifikat: {{ $registration->certificate_number }}
+                                                <i class="bi bi-hash"></i> No. Sertifikat: {{ $registration->certificate_number }}
                                             </span>
                                         @endif
                                     </div>

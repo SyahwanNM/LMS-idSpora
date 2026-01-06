@@ -575,6 +575,33 @@
                 transform: translateY(0);
             }
         }
+        
+        /* Custom collapse animation */
+        #badgeTerms.collapse,
+        #badgeFAQ.collapse {
+            transition: height 0.35s ease;
+            overflow: hidden;
+        }
+        
+        #badgeTerms.collapse.show,
+        #badgeFAQ.collapse.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Ensure content inside is visible when shown */
+        #badgeTerms.collapse.show > div,
+        #badgeFAQ.collapse.show > div {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        #badgeTerms.collapse:not(.show),
+        #badgeFAQ.collapse:not(.show) {
+            display: none;
+        }
 
         @media (max-width: 768px) {
             .completion-card-compact {
@@ -609,6 +636,31 @@
                 MENU NAVIGASI
             </div>
             
+            <!-- Badge Display in Sidebar -->
+            @php
+                $user = Auth::user();
+                $badgeInfo = $user->badge_info;
+                $currentPoints = $user->points ?? 0;
+            @endphp
+            <div class="sidebar-badge" style="margin: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                        <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="color: white; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
+                            {{ $badgeInfo['name'] }}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="bi bi-star-fill" style="color: #FFD700; font-size: 0.75rem;"></i>
+                            <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.75rem; font-weight: 500;">
+                                {{ number_format($currentPoints, 0, ',', '.') }} Poin
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Menu Items -->
             <nav class="flex-1 py-4">
                 <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
@@ -626,6 +678,97 @@
         <!-- Main Content -->
         <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
             <div class="max-w-6xl mx-auto fade-in">
+                <!-- Badge & Points Widget -->
+                @php
+                    $user = Auth::user();
+                    $badgeInfo = $user->badge_info;
+                    $nextBadgeInfo = $user->next_badge_info;
+                    $currentPoints = $user->points ?? 0;
+                    $currentBadge = $user->badge ?? 'beginner';
+                    
+                    // Define all badges for modal display
+                    $allBadges = [
+                        'beginner' => ['name' => 'Beginner', 'min' => 0, 'max' => 99, 'gradient' => 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', 'icon' => 'bi-star', 'color' => '#94a3b8'],
+                        'explorer' => ['name' => 'Explorer', 'min' => 100, 'max' => 249, 'gradient' => 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 'icon' => 'bi-compass', 'color' => '#3b82f6'],
+                        'learner' => ['name' => 'Learner', 'min' => 250, 'max' => 499, 'gradient' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', 'icon' => 'bi-book', 'color' => '#8b5cf6'],
+                        'expert' => ['name' => 'Expert', 'min' => 500, 'max' => 999, 'gradient' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 'icon' => 'bi-trophy', 'color' => '#f59e0b'],
+                        'master' => ['name' => 'Master', 'min' => 1000, 'max' => 9999, 'gradient' => 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)', 'icon' => 'bi-gem', 'color' => '#dc2626'],
+                    ];
+                @endphp
+                <div class="badge-widget mb-4" style="animation: fadeInUp 0.5s ease-out;">
+                    <div class="badge-card" style="background: {{ $badgeInfo['gradient'] }}; border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); position: relative; overflow: hidden;">
+                        <!-- Decorative Elements -->
+                        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255, 255, 255, 0.1); border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: -30px; left: -30px; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.08); border-radius: 50%;"></div>
+                        
+                        <div style="display: flex; align-items: center; gap: 1.5rem; position: relative; z-index: 1;">
+                            <!-- Badge Icon -->
+                            <div class="badge-icon-wrapper" style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border-radius: 20px; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);">
+                                <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 2.5rem; color: white;"></i>
+                            </div>
+                            
+                            <!-- Badge Info -->
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                    <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin: 0; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                                        {{ $badgeInfo['name'] }}
+                                    </h3>
+                                    <span style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
+                                        Level {{ ucfirst($currentBadge) }}
+                                    </span>
+                                    <!-- Info Toggle Button -->
+                                    <button 
+                                        type="button" 
+                                        onclick="openBadgeInfoModal()"
+                                        style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: white; padding: 0;"
+                                        onmouseover="this.style.background='rgba(255, 255, 255, 0.35)'; this.style.transform='scale(1.1)'"
+                                        onmouseout="this.style.background='rgba(255, 255, 255, 0.25)'; this.style.transform='scale(1)'"
+                                        title="Info Badge & Poin"
+                                    >
+                                        <i class="bi bi-info-circle" style="font-size: 1.1rem;"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Points Display -->
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="bi bi-star-fill" style="color: #FFD700; font-size: 1.25rem; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));"></i>
+                                        <span style="color: white; font-size: 1.5rem; font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+                                            {{ number_format($currentPoints, 0, ',', '.') }} Poin
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress to Next Badge -->
+                                @if($nextBadgeInfo)
+                                <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 12px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; font-weight: 500;">
+                                            Menuju {{ $nextBadgeInfo['name'] }}
+                                        </span>
+                                        <span style="color: white; font-size: 0.85rem; font-weight: 700;">
+                                            {{ $nextBadgeInfo['points_needed'] }} poin lagi
+                                        </span>
+                                    </div>
+                                    @php
+                                        $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
+                                    @endphp
+                                    <div style="height: 8px; background: rgba(255, 255, 255, 0.2); border-radius: 4px; overflow: hidden;">
+                                        <div style="height: 100%; background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%); width: {{ $progressPercent }}%; border-radius: 4px; transition: width 0.6s ease; box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);"></div>
+                                    </div>
+                                </div>
+                                @else
+                                <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 12px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2);">
+                                    <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; font-weight: 500;">
+                                        🏆 Anda telah mencapai level tertinggi!
+                                    </span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Profile Completion Widget - Compact -->
                 <div class="profile-completion-widget-compact mb-4">
                     <div class="completion-card-compact">
@@ -809,6 +952,185 @@
         </main>
     </div>
     
+    <!-- Badge Info Modal - Minimalis -->
+    <div class="modal fade" id="badgeInfoModal" tabindex="-1" aria-labelledby="badgeInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                <div class="modal-header" style="background: white; border-bottom: 1px solid #f1f5f9; padding: 1.25rem 1.5rem;">
+                    <h5 class="modal-title" id="badgeInfoModalLabel" style="color: #1e293b; font-weight: 600; font-size: 1.25rem; margin: 0;">
+                        Badge & Poin
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.5;"></button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem; background: white;">
+                    <!-- Cara Mendapatkan Poin - Minimalis -->
+                    <div class="mb-4">
+                        <h6 style="color: #475569; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Cara Mendapatkan Poin
+                        </h6>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #3b82f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-gift" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Event Gratis</div>
+                                    <div style="color: #3b82f6; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+10</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #f59e0b; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-credit-card" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Event Berbayar</div>
+                                    <div style="color: #f59e0b; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+30</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #8b5cf6; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-chat-left-text" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Feedback</div>
+                                    <div style="color: #8b5cf6; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+5</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #22c55e; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-lightning-charge" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Streak</div>
+                                    <div style="color: #22c55e; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+5</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Daftar Badge - Minimalis -->
+                    <div class="mb-4">
+                        <h6 style="color: #475569; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Level Badge
+                        </h6>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            @foreach($allBadges as $badgeKey => $badge)
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem; background: {{ $badgeKey === $currentBadge ? '#fef3c7' : '#f8fafc' }}; border-radius: 10px; border: 1px solid {{ $badgeKey === $currentBadge ? $badgeInfo['color'] : '#e2e8f0' }}; position: relative;">
+                                @if($badgeKey === $currentBadge)
+                                <div style="position: absolute; top: 0.5rem; right: 0.75rem; background: {{ $badgeInfo['color'] }}; color: white; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.625rem; font-weight: 700; text-transform: uppercase;">
+                                    Anda
+                                </div>
+                                @endif
+                                <div style="width: 48px; height: 48px; background: {{ $badge['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                                    <i class="bi {{ $badge['icon'] }}" style="color: white; font-size: 1.25rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.9375rem; margin-bottom: 0.125rem;">
+                                        {{ $badge['name'] }}
+                                    </div>
+                                    <div style="color: #64748b; font-size: 0.8125rem;">
+                                        {{ number_format($badge['min'], 0, ',', '.') }}{{ $badge['max'] < 9999 ? ' - ' . number_format($badge['max'], 0, ',', '.') : '+' }} Poin
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                    <!-- Terms & Conditions / FAQ -->
+                    <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                        <div style="margin-bottom: 0.75rem;">
+                            <button type="button" class="btn btn-link p-0 text-start w-100 badge-terms-btn" aria-expanded="false" aria-controls="badgeTerms" style="text-decoration: none; color: #475569; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; justify-content: space-between; border: none; background: none; cursor: pointer; width: 100%;">
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="bi bi-info-circle" style="font-size: 1rem;"></i>
+                                    <span>Syarat & Ketentuan</span>
+                                </span>
+                                <i class="bi bi-chevron-down badge-chevron-terms" style="font-size: 0.75rem; transition: transform 0.3s ease;"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="badgeTerms">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; font-size: 0.8125rem; color: #475569; line-height: 1.6; margin-top: 0.5rem;">
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">1. Poin Event</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Poin event diberikan saat registrasi berhasil</li>
+                                        <li>Event gratis: +10 poin, Event berbayar: +30 poin</li>
+                                        <li>Poin tidak dapat ditransfer atau dikembalikan</li>
+                                    </ul>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">2. Poin Feedback</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Poin feedback diberikan setelah event selesai</li>
+                                        <li>Hanya 1 feedback per event yang mendapat poin</li>
+                                        <li>Feedback harus diisi dengan lengkap dan valid</li>
+                                    </ul>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">3. Bonus Streak</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Bonus streak diberikan jika mengikuti event dalam 7 hari setelah event sebelumnya</li>
+                                        <li>Streak dihitung berdasarkan tanggal event, bukan tanggal registrasi</li>
+                                        <li>Bonus hanya diberikan untuk event yang sudah selesai</li>
+                                    </ul>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">4. Badge & Level</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Badge otomatis terupdate berdasarkan total poin</li>
+                                        <li>Badge tidak dapat diturunkan setelah diperoleh</li>
+                                        <li>Level Master dapat dicapai dengan 1000+ poin</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">5. Ketentuan Umum</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Poin dan badge adalah sistem reward yang tidak dapat ditukar dengan uang</li>
+                                        <li>Kami berhak mengubah sistem poin dengan pemberitahuan sebelumnya</li>
+                                        <li>Penyalahgunaan sistem akan mengakibatkan poin dibatalkan</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 0.75rem;">
+                            <button type="button" class="btn btn-link p-0 text-start w-100 badge-faq-btn" aria-expanded="false" aria-controls="badgeFAQ" style="text-decoration: none; color: #475569; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; justify-content: space-between; border: none; background: none; cursor: pointer; width: 100%;">
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="bi bi-question-circle" style="font-size: 1rem;"></i>
+                                    <span>Pertanyaan Umum</span>
+                                </span>
+                                <i class="bi bi-chevron-down badge-chevron-faq" style="font-size: 0.75rem; transition: transform 0.3s ease;"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="badgeFAQ">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; font-size: 0.8125rem; color: #475569; line-height: 1.6; margin-top: 0.5rem;">
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Apakah poin bisa hilang?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Poin tidak akan hilang kecuali ada pelanggaran ketentuan. Badge yang sudah diperoleh juga tidak akan diturunkan.</p>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Bagaimana cara mendapatkan bonus streak?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Ikuti event dalam 7 hari setelah event sebelumnya selesai. Bonus streak hanya diberikan untuk event yang sudah terjadi.</p>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Apakah bisa mendapat poin untuk event yang sudah lewat?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Tidak, poin hanya diberikan saat registrasi aktif. Event yang sudah lewat tidak akan mendapat poin tambahan.</p>
+                                </div>
+                                <div>
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Bagaimana jika poin saya tidak sesuai?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Hubungi admin untuk verifikasi. Poin akan dihitung ulang berdasarkan riwayat registrasi dan feedback Anda.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: white; border-top: 1px solid #f1f5f9; padding: 1rem 1.5rem;">
+                    <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background: #f1f5f9; color: #475569; border: none; border-radius: 8px; padding: 0.5rem 1.25rem; font-weight: 500; font-size: 0.875rem;">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Smooth scroll and animations
         document.addEventListener('DOMContentLoaded', function() {
@@ -834,6 +1156,177 @@
                     document.getElementById('avatarPreview').src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // Open Badge Info Modal
+        function openBadgeInfoModal() {
+            const modalEl = document.getElementById('badgeInfoModal');
+            if (!modalEl) return;
+            
+            // Check if Bootstrap is available
+            if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+                
+                // Simple manual toggle without Bootstrap Collapse API
+                modalEl.addEventListener('shown.bs.modal', function() {
+                    const termsBtn = modalEl.querySelector('.badge-terms-btn');
+                    const termsCollapse = modalEl.querySelector('#badgeTerms');
+                    const termsChevron = modalEl.querySelector('.badge-chevron-terms');
+                    const faqBtn = modalEl.querySelector('.badge-faq-btn');
+                    const faqCollapse = modalEl.querySelector('#badgeFAQ');
+                    const faqChevron = modalEl.querySelector('.badge-chevron-faq');
+                    
+                    // Terms collapse - simple toggle
+                    if (termsBtn && termsCollapse && termsChevron) {
+                        termsBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const isExpanded = termsCollapse.classList.contains('show');
+                            
+                            if (isExpanded) {
+                                // Close
+                                termsCollapse.classList.remove('show');
+                                termsCollapse.style.height = '0px';
+                                termsChevron.style.transform = 'rotate(0deg)';
+                                termsBtn.setAttribute('aria-expanded', 'false');
+                                
+                                // Wait for transition then hide
+                                setTimeout(() => {
+                                    termsCollapse.style.display = 'none';
+                                    termsCollapse.style.height = '';
+                                }, 350);
+                            } else {
+                                // Open - set display first
+                                termsCollapse.style.display = 'block';
+                                termsCollapse.style.visibility = 'visible';
+                                termsCollapse.style.opacity = '1';
+                                
+                                // Ensure content is visible
+                                const content = termsCollapse.querySelector('div');
+                                if (content) {
+                                    content.style.display = 'block';
+                                    content.style.visibility = 'visible';
+                                    content.style.opacity = '1';
+                                }
+                                
+                                // Set initial height to 0 for animation
+                                termsCollapse.style.height = '0px';
+                                termsCollapse.style.overflow = 'hidden';
+                                
+                                // Force reflow
+                                void termsCollapse.offsetHeight;
+                                
+                                // Add show class
+                                termsCollapse.classList.add('show');
+                                
+                                // Calculate height - content should be visible now
+                                const height = termsCollapse.scrollHeight;
+                                termsCollapse.style.height = height + 'px';
+                                termsChevron.style.transform = 'rotate(180deg)';
+                                termsBtn.setAttribute('aria-expanded', 'true');
+                                
+                                // After transition, set height to auto and overflow visible
+                                setTimeout(() => {
+                                    if (termsCollapse.classList.contains('show')) {
+                                        termsCollapse.style.height = 'auto';
+                                        termsCollapse.style.overflow = 'visible';
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                    
+                    // FAQ collapse - simple toggle
+                    if (faqBtn && faqCollapse && faqChevron) {
+                        faqBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const isExpanded = faqCollapse.classList.contains('show');
+                            
+                            if (isExpanded) {
+                                // Close
+                                faqCollapse.classList.remove('show');
+                                faqCollapse.style.height = '0px';
+                                faqChevron.style.transform = 'rotate(0deg)';
+                                faqBtn.setAttribute('aria-expanded', 'false');
+                                
+                                // Wait for transition then hide
+                                setTimeout(() => {
+                                    faqCollapse.style.display = 'none';
+                                    faqCollapse.style.height = '';
+                                }, 350);
+                            } else {
+                                // Open - set display first
+                                faqCollapse.style.display = 'block';
+                                faqCollapse.style.visibility = 'visible';
+                                faqCollapse.style.opacity = '1';
+                                
+                                // Ensure content is visible
+                                const content = faqCollapse.querySelector('div');
+                                if (content) {
+                                    content.style.display = 'block';
+                                    content.style.visibility = 'visible';
+                                    content.style.opacity = '1';
+                                }
+                                
+                                // Set initial height to 0 for animation
+                                faqCollapse.style.height = '0px';
+                                faqCollapse.style.overflow = 'hidden';
+                                
+                                // Force reflow
+                                void faqCollapse.offsetHeight;
+                                
+                                // Add show class
+                                faqCollapse.classList.add('show');
+                                
+                                // Calculate height - content should be visible now
+                                const height = faqCollapse.scrollHeight;
+                                faqCollapse.style.height = height + 'px';
+                                faqChevron.style.transform = 'rotate(180deg)';
+                                faqBtn.setAttribute('aria-expanded', 'true');
+                                
+                                // After transition, set height to auto and overflow visible
+                                setTimeout(() => {
+                                    if (faqCollapse.classList.contains('show')) {
+                                        faqCollapse.style.height = 'auto';
+                                        faqCollapse.style.overflow = 'visible';
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                });
+            } else {
+                // Fallback: show modal using jQuery or vanilla JS
+                modalEl.style.display = 'block';
+                modalEl.classList.add('show');
+                document.body.classList.add('modal-open');
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.id = 'badgeModalBackdrop';
+                document.body.appendChild(backdrop);
+                
+                // Close handler
+                const closeModal = function() {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const backdropEl = document.getElementById('badgeModalBackdrop');
+                    if (backdropEl) backdropEl.remove();
+                };
+                
+                // Close on backdrop click
+                backdrop.addEventListener('click', closeModal);
+                
+                // Close on close button click
+                const closeBtns = modalEl.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+                closeBtns.forEach(btn => {
+                    btn.addEventListener('click', closeModal);
+                });
             }
         }
     </script>

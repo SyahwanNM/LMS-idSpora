@@ -371,6 +371,13 @@ class EventController extends Controller
             'status' => 'active',
             'registration_code' => 'EVT-'.strtoupper(uniqid())
         ]);
+        
+        // Add points for event registration
+        try {
+            $pointsService = app(\App\Services\UserPointsService::class);
+            $pointsService->addEventPoints($user, $event, $reg);
+        } catch (\Throwable $e) { /* ignore */ }
+        
         // Create notification (expires in 14 days)
         try{
             UserNotification::create([

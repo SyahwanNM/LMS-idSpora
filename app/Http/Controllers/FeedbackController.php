@@ -55,6 +55,15 @@ class FeedbackController extends Controller
                 $registration->certificate_issued_at = Carbon::now();
             }
             $registration->save();
+            
+            // Add points for feedback
+            try {
+                $user = Auth::user();
+                if ($user) {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addFeedbackPoints($user);
+                }
+            } catch (\Throwable $e) { /* ignore */ }
         } catch (\Throwable $e) {
             // non-blocking: we still return success, but log could be added
         }

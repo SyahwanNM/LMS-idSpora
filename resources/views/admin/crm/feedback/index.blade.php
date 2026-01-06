@@ -409,8 +409,8 @@
                                         <img src="{{ $feedback->user->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                                     </div>
                                     <div>
-                                        <div class="fw-semibold text-dark">{{ $feedback->user->name }}</div>
-                                        <small class="text-muted">{{ $feedback->event->title }}</small>
+                                        <div class="fw-semibold text-dark">{{ $feedback->user->name ?? 'User tidak ditemukan' }}</div>
+                                        <small class="text-muted">{{ $feedback->event->title ?? 'Event tidak ditemukan' }}</small>
                                     </div>
                                 </div>
                                 <p class="mb-0 text-muted small">{{ \Illuminate\Support\Str::limit($feedback->comment, 100) }}</p>
