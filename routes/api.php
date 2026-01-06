@@ -13,7 +13,7 @@ Route::post('/midtrans-callback', [CallbackController::class, 'callback']);
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::get ('/events', [EventController::class, 'index']);
-Route::get('/events/{id}', [EventController::class, 'show']);
+Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+');
 
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::post('/events/{id}/register', [EventController::class, 'register']);
 
-    // Disarankan tambahan endpoint untuk alur event
+    // tambahan endpoint untuk alur event
     Route::get('/events/registrations', [EventController::class, 'listRegistrations']);
     Route::get('/events/{id}/registration/status', [EventController::class, 'registrationStatus']);
     Route::post('/events/{id}/payment', [EventController::class, 'createPayment']);
