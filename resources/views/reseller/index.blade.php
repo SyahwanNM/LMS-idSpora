@@ -1,5 +1,5 @@
 {{-- @include ('partials.navbar-after-login') --}}
-@include ('partials.navbar-before-login')
+@include ('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -424,7 +424,8 @@
 
 
 
-            <div class="card rounded-4 mb-4 border-0 shadow-sm rounded-4">
+            {{-- <div class="card rounded-4 mb-4"> --}}
+            <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body p-4">
                     <h6 class="fw-semibold mb-3">
                         <i class="bi bi-question-circle text-warning me-1"></i>
@@ -433,7 +434,7 @@
 
                     <div class="accordion" id="faqAccordion">
 
-                        <div class="accordion-item">
+                        <div class="accordion-item mb-2">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                     data-bs-target="#faq1">
@@ -441,13 +442,13 @@
                                 </button>
                             </h2>
                             <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
+                                <div class="accordion-body text-muted small">
                                     Dana dapat ditarik melalui menu "Withdraw" di dashboard reseller.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-item">
+                        <div class="accordion-item mb-2">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                     data-bs-target="#faq2">
@@ -455,13 +456,13 @@
                                 </button>
                             </h2>
                             <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
+                                <div class="accordion-body text-muted small">
                                     Komisi masuk setelah pembelian berhasil & tidak refund.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-item">
+                        <div class="accordion-item mb-2">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                     data-bs-target="#faq3">
@@ -469,13 +470,13 @@
                                 </button>
                             </h2>
                             <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
+                                <div class="accordion-body text-muted small">
                                     Link berlaku tanpa batas selama akun Anda aktif.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-item">
+                        <div class="accordion-item mb-2">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                     data-bs-target="#faq4">
@@ -483,13 +484,13 @@
                                 </button>
                             </h2>
                             <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
+                                <div class="accordion-body text-muted small">
                                     Tidak, referral untuk pembelian orang lain.
                                 </div>
                             </div>
                         </div>
 
-                        <div class="accordion-item">
+                        <div class="accordion-item mb-2">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                     data-bs-target="#faq5">
@@ -497,7 +498,7 @@
                                 </button>
                             </h2>
                             <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body">
+                                <div class="accordion-body text-muted small">
                                     Tingkatkan jumlah referral sesuai persyaratan tier.
                                 </div>
                             </div>
@@ -515,7 +516,6 @@
 
                 </div>
             </div>
-
 
 
 
