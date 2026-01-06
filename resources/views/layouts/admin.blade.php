@@ -24,13 +24,23 @@
             </button>
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @if(!(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')))
-                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                    @endif
-                    {{-- Manage Event link removed from navbar per request --}}
-                    <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts</a></li>
-                    {{-- Report menu moved into Kelola Event page per request --}}
+                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*'))
+                    <li class="nav-item">
+                        <a class="nav-link {{ (request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.add-users') ? 'active' : '' }}" href="{{ route('admin.add-users') }}">Manage User</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">Report</a>
+                    </li>
+                    @endunless
                     {{-- Certificate management moved to CRM --}}
+                    @if(request()->routeIs('admin.dashboard'))
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admine</a>
+                    </li>
+                    @endif
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
@@ -50,9 +60,9 @@
                                 <li><hr class="dropdown-divider"></li>
                             @endif
                             <li>
-                                <form action="{{ route('logout') }}" method="POST" class="m-0">
+                                <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="m-0">
                                     @csrf
-                                    <button type="submit" class="dropdown-item small text-danger">
+                                    <button type="button" id="logoutTrigger" class="dropdown-item small text-danger">
                                         <i class="bi bi-box-arrow-right me-1"></i>Logout
                                     </button>
                                 </form>
@@ -63,6 +73,28 @@
             </div>
         </div>
     </nav>
+        <!-- Logout Confirmation Modal -->
+        <div class="modal fade" id="confirmLogoutModal" tabindex="-1" aria-labelledby="confirmLogoutLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmLogoutLabel">Konfirmasi Logout</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
+                        <div class="logout-check form-check d-flex align-items-center gap-2">
+                            <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck">
+                            <label class="form-check-label" for="logoutConfirmCheck">Saya yakin ingin logout</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-danger" id="logoutConfirmBtn" disabled>Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     {{-- Quick Actions Scrollable Bar (override with @section('admin_quick_actions') if needed) --}}
     {{-- Quick actions bar removed per request: New Course/Event/User, All Courses/Events/Users, Reports --}}
     <div class="container">
@@ -93,6 +125,54 @@
                     } catch(e){}
                 });
             });
+        }
+        
+        // Logout confirmation with animated checklist
+        const logoutTrigger = document.getElementById('logoutTrigger');
+        const logoutForm = document.getElementById('logoutForm');
+        const modalEl = document.getElementById('confirmLogoutModal');
+        const confirmBtn = document.getElementById('logoutConfirmBtn');
+        const confirmCheck = document.getElementById('logoutConfirmCheck');
+        if (logoutTrigger && logoutForm && modalEl && confirmBtn && confirmCheck && window.bootstrap && bootstrap.Modal) {
+            const confirmModal = new bootstrap.Modal(modalEl);
+            logoutTrigger.addEventListener('click', function(ev){
+                ev.preventDefault();
+                // reset state
+                confirmCheck.checked = false;
+                confirmBtn.disabled = true;
+                modalEl.querySelector('.check-anim')?.classList.remove('active');
+                confirmModal.show();
+            });
+            confirmCheck.addEventListener('change', function(){
+                confirmBtn.disabled = !confirmCheck.checked;
+                const box = modalEl.querySelector('.check-anim');
+                if(box){ box.classList.toggle('active', confirmCheck.checked); }
+            });
+            function showLogoutSuccessState(){
+                const body = modalEl.querySelector('.modal-body');
+                const footer = modalEl.querySelector('.modal-footer');
+                if(footer) footer.style.display='none';
+                if(body){
+                    body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
+                    body.innerHTML = `
+                        <div class="logout-success-feedback text-center">
+                            <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
+                                <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
+                                <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
+                            </svg>
+                            <p class="fw-semibold mb-1 mt-3">Berhasil logout</p>
+                            <small class="text-muted">Mengalihkan...</small>
+                        </div>`;
+                }
+            }
+            function performAnimatedLogout(ev){
+                ev.preventDefault();
+                if(!confirmCheck.checked) return;
+                confirmBtn.disabled = true;
+                try { showLogoutSuccessState(); } catch(e){}
+                setTimeout(function(){ logoutForm.submit(); }, 900);
+            }
+            confirmBtn.addEventListener('click', performAnimatedLogout);
         }
         });
     </script>
@@ -139,6 +219,19 @@
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
     body { padding-top: 78px; }
     @media (max-width: 991.98px){ body { padding-top: 66px; } }
+    /* Animated checklist for logout confirmation */
+    .logout-check .check-anim{ width:26px; height:26px; border:2px solid #198754; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; transition: background-color .25s ease, border-color .25s ease; }
+    .logout-check .check-anim svg{ display:block; }
+    .logout-check .check-anim .path{ stroke:#198754; stroke-width:3; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:22; stroke-dashoffset:22; transition: stroke-dashoffset .3s ease .05s; }
+    .logout-check .check-anim.active{ background-color:#d1e7dd; border-color:#198754; }
+    .logout-check .check-anim.active .path{ stroke-dashoffset:0; }
+    .logout-check .form-check-label{ color:#000; }
+    /* Logout success animation (modal) */
+    .logout-success-feedback .check-anim { display:block; }
+    .logout-success-feedback .circle { stroke-dasharray: 201; stroke-dashoffset:201; animation: draw-circle .55s ease-out forwards; }
+    .logout-success-feedback .check { stroke-dasharray: 40; stroke-dashoffset:40; animation: draw-check .35s ease-out .45s forwards; }
+    @keyframes draw-circle { to { stroke-dashoffset:0; } }
+    @keyframes draw-check { to { stroke-dashoffset:0; } }
     </style>
     @yield('scripts')
 </body>

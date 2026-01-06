@@ -302,4 +302,3 @@ function handleGenerateClick(btn, count) {
 }
 </style>
 @endsection
-

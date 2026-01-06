@@ -116,6 +116,8 @@ class ProfileController extends Controller
                 },
             ],
             'bio' => 'nullable|string|max:1000',
+            'profession' => 'nullable|string|in:Pelajar/Mahasiswa,Karyawan Swasta,ASN/PNS,Wirausaha,Lainnya',
+            'institution' => 'nullable|string|max:255',
         ]);
 
         $user->name = $validated['name'];
@@ -163,6 +165,8 @@ class ProfileController extends Controller
         }
         
         $user->bio = $validated['bio'] ?? null;
+        $user->institution = $validated['institution'] ?? null;
+        $user->profession = $validated['profession'] ?? null;
         
         $user->save();
         
@@ -223,4 +227,3 @@ class ProfileController extends Controller
         ));
     }
 }
-

@@ -12,17 +12,22 @@ class EventRegistration extends Model
         'status',
         'attendance_status',
         'attended_at',
+        'attendance_code',
+        'attendance_code_used_at',
         'registration_code',
         'certificate_number',
         'certificate_issued_at',
         'feedback_text',
         'feedback_submitted_at',
+        'total_price', 
+        'payment_url',
     ];
 
     protected $casts = [
         'certificate_issued_at' => 'datetime',
         'feedback_submitted_at' => 'datetime',
         'attended_at' => 'datetime',
+        'attendance_code_used_at' => 'datetime',
     ];
 
     public function user(){

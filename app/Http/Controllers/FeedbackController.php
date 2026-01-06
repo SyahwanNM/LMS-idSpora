@@ -68,9 +68,13 @@ class FeedbackController extends Controller
             // non-blocking: we still return success, but log could be added
         }
 
+        // Get user name safely (user should be authenticated at this point, but check anyway)
+        $user = Auth::user();
+        $userName = $user ? $user->name : 'User';
+
         return response()->json([
             'success' => true,
-            'user_name' => Auth::user()->name,
+            'user_name' => $userName,
             'rating' => $feedback->rating,
             'comment' => $feedback->comment,
         ]);

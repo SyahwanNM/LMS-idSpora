@@ -430,4 +430,3 @@ class CRMController extends Controller
         ));
     }
 }
-

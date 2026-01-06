@@ -28,8 +28,8 @@ class EventController extends Controller
 
     public function create()
     {
-        // Show Add Event modal UI with existing ACTIVE (not finished) events list + dynamic jenis/materi options
-        $events = Event::active()->latest()->paginate(10);
+        // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
+        $events = Event::query()->latest()->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.add-event', compact('events','materiOptions','jenisOptions'));
@@ -181,7 +181,13 @@ class EventController extends Controller
             }
         }
 
-    return redirect()->route('admin.add-event')->with('success', 'Event berhasil ditambahkan!');
+        // If the newly created event is already finished based on end time, pre-select the Finished filter
+        $statusFilter = $event->isFinished() ? 'finished' : null;
+
+        return redirect()
+            ->route('admin.add-event')
+            ->with('success', 'Event berhasil ditambahkan!')
+            ->with('statusFilter', $statusFilter);
     }
 
     public function show(Event $event)
@@ -348,7 +354,7 @@ class EventController extends Controller
                 'status' => 'already',
                 'message' => 'Sudah terdaftar',
                 'event_title' => $event->title,
-                'redirect' => route('events.ticket', $event)
+                'redirect' => route('events.show', $event)
             ]);
         }
         // Hitung final price (sesudah diskon bila ada)
@@ -378,6 +384,15 @@ class EventController extends Controller
             $pointsService->addEventPoints($user, $event, $reg);
         } catch (\Throwable $e) { /* ignore */ }
         
+        // Generate per-user unique attendance code so it's never NULL
+        if (empty($reg->attendance_code)) {
+            $base = 'AT'.$event->id.'-'.$user->id.'-';
+            do {
+                $code = $base.strtoupper(\Illuminate\Support\Str::random(6));
+            } while (\App\Models\EventRegistration::where('attendance_code', $code)->exists());
+            $reg->attendance_code = $code;
+            $reg->save();
+        }
         // Create notification (expires in 14 days)
         try{
             UserNotification::create([
@@ -394,7 +409,7 @@ class EventController extends Controller
             'message' => 'Berhasil daftar event (GRATIS)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.ticket', $event)
+            'redirect' => route('events.show', $event)
         ]);
     }
 
