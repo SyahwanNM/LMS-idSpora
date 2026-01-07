@@ -241,7 +241,7 @@
 
         <div class="mb-3">
           <h6>Email</h6>
-          <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
+          <input type="email" name="email" autocomplete="username" class="form-control @error('email') is-invalid @enderror" 
                  value="{{ old('email') }}" required>
           @error('email')
             <div class="invalid-feedback">{{ $message }}</div>
@@ -250,7 +250,7 @@
         <div class="mb-3">
           <h6>Kata Sandi</h6>
           <div class="input-group">
-            <input id="signin-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+            <input id="signin-password" type="password" name="password" autocomplete="current-password" class="form-control @error('password') is-invalid @enderror" required>
             <button type="button" class="btn btn-outline-light" id="toggle-password" aria-label="Tampilkan/Sembunyikan kata sandi" style="border-color: rgba(255,255,255,0.4); display:flex; align-items:center;">
               <!-- Eye icon (Heroicons-style) -->
               <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -314,5 +314,28 @@
         eyeSlash.style.display = isHidden ? '' : 'none';
       });
     }
+  })();
+  // Simpan email saat "ingat saya" dicentang, tanpa menyimpan password (keamanan)
+  (function(){
+    const emailInput = document.querySelector('input[name="email"]');
+    const rememberCb = document.getElementById('remember');
+    if (!emailInput || !rememberCb) return;
+    try {
+      const savedEmail = localStorage.getItem('remember_email');
+      if (savedEmail && !emailInput.value) {
+        emailInput.value = savedEmail;
+        rememberCb.checked = true;
+      }
+      const form = emailInput.form;
+      if (form) {
+        form.addEventListener('submit', function(){
+          if (rememberCb.checked) {
+            localStorage.setItem('remember_email', emailInput.value || '');
+          } else {
+            localStorage.removeItem('remember_email');
+          }
+        });
+      }
+    } catch(e){}
   })();
 </script>

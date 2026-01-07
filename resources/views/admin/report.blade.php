@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
@@ -14,6 +15,50 @@
 
 <body>
     @include("partials.navbar-admin-course-bootstrap")
+    <!-- Scoped page styles to tidy layout without changing markup -->
+    <style>
+        .box_luar_report{max-width:1140px;margin:0 auto;padding:24px 16px}
+        .judul_report{font-weight:700;font-size:1.75rem;margin-bottom:.25rem}
+        .keterangan_judul{color:#6b7280;margin-bottom:1rem}
+        .btn_box_report{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+        .btn_report{border:1px solid #dee2e6;background:#fff;color:#111827;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer}
+        .btn_report.active{background:#6f42c1;color:#fff;border-color:#6f42c1;box-shadow:0 4px 12px rgba(111,66,193,.2)}
+        .box_report{display:none}
+        .box_report.active{display:block;animation:fadeIn .2s ease}
+        .box_pendapatan{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+        .box_btn_laporan{display:flex;gap:.5rem;flex-wrap:wrap}
+        .btn_laporan{border:1px solid #dee2e6;background:#fff;color:#111827;padding:.4rem .7rem;border-radius:.5rem;cursor:pointer}
+        .btn_laporan.active{background:#fbbf24;color:#111827;border-color:#f59e0b}
+        .box_unduh{display:flex;gap:.5rem;margin-right:.75rem}
+        .btn_unduh{display:flex;align-items:center;gap:.45rem;border:1px solid #dee2e6;background:#fff;color:#111827;padding:.45rem .75rem;border-radius:.5rem}
+        .box_detail_laporan{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin:1rem 0}
+        .detail_laporan,.detail_laporan_pertumbuhan{background:#fff;border:1px solid #e5e7eb;border-radius:1rem;padding:1.25rem;box-shadow:0 8px 24px rgba(0,0,0,.05)}
+        .detail_laporan{display:flex;flex-direction:column;justify-content:space-between;min-height:170px}
+        .detail_laporan_pertumbuhan{display:flex;flex-direction:column;gap:.5rem;min-height:170px}
+        .detail_laporan:hover,.detail_laporan_pertumbuhan:hover{box-shadow:0 12px 28px rgba(0,0,0,.06);transform:translateY(-2px);transition:all .15s ease}
+        .detail_laporan h4,.detail_laporan_pertumbuhan h4{font-weight:600;color:#111827;margin-bottom:.25rem}
+        .total_kenaikan{font-weight:700;margin:.25rem 0;font-size:1.85rem;line-height:1.25;color:#111827}
+        .informasi_kenaikan_pendapatan,.informasi_penurunan_pendapatan{display:flex;align-items:center;gap:.5rem;color:#6b7280;font-size:.95rem}
+        .box_cari_pendapatan{margin-top:1.25rem}
+        .cari_pendapatan{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+        .cari_pendapatan>div{display:flex;align-items:center;gap:.5rem;border:1px solid #dee2e6;border-radius:.5rem;padding:.35rem .6rem;background:#fff}
+        .cari_course{border:none;outline:none;min-width:220px}
+        .tabel_pendapatan,.tabel_pertumbuhan,.tabel_organize{margin-top:1rem}
+        .tabel_pendapatan th,.tabel_pertumbuhan th,.tabel_organize th{white-space:nowrap}
+        .tabel_performa{margin-bottom:.5rem}
+        .persentase{border:none;background:#6f42c1;color:#fff;border-radius:.5rem;padding:.25rem .5rem}
+        .status_lengkap{background:#22c55e;color:#fff;border:none;border-radius:.5rem;padding:.25rem .5rem}
+        .status_progress{background:#f59e0b;color:#fff;border:none;border-radius:.5rem;padding:.25rem .5rem}
+        .status_missing{background:#ef4444;color:#fff;border:none;border-radius:.5rem;padding:.25rem .5rem}
+        .durasi_menonton{margin-bottom:.5rem}
+        .progress_bg{background:#e9ecef;border-radius:999px;height:8px;overflow:hidden}
+        .progress_fill{background:#667eea;height:8px}
+        .box_kelengkapan{margin-top:2rem}
+        .box_pencarian{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem}
+        .box_pencarian>div{display:flex;align-items:center;gap:.5rem;border:1px solid #dee2e6;border-radius:.5rem;padding:.35rem .6rem;background:#fff}
+        .btn_terapkan{background:#0d6efd;color:#fff;border:none;border-radius:.5rem;padding:.45rem .8rem}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    </style>
     <div class="box_luar_report">
         <h1 class="judul_report">Laporan EduPlatform Admin</h1>
         <p class="keterangan_judul">Berikut adalah laporan course.</p>
@@ -532,6 +577,30 @@
                 button.classList.add("active");
             });
         });
+    </script>
+
+    <!-- Hidden logout form for inactivity auto-logout -->
+    <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
+
+    <!-- Inactivity auto-logout (idle timeout) -->
+    <script>
+    (function(){
+        // Adjust minutes as needed; defaults to 30 minutes
+        const IDLE_MINUTES = 30;
+        const EVENTS = ['click','mousemove','keydown','scroll','touchstart','touchmove'];
+        const logoutForm = document.getElementById('logoutForm');
+        let timer;
+        function reset(){
+            if(timer) clearTimeout(timer);
+            timer = setTimeout(function(){
+                if (logoutForm) {
+                    try { logoutForm.submit(); } catch(e){}
+                }
+            }, IDLE_MINUTES * 60 * 1000);
+        }
+        EVENTS.forEach(function(evt){ window.addEventListener(evt, reset, { passive: true }); });
+        reset();
+    })();
     </script>
 
 </body>
