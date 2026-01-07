@@ -162,6 +162,9 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
 
+// Query current pending order for this user+event (auth required)
+Route::middleware('auth')->get('/payment/{event}/pending-order', [PaymentController::class, 'pendingOrder'])->name('payment.pending-order');
+
 // Finalize registration after successful payment (auth required)
 Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController::class, 'finalize'])->name('payment.finalize');
 
