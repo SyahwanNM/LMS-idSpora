@@ -369,13 +369,21 @@
                         $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                     }
-                    // Attendance dianggap selesai jika user sudah submit attendance (menggunakan attendance_status)
-                    $attendanceSubmitted = $registration && !empty($registration->attendance_status);
+                    // Attendance via QR verification (check-in)
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
                     $hasCertificate = $registration && $registration->certificate_issued_at;
+                    $attendanceSubmitted = false;
+                    if ($registration) {
+                        $status = strtolower((string)($registration->attendance_status ?? ''));
+                        $attendanceSubmitted = (
+                            in_array($status, ['present','attended','checked-in'], true)
+                            || !empty($registration->attended_at)
+                            || !empty($registration->attendance_code_used_at)
+                        );
+                    }
                     $stepStates = [
                         'Registered' => $isRegistered,
-                        'Attended' => $attendanceSubmitted,
+                        'Attendance' => $attendanceSubmitted,
                         'Feedback' => $hasFeedback,
                         'Certificate' => $hasCertificate,
                     ];
@@ -653,12 +661,7 @@
                                     <label class="form-label">Registration Code</label>
                                     <input type="text" class="form-control" value="{{ $registration->registration_code ?? 'Pending assignment' }}" disabled>
                                 </div>
-                                @if(isset($event) && strtolower((string)$event->type) === 'offline')
-                                <div class="mb-3">
-                                    <label class="form-label">Attendance Code (Unique)</label>
-                                    <input type="text" class="form-control" value="{{ $registration->attendance_code ?? 'Generating...' }}" disabled>
-                                </div>
-                                @endif
+                                
                             </form>
                         @else
                             <p class="text-muted">You are not registered yet.</p>
@@ -668,31 +671,37 @@
             </div>
         </div>
         
-        <!-- Attendance Modal -->
-        <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
+        <!-- Scan QR Modal -->
+        <div class="modal fade" id="scanQrModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Attendance Form</h5>
-                        <button type="button" class="btn-close"  style="cursor:pointer;" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <h5 class="modal-title">Scan QR Event</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                       <div class="modal-body">
-                            <form method="POST" action="{{ route('events.attendance', $event) }}"> 
-                                @csrf
-        
-                                <div class="mb-3">
-                                    <label for="inputKode" class="label-kode">Masukkan Kode</label>
-                                    <input type="text" class="form-control input-kode" id="inputKode" name="unique_code" placeholder="Kode Kehadiran" required>
-            
-                                    <div class="note-text"> * kode kehadiran didapatkan dari panitia kegiatan pada saat acara</div>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary w-100 btn-submit-attendance">
-                                Kirim Attendance
-                                </button>
-
-                            </form>
+                        <div id="qr-reader" style="width:100%; max-width:520px; margin:0 auto;"></div>
+                        <div id="qr-success" class="text-center d-none" style="padding: 16px 8px;">
+                            <div style="display:flex;justify-content:center;margin:16px 0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                            <p class="mb-1 fw-semibold text-success">Absensi Berhasil Dilakukan</p>
+                            <p class="text-muted" style="margin-bottom:16px;">{{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}</p>
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
+                        </div>
+                        <div class="mt-3">
+                            <div id="qr-status" class="alert alert-info small">Arahkan kamera ke QR event untuk memindai.</div>
+                            <div class="d-flex justify-content-center mt-2 gap-2 flex-wrap">
+                                <button id="qr-permission-btn" type="button" class="btn btn-sm btn-primary d-none">Izinkan Kamera</button>
+                                <button id="qr-test-btn" type="button" class="btn btn-sm btn-outline-primary d-none">Test Kamera</button>
+                                <label class="btn btn-sm btn-outline-secondary d-none" id="qr-upload-btn">
+                                    Unggah QR
+                                    <input type="file" id="qr-file-input" accept="image/*" class="d-none">
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -755,34 +764,35 @@
                     @endif
                 </div>
 
-                <div class="resource-card {{ ($isRegistered && $eventFinished && !$hasFeedback) ? '' : 'locked' }}">
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}" style="position:relative;">
                     <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-check" viewBox="0 0 16 16">
-                            <path d="M10.854 7.854a.5.5 0 0 0-.708-.708L7.5 9.793 6.354 8.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z" />
-                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z" />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-qr-code-scan" viewBox="0 0 16 16"><path d="M2 2h2v2H2V2Z"/><path d="M6 0H0v6h6V0ZM2 4V2h2v2H2Z"/><path d="M12 2h2v2h-2V2Z"/><path d="M16 0h-6v6h6V0Zm-4 4V2h2v2h-2Z"/><path d="M2 12h2v2H2v-2Z"/><path d="M6 10H0v6h6v-6Zm-4 4v-2h2v2H2Z"/><path d="M7 2h1v1H7V2Z"/><path d="M8 4h1v1H8V4Z"/><path d="M2 7h1v1H2V7Z"/><path d="M4 8h1v1H4V8Z"/><path d="M12 7h1v1h-1V7Z"/><path d="M7 12h1v1H7v-1Z"/><path d="M8 13h1v1H8v-1Z"/><path d="M9 7h1v1H9V7Z"/><path d="M10 2h1v1h-1V2Z"/><path d="M10 11h1v1h-1v-1Z"/><path d="M11 10h1v1h-1v-1Z"/><path d="M12 9h1v1h-1V9Z"/><path d="M13 8h1v1h-1V8Z"/><path d="M14 7h1v1h-1V7Z"/><path d="M15 6h1v1h-1V6Z"/><path d="M12 12h1v1h-1v-1Z"/><path d="M13 13h1v1h-1v-1Z"/><path d="M14 12h1v1h-1v-1Z"/></svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Attendance Form</h6>
-                        <p>
-                            @if($isRegistered && $eventFinished && !$attendanceSubmitted)
-                                Please submit your attendance & feedback
-                            @elseif($attendanceSubmitted)
-                                Attendance submitted
-                            @else
-                                Available after event completion
-                            @endif
-                        </p>
+                        <h6>Attendance QR Event</h6>
+                        @if(isset($attendanceSubmitted) && $attendanceSubmitted)
+                            <p class="text-success" style="font-weight:600;">Absensi Berhasil Dilakukan</p>
+                        @else
+                            <p>Scan QR Event to mark your attendance.</p>
+                        @endif
                     </div>
-                    @if($isRegistered && $eventFinished && !$hasFeedback)
-                        <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#attendanceModal" style="border:none;background:transparent;padding:0;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
+                        <span class="d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px;" title="Absensi Berhasil Dilakukan">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Absensi Berhasil">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <polyline points="8 12 11 15 16 10"></polyline>
                             </svg>
-                        </button>
+                        </span>
+                    @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
+                        <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan" style="position:absolute; top:24px; right:10px; text-decoration:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Buka Halaman Scan">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                        </a>
                     @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                        <span class="link-share d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px; opacity:.4; cursor:not-allowed;" title="Scan tersedia saat acara dimulai"></span>
                     @endif
                 </div>
 
@@ -1013,7 +1023,346 @@
                         <div class="scroll-schedule-box">
                             <div class="schedule-box">
                             <h6 class="title-schedule">Event Schedule</h6>
-                            @php
+                        
+
+                        <!-- QR scanning library -->
+                        <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function(){
+                            var scanner = null;
+                            var modalEl = document.getElementById('scanQrModal');
+                            if(!modalEl) return;
+                            // Helper to detect secure origin acceptance (https or localhost)
+                            function isSecureEnough(){
+                                var isLocalhost = ['localhost','127.0.0.1','::1'].indexOf(location.hostname) !== -1;
+                                return window.isSecureContext || isLocalhost;
+                            }
+
+                            // Attempt to request camera permission directly (user-gesture)
+                            function requestCameraPermission(statusEl, onDone){
+                                var constraintsAttempts = [
+                                    { video: { facingMode: { exact: 'environment' } } },
+                                    { video: { facingMode: { ideal: 'environment' } } },
+                                    { video: true }
+                                ];
+                                var p = Promise.resolve();
+                                constraintsAttempts.forEach(function(constraints){
+                                    p = p.catch(function(){
+                                        return navigator.mediaDevices.getUserMedia(constraints).then(function(stream){
+                                            try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(_e){}
+                                            if (typeof onDone === 'function') onDone(true);
+                                            throw '__BREAK__';
+                                        });
+                                    });
+                                });
+                                return p.catch(function(e){ if(e==='__BREAK__') return; if (typeof onDone === 'function') onDone(false, e); });
+                            }
+
+                            // Try to read Permissions API when available
+                            function checkPermissionState(){
+                                if (navigator.permissions && navigator.permissions.query) {
+                                    try { return navigator.permissions.query({ name: 'camera' }); } catch(_e) { return Promise.resolve(null); }
+                                }
+                                return Promise.resolve(null);
+                            }
+
+                            modalEl.addEventListener('shown.bs.modal', function(){
+                                try {
+                                    var el = document.getElementById('qr-reader');
+                                    if (!el) return;
+                                    if (scanner) { try { scanner.stop(); } catch(e){} }
+                                    // Ensure Html5Qrcode library is available; load fallback if missing
+                                    if (!window.Html5Qrcode) {
+                                        if (statusEl) {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.textContent = 'Memuat library pemindaian QR...';
+                                        }
+                                        var fallback = document.createElement('script');
+                                        fallback.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js';
+                                        fallback.async = true;
+                                        fallback.onload = function(){
+                                            try {
+                                                scanner = new Html5Qrcode('qr-reader');
+                                            } catch (err) {
+                                                console.error('Init Html5Qrcode gagal setelah fallback', err);
+                                                if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memuat library QR. Gunakan unggah gambar sebagai alternatif.'; }
+                                                if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                                return;
+                                            }
+                                            // Lanjut ke alur normal di bawah
+                                        };
+                                        fallback.onerror = function(){
+                                            console.error('Gagal memuat library Html5Qrcode dari CDN');
+                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Library QR tidak termuat. Silakan gunakan unggah gambar.'; }
+                                            if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                        };
+                                        document.head.appendChild(fallback);
+                                        // Jangan lanjutkan hingga library termuat
+                                        return;
+                                    }
+                                    scanner = new Html5Qrcode("qr-reader");
+                                    var statusEl = document.getElementById('qr-status');
+                                    var successEl = document.getElementById('qr-success');
+                                    var permBtn = document.getElementById('qr-permission-btn');
+                                    var testBtn = document.getElementById('qr-test-btn');
+                                    var uploadBtn = document.getElementById('qr-upload-btn');
+                                    var fileInput = document.getElementById('qr-file-input');
+                                    var eventStartedFlag = {{ (isset($eventStarted) && $eventStarted) ? 'true' : 'false' }};
+                                    // Reset views each time modal opens
+                                    if (successEl) successEl.classList.add('d-none');
+                                    if (el) el.style.display = '';
+                                    var currentEventId = {{ (int) ($event->id ?? 0) }};
+                                    var eventQrToken = @json($event->attendance_qr_token ?? null);
+                                    // Gate scanning if event hasn't started
+                                    if (!eventStartedFlag) {
+                                        if (statusEl) {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.textContent = 'Scan tersedia saat acara dimulai.';
+                                        }
+                                        if (permBtn) { permBtn.classList.add('d-none'); }
+                                        if (uploadBtn) { uploadBtn.classList.add('d-none'); }
+                                        return;
+                                    }
+                                    // If insecure origin and not localhost, camera will be blocked
+                                    if (!isSecureEnough()) {
+                                        if (statusEl) {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.innerHTML = 'Kamera diblokir pada koneksi non-HTTPS.<br>Gunakan HTTPS atau localhost.<br><small>Opsi solusi cepat:<br>- Aktifkan SSL di Laragon lalu akses: https://domain.test<br>- atau gunakan ngrok/cloudflared untuk URL https publik.</small>';
+                                        }
+                                        if (permBtn) { permBtn.classList.add('d-none'); }
+                                        if (testBtn) { testBtn.classList.remove('d-none'); }
+                                        if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                        return;
+                                    }
+
+                                    function beginScan(cameraIdOrFacingMode){
+                                        return scanner.start(cameraIdOrFacingMode, { fps: 10, qrbox: { width: 250, height: 250 } }, function(decodedText) {
+                                        // Validate QR: must contain event URL with matching token
+                                        var ok = false;
+                                        try {
+                                            var url = new URL(decodedText);
+                                            ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
+                                        } catch(_e) {
+                                            // Fallback string check
+                                            ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
+                                        }
+                                        if (ok) {
+                                            if (statusEl){ statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil! Menyimpan absensi...'; }
+                                            // Stop camera and show success UI
+                                            try { scanner.stop(); } catch(e){}
+                                            if (el) el.style.display = 'none';
+                                            if (successEl) successEl.classList.remove('d-none');
+                                            // NOTE: If you want to persist attendance here via AJAX, call a route.
+                                            // Currently no attendance route is exposed in routes/web.php. If added, perform fetch here.
+                                        } else {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.textContent = 'QR tidak cocok dengan event ini.';
+                                        }
+                                        }, function(err){ /* per-frame failure, ignore */ });
+                                    }
+
+                                    // Helper: robust start attempts sequence
+                                    function tryStartSequence(){
+                                        // Attempt environment, then user, then enumerate
+                                        var tried = false;
+                                        return beginScan({ facingMode: 'environment' }).catch(function(e1){
+                                            tried = true;
+                                            // If permission denied, show controls
+                                            if (permBtn && e1 && (e1.name === 'NotAllowedError' || e1.message?.toLowerCase().includes('permission'))) {
+                                                permBtn.classList.remove('d-none'); permBtn.disabled = false;
+                                            }
+                                            return beginScan({ facingMode: 'user' });
+                                        }).catch(function(e2){
+                                            if (Html5Qrcode && Html5Qrcode.getCameras) {
+                                                return Html5Qrcode.getCameras().then(function(cameras){
+                                                    if (!cameras || !cameras.length) { throw new Error('Tidak ada kamera terdeteksi'); }
+                                                    var back = cameras.find(function(c){ return /back|rear|environment/i.test(c.label); });
+                                                    var chosen = (back || cameras[0]).id;
+                                                    return beginScan(chosen);
+                                                });
+                                            }
+                                            throw e2;
+                                        }).catch(function(eFinal){
+                                            console.warn('Gagal memulai kamera', eFinal);
+                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (eFinal && eFinal.message ? eFinal.message : eFinal); }
+                                            if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
+                                            if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                            return Promise.reject(eFinal);
+                                        });
+                                    }
+
+                                    // Preflight permission to improve camera availability (especially iOS)
+                                    var preflight = function(){
+                                        if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
+                                        if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { return Promise.resolve(); }
+                                        return checkPermissionState().then(function(state){
+                                            if (state && state.state === 'denied') {
+                                                if (statusEl) {
+                                                    statusEl.className = 'alert alert-danger small';
+                                                    statusEl.innerHTML = 'Izin kamera ditolak oleh browser. Buka pengaturan situs dan izinkan kamera, lalu coba lagi.';
+                                                }
+                                                if (permBtn) {
+                                                    permBtn.classList.remove('d-none');
+                                                    permBtn.disabled = false;
+                                                }
+                                                return Promise.resolve();
+                                            }
+                                            // Attempt a quick silent preflight; if it fails, we’ll show the manual button
+                                            return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                                                .then(function(stream){ try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(_e){} })
+                                                .catch(function(e){ console.warn('Preflight getUserMedia failed', e); });
+                                        });
+                                    };
+
+                                    preflight().then(function(){
+                                        // If permission still not granted, show manual button to request
+                                        if (navigator.permissions && navigator.permissions.query) {
+                                            navigator.permissions.query({name: 'camera'}).then(function(ps){
+                                                if (ps && ps.state !== 'granted' && permBtn) {
+                                                    permBtn.classList.remove('d-none');
+                                                    permBtn.disabled = false;
+                                                    if (testBtn) { testBtn.classList.remove('d-none'); }
+                                                }
+                                            }).catch(function(){});
+                                        } else {
+                                            if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
+                                            if (testBtn) { testBtn.classList.remove('d-none'); }
+                                        }
+                                        // Try robust start
+                                        return tryStartSequence();
+                                    }).catch(function(){ /* already handled in tryStartSequence */ });
+
+                                    // Hook manual permission button
+                                    // Test camera button (diagnostic)
+                                    if (testBtn) {
+                                        testBtn.onclick = function(){
+                                            if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                                                statusEl.className = 'alert alert-danger small';
+                                                statusEl.textContent = 'Browser tidak mendukung kamera.';
+                                                return;
+                                            }
+                                            statusEl.className = 'alert alert-info small';
+                                            statusEl.textContent = 'Menguji akses kamera...';
+                                            navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                                                .then(function(stream){
+                                                    try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(_e){}
+                                                    statusEl.className = 'alert alert-success small';
+                                                    statusEl.textContent = 'Tes berhasil: kamera dapat diakses.';
+                                                    testBtn.classList.add('d-none');
+                                                    // Attempt start after successful test
+                                                    tryStartSequence();
+                                                })
+                                                .catch(function(err){
+                                                    statusEl.className = 'alert alert-danger small';
+                                                    statusEl.textContent = 'Tes gagal: ' + (err && err.message ? err.message : err);
+                                                    uploadBtn && uploadBtn.classList.remove('d-none');
+                                                    permBtn && (permBtn.classList.remove('d-none'), permBtn.disabled = false);
+                                                });
+                                        };
+                                    }
+                                    if (permBtn) {
+                                        permBtn.onclick = function(){
+                                            permBtn.disabled = true;
+                                            if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
+                                            if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                                                if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Browser tidak mendukung kamera.'; }
+                                                return;
+                                            }
+                                            requestCameraPermission(statusEl, function(granted, err){
+                                                if (!granted) {
+                                                    if (statusEl) {
+                                                        statusEl.className = 'alert alert-danger small';
+                                                        statusEl.textContent = 'Izin kamera gagal: ' + (err && err.message ? err.message : 'Unknown error');
+                                                    }
+                                                    permBtn.disabled = false;
+                                                    return;
+                                                }
+                                                // After permission granted, try to start scan again
+                                                if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memulai kamera...'; }
+                                                if (Html5Qrcode && Html5Qrcode.getCameras) {
+                                                    Html5Qrcode.getCameras().then(function(cameras){
+                                                        var back = cameras && cameras.find(function(c){ return /back|rear|environment/i.test(c.label); });
+                                                        var chosen = (back || (cameras && cameras[0]) || {}).id || { facingMode: 'environment' };
+                                                        beginScan(chosen).then(function(){
+                                                            permBtn.classList.add('d-none');
+                                                        }).catch(function(e){
+                                                            console.error('start error', e);
+                                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                            permBtn.disabled = false;
+                                                        });
+                                                    }).catch(function(){
+                                                        beginScan({ facingMode: 'environment' }).then(function(){
+                                                            permBtn.classList.add('d-none');
+                                                        }).catch(function(e){
+                                                            console.error('start error', e);
+                                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                            permBtn.disabled = false;
+                                                        });
+                                                    });
+                                                } else {
+                                                    tryStartSequence().then(function(){ permBtn.classList.add('d-none'); }).catch(function(e){
+                                                        console.error('start error', e);
+                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                        permBtn.disabled = false;
+                                                    });
+                                                }
+                                            });
+                                        };
+                                    }
+                                    // File upload fallback
+                                    if (fileInput) {
+                                        fileInput.onchange = function(){
+                                            var f = fileInput.files && fileInput.files[0];
+                                            if (!f) return;
+                                            statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memindai gambar...';
+                                            scanner.scanFile(f, true).then(function(decodedText){
+                                                var ok = false;
+                                                try {
+                                                    var url = new URL(decodedText);
+                                                    ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
+                                                } catch(_e) {
+                                                    ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
+                                                }
+                                                if (ok) {
+                                                    if (statusEl){ statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil dari gambar! Menyimpan absensi...'; }
+                                                    try { scanner.stop(); } catch(e){}
+                                                    if (el) el.style.display = 'none';
+                                                    if (successEl) successEl.classList.remove('d-none');
+                                                } else {
+                                                    statusEl.className = 'alert alert-warning small';
+                                                    statusEl.textContent = 'Gambar tidak cocok dengan event ini.';
+                                                }
+                                            }).catch(function(err){
+                                                console.error('scanFile error', err);
+                                                statusEl.className = 'alert alert-danger small';
+                                                statusEl.textContent = 'Gagal memindai gambar QR.';
+                                            });
+                                        };
+                                        if (uploadBtn) {
+                                            uploadBtn.onclick = function(){ fileInput && fileInput.click(); };
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            });
+                            modalEl.addEventListener('hidden.bs.modal', function(){
+                                if (scanner) {
+                                    scanner.stop().catch(function(){/* ignore */});
+                                    scanner.clear();
+                                    scanner = null;
+                                }
+                                // Reset UI for next open
+                                var el = document.getElementById('qr-reader');
+                                var successEl = document.getElementById('qr-success');
+                                var permBtn = document.getElementById('qr-permission-btn');
+                                if (el) el.style.display = '';
+                                if (successEl) successEl.classList.add('d-none');
+                                if (permBtn) permBtn.classList.add('d-none');
+                            });
+                        });
+                        </script>
+                        @php
                                 $items = collect();
                                 if(isset($event)){
                                     if($event->relationLoaded('scheduleItems')){
@@ -1081,7 +1430,7 @@
                             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, 100);
                     } else {
-                        section.style.display = 'none';a
+                        section.style.display = 'none';
                     }
                 }
             }
