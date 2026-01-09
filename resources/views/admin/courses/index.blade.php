@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Course</title>
+    <title>Admin Course Index</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -12,9 +12,9 @@
 </head>
 
 <body>
-    @include("partials.navbar-admin-course-bootstrap")
+    @include('partials.navbar-admin-course-bootstrap')
     <div class="box_luar_course_builder">
-        <h1 class="judul_course_builder">Tambah Course Baru</h1>
+        <h1 class="judul_course_builder">Daftar Course</h1>
         <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
         <a href="{{ route('admin.add-course') }}" class="tambah_course" style="text-decoration: none;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
