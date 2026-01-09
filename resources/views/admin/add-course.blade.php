@@ -19,9 +19,9 @@
             <div class="col-lg-8 mx-auto">
                 <div class="box_luar_add_course">
                     <div class="box_link d-flex align-items-center gap-2 text-muted small mb-2">
-                        <a href="">Course Builder</a>
+                        <a href="{{ route('admin.courses.index') }}" class="text-decoration-none">Course Builder</a>
                         <span>/</span>
-                        <a href="">Add Course</a>
+                        <a href="{{ route('admin.add-course') }}" class="text-decoration-none">Add Course</a>
                     </div>
                     <div class="box_judul mb-3">
                         <h1 class="h3 mb-1">Tambah Course</h1>

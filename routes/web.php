@@ -162,6 +162,9 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
 
+// Query current pending order for this user+event (auth required)
+Route::middleware('auth')->get('/payment/{event}/pending-order', [PaymentController::class, 'pendingOrder'])->name('payment.pending-order');
+
 // Finalize registration after successful payment (auth required)
 Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController::class, 'finalize'])->name('payment.finalize');
 
@@ -188,7 +191,28 @@ Route::middleware('auth')->group(function(){
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
-    Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
+    // Dedicated scan page for event QR (auth, require registration)
+    Route::get('/events/{event}/scan', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
+        $user = $request->user();
+        if(!$user){ return redirect()->route('login'); }
+        $registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
+        if(!$registration || $registration->status !== 'active'){
+            return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
+        }
+        // Compute event start/end for gating
+        $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
+        $startTime = null; $endTime = null;
+        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch(\Throwable $e) {}
+        try { $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch(\Throwable $e) {}
+        if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+        if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+        $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
+        $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
+        return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
+    })->name('events.scan');
+    // Attendance via scan: persist attendance when QR is decoded
+    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
     // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
@@ -315,6 +339,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Event document uploads (admin)
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+    // Event QR actions (admin)
+    Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
+    Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
     // Utility: resolve Google Maps short links to lat/lng
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
         
