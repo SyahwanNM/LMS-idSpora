@@ -12,8 +12,7 @@ class EventRegistration extends Model
         'status',
         'attendance_status',
         'attended_at',
-        'attendance_code',
-        'attendance_code_used_at',
+        'attendance_scan_qr',
         'registration_code',
         'certificate_number',
         'certificate_issued_at',
@@ -27,7 +26,7 @@ class EventRegistration extends Model
         'certificate_issued_at' => 'datetime',
         'feedback_submitted_at' => 'datetime',
         'attended_at' => 'datetime',
-        'attendance_code_used_at' => 'datetime',
+        'attendance_scan_qr' => 'datetime',
     ];
 
     public function user(){
