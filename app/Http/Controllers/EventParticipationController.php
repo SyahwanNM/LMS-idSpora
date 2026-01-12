@@ -64,7 +64,7 @@ class EventParticipationController extends Controller
                     'user_id' => $user->id,
                     'type' => 'event_registration',
                     'title' => 'Pendaftaran Dikonfirmasi',
-                    'message' => 'Pendaftaran "'.$event->title.'" telah dikonfirmasi.',
+                    'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
                     // Redirect back to detail event instead of ticket page
                     'data' => [ 'url' => route('events.registered.detail', $event) ],
                     'expires_at' => now()->addDays(14),

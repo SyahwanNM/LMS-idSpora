@@ -24,43 +24,6 @@
                 .add-stars .stars-bi.hovered,
                 .add-stars .stars-bi.hovered:focus {
                     transform: scale(1.22) rotate(-8deg) !important;
-
-            // Free event registration via AJAX (avoid ticket redirect, stay on detail page)
-            (function(){
-                const freeBtn = document.getElementById('bookFreeBtn');
-                if(!freeBtn) return;
-                freeBtn.addEventListener('click', function(){
-                    const original = this.textContent;
-                    this.disabled = true;
-                    this.textContent = 'Registering...';
-                    fetch('{{ route('events.register', $event) }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({})
-                    })
-                    .then(async (r) => {
-                        // On success, server redirects back; for XHR, read text
-                        if (r.ok) {
-                            // Reload to reflect registered state
-                            window.location.reload();
-                        } else {
-                            const t = await r.text();
-                            alert('Gagal mendaftar: '+t);
-                            this.disabled = false;
-                            this.textContent = original;
-                        }
-                    })
-                    .catch(() => {
-                        alert('Gagal mendaftar.');
-                        this.disabled = false;
-                        this.textContent = original;
-                    });
-                });
-            })();
                     color: #FFD600 !important;
                     filter: drop-shadow(0 2px 6px #FFD600cc) !important;
                     z-index: 2 !important;
@@ -205,7 +168,7 @@
             }
             .bookseat { background:#f5c400; color:#111; border:none; order:1; }
             .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
-            .save { background:#1f2235; color:#ffd400; border:none; order:2; }
+            .save { background:#1f2235; color:#ffd400; border:none; order:2; cursor:pointer; position:relative; z-index:2; pointer-events:auto !important; }
             /* Remove responsive horizontal override; keep vertical layout on all sizes */
             /* Price + info tidy */
             .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
@@ -550,9 +513,25 @@
                 @endphp
                 <div class="booksave-row">
                         @php
-                            // Show Book Seat when user not registered and event not finished
-                            // Allow booking only before the event starts
-                            $canRegister = (!$isRegistered) && (!$eventStarted);
+                            // Registration rules
+                            // - FREE events: allow booking until event finished (ignore started state)
+                            // - PAID events: allow booking only before start time when available; else until end-of-day
+                            $hasStartTime = isset($event) && !empty($event->event_time);
+                                                        $canRegister = (!$isRegistered) && (
+                                                                $eventDate
+                                                                        ? (
+                                                                                // For FREE events: block booking once started or finished
+                                                                                ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
+                                                                            )
+                                                                        : true
+                                                        );
+                            // Pre-compute saved state for current user to render initial label
+                            $isSaved = false;
+                            if(isset($event) && auth()->check()){
+                                try {
+                                    $isSaved = auth()->user()->savedEvents()->where('event_id', $event->id)->exists();
+                                } catch (\Throwable $e) { $isSaved = false; }
+                            }
                         @endphp
                         @if($canRegister)
                             @if($isFree)
@@ -571,7 +550,7 @@
                                 <button class="bookseat" disabled>Unavailable</button>
                             @endif
                         @endif
-                        <button class="save" id="saveEventBtn" data-event-id="{{ $event->id }}">Save</button>
+                        <button type="button" class="save" id="saveEventBtn" data-event-id="{{ $event->id }}" style="cursor:pointer; position:relative; z-index:10;">{{ $isSaved ? 'Saved' : 'Save' }}</button>
                     </div>
                 <hr>
                 <div class="include-box">
@@ -1689,34 +1668,125 @@
             })();
         </script>
         <script>
-            // Save/Unsave event handler
+            // Save/Unsave event handler (supports ID and fallback by class)
             (function(){
-                const btn = document.getElementById('saveEventBtn');
-                if(!btn) return;
-                btn.addEventListener('click', function(){
-                    const id = this.dataset.eventId;
+                const nodeList = document.querySelectorAll('#saveEventBtn, .booksave-row .save');
+                // Deduplicate elements in case the selector matches the same node twice
+                const buttons = Array.from(new Set(Array.from(nodeList)));
+                if(!buttons.length) return;
+
+                function getCsrfToken(){
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if(meta && meta.content) return meta.content;
+                    // Fallback to blade-injected token
+                    return '{{ csrf_token() }}';
+                }
+
+                function onClick(e){
+                    try { e.preventDefault(); e.stopPropagation(); } catch(_) {}
+                    if (this.disabled) return; // guard against double-clicks
+
+                    const original = (this.textContent || '').trim();
+                    const wasSaved = original.toLowerCase() === 'saved';
                     this.disabled = true;
-                    const original = this.textContent;
+                    this.setAttribute('aria-busy', 'true');
                     this.textContent = 'Saving...';
+
                     fetch('{{ route('events.save', $event) }}', {
                         method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With':'XMLHttpRequest' }
+                        headers: {
+                            'Accept': 'application/json, text/html;q=0.9,*/*;q=0.8',
+                            'X-CSRF-TOKEN': getCsrfToken(),
+                            'X-Requested-With':'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
                     })
-                    .then(r=>r.json())
+                    .then(async (r)=>{
+                        if (r.redirected && r.url) {
+                            if (r.url.includes('/sign-in') || r.url.includes('/login')) {
+                                // Preserve return URL so user returns to this event after login
+                                const ret = encodeURIComponent(window.location.href);
+                                const loginUrl = r.url.includes('?') ? `${r.url}&return=${ret}` : `${r.url}?return=${ret}`;
+                                window.location.href = loginUrl;
+                                return { success: false, saved: wasSaved };
+                            }
+                        }
+                        if (r.status === 401 || r.status === 419) {
+                            const ret = encodeURIComponent(window.location.href);
+                            window.location.href = '{{ route('login') }}' + `?return=${ret}`;
+                            return { success: false, saved: wasSaved };
+                        }
+                        const ct = (r.headers.get('content-type')||'').toLowerCase();
+                        if (ct.includes('application/json')) {
+                            try {
+                                const data = await r.json();
+                                // Normalize payload
+                                return {
+                                    success: !!data.success,
+                                    saved: typeof data.saved === 'boolean' ? data.saved : (!wasSaved)
+                                };
+                            } catch(_) {
+                                return { success:false, saved: wasSaved };
+                            }
+                        }
+                        return { success: r.ok, saved: r.ok ? (!wasSaved) : wasSaved };
+                    })
                     .then(({success, saved})=>{
-                        if(success){ this.textContent = saved ? 'Saved' : 'Save'; }
-                        else { this.textContent = original; }
+                        if(success){
+                            this.textContent = saved ? 'Saved' : 'Save';
+                            this.dataset.state = saved ? 'saved' : 'unsaved';
+                            this.setAttribute('aria-pressed', saved ? 'true' : 'false');
+                        } else {
+                            this.textContent = original;
+                        }
                     })
-                    .catch(()=>{ this.textContent = original; })
-                    .finally(()=>{ this.disabled = false; });
-                });
+                    .catch(()=>{
+                        // Network or fetch error: fallback to form POST
+                        try {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = '{{ route('events.save', $event) }}';
+                            const csrf = document.createElement('input');
+                            csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = getCsrfToken();
+                            form.appendChild(csrf);
+                            document.body.appendChild(form);
+                            form.submit();
+                            return;
+                        } catch(_e) {
+                            // Visual feedback if even fallback fails
+                            this.textContent = original;
+                            try { this.classList.add('shake'); setTimeout(()=>this.classList.remove('shake'), 500); } catch(_){ }
+                        }
+                    })
+                    .finally(()=>{
+                        this.disabled = false;
+                        this.removeAttribute('aria-busy');
+                    });
+                }
+
+                buttons.forEach(function(b){ b.addEventListener('click', onClick); });
             })();
         </script>
         <script>
             // Free event booking via AJAX: redirect to ticket page
-            (function(){
-                const btn = document.getElementById('bookFreeBtn');
+                (function(){
+                    const btn = document.getElementById('bookFreeBtn');
                 if(!btn) return;
+                function submitFallbackForm(){
+                    try {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '{{ route('events.register.form', $event) }}';
+                        form.style.display = 'none';
+                        const csrf = document.createElement('input');
+                        csrf.type = 'hidden';
+                        csrf.name = '_token';
+                        csrf.value = '{{ csrf_token() }}';
+                        form.appendChild(csrf);
+                        document.body.appendChild(form);
+                        form.submit();
+                    } catch (_e) {}
+                }
                 btn.addEventListener('click', function(){
                     const original = this.textContent;
                     this.disabled = true;
@@ -1725,31 +1795,58 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json, text/html;q=0.9,*/*;q=0.8',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({})
                     })
-                    .then(r => r.json())
-                    .then(({status, redirect, message, button_text}) => {
-                        if (redirect) {
-                            window.location.href = redirect;
+                    .then(async (r) => {
+                        // Handle auth/CSRF issues explicitly
+                        if (r.status === 401 || r.status === 419) {
+                            // Redirect to login so the user can re-authenticate
+                            window.location.href = '{{ route('login') }}';
                             return;
                         }
-                        if (status === 'ok' || status === 'already') {
-                            this.textContent = button_text || 'Seat Booked';
-                            this.disabled = true;
-                        } else if (status === 'payment_required' && redirect) {
-                            window.location.href = redirect;
-                        } else {
+                        const ct = (r.headers.get('content-type') || '').toLowerCase();
+                        if (!r.ok) {
+                            // Read body for message when possible
+                            const t = await r.text();
                             this.textContent = original;
+                            this.disabled = false;
+                            // Fallback to form-based registration
+                            submitFallbackForm();
+                            return;
                         }
+                        if (r.redirected && r.url) {
+                            window.location.href = r.url; return;
+                        }
+                        if (ct.includes('application/json')) {
+                            const data = await r.json();
+                            if (data && data.redirect) { window.location.href = data.redirect; return; }
+                            if (data && (data.status === 'ok' || data.status === 'already')) {
+                                this.textContent = data.button_text || 'Seat Booked';
+                                this.disabled = true;
+                                // Trigger notification refresh immediately
+                                try { if (typeof loadNotifications === 'function') setTimeout(() => loadNotifications(), 50); } catch(_e){}
+                                // Ensure UI reflects registered state
+                                setTimeout(()=> window.location.reload(), 300);
+                                return;
+                            }
+                            // Unknown JSON shape: just reload to update state
+                            window.location.reload();
+                            return;
+                        }
+                        // Non-JSON success: reload to reflect state
+                        window.location.reload();
                     })
                     .catch(() => {
                         this.textContent = original;
+                        // Fallback to form-based registration on network errors
+                        submitFallbackForm();
                     })
                     .finally(() => {
-                        // keep disabled only if booked; otherwise re-enable
                         if (this.textContent === original) this.disabled = false;
                     });
                 });

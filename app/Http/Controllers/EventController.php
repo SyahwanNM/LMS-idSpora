@@ -428,8 +428,8 @@ class EventController extends Controller
             UserNotification::create([
                 'user_id' => $user->id,
                 'type' => 'event_registration',
-                'title' => 'Pendaftaran Event Berhasil',
-                'message' => 'Kamu terdaftar di "'.$event->title.'".',
+                'title' => 'Pendaftaran Dikonfirmasi',
+                'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
                 'data' => ['url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
