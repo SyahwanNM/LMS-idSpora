@@ -238,14 +238,42 @@ Route::middleware('auth')->group(function(){
     // Save/unsave event
     Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
         $user = $request->user();
-        if(!$user){ return response()->json(['success'=>false,'message'=>'Unauthorized'], 401); }
-        $exists = \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->exists();
-        if($exists){
-            \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->delete();
-            return response()->json(['success'=>true,'saved'=>false]);
+        if(!$user){
+            // For non-AJAX, redirect to login; for AJAX, return JSON 401
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success'=>false,'message'=>'Unauthorized'], 401);
+            }
+            return redirect()->route('login');
         }
-        \DB::table('user_saved_events')->insert(['user_id'=>$user->id,'event_id'=>$event->id,'created_at'=>now(),'updated_at'=>now()]);
-        return response()->json(['success'=>true,'saved'=>true]);
+
+        $exists = \DB::table('user_saved_events')
+            ->where('user_id',$user->id)
+            ->where('event_id',$event->id)
+            ->exists();
+
+        $saved = true;
+        if($exists){
+            \DB::table('user_saved_events')
+                ->where('user_id',$user->id)
+                ->where('event_id',$event->id)
+                ->delete();
+            $saved = false;
+        } else {
+            \DB::table('user_saved_events')->insert([
+                'user_id'=>$user->id,
+                'event_id'=>$event->id,
+                'created_at'=>now(),
+                'updated_at'=>now()
+            ]);
+            $saved = true;
+        }
+
+        // If the request expects JSON (AJAX/fetch), return JSON; otherwise redirect back to detail page
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success'=>true,'saved'=>$saved]);
+        }
+        return redirect()->route('events.registered.detail', $event)
+            ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
     })->name('events.save');
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
