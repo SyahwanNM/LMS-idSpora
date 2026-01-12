@@ -214,12 +214,8 @@
                                                 <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
                                                     <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                 </a>
-                                                <a href="{{ route('admin.events.qr.download', $event) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-download me-1"></i>Unduh</a>
-                                                <a href="{{ $qrUrl }}" download="event-{{ $event->id }}-qr" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-down me-1"></i>Unduh (Langsung)</a>
-                                                @if($qExt === 'svg')
-                                                    <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Unduh PNG</button>
-                                                    <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Unduh JPG</button>
-                                                @endif
+                                                <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Unduh PNG</button>
+                                                <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Unduh JPG</button>
                                                 <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
@@ -764,46 +760,59 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 @endif
 <script>
-// Convert SVG QR to PNG/JPG client-side for download
+// PNG/JPG download for QR (supports SVG and raster sources)
 document.addEventListener('DOMContentLoaded', function(){
-    function svgToImgData(svgText, type = 'image/png', targetWidth = 600, targetHeight = 600){
+    function loadImageFromSvgText(svgText){
         return new Promise((resolve, reject)=>{
             try {
-                const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-                const url = URL.createObjectURL(svgBlob);
+                const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
                 const img = new Image();
-                img.onload = function(){
-                    const canvas = document.createElement('canvas');
-                    // Preserve aspect ratio; default to square if intrinsic size missing
-                    const w = targetWidth; const h = targetHeight;
-                    canvas.width = w; canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#ffffff'; // white background for JPG
-                    ctx.fillRect(0,0,w,h);
-                    // Center-fit the svg
-                    const scale = Math.min(w / img.width, h / img.height);
-                    const dw = img.width * scale; const dh = img.height * scale;
-                    const dx = (w - dw) / 2; const dy = (h - dh) / 2;
-                    ctx.drawImage(img, dx, dy, dw, dh);
-                    const dataUrl = canvas.toDataURL(type);
-                    URL.revokeObjectURL(url);
-                    resolve(dataUrl);
-                };
+                img.onload = function(){ URL.revokeObjectURL(url); resolve(img); };
                 img.onerror = function(e){ URL.revokeObjectURL(url); reject(e); };
                 img.src = url;
             } catch (err) { reject(err); }
         });
     }
-    async function downloadSvgAs(format){
+    function loadImageFromUrl(src){
+        return new Promise((resolve, reject)=>{
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = ()=> resolve(img);
+            img.onerror = (e)=> reject(e);
+            img.src = src;
+        });
+    }
+    function drawToCanvas(img, type='image/png', targetWidth=600, targetHeight=600){
+        const canvas = document.createElement('canvas');
+        const w = targetWidth, h = targetHeight;
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; // white bg for JPG
+        ctx.fillRect(0,0,w,h);
+        const scale = Math.min(w / img.width, h / img.height);
+        const dw = img.width * scale; const dh = img.height * scale;
+        const dx = (w - dw) / 2; const dy = (h - dh) / 2;
+        ctx.drawImage(img, dx, dy, dw, dh);
+        return canvas.toDataURL(type);
+    }
+    async function handleDownload(format){
         const btn = format === 'png' ? document.getElementById('btnDownloadQrPng') : document.getElementById('btnDownloadQrJpg');
         if(!btn) return;
         const src = btn.getAttribute('data-qr-src');
+        const ext = (btn.getAttribute('data-qr-ext') || '').toLowerCase();
         const baseName = btn.getAttribute('data-qr-name') || 'qr';
+        const mime = format === 'png' ? 'image/png' : 'image/jpeg';
         try {
-            const res = await fetch(src, { cache: 'no-store' });
-            const svgText = await res.text();
-            const mime = format === 'png' ? 'image/png' : 'image/jpeg';
-            const dataUrl = await svgToImgData(svgText, mime);
+            let img;
+            if(ext === 'svg'){
+                const res = await fetch(src, { cache: 'no-store' });
+                const svgText = await res.text();
+                img = await loadImageFromSvgText(svgText);
+            } else {
+                img = await loadImageFromUrl(src);
+            }
+            const dataUrl = drawToCanvas(img, mime);
             const a = document.createElement('a');
             a.href = dataUrl;
             a.download = `${baseName}.${format}`;
@@ -811,14 +820,14 @@ document.addEventListener('DOMContentLoaded', function(){
             a.click();
             a.remove();
         } catch (err) {
-            console.error('Gagal mengonversi SVG ke', format, err);
+            console.error('Gagal mengunduh QR sebagai', format, err);
             alert('Maaf, gagal mengunduh dalam format ' + format.toUpperCase() + '.');
         }
     }
     const btnPng = document.getElementById('btnDownloadQrPng');
     const btnJpg = document.getElementById('btnDownloadQrJpg');
-    if(btnPng) btnPng.addEventListener('click', ()=> downloadSvgAs('png'));
-    if(btnJpg) btnJpg.addEventListener('click', ()=> downloadSvgAs('jpg'));
+    if(btnPng) btnPng.addEventListener('click', ()=> handleDownload('png'));
+    if(btnJpg) btnJpg.addEventListener('click', ()=> handleDownload('jpg'));
 });
 </script>
 <!-- Delete Confirmation Modal (modern) -->
