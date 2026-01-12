@@ -126,6 +126,8 @@ if(btn){
         btn.textContent = 'Anda Terdaftar';
         const m = new bootstrap.Modal(document.getElementById('regSuccessModal'));
         m.show();
+        // Refresh notifications so the new "Pendaftaran Dikonfirmasi" appears immediately
+        try { if (typeof loadNotifications === 'function') setTimeout(() => loadNotifications(), 50); } catch(_e){}
       } else {
         alert(data.message || 'Gagal mendaftar');
         btn.disabled = false;

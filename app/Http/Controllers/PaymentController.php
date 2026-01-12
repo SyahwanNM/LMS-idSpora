@@ -326,7 +326,7 @@ class PaymentController extends Controller
                         UserNotification::create([
                             'user_id' => $payment->user_id,
                             'type' => 'event_registration',
-                            'title' => 'Pembayaran Berhasil',
+                            'title' => 'Pendaftaran Dikonfirmasi',
                             'message' => 'Pendaftaran untuk "'.$ev->title.'" telah dikonfirmasi.',
                             'data' => ['url' => route('events.show', $ev)],
                             'expires_at' => now()->addDays(14),
@@ -399,8 +399,8 @@ class PaymentController extends Controller
                     UserNotification::create([
                         'user_id' => $user->id,
                         'type' => 'event_registration',
-                        'title' => $isFree ? 'Pendaftaran Event Berhasil' : 'Pembayaran Berhasil',
-                        'message' => ($isFree ? 'Kamu terdaftar di ' : 'Pendaftaran untuk ').'"'.$event->title.'" telah dikonfirmasi.',
+                        'title' => 'Pendaftaran Dikonfirmasi',
+                        'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
                         'data' => ['url' => route('events.show', $event)],
                         'expires_at' => now()->addDays(14),
                     ]);
