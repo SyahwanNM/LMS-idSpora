@@ -156,7 +156,7 @@ function loadNotifications() {
     notificationList.innerHTML = '<div class="px-3 py-3 text-center text-muted"><small>Memuat...</small></div>';
     if (notificationStatus) notificationStatus.textContent = 'Memuat...';
     
-    fetch('{{ route("notifications.index") }}', {
+    safeFetchJson('/notifications', {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -164,7 +164,6 @@ function loadNotifications() {
         },
         credentials: 'same-origin'
     })
-    .then(response => response.json())
     .then(data => {
         // Update badge
         if (badge) {
@@ -220,14 +219,21 @@ function loadNotifications() {
         }
     })
     .catch(error => {
-        console.error('Error loading notifications:', error);
-        notificationList.innerHTML = '<div class="px-3 py-3 text-center text-danger"><small>Gagal memuat notifikasi</small></div>';
-        if (notificationStatus) notificationStatus.textContent = 'Error';
+        console.warn('Error loading notifications:', error);
+        // Show gentle empty state instead of error banner
+        notificationList.innerHTML = `
+            <div class="px-3 py-4 text-center text-muted" style="background-color: #f8f9fa;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 0.5rem;">
+                    <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 8 9h6.46l-3.05-3.812A.5.5 0 0 0 11.02 5H4.98zm9.954 5H8.854l.147-.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L8.854 12h5.08a.5.5 0 0 0 .496-.563l-1-8a.5.5 0 0 0-.496-.437H4.98a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 9h4.932l.5 4z"/>
+                </svg>
+                <p class="mt-2 mb-0 small">Tidak ada notifikasi</p>
+            </div>`;
+        if (notificationStatus) notificationStatus.textContent = 'Semua telah dibaca';
     });
 }
 
 function markAllAsRead() {
-    fetch('{{ route("notifications.markAllRead") }}', {
+    safeFetchJson('/notifications/mark-all-read', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -236,7 +242,6 @@ function markAllAsRead() {
         },
         credentials: 'same-origin'
     })
-    .then(response => response.json())
     .then(data => {
         if (data.ok) {
             // Reload notifications
@@ -258,7 +263,7 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', function() {
     const badge = document.getElementById('notificationBadge');
     if (badge) {
-        fetch('{{ route("notifications.index") }}', {
+        safeFetchJson('/notifications', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -266,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             credentials: 'same-origin'
         })
-        .then(response => response.json())
         .then(data => {
             if (data.unread > 0) {
                 badge.textContent = data.unread > 99 ? '99+' : data.unread;
@@ -418,6 +422,25 @@ function showLogoutSuccessState(){
                 <small class="text-muted">Mengalihkan...</small>
             </div>`;
     }
+}
+</script>
+<script>
+// Helper: robust JSON fetch with redirect/non-JSON guard
+function safeFetchJson(url, options){
+    return fetch(url, options).then(async (response) => {
+        const ct = (response.headers.get('content-type') || '').toLowerCase();
+        if (!response.ok) {
+            // Return empty state on any HTTP error to avoid breaking UI
+            return { items: [], unread: 0, ok: false, status: response.status };
+        }
+        // If server redirected to HTML (e.g., login), return empty state
+        if (!ct.includes('application/json')) {
+            return { items: [], unread: 0, ok: false };
+        }
+        // Parse JSON; on failure, return empty instead of throwing
+        try { return await response.json(); }
+        catch(_e){ return { items: [], unread: 0, ok: false }; }
+    });
 }
 </script>
 
