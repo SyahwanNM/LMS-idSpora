@@ -32,6 +32,10 @@
     /* Discount badge styling (moved to bottom-left) */
     .event .card-event .thumb-wrapper {overflow:hidden;}
     .event .card-event .discount-badge {position:absolute; bottom:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:13px; font-weight:600; padding:6px 10px 5px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); display:inline-flex; align-items:center; gap:4px; text-transform:uppercase;}
+    /* Manage/Create banner (small ribbon) */
+    .event .card-event .manage-badge {position:absolute; top:12px; left:12px; color:#fff; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;}
+    .event .card-event .manage-badge.manage {background:#0d6efd;} /* Bootstrap primary */
+    .event .card-event .manage-badge.create {background:#6f42c1;} /* Bootstrap purple */
         /* Countdown styles */
         .countdown-wrapper {margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;}
         .countdown-label {color:#555; font-weight:500;}
@@ -72,6 +76,10 @@
         .search-suggest .clear-all { color:#dc3545; font-weight:500; }
         /* Tag badge background override (speaker/location) */
         .event .card-event .tags .tag { background-color:#E4E4E6 !important; color:#3B3B43; }
+        /* Ensure filter dropdowns open above other overlays */
+        .header-card .dropdown-menu { z-index: 1100; }
+        /* Prevent clipping within header filters */
+        .header-card .dropdown-box, .header-card .dropdown { overflow: visible; }
     </style>
     </head>
 <body>
@@ -109,6 +117,10 @@
         <form id="eventFilters" class="filter-box" action="{{ route('events.index') }}" method="get">
             <input type="hidden" name="search" value="{{ request('search') }}">
             <input type="hidden" id="filter-free" name="free" value="{{ request()->boolean('free') ? 1 : '' }}">
+            <input type="hidden" id="filter-day" name="day" value="{{ request('day') }}">
+            <input type="hidden" id="filter-type" name="event_type" value="{{ request('event_type') }}">
+            <input type="hidden" id="filter-category" name="category" value="{{ request('category') }}">
+            <input type="hidden" id="filter-status" name="status" value="{{ request('status') }}">
             <div class="options">
                 <label>Place</label>
                 <select name="location" id="filter-location" class="form-select">
@@ -136,6 +148,9 @@
                     <input type="hidden" name="location" value="{{ request('location') }}">
                     <input type="hidden" name="price" value="{{ request('price') }}">
                     <input type="hidden" name="free" value="{{ request()->boolean('free') ? 1 : '' }}">
+                    <input type="hidden" name="day" value="{{ request('day') }}">
+                    <input type="hidden" name="event_type" value="{{ request('event_type') }}">
+                    <input type="hidden" name="category" value="{{ request('category') }}">
                     <span class="search-icon" id="search-submit-trigger" ariza-hidden="false" tabindex="0" role="button" aria-label="Cari">
                         <svg id="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                             fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
@@ -149,38 +164,70 @@
             </form>
         </div>
     </div>
+    @if(auth()->check() && auth()->user()->role === 'admin')
+    <div class="container my-3">
+        <div class="alert alert-info d-flex justify-content-between align-items-center py-2 px-3">
+            <div>
+                <strong>Kelola Event:</strong> Buat, edit, dan hapus event dari DB.
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.add-event') }}" class="btn btn-sm btn-primary">Tambah Event</a>
+                <a href="{{ route('admin.events.index') }}" class="btn btn-sm btn-outline-primary">Manage Event</a>
+                <a href="{{ route('admin.events.history') }}" class="btn btn-sm btn-outline-secondary">Riwayat</a>
+            </div>
+        </div>
+    </div>
+    @endif
     <section class="event">
         <div class="header-card">
-            <h3>Event Mendatang</h3>
+            <h3>Daftar Event</h3>
             <div class="dropdown-box d-flex gap-2">
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Weekdays
+                        {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Weekdays</a></li>
-                        <li><a class="dropdown-item" href="#">Weekend</a></li>
-                        <li><a class="dropdown-item" href="#">Today</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="">Any Day</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="today">Today</a></li>
                     </ul>
                 </div>
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Event Type
+                        {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'onsite' ? 'Onsite' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Online</a></li>
-                        <li><a class="dropdown-item" href="#">Onsite</a></li>
-                        <li><a class="dropdown-item" href="#">Hybrid</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="">Any Type</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="online">Online</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="onsite">Onsite</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
                     </ul>
                 </div>
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Any Categori
+                        {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Workshop</a></li>
-                        <li><a class="dropdown-item" href="#">Training</a></li>
-                        <li><a class="dropdown-item" href="#">Webinar</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="">Any Category</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="training">Training</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    @php
+                        $reqStatus = request('status');
+                        $statusLabel = $reqStatus === 'upcoming' ? 'Mendatang' : ($reqStatus === 'ongoing' ? 'Sedang Berlangsung' : ($reqStatus === 'finished' ? 'Telah Selesai' : 'Semua Status'));
+                    @endphp
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="statusFilterBtn">
+                        {{ $statusLabel }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="all">Semua Status</a></li>
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="upcoming">Mendatang</a></li>
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="ongoing">Sedang Berlangsung</a></li>
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="finished">Telah Selesai</a></li>
                     </ul>
                 </div>
             </div>
@@ -202,8 +249,33 @@
                         try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
                     }
                 @endphp
-                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
+                @php
+                    $endAt = null;
+                    if($startAt){
+                        $timeEndStr = null;
+                        if(!empty($event->event_time_end)){
+                            $timeEndStr = method_exists($event->event_time_end,'format') ? $event->event_time_end->format('H:i:s') : (is_string($event->event_time_end) ? $event->event_time_end : null);
+                        }
+                        if($timeEndStr){
+                            try { $endAt = \Carbon\Carbon::parse($startAt->format('Y-m-d'). ' ' . $timeEndStr, config('app.timezone')); } catch (Exception $e) { $endAt = $startAt->copy()->endOfDay(); }
+                        } else {
+                            $endAt = $startAt->copy()->endOfDay();
+                        }
+                    }
+                    $nowTs = \Carbon\Carbon::now();
+                    $status = 'all';
+                    if($startAt && $endAt){
+                        if($nowTs->lt($startAt)) $status = 'upcoming';
+                        elseif($nowTs->between($startAt, $endAt)) $status = 'ongoing';
+                        elseif($nowTs->gt($endAt)) $status = 'finished';
+                    }
+                @endphp
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-status="{{ $status }}" data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
+                        @php $action = $event->manage_action ?? null; @endphp
+                        @if($action)
+                            <span class="manage-badge {{ $action === 'manage' ? 'manage' : 'create' }}">{{ $action === 'manage' ? 'Manage' : 'Create' }}</span>
+                        @endif
                         @if($event->image_url)
                             <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         @else
@@ -222,6 +294,13 @@
                                     <path d="M2 2v13.5l6-3 6 3V2z" />
                                 </svg>
                             </button>
+                            @if(auth()->check() && auth()->user()->role === 'admin')
+                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-sm btn-light" title="Edit" onclick="event.stopPropagation();">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M12.854.146a.5.5 0 0 1 .11.638l-.057.07-9 9-.5 2 2-.5 9-9a.5.5 0 0 1 .698.698l-9 9a.5.5 0 0 1-.233.13l-3 1a.5.5 0 0 1-.643-.643l1-3a.5.5 0 0 1 .13-.233l9-9a.5.5 0 0 1 .707 0z"/>
+                                </svg>
+                            </a>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body">
@@ -260,8 +339,8 @@
                         </div>
                         @if($startAt)
                         <div class="countdown-wrapper" data-countdown-wrapper>
-                            <span class="countdown-label">Mulai dalam:</span>
-                            <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}">--</span>
+                            <span class="countdown-label" data-countdown-label>Mulai dalam:</span>
+                            <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}" @if($endAt) data-end-ts="{{ $endAt->timestamp }}" @endif>--</span>
                         </div>
                         @endif
                         <div class="price-row">
@@ -278,9 +357,12 @@
                                     @endif
                                 @endif
                             </div>
-                            @php $registered = !empty($event->is_registered); @endphp
-                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" {{ $registered ? 'disabled' : '' }} onclick="event.stopPropagation();">
-                                {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
+                            @php 
+                                $registered = !empty($event->is_registered);
+                                $isFinished = ($status === 'finished');
+                            @endphp
+                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary') }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
+                                {{ $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar') }}
                             </button>
                         </div>
                     </div>
@@ -452,6 +534,51 @@
                 submitFilters();
             });
         }
+        // Dropdown filters (day/type/category)
+        document.querySelectorAll('.dropdown-menu [data-filter]').forEach(item => {
+            item.addEventListener('click', function(e){
+                e.preventDefault();
+                const key = this.getAttribute('data-filter');
+                const val = this.getAttribute('data-value') || '';
+                const hiddenMap = {
+                    day: document.getElementById('filter-day'),
+                    event_type: document.getElementById('filter-type'),
+                    category: document.getElementById('filter-category')
+                };
+                const hidden = hiddenMap[key];
+                if(hidden){ hidden.value = val; }
+                submitFilters();
+            });
+        });
+        // Robust dropdown toggler for header filters (independent of Bootstrap)
+        (function(){
+            const containerSelector = '.header-card';
+            const toggles = document.querySelectorAll(containerSelector + ' .dropdown-toggle');
+            function closeAll(except){
+                document.querySelectorAll(containerSelector + ' .dropdown-menu.show').forEach(m=>{ if(m!==except) m.classList.remove('show'); });
+                document.querySelectorAll(containerSelector + ' .dropdown-toggle[aria-expanded]')
+                    .forEach(b=>b.setAttribute('aria-expanded','false'));
+            }
+            toggles.forEach(btn => {
+                // Remove data attribute to avoid double-toggling if Bootstrap also present
+                if(btn.hasAttribute('data-bs-toggle')) btn.removeAttribute('data-bs-toggle');
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const menu = this.nextElementSibling;
+                    if(!menu) return;
+                    const isOpen = menu.classList.contains('show');
+                    closeAll(menu);
+                    menu.classList.toggle('show', !isOpen);
+                    this.setAttribute('aria-expanded', String(!isOpen));
+                });
+            });
+            document.addEventListener('click', function(e){
+                if(!e.target.closest(containerSelector + ' .dropdown')){
+                    closeAll();
+                }
+            });
+        })();
         // Card click -> go to detail
         document.querySelectorAll('.card-event').forEach(card => {
             const url = card.getAttribute('data-detail-url');
@@ -477,6 +604,30 @@
                 if(url) window.location = url;
             });
         });
+        // Status filter: submit to server for correct dataset (finished/ongoing/upcoming)
+        (function(){
+            const statusBtn = document.getElementById('statusFilterBtn');
+            const statusInput = document.getElementById('filter-status');
+            const links = document.querySelectorAll('[data-status-filter]');
+            function labelOf(val){
+                if(val==='upcoming') return 'Mendatang';
+                if(val==='ongoing') return 'Sedang Berlangsung';
+                if(val==='finished') return 'Telah Selesai';
+                return 'Semua Status';
+            }
+            // Initialize label from current query
+            const cur = (new URLSearchParams(window.location.search).get('status')) || '{{ request('status') }}' || '';
+            if(statusBtn){ statusBtn.textContent = labelOf(cur || 'all'); }
+            links.forEach(a => {
+                a.addEventListener('click', function(e){
+                    e.preventDefault();
+                    const val = this.getAttribute('data-value') || 'all';
+                    if(statusBtn){ statusBtn.textContent = labelOf(val); }
+                    if(statusInput){ statusInput.value = (val==='all') ? '' : val; }
+                    submitFilters();
+                });
+            });
+        })();
     });
     </script>
     <script>
@@ -506,13 +657,30 @@
             document.querySelectorAll('[data-countdown]').forEach(el => {
                 const start = parseInt(el.getAttribute('data-start-ts'),10);
                 if(!start) return;
-                const diff = start - now;
-                if(diff <= 0){
-                    el.textContent = 'Dimulai';
-                    el.classList.add('started');
+                const endAttr = el.getAttribute('data-end-ts');
+                const end = endAttr ? parseInt(endAttr,10) : null;
+                const label = el.closest('[data-countdown-wrapper]')?.querySelector('[data-countdown-label]');
+                // Finished
+                if(end && now > end){
+                    el.textContent = 'Telah Selesai';
+                    el.classList.remove('started');
+                    el.classList.add('expired');
+                    if(label) label.textContent = 'Status:';
                     return;
                 }
+                // Started but not finished
+                if(now >= start){
+                    el.textContent = 'Sedang Berlangsung';
+                    el.classList.remove('expired');
+                    el.classList.add('started');
+                    if(label) label.textContent = 'Status:';
+                    return;
+                }
+                // Not started yet -> countdown
+                const diff = start - now;
                 el.textContent = formatDiff(diff);
+                el.classList.remove('started','expired');
+                if(label) label.textContent = 'Mulai dalam:';
             });
         }
         // Initial paint and 1s interval for smoother countdown, esp. near start time
