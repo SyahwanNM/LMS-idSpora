@@ -39,7 +39,7 @@
     <div class="link-box mb-3" style="margin-top:80px;">
         <a href="{{ route('dashboard') }}">Home</a><p>/</p>
         <a href="{{ route('events.index') }}">Event</a><p>/</p>
-        <a href="{{ route('events.ticket',$event) }}">Ticket</a><p>/</p>
+        <a href="{{ route('events.show',$event) }}">Detail</a><p>/</p>
         <a class="active" href="#">Certificate</a>
     </div>
     <div class="cert-container">
@@ -80,7 +80,7 @@
             </div>
         </div>
         <div class="actions">
-            <a href="{{ route('events.ticket',$event) }}" class="btn-back">Kembali</a>
+            <a href="{{ route('events.show',$event) }}" class="btn-back">Kembali</a>
             @if($certificateReady)
                 <a href="{{ route('certificates.download',[$event,$registration]) }}" class="btn-download">Download PDF</a>
             @else
