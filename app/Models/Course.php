@@ -11,9 +11,15 @@ class Course extends Model
         'category_id',
         'description',
         'level',
+        'status',
         'price',
         'duration',
-        'image',
+        'media',
+        'media_type',
+        'card_thumbnail',
+        'discount_percent',
+        'discount_start',
+        'discount_end',
     ];
 
     public function category()

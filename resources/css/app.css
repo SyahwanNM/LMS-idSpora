@@ -4037,6 +4037,16 @@ input[type="time"] {
     font-size: 20px;
     margin-left: 30px;
 }
+.box_kanan_detail_course {
+    flex: 1; 
+    background-color: white;
+    border: solid 2px #FFD33B;
+    margin-top: 30px;
+    border-radius: 10px; 
+    margin-right: 60px;
+    padding: 30px;
+}
+
 .box_kanan_hasil{
     padding: 30px;
     margin-left: 50px;

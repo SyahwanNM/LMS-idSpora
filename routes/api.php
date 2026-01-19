@@ -12,11 +12,14 @@ use App\Models\Event;
 Route::post('/midtrans-callback', [CallbackController::class, 'callback']);
 
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::get ('/events', [EventController::class, 'index']);
-Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+');
+// Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+// Public events listing throttled to avoid scraping (120 req/min)
+Route::get ('/events', [EventController::class, 'index'])->middleware('throttle:120,1');
+Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+')->middleware('throttle:120,1');
 
-Route::middleware('auth:sanctum')->group(function () {
+// Authenticated user actions with moderate throttle (100 req/min)
+Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -36,7 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Admin Manage Events API (CRUD)
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+// Admin endpoints with stricter throttle (60 req/min)
+Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->group(function () {
     // List events with simple pagination
     Route::get('/events', function (Illuminate\Http\Request $request) {
         $perPage = max(1, min((int)$request->query('per_page', 10), 100));
