@@ -131,6 +131,17 @@
 </div>
 
 <script>
+// Logout Modal Functionality
+function openLogoutModal() {
+    var modal = document.getElementById('logoutConfirmModal');
+    if (window.bootstrap && modal) {
+        var m = new bootstrap.Modal(modal);
+        m.show();
+    } else if (modal) {
+        // Fallback for Bootstrap 4
+        $(modal).modal('show');
+    }
+}
 // Notification Dropdown Functionality
 function toggleNotificationDropdown() {
     const dropdown = document.getElementById('notificationDropdown');

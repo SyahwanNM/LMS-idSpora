@@ -87,6 +87,7 @@ class UserManagementController extends Controller
             'role' => ['required', Rule::in(['admin'])],
             'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
             'avatar_base64' => ['nullable','string'],
+            'remove_avatar' => ['nullable'],
         ]);
         // Force role to admin
         $data['role'] = 'admin';
@@ -95,8 +96,20 @@ class UserManagementController extends Controller
         } else {
             unset($data['password']);
         }
-        // Handle avatar upload and remove old file if local
-        if($request->hasFile('avatar')){
+        // If explicitly removing avatar, delete old file and nullify
+        $removeAvatar = filter_var($request->input('remove_avatar'), FILTER_VALIDATE_BOOLEAN);
+        if($removeAvatar){
+            if($user->avatar && !str_starts_with($user->avatar, 'http')){
+                $oldPath = str_contains($user->avatar, '/') ? ltrim($user->avatar, '/') : ('avatars/'.$user->avatar);
+                if(Storage::disk('public')->exists($oldPath)){
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+            $data['avatar'] = null;
+        }
+
+        // Handle avatar upload and remove old file if local (only when not removing)
+        if(!$removeAvatar && $request->hasFile('avatar')){
             $file = $request->file('avatar');
             $filename = uniqid('ava_').'.'.$file->getClientOriginalExtension();
             if(!Storage::disk('public')->exists('avatars')){
@@ -105,13 +118,13 @@ class UserManagementController extends Controller
             Storage::disk('public')->putFileAs('avatars', $file, $filename);
             // Delete old local avatar if exists and not an external URL
             if($user->avatar && !str_starts_with($user->avatar, 'http')){
-                $oldPath = 'avatars/'.$user->avatar;
+                $oldPath = str_contains($user->avatar, '/') ? ltrim($user->avatar, '/') : ('avatars/'.$user->avatar);
                 if(Storage::disk('public')->exists($oldPath)){
                     Storage::disk('public')->delete($oldPath);
                 }
             }
             $data['avatar'] = $filename;
-        } elseif($request->filled('avatar_base64')) {
+        } elseif(!$removeAvatar && $request->filled('avatar_base64')) {
             // Accept base64-encoded avatar (data URL)
             $dataUrl = (string) $request->input('avatar_base64');
             if(preg_match('/^data:(image\/(png|jpe?g|webp));base64,(.+)$/i', $dataUrl, $m)){
@@ -126,7 +139,7 @@ class UserManagementController extends Controller
                     Storage::disk('public')->put('avatars/'.$filename, $payload);
                     // Delete old local avatar if exists and not an external URL
                     if($user->avatar && !str_starts_with($user->avatar, 'http')){
-                        $oldPath = 'avatars/'.$user->avatar;
+                        $oldPath = str_contains($user->avatar, '/') ? ltrim($user->avatar, '/') : ('avatars/'.$user->avatar);
                         if(Storage::disk('public')->exists($oldPath)){
                             Storage::disk('public')->delete($oldPath);
                         }

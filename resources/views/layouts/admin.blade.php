@@ -45,7 +45,7 @@
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
-                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="javascript:void(0)" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-display="static" data-bs-auto-close="outside" aria-expanded="false">
+                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
@@ -109,11 +109,18 @@
         // Ensure dropdown initialization even if other scripts errored earlier
         var trigger = document.getElementById('adminProfileDropdown');
         if (trigger && window.bootstrap && bootstrap.Dropdown) {
-            try { new bootstrap.Dropdown(trigger, { autoClose: 'outside', display: 'static' }); } catch(e){}
+            try { new bootstrap.Dropdown(trigger, { autoClose: 'outside' }); } catch(e){}
             // Defensive: manually toggle on click if data-api missed
-            trigger.addEventListener('click', function(ev){ ev.preventDefault(); try {
-                const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside', display: 'static' });
+            trigger.addEventListener('click', function(ev){ try {
+                const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside' });
                 dd.toggle();
+                // Fallback: force show if still hidden
+                const menu = document.querySelector('ul.profile-dropdown.dropdown-menu');
+                if(menu && !menu.classList.contains('show')){
+                    menu.classList.add('show');
+                    menu.style.display = 'block';
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
             } catch(e){} });
 
             // Close button in dropdown
@@ -204,7 +211,9 @@
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(90deg,#6f42c1 0%, #a855f7 100%);}    
-    .navbar { z-index: 1040; }
+    /* Ensure navbar always sits above any page overlays */
+    .navbar { z-index: 10000; pointer-events:auto; overflow: visible !important; }
+    .navbar .container { overflow: visible !important; }
     .navbar .nav-link {color: rgba(255,255,255,.9);} 
     .navbar .nav-link:hover {color: #fff;}
     .navbar .nav-link.active {color:#fff;position:relative;}
@@ -215,11 +224,13 @@
     .profile-dropdown {
         margin-top:.25rem;
         opacity:0;
-        transform:translateY(-6px) scale(.98);
-        transition:opacity .16s ease, transform .16s ease;
-        /* Keep below Bootstrap modal (1060) but above navbar */
-        z-index:1045;
-        position: relative;
+        transition:opacity .16s ease;
+        /* Keep above navbar */
+        z-index:10001;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: auto;
         background: rgba(255,255,255,0.96);
         backdrop-filter: saturate(180%) blur(6px);
         -webkit-backdrop-filter: saturate(180%) blur(6px);
@@ -228,7 +239,7 @@
         border-radius: 12px;
         overflow: hidden;
     }
-    .profile-dropdown.show {opacity:1;transform:translateY(0) scale(1);} 
+    .profile-dropdown.show {opacity:1;} 
     .profile-dropdown::before {display:none !important;} 
     .profile-dropdown .dropdown-close { position:absolute; top:6px; right:8px; opacity:.8; }
     .profile-dropdown .dropdown-close:hover { opacity:1; }
@@ -241,6 +252,9 @@
     }
     /* Ensure admin username in the profile toggle is readable on light pill backgrounds */
     .user-name { color: #0f172a !important; }
+    /* Prevent toast container from blocking navbar clicks while keeping toasts interactive */
+    .toast-container { pointer-events: none; }
+    .toast-container .toast, .toast-container .btn-close { pointer-events: auto; }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
     body { padding-top: 78px; }

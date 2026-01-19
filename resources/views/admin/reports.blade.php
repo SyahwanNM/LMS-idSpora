@@ -18,6 +18,9 @@
     .tabel-pendapatan th, .tabel-pendapatan td { border:1px solid #e5e7eb; padding:8px 10px; }
     .title-laporan-metrik { margin-top:16px; }
     .content-event.modal-content, .content-operasional-view.modal-content { border-radius:10px; }
+    .qr-box { display:flex; align-items:center; gap:12px; }
+    .qr-box canvas { border:1px solid #eee; border-radius:8px; }
+    .qr-box img { width:140px; height:140px; object-fit:contain; border:1px solid #eee; border-radius:8px; }
 </style>
 @endsection
 @section('content')
@@ -226,7 +229,6 @@
                             <th style="background-color: #E4E4E6;" scope="col">Keuntungan</th>
                             <th style="background-color: #E4E4E6;" scope="col">Detail</th>
                         </tr>
-                    </thead>
                     <tbody>
                         @php
                             if(!isset($eventRows)) {
@@ -243,7 +245,7 @@
                                     $paidStatuses = ['settlement','capture','success'];
                                     $payments = \App\Models\Payment::where('event_id',$e->id)->whereIn('status',$paidStatuses)->get();
                                     $revenue = (float) $payments->sum('gross_amount');
-                                    // Use number of active registrations as "jumlah yang daftar"
+                                    // Use number of active registrations as "jumlah yang daftara"
                                     $registeredCount = (int) $e->registrations()->where('status','active')->count();
                                     $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
                                     // Income rows: Tiket Pendaftar based on jumlah yang daftar
@@ -577,6 +579,10 @@
                                                 'has_vbg' => !empty($e->vbg_path),
                                                 'has_cert' => !empty($e->certificate_path),
                                                 'has_abs' => !empty($e->attendance_path),
+                                                // attendance QR data
+                                                'qr_token' => $e->attendance_qr_token,
+                                                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
+                                                'qr_image_url' => $e->attendance_qr_image ? asset('storage/'.$e->attendance_qr_image) : null,
                                             ];
                                         });
                                 }
@@ -592,7 +598,13 @@
                                         </button>
                                     </td>
                                     <td>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ !empty($row['has_vbg']) ? 1 : 0 }}" data-cert="{{ !empty($row['has_cert']) ? 1 : 0 }}" data-abs="{{ !empty($row['has_abs']) ? 1 : 0 }}">
+                                        @php
+                                            $ev = isset($row['id']) ? \App\Models\Event::find($row['id']) : null;
+                                            $qrToken = $ev?->attendance_qr_token ?: '';
+                                            $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
+                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('storage/'.$ev->attendance_qr_image) : '';
+                                        @endphp
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ !empty($row['has_vbg']) ? 1 : 0 }}" data-cert="{{ !empty($row['has_cert']) ? 1 : 0 }}" data-abs="{{ !empty($row['has_abs']) ? 1 : 0 }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
                                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
                                             <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
                                         </svg>
@@ -741,6 +753,10 @@
 @endsection
 @section('scripts')
 <script>
+// QRCode library (client-side render)
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
 document.addEventListener('DOMContentLoaded', function(){
     const buttons = document.querySelectorAll('.btn-report');
     const sections = document.querySelectorAll('.rekap-box');
@@ -851,6 +867,8 @@ document.addEventListener('DOMContentLoaded', function(){
             const hasVbg = (trigger?.getAttribute('data-vbg') === '1');
             const hasCert = (trigger?.getAttribute('data-cert') === '1');
             const hasAbs = (trigger?.getAttribute('data-abs') === '1');
+            const qrText = trigger?.getAttribute('data-qr') || '';
+            const qrImage = trigger?.getAttribute('data-qr-img') || '';
             const titleEl = document.getElementById('viewOperasionalTitle');
             if (titleEl) titleEl.textContent = 'Status Dokumen: ' + name;
             const container = document.getElementById('operasionalStatusContainer');
@@ -858,16 +876,52 @@ document.addEventListener('DOMContentLoaded', function(){
             const row = (label, done) => {
                 const cls = done ? 'btn-selesai' : 'btn-pending';
                 const text = done ? 'Selesai' : 'Pending';
+                // Special handling: always show QR code row for Absensi
+                if (label === 'QR Absensi') {
+                    if (qrImage) {
+                        return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
+                            <h6 class="mb-0">${label}</h6>
+                            <div class="qr-box"><img id="attendanceQrImg" src="${qrImage}" alt="QR Absensi"> 
+                                <div class="small text-muted">Scan untuk absensi</div></div>
+                        </div>`;
+                    }
+                    return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0">${label}</h6>
+                        <div class="qr-box"><canvas id="attendanceQrCanvas" aria-label="QR Absensi"></canvas>
+                            <div class="small text-muted">Scan untuk absensi</div></div>
+                    </div>`;
+                }
                 return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                    <h6 class="mb-0">${label}</h6>
-                    <button class="${cls}">${text}</button>
-                </div>`;
+                        <h6 class="mb-0">${label}</h6>
+                        <button class="${cls}">${text}</button>
+                    </div>`;
             };
             container.innerHTML = [
                 row('Vbg', hasVbg),
                 row('Sertifikat', hasCert),
-                row('Daftar Hadir', hasAbs),
+                row('QR Absensi', hasAbs),
             ].join('');
+
+            // Render QR on canvas if no stored image provided
+            try {
+                const canvas = document.getElementById('attendanceQrCanvas');
+                if (canvas) {
+                    if (qrText && window.QRCode) {
+                        QRCode.toCanvas(canvas, qrText, { width: 140, margin: 1 }, function (error) {
+                            if (error) console.error('QR render error:', error);
+                        });
+                    } else {
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            ctx.fillStyle = '#f8f9fa';
+                            ctx.fillRect(0,0,140,140);
+                            ctx.fillStyle = '#6c757d';
+                            ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto';
+                            ctx.fillText('QR tidak tersedia', 14, 74);
+                        }
+                    }
+                }
+            } catch (_e) { /* silent */ }
         });
     }
 

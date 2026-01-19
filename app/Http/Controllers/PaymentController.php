@@ -9,6 +9,7 @@ use Midtrans\Snap;
 use Midtrans\Transaction;
 use Midtrans\CoreApi;
 use App\Models\Event;
+use App\Models\Course;
 use App\Models\EventRegistration;
 use App\Models\Payment;
 use App\Models\UserNotification;
@@ -24,6 +25,131 @@ class PaymentController extends Controller
         MidtransConfig::$isProduction = (bool) config('midtrans.is_production');
         MidtransConfig::$isSanitized = (bool) config('midtrans.sanitize');
         MidtransConfig::$is3ds = (bool) config('midtrans.enable_3ds');
+    }
+
+    /**
+     * Manual refresh payment status from Midtrans for course payments
+     */
+    public function refreshCoursePayment(Request $request, $orderId)
+    {
+        $this->configureMidtrans();
+        $payment = Payment::where('order_id', $orderId)->first();
+        if (!$payment) {
+            return response()->json(['error' => 'Payment not found'], 404);
+        }
+        try {
+            $status = Transaction::status($orderId);
+            $payload = json_decode(json_encode($status), true);
+            $va = $payload['va_numbers'][0] ?? null;
+            $payment->update([
+                'transaction_id' => $payload['transaction_id'] ?? $payment->transaction_id,
+                'payment_type' => $payload['payment_type'] ?? $payment->payment_type,
+                'bank' => $payload['bank'] ?? ($va['bank'] ?? $payment->bank),
+                'va_number' => $va['va_number'] ?? $payment->va_number,
+                'status' => $payload['transaction_status'] ?? $payment->status,
+                'fraud_status' => $payload['fraud_status'] ?? $payment->fraud_status,
+                'pdf_url' => $payload['pdf_url'] ?? $payment->pdf_url,
+                'raw_notification' => $payload,
+            ]);
+            return response()->json(['status' => $payment->status, 'payload' => $payload]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Handle course payment and redirect to Midtrans Snap payment page.
+     */
+    public function payCourse(Request $request, Course $course)
+    {
+        $this->configureMidtrans();
+        $user = Auth::user();
+        // Prevent duplicate payment for the same course
+        $alreadyEnrolled = \App\Models\Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->exists();
+        if ($alreadyEnrolled) {
+            return back()->with('error', 'Anda sudah terdaftar pada course ini.');
+        }
+        $name = $request->input('name', $user?->name ?? '');
+        $email = $request->input('email', $user?->email ?? '');
+        $kode_dial = $request->input('kode_dial', '+62');
+        $whatsapp = $request->input('whatsapp', '');
+        $phone = $kode_dial . $whatsapp;
+        $price = $course->price ?? 0;
+
+        // Generate unique order ID
+        $orderId = 'COURSE-' . $course->id . '-' . now()->format('YmdHis') . '-' . Str::random(5);
+
+        // Simpan transaksi ke tabel payments
+        $payment = \App\Models\Payment::create([
+            'user_id' => $user->id,
+            'course_id' => $course->id,
+            'event_id' => null,
+            'order_id' => $orderId,
+            'gross_amount' => $price,
+            'status' => 'pending',
+        ]);
+
+        // Definisikan $params sebelum digunakan
+        $params = [
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => $price,
+                'currency' => 'IDR',
+            ],
+            'item_details' => [[
+                'id' => 'course-' . $course->id,
+                'price' => $price,
+                'quantity' => 1,
+                'name' => Str::limit($course->title ?? 'Course', 50),
+            ]],
+            'customer_details' => [
+                'first_name' => $name,
+                'email' => $email,
+                'phone' => $phone,
+            ],
+            'enabled_payments' => ['qris','bank_transfer','gopay','echannel','permata'],
+            'expiry' => [
+                'unit' => 'minute',
+                'duration' => 15,
+            ],
+        ];
+
+        try {
+            $snapRes = Snap::createTransaction($params);
+            $arr = json_decode(json_encode($snapRes), true);
+            $snapToken = $arr['token'] ?? null;
+            $redirectUrl = $arr['redirect_url'] ?? null;
+
+            if ($snapToken || $redirectUrl) {
+                $payment->update([
+                    'snap_token' => $snapToken,
+                    'snap_redirect_url' => $redirectUrl,
+                ]);
+            }
+            // If this is an AJAX request (client-side Snap modal), return JSON with token
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'snapToken' => $snapToken,
+                    'redirectUrl' => $redirectUrl,
+                    'orderId' => $orderId,
+                    'courseId' => $course->id,
+                ]);
+            }
+            if ($redirectUrl) {
+                // Prevent redirecting to placeholder domains like example.com
+                $host = parse_url($redirectUrl, PHP_URL_HOST) ?: '';
+                if (str_contains(strtolower($host), 'example.com')) {
+                    // ignore external placeholder redirect and send user back to course detail
+                    return redirect()->route('course.detail', $course->id)
+                        ->with('info', 'Link pembayaran Midtrans tidak valid. Silakan coba lagi.');
+                }
+                return redirect()->away($redirectUrl);
+            }
+            return back()->with('error', 'Gagal mendapatkan link pembayaran Midtrans.');
+        } catch (\Throwable $e) {
+            \Log::error('[Midtrans][payCourse] error', ['order_id' => $orderId, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Terjadi kesalahan pembayaran: ' . $e->getMessage());
+        }
     }
 
     public function snapToken(Request $request, Event $event)
@@ -92,15 +218,10 @@ class PaymentController extends Controller
                 'unit' => 'minute',
                 'duration' => 15,
             ],
-            'callbacks' => [
-                // Optional redirect callback after payment
-                'finish' => url('/payment/finish'),
-            ],
         ];
         // Remove nulls from customer_details to avoid Midtrans validation issues
         $params['customer_details'] = array_filter($params['customer_details'], function($v){ return !is_null($v) && $v !== ''; });
 
-        // Create or reuse payment row in DB (pending)
         if ($existingPayment) {
             // Verify status from Midtrans; if not paid/closed, reuse token if stored
             try {
@@ -286,20 +407,34 @@ class PaymentController extends Controller
         $payment = Payment::where('order_id', $orderId)->first();
         if(!$payment){ return response()->json(['message' => 'order not found'], 404); }
 
-        $va = $payload['va_numbers'][0] ?? null;
+        $va = isset($payload['va_numbers']) && is_array($payload['va_numbers']) && count($payload['va_numbers']) > 0 ? $payload['va_numbers'][0] : null;
         $payment->update([
-            'transaction_id' => $payload['transaction_id'] ?? $payment->transaction_id,
-            'payment_type' => $payload['payment_type'] ?? $payment->payment_type,
-            'bank' => $payload['bank'] ?? ($va['bank'] ?? $payment->bank),
-            'va_number' => $va['va_number'] ?? $payment->va_number,
-            'status' => $payload['transaction_status'] ?? $payment->status,
-            'fraud_status' => $payload['fraud_status'] ?? $payment->fraud_status,
-            'pdf_url' => $payload['pdf_url'] ?? $payment->pdf_url,
+            'transaction_id' => $payload['transaction_id'] ?? null,
+            'payment_type' => $payload['payment_type'] ?? null,
+            'bank' => $payload['bank'] ?? ($va['bank'] ?? null),
+            'va_number' => $va['va_number'] ?? null,
+            'status' => $payload['transaction_status'] ?? null,
+            'fraud_status' => $payload['fraud_status'] ?? null,
+            'pdf_url' => $payload['pdf_url'] ?? null,
             'raw_notification' => $payload,
         ]);
+        $payment->refresh();
 
+        // If settlement (paid), auto register the user to the course
+        if($payment->course_id && in_array($payment->status, ['capture','settlement'])){
+            $exists = \App\Models\Enrollment::where('user_id',$payment->user_id)->where('course_id',$payment->course_id)->exists();
+            if(!$exists){
+                \App\Models\Enrollment::create([
+                    'user_id' => $payment->user_id,
+                    'course_id' => $payment->course_id,
+                    'status' => 'active',
+                    'enrolled_at' => now(),
+                    'enrollment_code' => 'CRS-'.strtoupper(uniqid()),
+                ]);
+            }
+        }
         // If settlement (paid), auto register the user to the event
-        if(in_array($payment->status, ['capture','settlement'])){
+        if($payment->event_id && in_array($payment->status, ['capture','settlement'])){
             $exists = EventRegistration::where('user_id',$payment->user_id)->where('event_id',$payment->event_id)->exists();
             if(!$exists){
                 $reg = EventRegistration::create([
@@ -308,7 +443,6 @@ class PaymentController extends Controller
                     'status' => 'active',
                     'registration_code' => 'EVT-'.strtoupper(uniqid())
                 ]);
-                
                 // Add points for paid event registration
                 try {
                     $user = \App\Models\User::find($payment->user_id);
@@ -318,7 +452,6 @@ class PaymentController extends Controller
                         $pointsService->addEventPoints($user, $ev, $reg);
                     }
                 } catch (\Throwable $e) { /* ignore */ }
-                
                 // Notification for paid registration
                 try{
                     $ev = Event::find($payment->event_id);
