@@ -41,8 +41,9 @@ class CRMController extends Controller
         $totalRegistrations = EventRegistration::where('status', 'active')->count();
         $totalEnrollments = Enrollment::where('status', 'active')->count();
         
-        // Recent registrations
+        // Recent registrations (only show registrations with valid events)
         $recentRegistrations = EventRegistration::with(['user', 'event'])
+            ->whereHas('event') // Only get registrations with valid events
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -259,7 +260,8 @@ class CRMController extends Controller
         $topRatedEvents = $topRatedEventsQuery->get();
 
         // Recent feedbacks (with date filter if applied)
-        $recentFeedbacksQuery = Feedback::with(['user', 'event']);
+        $recentFeedbacksQuery = Feedback::with(['user', 'event'])
+            ->whereHas('event'); // Only get feedbacks where event still exists
         if($dateFrom) {
             $recentFeedbacksQuery->whereDate('created_at', '>=', $dateFrom);
         }
@@ -428,4 +430,3 @@ class CRMController extends Controller
         ));
     }
 }
-

@@ -35,18 +35,42 @@
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active" data-bs-interval="10000">
-                    <img src="{{ asset('aset/ai.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item" data-bs-interval="2000">
-                    <img src="{{ asset('aset/ai2.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item">
-                    <img src="{{ asset('aset/ai3.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
+                @if(isset($dashboardCarousels) && $dashboardCarousels->count() > 0)
+                    @foreach($dashboardCarousels as $i => $carousel)
+                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
+                            @if($carousel->link_url)
+                                <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;">
+                                    <img src="{{ $carousel->image_url }}" 
+                                         class="d-block" 
+                                         alt="{{ $carousel->title ?? 'Carousel' }}" 
+                                         onerror="this.src='{{ asset('aset/poster.png') }}'">
+                                </a>
+                            @else
+                                <img src="{{ $carousel->image_url }}" 
+                                     class="d-block" 
+                                     alt="{{ $carousel->title ?? 'Carousel' }}" 
+                                     onerror="this.src='{{ asset('aset/poster.png') }}'">
+                            @endif
+                        </div>
+                    @endforeach
+                @elseif(isset($upcomingEvents) && $upcomingEvents->count() > 0)
+                    @foreach($upcomingEvents->take(5) as $i => $evt)
+                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
+                            <img src="{{ $evt->image_url ? $evt->image_url : asset('aset/poster.png') }}"
+                                class="d-block" alt="{{ $evt->title ?? 'Event' }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
+                        </div>
+                    @endforeach
+                @else
+                    <div class="carousel-item active" data-bs-interval="10000">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+                    </div>
+                    <div class="carousel-item" data-bs-interval="2000">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+                    </div>
+                @endif
             </div>
 
             <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
@@ -58,7 +82,7 @@
                 data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
-            </button>
+            </button>e
         </div>
     </section>
 
@@ -399,6 +423,10 @@
                 @endphp
                 <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                     <div class="thumb-wrapper">
+                        @php $action = $event->manage_action ?? null; @endphp
+                        @if($action)
+                            <span class="manage-badge {{ $action === 'manage' ? 'manage' : 'create' }}">{{ $action === 'manage' ? 'Manage' : 'Create' }}</span>
+                        @endif
                         @if($event->image_url)
                             <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         @else
@@ -551,6 +579,10 @@
     }
     .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
     .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
+    /* Manage/Create banner (small ribbon) */
+    .event .card-event .manage-badge {position:absolute; top:12px; left:12px; color:#fff; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;}
+    .event .card-event .manage-badge.manage {background:#0d6efd;}
+    .event .card-event .manage-badge.create {background:#6f42c1;}
     /* Countdown styles */
     .countdown-wrapper {margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;}
     .countdown-label {color:#555; font-weight:500;}
