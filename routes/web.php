@@ -149,52 +149,6 @@ Route::get('/', function () {
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
 
-// punya dini
-Route::get('/modul-course', function () {
-    return view('modul-course');
-})->name('modul-course');
-
-Route::get('/aturan-kuis', function () {
-    return view('aturan-kuis');
-})->name('aturan-kuis');
-
-Route::get('/payment-course', function () {
-    return view('payment-course');
-})->name('payment-course');
-
-Route::get('/detail-course', function () {
-    return view('detail-course');
-})->name('detail-course');
-
-Route::get('/quiz1-course', function () {
-    return view('quiz1-course');
-})->name('quiz1-course');
-
-// ...existing code...
-Route::get('/quiz-course', function () {
-    return view('quiz-course');
-})->name('quiz-course');
-Route::get('/hasil-course', function () {
-    return view('hasil-course');
-})->name('hasil-course');
-Route::get('/admin/course-builder', function () {
-    return view('admin/course-builder');
-})->name('admin/course-builder');
-Route::get('/admin/add-course', function () {
-    return view('admin/add-course');
-})->name('admin/add-course');
-Route::get('/admin/view-modul-course', function () {
-    return view('admin/view-modul-course');
-})->name('admin/view-modul-course');
-Route::get('/admin/add-pdf-module', function () {
-    return view('admin/add-pdf-module');
-})->name('add-pdf-module');
-Route::get('/admin/report', function () {
-    return view('admin/report');
-})->name('report');
-
-
-
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
     $user = auth()->user();
@@ -207,9 +161,6 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
 
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
-
-// Query current pending order for this user+event (auth required)
-Route::middleware('auth')->get('/payment/{event}/pending-order', [PaymentController::class, 'pendingOrder'])->name('payment.pending-order');
 
 // Finalize registration after successful payment (auth required)
 Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController::class, 'finalize'])->name('payment.finalize');
@@ -237,28 +188,7 @@ Route::middleware('auth')->group(function(){
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
-    // Dedicated scan page for event QR (auth, require registration)
-    Route::get('/events/{event}/scan', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
-        $user = $request->user();
-        if(!$user){ return redirect()->route('login'); }
-        $registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
-        if(!$registration || $registration->status !== 'active'){
-            return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
-        }
-        // Compute event start/end for gating
-        $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
-        $startTime = null; $endTime = null;
-        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch(\Throwable $e) {}
-        try { $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch(\Throwable $e) {}
-        if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
-        $now = \Carbon\Carbon::now(config('app.timezone'));
-        $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
-        $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
-        return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
-    })->name('events.scan');
-    // Attendance via scan: persist attendance when QR is decoded
-    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
+    Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
     // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
@@ -287,42 +217,14 @@ Route::middleware('auth')->group(function(){
     // Save/unsave event
     Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
         $user = $request->user();
-        if(!$user){
-            // For non-AJAX, redirect to login; for AJAX, return JSON 401
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json(['success'=>false,'message'=>'Unauthorized'], 401);
-            }
-            return redirect()->route('login');
-        }
-
-        $exists = \DB::table('user_saved_events')
-            ->where('user_id',$user->id)
-            ->where('event_id',$event->id)
-            ->exists();
-
-        $saved = true;
+        if(!$user){ return response()->json(['success'=>false,'message'=>'Unauthorized'], 401); }
+        $exists = \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->exists();
         if($exists){
-            \DB::table('user_saved_events')
-                ->where('user_id',$user->id)
-                ->where('event_id',$event->id)
-                ->delete();
-            $saved = false;
-        } else {
-            \DB::table('user_saved_events')->insert([
-                'user_id'=>$user->id,
-                'event_id'=>$event->id,
-                'created_at'=>now(),
-                'updated_at'=>now()
-            ]);
-            $saved = true;
+            \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->delete();
+            return response()->json(['success'=>true,'saved'=>false]);
         }
-
-        // If the request expects JSON (AJAX/fetch), return JSON; otherwise redirect back to detail page
-        if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['success'=>true,'saved'=>$saved]);
-        }
-        return redirect()->route('events.registered.detail', $event)
-            ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
+        \DB::table('user_saved_events')->insert(['user_id'=>$user->id,'event_id'=>$event->id,'created_at'=>now(),'updated_at'=>now()]);
+        return response()->json(['success'=>true,'saved'=>true]);
     })->name('events.save');
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
@@ -416,9 +318,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Event document uploads (admin)
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
-    // Event QR actions (admin)
-    Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
-    Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
     // Utility: resolve Google Maps short links to lat/lng
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
         
@@ -506,4 +405,3 @@ Route::get('/course-quiz-start', function () {
         })->name('admin.certificates.generate-massal');
     });
 });
-
