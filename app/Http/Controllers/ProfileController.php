@@ -235,4 +235,41 @@ class ProfileController extends Controller
             'savedEvents'
         ));
     }
+    
+    public function settings()
+    {
+        $user = Auth::user();
+        // Redirect to edit profile as default
+        return redirect()->route('profile.edit');
+    }
+    
+    public function accountSettings()
+    {
+        $user = Auth::user();
+        return view('profile.account-settings', compact('user'));
+    }
+    
+    public function updateAccountSettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'current_password' => 'required_with:password',
+            'password' => 'nullable|min:6|confirmed',
+        ]);
+        
+        // Verify current password if changing password
+        if (!empty($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
+            }
+            $user->password = Hash::make($validated['password']);
+        }
+        
+        $user->email = $validated['email'];
+        $user->save();
+        
+        return redirect()->route('profile.account-settings')->with('success', 'Pengaturan akun berhasil diperbarui!');
+    }
 }
