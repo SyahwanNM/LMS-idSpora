@@ -2158,18 +2158,8 @@ label {
 .step {
     text-align: center;
     width: 25%;
-.scroll_rating_card::-webkit-scrollbar {
-  width: 8px;
 }
 
-.scroll_rating_card::-webkit-scrollbar-thumb {
-  background: #c8baba;
-  border-radius: 8px;
-}
-
-.scroll_rating_card::-webkit-scrollbar-track {
-  background: #f0e8e8;
-}
 
 .box_luar_detail_course {
     display: flex; 
