@@ -16,7 +16,6 @@ class Event extends Model
         'certificate_path',
         'certificate_logo',
         'certificate_signature',
-        'attendance_path',
         'speaker',
         'materi',
         'jenis',
@@ -35,6 +34,10 @@ class Event extends Model
         'latitude',
         'longitude',
         'zoom_link',
+        // attendance QR one-time fields
+        'attendance_qr_token',
+        'attendance_qr_image',
+        'attendance_qr_generated_at',
         // legacy JSON storage (backward compatible)
         'schedule_json',
         'expenses_json',
@@ -64,7 +67,11 @@ class Event extends Model
         $count = 0;
         if(!empty($this->vbg_path)) $count++;
         if(!empty($this->certificate_path)) $count++;
-        if(!empty($this->attendance_path)) $count++;
+        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
+        $hasAttendance = !empty($this->attendance_path)
+            || !empty($this->attendance_qr_image)
+            || !empty($this->attendance_qr_token);
+        if($hasAttendance) $count++;
         return $count;
     }
 
@@ -73,8 +80,8 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 3; // virtual background, certificate, attendance
-        $done = $this->documents_completed_count; // uses accessor above
+        $total = 3; // Virtual Background, Sertifikat, Absensi (QR/File)
+        $done = max(0, min(3, (int) $this->documents_completed_count));
         return (int) floor(($done / $total) * 100);
     }
 

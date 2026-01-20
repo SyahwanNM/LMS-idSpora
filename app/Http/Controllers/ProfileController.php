@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\EventRegistration;
+use App\Services\ProfileReminderService;
 use Carbon\Carbon;
 
 class ProfileController extends Controller
@@ -45,9 +46,78 @@ class ProfileController extends Controller
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6|confirmed',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'phone' => 'nullable|string|max:20',
-            'website' => 'nullable|url|max:255',
+            'phone_country_code' => 'required|string|in:+62,+60,+65,+1,+44,+61,+86,+81,+82,+66,+84,+63,+91',
+            'phone_number' => [
+                'required',
+                'string',
+                'max:15',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (!empty($value)) {
+                        // Hapus semua karakter selain angka
+                        $cleaned = preg_replace('/[^0-9]/', '', $value);
+                        
+                        // Hapus leading zero
+                        $cleaned = ltrim($cleaned, '0');
+                        
+                        // Validasi panjang berdasarkan country code
+                        $countryCode = $request->input('phone_country_code', '+62');
+                        
+                        $minLength = 6;
+                        $maxLength = 15;
+                        
+                        // Set panjang minimum/maksimum berdasarkan country code
+                        switch ($countryCode) {
+                            case '+62': // Indonesia
+                                $minLength = 9;
+                                $maxLength = 12;
+                                break;
+                            case '+60': // Malaysia
+                            case '+65': // Singapore
+                            case '+66': // Thailand
+                            case '+84': // Vietnam
+                            case '+63': // Philippines
+                                $minLength = 8;
+                                $maxLength = 10;
+                                break;
+                            case '+1': // US/Canada
+                                $minLength = 10;
+                                $maxLength = 10;
+                                break;
+                            case '+44': // UK
+                                $minLength = 10;
+                                $maxLength = 10;
+                                break;
+                            case '+61': // Australia
+                                $minLength = 9;
+                                $maxLength = 9;
+                                break;
+                            case '+86': // China
+                                $minLength = 11;
+                                $maxLength = 11;
+                                break;
+                            case '+81': // Japan
+                                $minLength = 10;
+                                $maxLength = 11;
+                                break;
+                            case '+82': // South Korea
+                                $minLength = 9;
+                                $maxLength = 10;
+                                break;
+                            case '+91': // India
+                                $minLength = 10;
+                                $maxLength = 10;
+                                break;
+                        }
+                        
+                        if (strlen($cleaned) < $minLength || strlen($cleaned) > $maxLength) {
+                            $fail("Nomor telepon harus {$minLength}-{$maxLength} digit untuk kode negara {$countryCode}");
+                        }
+                    }
+                },
+            ],
             'bio' => 'nullable|string|max:1000',
+            'profession' => 'nullable|string|in:Pelajar/Mahasiswa,Karyawan Swasta,ASN/PNS,Wirausaha,Lainnya',
+            'institution' => 'nullable|string|max:255',
         ]);
 
         $user->name = $validated['name'];
@@ -82,11 +152,29 @@ class ProfileController extends Controller
         }
         
         // Update additional fields
-        $user->phone = $validated['phone'] ?? null;
-        $user->website = $validated['website'] ?? null;
+        // Format phone number: gabungkan country code + number
+        if (!empty($validated['phone_number'])) {
+            $countryCode = $validated['phone_country_code'];
+            $phoneNumber = preg_replace('/[^0-9]/', '', $validated['phone_number']);
+            // Hapus leading zero
+            $phoneNumber = ltrim($phoneNumber, '0');
+            // Gabungkan: +62 + 81234567890 = +6281234567890
+            $user->phone = $countryCode . $phoneNumber;
+        } else {
+            $user->phone = null;
+        }
+        
         $user->bio = $validated['bio'] ?? null;
+        $user->institution = $validated['institution'] ?? null;
+        $user->profession = $validated['profession'] ?? null;
         
         $user->save();
+        
+        // Auto-deactivate reminder jika profile sudah lengkap
+        $reminderService = app(ProfileReminderService::class);
+        if ($user->isProfileComplete()) {
+            $reminderService->deactivateReminder($user);
+        }
         
         return redirect()->route('profile.edit')->with('success', 'Profil berhasil diperbarui!');
     }
@@ -97,11 +185,91 @@ class ProfileController extends Controller
         
         // Get all event registrations with event details
         $registrations = EventRegistration::where('user_id', $user->id)
-            ->with('event')
+            ->with(['event', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Saved events (Event Tersimpan)
+        $savedEvents = \DB::table('user_saved_events')
+            ->where('user_id', $user->id)
+            ->join('events', 'user_saved_events.event_id', '=', 'events.id')
+            ->select('events.*', 'user_saved_events.created_at as saved_at')
+            ->orderBy('user_saved_events.created_at', 'desc')
+            ->get();
         
-        return view('profile.events', compact('registrations'));
+        // Get all payments for this user
+        $payments = \App\Models\Payment::where('user_id', $user->id)
+            ->whereIn('status', ['capture', 'settlement'])
+            ->get()
+            ->keyBy('event_id');
+        
+        // Calculate total spending
+        $totalSpending = $payments->sum('gross_amount');
+        
+        // Count statistics
+        $totalEvents = $registrations->count();
+        $paidEvents = $registrations->filter(function($reg) {
+            return $reg->event && $reg->event->price > 0;
+        })->count();
+        $freeEvents = $totalEvents - $paidEvents;
+        $attendedEvents = $registrations->filter(function($reg) {
+            return !empty($reg->attendance_status);
+        })->count();
+        $certifiedEvents = $registrations->filter(function($reg) {
+            return !empty($reg->certificate_issued_at);
+        })->count();
+        $feedbackSubmitted = $registrations->filter(function($reg) {
+            return !empty($reg->feedback_submitted_at);
+        })->count();
+        
+        return view('profile.events', compact(
+            'registrations', 
+            'payments', 
+            'totalSpending',
+            'totalEvents',
+            'paidEvents',
+            'freeEvents',
+            'attendedEvents',
+            'certifiedEvents',
+            'feedbackSubmitted',
+            'savedEvents'
+        ));
+    }
+    
+    public function settings()
+    {
+        $user = Auth::user();
+        // Redirect to edit profile as default
+        return redirect()->route('profile.edit');
+    }
+    
+    public function accountSettings()
+    {
+        $user = Auth::user();
+        return view('profile.account-settings', compact('user'));
+    }
+    
+    public function updateAccountSettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'current_password' => 'required_with:password',
+            'password' => 'nullable|min:6|confirmed',
+        ]);
+        
+        // Verify current password if changing password
+        if (!empty($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
+            }
+            $user->password = Hash::make($validated['password']);
+        }
+        
+        $user->email = $validated['email'];
+        $user->save();
+        
+        return redirect()->route('profile.account-settings')->with('success', 'Pengaturan akun berhasil diperbarui!');
     }
 }
-

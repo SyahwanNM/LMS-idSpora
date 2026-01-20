@@ -18,7 +18,6 @@ class FeedbackController extends Controller
             'event_id' => 'required|exists:events,id',
             'rating' => 'required|integer|min:1|max:5',
             'speaker_rating' => 'nullable|integer|min:1|max:5',
-            'committee_rating' => 'nullable|integer|min:1|max:5',
             'comment' => 'required|string',
         ]);
         $userId = Auth::id();
@@ -46,7 +45,6 @@ class FeedbackController extends Controller
             'user_id' => $userId,
             'rating' => $request->rating,
             'speaker_rating' => $request->speaker_rating ?? null,
-            'committee_rating' => $request->committee_rating ?? null,
             'comment' => $request->comment,
         ]);
 
@@ -57,13 +55,26 @@ class FeedbackController extends Controller
                 $registration->certificate_issued_at = Carbon::now();
             }
             $registration->save();
+            
+            // Add points for feedback
+            try {
+                $user = Auth::user();
+                if ($user) {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addFeedbackPoints($user);
+                }
+            } catch (\Throwable $e) { /* ignore */ }
         } catch (\Throwable $e) {
             // non-blocking: we still return success, but log could be added
         }
 
+        // Get user name safely (user should be authenticated at this point, but check anyway)
+        $user = Auth::user();
+        $userName = $user ? $user->name : 'User';
+
         return response()->json([
             'success' => true,
-            'user_name' => Auth::user()->name,
+            'user_name' => $userName,
             'rating' => $feedback->rating,
             'comment' => $feedback->comment,
         ]);

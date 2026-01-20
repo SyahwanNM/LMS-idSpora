@@ -53,7 +53,9 @@ class AuthController extends Controller
         }
 
         // Langsung login tanpa OTP (OTP dipindah ke proses pendaftaran akun)
-        Auth::loginUsingId($user->id, true);
+        // Hormati pilihan "ingat saya" dari form
+        $remember = $request->boolean('remember');
+        Auth::loginUsingId($user->id, $remember);
         // Catat aktivitas login
         try { \App\Models\ActivityLog::create(['user_id' => $user->id, 'action' => 'Login', 'description' => 'Login (direct)']); } catch (\Throwable $e) {}
         $redirect = $this->resolveSafeRedirect($request);
