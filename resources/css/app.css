@@ -4427,6 +4427,324 @@ input[type="time"] {
     border-radius: 5px;
     padding: 5px;
 }
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+    color: #1e1e1e;
+    margin: 0;
+    padding: 20px;
+}
+
+h1, h2, h3, h4, h5, p {
+    margin: 0;
+    padding: 0;
+}
+
+.box_luar_view_pendapatan {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.judul_view {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.deskripsi_view {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 25px;
+}
+
+.tabel_paling_atas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.tabel_paling_atas > div {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background: #fff;
+}
+
+.tabel_paling_atas p {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.tabel_paling_atas h5 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.status_view h5 {
+    color: #22c55e;
+}
+
+.box_luar_breakdown_pendapatan,
+.box_luar_breakdown_pengeluaran,
+.box_luar_analisis_keuntungan,
+.box_luar_financial {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    background-color: #fff;
+}
+
+.box_judul_breakdown_pendapatan,
+.box_judul_breakdown_pengeluaran {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.box_judul_breakdown_pendapatan h2,
+.box_judul_breakdown_pengeluaran h2,
+.box_luar_analisis_keuntungan h2,
+.box_luar_financial h2 {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.box_dalam_breakdown_pendapatan {
+    background-color: #dcfce7;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.box_dalam_breakdown_pendapatan h5 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #166534;
+    margin-bottom: 5px;
+}
+
+.box_dalam_breakdown_pendapatan h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #14532d;
+    margin-bottom: 15px;
+}
+
+.isi_box_pendapatan,
+.isi_harga_perunit,
+.isi_kalkulasi {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: #14532d;
+    margin-bottom: 4px;
+}
+
+.isi_box_pendapatan p:first-child,
+.isi_harga_perunit p:first-child,
+.isi_kalkulasi p:first-child {
+    width: 100px;
+    font-weight: 500;
+}
+
+.box_dalam_breakdown_pendapatan .garis_abu {
+    margin-top: 15px;
+    height: 4px;
+    background-color: #bbf7d0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.box_dalam_breakdown_pendapatan .garis_hijau {
+    width: 100%;
+    height: 100%;
+    background-color: #22c55e;
+}
+
+.box_dalam_pendapatan {
+    background-color: #ced4ff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.box_dalam_pendapatan h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #312e81;
+}
+
+.box_isi_pengeluaran {
+    border: 1px solid #f3f4f6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #fff;
+}
+
+.judul_pertama {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.subjudul_pertama {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.persentase_box {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.box_isi_pengeluaran h5 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.garis_abu {
+    width: 100%;
+    height: 4px;
+    background-color: #e5e7eb;
+    border-radius: 2px;
+    position: relative;
+}
+
+.garis_abu > div {
+    height: 100%;
+    border-radius: 2px;
+}
+
+.garis_orange { width: 40%; background-color: #ef4444; }
+.garis_kuning { width: 20%; background-color: #fbbf24; }
+.garis_ungu   { width: 15%; background-color: #a855f7; }
+.garis_biru   { width: 15%; background-color: #3b82f6; }
+.garis_pink   { width: 10%; background-color: #ec4899; }
+
+.box_dalam_pengeluaran {
+    background-color: #fee2e2;
+    border-radius: 8px;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.box_dalam_pengeluaran h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #991b1b;
+}
+
+.box_isi_untung {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.box_status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.box_status h5 {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.box_validasi_status h5 {
+    color: #22c55e;
+    border: 1px solid #22c55e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    background-color: #fff;
+}
+
+.box_isi_untung h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #15803d;
+}
+
+.box_dalam_perhitungan {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.box_dalam_perhitungan > h5 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.pendapatan_kotor,
+.total_pengeluaran,
+.keuntungan_bersih {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.pendapatan_kotor p, .total_pengeluaran p, .keuntungan_bersih p {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.pendapatan_kotor h5, .total_pengeluaran h5 {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.keuntungan_bersih {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.keuntungan_bersih h5 {
+    color: #16a34a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.box_chart_financial {
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .tabel_paling_atas {
+        grid-template-columns: 1fr 1fr;
+    }
+}
 /*FOOTER*/
 .footer-section {
     background: var(--primary-dark);}

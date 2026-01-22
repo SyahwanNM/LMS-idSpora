@@ -43,7 +43,8 @@ class ProfileController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            // email is optional on profile edit (account settings handles email changes)
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6|confirmed',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
             'phone_country_code' => 'required|string|in:+62,+60,+65,+1,+44,+61,+86,+81,+82,+66,+84,+63,+91',
@@ -121,7 +122,9 @@ class ProfileController extends Controller
         ]);
 
         $user->name = $validated['name'];
-        $user->email = $validated['email'];
+        if (array_key_exists('email', $validated)) {
+            $user->email = $validated['email'];
+        }
         
         // Update password if provided
         if (!empty($validated['password'])) {

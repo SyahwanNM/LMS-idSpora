@@ -345,6 +345,11 @@ Route::middleware(['auth'])->group(function () {
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
+        // Admin view: Pendapatan (financial breakdown)
+        Route::get('/admin/view-pendapatan', function () {
+            return view('admin.view_pendapatan');
+        })->name('admin.view-pendapatan');
+
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         // Recent activities AJAX (returns latest login activities)
         Route::get('/admin/recent-activities', [AdminController::class, 'recentActivities'])->name('admin.recent-activities');
