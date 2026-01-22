@@ -1,3 +1,4 @@
+@unless(request()->routeIs('admin.*'))
 @php
     $hasMessages = session('success') || session('error') || $errors->any();
 @endphp
@@ -125,3 +126,4 @@
         }
     </style>
 @endif
+@endunless

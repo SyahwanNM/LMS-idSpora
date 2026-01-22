@@ -486,3 +486,5 @@ Route::get('/course-quiz-start', function () {
         })->name('admin.certificates.generate-massal');
     });
 });
+// Include additional manual-payment routes (manual QRIS proof upload)
+require __DIR__.'/web_manual_payment.php';

@@ -76,16 +76,17 @@
             @php
                 $paidStatuses = ['settlement','capture','success'];
                 // Total sepanjang waktu (aggregat keseluruhan, bukan hanya bulan dipilih)
-                $totalRevenueAll = \App\Models\Payment::whereIn('status',$paidStatuses)->sum('gross_amount');
+                // Use manual_payments (settled) as source of revenue
+                $totalRevenueAll = \App\Models\ManualPayment::where('status','settled')->sum('amount');
                 $totalExpenseAll = \App\Models\EventExpense::sum('total');
                 $totalMarginAll = $totalRevenueAll - $totalExpenseAll;
                 // Revenue & Expense bulan terpilih (berdasarkan created_at transaksi / expense)
-                $currentMonthRevenue = \App\Models\Payment::whereIn('status',$paidStatuses)
+                $currentMonthRevenue = \App\Models\ManualPayment::where('status','settled')
                     ->whereYear('created_at',$selectedDate->year)->whereMonth('created_at',$selectedDate->month)
-                    ->sum('gross_amount');
-                $previousMonthRevenue = \App\Models\Payment::whereIn('status',$paidStatuses)
+                    ->sum('amount');
+                $previousMonthRevenue = \App\Models\ManualPayment::where('status','settled')
                     ->whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)
-                    ->sum('gross_amount');
+                    ->sum('amount');
                 $currentMonthExpense = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)->whereMonth('created_at',$selectedDate->month)->sum('total');
                 $previousMonthExpense = \App\Models\EventExpense::whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)->sum('total');
                 $currentMonthMargin = $currentMonthRevenue - $currentMonthExpense;
@@ -115,6 +116,41 @@
                 [$expUp,$expColor,$expIcon,$expPctAbs] = $arrowData($expGrowth);
                 [$marUp,$marColor,$marIcon,$marPctAbs] = $arrowData($marGrowth);
             @endphp
+            {{-- Chart: trend per hari di bulan terpilih --}}
+            @php
+                // Prepare per-day series for the selected month
+                $daysInMonth = $selectedDate->daysInMonth;
+                $revenuePerDay = \App\Models\ManualPayment::where('status','settled')
+                    ->whereYear('created_at',$selectedDate->year)
+                    ->whereMonth('created_at',$selectedDate->month)
+                    ->selectRaw('DAY(created_at) as day, SUM(amount) as total')
+                    ->groupBy('day')
+                    ->pluck('total','day');
+
+                $expensePerDay = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)
+                    ->whereMonth('created_at',$selectedDate->month)
+                    ->selectRaw('DAY(created_at) as day, SUM(total) as total')
+                    ->groupBy('day')
+                    ->pluck('total','day');
+
+                $labels = [];
+                $seriesRevenue = [];
+                $seriesExpense = [];
+                $seriesProfit = [];
+                for($d=1;$d<=$daysInMonth;$d++){
+                    $labels[] = $d;
+                    $r = (float) ($revenuePerDay[$d] ?? 0);
+                    $e = (float) ($expensePerDay[$d] ?? 0);
+                    $seriesRevenue[] = $r;
+                    $seriesExpense[] = $e;
+                    $seriesProfit[] = $r - $e;
+                }
+            @endphp
+
+            <div style="margin-bottom:12px;">
+                <canvas id="trendChart" height="100"></canvas>
+            </div>
+
             <div class="recap-card-box" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;">
                 <!-- Total Pendapatan -->
                 <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:12px;">
@@ -233,9 +269,10 @@
                         @php
                             if(!isset($eventRows)) {
                                 $paidStatuses = ['settlement','capture','success'];
-                                $revenueMap = \App\Models\Payment::query()
-                                    ->selectRaw('event_id, SUM(gross_amount) as total')
-                                    ->whereIn('status',$paidStatuses)
+                                // Use manual payments as source of revenue per event
+                                $revenueMap = \App\Models\ManualPayment::query()
+                                    ->selectRaw('event_id, SUM(amount) as total')
+                                    ->where('status','settled')
                                     ->groupBy('event_id')
                                     ->pluck('total','event_id');
                                 $eventsTmp = \App\Models\Event::withCount('registrations')->orderBy('event_date','asc')->get();
@@ -243,8 +280,8 @@
                                     $price = $e->discounted_price ?? $e->price;
                                     // Paid revenue from successful payments
                                     $paidStatuses = ['settlement','capture','success'];
-                                    $payments = \App\Models\Payment::where('event_id',$e->id)->whereIn('status',$paidStatuses)->get();
-                                    $revenue = (float) $payments->sum('gross_amount');
+                                    $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
+                                    $revenue = (float) $payments->sum('amount');
                                     // Use number of active registrations as "jumlah yang daftara"
                                     $registeredCount = (int) $e->registrations()->where('status','active')->count();
                                     $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
@@ -328,6 +365,24 @@
         </div>
 
         <div id="pertumbuhan" class="rekap-box">
+            @php
+                // Prepare last 6 months labels ending with current month
+                $months = [];
+                $paidEvents = [];
+                $freeEvents = [];
+                $end = Carbon::createFromDate((int) now()->year, (int) now()->month, 1)->startOfMonth();
+                $start = (clone $end)->subMonths(5);
+                for($m = 0; $m < 6; $m++){
+                    $d = (clone $start)->addMonths($m);
+                    $months[] = $d->format('M');
+                    $paidEvents[] = \App\Models\Event::whereYear('created_at',$d->year)->whereMonth('created_at',$d->month)->where('price','>',0)->count();
+                    $freeEvents[] = \App\Models\Event::whereYear('created_at',$d->year)->whereMonth('created_at',$d->month)->where(function($q){ $q->whereNull('price')->orWhere('price',0); })->count();
+                }
+            @endphp
+            <div style="margin-bottom:14px;">
+                <canvas id="growthChart" height="110"></canvas>
+            </div>
+
             <div class="data-box">
                 <div class="data-pengguna">
                     <div class="data-pengguna-kiri">
@@ -756,6 +811,8 @@
 // QRCode library (client-side render)
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const buttons = document.querySelectorAll('.btn-report');
@@ -991,5 +1048,93 @@ document.addEventListener('DOMContentLoaded', function(){
         });
     }
 });
+</script>
+<script>
+    // Render trend chart using server-side computed arrays
+    (function(){
+        const labels = {!! json_encode($labels ?? []) !!};
+        const revenue = {!! json_encode($seriesRevenue ?? []) !!};
+        const expense = {!! json_encode($seriesExpense ?? []) !!};
+        const profit = {!! json_encode($seriesProfit ?? []) !!};
+
+        const ctx = document.getElementById('trendChart');
+        if(!ctx) return;
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pendapatan',
+                        data: revenue,
+                        borderColor: '#6B7CFF',
+                        backgroundColor: 'rgba(107,124,255,0.08)',
+                        tension: 0.25,
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointHoverRadius: 4,
+                    },
+                    {
+                        label: 'Pengeluaran',
+                        data: expense,
+                        borderColor: '#FF7A7A',
+                        backgroundColor: 'rgba(255,122,122,0.08)',
+                        tension: 0.25,
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointHoverRadius: 4,
+                    },
+                    {
+                        label: 'Keuntungan',
+                        data: profit,
+                        borderColor: '#3BD1C6',
+                        backgroundColor: 'rgba(59,209,198,0.08)',
+                        tension: 0.25,
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointHoverRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { ticks: { callback: function(v){ return new Intl.NumberFormat('id-ID').format(v); } } }
+                },
+                plugins: { legend: { position: 'right' } }
+            }
+        });
+    })();
+</script>
+<script>
+    // Growth chart (free vs paid events per month)
+    (function(){
+        const labelsGrowth = {!! json_encode($months ?? []) !!};
+        const paid = {!! json_encode($paidEvents ?? []) !!};
+        const free = {!! json_encode($freeEvents ?? []) !!};
+        const ctxG = document.getElementById('growthChart');
+        if(!ctxG) return;
+        new Chart(ctxG, {
+            type: 'line',
+            data: {
+                labels: labelsGrowth,
+                datasets: [
+                    { label: 'Total Event Berbayar', data: paid, borderColor: '#FF8A80', backgroundColor: 'rgba(255,138,128,0.08)', tension:0.25, fill:true, borderWidth:2, pointRadius:2, pointHoverRadius:4 },
+                    { label: 'Total Event Free', data: free, borderColor: '#8A8CFF', backgroundColor: 'rgba(138,140,255,0.08)', tension:0.25, fill:true, borderWidth:2, pointRadius:2, pointHoverRadius:4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { x: { grid: { display:false } }, y: { beginAtZero:true } }
+            }
+        });
+    })();
 </script>
 @endsection

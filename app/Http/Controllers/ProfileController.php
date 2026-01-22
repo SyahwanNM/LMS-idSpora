@@ -204,7 +204,7 @@ class ProfileController extends Controller
             ->keyBy('event_id');
         
         // Calculate total spending
-        $totalSpending = $payments->sum('gross_amount');
+        $totalSpending = $payments->sum('amount');
         
         // Count statistics
         $totalEvents = $registrations->count();

@@ -65,7 +65,7 @@ class AuthController extends Controller
         if ($redirect) {
             return redirect($redirect)->with('success', 'Login berhasil!');
         }
-        return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
+        return redirect()->intended('/dashboard')->with('success', 'Login berhasil Selamat datang di IdSpora Academy!');
     }
 
     public function register(Request $request)

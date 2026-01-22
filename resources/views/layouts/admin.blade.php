@@ -10,6 +10,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
+    <style>
+        /* Ensure toast notifications appear above fixed navbar and profile dropdown */
+        .toast-container.position-fixed { z-index: 11050 !important; }
+    </style>
 </head>
 <body>
     <!-- Admin Navbar (Bootstrap) -->
@@ -39,7 +43,7 @@
                     {{-- Certificate management moved to CRM --}}
                     @if(request()->routeIs('admin.dashboard'))
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admine</a>
+                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
                     </li>
                     @endif
                 </ul>
@@ -134,6 +138,17 @@
                 });
             });
         }
+        // Auto-show any server-rendered Bootstrap toasts (flash messages)
+        try {
+            document.querySelectorAll('.toast').forEach(function(t){
+                try {
+                    if(window.bootstrap && bootstrap.Toast){
+                        var inst = bootstrap.Toast.getOrCreateInstance(t);
+                        inst.show();
+                    }
+                } catch(e) {}
+            });
+        } catch(e) {}
         
         // Logout confirmation with animated checklist
         const logoutTrigger = document.getElementById('logoutTrigger');
@@ -253,8 +268,17 @@
     /* Ensure admin username in the profile toggle is readable on light pill backgrounds */
     .user-name { color: #0f172a !important; }
     /* Prevent toast container from blocking navbar clicks while keeping toasts interactive */
-    .toast-container { pointer-events: none; }
+    .toast-container { pointer-events: none; z-index: 11050 !important; }
     .toast-container .toast, .toast-container .btn-close { pointer-events: auto; }
+
+    /* New global notification component */
+    .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
+    .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+    .notification.show { transform: translateY(0) scale(1); opacity:1; }
+    .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
+    .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+    .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
+    .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
     body { padding-top: 78px; }
@@ -273,6 +297,47 @@
     @keyframes draw-circle { to { stroke-dashoffset:0; } }
     @keyframes draw-check { to { stroke-dashoffset:0; } }
     </style>
+
+    @if(session('success') || session('login_success') || session('error'))
+        <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
+            @if(session('login_success'))
+                <div class="notification success" role="status" data-timeout="4200">
+                    <div class="notif-message"><i class="bi bi-check-circle-fill me-2"></i>{{ session('login_success') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @elseif(session('success'))
+                <div class="notification success" role="status" data-timeout="3800">
+                    <div class="notif-message"><i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message"><i class="bi bi-x-circle-fill me-2"></i>{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        try {
+            const wrap = document.getElementById('globalNotifications');
+            if(!wrap) return;
+            wrap.querySelectorAll('.notification').forEach(function(n){
+                // show animation
+                setTimeout(function(){ n.classList.add('show'); }, 20);
+                const timeout = parseInt(n.getAttribute('data-timeout') || 4000, 10);
+                const closeBtn = n.querySelector('.notif-close');
+                const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                if(closeBtn) closeBtn.addEventListener('click', hide);
+                setTimeout(hide, timeout);
+            });
+        } catch(e){}
+    });
+    </script>
+
     @yield('scripts')
 </body>
 </html>
