@@ -14,7 +14,7 @@
 </head>
 
 <body>
-    @include("partials.navbar-admin-course-bootstrap")
+    @include("partials.navbar-admin-course")
     <!-- Scoped page styles: cleaner spacing + Bootstrap-friendly tokens -->
     <style>
     /* --- Layout Utama --- */

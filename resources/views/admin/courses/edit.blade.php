@@ -3,7 +3,7 @@
 @section('title', 'Edit Course - ' . $course->name)
 
 @section('content')
-@include('partials.navbar-admin-course-bootstrap')
+@include('partials.navbar-admin-course')
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
