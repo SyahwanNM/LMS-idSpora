@@ -13,66 +13,6 @@
 </head>
 
 <body>
-<<<<<<< HEAD
-    @include("partials.navbar-admin-course")
-    <div class="box_luar_add_course">
-        <div class="box_link">
-            <a href="">Course Builder</a>
-            <p>/</p>
-            <a href="">Add Course</a>
-        </div>
-        <div class="box_judul">
-            <h1>Tambah Course</h1>
-            <p>Atur detail course sebelum dipublkasi</p>
-        </div>
-        <div class="box_form">
-            <h4>Formulir Pengaturan Course</h4>
-            <p>Judul Course</p>
-            <input type="text" placeholder="Masukkan Judul Course">
-            <div class="box_select_level_status">
-                <div>
-                    <p>Level Course</p>
-                    <div class="select_box dropdown">
-                        <button class="select_level btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Choose your level
-                        </button>
-                        <ul class="choose_level dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Beginner</a></li>
-                            <li><a class="dropdown-item" href="#">Intermediate</a></li>
-                            <li><a class="dropdown-item" href="#">Advance</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="box_select_status">
-                    <p>Status</p>
-                    <div class="select_box dropdown">
-                        <button class="select_level btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Choose your Status
-                        </button>
-                        <ul class="choose_level dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Active</a></li>
-                            <li><a class="dropdown-item" href="#">Archive</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <p>Harga</p>
-            <input type="text" placeholder="Masukkan Harga Course">
-            <p>Deskrpsi Course</p>
-            <textarea name="" placeholder="Deskripsikan course secara lengkap" id=""></textarea>
-            <p>Thumbnail Course</p>
-            <input type="file">
-        </div>
-
-    </div>
-    <div class="box_button">
-        <button class="cancel">Cancel</button>
-        <button class="save_add">Save</button>
-    </div>
-    </div>
-</body>
-</head>
-=======
     @include("partials.navbar-admin-course-bootstrap")
     <div class="container py-4">
         <div class="row">
@@ -90,7 +30,6 @@
 
                     <div class="box_form">
                         <h4 class="h5 mb-3">Formulir Pengaturan Course</h4>
-a
                         <div class="mb-3">
                             <label class="form-label text-dark">Judul Course</label>
                             <input type="text" class="form-control" placeholder="Masukkan Judul Course">
@@ -141,6 +80,5 @@ a
         </div>
     </div>
 </body>
->>>>>>> f587188d4cab519fdc0662389f336cb06bb0dcca
 
 </html>
