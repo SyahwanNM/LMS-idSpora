@@ -262,7 +262,7 @@ Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('ne
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
