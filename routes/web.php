@@ -251,8 +251,11 @@ Route::middleware('auth')->group(function(){
     // User profile
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/settings', [\App\Http\Controllers\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
+    Route::post('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
     
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
@@ -338,7 +341,7 @@ Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('ne
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
