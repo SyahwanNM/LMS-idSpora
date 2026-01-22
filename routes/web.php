@@ -79,9 +79,9 @@ Route::get('/quiz-course', function () {
 Route::get('/hasil-course', function () {
     return view('hasil-course');
 })->name('hasil-course');
-Route::get('admin/course-builder', function () {
-    return view('admin/course-builder');
-})->name('admin/course-builder');
+Route::get('admin/courses', function () {
+    return view('admin/courses');
+})->name('admin/courses');
 // Legacy Add Course page (standalone view)
 Route::get('/admin/add-course', function () {
     return view('admin/add-course');
@@ -95,6 +95,9 @@ Route::get('/admin/add-pdf-module', function () {
 Route::get('/admin/report', function () {
     return view('admin/report');
 })->name('report');
+Route::get('/admin/view-pendapatan', function () {
+    return view('admin/view-pendapatan');
+})->name('view-pendapatan');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
