@@ -41,4 +41,20 @@ class Course extends Model
     {
         return $this->hasMany(Review::class);
     }
+
+    /**
+     * Enrollments relation (students enrolled to this course)
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class);
+    }
+
+    /**
+     * Payments relation (payments made for this course)
+     */
+    public function payments()
+    {
+        return $this->hasMany(\App\Models\Payment::class);
+    }
 }

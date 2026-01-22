@@ -334,13 +334,14 @@
                     </div>
                 </div>
 
-                <form id="midtransPaymentForm" method="POST" action="{{ route('midtrans.pay', $course->id) }}">
+                <!-- Manual payment via QRIS: show QR image modal when clicking Bayar -->
+                <form id="manualPaymentForm" method="POST" action="#">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
-                    <button type="submit" class="btn_bayar_payment">Bayar</button>
+                    <button type="button" id="showQrisBtn" class="btn_bayar_payment">Bayar</button>
                 </form>
             </div>
 
@@ -348,10 +349,44 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    @php
-        $snapJsUrl = config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js';
-        $clientKey = config('midtrans.client_key');
-    @endphp
+
+    <!-- QRIS Modal -->
+    <div class="modal fade" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+                    <div class="modal-body text-center">
+                        <p>Scan QRIS berikut untuk melakukan pembayaran.</p>
+                        <img id="qrisImage" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment" style="max-width:100%; height:auto; border-radius:8px;">
+                        <p class="mt-3">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
+
+                        <!-- Upload bukti pembayaran -->
+                        <form id="uploadProofForm" method="POST" action="/manual-payment/upload/{{ $course->id }}" enctype="multipart/form-data" class="mt-3 text-start">
+                                @csrf
+                                <div class="mb-2">
+                                        <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
+                                        <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required>
+                                </div>
+                                <div id="proofPreview" class="mb-3" style="display:none;">
+                                        <p class="mb-1">Preview bukti:</p>
+                                        <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>Download QR</a>
+                                        <div>
+                                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Tutup</button>
+                                                <button type="submit" id="payNowBtn" class="btn_bayar_payment">Bayar Sekarang</button>
+                                        </div>
+                                </div>
+                        </form>
+                    </div>
+        </div>
+      </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var kodeDialBtn = document.getElementById('kodeDialBtn');
@@ -360,88 +395,95 @@
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.querySelector('.input_nomor');
             var formWhatsappInput = document.getElementById('formWhatsappInput');
-            var midtransForm = document.getElementById('midtransPaymentForm');
+            var showQrisBtn = document.getElementById('showQrisBtn');
 
             // Show dropdown on button click
-            kodeDialBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                kodeDialMenu.classList.toggle('show');
-            });
+            if (kodeDialBtn) {
+                kodeDialBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    kodeDialMenu.classList.toggle('show');
+                });
+            }
             // Hide dropdown when clicking outside
             document.addEventListener('click', function(e) {
-                if (!kodeDialBtn.contains(e.target) && !kodeDialMenu.contains(e.target)) {
+                if (kodeDialBtn && kodeDialMenu && !kodeDialBtn.contains(e.target) && !kodeDialMenu.contains(e.target)) {
                     kodeDialMenu.classList.remove('show');
                 }
             });
             // Select code
-            kodeDialMenu.querySelectorAll('.dropdown-item').forEach(function(item) {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    var code = item.getAttribute('data-code');
-                    kodeDialBtn.textContent = code;
-                    kodeDialInput.value = code;
-                    formKodeDialInput.value = code;
-                    kodeDialMenu.classList.remove('show');
-                });
-            });
-
-            // On form submit, use AJAX to get snap token and open Snap modal
-            if (midtransForm) {
-                midtransForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    formKodeDialInput.value = kodeDialInput.value;
-                    formWhatsappInput.value = whatsappInput.value;
-
-                    var formData = new FormData(midtransForm);
-                    // send request to create payment and return snap token
-                    fetch(midtransForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '{{ csrf_token() }}'
-                        },
-                        body: formData,
-                    }).then(function(res){
-                        return res.json();
-                    }).then(function(json){
-                        if(json.snapToken){
-                            // load snap.js dynamically with client key
-                            var snapScript = document.createElement('script');
-                            snapScript.src = '{{ $snapJsUrl }}';
-                            snapScript.setAttribute('data-client-key', '{{ $clientKey }}');
-                            document.body.appendChild(snapScript);
-                            snapScript.onload = function(){
-                                window.snap.pay(json.snapToken, {
-                                    onSuccess: function(result){
-                                        // refresh payment status on server
-                                        fetch('/payment/refresh-course/'+json.orderId, { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
-                                            .then(function(r){ return r.json(); })
-                                            .catch(function(){ /* ignore */ })
-                                            .finally(function(){
-                                                // redirect to course detail
-                                                window.location.href = '/course-detail/' + json.courseId;
-                                            });
-                                    },
-                                    onPending: function(result){
-                                        window.location.href = '/course-detail/' + json.courseId;
-                                    },
-                                    onError: function(err){
-                                        alert('Pembayaran gagal: ' + (err.message || JSON.stringify(err)));
-                                    },
-                                    onClose: function(){
-                                        // User closed the popup
-                                    }
-                                });
-                            };
-                        } else if (json.redirectUrl) {
-                            // fallback to redirect link
-                            window.location.href = json.redirectUrl;
-                        } else {
-                            alert('Gagal memproses pembayaran. Coba lagi.');
-                        }
-                    }).catch(function(err){
-                        alert('Terjadi kesalahan jaringan saat memproses pembayaran.');
+            if (kodeDialMenu) {
+                kodeDialMenu.querySelectorAll('.dropdown-item').forEach(function(item) {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var code = item.getAttribute('data-code');
+                        kodeDialBtn.textContent = code;
+                        kodeDialInput.value = code;
+                        formKodeDialInput.value = code;
+                        kodeDialMenu.classList.remove('show');
                     });
+                });
+            }
+
+            // Show QRIS modal when clicking bayar
+            if (showQrisBtn) {
+                showQrisBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
+                    if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
+
+                    var qrisEl = document.getElementById('qrisModal');
+                    if (qrisEl && window.bootstrap) {
+                        var qrisModal = new window.bootstrap.Modal(qrisEl);
+                        qrisModal.show();
+                    } else if (qrisEl) {
+                        qrisEl.classList.add('show');
+                        qrisEl.style.display = 'block';
+                        document.body.classList.add('modal-open');
+                    }
+                });
+            }
+
+            // Preview selected proof image and simple client-side validation
+            var paymentProofInput = document.getElementById('paymentProofInput');
+            var proofPreview = document.getElementById('proofPreview');
+            var proofPreviewImg = document.getElementById('proofPreviewImg');
+            var uploadProofForm = document.getElementById('uploadProofForm');
+            var payNowBtn = document.getElementById('payNowBtn');
+
+            if (paymentProofInput) {
+                paymentProofInput.addEventListener('change', function(e) {
+                    var file = paymentProofInput.files[0];
+                    if (!file) {
+                        proofPreview.style.display = 'none';
+                        return;
+                    }
+                    // size check (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Ukuran file terlalu besar. Maksimal 5MB.');
+                        paymentProofInput.value = '';
+                        proofPreview.style.display = 'none';
+                        return;
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function(evt) {
+                        proofPreviewImg.src = evt.target.result;
+                        proofPreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // Optionally handle upload form submit: simple UX feedback
+            if (uploadProofForm) {
+                uploadProofForm.addEventListener('submit', function(e) {
+                    // let normal POST happen; show simple feedback
+                    if (!paymentProofInput || !paymentProofInput.files[0]) {
+                        e.preventDefault();
+                        alert('Silakan pilih file bukti pembayaran terlebih dahulu.');
+                        return;
+                    }
+                    payNowBtn.disabled = true;
+                    payNowBtn.textContent = 'Mengirim...';
                 });
             }
         });

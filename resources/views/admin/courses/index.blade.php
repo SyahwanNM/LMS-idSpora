@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Course Index</title>
+    <title>Beranda Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -117,15 +117,19 @@
                                             <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
                                         </svg>
                                     </a>
-                                    <button type="button" class="btn p-0 preview-course" title="Preview"
-                                        data-title="{{ $course->name }}"
-                                        data-image="{{ $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '' }}"
-                                        data-description="{{ trim($course->description) }}"
-                                        data-modules="{{ ($course->modules && $course->modules->count() > 0) ? $course->modules->implode('title', '||') : '' }}"
-                                        data-published="{{ $isPublished ? '1' : '0' }}"
-                                        data-level="{{ ucfirst($course->level) }}"
-                                        data-price="Rp. {{ number_format($course->price, 0, ',', '.') }}"
-                                        data-duration="{{ $course->duration }} jam">
+                                    @php
+                                        $previewData = [
+                                            'title' => $course->name,
+                                            'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                            'description' => trim($course->description),
+                                            'modules' => ($course->modules && $course->modules->count() > 0) ? $course->modules->implode('title', '||') : '',
+                                            'published' => $isPublished ? '1' : '0',
+                                            'level' => ucfirst($course->level),
+                                            'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
+                                            'duration' => $course->duration . ' jam',
+                                        ];
+                                    @endphp
+                                    <button type="button" class="btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                                             <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
                                             <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
@@ -153,8 +157,22 @@
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- Bootstrap is provided by the Vite bundle (`resources/js/app.js`) to avoid duplicate initialisation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            try{
+                // If bootstrap is available, ensure the profile dropdown is initialised
+                var toggle = document.getElementById('adminProfileDropdown');
+                if(window.bootstrap && toggle){
+                    // Explicitly create Dropdown instance to avoid issues from duplicate loads
+                    try{ new bootstrap.Dropdown(toggle); }catch(e){}
+                    // Prevent default navigation on anchor to avoid instant page jump
+                    toggle.addEventListener('click', function(ev){ ev.preventDefault(); });
+                }
+            }catch(e){console && console.warn && console.warn(e);}
+        });
+    </script>
+
     <!-- Course Preview Modal -->
     <div class="modal fade" id="coursePreviewModal" tabindex="-1" aria-labelledby="coursePreviewLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -196,7 +214,50 @@
     <script>
         document.addEventListener('DOMContentLoaded', function(){
             var modalEl = document.getElementById('coursePreviewModal');
-            var modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+            var modal = null;
+            if(window.bootstrap && modalEl){
+                try{ modal = new window.bootstrap.Modal(modalEl); }catch(e){}
+            }
+            // Fallback handling when Bootstrap JS is not available
+            var _fallbackBackdrop = null;
+            function showCourseModal(){
+                if(window.bootstrap && modal){
+                    try{ modal.show(); return; }catch(e){}
+                }
+                if(!modalEl) return;
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                modalEl.removeAttribute('aria-hidden');
+                modalEl.setAttribute('aria-modal', 'true');
+                document.body.classList.add('modal-open');
+                if(!_fallbackBackdrop){
+                    _fallbackBackdrop = document.createElement('div');
+                    _fallbackBackdrop.className = 'modal-backdrop fade show';
+                    document.body.appendChild(_fallbackBackdrop);
+                }
+            }
+            function hideCourseModal(){
+                if(window.bootstrap && modal){
+                    try{ modal.hide(); return; }catch(e){}
+                }
+                if(!modalEl) return;
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+                modalEl.setAttribute('aria-hidden', 'true');
+                modalEl.removeAttribute('aria-modal');
+                document.body.classList.remove('modal-open');
+                if(_fallbackBackdrop){ _fallbackBackdrop.remove(); _fallbackBackdrop = null; }
+            }
+            // Wire up any close buttons inside modal to fallback hide
+            if(modalEl){
+                modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(function(btn){
+                    btn.addEventListener('click', function(){ hideCourseModal(); });
+                });
+                // clicking backdrop (outside modal-content) should also close
+                modalEl.addEventListener('click', function(ev){
+                    if(ev.target === modalEl){ hideCourseModal(); }
+                });
+            }
             var currentPreviewHasModules = false;
             var currentPreviewIsPublished = false;
             function setText(id, val){ var el=document.getElementById(id); if(el){ el.textContent = val || ''; } }
@@ -233,60 +294,77 @@
                 return null;
             }
 
-            document.querySelectorAll('.preview-course').forEach(function(btn){
-                btn.addEventListener('click', function(){
-                    var title = btn.getAttribute('data-title') || 'Preview Course';
-                    var img = btn.getAttribute('data-image') || '';
-                    var desc = btn.getAttribute('data-description') || '';
-                    var mods = btn.getAttribute('data-modules') || '';
-                    var published = btn.getAttribute('data-published') || '0';
-                    var level = btn.getAttribute('data-level') || '';
-                    var price = btn.getAttribute('data-price') || '';
-                    var duration = btn.getAttribute('data-duration') || '';
-                    // Set header
-                    var label = document.getElementById('coursePreviewLabel');
-                    if(label){ label.textContent = 'Preview Course: ' + title; }
-                    setImage('cp-image', img);
-                    setText('cp-description', desc);
-                    setHighlights(mods);
-                    currentPreviewHasModules = !!mods && mods.split('||').map(function(s){return s.trim();}).filter(Boolean).length > 0;
-                    currentPreviewIsPublished = String(published) === '1';
-                    setText('cp-level', level);
-                    setText('cp-price', price);
-                    setText('cp-duration', duration);
+            // Use event delegation so clicks on the eye icon always trigger the preview
+            document.addEventListener('click', function(ev){
+                var btn = ev.target.closest && ev.target.closest('.preview-course');
+                if(!btn) return;
 
-                    // Set publish form action
-                    var row = btn.closest('tr');
-                    var courseId = getCourseIdFromEditLink(row);
-                    var publishForm = document.getElementById('cp-publish-form');
-                    var publishBtn = document.getElementById('cp-publish-btn');
-                    if(publishForm && courseId){
-                        publishForm.action = '/admin/courses/' + courseId + '/publish';
-                        publishForm.method = 'POST';
-                        // Visual "disabled" state when already published
-                        if(currentPreviewIsPublished){
-                            publishBtn.setAttribute('disabled', 'true');
-                            publishBtn.textContent = 'Sudah Diterbitkan';
-                        }else{
-                            publishBtn.removeAttribute('disabled');
-                            publishBtn.textContent = 'Terbitkan Course';
-                        }
-                        publishForm.onsubmit = function(evt){
-                            if(currentPreviewIsPublished){
-                                evt.preventDefault();
-                                showAlreadyPublished();
-                                return false;
-                            }
-                            if(!currentPreviewHasModules){
-                                evt.preventDefault();
-                                showPublishWarning();
-                                return false;
-                            }
-                            return true;
-                        };
+                var raw = btn.getAttribute('data-course') || '';
+                var data = {};
+                if(raw){
+                    try{ data = JSON.parse(atob(raw)); }catch(e){
+                        try{ data = JSON.parse(raw); }catch(e2){ data = {}; }
                     }
-                    if(modal){ modal.show(); }
-                });
+                }
+                var title = data.title || 'Preview Course';
+                var img = data.image || '';
+                var desc = data.description || '';
+                var mods = data.modules || '';
+                var published = data.published || '0';
+                var level = data.level || '';
+                var price = data.price || '';
+                var duration = data.duration || '';
+                // Set header
+                var label = document.getElementById('coursePreviewLabel');
+                if(label){ label.textContent = 'Preview Course: ' + title; }
+                setImage('cp-image', img);
+                setText('cp-description', desc);
+                setHighlights(mods);
+                currentPreviewHasModules = !!mods && mods.split('||').map(function(s){return s.trim();}).filter(Boolean).length > 0;
+                currentPreviewIsPublished = String(published) === '1';
+                setText('cp-level', level);
+                setText('cp-price', price);
+                setText('cp-duration', duration);
+
+                // Set publish form action
+                var row = btn.closest('tr');
+                var courseId = getCourseIdFromEditLink(row);
+                var publishForm = document.getElementById('cp-publish-form');
+                var publishBtn = document.getElementById('cp-publish-btn');
+                if(publishForm && courseId){
+                    publishForm.action = '/admin/courses/' + courseId + '/publish';
+                    publishForm.method = 'POST';
+                    // Visual "disabled" state when already published
+                    if(currentPreviewIsPublished){
+                        publishBtn.setAttribute('disabled', 'true');
+                        publishBtn.textContent = 'Sudah Diterbitkan';
+                    }else{
+                        publishBtn.removeAttribute('disabled');
+                        publishBtn.textContent = 'Terbitkan Course';
+                    }
+                    publishForm.onsubmit = function(evt){
+                        if(currentPreviewIsPublished){
+                            evt.preventDefault();
+                            showAlreadyPublished();
+                            return false;
+                        }
+                        if(!currentPreviewHasModules){
+                            evt.preventDefault();
+                            showPublishWarning();
+                            return false;
+                        }
+                        return true;
+                    };
+                }
+
+                // Ensure modal instance exists (safe reference to window.bootstrap)
+                if(!modal && window.bootstrap && modalEl){
+                    try{ modal = new window.bootstrap.Modal(modalEl); }catch(e){}
+                }
+                // Use unified show function (will fallback when Bootstrap JS isn't present)
+                try{ showCourseModal(); }catch(e){
+                    if(modal){ try{ modal.show(); }catch(e2){} }
+                }
             });
         });
     </script>

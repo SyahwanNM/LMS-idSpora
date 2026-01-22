@@ -85,7 +85,7 @@ class PaymentController extends Controller
             'course_id' => $course->id,
             'event_id' => null,
             'order_id' => $orderId,
-            'gross_amount' => $price,
+            'amount' => $price,
             'status' => 'pending',
         ]);
 
@@ -269,7 +269,7 @@ class PaymentController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'order_id' => $orderId,
-                'gross_amount' => $amountInt,
+                'amount' => $amountInt,
                 'status' => 'pending',
             ]);
             // Log initiation for history
@@ -441,7 +441,8 @@ class PaymentController extends Controller
                     'user_id' => $payment->user_id,
                     'event_id' => $payment->event_id,
                     'status' => 'active',
-                    'registration_code' => 'EVT-'.strtoupper(uniqid())
+                    'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                    'total_price' => $payment->amount ?? 0.00,
                 ]);
                 // Add points for paid event registration
                 try {
@@ -515,12 +516,18 @@ class PaymentController extends Controller
         if($isFree || in_array($paymentStatus, ['capture','settlement'])){
             $exists = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->exists();
             if(!$exists){
-                $reg = EventRegistration::create([
+                $regData = [
                     'user_id' => $user->id,
                     'event_id' => $event->id,
                     'status' => 'active',
-                    'registration_code' => 'EVT-'.strtoupper(uniqid())
-                ]);
+                    'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                    'total_price' => $payment ? ($payment->amount ?? $finalPrice) : $finalPrice,
+                ];
+                // if we have a payment record and a stored proof, attach it
+                if($payment && !empty($payment->raw_notification) && is_array($payment->raw_notification)){
+                    // nothing specific for raw_notification; keep for future
+                }
+                $reg = EventRegistration::create($regData);
                 
                 // Add points for event registration
                 try {
@@ -569,7 +576,7 @@ class PaymentController extends Controller
             'user_id' => $user->id,
             'event_id' => $event->id,
             'order_id' => $orderId,
-            'gross_amount' => $amountInt,
+            'amount' => $amountInt,
             'status' => 'pending',
         ]);
         session(["midtrans_order_{$event->id}" => $orderId]);
