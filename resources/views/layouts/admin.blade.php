@@ -225,7 +225,7 @@
         });
     </script>
     <style>
-    .bg-purple-gradient {background:linear-gradient(90deg,#6f42c1 0%, #a855f7 100%);}    
+    .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
     /* Ensure navbar always sits above any page overlays */
     .navbar { z-index: 10000; pointer-events:auto; overflow: visible !important; }
     .navbar .container { overflow: visible !important; }

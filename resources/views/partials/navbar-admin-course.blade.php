@@ -1,9 +1,9 @@
 <div class="course-admin-navbar shadow-sm">
     <div class="container">
         <div class="nav-inner">
-            <a href="{{ route('admin.courses.index') }}" class="brand">
+            <a href="{{ route('admin.dashboard') }}" class="brand">
                 <img src="{{ asset('aset/logo.png') }}" alt="idSpora" class="brand-logo">
-                <span class="brand-text">Admin • Course</span>
+                
             </a>
             <nav class="nav-links">
                 <a href="{{ route('admin.courses.index') }}" class="nav-link {{ request()->routeIs('admin.courses.*') ? 'active' : '' }}">Course Builder</a>
@@ -34,7 +34,7 @@
     height: 56px; /* matches standard navbar height */
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start; /* keep brand + nav links on the left */
 }
 .course-admin-navbar .brand {
     display: flex;
@@ -44,7 +44,7 @@
 }
 .course-admin-navbar .brand-logo { height: 32px; width: auto; display:block; }
 .course-admin-navbar .brand-text { color:#fff; font-weight:600; font-size: 14px; }
-.course-admin-navbar .nav-links { display:flex; align-items:center; gap:24px; }
+.course-admin-navbar .nav-links { display:flex; align-items:center; gap:24px; margin-left:16px; }
 .course-admin-navbar .nav-link { color: rgba(255,255,255,.9); text-decoration: none; position: relative; font-size: 14px; }
 .course-admin-navbar .nav-link:hover { color:#fff; }
 .course-admin-navbar .nav-link.active { color:#fff; }
