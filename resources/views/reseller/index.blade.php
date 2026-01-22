@@ -103,7 +103,7 @@
             </div>
 
             <div class="col-md-4 text-end">
-                <button class="btn btn-warning rounded-pill px-4 py-2">
+                <button class="btn btn-warning rounded-pill px-5 py-2">
                     <i class="bi bi-wallet2 me-1"></i>
                     Tarik Komisi
                 </button>
