@@ -20,7 +20,7 @@
 <style>
 /* Compact admin navbar without Tailwind dependency */
 .course-admin-navbar { 
-    background: linear-gradient(90deg,#6f42c1 0%, #a855f7 100%);
+    background: linear-gradient( #4B2DBF 100%);
     position: fixed;
     top: 0;
     left: 0;

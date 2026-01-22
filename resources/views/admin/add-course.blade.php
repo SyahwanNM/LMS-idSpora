@@ -58,7 +58,7 @@
 </head>
 
 <body>
-    @include("partials.navbar-admin-course-bootstrap")
+    @include("partials.navbar-admin-course")
     <div class="container py-4">
         <div class="row">
             <div class="col-lg-8 mx-auto">

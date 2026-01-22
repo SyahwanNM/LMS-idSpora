@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 @section('title','Edit Event')
 @section('content')
- @include('partials.navbar-admin-course-bootstrap')
+ @include('partials.navbar-admin-event')
 <div class="container-fluid py-4">
     @if(session('success'))
         <div aria-live="polite" aria-atomic="true" class="position-relative">
