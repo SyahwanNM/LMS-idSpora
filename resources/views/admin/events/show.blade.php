@@ -278,7 +278,7 @@
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                 <td>
                                                     @php $st = strtolower((string)$reg->status); @endphp
-                                                    <span class="badge {{ $st==='active' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($reg->status ?? '-') }}</span>
+                                                <span class="badge {{ $st === 'active' ? 'bg-success' : ($st === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">{{ strtoupper($reg->status ?? '-') }}</span>
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                                 <td>
