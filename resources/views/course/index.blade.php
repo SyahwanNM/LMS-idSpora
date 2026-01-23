@@ -1,4 +1,3 @@
-@include ('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,15 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Courses</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <!-- Match dashboard includes -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for footer icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        body {
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .hero-carousel {
+            margin-top: 100px; 
+        }
+
+        .footer-section {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            margin-top: 40px; /* Jarak antara konten terakhir dengan footer */
+        }
+    </style>
 </head>
 
 <body>
+    @include ('partials.navbar-after-login')
+
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
@@ -161,127 +181,8 @@
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
                                     <path
                                         d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg>
-                                <span style="font-size:13px;">10 videos</span>
+                                </svg> <span style="font-size:13px;">10 videos</span>
                             </div>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                </article>
-            </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
-                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span> </div>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                </article>
-            </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
-                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span> </div>
                         </div>
                         <div class="progress-wrapper">
                             <div class="progress">
@@ -362,19 +263,28 @@
             <h6>Kursus terpopuler dengan rating tertinggi</h6>
         </div>
 
+        @php
+            $publishedFeaturedCourses = isset($featuredCourses)
+                ? collect($featuredCourses)->filter(function($c){ return ($c->status ?? null) === 'active'; })
+                : collect();
+        @endphp
         <ul class="course-list">
-            @forelse($featuredCourses as $course)
+            @forelse($publishedFeaturedCourses as $course)
             <li>
+                <a href="{{ route('course.detail', $course->id) }}" style="text-decoration:none;color:inherit;">
                 <article class="course-card">
                     <div class="thumb-wrapper">
-                        @if($course->image)
-                            <img class="thumb" src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        @php
+                            $cardImage = $course->card_thumbnail ?? $course->image;
+                        @endphp
+                        @if($cardImage)
+                            <img class="thumb" src="{{ Storage::url($cardImage) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         @else
                             <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         @endif
                         <div class="badge-save-group" style="gap:12px;">
                             <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
-                            <button class="save-btn" aria-label="Save course">
+                            <button class="save-btn" aria-label="Save course" type="button">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                     viewBox="0 0 16 16">
                                     <path d="M2 2v13.5l6-3 6 3V2z" />
@@ -421,10 +331,11 @@
                             <div class="price-col">
                                 <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                             </div>
-                            <button class="btn-enroll">Enroll Now</button>
+                            <a href="{{ route('course.detail', $course->id) }}" class="btn-enroll" style="text-decoration:none;">Enroll Now</a>
                         </div>
                     </div>
                 </article>
+                </a>
             </li>
             @empty
             <li>
@@ -494,10 +405,8 @@
             });
         });
     </script>
-
     @include('partials.footer-before-login')
 </body>
 
-<!-- Match dashboard bootstrap bundle for navbar dropdown & modal -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </html>

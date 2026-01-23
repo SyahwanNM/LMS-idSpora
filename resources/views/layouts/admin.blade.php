@@ -10,6 +10,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
+    <style>
+        /* Ensure toast notifications appear above fixed navbar and profile dropdown */
+        .toast-container.position-fixed { z-index: 11050 !important; }
+    </style>
 </head>
 <body>
     <!-- Admin Navbar (Bootstrap) -->
@@ -39,13 +43,13 @@
                     {{-- Certificate management moved to CRM --}}
                     @if(request()->routeIs('admin.dashboard'))
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admine</a>
+                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
                     </li>
                     @endif
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
-                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="javascript:void(0)" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-display="static" data-bs-auto-close="outside" aria-expanded="false">
+                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
@@ -109,11 +113,18 @@
         // Ensure dropdown initialization even if other scripts errored earlier
         var trigger = document.getElementById('adminProfileDropdown');
         if (trigger && window.bootstrap && bootstrap.Dropdown) {
-            try { new bootstrap.Dropdown(trigger, { autoClose: 'outside', display: 'static' }); } catch(e){}
+            try { new bootstrap.Dropdown(trigger, { autoClose: 'outside' }); } catch(e){}
             // Defensive: manually toggle on click if data-api missed
-            trigger.addEventListener('click', function(ev){ ev.preventDefault(); try {
-                const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside', display: 'static' });
+            trigger.addEventListener('click', function(ev){ try {
+                const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside' });
                 dd.toggle();
+                // Fallback: force show if still hidden
+                const menu = document.querySelector('ul.profile-dropdown.dropdown-menu');
+                if(menu && !menu.classList.contains('show')){
+                    menu.classList.add('show');
+                    menu.style.display = 'block';
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
             } catch(e){} });
 
             // Close button in dropdown
@@ -127,6 +138,17 @@
                 });
             });
         }
+        // Auto-show any server-rendered Bootstrap toasts (flash messages)
+        try {
+            document.querySelectorAll('.toast').forEach(function(t){
+                try {
+                    if(window.bootstrap && bootstrap.Toast){
+                        var inst = bootstrap.Toast.getOrCreateInstance(t);
+                        inst.show();
+                    }
+                } catch(e) {}
+            });
+        } catch(e) {}
         
         // Logout confirmation with animated checklist
         const logoutTrigger = document.getElementById('logoutTrigger');
@@ -203,8 +225,10 @@
         });
     </script>
     <style>
-    .bg-purple-gradient {background:linear-gradient(90deg,#6f42c1 0%, #a855f7 100%);}    
-    .navbar { z-index: 1040; }
+    .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
+    /* Ensure navbar always sits above any page overlays */
+    .navbar { z-index: 10000; pointer-events:auto; overflow: visible !important; }
+    .navbar .container { overflow: visible !important; }
     .navbar .nav-link {color: rgba(255,255,255,.9);} 
     .navbar .nav-link:hover {color: #fff;}
     .navbar .nav-link.active {color:#fff;position:relative;}
@@ -215,11 +239,13 @@
     .profile-dropdown {
         margin-top:.25rem;
         opacity:0;
-        transform:translateY(-6px) scale(.98);
-        transition:opacity .16s ease, transform .16s ease;
-        /* Keep below Bootstrap modal (1060) but above navbar */
-        z-index:1045;
-        position: relative;
+        transition:opacity .16s ease;
+        /* Keep above navbar */
+        z-index:10001;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: auto;
         background: rgba(255,255,255,0.96);
         backdrop-filter: saturate(180%) blur(6px);
         -webkit-backdrop-filter: saturate(180%) blur(6px);
@@ -228,7 +254,7 @@
         border-radius: 12px;
         overflow: hidden;
     }
-    .profile-dropdown.show {opacity:1;transform:translateY(0) scale(1);} 
+    .profile-dropdown.show {opacity:1;} 
     .profile-dropdown::before {display:none !important;} 
     .profile-dropdown .dropdown-close { position:absolute; top:6px; right:8px; opacity:.8; }
     .profile-dropdown .dropdown-close:hover { opacity:1; }
@@ -241,6 +267,18 @@
     }
     /* Ensure admin username in the profile toggle is readable on light pill backgrounds */
     .user-name { color: #0f172a !important; }
+    /* Prevent toast container from blocking navbar clicks while keeping toasts interactive */
+    .toast-container { pointer-events: none; z-index: 11050 !important; }
+    .toast-container .toast, .toast-container .btn-close { pointer-events: auto; }
+
+    /* New global notification component */
+    .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
+    .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+    .notification.show { transform: translateY(0) scale(1); opacity:1; }
+    .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
+    .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+    .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
+    .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
     body { padding-top: 78px; }
@@ -259,6 +297,47 @@
     @keyframes draw-circle { to { stroke-dashoffset:0; } }
     @keyframes draw-check { to { stroke-dashoffset:0; } }
     </style>
+
+    @if(session('success') || session('login_success') || session('error'))
+        <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
+            @if(session('login_success'))
+                <div class="notification success" role="status" data-timeout="4200">
+                    <div class="notif-message"><i class="bi bi-check-circle-fill me-2"></i>{{ session('login_success') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @elseif(session('success'))
+                <div class="notification success" role="status" data-timeout="3800">
+                    <div class="notif-message"><i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message"><i class="bi bi-x-circle-fill me-2"></i>{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        try {
+            const wrap = document.getElementById('globalNotifications');
+            if(!wrap) return;
+            wrap.querySelectorAll('.notification').forEach(function(n){
+                // show animation
+                setTimeout(function(){ n.classList.add('show'); }, 20);
+                const timeout = parseInt(n.getAttribute('data-timeout') || 4000, 10);
+                const closeBtn = n.querySelector('.notif-close');
+                const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                if(closeBtn) closeBtn.addEventListener('click', hide);
+                setTimeout(hide, timeout);
+            });
+        } catch(e){}
+    });
+    </script>
+
     @yield('scripts')
 </body>
 </html>

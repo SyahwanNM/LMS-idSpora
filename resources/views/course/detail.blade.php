@@ -1,4 +1,4 @@
-@include ('partials.navbar-after-login')
+@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,8 +9,10 @@
   <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 
 <style>
   :root {
@@ -19,6 +21,10 @@
     --primary-dark: #333333;
     --secondary: #F4C430;
     --black: #000000;
+  }
+
+  html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
+    font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
   }
 
   .course-hero {
@@ -93,9 +99,6 @@
     object-fit: cover;
     background: #000;
   }
-  
-  
-
   .content-description,
   .comments {
     width: 100%;
@@ -213,17 +216,27 @@
 
   }
 
+  .info-box {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
   .info-box>div {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 6px 0;
+    padding: 0;
+    justify-content: flex-start;
+  }
+  .info-box>div p {
+    text-align: left !important;
   }
 
   .info-box>div p:last-of-type {
-    margin-left: auto;
+    margin-left: 0;
     white-space: nowrap;
-    text-align: right;
+    text-align: left;
   }
 
   .info-box svg {
@@ -569,70 +582,64 @@
 </style>
 
 <body>
+  
   <section class="course-hero">
     <nav aria-label="breadcrumb">
-      <div class="container">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">Home</a></li>
-          <li class="breadcrumb-item"><a href="#">Course</a></li>
-          <li class="breadcrumb-item active">Learn Artificial Intelligence with Python</li>
-        </ol>
+      <div class="container" style="margin-left: 50px; margin-top: 2px;">
+        <div style="color:#fff; font-size:15px; font-weight:500;">
+          <span><a href="{{ route('dashboard') }}" style="color:#fff; text-decoration:none;">Home</a></span>
+          <span style="margin: 0 7px;">/</span>
+          <span><a href="{{ route('courses.index') }}" style="color:#fff; text-decoration:none;">Course</a></span>
+          <span style="margin: 0 7px;">/</span>
+          <span style="color:#fff; font-weight:600;">{{ $course->name }}</span>
+        </div>
       </div>
     </nav>
 
     <div class="title-course-hero">
       <div class="sub-title">
-        <h6>
-          Website Design
-        </h6>
+        <h6>{{ $course->category->name ?? '-' }}</h6>
         <p>by idSpora</p>
       </div>
       <div class="main-title">
-        <h1>
-          Complete Website Responsive Design: from Figma to Webflow to Website Design
-        </h1>
+        <h1>{{ $course->name }}</h1>
       </div>
       <div class="container-icon">
         <div class="icon-time">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill"
             viewBox="0 0 20 20">
-            <path
-              d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
           </svg>
-          <span>2 Weeks</span>
+          <span>{{ $course->duration ?? '-' }} Jam</span>
         </div>
         <div class="icon-attendant">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
-            <path
-              d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
-            <path
-              d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
+            <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
+            <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
           </svg>
-          <span>156 Students</span>
+          <span>{{ $course->students_count ?? '0' }} Students</span>
         </div>
         <div class="icon-badge">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reception-4"
             viewBox="0 0 16 16">
-            <path
-              d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
+            <path d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
           </svg>
-          <span>AI Level</span>
+          <span>{{ $course->level ?? '-' }}</span>
         </div>
         <div class="icon-lesson">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
-            <path
-              d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
+            <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
           </svg>
-          <span>20 Lessons</span>
+          <span>{{ $course->modules->count() ?? '0' }} Lessons</span>
         </div>
         <div class="icon-quizzez">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path fill="currentColor"
               d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
           </svg>
-          <span>3 quizzez</span>
+          <span>{{ $course->modules->where('type','quiz')->count() ?? '0' }} Quizzes</span>
         </div>
       </div>
     </div>
@@ -645,6 +652,36 @@
         <div id="video-wrapper"></div>
       </div>
       <div class="content-description">
+        @php
+          $progressTotal = $course->modules->count();
+          $progressCompleted = 0;
+          if(auth()->check()) {
+              try {
+                  $quizCompleted = \App\Models\QuizAttempt::where('user_id', auth()->id())
+                      ->whereIn('course_module_id', $course->modules->pluck('id'))
+                      ->whereNotNull('completed_at')
+                      ->distinct('course_module_id')
+                      ->count();
+              } catch (\Throwable $e) {
+                  $quizCompleted = 0;
+              }
+              $progressCompleted = $quizCompleted;
+          }
+          $progressPercent = $progressTotal > 0 ? round(($progressCompleted / $progressTotal) * 100) : 0;
+        @endphp
+
+        <div class="course-progress-card" style="margin-bottom:16px;">
+          <div style="background:#fff;border:1px solid #E4E4E6;padding:14px;border-radius:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:600;color:#111827;">Course Progress</div>
+              <div style="color:#6c6c6c;font-size:14px;">{{ $progressCompleted }} / {{ $progressTotal }}</div>
+            </div>
+            <div style="background:#f3f3f3;border-radius:8px;height:10px;overflow:hidden;">
+              <div style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="content-description-title">
           <button class="tab-btn" data-tab="overview">Overview</button>
           <button class="tab-btn active" data-tab="syllabus">Syllabus</button>
@@ -652,30 +689,9 @@
         </div>
         <div class="tab-content" id="overview">
           <h5>Overview</h5>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
-            placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
-            vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc
-            posuere.
-            Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
-            himenaeos.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
-            placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
-            vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc
-            posuere.
-            Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
-            himenaeos.
-          </p>
-          <p>
-            Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem
-            placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar
-            vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc
-            posuere.
-            Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos
-            himenaeos.
-          </p>
+            <p>
+              {!! $course->description !!}
+            </p>
         </div>
         <div class="tab-content active" id="syllabus">
           <h5>Syllabus</h5>
@@ -757,8 +773,21 @@
     <aside class="sidebar">
       <div class="kanan">
         <div class="price">
-          <span class="text-muted text-decoration-line-through">Rp300.000</span>
-          <h4 class="price-text">Rp150.000</h4>
+          @php
+            $now = \Carbon\Carbon::now();
+            $hasDiscount = $course->discount_percent && $course->discount_percent > 0 &&
+              ($course->discount_start == null || $now->gte(\Carbon\Carbon::parse($course->discount_start))) &&
+              ($course->discount_end == null || $now->lte(\Carbon\Carbon::parse($course->discount_end)));
+            $discountedPrice = $hasDiscount
+              ? (int) round($course->price * (1 - $course->discount_percent / 100))
+              : $course->price;
+          @endphp
+          @if($hasDiscount)
+            <span class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+            <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
+          @else
+            <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
+          @endif
           <div class="box-diskon">
             <div class="time-alert">
               <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
@@ -767,8 +796,23 @@
                 <path
                   d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
               </svg>
-              <p class="text-danger">2 days left at this price!</p>
-              <small class="diskon">50% OFF</small>
+              @php
+                $now = \Carbon\Carbon::now();
+                $discountEnd = $course->discount_end ? \Carbon\Carbon::parse($course->discount_end) : null;
+                $daysLeft = $discountEnd && $discountEnd->isFuture() ? $now->diffInDays($discountEnd, false) : null;
+              @endphp
+              @if($discountEnd && $daysLeft !== null && $daysLeft > 1)
+                <p class="text-danger">{{ $daysLeft }} days</p>
+              @elseif($discountEnd && $daysLeft === 1)
+                <p class="text-danger">1 day</p>
+              @elseif($discountEnd && $daysLeft === 0)
+                <p class="text-danger">Last day</p>
+              @else
+                <p class="text-danger">Limited time offer</p>
+              @endif
+              @if($hasDiscount)
+                <small class="diskon">{{ $course->discount_percent }}% OFF</small>
+              @endif
             </div>
           </div>
           <hr>
@@ -824,7 +868,17 @@
             </div>
           </div>
           <hr>
-          <button class="enroll">Enroll Now</button>
+          @php
+            $enrolled = false;
+            if (auth()->check()) {
+                $enrolled = \App\Models\Enrollment::where('user_id', auth()->id())->where('course_id', $course->id)->exists();
+            }
+          @endphp
+          @if($enrolled)
+            <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Start Learn</a>
+          @else
+            <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+          @endif
           <button class="save">Save</button>
           <p class="note">Note: all course have 30-days money-back guarantee</p>
         </div>
@@ -911,47 +965,61 @@
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // --- DATA VIDEO (Ganti sesuai kebutuhan) ---
 
-      // Skenario 1: Video dari YouTube (Aktif saat ini)
-      const videoData = {
-        type: 'youtube',
-        id: 'oEwTLmyVheA' // ID Video YouTube
-      };
-
-      /*
-      // Skenario 2: Video dari file lokal (Gunakan ini jika video dari file)
-      const videoData = {
-        type: 'local',
-        path: 'URL_FILE_VIDEO_ANDA.mp4', // Ganti dengan path video Anda
-        poster: 'property/idspora.png'      // Ganti dengan path poster Anda
-      };
-      */
-
-
-      // --- LOGIKA UNTUK MEMBUAT PLAYER VIDEO ---
+      // --- DATA VIDEO DARI DB ---
       const videoWrapper = document.getElementById('video-wrapper');
       let playerElement;
 
-      if (videoData.type === 'youtube') {
-        playerElement = document.createElement('div');
-        playerElement.setAttribute('data-plyr-provider', 'youtube');
-        playerElement.setAttribute('data-plyr-embed-id', videoData.id);
-      } else if (videoData.type === 'local') {
-        playerElement = document.createElement('video');
-        playerElement.setAttribute('playsinline', '');
-        playerElement.setAttribute('controls', '');
-        playerElement.setAttribute('poster', videoData.poster);
-        const sourceElement = document.createElement('source');
-        sourceElement.setAttribute('src', videoData.path);
-        sourceElement.setAttribute('type', 'video/mp4');
-        playerElement.appendChild(sourceElement);
+      // Ambil data video dari Blade
+      const mediaRaw = @json($course->media);
+      const mediaType = @json(pathinfo($course->media, PATHINFO_EXTENSION));
+      let media = mediaRaw;
+      // Jika file lokal, gunakan Storage::url
+      @if($course->media && !Str::contains($course->media, ['youtube.com', 'youtu.be']))
+        media = @json(Storage::url($course->media));
+      @endif
+
+      function getYoutubeId(url) {
+        // Regex untuk ambil ID YouTube
+        const regExp = /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[1].length === 11) ? match[1] : null;
+      }
+
+      if (media) {
+        const youtubeId = getYoutubeId(media);
+        if (youtubeId) {
+          playerElement = document.createElement('div');
+          playerElement.setAttribute('data-plyr-provider', 'youtube');
+          playerElement.setAttribute('data-plyr-embed-id', youtubeId);
+        } else if (mediaType === 'mp4') {
+          playerElement = document.createElement('video');
+          playerElement.setAttribute('playsinline', '');
+          playerElement.setAttribute('controls', '');
+          playerElement.setAttribute('poster', '');
+          const sourceElement = document.createElement('source');
+          sourceElement.setAttribute('src', media);
+          sourceElement.setAttribute('type', 'video/mp4');
+          playerElement.appendChild(sourceElement);
+        } else {
+          // Fallback jika bukan video
+          playerElement = document.createElement('img');
+          playerElement.setAttribute('src', media);
+          playerElement.setAttribute('alt', 'Course Media');
+        }
+      } else {
+        // Fallback jika tidak ada media
+        playerElement = document.createElement('img');
+        playerElement.setAttribute('src', '/aset/poster.png');
+        playerElement.setAttribute('alt', 'No Video');
       }
 
       if (playerElement) {
         playerElement.id = 'player';
         videoWrapper.appendChild(playerElement);
-        const player = new Plyr('#player');
+        if (playerElement.tagName === 'VIDEO' || playerElement.tagName === 'DIV') {
+          const player = new Plyr('#player');
+        }
       }
 
 

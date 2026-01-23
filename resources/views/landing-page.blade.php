@@ -396,8 +396,13 @@
             <h6>Kursus terpopuler dengan rating tertinggi</h6>
         </div>
 
+        @php
+            $publishedFeaturedCourses = isset($featuredCourses)
+                ? $featuredCourses->filter(function($c){ return ($c->status ?? null) === 'active'; })
+                : collect();
+        @endphp
         <ul class="course-list">
-            @forelse($featuredCourses as $course)
+            @forelse($publishedFeaturedCourses as $course)
             <li>
                 <article class="course-card">
                     <div class="thumb-wrapper">
