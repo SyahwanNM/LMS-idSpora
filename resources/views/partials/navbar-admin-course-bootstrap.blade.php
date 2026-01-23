@@ -1,6 +1,6 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm">
-  <div class="container">
-    <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.courses.index') }}">
+<nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top w-100">
+  <div class="container-fluid px-3">
+    <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
       <img src="{{ asset('aset/logo.png') }}" alt="idSpora" class="me-2" style="height:28px;">
       <span class="fw-semibold">Admin • Course</span>
     </a>
@@ -27,4 +27,6 @@
 .navbar .nav-link:hover {color: #fff;}
 .navbar .nav-link.active {color:#fff;position:relative;}
 .navbar .nav-link.active::after {content:"";position:absolute;left:.5rem;right:.5rem;bottom:-.4rem;height:2px;background:#fff;border-radius:2px;opacity:.9;}
+/* Offset page content so fixed-top navbar doesn't overlap */
+body {padding-top: 64px;}
 </style>

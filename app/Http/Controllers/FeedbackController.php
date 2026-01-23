@@ -55,13 +55,26 @@ class FeedbackController extends Controller
                 $registration->certificate_issued_at = Carbon::now();
             }
             $registration->save();
+            
+            // Add points for feedback
+            try {
+                $user = Auth::user();
+                if ($user) {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addFeedbackPoints($user);
+                }
+            } catch (\Throwable $e) { /* ignore */ }
         } catch (\Throwable $e) {
             // non-blocking: we still return success, but log could be added
         }
 
+        // Get user name safely (user should be authenticated at this point, but check anyway)
+        $user = Auth::user();
+        $userName = $user ? $user->name : 'User';
+
         return response()->json([
             'success' => true,
-            'user_name' => Auth::user()->name,
+            'user_name' => $userName,
             'rating' => $feedback->rating,
             'comment' => $feedback->comment,
         ]);

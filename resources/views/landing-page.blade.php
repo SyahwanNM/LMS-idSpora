@@ -32,27 +32,47 @@
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
-                @php
-                    $slides = (isset($carouselEvents) && $carouselEvents->count() > 0)
-                        ? $carouselEvents->take(3)
-                        : (isset($upcomingEvents) ? $upcomingEvents->take(3) : collect());
-                @endphp
-                @if($slides->isEmpty())
-                    <div class="carousel-item active" data-bs-interval="10000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
-                    </div>
-                    <div class="carousel-item" data-bs-interval="2000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
-                    </div>
-                    <div class="carousel-item">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
-                    </div>
-                @else
-                    @foreach($slides as $idx => $ev)
-                        <div class="carousel-item {{ $idx === 0 ? 'active' : '' }}" data-bs-interval="{{ $idx === 0 ? 10000 : 2000 }}">
-                            <img src="{{ $ev->image_url ?: asset('aset/poster.png') }}" class="d-block" alt="{{ $ev->title }}">
+                @if(isset($landingCarousels) && $landingCarousels->count() > 0)
+                    @foreach($landingCarousels as $i => $carousel)
+                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
+                            @if($carousel->link_url)
+                                <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;">
+                                    <img src="{{ $carousel->image_url }}" 
+                                         class="d-block" 
+                                         alt="{{ $carousel->title ?? 'Carousel' }}" 
+                                         onerror="this.src='{{ asset('aset/poster.png') }}'">
+                                </a>
+                            @else
+                                <img src="{{ $carousel->image_url }}" 
+                                     class="d-block" 
+                                     alt="{{ $carousel->title ?? 'Carousel' }}" 
+                                     onerror="this.src='{{ asset('aset/poster.png') }}'">
+                            @endif
                         </div>
                     @endforeach
+                @else
+                    @php
+                        $slides = (isset($carouselEvents) && $carouselEvents->count() > 0)
+                            ? $carouselEvents->take(3)
+                            : (isset($upcomingEvents) ? $upcomingEvents->take(3) : collect());
+                    @endphp
+                    @if($slides->isEmpty())
+                        <div class="carousel-item active" data-bs-interval="10000">
+                            <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
+                        </div>
+                        <div class="carousel-item" data-bs-interval="2000">
+                            <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
+                        </div>
+                        <div class="carousel-item">
+                            <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Event">
+                        </div>
+                    @else
+                        @foreach($slides as $idx => $ev)
+                            <div class="carousel-item {{ $idx === 0 ? 'active' : '' }}" data-bs-interval="{{ $idx === 0 ? 10000 : 2000 }}">
+                                <img src="{{ $ev->image_url ?: asset('aset/poster.png') }}" class="d-block" alt="{{ $ev->title }}">
+                            </div>
+                        @endforeach
+                    @endif
                 @endif
             </div>
 
