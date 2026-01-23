@@ -238,10 +238,10 @@ class AdminController extends Controller
         // Paid statuses based on Midtrans typical values
         $paidStatuses = ['settlement', 'capture', 'success'];
 
-        // Sum payment gross_amount grouped by event
-        $revenueMap = \App\Models\Payment::query()
-            ->selectRaw('event_id, SUM(gross_amount) as total')
-            ->whereIn('status', $paidStatuses)
+        // Sum revenue from manual payments (use settled manual payments)
+        $revenueMap = \App\Models\ManualPayment::query()
+            ->selectRaw('event_id, SUM(COALESCE(amount, 0)) as total')
+            ->where('status', 'settled')
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 

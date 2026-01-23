@@ -14,8 +14,12 @@
             <div class="flex-grow-1">
                 <input type="file" name="avatar" accept="image/*" class="form-control" id="avatarEditInput">
                 <input type="hidden" name="avatar_base64" id="avatarBase64">
+                <input type="hidden" name="remove_avatar" id="removeAvatarFlag" value="0">
                 <small class="text-muted d-block">Opsional. Format: JPG/PNG, ukuran maks 2MB.</small>
-                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="toggleAvatarCrop">Atur Foto Profil</button>
+                <div class="d-flex gap-2 mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleAvatarCrop">Atur Foto Profil</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="removeAvatarBtn">Hapus Foto</button>
+                </div>
             </div>
         </div>
         <div id="avatarCropSection" class="mt-3" style="display:none;">
@@ -93,6 +97,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var zoomOutBtn = document.getElementById('avatarZoomOut');
     var resetBtn = document.getElementById('avatarReset');
     var applyBtn = document.getElementById('applyAvatarCrop');
+    var removeBtn = document.getElementById('removeAvatarBtn');
+    var removeFlag = document.getElementById('removeAvatarFlag');
     var cropper = {
         scale: 1,
         x: 0,
@@ -207,6 +213,8 @@ document.addEventListener('DOMContentLoaded', function(){
             var file = input.files && input.files[0];
             if(!file) return;
             if(!file.type.startsWith('image/')) return;
+            // If user selects a file, ensure remove flag is reset
+            if(removeFlag){ removeFlag.value = '0'; }
             // Show preview
             var reader = new FileReader();
             reader.onload = function(e){ preview.src = e.target.result; };
@@ -214,6 +222,24 @@ document.addEventListener('DOMContentLoaded', function(){
             // Prepare crop UI
             loadCropImage(file);
             section.style.display = 'block';
+        });
+    }
+
+    // Handle remove avatar action
+    if(removeBtn){
+        removeBtn.addEventListener('click', function(){
+            if(removeFlag){ removeFlag.value = '1'; }
+            // Clear inputs and crop state
+            if(input){ input.value = ''; }
+            var hiddenB64 = document.getElementById('avatarBase64');
+            if(hiddenB64){ hiddenB64.value = ''; }
+            cropImg.src = '';
+            cropImg.style.display = 'none';
+            resetCrop();
+            // Set preview to default placeholder
+            preview.src = '{{ asset('aset/default-avatar.png') }}';
+            // Hide crop section if open
+            section.style.display = 'none';
         });
     }
 });

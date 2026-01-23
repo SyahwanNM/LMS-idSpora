@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg navbar-gradient fixed-top">
     <div class="container-fluid d-flex align-items-center" style="padding: 0;">
-        <a class="navbar-brand" href="#" style="margin-left: 30px;">
+        <a class="navbar-brand" href="{{ route('dashboard') }}" style="margin-left: 30px;">
             <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="Logo idSpora" class="img-fluid"
                 style="max-width:80px; height:auto;">
         </a>
@@ -149,6 +149,17 @@
 </div>
 
 <script>
+// Logout Modal Functionality
+function openLogoutModal() {
+    var modal = document.getElementById('logoutConfirmModal');
+    if (window.bootstrap && modal) {
+        var m = new bootstrap.Modal(modal);
+        m.show();
+    } else if (modal) {
+        // Fallback for Bootstrap 4
+        $(modal).modal('show');
+    }
+}
 // Notification Dropdown Functionality
 function toggleNotificationDropdown() {
     const dropdown = document.getElementById('notificationDropdown');
