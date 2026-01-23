@@ -260,7 +260,8 @@ class CRMController extends Controller
         $topRatedEvents = $topRatedEventsQuery->get();
 
         // Recent feedbacks (with date filter if applied)
-        $recentFeedbacksQuery = Feedback::with(['user', 'event']);
+        $recentFeedbacksQuery = Feedback::with(['user', 'event'])
+            ->whereHas('event'); // Only get feedbacks where event still exists
         if($dateFrom) {
             $recentFeedbacksQuery->whereDate('created_at', '>=', $dateFrom);
         }

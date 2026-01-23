@@ -116,6 +116,8 @@ class ProfileController extends Controller
                 },
             ],
             'bio' => 'nullable|string|max:1000',
+            'profession' => 'nullable|string|in:Pelajar/Mahasiswa,Karyawan Swasta,ASN/PNS,Wirausaha,Lainnya',
+            'institution' => 'nullable|string|max:255',
         ]);
 
         $user->name = $validated['name'];
@@ -163,6 +165,8 @@ class ProfileController extends Controller
         }
         
         $user->bio = $validated['bio'] ?? null;
+        $user->institution = $validated['institution'] ?? null;
+        $user->profession = $validated['profession'] ?? null;
         
         $user->save();
         
@@ -181,10 +185,91 @@ class ProfileController extends Controller
         
         // Get all event registrations with event details
         $registrations = EventRegistration::where('user_id', $user->id)
-            ->with('event')
+            ->with(['event', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // Saved events (Event Tersimpan)
+        $savedEvents = \DB::table('user_saved_events')
+            ->where('user_id', $user->id)
+            ->join('events', 'user_saved_events.event_id', '=', 'events.id')
+            ->select('events.*', 'user_saved_events.created_at as saved_at')
+            ->orderBy('user_saved_events.created_at', 'desc')
+            ->get();
         
-        return view('profile.events', compact('registrations'));
+        // Get all payments for this user
+        $payments = \App\Models\Payment::where('user_id', $user->id)
+            ->whereIn('status', ['capture', 'settlement'])
+            ->get()
+            ->keyBy('event_id');
+        
+        // Calculate total spending
+        $totalSpending = $payments->sum('gross_amount');
+        
+        // Count statistics
+        $totalEvents = $registrations->count();
+        $paidEvents = $registrations->filter(function($reg) {
+            return $reg->event && $reg->event->price > 0;
+        })->count();
+        $freeEvents = $totalEvents - $paidEvents;
+        $attendedEvents = $registrations->filter(function($reg) {
+            return !empty($reg->attendance_status);
+        })->count();
+        $certifiedEvents = $registrations->filter(function($reg) {
+            return !empty($reg->certificate_issued_at);
+        })->count();
+        $feedbackSubmitted = $registrations->filter(function($reg) {
+            return !empty($reg->feedback_submitted_at);
+        })->count();
+        
+        return view('profile.events', compact(
+            'registrations', 
+            'payments', 
+            'totalSpending',
+            'totalEvents',
+            'paidEvents',
+            'freeEvents',
+            'attendedEvents',
+            'certifiedEvents',
+            'feedbackSubmitted',
+            'savedEvents'
+        ));
+    }
+    
+    public function settings()
+    {
+        $user = Auth::user();
+        // Redirect to edit profile as default
+        return redirect()->route('profile.edit');
+    }
+    
+    public function accountSettings()
+    {
+        $user = Auth::user();
+        return view('profile.account-settings', compact('user'));
+    }
+    
+    public function updateAccountSettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'current_password' => 'required_with:password',
+            'password' => 'nullable|min:6|confirmed',
+        ]);
+        
+        // Verify current password if changing password
+        if (!empty($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
+            }
+            $user->password = Hash::make($validated['password']);
+        }
+        
+        $user->email = $validated['email'];
+        $user->save();
+        
+        return redirect()->route('profile.account-settings')->with('success', 'Pengaturan akun berhasil diperbarui!');
     }
 }
