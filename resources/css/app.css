@@ -1425,6 +1425,33 @@ label {
     margin-bottom: 50px;
 }
 
+.label-kode {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.input-kode {
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    font-size: 14px;
+}
+
+.note-text {
+    color: #dc3545;
+    font-size: 12px;
+    font-style: italic; 
+    margin-top: 6px;
+}
+
+.btn-submit-attendance {
+    font-weight: 500;
+    padding: 10px;
+    margin-top: 10px;
+}
+
 @media (max-width: 992px) {
     .container-detail {
         grid-template-columns: 1fr;

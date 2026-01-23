@@ -27,9 +27,17 @@ Route::get('/admin/report', function () {
     return redirect()->route('admin.reports');
 });
 
-Route::get('/admin/add-users', function () {
-    return view('/admin/add-users');
-});
+Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
+    // Pull non-admin users with event participations for the Manage User table and view modal
+    $users = \App\Models\User::with(['eventRegistrations' => function($q){
+            $q->with('event')->orderBy('created_at','desc');
+        }])
+        ->select('id','name','email','phone','profession','institution','avatar','created_at')
+        ->where('role', '!=', 'admin')
+        ->orderBy('name')
+        ->get();
+    return view('/admin/add-users', compact('users'));
+})->name('admin.add-users');
 
 Route::get('/reseller', function () {
     return view('reseller.index');
@@ -163,6 +171,9 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
 
+// Query current pending order for this user+event (auth required)
+Route::middleware('auth')->get('/payment/{event}/pending-order', [PaymentController::class, 'pendingOrder'])->name('payment.pending-order');
+
 // Finalize registration after successful payment (auth required)
 Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController::class, 'finalize'])->name('payment.finalize');
 
@@ -189,8 +200,29 @@ Route::middleware('auth')->group(function(){
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
-    Route::post('/events/{event}/attendance', [\App\Http\Controllers\EventParticipationController::class, 'submitAttendance'])->name('events.attendance');
-    Route::get('/events/{event}/ticket', [PublicEventController::class, 'ticket'])->name('events.ticket');
+    // Dedicated scan page for event QR (auth, require registration)
+    Route::get('/events/{event}/scan', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
+        $user = $request->user();
+        if(!$user){ return redirect()->route('login'); }
+        $registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
+        if(!$registration || $registration->status !== 'active'){
+            return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
+        }
+        // Compute event start/end for gating
+        $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
+        $startTime = null; $endTime = null;
+        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch(\Throwable $e) {}
+        try { $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch(\Throwable $e) {}
+        if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+        if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+        $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
+        $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
+        return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
+    })->name('events.scan');
+    // Attendance via scan: persist attendance when QR is decoded
+    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
+    // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationsController::class,'markAllRead'])->name('notifications.markAllRead');
@@ -201,8 +233,11 @@ Route::middleware('auth')->group(function(){
     // User profile
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/settings', [\App\Http\Controllers\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
+    Route::post('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
     
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
@@ -215,14 +250,42 @@ Route::middleware('auth')->group(function(){
     // Save/unsave event
     Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
         $user = $request->user();
-        if(!$user){ return response()->json(['success'=>false,'message'=>'Unauthorized'], 401); }
-        $exists = \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->exists();
-        if($exists){
-            \DB::table('user_saved_events')->where('user_id',$user->id)->where('event_id',$event->id)->delete();
-            return response()->json(['success'=>true,'saved'=>false]);
+        if(!$user){
+            // For non-AJAX, redirect to login; for AJAX, return JSON 401
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success'=>false,'message'=>'Unauthorized'], 401);
+            }
+            return redirect()->route('login');
         }
-        \DB::table('user_saved_events')->insert(['user_id'=>$user->id,'event_id'=>$event->id,'created_at'=>now(),'updated_at'=>now()]);
-        return response()->json(['success'=>true,'saved'=>true]);
+
+        $exists = \DB::table('user_saved_events')
+            ->where('user_id',$user->id)
+            ->where('event_id',$event->id)
+            ->exists();
+
+        $saved = true;
+        if($exists){
+            \DB::table('user_saved_events')
+                ->where('user_id',$user->id)
+                ->where('event_id',$event->id)
+                ->delete();
+            $saved = false;
+        } else {
+            \DB::table('user_saved_events')->insert([
+                'user_id'=>$user->id,
+                'event_id'=>$event->id,
+                'created_at'=>now(),
+                'updated_at'=>now()
+            ]);
+            $saved = true;
+        }
+
+        // If the request expects JSON (AJAX/fetch), return JSON; otherwise redirect back to detail page
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success'=>true,'saved'=>$saved]);
+        }
+        return redirect()->route('events.registered.detail', $event)
+            ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
     })->name('events.save');
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
@@ -260,7 +323,7 @@ Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('ne
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
@@ -285,6 +348,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/users/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
     Route::put('/admin/users/{user}', [UserManagementController::class, 'update'])->name('admin.users.update');
     Route::delete('/admin/users/{user}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
+
+    // Carousel Management
+    Route::get('/admin/carousels', [\App\Http\Controllers\Admin\CarouselController::class, 'index'])->name('admin.carousels.index');
+    Route::get('/admin/carousels/create', [\App\Http\Controllers\Admin\CarouselController::class, 'create'])->name('admin.carousels.create');
+    Route::post('/admin/carousels', [\App\Http\Controllers\Admin\CarouselController::class, 'store'])->name('admin.carousels.store');
+    Route::get('/admin/carousels/{carousel}/edit', [\App\Http\Controllers\Admin\CarouselController::class, 'edit'])->name('admin.carousels.edit');
+    Route::put('/admin/carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselController::class, 'update'])->name('admin.carousels.update');
+    Route::delete('/admin/carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselController::class, 'destroy'])->name('admin.carousels.destroy');
+    Route::post('/admin/carousels/{carousel}/toggle-active', [\App\Http\Controllers\Admin\CarouselController::class, 'toggleActive'])->name('admin.carousels.toggle-active');
         
         // Course management routes
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
@@ -307,6 +379,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Event document uploads (admin)
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+    // Event QR actions (admin)
+    Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
+    Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
     // Utility: resolve Google Maps short links to lat/lng
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
         

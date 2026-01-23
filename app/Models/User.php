@@ -28,6 +28,11 @@ class User extends Authenticatable
         'phone',
         'website',
         'bio',
+        'points',
+        'badge',
+        'last_event_date',
+        'profession',
+        'institution',
     ];
 
     /**
@@ -50,6 +55,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_event_date' => 'date',
+            'points' => 'integer',
         ];
     }
 
@@ -273,5 +280,36 @@ class User extends Authenticatable
         }
 
         return $phone;
+    }
+
+    /**
+     * Get badge information
+     */
+    public function getBadgeInfoAttribute(): array
+    {
+        $service = app(\App\Services\UserPointsService::class);
+        return $service->getBadgeInfo($this->badge ?? 'beginner');
+    }
+
+    /**
+     * Get next badge information
+     */
+    public function getNextBadgeInfoAttribute(): ?array
+    {
+        $service = app(\App\Services\UserPointsService::class);
+        $currentPoints = $this->points ?? 0;
+        $currentBadge = $this->badge ?? 'beginner';
+        
+        $badges = ['beginner', 'explorer', 'learner', 'expert', 'master'];
+        $currentIndex = array_search($currentBadge, $badges);
+        
+        if ($currentIndex !== false && $currentIndex < count($badges) - 1) {
+            $nextBadge = $badges[$currentIndex + 1];
+            $nextBadgeInfo = $service->getBadgeInfo($nextBadge);
+            $nextBadgeInfo['points_needed'] = $nextBadgeInfo['min_points'] - $currentPoints;
+            return $nextBadgeInfo;
+        }
+        
+        return null;
     }
 }

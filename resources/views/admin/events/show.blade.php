@@ -207,23 +207,86 @@
                                         </span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->attendance_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Absensi</span>
-                                        <span>
-                                            @if(!empty($event->attendance_path))
-                                                @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                    </a>
-                                                @elseif($aExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                @else
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
-                                                @endif
-                                            @else <span class="text-muted">Belum ada</span> @endif
+                                        <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Absensi</span>
+                                        <span class="d-flex align-items-center gap-2">
+                                            @if(!empty($event->attendance_qr_image))
+                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = Storage::url($event->attendance_qr_image); @endphp
+                                                <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
+                                                    <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Unduh PNG</button>
+                                                <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Unduh JPG</button>
+                                                <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
+                                                </form>
+                                            @else
+                                                <span class="text-muted">Belum tersedia</span>
+                                                <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-qr-code me-1"></i>Generate</button>
+                                                </form>
+                                            @endif
                                         </span>
                                     </li>
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Registered Participants -->
+                    @php
+                        // Eager-load users for participant list
+                        try {
+                            $registrations = $event->registrations()->with('user')->latest()->get();
+                        } catch (\Throwable $e) {
+                            $registrations = collect();
+                        }
+                    @endphp
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Peserta Terdaftar</h6>
+                                        <span class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
+                                    </div>
+                                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="participantSearch" class="form-control" placeholder="Cari peserta (nama/email/kode)">
+                                    </div>
+                                </div>
+                                @if($registrations->count())
+                                <div class="table-responsive">
+                                    <table id="participantsTable" class="table table-sm table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:48px;">No</th>
+                                                <th style="width:220px;">Nama</th>
+                                                <th style="width:240px;">Email</th>
+                                                <th style="width:120px;">Status</th>
+                                                <th style="width:160px;">Terdaftar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($registrations as $i => $reg)
+                                            <tr>
+                                                <td>{{ $i+1 }}</td>
+                                                <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
+                                                <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
+                                                <td>
+                                                    @php $st = strtolower((string)$reg->status); @endphp
+                                                    <span class="badge {{ $st==='active' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($reg->status ?? '-') }}</span>
+                                                </td>
+                                                <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @else
+                                <div class="alert alert-light border small mb-0">Belum ada peserta terdaftar.</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -677,7 +740,96 @@ document.addEventListener('DOMContentLoaded', function(){
     }catch(e){ console.error(e); }
 });
 </script>
+<script>
+// Client-side filter for participants table
+document.addEventListener('DOMContentLoaded', function(){
+    var input = document.getElementById('participantSearch');
+    var table = document.getElementById('participantsTable');
+    if (!input || !table) return;
+    var tbody = table.querySelector('tbody');
+    input.addEventListener('input', function(){
+        var q = (this.value || '').toLowerCase().trim();
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
+            var name = (row.children[1]?.textContent || '').toLowerCase();
+            var email = (row.children[2]?.textContent || '').toLowerCase();
+            var match = !q || name.includes(q) || email.includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    });
+});
+</script>
 @endif
+<script>
+// PNG/JPG download for QR (supports SVG and raster sources)
+document.addEventListener('DOMContentLoaded', function(){
+    function loadImageFromSvgText(svgText){
+        return new Promise((resolve, reject)=>{
+            try {
+                const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = function(){ URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = function(e){ URL.revokeObjectURL(url); reject(e); };
+                img.src = url;
+            } catch (err) { reject(err); }
+        });
+    }
+    function loadImageFromUrl(src){
+        return new Promise((resolve, reject)=>{
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = ()=> resolve(img);
+            img.onerror = (e)=> reject(e);
+            img.src = src;
+        });
+    }
+    function drawToCanvas(img, type='image/png', targetWidth=600, targetHeight=600){
+        const canvas = document.createElement('canvas');
+        const w = targetWidth, h = targetHeight;
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; // white bg for JPG
+        ctx.fillRect(0,0,w,h);
+        const scale = Math.min(w / img.width, h / img.height);
+        const dw = img.width * scale; const dh = img.height * scale;
+        const dx = (w - dw) / 2; const dy = (h - dh) / 2;
+        ctx.drawImage(img, dx, dy, dw, dh);
+        return canvas.toDataURL(type);
+    }
+    async function handleDownload(format){
+        const btn = format === 'png' ? document.getElementById('btnDownloadQrPng') : document.getElementById('btnDownloadQrJpg');
+        if(!btn) return;
+        const src = btn.getAttribute('data-qr-src');
+        const ext = (btn.getAttribute('data-qr-ext') || '').toLowerCase();
+        const baseName = btn.getAttribute('data-qr-name') || 'qr';
+        const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+        try {
+            let img;
+            if(ext === 'svg'){
+                const res = await fetch(src, { cache: 'no-store' });
+                const svgText = await res.text();
+                img = await loadImageFromSvgText(svgText);
+            } else {
+                img = await loadImageFromUrl(src);
+            }
+            const dataUrl = drawToCanvas(img, mime);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `${baseName}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch (err) {
+            console.error('Gagal mengunduh QR sebagai', format, err);
+            alert('Maaf, gagal mengunduh dalam format ' + format.toUpperCase() + '.');
+        }
+    }
+    const btnPng = document.getElementById('btnDownloadQrPng');
+    const btnJpg = document.getElementById('btnDownloadQrJpg');
+    if(btnPng) btnPng.addEventListener('click', ()=> handleDownload('png'));
+    if(btnJpg) btnJpg.addEventListener('click', ()=> handleDownload('jpg'));
+});
+</script>
 <!-- Delete Confirmation Modal (modern) -->
 <div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

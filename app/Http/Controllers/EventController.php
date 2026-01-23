@@ -28,8 +28,8 @@ class EventController extends Controller
 
     public function create()
     {
-        // Show Add Event modal UI with existing ACTIVE (not finished) events list + dynamic jenis/materi options
-        $events = Event::active()->latest()->paginate(10);
+        // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
+        $events = Event::query()->latest()->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.add-event', compact('events','materiOptions','jenisOptions'));
@@ -181,7 +181,52 @@ class EventController extends Controller
             }
         }
 
-    return redirect()->route('admin.add-event')->with('success', 'Event berhasil ditambahkan!');
+        // Generate one-time attendance QR (only once per event)
+        try {
+            if (empty($event->attendance_qr_token) && empty($event->attendance_qr_image)) {
+                $token = bin2hex(random_bytes(16));
+                $content = url('/events/'.$event->id.'?t='.$token);
+                // Try PNG first; if GD not available, fallback to SVG
+                $png = null; $svg = null; $filename = null;
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) { $png = null; }
+                if ($png) {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                } else {
+                    // Attempt SVG generation as a reliable fallback
+                    try {
+                        if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                        }
+                    } catch (\Throwable $e) { $svg = null; }
+                    if ($svg) {
+                        $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                    } else {
+                        // Final minimal PNG to avoid errors
+                        $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                    }
+                }
+                $event->attendance_qr_token = $token;
+                $event->attendance_qr_image = $filename;
+                $event->attendance_qr_generated_at = now();
+                $event->save();
+            }
+        } catch (\Throwable $e) { /* ignore QR errors */ }
+
+        // If the newly created event is already finished based on end time, pre-select the Finished filter
+        $statusFilter = $event->isFinished() ? 'finished' : null;
+
+        return redirect()
+            ->route('admin.add-event')
+            ->with('success', 'Event berhasil ditambahkan!')
+            ->with('statusFilter', $statusFilter);
     }
 
     public function show(Event $event)
@@ -348,7 +393,7 @@ class EventController extends Controller
                 'status' => 'already',
                 'message' => 'Sudah terdaftar',
                 'event_title' => $event->title,
-                'redirect' => route('events.ticket', $event)
+                'redirect' => route('events.show', $event)
             ]);
         }
         // Hitung final price (sesudah diskon bila ada)
@@ -371,13 +416,20 @@ class EventController extends Controller
             'status' => 'active',
             'registration_code' => 'EVT-'.strtoupper(uniqid())
         ]);
+        
+        // Add points for event registration
+        try {
+            $pointsService = app(\App\Services\UserPointsService::class);
+            $pointsService->addEventPoints($user, $event, $reg);
+        } catch (\Throwable $e) { /* ignore */ }
+
         // Create notification (expires in 14 days)
         try{
             UserNotification::create([
                 'user_id' => $user->id,
                 'type' => 'event_registration',
-                'title' => 'Pendaftaran Event Berhasil',
-                'message' => 'Kamu terdaftar di "'.$event->title.'".',
+                'title' => 'Pendaftaran Dikonfirmasi',
+                'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
                 'data' => ['url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
@@ -387,7 +439,7 @@ class EventController extends Controller
             'message' => 'Berhasil daftar event (GRATIS)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.ticket', $event)
+            'redirect' => route('events.show', $event)
         ]);
     }
 
@@ -397,7 +449,6 @@ class EventController extends Controller
         $validated = $request->validate([
             'virtual_background' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
             'certificate' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
-            'attendance' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
         ]);
 
         $updates = [];
@@ -407,15 +458,73 @@ class EventController extends Controller
         if ($request->hasFile('certificate')) {
             $updates['certificate_path'] = $request->file('certificate')->store('events/docs', 'public');
         }
-        if ($request->hasFile('attendance')) {
-            $updates['attendance_path'] = $request->file('attendance')->store('events/docs', 'public');
-        }
 
         if (!empty($updates)) {
             $event->update($updates);
         }
 
         return back()->with('success', 'Dokumen berhasil diperbarui.');
+    }
+
+    // Admin: download event QR image
+    public function downloadQr(Event $event)
+    {
+        $path = (string) $event->attendance_qr_image;
+        if (!$path) abort(404, 'QR image not available');
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        if (!$disk->exists($path)) {
+            // Fallback: try public/storage
+            $alt = public_path('storage/'.ltrim($path,'/'));
+            if (!is_file($alt)) abort(404, 'QR image file missing');
+            $ext = strtolower(pathinfo($alt, PATHINFO_EXTENSION));
+            $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+            return response()->download($alt, $downloadName);
+        }
+        $full = $disk->path($path);
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+        return response()->download($full, $downloadName);
+    }
+
+    // Admin: generate or regenerate event attendance QR
+    public function generateQr(Event $event)
+    {
+        try {
+            // Generate new token and QR image (PNG preferred, SVG fallback)
+            $token = bin2hex(random_bytes(16));
+            $content = url('/events/'.$event->id.'?t='.$token);
+            $png = null; $svg = null; $filename = null;
+            try {
+                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                }
+            } catch (\Throwable $e) { $png = null; }
+            if ($png) {
+                $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+            } else {
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) { $svg = null; }
+                if ($svg) {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                } else {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                }
+            }
+            $event->attendance_qr_token = $token;
+            $event->attendance_qr_image = $filename;
+            $event->attendance_qr_generated_at = now();
+            $event->save();
+            return back()->with('success', 'QR Absensi berhasil digenerate.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal generate QR Absensi.');
+        }
     }
 
     // Resolve Google Maps short links to coordinates (admin only)

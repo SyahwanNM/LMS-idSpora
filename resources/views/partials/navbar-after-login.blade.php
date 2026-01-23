@@ -89,8 +89,26 @@
                         </svg>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" id="userDropdownMenu" aria-labelledby="userDropdown" style="display: none;">
+                        <li>
+                            <div class="dropdown-item-text d-flex align-items-center justify-content-between px-3 py-2" style="cursor: default;">
+                                <div class="d-flex align-items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ffc107" viewBox="0 0 16 16" class="me-2">
+                                        <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33 33 0 0 1 2.5.5m.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935m10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935M3.504 1c.007.517.026 1.006.056 1.469.13 2.028.457 3.546.87 4.667C5.294 9.48 6.484 10 7 10c.484 0 1.706-.52 2.57-2.864.413-1.12.74-2.64.87-4.667.03-.463.049-.952.056-1.469H3.504z"/>
+                                    </svg>
+                                    <span class="fw-semibold">Poin Saya</span>
+                                </div>
+                                <span class="badge bg-warning text-dark ms-2 d-flex align-items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                                    </svg>
+                                    {{ Auth::user()->points ?? 0 }}
+                                </span>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
                         <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.settings') }}"><i class="bi bi-gear me-2"></i>Pengaturan</a></li>
                         <li><hr class="dropdown-divider"></li>
                                                 <li>
                             <button type="button" class="dropdown-item text-danger" onclick="openLogoutModal()">
@@ -156,7 +174,7 @@ function loadNotifications() {
     notificationList.innerHTML = '<div class="px-3 py-3 text-center text-muted"><small>Memuat...</small></div>';
     if (notificationStatus) notificationStatus.textContent = 'Memuat...';
     
-    fetch('{{ route("notifications.index") }}', {
+    safeFetchJson('/notifications', {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -164,7 +182,6 @@ function loadNotifications() {
         },
         credentials: 'same-origin'
     })
-    .then(response => response.json())
     .then(data => {
         // Update badge
         if (badge) {
@@ -220,14 +237,21 @@ function loadNotifications() {
         }
     })
     .catch(error => {
-        console.error('Error loading notifications:', error);
-        notificationList.innerHTML = '<div class="px-3 py-3 text-center text-danger"><small>Gagal memuat notifikasi</small></div>';
-        if (notificationStatus) notificationStatus.textContent = 'Error';
+        console.warn('Error loading notifications:', error);
+        // Show gentle empty state instead of error banner
+        notificationList.innerHTML = `
+            <div class="px-3 py-4 text-center text-muted" style="background-color: #f8f9fa;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.5; margin-bottom: 0.5rem;">
+                    <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 8 9h6.46l-3.05-3.812A.5.5 0 0 0 11.02 5H4.98zm9.954 5H8.854l.147-.146a.5.5 0 0 0-.708-.708l-3 3a.5.5 0 0 0 0 .708l3 3a.5.5 0 0 0 .708-.708L8.854 12h5.08a.5.5 0 0 0 .496-.563l-1-8a.5.5 0 0 0-.496-.437H4.98a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 9h4.932l.5 4z"/>
+                </svg>
+                <p class="mt-2 mb-0 small">Tidak ada notifikasi</p>
+            </div>`;
+        if (notificationStatus) notificationStatus.textContent = 'Semua telah dibaca';
     });
 }
 
 function markAllAsRead() {
-    fetch('{{ route("notifications.markAllRead") }}', {
+    safeFetchJson('/notifications/mark-all-read', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -236,7 +260,6 @@ function markAllAsRead() {
         },
         credentials: 'same-origin'
     })
-    .then(response => response.json())
     .then(data => {
         if (data.ok) {
             // Reload notifications
@@ -258,7 +281,7 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', function() {
     const badge = document.getElementById('notificationBadge');
     if (badge) {
-        fetch('{{ route("notifications.index") }}', {
+        safeFetchJson('/notifications', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -266,7 +289,6 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             credentials: 'same-origin'
         })
-        .then(response => response.json())
         .then(data => {
             if (data.unread > 0) {
                 badge.textContent = data.unread > 99 ? '99+' : data.unread;
@@ -292,6 +314,24 @@ function toggleUserDropdown() {
             arrow.style.transform = 'rotate(180deg)';
         } else {
             dropdown.style.display = 'none';
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+// Settings Submenu Toggle
+function toggleSettingsSubmenu(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const submenu = document.getElementById('settingsSubmenu');
+    const arrow = document.getElementById('settingsArrow');
+    
+    if (submenu && arrow) {
+        if (submenu.style.display === 'none' || submenu.style.display === '') {
+            submenu.style.display = 'block';
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            submenu.style.display = 'none';
             arrow.style.transform = 'rotate(0deg)';
         }
     }
@@ -418,6 +458,25 @@ function showLogoutSuccessState(){
                 <small class="text-muted">Mengalihkan...</small>
             </div>`;
     }
+}
+</script>
+<script>
+// Helper: robust JSON fetch with redirect/non-JSON guard
+function safeFetchJson(url, options){
+    return fetch(url, options).then(async (response) => {
+        const ct = (response.headers.get('content-type') || '').toLowerCase();
+        if (!response.ok) {
+            // Return empty state on any HTTP error to avoid breaking UI
+            return { items: [], unread: 0, ok: false, status: response.status };
+        }
+        // If server redirected to HTML (e.g., login), return empty state
+        if (!ct.includes('application/json')) {
+            return { items: [], unread: 0, ok: false };
+        }
+        // Parse JSON; on failure, return empty instead of throwing
+        try { return await response.json(); }
+        catch(_e){ return { items: [], unread: 0, ok: false }; }
+    });
 }
 </script>
 
@@ -590,6 +649,36 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Dropdown item hover effects */
 #userDropdownMenu .dropdown-item:hover {
     background-color: #f8f9fa;
+}
+
+/* Points display styling */
+#userDropdownMenu .dropdown-item-text {
+    background-color: #fffbf0;
+    border-bottom: 1px solid #ffe8b3;
+}
+
+#userDropdownMenu .dropdown-item-text .badge {
+    font-size: 0.875rem;
+    padding: 0.35em 0.65em;
+    font-weight: 600;
+}
+
+/* Settings Submenu Styles */
+.dropdown-submenu {
+    background-color: #f8f9fa;
+    border-left: 3px solid #ffc107;
+    margin-top: 0.25rem;
+}
+
+.dropdown-submenu .dropdown-item {
+    padding-left: 1.5rem !important;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.dropdown-submenu .dropdown-item:hover {
+    background-color: #e9ecef;
+    color: #212529;
 }
 
 /* Notification dropdown styles */

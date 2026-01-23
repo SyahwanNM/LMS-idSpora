@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Event;
 use App\Models\Course;
 use App\Models\EventRegistration;
+use App\Models\Carousel;
 
 class DashboardController extends Controller
 {
@@ -53,11 +54,18 @@ class DashboardController extends Controller
         $materiList = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisList = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
 
+        // Get carousel images for dashboard
+        $dashboardCarousels = Carousel::active()
+            ->forLocation('dashboard')
+            ->orderBy('order')
+            ->get();
+
         return view('dashboard', [
             'upcomingEvents' => $upcomingEvents,
             'featuredCourses' => $featuredCourses,
             'materiList' => $materiList,
             'jenisList' => $jenisList,
+            'dashboardCarousels' => $dashboardCarousels,
         ]);
     }
 }

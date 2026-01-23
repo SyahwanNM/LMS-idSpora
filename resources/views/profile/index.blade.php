@@ -10,6 +10,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
@@ -134,23 +135,24 @@
         }
         
         .glass-sidebar {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            border-right: none;
-            position: fixed;
-            top: 70px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 90px;
             left: 0;
-            height: calc(100vh - 70px);
+            height: fit-content;
+            max-height: calc(100vh - 100px);
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 100;
             width: 280px;
+            margin: 2rem 0 2rem 2rem;
         }
         
         .sidebar-header {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.75rem;
-            font-weight: 600;
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
             letter-spacing: 0.05em;
             text-transform: uppercase;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
@@ -158,8 +160,13 @@
         
         /* Main content with sidebar offset */
         .main-content-with-sidebar {
-            margin-left: 280px;
             padding: 2rem;
+            flex: 1;
+        }
+        
+        /* Container untuk sidebar dan content */
+        .flex.min-h-screen {
+            align-items: flex-start;
         }
         
         /* Responsive Design */
@@ -175,9 +182,8 @@
                 width: 100%;
                 height: auto;
                 top: 0;
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-                padding: 1.25rem;
+                margin: 1rem;
+                max-height: none;
             }
             .main-content-with-sidebar {
                 margin-left: 0;
@@ -333,55 +339,21 @@
             transform: translateY(-1px);
         }
         
-        /* Sidebar Menu Item - Matching Navbar Gradient */
+        /* Sidebar Menu Item - Minimalist Design */
         .menu-item {
-            transition: all 0.3s ease;
-            color: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
-            margin: 0.5rem 1rem;
-            padding: 0.875rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            transition: all 0.2s ease;
+            color: #374151;
             text-decoration: none;
-            position: relative;
         }
         
-        .menu-item:hover {
-            color: rgba(255, 255, 255, 0.9);
-            background: rgba(255, 255, 255, 0.1);
+        .menu-item:hover:not(.active) {
+            background-color: #f9fafb;
         }
         
         .menu-item.active {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1e1b4b;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: #1e1b4b;
-        }
-        
-        .menu-item .menu-text {
-            color: inherit;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .menu-icon {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 20px;
-            transition: color 0.3s ease;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .menu-item:hover .menu-icon {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: white;
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left-color: #2563eb !important;
         }
         
         /* Premium Badge */
@@ -575,6 +547,33 @@
                 transform: translateY(0);
             }
         }
+        
+        /* Custom collapse animation */
+        #badgeTerms.collapse,
+        #badgeFAQ.collapse {
+            transition: height 0.35s ease;
+            overflow: hidden;
+        }
+        
+        #badgeTerms.collapse.show,
+        #badgeFAQ.collapse.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Ensure content inside is visible when shown */
+        #badgeTerms.collapse.show > div,
+        #badgeFAQ.collapse.show > div {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        #badgeTerms.collapse:not(.show),
+        #badgeFAQ.collapse:not(.show) {
+            display: none;
+        }
 
         @media (max-width: 768px) {
             .completion-card-compact {
@@ -601,24 +600,100 @@
 <body>
     @include("partials.navbar-after-login")
     
-    <div class="flex min-h-screen">
-        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
-        <aside class="glass-sidebar flex flex-col">
+    @php
+        // Define all badges for modal display - available throughout the view
+        $allBadges = [
+            'beginner' => ['name' => 'Beginner', 'min' => 0, 'max' => 99, 'gradient' => 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', 'icon' => 'bi-star', 'color' => '#94a3b8'],
+            'explorer' => ['name' => 'Explorer', 'min' => 100, 'max' => 249, 'gradient' => 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 'icon' => 'bi-compass', 'color' => '#3b82f6'],
+            'learner' => ['name' => 'Learner', 'min' => 250, 'max' => 499, 'gradient' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', 'icon' => 'bi-book', 'color' => '#8b5cf6'],
+            'expert' => ['name' => 'Expert', 'min' => 500, 'max' => 999, 'gradient' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 'icon' => 'bi-trophy', 'color' => '#f59e0b'],
+            'master' => ['name' => 'Master', 'min' => 1000, 'max' => 9999, 'gradient' => 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)', 'icon' => 'bi-gem', 'color' => '#dc2626'],
+        ];
+    @endphp
+    
+    <div class="flex min-h-screen" style="align-items: flex-start;">
+        <!-- Minimalist Sidebar -->
+        <aside class="glass-sidebar flex flex-col" style="width: 280px; background: #ffffff; flex-shrink: 0;">
             <!-- Sidebar Header -->
-            <div class="sidebar-header">
-                MENU NAVIGASI
+            <div class="sidebar-header" style="padding: 1.25rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Navigasi Profil</h3>
+            </div>
+            
+            <!-- Badge Display in Sidebar -->
+            @php
+                $user = Auth::user();
+                $badgeInfo = $user->badge_info;
+                $nextBadgeInfo = $user->next_badge_info;
+                $currentPoints = $user->points ?? 0;
+                $currentBadge = $user->badge ?? 'beginner';
+            @endphp
+            <div class="sidebar-badge" style="margin: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
+                        <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <div style="color: #111827; font-size: 0.875rem; font-weight: 600;">
+                                {{ $badgeInfo['name'] }}
+                            </div>
+                            <button 
+                                type="button" 
+                                onclick="openBadgeInfoModal()"
+                                style="background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: #6b7280; padding: 0; flex-shrink: 0;"
+                                onmouseover="this.style.background='#d1d5db'; this.style.transform='scale(1.1)'"
+                                onmouseout="this.style.background='#e5e7eb'; this.style.transform='scale(1)'"
+                                title="Info Badge & Poin"
+                            >
+                                <i class="bi bi-info-circle" style="font-size: 0.7rem;"></i>
+                            </button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="bi bi-star-fill" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                            <span style="color: #374151; font-size: 0.75rem; font-weight: 500;">
+                                {{ number_format($currentPoints, 0, ',', '.') }} Poin
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress to Next Badge -->
+                @if($nextBadgeInfo)
+                @php
+                    $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
+                @endphp
+                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
+                            Menuju {{ $nextBadgeInfo['name'] }}
+                        </span>
+                        <span style="color: #111827; font-size: 0.75rem; font-weight: 700;">
+                            {{ $nextBadgeInfo['points_needed'] }} poin
+                        </span>
+                    </div>
+                    <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); width: {{ $progressPercent }}%; border-radius: 3px; transition: width 0.6s ease;"></div>
+                    </div>
+                </div>
+                @else
+                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
+                    <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
+                        🏆 Level tertinggi!
+                    </span>
+                </div>
+                @endif
             </div>
             
             <!-- Menu Items -->
-            <nav class="flex-1 py-4">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="bi bi-person menu-icon"></i>
-                    <span class="menu-text">Profile</span>
+            <nav style="padding: 0.5rem 0;">
+                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-person" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Profil Saya</span>
                 </a>
                 
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check menu-icon"></i>
-                    <span class="menu-text">History Event</span>
+                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-clock-history" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Aktivitas Saya</span>
                 </a>
             </nav>
         </aside>
@@ -643,7 +718,7 @@
                                 </div>
                             </div>
                             @if(!Auth::user()->isProfileComplete())
-                            <a href="{{ route('profile.edit') }}" class="completion-link-compact" title="Lengkapi Profil">
+                            <a href="{{ route('profile.settings') }}" class="completion-link-compact" title="Lengkapi Profil">
                                 <i class="bi bi-arrow-right"></i>
                             </a>
                             @else
@@ -688,15 +763,8 @@
                     
                     <!-- Biodata Section -->
                     <div class="mb-8">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="mb-4">
                             <h2 class="text-xl font-bold" style="color: #111827;">Biodata</h2>
-                            <a 
-                                href="{{ route('profile.edit') }}"
-                                class="gold-accent px-5 py-2.5 rounded-xl text-gray-900 font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
-                            >
-                                <i class="bi bi-pencil"></i>
-                                <span>Edit Profile</span>
-                            </a>
                         </div>
                         <div class="grid md:grid-cols-2 gap-4" style="color: #374151;">
                             <div>
@@ -739,32 +807,34 @@
                             <i class="bi bi-calendar-check mr-2" style="color: #fbbf24;"></i>
                             Event Yang Didaftarkan
                         </h2>
-                        @php($regs = Auth::user()->eventRegistrations()->with('event')->latest()->get())
+                        @php
+                            $regs = Auth::user()->eventRegistrations()->with(['event' => function($query) { $query->whereNull('deleted_at'); }])->latest()->get()->filter(function($reg) { return $reg->event !== null && $reg->event->deleted_at === null; });
+                        @endphp
                         @if($regs->isEmpty())
                             <p class="text-sm" style="color: #6b7280;">Belum ada event yang didaftarkan.</p>
                         @else
                             <div class="space-y-3 max-h-96 overflow-y-auto">
                                 @foreach($regs as $reg)
+                                    @if($reg->event)
                                     <div class="event-card rounded-xl p-4">
                                         <div class="flex items-start justify-between">
                                             <div class="flex-1">
-                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $reg->event?->title ?? 'Event' }}</h3>
+                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $reg->event->title ?? 'Event' }}</h3>
                                                 <div class="text-xs text-gray-400 space-y-1">
-                                                    @if($reg->event?->date_start)
-                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $reg->event->date_start->format('d M Y') }}</div>
+                                                    @if($reg->event->date_start)
+                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $reg->event->date_start?->format('d M Y') ?? '' }}</div>
                                                     @endif
-                                                    @if($reg->event?->location)
-                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $reg->event->location }}</div>
+                                                    @if($reg->event->location)
+                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $reg->event->location ?? '' }}</div>
                                                     @endif
                                                 </div>
                                             </div>
-                                            @if($reg->event)
                                             <a href="{{ route('events.show', $reg->event) }}" class="gold-accent px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900 ml-3 whitespace-nowrap" style="text-decoration: none;">
                                                 Detail
                                             </a>
-                                            @endif
                                         </div>
                                     </div>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif
@@ -776,22 +846,39 @@
                             <i class="bi bi-bookmark-star mr-2" style="color: #fbbf24;"></i>
                             Event Tersimpan
                         </h2>
-                        @php($saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get())
+                        @php
+                            $saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get()->filter(function($ev) { return $ev !== null && $ev->deleted_at === null; });
+                        @endphp
                         @if($saved->isEmpty())
                             <p class="text-sm" style="color: #6b7280;">Belum ada event yang disimpan.</p>
                         @else
                             <div class="space-y-3 max-h-96 overflow-y-auto">
                                 @foreach($saved as $ev)
+                                    @if($ev)
                                     <div class="event-card rounded-xl p-4">
                                         <div class="flex items-start justify-between">
                                             <div class="flex-1">
                                                 <h3 class="font-semibold mb-1" style="color: #111827;">{{ $ev->title ?? 'Event' }}</h3>
                                                 <div class="text-xs text-gray-400 space-y-1">
-                                                    @if($ev->event_date)
-                                                        <div><i class="bi bi-calendar mr-1"></i>{{ \Carbon\Carbon::parse($ev->event_date)->format('d M Y') }}</div>
+                                                    @php
+                                                        $dateFormatted = '';
+                                                        if ($ev->event_date) {
+                                                            if ($ev->event_date instanceof \Carbon\Carbon) {
+                                                                $dateFormatted = $ev->event_date->format('d M Y');
+                                                            } else {
+                                                                try {
+                                                                    $dateFormatted = \Carbon\Carbon::parse($ev->event_date)->format('d M Y');
+                                                                } catch (\Exception $e) {
+                                                                    $dateFormatted = '';
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if($dateFormatted)
+                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $dateFormatted }}</div>
                                                     @endif
                                                     @if($ev->location)
-                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $ev->location }}</div>
+                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $ev->location ?? '' }}</div>
                                                     @endif
                                                 </div>
                                             </div>
@@ -800,6 +887,7 @@
                                             </a>
                                         </div>
                                     </div>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif
@@ -807,6 +895,190 @@
                 </div>
             </div>
         </main>
+    </div>
+    
+    <!-- Badge Info Modal - Minimalis -->
+    @php
+        $user = Auth::user();
+        $badgeInfo = $user->badge_info;
+        $currentBadge = $user->badge ?? 'beginner';
+    @endphp
+    <div class="modal fade" id="badgeInfoModal" tabindex="-1" aria-labelledby="badgeInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                <div class="modal-header" style="background: white; border-bottom: 1px solid #f1f5f9; padding: 1.25rem 1.5rem;">
+                    <h5 class="modal-title" id="badgeInfoModalLabel" style="color: #1e293b; font-weight: 600; font-size: 1.25rem; margin: 0;">
+                        Badge & Poin
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="opacity: 0.5;"></button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem; background: white;">
+                    <!-- Cara Mendapatkan Poin - Minimalis -->
+                    <div class="mb-4">
+                        <h6 style="color: #475569; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Cara Mendapatkan Poin
+                        </h6>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #3b82f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-gift" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Event Gratis</div>
+                                    <div style="color: #3b82f6; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+10</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #f59e0b; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-credit-card" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Event Berbayar</div>
+                                    <div style="color: #f59e0b; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+30</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #8b5cf6; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-chat-left-text" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Feedback</div>
+                                    <div style="color: #8b5cf6; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+5</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f8fafc; border-radius: 8px;">
+                                <div style="width: 32px; height: 32px; background: #22c55e; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="bi bi-lightning-charge" style="color: white; font-size: 0.875rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.8125rem;">Streak</div>
+                                    <div style="color: #22c55e; font-weight: 700; font-size: 0.875rem; margin-top: 0.125rem;">+5</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Daftar Badge - Minimalis -->
+                    <div class="mb-4">
+                        <h6 style="color: #475569; font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Level Badge
+                        </h6>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            @foreach($allBadges as $badgeKey => $badge)
+                            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem; background: {{ $badgeKey === $currentBadge ? '#fef3c7' : '#f8fafc' }}; border-radius: 10px; border: 1px solid {{ $badgeKey === $currentBadge ? $badgeInfo['color'] : '#e2e8f0' }}; position: relative;">
+                                @if($badgeKey === $currentBadge)
+                                <div style="position: absolute; top: 0.5rem; right: 0.75rem; background: {{ $badgeInfo['color'] }}; color: white; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.625rem; font-weight: 700; text-transform: uppercase;">
+                                    Anda
+                                </div>
+                                @endif
+                                <div style="width: 48px; height: 48px; background: {{ $badge['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                                    <i class="bi {{ $badge['icon'] }}" style="color: white; font-size: 1.25rem;"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1e293b; font-size: 0.9375rem; margin-bottom: 0.125rem;">
+                                        {{ $badge['name'] }}
+                                    </div>
+                                    <div style="color: #64748b; font-size: 0.8125rem;">
+                                        {{ number_format($badge['min'], 0, ',', '.') }}{{ $badge['max'] < 9999 ? ' - ' . number_format($badge['max'], 0, ',', '.') : '+' }} Poin
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    
+                    <!-- Terms & Conditions / FAQ -->
+                    <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                        <div style="margin-bottom: 0.75rem;">
+                            <button type="button" class="btn btn-link p-0 text-start w-100 badge-terms-btn" aria-expanded="false" aria-controls="badgeTerms" style="text-decoration: none; color: #475569; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; justify-content: space-between; border: none; background: none; cursor: pointer; width: 100%;">
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="bi bi-info-circle" style="font-size: 1rem;"></i>
+                                    <span>Syarat & Ketentuan</span>
+                                </span>
+                                <i class="bi bi-chevron-down badge-chevron-terms" style="font-size: 0.75rem; transition: transform 0.3s ease;"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="badgeTerms">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; font-size: 0.8125rem; color: #475569; line-height: 1.6; margin-top: 0.5rem;">
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">1. Poin Event</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Poin event diberikan saat registrasi berhasil</li>
+                                        <li>Event gratis: +10 poin, Event berbayar: +30 poin</li>
+                                        <li>Poin tidak dapat ditransfer atau dikembalikan</li>
+                                    </ul>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">2. Poin Feedback</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Poin feedback diberikan setelah event selesai</li>
+                                        <li>Hanya 1 feedback per event yang mendapat poin</li>
+                                        <li>Feedback harus diisi dengan lengkap dan valid</li>
+                                    </ul>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">3. Bonus Streak</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Bonus streak diberikan jika mengikuti event dalam 7 hari setelah event sebelumnya</li>
+                                        <li>Streak dihitung berdasarkan tanggal event, bukan tanggal registrasi</li>
+                                        <li>Bonus hanya diberikan untuk event yang sudah selesai</li>
+                                    </ul>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">4. Badge & Level</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Badge otomatis terupdate berdasarkan total poin</li>
+                                        <li>Badge tidak dapat diturunkan setelah diperoleh</li>
+                                        <li>Level Master dapat dicapai dengan 1000+ poin</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">5. Ketentuan Umum</strong>
+                                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                                        <li>Poin dan badge adalah sistem reward yang tidak dapat ditukar dengan uang</li>
+                                        <li>Kami berhak mengubah sistem poin dengan pemberitahuan sebelumnya</li>
+                                        <li>Penyalahgunaan sistem akan mengakibatkan poin dibatalkan</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 0.75rem;">
+                            <button type="button" class="btn btn-link p-0 text-start w-100 badge-faq-btn" aria-expanded="false" aria-controls="badgeFAQ" style="text-decoration: none; color: #475569; font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; justify-content: space-between; border: none; background: none; cursor: pointer; width: 100%;">
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="bi bi-question-circle" style="font-size: 1rem;"></i>
+                                    <span>Pertanyaan Umum</span>
+                                </span>
+                                <i class="bi bi-chevron-down badge-chevron-faq" style="font-size: 0.75rem; transition: transform 0.3s ease;"></i>
+                            </button>
+                        </div>
+                        <div class="collapse" id="badgeFAQ">
+                            <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; font-size: 0.8125rem; color: #475569; line-height: 1.6; margin-top: 0.5rem;">
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Apakah poin bisa hilang?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Poin tidak akan hilang kecuali ada pelanggaran ketentuan. Badge yang sudah diperoleh juga tidak akan diturunkan.</p>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Bagaimana cara mendapatkan bonus streak?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Ikuti event dalam 7 hari setelah event sebelumnya selesai. Bonus streak hanya diberikan untuk event yang sudah terjadi.</p>
+                                </div>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Apakah bisa mendapat poin untuk event yang sudah lewat?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Tidak, poin hanya diberikan saat registrasi aktif. Event yang sudah lewat tidak akan mendapat poin tambahan.</p>
+                                </div>
+                                <div>
+                                    <strong style="color: #1e293b; display: block; margin-bottom: 0.25rem;">Q: Bagaimana jika poin saya tidak sesuai?</strong>
+                                    <p style="margin: 0; color: #64748b;">A: Hubungi admin untuk verifikasi. Poin akan dihitung ulang berdasarkan riwayat registrasi dan feedback Anda.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: white; border-top: 1px solid #f1f5f9; padding: 1rem 1.5rem;">
+                    <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background: #f1f5f9; color: #475569; border: none; border-radius: 8px; padding: 0.5rem 1.25rem; font-weight: 500; font-size: 0.875rem;">Tutup</button>
+                </div>
+            </div>
+        </div>
     </div>
     
     <script>
@@ -836,6 +1108,178 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+        
+        // Open Badge Info Modal
+        function openBadgeInfoModal() {
+            const modalEl = document.getElementById('badgeInfoModal');
+            if (!modalEl) return;
+            
+            // Check if Bootstrap is available
+            if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+                
+                // Simple manual toggle without Bootstrap Collapse API
+                modalEl.addEventListener('shown.bs.modal', function() {
+                    const termsBtn = modalEl.querySelector('.badge-terms-btn');
+                    const termsCollapse = modalEl.querySelector('#badgeTerms');
+                    const termsChevron = modalEl.querySelector('.badge-chevron-terms');
+                    const faqBtn = modalEl.querySelector('.badge-faq-btn');
+                    const faqCollapse = modalEl.querySelector('#badgeFAQ');
+                    const faqChevron = modalEl.querySelector('.badge-chevron-faq');
+                    
+                    // Terms collapse - simple toggle
+                    if (termsBtn && termsCollapse && termsChevron) {
+                        termsBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const isExpanded = termsCollapse.classList.contains('show');
+                            
+                            if (isExpanded) {
+                                // Close
+                                termsCollapse.classList.remove('show');
+                                termsCollapse.style.height = '0px';
+                                termsChevron.style.transform = 'rotate(0deg)';
+                                termsBtn.setAttribute('aria-expanded', 'false');
+                                
+                                // Wait for transition then hide
+                                setTimeout(() => {
+                                    termsCollapse.style.display = 'none';
+                                    termsCollapse.style.height = '';
+                                }, 350);
+                            } else {
+                                // Open - set display first
+                                termsCollapse.style.display = 'block';
+                                termsCollapse.style.visibility = 'visible';
+                                termsCollapse.style.opacity = '1';
+                                
+                                // Ensure content is visible
+                                const content = termsCollapse.querySelector('div');
+                                if (content) {
+                                    content.style.display = 'block';
+                                    content.style.visibility = 'visible';
+                                    content.style.opacity = '1';
+                                }
+                                
+                                // Set initial height to 0 for animation
+                                termsCollapse.style.height = '0px';
+                                termsCollapse.style.overflow = 'hidden';
+                                
+                                // Force reflow
+                                void termsCollapse.offsetHeight;
+                                
+                                // Add show class
+                                termsCollapse.classList.add('show');
+                                
+                                // Calculate height - content should be visible now
+                                const height = termsCollapse.scrollHeight;
+                                termsCollapse.style.height = height + 'px';
+                                termsChevron.style.transform = 'rotate(180deg)';
+                                termsBtn.setAttribute('aria-expanded', 'true');
+                                
+                                // After transition, set height to auto and overflow visible
+                                setTimeout(() => {
+                                    if (termsCollapse.classList.contains('show')) {
+                                        termsCollapse.style.height = 'auto';
+                                        termsCollapse.style.overflow = 'visible';
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                    
+                    // FAQ collapse - simple toggle
+                    if (faqBtn && faqCollapse && faqChevron) {
+                        faqBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const isExpanded = faqCollapse.classList.contains('show');
+                            
+                            if (isExpanded) {
+                                // Close
+                                faqCollapse.classList.remove('show');
+                                faqCollapse.style.height = '0px';
+                                faqChevron.style.transform = 'rotate(0deg)';
+                                faqBtn.setAttribute('aria-expanded', 'false');
+                                
+                                // Wait for transition then hide
+                                setTimeout(() => {
+                                    faqCollapse.style.display = 'none';
+                                    faqCollapse.style.height = '';
+                                }, 350);
+                            } else {
+                                // Open - set display first
+                                faqCollapse.style.display = 'block';
+                                faqCollapse.style.visibility = 'visible';
+                                faqCollapse.style.opacity = '1';
+                                
+                                // Ensure content is visible
+                                const content = faqCollapse.querySelector('div');
+                                if (content) {
+                                    content.style.display = 'block';
+                                    content.style.visibility = 'visible';
+                                    content.style.opacity = '1';
+                                }
+                                
+                                // Set initial height to 0 for animation
+                                faqCollapse.style.height = '0px';
+                                faqCollapse.style.overflow = 'hidden';
+                                
+                                // Force reflow
+                                void faqCollapse.offsetHeight;
+                                
+                                // Add show class
+                                faqCollapse.classList.add('show');
+                                
+                                // Calculate height - content should be visible now
+                                const height = faqCollapse.scrollHeight;
+                                faqCollapse.style.height = height + 'px';
+                                faqChevron.style.transform = 'rotate(180deg)';
+                                faqBtn.setAttribute('aria-expanded', 'true');
+                                
+                                // After transition, set height to auto and overflow visible
+                                setTimeout(() => {
+                                    if (faqCollapse.classList.contains('show')) {
+                                        faqCollapse.style.height = 'auto';
+                                        faqCollapse.style.overflow = 'visible';
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                });
+            } else {
+                // Fallback: show modal using jQuery or vanilla JS
+                modalEl.style.display = 'block';
+                modalEl.classList.add('show');
+                document.body.classList.add('modal-open');
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.id = 'badgeModalBackdrop';
+                document.body.appendChild(backdrop);
+                
+                // Close handler
+                const closeModal = function() {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const backdropEl = document.getElementById('badgeModalBackdrop');
+                    if (backdropEl) backdropEl.remove();
+                };
+                
+                // Close on backdrop click
+                backdrop.addEventListener('click', closeModal);
+                
+                // Close on close button click
+                const closeBtns = modalEl.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+                closeBtns.forEach(btn => {
+                    btn.addEventListener('click', closeModal);
+                });
+            }
+        }
     </script>
+    @include('partials.footer-after-login')
 </body>
-</html>w
+</html>

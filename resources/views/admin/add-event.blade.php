@@ -1,7 +1,5 @@
 @extends('layouts.admin')
-
 @section('title', 'Kelola Event')
-
 @section('content')
 <div class="container-fluid py-4">
         {{-- Success Toast Popup --}}
@@ -33,12 +31,23 @@
         @if($errors->any())
             <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
         @endif
+        @if(session('statusFilter'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    try{
+                        var sel = document.getElementById('statusFilter');
+                        if(sel){
+                            sel.value = '{{ session('statusFilter') }}';
+                            sel.dispatchEvent(new Event('change'));
+                        }
+                    }catch(e){}
+                });
+            </script>
+        @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
                 <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
-                <a href="{{ route('admin.events.history') }}" class="btn btn-outline-secondary"><i class="bi bi-clock-history"></i> History</a>
-                <a href="{{ route('admin.reports') }}" class="btn btn-outline-primary"><i class="bi bi-graph-up-arrow"></i> Report</a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
@@ -153,12 +162,18 @@
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
-                                        $completed = $event->documents_completed_count; 
                                         $hasVbg = !empty($event->vbg_path);
                                         $hasCert = !empty($event->certificate_path);
-                                        $hasAbs = !empty($event->attendance_path);
-                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Absensi: '.($hasAbs ? '✔' : '✖');
+                                        // Absensi dianggap selesai jika ada file atau QR sudah aktif
+                                        $hasAbsFile = !empty($event->attendance_path);
+                                        $hasAbsQrImg = !empty($event->attendance_qr_image);
+                                        $hasAbsQrToken = !empty($event->attendance_qr_token);
+                                        $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                        // Tooltip ringkas
+                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
+                                        // Tampilkan count UI sebagai 3 komponen (termasuk Absensi via QR)
+                                        $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Kelengkapan Dokumen">{{ $pct }}%</span>
@@ -168,7 +183,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1">{{ $completed }}/3 selesai</small>
+                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/3 selesai</small>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
@@ -286,8 +301,19 @@
                                 @php 
                                     $hasVbg = !empty($event->vbg_path);
                                     $hasCert = !empty($event->certificate_path);
-                                    $hasAbs = !empty($event->attendance_path);
+                                    // Absensi: selesai jika file atau QR aktif
+                                    $hasAbsFile = !empty($event->attendance_path);
+                                    $hasAbsQrImg = !empty($event->attendance_qr_image);
+                                    $hasAbsQrToken = !empty($event->attendance_qr_token);
+                                    $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                    $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $pct = $event->documents_completion_percent;
+                                    $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="{{ $pctClass }}" title="Kelengkapan Dokumen">{{ $pct }}%</span>
+                                    <small class="text-muted">{{ $completedDisplay }}/3 selesai</small>
+                                </div>
                                 <ul class="list-group list-group-flush mb-3 small">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span>
@@ -340,15 +366,23 @@
                                         </span>
                                         <span>
                                             @if($hasAbs)
-                                                @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                @if($hasAbsFile)
+                                                    @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
+                                                    @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="d-inline-block">
+                                                            <img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                        </a>
+                                                    @elseif($aExt === 'pdf')
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    @else
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    @endif
+                                                @elseif($hasAbsQrImg)
+                                                    <a href="{{ Storage::url($event->attendance_qr_image) }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ Storage::url($event->attendance_qr_image) }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                     </a>
-                                                @elseif($aExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                 @else
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    <span class="badge bg-success">QR Absensi Aktif</span>
                                                 @endif
                                             @else
                                                 <span class="text-muted">Belum ada</span>
@@ -376,11 +410,7 @@
                                                 <input type="file" class="form-control" id="sertif-{{ $event->id }}" name="certificate" accept="image/*,application/pdf" data-preview="#sertif-preview-{{ $event->id }}">
                                                 <div id="sertif-preview-{{ $event->id }}" class="mt-2"></div>
                                             </div>
-                                            <div class="box-up mb-3">
-                                                <label for="absensi-{{ $event->id }}" class="form-label">Absensi</label>
-                                                <input type="file" class="form-control" id="absensi-{{ $event->id }}" name="attendance" accept="image/*,application/pdf" data-preview="#absensi-preview-{{ $event->id }}">
-                                                <div id="absensi-preview-{{ $event->id }}" class="mt-2"></div>
-                                            </div>
+                                            <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                         </div>
                                     @else
                                         <div class="box-up mb-3">
@@ -393,11 +423,7 @@
                                             <input type="file" class="form-control" id="sertif-{{ $event->id }}" name="certificate" accept="image/*,application/pdf" data-preview="#sertif-preview-{{ $event->id }}">
                                             <div id="sertif-preview-{{ $event->id }}" class="mt-2"></div>
                                         </div>
-                                        <div class="box-up mb-3">
-                                            <label for="absensi-{{ $event->id }}" class="form-label">Absensi</label>
-                                            <input type="file" class="form-control" id="absensi-{{ $event->id }}" name="attendance" accept="image/*,application/pdf" data-preview="#absensi-preview-{{ $event->id }}">
-                                            <div id="absensi-preview-{{ $event->id }}" class="mt-2"></div>
-                                        </div>
+                                        <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                     @endif
                                 </form>
                             </div>
@@ -815,6 +841,7 @@
     let leafletMap = null, leafletMarker = null;
         const mapsInput = document.getElementById('maps');
         const mapsPreview = document.getElementById('mapsPreview');
+        const zoomInput = document.getElementById('zoom');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
     const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
@@ -884,12 +911,37 @@
             if(p){ showMap(p.lat, p.lng); }
             else if(mapsPreview){ mapsPreview.style.display = 'none'; }
         }
+        // Mutually disable Maps vs Zoom link: choosing one disables the other
+        function syncOnlineOfflineInputs(){
+            const hasMaps = !!(mapsInput && mapsInput.value.trim());
+            const hasZoom = !!(zoomInput && zoomInput.value.trim());
+            if (hasMaps) {
+                if (zoomInput) zoomInput.disabled = true;
+                if (mapsInput) mapsInput.disabled = false;
+                if (btnResolveMaps) btnResolveMaps.disabled = false;
+            } else if (hasZoom) {
+                if (mapsInput) mapsInput.disabled = true;
+                if (btnResolveMaps) btnResolveMaps.disabled = true;
+                if (mapsPreview) mapsPreview.style.display = 'none';
+                if (zoomInput) zoomInput.disabled = false;
+            } else {
+                if (mapsInput) mapsInput.disabled = false;
+                if (zoomInput) zoomInput.disabled = false;
+                if (btnResolveMaps) btnResolveMaps.disabled = false;
+            }
+        }
         if(mapsInput){
-            mapsInput.addEventListener('change', tryRenderMap);
-            mapsInput.addEventListener('blur', tryRenderMap);
+            mapsInput.addEventListener('input', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('change', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('blur', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
             // initial (old() values)
             tryRenderMap();
         }
+        if(zoomInput){
+            ['input','change','blur'].forEach(ev => zoomInput.addEventListener(ev, syncOnlineOfflineInputs));
+        }
+        // Initial mutual-disable state
+        syncOnlineOfflineInputs();
         if(btnResolveMaps){
             btnResolveMaps.addEventListener('click', async () => {
                 const url = mapsInput?.value || '';
@@ -1288,7 +1340,7 @@
             tr.innerHTML = `
                 <td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1" value="" /></td>
-                <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1000" value="" /></td>
+                <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1" value="" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0" /></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
@@ -1304,7 +1356,8 @@
                 qtyInput.addEventListener('input', () => recalcExpenseRow(tr));
             }
             if (unitInput) {
-                clampNonNegativeNumberInput(unitInput, 100);
+                // Allow any integer price (e.g., 23333, 23500, etc.)
+                clampNonNegativeNumberInput(unitInput, 1);
                 unitInput.addEventListener('input', () => recalcExpenseRow(tr));
             }
 

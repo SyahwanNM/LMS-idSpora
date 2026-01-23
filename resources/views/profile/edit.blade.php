@@ -10,8 +10,18 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        /* Override app.css navbar styling - must be after app.css */
+        body .navbar.navbar-gradient,
+        body .navbar-gradient,
+        body nav.navbar.navbar-gradient,
+        body nav.navbar-gradient {
+            background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
+            opacity: 1 !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+        }
         * {
             font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
@@ -23,70 +33,125 @@
             padding-top: 70px;
         }
         
-        /* Ensure navbar is visible and on top */
-        .navbar {
+        /* Ensure navbar is visible and on top - High specificity to override app.css */
+        body .navbar,
+        body nav.navbar {
             z-index: 1050 !important;
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
             right: 0 !important;
             width: 100% !important;
+            background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
         }
         
-        .navbar-gradient {
+        body .navbar.navbar-gradient,
+        body .navbar-gradient,
+        body nav.navbar.navbar-gradient,
+        body nav.navbar-gradient {
             background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
+            opacity: 1 !important;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
         }
         
-        /* Ensure navbar elements are visible */
-        .navbar-gradient .navbar-brand,
-        .navbar-gradient .nav-link,
-        .navbar-gradient .navbar-text {
+        /* Ensure navbar elements are visible - High specificity */
+        body .navbar-gradient .navbar-brand,
+        body .navbar-gradient .nav-link,
+        body .navbar-gradient .navbar-text,
+        body .navbar .navbar-brand,
+        body .navbar .nav-link,
+        body .navbar .navbar-text,
+        body nav.navbar-gradient .navbar-brand,
+        body nav.navbar-gradient .nav-link,
+        body nav.navbar .navbar-brand,
+        body nav.navbar .nav-link {
             color: #fff !important;
         }
         
-        .navbar-gradient .nav-link:hover,
-        .navbar-gradient .nav-link:focus {
+        body .navbar-gradient .nav-link:hover,
+        body .navbar-gradient .nav-link:focus,
+        body .navbar .nav-link:hover,
+        body .navbar .nav-link:focus,
+        body nav.navbar-gradient .nav-link:hover,
+        body nav.navbar .nav-link:hover {
             color: #ffe8b3 !important;
         }
         
-        .navbar-gradient .nav-link.active {
+        body .navbar-gradient .nav-link.active,
+        body .navbar .nav-link.active,
+        body nav.navbar-gradient .nav-link.active,
+        body nav.navbar .nav-link.active {
             font-weight: 600;
             color: #ffe8b3 !important;
         }
         
-        /* Notification and user dropdown */
-        #notifBtn,
-        #userDropdown {
+        /* Notification and user dropdown - High specificity */
+        body #notifBtn,
+        body #userDropdown,
+        body .navbar #notifBtn,
+        body .navbar #userDropdown,
+        body nav.navbar #notifBtn,
+        body nav.navbar #userDropdown {
             color: white !important;
         }
         
-        #notifBtn:hover,
-        #userDropdown:hover {
+        body #notifBtn:hover,
+        body #userDropdown:hover,
+        body .navbar #notifBtn:hover,
+        body .navbar #userDropdown:hover,
+        body nav.navbar #notifBtn:hover,
+        body nav.navbar #userDropdown:hover {
             color: #ffe8b3 !important;
         }
         
-        /* Search bar */
-        .navbar .form-control {
+        /* Search bar - High specificity */
+        body .navbar .form-control,
+        body nav.navbar .form-control,
+        body .navbar-gradient .form-control {
             color: white !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
         }
         
-        .navbar .form-control::placeholder {
+        body .navbar .form-control::placeholder,
+        body nav.navbar .form-control::placeholder {
             color: rgba(255, 255, 255, 0.7) !important;
         }
         
+        body .navbar .form-control:focus,
+        body nav.navbar .form-control:focus {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            color: white !important;
+        }
+        
         /* Ensure navbar container is visible */
-        .navbar .container-fluid {
+        body .navbar .container-fluid,
+        body nav.navbar .container-fluid {
             display: flex !important;
             visibility: visible !important;
         }
         
         /* Ensure all navbar elements are visible */
-        .navbar-brand,
-        .navbar-nav,
-        .navbar-collapse {
+        body .navbar-brand,
+        body .navbar-nav,
+        body .navbar-collapse,
+        body nav .navbar-brand,
+        body nav .navbar-nav,
+        body nav .navbar-collapse {
             display: flex !important;
             visibility: visible !important;
+        }
+        
+        /* Navbar toggler for mobile */
+        body .navbar-toggler,
+        body nav.navbar .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        body .navbar-toggler-icon,
+        body nav.navbar .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
         }
         
         /* Navbar Responsive */
@@ -133,33 +198,15 @@
             border-radius: 0.75rem;
         }
         
-        .glass-sidebar {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            border-right: none;
-            position: fixed;
-            top: 70px;
-            left: 0;
-            height: calc(100vh - 70px);
-            overflow-y: auto;
-            z-index: 1000;
-            width: 280px;
+        /* Container untuk sidebar dan content - Centered layout */
+        .flex.min-h-screen {
+            align-items: flex-start;
+            justify-content: center;
         }
         
-        .sidebar-header {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        
-        /* Main content with sidebar offset */
         .main-content-with-sidebar {
-            margin-left: 280px;
-            padding: 2rem;
+            flex: 1;
+            min-width: 0;
         }
         
         /* Responsive Design */
@@ -169,19 +216,19 @@
             }
             .flex.min-h-screen {
                 flex-direction: column;
+                padding: 0 0.5rem;
             }
             .glass-sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                top: 0;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                top: 0 !important;
+                margin: 1rem 0 !important;
             }
             .main-content-with-sidebar {
                 margin-left: 0;
                 margin-top: 0;
-                padding: 1.5rem;
+                padding: 1.5rem 0.5rem;
             }
         }
         
@@ -322,59 +369,7 @@
             }
         }
         
-        /* Sidebar Menu Item - Matching Navbar Gradient */
-        .menu-item {
-            transition: all 0.3s ease;
-            color: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
-            margin: 0.5rem 1rem;
-            padding: 0.875rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            position: relative;
-        }
-        
-        .menu-item:hover {
-            color: rgba(255, 255, 255, 0.9);
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .menu-item.active {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1e1b4b;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: #1e1b4b;
-        }
-        
-        .menu-item .menu-text {
-            color: inherit;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .menu-icon {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 20px;
-            transition: color 0.3s ease;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .menu-item:hover .menu-icon {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: white;
-        }
-            font-size: 14px;
-        }
-        
+
         .search-bar input::placeholder {
             color: #9ca3af;
         }
@@ -487,262 +482,115 @@
 <body>
     @include("partials.navbar-after-login")
     
-    <div class="flex min-h-screen">
-        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
-        <aside class="glass-sidebar flex flex-col">
+    <div class="flex min-h-screen" style="align-items: flex-start; justify-content: center; max-width: 1400px; margin: 0 auto; padding: 0 1rem;">
+        <!-- Minimalist Sidebar - Settings -->
+        <aside class="glass-sidebar flex flex-col" style="width: 280px; background: #ffffff; flex-shrink: 0; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); position: sticky; top: 90px; left: 0; height: fit-content; max-height: calc(100vh - 100px); overflow-y: auto; z-index: 100; margin: 2rem 1rem 2rem 0;">
             <!-- Sidebar Header -->
-            <div class="sidebar-header">
-                MENU NAVIGASI
+            <div class="sidebar-header" style="padding: 1.25rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Navigasi Profil</h3>
             </div>
             
             <!-- Menu Items -->
-            <nav class="flex-1 py-4">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="bi bi-person menu-icon"></i>
-                    <span class="menu-text">Profile</span>
+            <nav style="padding: 0.5rem 0;">
+                <a href="{{ route('profile.edit') }}" class="menu-item {{ request()->routeIs('profile.edit') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-person" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Profil</span>
                 </a>
                 
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check menu-icon"></i>
-                    <span class="menu-text">History Event</span>
+                <a href="{{ route('profile.account-settings') }}" class="menu-item {{ request()->routeIs('profile.account-settings') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-shield-lock" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Akun</span>
                 </a>
             </nav>
         </aside>
         
         <!-- Main Content -->
-        <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
-            <div class="max-w-4xl mx-auto fade-in">
-            <!-- Header -->
-            <div class="mb-6">
-                <h1 class="text-3xl font-bold mb-2" style="color: #111827;">Edit Profil</h1>
-                <p class="text-sm" style="color: #6b7280;">Perbarui informasi profil Anda</p>
-            </div>
-            
-            <!-- Profile Information Card -->
-            <div class="glass-card rounded-2xl p-8 shadow-2xl">
-                <!-- Success/Error Messages -->
-                @if(session('success'))
-                    <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
-                        <p class="text-green-800 text-sm font-medium">{{ session('success') }}</p>
-                    </div>
-                @endif
-
-                @if ($errors->any())
-                    <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
-                        <ul class="list-disc list-inside space-y-1 text-red-800 text-sm">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-                
-                <!-- Edit Profile Form -->
-                <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-                    @csrf
-                    
-                    <!-- Avatar Upload -->
-                    <div id="field-avatar">
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Foto Profil
-                        </label>
-                        <div class="flex items-center space-x-4">
-                            <div class="profile-img-wrapper">
-                                <img 
-                                    id="avatarPreview"
-                                    src="{{ $user->avatar_url }}" 
-                                    alt="Profile" 
-                                    class="w-24 h-24 rounded-full object-cover border-4 border-yellow-400 shadow-lg"
-                                    referrerpolicy="no-referrer"
-                                    onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=fbbf24&color=1e1b4b&size=128';"
-                                >
-                                <div class="profile-img-overlay" onclick="document.getElementById('avatarInput').click()">
-                                    <i class="bi bi-camera text-white text-lg"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <input 
-                                    type="file" 
-                                    name="avatar" 
-                                    id="avatarInput"
-                                    accept="image/*"
-                                    class="hidden"
-                                    onchange="previewAvatar(this)"
-                                >
-                                <label for="avatarInput" class="cursor-pointer">
-                                    <span class="px-4 py-2 rounded-lg border-2 font-semibold transition-all duration-300 inline-block" style="border-color: #d1d5db; color: #374151;" onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='transparent'">
-                                        <i class="bi bi-upload mr-2"></i>Unggah Foto
-                                    </span>
-                                </label>
-                                <p class="text-xs mt-2" style="color: #6b7280;">Format: JPG, PNG, atau WEBP. Maksimal 4MB.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Name -->
-                    <div id="field-name">
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Nama Lengkap <span class="text-red-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            name="name" 
-                            id="input-name"
-                            value="{{ old('name', $user->name) }}"
-                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
-                            style="color: #111827;"
-                            placeholder="Masukkan nama lengkap"
-                            required
-                        >
-                    </div>
-                    
-                    <!-- Email -->
-                    <div id="field-email">
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Email <span class="text-red-500">*</span>
-                        </label>
-                        <input 
-                            type="email" 
-                            name="email" 
-                            id="input-email"
-                            value="{{ old('email', $user->email) }}"
-                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
-                            style="color: #111827;"
-                            placeholder="nama@email.com"
-                            required
-                        >
-                    </div>
-                    
-                    <!-- Phone -->
-                    <div id="field-phone">
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Nomor Telepon <span class="text-red-500">*</span>
-                        </label>
-                        <div class="flex gap-3">
-                            <!-- Country Code Dropdown -->
-                            <div style="flex-shrink: 0; width: 150px;" class="country-code-wrapper">
-                                <select 
-                                    name="phone_country_code" 
-                                    id="phone-country-code"
-                                    class="neu-input country-code-select w-full rounded-xl focus:outline-none transition-all @error('phone') border-red-300 @enderror"
-                                    style="color: #111827;"
-                                >
-                                    <option value="+62" {{ old('phone_country_code', $user->phone_country_code ?? '+62') == '+62' ? 'selected' : '' }}>🇮🇩 +62 (ID)</option>
-                                    <option value="+60" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+60' ? 'selected' : '' }}>🇲🇾 +60 (MY)</option>
-                                    <option value="+65" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+65' ? 'selected' : '' }}>🇸🇬 +65 (SG)</option>
-                                    <option value="+1" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+1' ? 'selected' : '' }}>🇺🇸 +1 (US)</option>
-                                    <option value="+44" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+44' ? 'selected' : '' }}>🇬🇧 +44 (GB)</option>
-                                    <option value="+61" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+61' ? 'selected' : '' }}>🇦🇺 +61 (AU)</option>
-                                    <option value="+86" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+86' ? 'selected' : '' }}>🇨🇳 +86 (CN)</option>
-                                    <option value="+81" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+81' ? 'selected' : '' }}>🇯🇵 +81 (JP)</option>
-                                    <option value="+82" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+82' ? 'selected' : '' }}>🇰🇷 +82 (KR)</option>
-                                    <option value="+66" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+66' ? 'selected' : '' }}>🇹🇭 +66 (TH)</option>
-                                    <option value="+84" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+84' ? 'selected' : '' }}>🇻🇳 +84 (VN)</option>
-                                    <option value="+63" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+63' ? 'selected' : '' }}>🇵🇭 +63 (PH)</option>
-                                    <option value="+91" {{ old('phone_country_code', $user->phone_country_code ?? '') == '+91' ? 'selected' : '' }}>🇮🇳 +91 (IN)</option>
-                                </select>
-                            </div>
-                            <!-- Phone Number Input -->
-                            <div style="flex: 1;">
-                        <input 
-                            type="tel" 
-                                    name="phone_number" 
-                                    id="input-phone"
-                                    value="{{ old('phone_number', $user->phone_number ?? '') }}"
-                                    class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all @error('phone') border-red-300 @enderror"
-                            style="color: #111827;"
-                                    placeholder="812 3456 7890"
-                                    maxlength="15"
-                                    inputmode="numeric"
-                        >
-                    </div>
-                        </div>
-                        @error('phone')
-                            <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                        <p class="text-xs mt-2" style="color: #6b7280;">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Masukkan nomor tanpa kode negara (contoh: <strong>812 3456 7890</strong> untuk Indonesia)
-                        </p>
-                    </div>
-                    
-                    <!-- Bio -->
-                    <div id="field-bio">
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Bio
-                        </label>
-                        <textarea 
-                            name="bio"
-                            id="input-bio"
-                            rows="4"
-                            class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none resize-none transition-all"
-                            style="color: #111827;"
-                            placeholder="Ceritakan tentang diri Anda..."
-                        >{{ old('bio', $user->bio ?? '') }}</textarea>
-                    </div>
-                    
-                    <!-- Password Fields -->
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                                Password Baru (opsional)
-                            </label>
-                            <input 
-                                type="password" 
-                                name="password" 
-                                class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
-                                style="color: #111827;"
-                                placeholder="Biarkan kosong jika tidak diganti"
-                            >
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                                Konfirmasi Password Baru
-                            </label>
-                            <input 
-                                type="password" 
-                                name="password_confirmation" 
-                                class="neu-input w-full px-4 py-3 rounded-xl focus:outline-none transition-all"
-                                style="color: #111827;"
-                                placeholder="Ulangi password baru"
-                            >
-                        </div>
-                    </div>
-                    
-                    <!-- Role Display (Read-only) -->
-                    <div>
-                        <label class="block text-sm font-semibold mb-2" style="color: #374151;">
-                            Role
-                        </label>
-                        <div class="neu-input w-full px-4 py-3 rounded-xl" style="color: #6b7280; background: #f9fafb;">
-                            {{ ucfirst($user->role ?? 'user') }}
-                        </div>
-                        <p class="text-xs mt-1" style="color: #9ca3af;">Role tidak dapat diubah</p>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end space-x-4 pt-6 border-t" style="border-color: #e5e7eb;">
-                        <a 
-                            href="{{ route('profile.index') }}"
-                            class="px-6 py-3 rounded-xl border-2 font-semibold transition-all duration-300"
-                            style="border-color: #d1d5db; color: #374151; text-decoration: none;"
-                            onmouseover="this.style.backgroundColor='#f9fafb'"
-                            onmouseout="this.style.backgroundColor='transparent'"
-                        >
-                            Batal
-                        </a>
-                        <button 
-                            type="submit"
-                            class="gold-accent px-6 py-3 rounded-xl text-gray-900 font-semibold flex items-center space-x-2 transition-all duration-300"
-                        >
-                            <i class="bi bi-save"></i>
-                            <span>Simpan Perubahan</span>
-                        </button>
-                    </div>
-                </form>
+        <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px; padding: 2rem 1rem;">
+            <div class="max-w-4xl mx-auto fade-in" style="max-width: 100%;">
+                @include('profile.partials.edit-content')
             </div>
         </main>
     </div>
+    
+    <style>
+        .menu-item {
+            transition: all 0.2s ease;
+            color: #374151;
+            text-decoration: none;
+        }
+        
+        .menu-item:hover:not(.active) {
+            background-color: #f9fafb;
+        }
+        
+        .menu-item.active {
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+            border-left-color: #2563eb !important;
+        }
+        
+        /* Override any yellow/gold background for active menu */
+        .menu-item.active {
+            background: #eff6ff !important;
+            background-color: #eff6ff !important;
+            background-image: none !important;
+            color: #2563eb !important;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .flex.min-h-screen {
+                padding: 0 0.5rem;
+            }
+            .glass-sidebar {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                top: 0 !important;
+                margin: 1rem 0 !important;
+            }
+            .main-content-with-sidebar {
+                margin-left: 0;
+                margin-top: 0;
+                padding: 1.5rem 0.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            .main-content-with-sidebar {
+                padding: 1rem;
+            }
+            .glass-card {
+                padding: 1.5rem !important;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .glass-card {
+                padding: 1rem !important;
+            }
+            .glass-card h1 {
+                font-size: 1.5rem !important;
+            }
+        }
+    </style>
     
     <script>
         // Avatar preview function
@@ -759,7 +607,6 @@
         // Phone number formatting
         document.addEventListener('DOMContentLoaded', function() {
             const phoneInput = document.getElementById('input-phone');
-            const countryCodeSelect = document.getElementById('phone-country-code');
             
             if (phoneInput) {
                 // Format phone number saat input (hanya angka dengan spasi untuk readability)
@@ -843,5 +690,6 @@
             }
         });
     </script>
+    @include('partials.footer-after-login')
 </body>
 </html>

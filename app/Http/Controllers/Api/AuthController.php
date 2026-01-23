@@ -45,8 +45,21 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Verify user is authenticated (defensive check, middleware should handle this)
+        $user = $request->user();
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User tidak terautentikasi'
+            ], 401);
+        }
+
         // Hapus token yang sedang dipakai (Revoke)
-        $request->user()->currentAccessToken()->delete();
+        // currentAccessToken() can return null in edge cases (e.g., token already deleted)
+        $currentToken = $user->currentAccessToken();
+        if ($currentToken) {
+            $currentToken->delete();
+        }
 
         return response()->json([
             'status' => 'success',
