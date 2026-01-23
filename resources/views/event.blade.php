@@ -87,18 +87,35 @@
     <section class="hero-carousel">
         <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active" data-bs-interval="10000">
-                    <img src="{{ asset('aset/ai.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item" data-bs-interval="2000">
-                    <img src="{{ asset('aset/ai2.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
-                <div class="carousel-item">
-                    <img src="{{ asset('aset/ai3.jpg') }}"
-                        class="d-block" alt="...">
-                </div>
+                @if(isset($eventCarousels) && $eventCarousels->count() > 0)
+                    @foreach($eventCarousels as $i => $carousel)
+                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
+                            @if($carousel->link_url)
+                                <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;">
+                                    <img src="{{ $carousel->image_url }}" 
+                                         class="d-block" 
+                                         alt="{{ $carousel->title ?? 'Carousel' }}" 
+                                         onerror="this.src='{{ asset('aset/poster.png') }}'">
+                                </a>
+                            @else
+                                <img src="{{ $carousel->image_url }}" 
+                                     class="d-block" 
+                                     alt="{{ $carousel->title ?? 'Carousel' }}" 
+                                     onerror="this.src='{{ asset('aset/poster.png') }}'">
+                            @endif
+                        </div>
+                    @endforeach
+                @else
+                    <div class="carousel-item active" data-bs-interval="10000">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+                    </div>
+                    <div class="carousel-item" data-bs-interval="2000">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+                    </div>
+                @endif
             </div>
 
             <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
@@ -166,15 +183,6 @@
     </div>
     @if(auth()->check() && auth()->user()->role === 'admin')
     <div class="container my-3">
-        <div class="alert alert-info d-flex justify-content-between align-items-center py-2 px-3">
-            <div>
-                <strong>Kelola Event:</strong> Buat, edit, dan hapus event dari DB.
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('admin.add-event') }}" class="btn btn-sm btn-primary">Tambah Event</a>
-                <a href="{{ route('admin.events.index') }}" class="btn btn-sm btn-outline-primary">Manage Event</a>
-                <a href="{{ route('admin.events.history') }}" class="btn btn-sm btn-outline-secondary">Riwayat</a>
-            </div>
         </div>
     </div>
     @endif
@@ -294,13 +302,7 @@
                                     <path d="M2 2v13.5l6-3 6 3V2z" />
                                 </svg>
                             </button>
-                            @if(auth()->check() && auth()->user()->role === 'admin')
-                            <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-sm btn-light" title="Edit" onclick="event.stopPropagation();">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M12.854.146a.5.5 0 0 1 .11.638l-.057.07-9 9-.5 2 2-.5 9-9a.5.5 0 0 1 .698.698l-9 9a.5.5 0 0 1-.233.13l-3 1a.5.5 0 0 1-.643-.643l1-3a.5.5 0 0 1 .13-.233l9-9a.5.5 0 0 1 .707 0z"/>
-                                </svg>
-                            </a>
-                            @endif
+                            
                         </div>
                     </div>
                     <div class="card-body">

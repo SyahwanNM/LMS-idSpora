@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
 </head>
@@ -24,7 +25,7 @@
             </button>
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*'))
+                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*') || request()->routeIs('admin.carousels.*'))
                     <li class="nav-item">
                         <a class="nav-link {{ (request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a>
                     </li>
@@ -174,6 +175,31 @@
             }
             confirmBtn.addEventListener('click', performAnimatedLogout);
         }
+        
+        // Inactivity auto-logout (idle timeout)
+        try {
+            const logoutFormEl = document.getElementById('logoutForm');
+            // Adjust minutes as needed; defaults to 30 minutes
+            const IDLE_MINUTES = 30;
+            const EVENTS = ['click','mousemove','keydown','scroll','touchstart','touchmove'];
+            let idleTimer;
+            const resetIdle = function(){
+                if(idleTimer) clearTimeout(idleTimer);
+                idleTimer = setTimeout(function(){
+                    // Prefer graceful modal if present; otherwise submit directly
+                    if (logoutFormEl) {
+                        try {
+                            // If confirmation modal exists, bypass UI and submit
+                            logoutFormEl.submit();
+                        } catch(e){ /* noop */ }
+                    }
+                }, IDLE_MINUTES * 60 * 1000);
+            };
+            EVENTS.forEach(function(evt){
+                window.addEventListener(evt, resetIdle, { passive: true });
+            });
+            resetIdle();
+        } catch(e){ /* noop */ }
         });
     </script>
     <style>
