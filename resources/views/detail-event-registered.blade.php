@@ -1852,8 +1852,7 @@
                 });
             })();
         </script>
+         @include('partials.footer-before-login')
     </body>
 
     </html>
-
-    @include('partials.footer-before-login')
