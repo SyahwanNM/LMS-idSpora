@@ -1,4 +1,7 @@
+
 <?php
+// Payment page for course
+Route::get('/courses/{course}/payment', [App\Http\Controllers\CourseController::class, 'payment'])->name('course.payment');
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -18,14 +21,24 @@ use App\Http\Controllers\NotificationsController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
-
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
 });
 
+Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('course.detail');
 Route::get('/admin/report', function () {
-    // Legacy path -> redirect to controller-powered reports so the view gets data
-    return redirect()->route('admin.reports');
+    // Provide course completeness data to the report view
+    $courses = \App\Models\Course::query()
+        ->withCount([
+            'modules',
+            'modules as video_count' => function($q){ $q->where('type','video'); },
+            'modules as pdf_count' => function($q){ $q->where('type','pdf'); },
+            'modules as quiz_count' => function($q){ $q->where('type','quiz'); },
+        ])
+        ->select('id','name','status')
+        ->latest('updated_at')
+        ->get();
+    return view('admin/report', compact('courses'));
 });
 
 Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
@@ -65,15 +78,13 @@ Route::get('/payment-course', function () {
     return view('payment-course');
 })->name('payment-course');
 
-Route::get('/detail-course', function () {
-    return view('detail-course');
-})->name('detail-course');
-
 Route::get('/quiz1-course', function () {
     return view('quiz1-course');
 })->name('quiz1-course');
 
-// ...existing code...
+
+// Midtrans payment for course
+Route::post('/courses/{course}/pay', [App\Http\Controllers\PaymentController::class, 'payCourse'])->name('midtrans.pay');
 Route::get('/quiz-course', function () {
     return view('quiz-course');
 })->name('quiz-course');
@@ -83,9 +94,10 @@ Route::get('/hasil-course', function () {
 Route::get('admin/course-builder', function () {
     return view('admin/course-builder');
 })->name('admin/course-builder');
-// Legacy Add Course page (standalone view)
+// Legacy Add Course page (standalone view) with categories for the form
 Route::get('/admin/add-course', function () {
-    return view('admin/add-course');
+    $categories = \App\Models\Category::select('id','name')->orderBy('name')->get();
+    return view('admin/add-course', compact('categories'));
 })->name('admin.add-course');
 Route::get('/admin/view-modul-course', function () {
     return view('admin/view-modul-course');
@@ -94,7 +106,17 @@ Route::get('/admin/add-pdf-module', function () {
     return view('admin/add-pdf-module');
 })->name('add-pdf-module');
 Route::get('/admin/report', function () {
-    return view('admin/report');
+    $courses = \App\Models\Course::query()
+        ->withCount([
+            'modules',
+            'modules as video_count' => function($q){ $q->where('type','video'); },
+            'modules as pdf_count' => function($q){ $q->where('type','pdf'); },
+            'modules as quiz_count' => function($q){ $q->where('type','quiz'); },
+        ])
+        ->select('id','name','status')
+        ->latest('updated_at')
+        ->get();
+    return view('admin/report', compact('courses'));
 })->name('report');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
@@ -163,6 +185,9 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
 
+// Refresh course payment status (used by client after Snap modal success)
+Route::post('/payment/refresh-course/{orderId}', [PaymentController::class, 'refreshCoursePayment'])->name('payment.refresh-course');
+
 // Query current pending order for this user+event (auth required)
 Route::middleware('auth')->get('/payment/{event}/pending-order', [PaymentController::class, 'pendingOrder'])->name('payment.pending-order');
 
@@ -172,6 +197,7 @@ Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController:
 // Midtrans notification webhook (no auth)
 Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('midtrans.notify');
 
+// Optional finish redirect target from Snap callbacks to avoid 404 after payment
 // Optional finish redirect target from Snap callbacks to avoid 404 after payment
 Route::get('/payment/finish', function(){
     return redirect()->route('dashboard')->with('success','Pembayaran sedang diproses.');
@@ -225,8 +251,11 @@ Route::middleware('auth')->group(function(){
     // User profile
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/settings', [\App\Http\Controllers\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
+    Route::post('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
     
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
@@ -312,10 +341,15 @@ Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('ne
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
+        // Admin view: Pendapatan (financial breakdown)
+        Route::get('/admin/view-pendapatan', function () {
+            return view('admin.view_pendapatan');
+        })->name('admin.view-pendapatan');
+
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         // Recent activities AJAX (returns latest login activities)
         Route::get('/admin/recent-activities', [AdminController::class, 'recentActivities'])->name('admin.recent-activities');
@@ -348,6 +382,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/carousels/{carousel}/toggle-active', [\App\Http\Controllers\Admin\CarouselController::class, 'toggleActive'])->name('admin.carousels.toggle-active');
         
         // Course management routes
+            // Publish course (set status active)
+            Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');
@@ -423,7 +459,7 @@ Route::get('/course-quiz-start', function () {
                 'destroy' => 'admin.events.destroy',
             ]
         ]);
-        // CRM Routes 
+        // CRM Routes
         Route::prefix('admin/crm')->name('admin.crm.')->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\CRMController::class, 'dashboard'])->name('dashboard');
             
@@ -458,3 +494,5 @@ Route::get('/course-quiz-start', function () {
         })->name('admin.certificates.generate-massal');
     });
 });
+// Include additional manual-payment routes (manual QRIS proof upload)
+require __DIR__.'/web_manual_payment.php';

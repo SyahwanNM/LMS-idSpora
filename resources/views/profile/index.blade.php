@@ -10,6 +10,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
@@ -134,23 +135,24 @@
         }
         
         .glass-sidebar {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            border-right: none;
-            position: fixed;
-            top: 70px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 90px;
             left: 0;
-            height: calc(100vh - 70px);
+            height: fit-content;
+            max-height: calc(100vh - 100px);
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 100;
             width: 280px;
+            margin: 2rem 0 2rem 2rem;
         }
         
         .sidebar-header {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.75rem;
-            font-weight: 600;
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
             letter-spacing: 0.05em;
             text-transform: uppercase;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
@@ -158,8 +160,13 @@
         
         /* Main content with sidebar offset */
         .main-content-with-sidebar {
-            margin-left: 280px;
             padding: 2rem;
+            flex: 1;
+        }
+        
+        /* Container untuk sidebar dan content */
+        .flex.min-h-screen {
+            align-items: flex-start;
         }
         
         /* Responsive Design */
@@ -175,9 +182,8 @@
                 width: 100%;
                 height: auto;
                 top: 0;
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-                padding: 1.25rem;
+                margin: 1rem;
+                max-height: none;
             }
             .main-content-with-sidebar {
                 margin-left: 0;
@@ -333,55 +339,21 @@
             transform: translateY(-1px);
         }
         
-        /* Sidebar Menu Item - Matching Navbar Gradient */
+        /* Sidebar Menu Item - Minimalist Design */
         .menu-item {
-            transition: all 0.3s ease;
-            color: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
-            margin: 0.5rem 1rem;
-            padding: 0.875rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            transition: all 0.2s ease;
+            color: #374151;
             text-decoration: none;
-            position: relative;
         }
         
-        .menu-item:hover {
-            color: rgba(255, 255, 255, 0.9);
-            background: rgba(255, 255, 255, 0.1);
+        .menu-item:hover:not(.active) {
+            background-color: #f9fafb;
         }
         
         .menu-item.active {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1e1b4b;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: #1e1b4b;
-        }
-        
-        .menu-item .menu-text {
-            color: inherit;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .menu-icon {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 20px;
-            transition: color 0.3s ease;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .menu-item:hover .menu-icon {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: white;
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left-color: #2563eb !important;
         }
         
         /* Premium Badge */
@@ -628,49 +600,100 @@
 <body>
     @include("partials.navbar-after-login")
     
-    <div class="flex min-h-screen">
-        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
-        <aside class="glass-sidebar flex flex-col">
+    @php
+        // Define all badges for modal display - available throughout the view
+        $allBadges = [
+            'beginner' => ['name' => 'Beginner', 'min' => 0, 'max' => 99, 'gradient' => 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', 'icon' => 'bi-star', 'color' => '#94a3b8'],
+            'explorer' => ['name' => 'Explorer', 'min' => 100, 'max' => 249, 'gradient' => 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 'icon' => 'bi-compass', 'color' => '#3b82f6'],
+            'learner' => ['name' => 'Learner', 'min' => 250, 'max' => 499, 'gradient' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', 'icon' => 'bi-book', 'color' => '#8b5cf6'],
+            'expert' => ['name' => 'Expert', 'min' => 500, 'max' => 999, 'gradient' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 'icon' => 'bi-trophy', 'color' => '#f59e0b'],
+            'master' => ['name' => 'Master', 'min' => 1000, 'max' => 9999, 'gradient' => 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)', 'icon' => 'bi-gem', 'color' => '#dc2626'],
+        ];
+    @endphp
+    
+    <div class="flex min-h-screen" style="align-items: flex-start;">
+        <!-- Minimalist Sidebar -->
+        <aside class="glass-sidebar flex flex-col" style="width: 280px; background: #ffffff; flex-shrink: 0;">
             <!-- Sidebar Header -->
-            <div class="sidebar-header">
-                MENU NAVIGASI
+            <div class="sidebar-header" style="padding: 1.25rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Navigasi Profil</h3>
             </div>
             
             <!-- Badge Display in Sidebar -->
             @php
                 $user = Auth::user();
                 $badgeInfo = $user->badge_info;
+                $nextBadgeInfo = $user->next_badge_info;
                 $currentPoints = $user->points ?? 0;
+                $currentBadge = $user->badge ?? 'beginner';
             @endphp
-            <div class="sidebar-badge" style="margin: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+            <div class="sidebar-badge" style="margin: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
                         <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
                     </div>
                     <div style="flex: 1;">
-                        <div style="color: white; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
-                            {{ $badgeInfo['name'] }}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <div style="color: #111827; font-size: 0.875rem; font-weight: 600;">
+                                {{ $badgeInfo['name'] }}
+                            </div>
+                            <button 
+                                type="button" 
+                                onclick="openBadgeInfoModal()"
+                                style="background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: #6b7280; padding: 0; flex-shrink: 0;"
+                                onmouseover="this.style.background='#d1d5db'; this.style.transform='scale(1.1)'"
+                                onmouseout="this.style.background='#e5e7eb'; this.style.transform='scale(1)'"
+                                title="Info Badge & Poin"
+                            >
+                                <i class="bi bi-info-circle" style="font-size: 0.7rem;"></i>
+                            </button>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="bi bi-star-fill" style="color: #FFD700; font-size: 0.75rem;"></i>
-                            <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.75rem; font-weight: 500;">
+                            <i class="bi bi-star-fill" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                            <span style="color: #374151; font-size: 0.75rem; font-weight: 500;">
                                 {{ number_format($currentPoints, 0, ',', '.') }} Poin
                             </span>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Progress to Next Badge -->
+                @if($nextBadgeInfo)
+                @php
+                    $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
+                @endphp
+                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
+                            Menuju {{ $nextBadgeInfo['name'] }}
+                        </span>
+                        <span style="color: #111827; font-size: 0.75rem; font-weight: 700;">
+                            {{ $nextBadgeInfo['points_needed'] }} poin
+                        </span>
+                    </div>
+                    <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); width: {{ $progressPercent }}%; border-radius: 3px; transition: width 0.6s ease;"></div>
+                    </div>
+                </div>
+                @else
+                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
+                    <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
+                        🏆 Level tertinggi!
+                    </span>
+                </div>
+                @endif
             </div>
             
             <!-- Menu Items -->
-            <nav class="flex-1 py-4">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="bi bi-person menu-icon"></i>
-                    <span class="menu-text">Profile</span>
+            <nav style="padding: 0.5rem 0;">
+                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-person" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Profil Saya</span>
                 </a>
                 
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check menu-icon"></i>
-                    <span class="menu-text">History Event</span>
+                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-clock-history" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Aktivitas Saya</span>
                 </a>
             </nav>
         </aside>
@@ -678,97 +701,6 @@
         <!-- Main Content -->
         <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
             <div class="max-w-6xl mx-auto fade-in">
-                <!-- Badge & Points Widget -->
-                @php
-                    $user = Auth::user();
-                    $badgeInfo = $user->badge_info;
-                    $nextBadgeInfo = $user->next_badge_info;
-                    $currentPoints = $user->points ?? 0;
-                    $currentBadge = $user->badge ?? 'beginner';
-                    
-                    // Define all badges for modal display
-                    $allBadges = [
-                        'beginner' => ['name' => 'Beginner', 'min' => 0, 'max' => 99, 'gradient' => 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', 'icon' => 'bi-star', 'color' => '#94a3b8'],
-                        'explorer' => ['name' => 'Explorer', 'min' => 100, 'max' => 249, 'gradient' => 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 'icon' => 'bi-compass', 'color' => '#3b82f6'],
-                        'learner' => ['name' => 'Learner', 'min' => 250, 'max' => 499, 'gradient' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', 'icon' => 'bi-book', 'color' => '#8b5cf6'],
-                        'expert' => ['name' => 'Expert', 'min' => 500, 'max' => 999, 'gradient' => 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 'icon' => 'bi-trophy', 'color' => '#f59e0b'],
-                        'master' => ['name' => 'Master', 'min' => 1000, 'max' => 9999, 'gradient' => 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)', 'icon' => 'bi-gem', 'color' => '#dc2626'],
-                    ];
-                @endphp
-                <div class="badge-widget mb-4" style="animation: fadeInUp 0.5s ease-out;">
-                    <div class="badge-card" style="background: {{ $badgeInfo['gradient'] }}; border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); position: relative; overflow: hidden;">
-                        <!-- Decorative Elements -->
-                        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255, 255, 255, 0.1); border-radius: 50%;"></div>
-                        <div style="position: absolute; bottom: -30px; left: -30px; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.08); border-radius: 50%;"></div>
-                        
-                        <div style="display: flex; align-items: center; gap: 1.5rem; position: relative; z-index: 1;">
-                            <!-- Badge Icon -->
-                            <div class="badge-icon-wrapper" style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border-radius: 20px; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);">
-                                <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 2.5rem; color: white;"></i>
-                            </div>
-                            
-                            <!-- Badge Info -->
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                    <h3 style="color: white; font-size: 1.5rem; font-weight: 700; margin: 0; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
-                                        {{ $badgeInfo['name'] }}
-                                    </h3>
-                                    <span style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: white; border: 1px solid rgba(255, 255, 255, 0.3);">
-                                        Level {{ ucfirst($currentBadge) }}
-                                    </span>
-                                    <!-- Info Toggle Button -->
-                                    <button 
-                                        type="button" 
-                                        onclick="openBadgeInfoModal()"
-                                        style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: white; padding: 0;"
-                                        onmouseover="this.style.background='rgba(255, 255, 255, 0.35)'; this.style.transform='scale(1.1)'"
-                                        onmouseout="this.style.background='rgba(255, 255, 255, 0.25)'; this.style.transform='scale(1)'"
-                                        title="Info Badge & Poin"
-                                    >
-                                        <i class="bi bi-info-circle" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                </div>
-                                
-                                <!-- Points Display -->
-                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="bi bi-star-fill" style="color: #FFD700; font-size: 1.25rem; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));"></i>
-                                        <span style="color: white; font-size: 1.5rem; font-weight: 700; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
-                                            {{ number_format($currentPoints, 0, ',', '.') }} Poin
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Progress to Next Badge -->
-                                @if($nextBadgeInfo)
-                                <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 12px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2);">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                        <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; font-weight: 500;">
-                                            Menuju {{ $nextBadgeInfo['name'] }}
-                                        </span>
-                                        <span style="color: white; font-size: 0.85rem; font-weight: 700;">
-                                            {{ $nextBadgeInfo['points_needed'] }} poin lagi
-                                        </span>
-                                    </div>
-                                    @php
-                                        $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
-                                    @endphp
-                                    <div style="height: 8px; background: rgba(255, 255, 255, 0.2); border-radius: 4px; overflow: hidden;">
-                                        <div style="height: 100%; background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%); width: {{ $progressPercent }}%; border-radius: 4px; transition: width 0.6s ease; box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);"></div>
-                                    </div>
-                                </div>
-                                @else
-                                <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 12px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2);">
-                                    <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.85rem; font-weight: 500;">
-                                        🏆 Anda telah mencapai level tertinggi!
-                                    </span>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Profile Completion Widget - Compact -->
                 <div class="profile-completion-widget-compact mb-4">
                     <div class="completion-card-compact">
@@ -786,7 +718,7 @@
                                 </div>
                             </div>
                             @if(!Auth::user()->isProfileComplete())
-                            <a href="{{ route('profile.edit') }}" class="completion-link-compact" title="Lengkapi Profil">
+                            <a href="{{ route('profile.settings') }}" class="completion-link-compact" title="Lengkapi Profil">
                                 <i class="bi bi-arrow-right"></i>
                             </a>
                             @else
@@ -831,15 +763,8 @@
                     
                     <!-- Biodata Section -->
                     <div class="mb-8">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="mb-4">
                             <h2 class="text-xl font-bold" style="color: #111827;">Biodata</h2>
-                            <a 
-                                href="{{ route('profile.edit') }}"
-                                class="gold-accent px-5 py-2.5 rounded-xl text-gray-900 font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
-                            >
-                                <i class="bi bi-pencil"></i>
-                                <span>Edit Profile</span>
-                            </a>
                         </div>
                         <div class="grid md:grid-cols-2 gap-4" style="color: #374151;">
                             <div>
@@ -882,32 +807,34 @@
                             <i class="bi bi-calendar-check mr-2" style="color: #fbbf24;"></i>
                             Event Yang Didaftarkan
                         </h2>
-                        @php($regs = Auth::user()->eventRegistrations()->with('event')->latest()->get())
+                        @php
+                            $regs = Auth::user()->eventRegistrations()->with(['event' => function($query) { $query->whereNull('deleted_at'); }])->latest()->get()->filter(function($reg) { return $reg->event !== null && $reg->event->deleted_at === null; });
+                        @endphp
                         @if($regs->isEmpty())
                             <p class="text-sm" style="color: #6b7280;">Belum ada event yang didaftarkan.</p>
                         @else
                             <div class="space-y-3 max-h-96 overflow-y-auto">
                                 @foreach($regs as $reg)
+                                    @if($reg->event)
                                     <div class="event-card rounded-xl p-4">
                                         <div class="flex items-start justify-between">
                                             <div class="flex-1">
-                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $reg->event?->title ?? 'Event' }}</h3>
+                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $reg->event->title ?? 'Event' }}</h3>
                                                 <div class="text-xs text-gray-400 space-y-1">
-                                                    @if($reg->event?->date_start)
-                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $reg->event->date_start->format('d M Y') }}</div>
+                                                    @if($reg->event->date_start)
+                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $reg->event->date_start?->format('d M Y') ?? '' }}</div>
                                                     @endif
-                                                    @if($reg->event?->location)
-                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $reg->event->location }}</div>
+                                                    @if($reg->event->location)
+                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $reg->event->location ?? '' }}</div>
                                                     @endif
                                                 </div>
                                             </div>
-                                            @if($reg->event)
                                             <a href="{{ route('events.show', $reg->event) }}" class="gold-accent px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900 ml-3 whitespace-nowrap" style="text-decoration: none;">
                                                 Detail
                                             </a>
-                                            @endif
                                         </div>
                                     </div>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif
@@ -919,22 +846,39 @@
                             <i class="bi bi-bookmark-star mr-2" style="color: #fbbf24;"></i>
                             Event Tersimpan
                         </h2>
-                        @php($saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get())
+                        @php
+                            $saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get()->filter(function($ev) { return $ev !== null && $ev->deleted_at === null; });
+                        @endphp
                         @if($saved->isEmpty())
                             <p class="text-sm" style="color: #6b7280;">Belum ada event yang disimpan.</p>
                         @else
                             <div class="space-y-3 max-h-96 overflow-y-auto">
                                 @foreach($saved as $ev)
+                                    @if($ev)
                                     <div class="event-card rounded-xl p-4">
                                         <div class="flex items-start justify-between">
                                             <div class="flex-1">
                                                 <h3 class="font-semibold mb-1" style="color: #111827;">{{ $ev->title ?? 'Event' }}</h3>
                                                 <div class="text-xs text-gray-400 space-y-1">
-                                                    @if($ev->event_date)
-                                                        <div><i class="bi bi-calendar mr-1"></i>{{ \Carbon\Carbon::parse($ev->event_date)->format('d M Y') }}</div>
+                                                    @php
+                                                        $dateFormatted = '';
+                                                        if ($ev->event_date) {
+                                                            if ($ev->event_date instanceof \Carbon\Carbon) {
+                                                                $dateFormatted = $ev->event_date->format('d M Y');
+                                                            } else {
+                                                                try {
+                                                                    $dateFormatted = \Carbon\Carbon::parse($ev->event_date)->format('d M Y');
+                                                                } catch (\Exception $e) {
+                                                                    $dateFormatted = '';
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if($dateFormatted)
+                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $dateFormatted }}</div>
                                                     @endif
                                                     @if($ev->location)
-                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $ev->location }}</div>
+                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $ev->location ?? '' }}</div>
                                                     @endif
                                                 </div>
                                             </div>
@@ -943,6 +887,7 @@
                                             </a>
                                         </div>
                                     </div>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif
@@ -953,6 +898,11 @@
     </div>
     
     <!-- Badge Info Modal - Minimalis -->
+    @php
+        $user = Auth::user();
+        $badgeInfo = $user->badge_info;
+        $currentBadge = $user->badge ?? 'beginner';
+    @endphp
     <div class="modal fade" id="badgeInfoModal" tabindex="-1" aria-labelledby="badgeInfoModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
             <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
@@ -1330,5 +1280,6 @@
             }
         }
     </script>
+    @include('partials.footer-after-login')
 </body>
 </html>

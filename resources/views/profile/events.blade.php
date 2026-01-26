@@ -10,6 +10,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
@@ -89,83 +90,66 @@
             border-radius: 0.75rem;
         }
         
+        .menu-item {
+            transition: all 0.2s ease;
+            color: #374151;
+            text-decoration: none;
+        }
+        
+        .menu-item:hover:not(.active) {
+            background-color: #f9fafb;
+        }
+        
+        .menu-item.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left-color: #2563eb !important;
+        }
+        
         .glass-sidebar {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            border-right: none;
-            position: fixed;
-            top: 70px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 90px;
             left: 0;
-            height: calc(100vh - 70px);
+            height: fit-content;
+            max-height: calc(100vh - 100px);
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 100;
             width: 280px;
         }
         
         .sidebar-header {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 1.25rem 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
         }
         
         .main-content-with-sidebar {
-            margin-left: 280px;
             padding: 2rem;
+            flex: 1;
         }
         
-        /* Sidebar Menu Item - Matching Navbar Gradient */
+        .flex.min-h-screen {
+            align-items: flex-start;
+        }
+        
+        /* Sidebar Menu Item - Minimalist Design */
         .menu-item {
-            transition: all 0.3s ease;
-            color: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
-            margin: 0.5rem 1rem;
-            padding: 0.875rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            transition: all 0.2s ease;
+            color: #374151;
             text-decoration: none;
-            position: relative;
         }
         
-        .menu-item:hover {
-            color: rgba(255, 255, 255, 0.9);
-            background: rgba(255, 255, 255, 0.1);
+        .menu-item:hover:not(.active) {
+            background-color: #f9fafb;
         }
         
         .menu-item.active {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1e1b4b;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: #1e1b4b;
-        }
-        
-        .menu-item .menu-text {
-            color: inherit;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .menu-icon {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 20px;
-            transition: color 0.3s ease;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .menu-item:hover .menu-icon {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: white;
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-left-color: #2563eb !important;
         }
         
         
@@ -242,8 +226,8 @@
                 width: 100%;
                 height: auto;
                 top: 0;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                margin: 1rem;
+                max-height: none;
             }
             .main-content-with-sidebar {
                 margin-left: 0;
@@ -277,49 +261,79 @@
 <body>
     @include("partials.navbar-after-login")
     
-    <div class="flex min-h-screen">
-        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
-        <aside class="glass-sidebar flex flex-col">
+    <div class="flex min-h-screen" style="align-items: flex-start;">
+        <!-- Minimalist Sidebar -->
+        <aside class="glass-sidebar flex flex-col" style="width: 280px; background: #ffffff; flex-shrink: 0; margin: 2rem 0 2rem 2rem;">
             <!-- Sidebar Header -->
-            <div class="sidebar-header">
-                MENU NAVIGASI
+            <div class="sidebar-header" style="padding: 1.25rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Navigasi Profil</h3>
             </div>
             
             <!-- Badge Display in Sidebar -->
             @php
                 $user = Auth::user();
                 $badgeInfo = $user->badge_info;
+                $nextBadgeInfo = $user->next_badge_info;
                 $currentPoints = $user->points ?? 0;
+                $currentBadge = $user->badge ?? 'beginner';
             @endphp
-            <div class="sidebar-badge" style="margin: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);">
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);">
+            <div class="sidebar-badge" style="margin: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
                         <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
                     </div>
                     <div style="flex: 1;">
-                        <div style="color: white; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">
-                            {{ $badgeInfo['name'] }}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <div style="color: #111827; font-size: 0.875rem; font-weight: 600;">
+                                {{ $badgeInfo['name'] }}
+                            </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="bi bi-star-fill" style="color: #FFD700; font-size: 0.75rem;"></i>
-                            <span style="color: rgba(255, 255, 255, 0.9); font-size: 0.75rem; font-weight: 500;">
+                            <i class="bi bi-star-fill" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                            <span style="color: #374151; font-size: 0.75rem; font-weight: 500;">
                                 {{ number_format($currentPoints, 0, ',', '.') }} Poin
                             </span>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Progress to Next Badge -->
+                @if($nextBadgeInfo)
+                @php
+                    $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
+                @endphp
+                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
+                            Menuju {{ $nextBadgeInfo['name'] }}
+                        </span>
+                        <span style="color: #111827; font-size: 0.75rem; font-weight: 700;">
+                            {{ $nextBadgeInfo['points_needed'] }} poin
+                        </span>
+                    </div>
+                    <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); width: {{ $progressPercent }}%; border-radius: 3px; transition: width 0.6s ease;"></div>
+                    </div>
+                </div>
+                @else
+                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
+                    <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
+                        🏆 Level tertinggi!
+                    </span>
+                </div>
+                @endif
             </div>
             
             <!-- Menu Items -->
-            <nav class="flex-1 py-4">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="bi bi-person menu-icon"></i>
-                    <span class="menu-text">Profile</span>
+            <nav style="padding: 0.5rem 0;">
+                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-person" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Profil Saya</span>
                 </a>
                 
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check menu-icon"></i>
-                    <span class="menu-text">History Event</span>
+                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
+                    <i class="bi bi-clock-history" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
+                    <span style="font-size: 0.9375rem; font-weight: 500;">Aktivitas Saya</span>
                 </a>
             </nav>
         </aside>
@@ -491,7 +505,7 @@
                                 // Check if event is paid or free
                                 $isPaid = $event && $event->price > 0;
                                 $payment = isset($payments[$event->id ?? 0]) ? $payments[$event->id] : null;
-                                $amountPaid = $payment ? $payment->gross_amount : 0;
+                                $amountPaid = $payment ? $payment->amount : 0;
                                 $finalPrice = $event ? ($event->hasDiscount() ? $event->discounted_price : $event->price) : 0;
                             @endphp
                             <div class="glass-card rounded-2xl p-6 shadow-lg event-card">
@@ -691,5 +705,6 @@
             </div>
         </main>
     </div>
+    @include('partials.footer-after-login')
 </body>
 </html>

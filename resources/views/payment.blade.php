@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 @include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
@@ -137,7 +136,7 @@
         </div>
     </div>
 
-    <form id="paymentForm" method="POST" action="#" novalidate>
+    <form id="paymentForm" method="POST" action="{{ route('payment.manual.register', $event->id ?? '') }}" enctype="multipart/form-data" novalidate>
         @csrf
         <input type="hidden" name="event_id" value="{{ $event->id ?? '' }}">
 
@@ -245,8 +244,21 @@
                         
                         <div id="pending-payment-banner" style="display:none; margin-top:8px; padding:6px 8px; border-radius:4px; background:#fff; border:1px solid #FCD34D; color:#92400E; font-size:11px;"></div>
 
-                        <button type="submit" class="btn-pay" disabled>
-                            @if(isset($event) && $isFree) Daftar Gratis @else Bayar @endif
+                        <!-- Manual QRIS display -->
+                        <div class="mt-3 text-center">
+                            <img src="{{ asset('aset/QRIS Payment IdSpora.jpeg') }}" alt="QRIS" style="max-width:220px;cursor:pointer;" id="qrisImage">
+                            <div class="small text-muted mt-2">Scan QRIS di atas untuk membayar secara manual</div>
+                        </div>
+
+                        <!-- Upload proof field -->
+                        <div class="mt-3">
+                            <label class="form-label-custom">Upload Bukti Pembayaran (JPEG/PNG, max 5MB)</label>
+                            <input type="file" name="payment_proof" accept="image/*" class="form-control-custom">
+                            <small class="text-muted">Jika sudah membayar via QRIS, unggah bukti transfer/QR screenshot.</small>
+                        </div>
+
+                        <button type="submit" class="btn-pay">
+                            @if(isset($event) && $isFree) Daftar Gratis @else Kirim Bukti Pembayaran @endif
                         </button>
                         
                     </div>
@@ -255,7 +267,6 @@
         </div>
     </form>
 
-    <script src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function(){
         const form = document.getElementById('paymentForm');
@@ -264,200 +275,37 @@
         const dial = form.querySelector('select[name="dial_code"]');
         const wa = form.querySelector('input[name="whatsapp"]');
         const btn = form.querySelector('.btn-pay');
-        const emailInput = form.querySelector('input[name="email"]');
         const isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
-        const eventId = @json($event->id ?? null);
-        const pendingKey = `pending_payment_event_${eventId}`;
-        const pendingBanner = document.getElementById('pending-payment-banner');
-        let isPendingResume = false;
 
-        async function fetchPendingOrder(){
-            if(!eventId) return null;
-            try{
-                const res = await fetch(`/payment/${eventId}/pending-order`, { headers: { 'Accept':'application/json' } });
-                if(!res.ok) return null;
-                const data = await res.json();
-                // Consider finished when status is settlement or active
-                const status = (data?.status || '').toLowerCase();
-                const isPendingLike = status === 'pending' || status === 'challenge';
-                if(data?.order_id && isPendingLike){
-                    try{ localStorage.setItem(pendingKey, JSON.stringify({ order_id: data.order_id, ts: Date.now() })); }catch(_e){}
-                    return { order_id: data.order_id, status: data.status };
-                } else {
-                    try{ localStorage.removeItem(pendingKey); }catch(_e){}
-                    return null;
-                }
-            }catch(_e){ return null; }
-        }
-
-        function setPendingMode(){
-            try{
-                if(fullName) { fullName.setAttribute('readonly','readonly'); }
-                if(dial) { dial.setAttribute('disabled','disabled'); }
-                if(wa) { wa.setAttribute('readonly','readonly'); }
-                if(btn) { btn.innerText = 'Lanjutkan Bayar'; btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
-                isPendingResume = true;
-            }catch(_e){}
-        }
-
-        function clearPendingMode(){
-            try{
-                if(fullName) { fullName.removeAttribute('readonly'); }
-                if(dial) { dial.removeAttribute('disabled'); }
-                if(wa) { wa.removeAttribute('readonly'); }
-                isPendingResume = false;
-                if(pendingBanner){ pendingBanner.style.display = 'none'; pendingBanner.innerText = ''; }
-                if(btn){ btn.innerText = 'Bayar'; }
-                // Re-evaluate validation to properly disable the button until fields are complete
-                validate();
-            }catch(_e){}
-        }
-
-        (async function checkPendingBanner(){
-            // Prefer server truth; fallback to localStorage if server unavailable
-            const serverPending = await fetchPendingOrder();
-            if(serverPending){
-                if(pendingBanner){
-                    pendingBanner.style.display = 'block';
-                    pendingBanner.innerText = '⚠️ Menunggu pembayaran.';
-                }
-                setPendingMode();
-                return;
-            }
-            try{
-                const raw = localStorage.getItem(pendingKey);
-                if(!raw){ clearPendingMode(); return; }
-                const obj = JSON.parse(raw);
-                if(!obj || !obj.ts || !obj.order_id){ localStorage.removeItem(pendingKey); clearPendingMode(); return; }
-                const age = Date.now() - (obj.ts || 0);
-                if(age <= 24*60*60*1000){ // allow resume up to 24h if server unreachable
-                    if(pendingBanner){ pendingBanner.style.display = 'block'; pendingBanner.innerText = '⚠️ Menunggu pembayaran.'; }
-                    setPendingMode();
-                } else { localStorage.removeItem(pendingKey); clearPendingMode(); }
-            }catch(_e){ clearPendingMode(); }
-        })();
-
-        function isValidPhone(val){ return /^[0-9]{6,15}$/.test(val.trim()); }
+        function isValidPhone(val){ return /^[0-9]{6,15}$/.test(String(val || '').trim()); }
 
         function validate(){
-            if(isPendingResume){
-                btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
-                return;
-            }
-            const nameOk = fullName.value.trim().length >= 3;
-            const dialOk = dial.value.trim() !== '';
-            const waOk = isValidPhone(wa.value);
-            const allOk = nameOk && dialOk && waOk;
-            btn.disabled = !allOk;
-            btn.style.opacity = !allOk ? '0.5' : '1';
-            btn.style.cursor = !allOk ? 'not-allowed' : 'pointer';
+            if(isFree){ btn.disabled = false; btn.style.opacity = '1'; return true; }
+            const nameOk = fullName && fullName.value.trim().length >= 3;
+            const dialOk = dial && dial.value.trim() !== '';
+            const waOk = wa && isValidPhone(wa.value);
+            const ok = nameOk && dialOk && waOk;
+            if(btn){ btn.disabled = !ok; btn.style.opacity = ok ? '1' : '0.5'; }
+            return ok;
         }
 
         ['input','change','keyup','blur'].forEach(evt => {
-            fullName.addEventListener(evt, validate);
-            dial.addEventListener(evt, validate);
-            wa.addEventListener(evt, validate);
+            if(fullName) fullName.addEventListener(evt, validate);
+            if(dial) dial.addEventListener(evt, validate);
+            if(wa) wa.addEventListener(evt, validate);
         });
 
-        function buildPhone(){
-            const dialVal = (dial.value || '').trim();
-            let waVal = (wa.value || '').trim();
-            waVal = waVal.replace(/[^0-9]/g,'');
-            if(waVal.startsWith('0')) waVal = waVal.substring(1);
-            return `${dialVal}${waVal}`;
-        }
-
-        form.addEventListener('submit', async function(e){
-            e.preventDefault();
-            validate();
-            if(btn.disabled && !isPendingResume){ alert('Lengkapi data peserta.'); return; }
-            if(!eventId){ alert('Event tidak valid.'); return; }
-
-            if(isFree){
-                try{
-                    const res = await fetch(`/events/${eventId}/register`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'Accept': 'application/json' }, body: JSON.stringify({})
-                    });
-                    const data = await res.json();
-                    if(data.status === 'ok' || data.status === 'already'){ window.location = `/events/${eventId}`; }
-                    else { alert(data.message || 'Gagal mendaftar.'); }
-                }catch(err){ alert('Error mendaftar.'); }
-                return;
+        form.addEventListener('submit', function(e){
+            if(!validate()){
+                e.preventDefault();
+                alert('Lengkapi data peserta sebelum mengirim bukti pembayaran.');
             }
-
-            try{
-                btn.disabled = true; btn.innerText = '...';
-                const url = new URL(`${window.location.origin}/payment/${eventId}/snap-token`);
-                url.searchParams.set('phone', buildPhone());
-                url.searchParams.set('name', fullName.value.trim());
-                if(emailInput && emailInput.value) url.searchParams.set('email', emailInput.value.trim());
-
-                // Prefer server pending order to force resume until settlement/active
-                try {
-                    const serverPending = await fetchPendingOrder();
-                    if(serverPending?.order_id){
-                        url.searchParams.set('order_id', serverPending.order_id);
-                    } else {
-                        const pendingRaw = localStorage.getItem(pendingKey);
-                        if (pendingRaw) {
-                            const pendingObj = JSON.parse(pendingRaw);
-                            if (pendingObj && pendingObj.order_id && pendingObj.ts) {
-                                url.searchParams.set('order_id', pendingObj.order_id);
-                            }
-                        }
-                    }
-                } catch (_e) {}
-
-                const tokenRes = await fetch(url.toString(), { headers: { 'Accept':'application/json' } });
-                const data = await tokenRes.json();
-                if(data && data.free){ return; }
-
-                if (data && (data.orderId || data.order_id)) {
-                    try { localStorage.setItem(pendingKey, JSON.stringify({ order_id: data.orderId || data.order_id, ts: Date.now() })); } catch (_e){}
-                }
-
-                if(!data?.snapToken){
-                    if(data?.redirectUrl){
-                        // Fallback to redirect URL when snap token unavailable (resume continuity)
-                        window.location = data.redirectUrl;
-                        return;
-                    }
-                    throw new Error(data?.message || 'Token error');
-                }
-
-                window.snap.pay(data.snapToken, {
-                    onSuccess: async function(r){
-                        try{ localStorage.removeItem(pendingKey); } catch(_e){}
-                        try{ await fetch(`/payment/${eventId}/finalize`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'Accept': 'application/json' }, body: JSON.stringify({ order_id: r.order_id }) }); }catch(e){}
-                        window.location = `/events/${eventId}`;
-                    },
-                    onPending: function(r){ window.location = `/events/${eventId}`; },
-                    onError: function(r){ alert('Gagal bayar.'); btn.innerText = isPendingResume ? 'Lanjutkan Bayar' : 'Bayar'; },
-                    onClose: function(){ btn.innerText = isPendingResume ? 'Lanjutkan Bayar' : 'Bayar'; }
-                });
-            }catch(err){
-                console.error(err); alert('Gagal inisiasi.'); btn.innerText = isPendingResume ? 'Lanjutkan Bayar' : 'Bayar';
-            }finally{
-                if(btn.innerText !== '...') btn.disabled = false;
-            }
+            // otherwise allow normal form submission (multipart upload handled by server)
         });
-<<<<<<< HEAD
-    }
-});
-</script>
-<style>
-    .btn-pay:disabled {opacity:.55; cursor:not-allowed; filter:grayscale(.15);} 
-    .btn-pay.btn-disabled:hover {background:inherit;}
-</style>
-=======
->>>>>>> 7c287cc6e13fddde0a1fa94ce4bba305577efb13
-=======
-        
+
+        // initial
         validate();
-
-        
     });
     </script>
 </body>
 </html>
->>>>>>> 72354fd716044e12a05a1743a3c2f66b45a2728a
