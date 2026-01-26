@@ -14,66 +14,331 @@
 </head>
 
 <body>
-    @include("partials.navbar-admin-course-bootstrap")
-    <!-- Scoped page styles to tidy layout without changing markup -->
+    @include("partials.navbar-admin-course")
+    <!-- Scoped page styles: cleaner spacing + Bootstrap-friendly tokens -->
     <style>
-        .box_luar_report{max-width:1140px;margin:0 auto;padding:24px 16px}
-        .judul_report{font-weight:700;font-size:1.75rem;margin-bottom:.25rem}
-        .keterangan_judul{color:#6b7280;margin-bottom:1rem}
-        .btn_box_report{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
-        .btn_report{border:1px solid #dee2e6;background:#fff;color:#111827;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer}
-        .btn_report.active{background:#6f42c1;color:#fff;border-color:#6f42c1;box-shadow:0 4px 12px rgba(111,66,193,.2)}
-        .box_report{display:none}
-        .box_report.active{display:block;animation:fadeIn .2s ease}
-        .box_pendapatan{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
-        .box_btn_laporan{display:flex;gap:.5rem;flex-wrap:wrap}
-        .btn_laporan{border:1px solid #dee2e6;background:#fff;color:#111827;padding:.4rem .7rem;border-radius:.5rem;cursor:pointer}
-        .btn_laporan.active{background:#fbbf24;color:#111827;border-color:#f59e0b}
-        .box_unduh{display:flex;gap:.5rem;margin-right:.75rem}
-        .btn_unduh{display:flex;align-items:center;gap:.45rem;border:1px solid #dee2e6;background:#fff;color:#111827;padding:.45rem .75rem;border-radius:.5rem}
-        .box_detail_laporan{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin:1rem 0}
-        .detail_laporan,.detail_laporan_pertumbuhan{background:#fff;border:1px solid #e5e7eb;border-radius:1rem;padding:1.25rem;box-shadow:0 8px 24px rgba(0,0,0,.05)}
-        .detail_laporan{display:flex;flex-direction:column;justify-content:space-between;min-height:170px}
-        .detail_laporan_pertumbuhan{display:flex;flex-direction:column;gap:.5rem;min-height:170px}
-        .detail_laporan:hover,.detail_laporan_pertumbuhan:hover{box-shadow:0 12px 28px rgba(0,0,0,.06);transform:translateY(-2px);transition:all .15s ease}
-        .detail_laporan h4,.detail_laporan_pertumbuhan h4{font-weight:600;color:#111827;margin-bottom:.25rem}
-        .total_kenaikan{font-weight:700;margin:.25rem 0;font-size:1.85rem;line-height:1.25;color:#111827}
-        .informasi_kenaikan_pendapatan,.informasi_penurunan_pendapatan{display:flex;align-items:center;gap:.5rem;color:#6b7280;font-size:.95rem}
-        .box_cari_pendapatan{margin-top:1.25rem}
-        .cari_pendapatan{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
-        .cari_pendapatan>div{display:flex;align-items:center;gap:.5rem;border:1px solid #dee2e6;border-radius:.5rem;padding:.35rem .6rem;background:#fff}
-        .cari_course{border:none;outline:none;min-width:220px}
-        .tabel_pendapatan,.tabel_pertumbuhan,.tabel_organize{margin-top:1rem}
-        .tabel_pendapatan th,.tabel_pertumbuhan th,.tabel_organize th{white-space:nowrap}
-        .tabel_performa{margin-bottom:.5rem}
-        .persentase{border:none;background:#6f42c1;color:#fff;border-radius:.5rem;padding:.25rem .5rem}
-        .status_lengkap{background:#22c55e;color:#fff;border:none;border-radius:.5rem;padding:.25rem .5rem}
-        .status_progress{background:#f59e0b;color:#fff;border:none;border-radius:.5rem;padding:.25rem .5rem}
-        .status_missing{background:#ef4444;color:#fff;border:none;border-radius:.5rem;padding:.25rem .5rem}
-        .durasi_menonton{margin-bottom:.5rem}
-        .progress_bg{background:#e9ecef;border-radius:999px;height:8px;overflow:hidden}
-        .progress_fill{background:#667eea;height:8px}
-        .box_kelengkapan{margin-top:2rem}
-        .box_pencarian{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem}
-        .box_pencarian>div{display:flex;align-items:center;gap:.5rem;border:1px solid #dee2e6;border-radius:.5rem;padding:.35rem .6rem;background:#fff}
-        .btn_terapkan{background:#0d6efd;color:#fff;border:none;border-radius:.5rem;padding:.45rem .8rem}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-    </style>
+    /* --- Layout Utama --- */
+    .box_luar_report {
+        max-width: 1140px;
+        margin-left: 0;
+        margin-right: auto;
+        padding: 24px 8px;
+    }
+
+    .judul_report {
+        font-weight: 700;
+        font-size: 1.75rem;
+        margin-bottom: .25rem;
+    }
+
+    .keterangan_judul {
+        color: #6b7280;
+        margin-bottom: 1rem;
+    }
+
+    /* --- Navigasi Tab Report --- */
+    .btn_box_report {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .btn_report {
+        padding: .5rem .9rem;
+        border-radius: .6rem;
+    }
+
+    .btn_report.active {
+        box-shadow: 0 6px 18px -6px rgba(111, 66, 193, .3);
+    }
+
+    /* --- Konten & Animasi --- */
+    .box_report {
+        display: none;
+    }
+
+    .box_report.active {
+        display: block;
+        animation: fadeIn .2s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: none; }
+    }
+
+    /* --- Toolbar (Filter & Download) --- */
+    .box_pendapatan {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .box_btn_laporan {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn_laporan {
+        padding: .4rem .8rem;
+        border-radius: .6rem;
+    }
+
+    .box_unduh {
+        display: flex;
+        gap: .5rem;
+        margin-right: .75rem;
+    }
+
+    .btn_unduh {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        border: 1px solid #dee2e6;
+        background: #fff;
+        color: #111827;
+        padding: .45rem .75rem;
+        border-radius: .6rem;
+    }
+
+    .btn_unduh svg {
+        flex-shrink: 0;
+    }
+
+    .btn_unduh p {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    /* --- Cards / Grid Statistik --- */
+    .box_detail_laporan {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 3rem; /* Jarak antar card */
+        margin: 2rem 0;
+    }
+
+    .detail_laporan,
+    .detail_laporan_pertumbuhan {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+    }
+
+    .detail_laporan {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 160px;
+    }
+
+    .detail_laporan_pertumbuhan {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        min-height: 160px;
+    }
+
+    .detail_laporan h4,
+    .detail_laporan_pertumbuhan h4 {
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: .25rem;
+    }
+
+    .total_kenaikan {
+        font-weight: 700;
+        margin: .25rem 0;
+        font-size: 1.6rem;
+        line-height: 1.25;
+        color: #111827;
+    }
+
+    .informasi_kenaikan_pendapatan,
+    .informasi_penurunan_pendapatan {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        color: #6b7280;
+        font-size: .95rem;
+    }
+
+    /* --- Form Pencarian & Filter --- */
+    .box_cari_pendapatan {
+        margin-top: 1.25rem;
+    }
+
+    .cari_pendapatan {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .cari_pendapatan > div,
+    .box_pencarian > div {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        border: 1px solid #dee2e6;
+        border-radius: .6rem;
+        padding: .35rem .6rem;
+        background: #fff;
+    }
+
+    .cari_course {
+        border: none;
+        outline: none;
+        min-width: 220px;
+    }
+
+    .btn_terapkan {
+        background: #0d6efd;
+        color: #fff;
+        border: none;
+        border-radius: .6rem;
+        padding: .45rem .85rem;
+    }
+
+    .box_kelengkapan {
+        margin-top: 2rem;
+    }
+
+    .box_pencarian {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: .75rem;
+    }
+
+    /* --- Tabel --- */
+    .tabel_pendapatan,
+    .tabel_pertumbuhan,
+    .tabel_organize {
+        margin-top: 1rem;
+    }
+
+    .tabel_pendapatan th,
+    .tabel_pertumbuhan th,
+    .tabel_organize th {
+        white-space: nowrap;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+    }
+
+    .table > :not(caption) > * > * {
+        border-color: #e5e7eb;
+    }
+
+    .table-hover tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .tabel_performa {
+        margin-bottom: .5rem;
+    }
+
+    /* --- Status Badge --- */
+    .badge-status {
+        border: none;
+        border-radius: .5rem;
+        padding: .25rem .5rem;
+        font-weight: 600;
+        font-size: .8rem;
+    }
+
+    .status_lengkap {
+        background: #22c55e;
+        color: #fff;
+        border: none;
+        border-radius: .5rem;
+        padding: .25rem .5rem;
+        font-weight: 600;
+        font-size: .8rem;
+    }
+
+    .status_progress {
+        background: #f59e0b;
+        color: #fff;
+        border: none;
+        border-radius: .5rem;
+        padding: .25rem .5rem;
+        font-weight: 600;
+        font-size: .8rem;
+    }
+
+    .status_missing {
+        background: #ef4444;
+        color: #fff;
+        border: none;
+        border-radius: .5rem;
+        padding: .25rem .5rem;
+        font-weight: 600;
+        font-size: .8rem;
+    }
+
+    /* --- Progress Bar --- */
+    .durasi_menonton {
+        margin-bottom: .5rem;
+    }
+
+    .progress_bg {
+        background: #e9ecef;
+        border-radius: 999px;
+        height: 8px;
+        overflow: hidden;
+    }
+
+    .progress_fill {
+        background: #667eea;
+        height: 8px;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 768px) {
+        .box_detail_laporan {
+            grid-template-columns: 1fr;
+        }
+
+        .box_pendapatan {
+            gap: .75rem;
+        }
+
+        .btn_box_report {
+            justify-content: flex-start;
+        }
+    }
+</style>
     <div class="box_luar_report">
         <h1 class="judul_report">Laporan EduPlatform Admin</h1>
         <p class="keterangan_judul">Berikut adalah laporan course.</p>
         <div class="btn_box_report">
-            <button class="btn_report active" data-target="pendapatan">Pendapatan</button>
-            <button class="btn_report" data-target="pertumbuhan">Pertumbuhan</button>
-            <button class="btn_report" data-target="organize_course">Organize Course</button>
+            <div class="btn-group" role="group" aria-label="Report sections">
+                <button type="button" class="btn_report btn btn-outline-primary active" data-target="pendapatan">Pendapatan</button>
+                <button type="button" class="btn_report btn btn-outline-primary" data-target="pertumbuhan">Pertumbuhan</button>
+                <button type="button" class="btn_report btn btn-outline-primary" data-target="organize_course">Organize Course</button>
+            </div>
         </div>
         <div id="pendapatan" class="box_report active">
             <h3>Laporan Pendapatan</h3>
             <div class="box_pendapatan">
                 <div class="box_btn_laporan">
-                    <button class="btn_laporan active" data-target="harian">Harian</button>
-                    <button class="btn_laporan" data-target="mingguan">Mingguan</button>
-                    <button class="btn_laporan" data-target="bulanan">Bulanan</button>
+                    <div class="btn-group" role="group" aria-label="Revenue period">
+                        <button type="button" class="btn_laporan btn btn-outline-warning active" data-target="harian">Harian</button>
+                        <button type="button" class="btn_laporan btn btn-outline-warning" data-target="mingguan">Mingguan</button>
+                        <button type="button" class="btn_laporan btn btn-outline-warning" data-target="bulanan">Bulanan</button>
+                    </div>
                 </div>
                 <div class="box_unduh">
                     <button class="btn_unduh">
@@ -139,7 +404,8 @@
                     <button class="btn_terapkan">Terapkan</button>
                 </div>
             </div>
-            <table class="tabel_pendapatan table table-striped">
+            <div class="table-responsive">
+            <table class="tabel_pendapatan table table-striped table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Nama Course</th>
@@ -152,80 +418,63 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Pengantar UI/UX Dasar</td>
-                        <td>14/10/2025</td>
-                        <td>100</td>
-                        <td>10.000</td>
-                        <td>1.000.000</td>
-                        <td>100.000</td>
-                        <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                            </svg></td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar UI/UX Dasar</td>
-                        <td>14/10/2025</td>
-                        <td>100</td>
-                        <td>10.000</td>
-                        <td>1.000.000</td>
-                        <td>100.000</td>
-                        <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                            </svg></td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar UI/UX Dasar</td>
-                        <td>14/10/2025</td>
-                        <td>100</td>
-                        <td>10.000</td>
-                        <td>1.000.000</td>
-                        <td>100.000</td>
-                        <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                            </svg></td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar UI/UX Dasar</td>
-                        <td>14/10/2025</td>
-                        <td>100</td>
-                        <td>10.000</td>
-                        <td>1.000.000</td>
-                        <td>100.000</td>
-                        <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                            </svg></td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar UI/UX Dasar</td>
-                        <td>14/10/2025</td>
-                        <td>100</td>
-                        <td>10.000</td>
-                        <td>1.000.000</td>
-                        <td>100.000</td>
-                        <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                            </svg></td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar UI/UX Dasar</td>
-                        <td>14/10/2025</td>
-                        <td>100</td>
-                        <td>10.000</td>
-                        <td>1.000.000</td>
-                        <td>100.000</td>
-                        <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                            </svg></td>
-                    </tr>
+                    @if(!empty($pendapatan) && count($pendapatan))
+                        @foreach($pendapatan as $row)
+                        <tr>
+                            <td>{{ $row->course_name ?? ($row->course->title ?? '-') }}</td>
+                            <td>
+                                {{-- Prefer course creation date when available --}}
+                                @if(!empty($row->course) && !empty($row->course->created_at))
+                                    {{ optional($row->course->created_at)->format('d/m/Y') }}
+                                @elseif(!empty($row->created_at))
+                                    {{ optional($row->created_at)->format('d/m/Y') }}
+                                @elseif(!empty($row->date))
+                                    {{ \Carbon\Carbon::parse($row->date)->format('d/m/Y') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td>{{ $row->participants ?? $row->participants_count ?? 0 }}</td>
+                            <td>{{ number_format($row->price ?? ($row->course->price ?? 0), 0, ',', '.') }}</td>
+                            <td>{{ number_format($row->revenue ?? $row->amount ?? 0, 0, ',', '.') }}</td>
+                            <td>{{ number_format($row->expense ?? 0, 0, ',', '.') }}</td>
+                            <td>
+                                <a href="{{ route('admin.report.show', ['id' => $row->id ?? ($row->course_id ?? '')]) }}" class="text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+                                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    @elseif(!empty($courses) && count($courses))
+                        @foreach($courses as $c)
+                        <tr>
+                            <td>{{ $c->title ?? $c->name ?? '-' }}</td>
+                            <td>{{ \Carbon\Carbon::parse($c->created_at ?? $c->date ?? now())->format('d/m/Y') }}</td>
+                            <td>{{ $c->enrollments_count ?? (optional($c->enrollments)->count() ?? 0) }}</td>
+                            <td>{{ number_format($c->price ?? 0, 0, ',', '.') }}</td>
+                            <td>{{ number_format($c->revenue ?? 0, 0, ',', '.') }}</td>
+                            <td>{{ number_format($c->expense ?? 0, 0, ',', '.') }}</td>
+                            <td>
+                                <a href="{{ route('admin.courses.show', ['course' => $c->id]) }}" class="text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#5b35d5" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+                                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="7" class="text-center">Belum ada data.</td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
+            </div>
         </div>
         <div id="pertumbuhan" class="box_report">
             <h3>Laporan Pertumbuhan</h3>
@@ -339,7 +588,8 @@
                     <p>Detail pertumbuhan dan interaksi per course</p>
                 </div>
             </div>
-            <table class="tabel_pertumbuhan table table-striped">
+            <div class="table-responsive">
+            <table class="tabel_pertumbuhan table table-striped table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Nama Course</th>
@@ -450,6 +700,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
         <div id="organize_course" class="box_report">
 
@@ -471,7 +722,8 @@
                     <p>Export CSV</p>
                 </button>
             </div>
-              <table class="tabel_organize table table-striped">
+              <div class="table-responsive">
+              <table class="tabel_organize table table-striped table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Nama Course</th>
@@ -483,80 +735,35 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Pengantar Desain UI/UX</td>
-                        <td>12</td>
-                         <td>
-                            <button class="status_lengkap">
-                                Complete
-                            </button>
-                        </td>
-                        <td>8</td>
-                        <td>4</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar Desain UI/UX</td>
-                        <td>12</td>
-                         <td>
-                            <button class="status_lengkap">
-                                Complete
-                            </button>
-                        </td>
-                        <td>8</td>
-                        <td>4</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar Desain UI/UX</td>
-                        <td>12</td>
-                         <td>
-                            <button class="status_lengkap">
-                                Complete
-                            </button>
-                        </td>
-                        <td>8</td>
-                        <td>4</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar Desain UI/UX</td>
-                        <td>12</td>
-                         <td>
-                            <button class="status_progress">
-                                In Progress
-                            </button>
-                        </td>
-                        <td>8</td>
-                        <td>4</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar Desain UI/UX</td>
-                        <td>12</td>
-                         <td>
-                            <button class="status_missing">
-                                Missing Material
-                            </button>
-                        </td>
-                        <td>8</td>
-                        <td>4</td>
-                        <td>1</td>
-                    </tr>
-                    <tr>
-                        <td>Pengantar Desain UI/UX</td>
-                        <td>12</td>
-                         <td>
-                            <button class="status_lengkap">
-                                Complete
-                            </button>
-                        </td>
-                        <td>8</td>
-                        <td>4</td>
-                        <td>1</td>
-                    </tr>
+                    @forelse(($courses ?? []) as $c)
+                        @php
+                            $totalModules = isset($c->modules_count) ? $c->modules_count : ($c->modules->count() ?? 0);
+                            $videos = isset($c->video_count) ? $c->video_count : ($c->modules->where('type','video')->count() ?? 0);
+                            $pdfs = isset($c->pdf_count) ? $c->pdf_count : ($c->modules->where('type','pdf')->count() ?? 0);
+                            $quizzes = isset($c->quiz_count) ? $c->quiz_count : ($c->modules->where('type','quiz')->count() ?? 0);
+                            $hasModules = $totalModules > 0;
+                            $isPublished = ($c->status === 'active');
+                            $statusClass = $isPublished ? 'status_lengkap' : ($hasModules ? 'status_progress' : 'status_missing');
+                            $statusText = $isPublished ? 'Complete' : ($hasModules ? 'In Progress' : 'Missing Material');
+                        @endphp
+                        <tr>
+                            <td>{{ $c->name }}</td>
+                            <td>{{ $totalModules }}</td>
+                            <td>
+                                <button class="{{ $statusClass }}">{{ $statusText }}</button>
+                            </td>
+                            <td>{{ $videos }}</td>
+                            <td>{{ $pdfs }}</td>
+                            <td>{{ $quizzes }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Belum ada data course.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
-            </table>
+              </table>
+              </div>
         </div>
     </div>
     <script>
