@@ -75,19 +75,21 @@
             </form>
             @php
                 $paidStatuses = ['settlement','capture','success'];
-                // Total sepanjang waktu (aggregat keseluruhan, bukan hanya bulan dipilih)
-                // Use manual_payments (settled) as source of revenue
-                $totalRevenueAll = \App\Models\ManualPayment::where('status','settled')->sum('amount');
-                $totalExpenseAll = \App\Models\EventExpense::sum('total');
+                // Total bulan terpilih (bukan agregat keseluruhan)
+                $totalRevenueAll = \App\Models\ManualPayment::where('status','settled')
+                    ->whereYear('created_at',$selectedDate->year)
+                    ->whereMonth('created_at',$selectedDate->month)
+                    ->sum('amount');
+                $totalExpenseAll = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)
+                    ->whereMonth('created_at',$selectedDate->month)
+                    ->sum('total');
                 $totalMarginAll = $totalRevenueAll - $totalExpenseAll;
                 // Revenue & Expense bulan terpilih (berdasarkan created_at transaksi / expense)
-                $currentMonthRevenue = \App\Models\ManualPayment::where('status','settled')
-                    ->whereYear('created_at',$selectedDate->year)->whereMonth('created_at',$selectedDate->month)
-                    ->sum('amount');
+                $currentMonthRevenue = $totalRevenueAll;
                 $previousMonthRevenue = \App\Models\ManualPayment::where('status','settled')
                     ->whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)
                     ->sum('amount');
-                $currentMonthExpense = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)->whereMonth('created_at',$selectedDate->month)->sum('total');
+                $currentMonthExpense = $totalExpenseAll;
                 $previousMonthExpense = \App\Models\EventExpense::whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)->sum('total');
                 $currentMonthMargin = $currentMonthRevenue - $currentMonthExpense;
                 $previousMonthMargin = $previousMonthRevenue - $previousMonthExpense;
@@ -267,54 +269,52 @@
                         </tr>
                     <tbody>
                         @php
-                            if(!isset($eventRows)) {
-                                $paidStatuses = ['settlement','capture','success'];
-                                // Use manual payments as source of revenue per event
-                                $revenueMap = \App\Models\ManualPayment::query()
-                                    ->selectRaw('event_id, SUM(amount) as total')
-                                    ->where('status','settled')
-                                    ->groupBy('event_id')
-                                    ->pluck('total','event_id');
-                                $eventsTmp = \App\Models\Event::withCount('registrations')->orderBy('event_date','asc')->get();
-                                $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
-                                    $price = $e->discounted_price ?? $e->price;
-                                    // Paid revenue from successful payments
-                                    $paidStatuses = ['settlement','capture','success'];
-                                    $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
-                                    $revenue = (float) $payments->sum('amount');
-                                    // Use number of active registrations as "jumlah yang daftara"
-                                    $registeredCount = (int) $e->registrations()->where('status','active')->count();
-                                    $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
-                                    // Income rows: Tiket Pendaftar based on jumlah yang daftar
-                                    $incomeRows = [
-                                        [ 'label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue ],
-                                    ];
-                                    // Expenses from EventExpense
-                                    $expenseModels = $e->expenses()->get(['item','quantity','unit_price','total']);
-                                    $expenseRows = $expenseModels->map(function($row){
-                                        return [
-                                            'label' => $row->item,
-                                            'qty' => (int)($row->quantity ?? 0),
-                                            'unit' => (float)($row->unit_price ?? 0),
-                                            'total' => (float)($row->total ?? 0),
-                                        ];
-                                    })->values()->all();
-                                    $expense = (float) array_sum(array_map(fn($r)=> (float)($r['total'] ?? 0), $expenseRows));
+                            // Selalu generate $eventRows di sini agar tidak ada cache lama dari controller
+                            $paidStatuses = ['settlement','capture','success'];
+                            $revenueMap = \App\Models\ManualPayment::query()
+                                ->selectRaw('event_id, SUM(amount) as total')
+                                ->where('status','settled')
+                                ->groupBy('event_id')
+                                ->pluck('total','event_id');
+                            // Ambil event yang event_date-nya tidak null dan sesuai bulan/tahun yang dipilih
+                            $eventsTmp = \App\Models\Event::withCount('registrations')
+                                ->whereNotNull('event_date')
+                                ->whereYear('event_date', $selectedDate->year)
+                                ->whereMonth('event_date', $selectedDate->month)
+                                ->orderBy('event_date','asc')->get();
+                            $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
+                                $price = $e->discounted_price ?? $e->price;
+                                $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
+                                $revenue = (float) $payments->sum('amount');
+                                $registeredCount = (int) $e->registrations()->where('status','active')->count();
+                                $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+                                $incomeRows = [
+                                    [ 'label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue ],
+                                ];
+                                $expenseModels = $e->expenses()->get(['item','quantity','unit_price','total']);
+                                $expenseRows = $expenseModels->map(function($row){
                                     return [
-                                        'id' => $e->id,
-                                        'name' => $e->title,
-                                        'date' => optional($e->event_date)->format('d/m/Y'),
-                                        'participants' => (int)$e->registrations_count,
-                                        'registered_count' => $registeredCount,
-                                        'price' => (float)$price,
-                                        'revenue' => $revenue,
-                                        'expense' => $expense,
-                                        'profit' => $revenue - $expense,
-                                        'income_rows' => $incomeRows,
-                                        'expense_rows' => $expenseRows,
+                                        'label' => $row->item,
+                                        'qty' => (int)($row->quantity ?? 0),
+                                        'unit' => (float)($row->unit_price ?? 0),
+                                        'total' => (float)($row->total ?? 0),
                                     ];
-                                });
-                            }
+                                })->values()->all();
+                                $expense = (float) array_sum(array_map(fn($r)=> (float)($r['total'] ?? 0), $expenseRows));
+                                return [
+                                    'id' => $e->id,
+                                    'name' => $e->title,
+                                    'date' => optional($e->event_date)->format('d/m/Y'),
+                                    'participants' => (int)$e->registrations_count,
+                                    'registered_count' => $registeredCount,
+                                    'price' => (float)$price,
+                                    'revenue' => $revenue,
+                                    'expense' => $expense,
+                                    'profit' => $revenue - $expense,
+                                    'income_rows' => $incomeRows,
+                                    'expense_rows' => $expenseRows,
+                                ];
+                            });
                         @endphp
                         @forelse($eventRows as $row)
                             <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
@@ -1035,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         <td>${rp(r.unit||0)}</td>
                         <td>${rp(r.total||0)}</td>
                     </tr>`).join('');
-                const totalHtml = `<tr class=\"row-harga\"><td>Total</td><td></td><td></td><td>${rp(expenseTotal)}</td></tr>`;
+                const totalHtml = `<tr class="row-harga"><td>Total</td><td></td><td></td><td>${rp(expenseTotal)}</td></tr>`;
                 expenseTbody.innerHTML = rowsHtml + totalHtml;
             }
 
