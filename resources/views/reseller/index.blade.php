@@ -79,41 +79,42 @@
             </div> --}}
             <!-- End of Card for Target Komisi Bulan Ini -->
 
-<!-- Withdraw Section -->
-<div class="card mb-4 border-0 shadow-sm rounded-4">
-    <div class="card-body p-4">
-        <h5 class="mb-3 d-flex align-items-center gap-2">
-            <i class="bi bi-cash-coin text-warning fs-1"></i>
-            <span class="ms-2">Withdraw Komisi</span>
-        </h5>
+            <!-- Withdraw Section -->
+            <div class="card mb-4 border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-cash-coin text-warning fs-1"></i>
+                        <span class="ms-2">Withdraw Komisi</span>
+                    </h5>
 
-        <div class="row g-4 align-items-center">
-            <div class="col-md-4">
-                <div class="border rounded-3 p-3 h-100">
-                    <small class="text-muted">Saldo Bisa Ditarik</small>
-                    <h3 class="text-success mb-0">Rp 1.200.000</h3>
+                    <div class="row g-4 align-items-center">
+                        <div class="col-md-4">
+                            <div class="border rounded-3 p-3 h-100">
+                                <small class="text-muted">Saldo Bisa Ditarik</small>
+                                <h3 class="text-success mb-0">Rp 1.200.000</h3>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded-3 p-3 h-100 bg-light">
+                                <small class="text-muted">Saldo Pending</small>
+                                <h3 class="text-warning mb-0">Rp 640.000</h3>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-warning rounded-pill px-5 py-2" data-bs-toggle="modal"
+                                data-bs-target="#withdrawModal">
+                                <i class="bi bi-wallet2 me-1"></i>
+                                Tarik Komisi
+                            </button>
+                            <div class="small text-muted mt-2">
+                                Minimal penarikan Rp 50.000
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <div class="border rounded-3 p-3 h-100 bg-light">
-                    <small class="text-muted">Saldo Pending</small>
-                    <h3 class="text-warning mb-0">Rp 640.000</h3>
-                </div>
-            </div>
-
-            <div class="col-md-4 text-end">
-                <button class="btn btn-warning rounded-pill px-5 py-2">
-                    <i class="bi bi-wallet2 me-1"></i>
-                    Tarik Komisi
-                </button>
-                <div class="small text-muted mt-2">
-                    Minimal penarikan Rp 50.000
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
             <!-- Cards Section -->
             <div class="row row-cols-1 row-cols-md-3 mb-4">
@@ -176,43 +177,52 @@
                 <div class="card-body mt-3 mb-2">
                     <h5 class="card-title mb-0">Referrals Tools</h5>
                     <div class="row g-4 mt-1 align-items-end">
-    <div class="col-lg-4">
-        <label for="referralCode" class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
-            Referral Code
-        </label>
-        <div class="input-group">
-            <input type="text" class="form-control bg-light" id="referralCode" value="616ja03095" readonly>
-            <button class="btn btn-warning text-white" type="button" onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
-                <i class="bi bi-clipboard"></i>
-            </button>
-        </div>
-    </div>
+                        <div class="col-lg-4">
+                            <label for="referralCode"
+                                class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
+                                Referral Code
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control bg-light" id="referralCode" value="616ja03095"
+                                    readonly>
+                                <button class="btn btn-warning text-white" type="button"
+                                    onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
 
-    <div class="col-lg-4">
-        <label for="referralLink" class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
-            Referral Link
-        </label>
-        <div class="input-group">
-            <input type="text" class="form-control bg-light" id="referralLink" value="https://idspora.com/course/?ref=616ja03095" readonly>
-            <button class="btn btn-warning text-white" type="button" onclick="copyToClipboard(this, 'referralLink')" title="Copy link">
-                <i class="bi bi-clipboard"></i>
-            </button>
-        </div>
-    </div>
+                        <div class="col-lg-4">
+                            <label for="referralLink"
+                                class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
+                                Referral Link
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control bg-light" id="referralLink"
+                                    value="https://idspora.com/course/?ref=616ja03095" readonly>
+                                <button class="btn btn-warning text-white" type="button"
+                                    onclick="copyToClipboard(this, 'referralLink')" title="Copy link">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
 
-    <div class="col-lg-4">
-        <label for="referralCaption" class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
-            Broadcast Caption
-        </label>
-        <div class="input-group">
-            <input type="text" class="form-control bg-light text-truncate" id="referralCaption" 
-                   value="Join IdSpora and unlock exclusive events! Use my referral link to get started: https://idspora..." readonly>
-            <button class="btn btn-warning text-white" type="button" onclick="copyToClipboard(this, 'referralCaption')" title="Copy caption">
-                <i class="bi bi-clipboard"></i>
-            </button>
-        </div>
-    </div>
-</div>
+                        <div class="col-lg-4">
+                            <label for="referralCaption"
+                                class="form-label fw-medium small text-body-secondary border-start border-warning border-4 ps-2 mb-2">
+                                Broadcast Caption
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control bg-light text-truncate" id="referralCaption"
+                                    value="Join IdSpora and unlock exclusive events! Use my referral link to get started: https://idspora..."
+                                    readonly>
+                                <button class="btn btn-warning text-white" type="button"
+                                    onclick="copyToClipboard(this, 'referralCaption')" title="Copy caption">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <hr>
                     <h5 class="card-title mb-0">How It Works</h5>
                     <div class="row row-cols-1 row-cols-md-3 g-4 mt-1">
@@ -265,7 +275,9 @@
                                     <td>Workshop Figma 101</td>
                                     <td>Rp200.000</td>
                                     <td class="fw-semibold text-success">Rp25.000</td>
-                                    <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span></td>
+                                    <td class="text-center"><span
+                                            class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>27 Nov 2025</td>
@@ -273,7 +285,9 @@
                                     <td>Workshop SLR & Bibliometrik</td>
                                     <td>Rp200.000</td>
                                     <td class="fw-semibold text-success">Rp25.000</td>
-                                    <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span></td>
+                                    <td class="text-center"><span
+                                            class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>26 Nov 2025</td>
@@ -281,7 +295,9 @@
                                     <td>Workshop Web Design vol 2</td>
                                     <td>Rp500.000</td>
                                     <td class="fw-semibold text-success">Rp40.000</td>
-                                    <td class="text-center"><span class="badge bg-warning bg-opacity-10 text-warning px-4 py-2 rounded-pill">Menunggu</span></td>
+                                    <td class="text-center"><span
+                                            class="badge bg-warning bg-opacity-10 text-warning px-4 py-2 rounded-pill">Menunggu</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -425,132 +441,134 @@
 
 
             {{-- <div class="card rounded-4 mb-4"> --}}
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h6 class="fw-semibold mb-3">
-                        <i class="bi bi-question-circle text-warning me-1"></i>
-                        Frequently Asked Questions
-                    </h6>
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="bi bi-question-circle text-warning me-1"></i>
+                            Frequently Asked Questions
+                        </h6>
 
-                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion" id="faqAccordion">
 
-                        <div class="accordion-item mb-2">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" data-bs-toggle="collapse"
-                                    data-bs-target="#faq1">
-                                    Bagaimana cara menarik dana komisi saya?
-                                </button>
-                            </h2>
-                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body text-muted small">
-                                    Dana dapat ditarik melalui menu "Withdraw" di dashboard reseller.
+                            <div class="accordion-item mb-2">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#faq1">
+                                        Bagaimana cara menarik dana komisi saya?
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body text-muted small">
+                                        Dana dapat ditarik melalui menu "Withdraw" di dashboard reseller.
+                                    </div>
                                 </div>
                             </div>
+
+                            <div class="accordion-item mb-2">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#faq2">
+                                        Kapan saya mendapatkan komisi dari referral?
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body text-muted small">
+                                        Komisi masuk setelah pembelian berhasil & tidak refund.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item mb-2">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#faq3">
+                                        Berapa lama link referral saya aktif?
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body text-muted small">
+                                        Link berlaku tanpa batas selama akun Anda aktif.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item mb-2">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#faq4">
+                                        Apakah saya bisa menggunakan referral code untuk diri sendiri?
+                                    </button>
+                                </h2>
+                                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body text-muted small">
+                                        Tidak, referral untuk pembelian orang lain.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item mb-2">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#faq5">
+                                        Bagaimana cara naik ke tier yang lebih tinggi?
+                                    </button>
+                                </h2>
+                                <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body text-muted small">
+                                        Tingkatkan jumlah referral sesuai persyaratan tier.
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
-                        <div class="accordion-item mb-2">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" data-bs-toggle="collapse"
-                                    data-bs-target="#faq2">
-                                    Kapan saya mendapatkan komisi dari referral?
-                                </button>
-                            </h2>
-                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body text-muted small">
-                                    Komisi masuk setelah pembelian berhasil & tidak refund.
-                                </div>
+                        <div class="mt-4 p-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">Masih ada pertanyaan?</div>
+                                <small class="text-muted">Tim support kami siap membantu Anda 24/7</small>
                             </div>
-                        </div>
-
-                        <div class="accordion-item mb-2">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" data-bs-toggle="collapse"
-                                    data-bs-target="#faq3">
-                                    Berapa lama link referral saya aktif?
-                                </button>
-                            </h2>
-                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body text-muted small">
-                                    Link berlaku tanpa batas selama akun Anda aktif.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="accordion-item mb-2">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" data-bs-toggle="collapse"
-                                    data-bs-target="#faq4">
-                                    Apakah saya bisa menggunakan referral code untuk diri sendiri?
-                                </button>
-                            </h2>
-                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body text-muted small">
-                                    Tidak, referral untuk pembelian orang lain.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="accordion-item mb-2">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed" data-bs-toggle="collapse"
-                                    data-bs-target="#faq5">
-                                    Bagaimana cara naik ke tier yang lebih tinggi?
-                                </button>
-                            </h2>
-                            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                                <div class="accordion-body text-muted small">
-                                    Tingkatkan jumlah referral sesuai persyaratan tier.
-                                </div>
-                            </div>
+                            <button class="btn btn-warning rounded-pill px-4">Hubungi Support</button>
                         </div>
 
                     </div>
-
-                    <div class="mt-4 p-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fw-semibold">Masih ada pertanyaan?</div>
-                            <small class="text-muted">Tim support kami siap membantu Anda 24/7</small>
-                        </div>
-                        <button class="btn btn-warning rounded-pill px-4">Hubungi Support</button>
-                    </div>
-
                 </div>
+
+
+
             </div>
-
-
-
-        </div>
     </main>
+    @include('partials.withdraw-modal')
 
 
 
 
-@include ('partials.footer-before-login')
+
+    @include ('partials.footer-before-login')
     <script>
-    function copyToClipboard(button, elementId) {
-        // 1. Ambil teks dan copy
-        var copyText = document.getElementById(elementId);
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); // Untuk support mobile
-        navigator.clipboard.writeText(copyText.value);
+        function copyToClipboard(button, elementId) {
+            // 1. Ambil teks dan copy
+            var copyText = document.getElementById(elementId);
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // Untuk support mobile
+            navigator.clipboard.writeText(copyText.value);
 
-        // 2. Logika Ubah Icon (Clipboard -> Checklist -> Clipboard)
-        var icon = button.querySelector('i'); // Ambil elemen ikon di dalam tombol
-        
-        // Simpan class asli (bi-clipboard)
-        var originalClass = "bi bi-clipboard";
-        // Class untuk checklist
-        var successClass = "bi bi-check-lg"; // Bootstrap icon checklist tebal
+            // 2. Logika Ubah Icon (Clipboard -> Checklist -> Clipboard)
+            var icon = button.querySelector('i'); // Ambil elemen ikon di dalam tombol
 
-        // Ubah ikon jadi checklist
-        icon.className = successClass;
+            // Simpan class asli (bi-clipboard)
+            var originalClass = "bi bi-clipboard";
+            // Class untuk checklist
+            var successClass = "bi bi-check-lg"; // Bootstrap icon checklist tebal
 
-        // Kembalikan ke ikon awal setelah 2 detik (2000ms)
-        setTimeout(function() {
-            icon.className = originalClass;
-        }, 2000);
-    }
-</script>
+            // Ubah ikon jadi checklist
+            icon.className = successClass;
+
+            // Kembalikan ke ikon awal setelah 2 detik (2000ms)
+            setTimeout(function () {
+                icon.className = originalClass;
+            }, 2000);
+        }
+    </script>
 </body>
 
 </html>
