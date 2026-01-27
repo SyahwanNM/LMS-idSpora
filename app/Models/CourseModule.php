@@ -18,6 +18,9 @@ class CourseModule extends Model
         'description',
         'type',
         'content_url',
+        'file_name',
+        'mime_type',
+        'file_size',
         'is_free',
         'preview_pages',
         'duration',
@@ -28,6 +31,7 @@ class CourseModule extends Model
         'order_no' => 'integer',
         'preview_pages' => 'integer',
         'duration' => 'integer',
+        'file_size' => 'integer',
     ];
 
     public function course()
@@ -47,14 +51,22 @@ class CourseModule extends Model
 
     public function getFormattedDurationAttribute()
     {
-        $hours = floor($this->duration / 60);
-        $minutes = $this->duration % 60;
-        
-        if ($hours > 0) {
-            return $hours . 'h ' . $minutes . 'm';
+        // duration now stored in SECONDS
+        $seconds = (int) $this->duration;
+        if ($seconds <= 0) {
+            return '0 detik';
         }
-        
-        return $minutes . 'm';
+        $h = intdiv($seconds, 3600);
+        $rem = $seconds % 3600;
+        $m = intdiv($rem, 60);
+        $s = $rem % 60;
+        if ($h > 0) {
+            return $h.'j '.$m.'m '.$s.'d';
+        }
+        if ($m > 0) {
+            return $m.'m '.$s.'d';
+        }
+        return $s.' detik';
     }
 
     public function getFileExtensionAttribute()

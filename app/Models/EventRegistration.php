@@ -19,6 +19,9 @@ class EventRegistration extends Model
         'feedback_text',
         'feedback_submitted_at',
         'total_price', 
+        'payment_proof',
+        'payment_verified_at',
+        'payment_verified_by',
         'payment_url',
     ];
 
