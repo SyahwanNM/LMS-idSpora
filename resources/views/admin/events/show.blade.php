@@ -247,25 +247,27 @@
                         <div class="col-12">
                             <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
                                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center gap-2">
                                         <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Peserta Terdaftar</h6>
-                                        <span class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
+                                        <span id="participantsCountBadge" class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
                                     </div>
                                     <div class="input-group input-group-sm" style="max-width: 320px;">
                                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                                        <input type="text" id="participantSearch" class="form-control" placeholder="Cari peserta (nama/email/kode)">
+                                        <input type="text" id="participantSearch" class="form-control" placeholder="Cari peserta (nama/email)">
                                     </div>
                                 </div>
                                 @if($registrations->count())
-                                <div class="table-responsive">
+                                <div id="participantsTableWrapper" class="table-responsive">
                                     <table id="participantsTable" class="table table-sm table-striped align-middle mb-0">
                                         <thead class="table-light">
-                                            <tr>
+                                            <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
                                                 <th style="width:48px;">No</th>
                                                 <th style="width:220px;">Nama</th>
                                                 <th style="width:240px;">Email</th>
                                                 <th style="width:120px;">Status</th>
                                                 <th style="width:160px;">Terdaftar</th>
+                                                <th style="width:160px;">Bukti Pembayaran</th>
+                                                <th style="width:160px;">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -276,14 +278,53 @@
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                 <td>
                                                     @php $st = strtolower((string)$reg->status); @endphp
-                                                    <span class="badge {{ $st==='active' ? 'bg-success' : 'bg-secondary' }}">{{ strtoupper($reg->status ?? '-') }}</span>
+                                                <span class="badge {{ $st === 'active' ? 'bg-success' : ($st === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">{{ strtoupper($reg->status ?? '-') }}</span>
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
+                                                <td>
+                                                    @if(!empty($reg->payment_proof))
+                                                        @php $ppExt = strtolower(pathinfo($reg->payment_proof, PATHINFO_EXTENSION)); $ppUrl = Storage::url($reg->payment_proof); @endphp
+                                                        <a href="{{ $ppUrl }}" target="_blank" class="d-inline-block">
+                                                            @if(in_array($ppExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                                <img src="{{ $ppUrl }}" alt="Bukti" class="rounded border" style="width:80px;height:48px;object-fit:cover;">
+                                                            @else
+                                                                <i class="bi bi-file-earmark-text"></i> Lihat
+                                                            @endif
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted small">-</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($st === 'pending')
+                                                            <button type="button" class="btn btn-sm btn-success btn-action" 
+                                                                data-action="{{ route('admin.events.registrations.approve', ['event'=>$event->id, 'registration'=>$reg->id]) }}" 
+                                                                data-title="Setujui Pendaftaran" data-message="Setujui pendaftaran ini?" data-variant="approve">
+                                                                Acc
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-danger ms-1 btn-action" 
+                                                                data-action="{{ route('admin.events.registrations.reject', ['event'=>$event->id, 'registration'=>$reg->id]) }}" 
+                                                                data-title="Tolak Pendaftaran" data-message="Tolak pendaftaran ini?" data-variant="reject">
+                                                                Tolak
+                                                            </button>
+                                                        @else
+                                                        <span class="text-muted small">-</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
+                                    <div id="participantsEmpty" class="alert alert-light border small mb-0 d-none">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-emoji-frown fs-4 text-muted" aria-hidden="true"></i>
+                                            <div>
+                                                <div id="participantsEmptyMessage">Oopss, data peserta tidak ada.</div>
+                                                <div id="participantsEmptyQuery" class="small text-muted"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 @else
                                 <div class="alert alert-light border small mb-0">Belum ada peserta terdaftar.</div>
                                 @endif
@@ -485,49 +526,7 @@
                     @endif
 
                     <!-- Certificate Generation Section -->
-                    @php
-                        $registrationsCount = $event->registrations()->count();
-                    @endphp
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="border rounded p-4 {{ $registrationsCount > 0 ? 'bg-light' : 'bg-warning-subtle' }}">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <h6 class="text-dark mb-2"><i class="bi bi-award me-2"></i>Kelola Sertifikat</h6>
-                                        <p class="text-muted small mb-0">
-                                            @if($registrationsCount > 0)
-                                                Generate sertifikat untuk semua peserta yang terdaftar pada event ini. 
-                                                Total peserta: <strong>{{ $registrationsCount }}</strong> orang.
-                                            @else
-                                                <span class="text-warning-emphasis">Belum ada peserta yang terdaftar pada event ini.</span>
-                                            @endif
-                                        </p>
-                                    </div>
-                                    @if($event->certificate_logo || $event->certificate_signature)
-                                    <div class="text-end">
-                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Logo & TTD Terpasang</span>
-                                    </div>
-                                    @endif
-                                </div>
-                                <div class="d-flex gap-2 flex-wrap">
-                                    @if($registrationsCount > 0)
-                                    <a href="{{ route('admin.certificates.generate-massal', $event) }}" class="btn btn-success" onclick="return confirm('Apakah Anda yakin ingin generate sertifikat untuk semua {{ $registrationsCount }} peserta? Proses ini mungkin memakan waktu beberapa saat.')">
-                                        <i class="bi bi-download me-1"></i> Generate Semua Sertifikat (ZIP)
-                                    </a>
-                                    @endif
-                                    <a href="{{ route('admin.events.edit', $event) }}#certificate-settings" class="btn btn-outline-primary">
-                                        <i class="bi bi-gear me-1"></i> Pengaturan Logo & Tanda Tangan
-                                    </a>
-                                </div>
-                                @if(!$event->certificate_logo && !$event->certificate_signature)
-                                <div class="alert alert-info mt-3 mb-0 small">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    <strong>Tips:</strong> Upload logo dan tanda tangan di halaman Edit Event untuk membuat sertifikat lebih profesional.
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
+                  
 
                     <!-- Action Buttons -->
                     <div class="row mt-4">
@@ -740,25 +739,65 @@ document.addEventListener('DOMContentLoaded', function(){
     }catch(e){ console.error(e); }
 });
 </script>
+</script>
+@endif
 <script>
-// Client-side filter for participants table
+// Client-side filter for participants table (always rendered)
 document.addEventListener('DOMContentLoaded', function(){
     var input = document.getElementById('participantSearch');
     var table = document.getElementById('participantsTable');
     if (!input || !table) return;
     var tbody = table.querySelector('tbody');
+    var wrapper = document.getElementById('participantsTableWrapper');
+    var emptyEl = document.getElementById('participantsEmpty');
+    var badge = document.getElementById('participantsCountBadge');
+    function refreshCounts(){
+        var visible = 0;
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
+            if(row.style.display !== 'none') visible++;
+        });
+        if(badge) {
+            badge.textContent = 'Total: ' + visible;
+            badge.classList.toggle('bg-primary', visible > 0);
+            badge.classList.toggle('bg-secondary', visible === 0);
+        }
+        if(visible === 0){
+            if(wrapper) wrapper.style.display = 'none';
+            if(emptyEl) emptyEl.classList.remove('d-none');
+        } else {
+            if(wrapper) wrapper.style.display = '';
+            if(emptyEl) emptyEl.classList.add('d-none');
+        }
+    }
+
     input.addEventListener('input', function(){
-        var q = (this.value || '').toLowerCase().trim();
+        var raw = (this.value || '').trim();
+        var q = raw.toLowerCase();
         Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
             var name = (row.children[1]?.textContent || '').toLowerCase();
             var email = (row.children[2]?.textContent || '').toLowerCase();
-            var match = !q || name.includes(q) || email.includes(q);
+            var code = (row.dataset.regCode || '').toLowerCase();
+            var match = !q || name.includes(q) || email.includes(q) || code.includes(q);
             row.style.display = match ? '' : 'none';
         });
+        // Update empty message to include the searched query when present
+        var msgEl = document.getElementById('participantsEmptyMessage');
+        var qEl = document.getElementById('participantsEmptyQuery');
+        if(msgEl && qEl){
+            if(raw){
+                msgEl.textContent = 'Oopss, nama/email yang kamu cari tidak ada.';
+                qEl.textContent = '"' + raw + '"';
+            } else {
+                msgEl.textContent = 'Oopss, data peserta tidak ada.';
+                qEl.textContent = '';
+            }
+        }
+        refreshCounts();
     });
+    // initialize counts on load
+    refreshCounts();
 });
 </script>
-@endif
 <script>
 // PNG/JPG download for QR (supports SVG and raster sources)
 document.addEventListener('DOMContentLoaded', function(){
@@ -830,6 +869,30 @@ document.addEventListener('DOMContentLoaded', function(){
     if(btnJpg) btnJpg.addEventListener('click', ()=> handleDownload('jpg'));
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    var actionModalEl = document.getElementById('registrationActionModal');
+    if(!actionModalEl) return;
+    var actionModal = new bootstrap.Modal(actionModalEl);
+    var actionForm = document.getElementById('registrationActionForm');
+    var actionMessage = document.getElementById('registrationActionMessage');
+    var actionLabel = document.getElementById('registrationActionLabel');
+
+    document.querySelectorAll('.btn-action').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var action = btn.getAttribute('data-action');
+            var title = btn.getAttribute('data-title') || 'Konfirmasi';
+            var message = btn.getAttribute('data-message') || 'Lanjutkan tindakan ini?';
+            // Set form action and modal text
+            actionForm.setAttribute('action', action);
+            actionLabel.textContent = title;
+            actionMessage.textContent = message;
+            // show modal
+            actionModal.show();
+        });
+    });
+});
+</script>
 <!-- Delete Confirmation Modal (modern) -->
 <div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -866,4 +929,25 @@ document.addEventListener('DOMContentLoaded', function(){
         @method('DELETE')
     </form>
 </div>
+    <!-- Approve/Reject confirmation modal (reusable) -->
+    <div class="modal fade" id="registrationActionModal" tabindex="-1" aria-labelledby="registrationActionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="registrationActionLabel">Confirm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="registrationActionMessage">Are you sure?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <form id="registrationActionForm" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-primary" id="registrationActionConfirmBtn">Konfirmasi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection

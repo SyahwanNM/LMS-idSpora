@@ -22,8 +22,8 @@ class RequireProfileComplete
             return $next($request);
         }
 
-        // Skip middleware if user is already on profile edit page or account settings
-        if ($request->routeIs('profile.edit') || $request->routeIs('profile.update') || $request->routeIs('profile.account-settings') || $request->routeIs('profile.update-account-settings')) {
+        // Skip middleware if user is already on profile edit page, account settings, or dashboard
+        if ($request->routeIs('profile.edit') || $request->routeIs('profile.update') || $request->routeIs('profile.account-settings') || $request->routeIs('profile.update-account-settings') || $request->routeIs('dashboard')) {
             return $next($request);
         }
 

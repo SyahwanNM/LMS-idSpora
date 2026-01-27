@@ -58,14 +58,13 @@ class AuthController extends Controller
         Auth::loginUsingId($user->id, $remember);
         // Catat aktivitas login
         try { \App\Models\ActivityLog::create(['user_id' => $user->id, 'action' => 'Login', 'description' => 'Login (direct)']); } catch (\Throwable $e) {}
-        $redirect = $this->resolveSafeRedirect($request);
+        // If admin, go to admin dashboard
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
         }
-        if ($redirect) {
-            return redirect($redirect)->with('success', 'Login berhasil!');
-        }
-        return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
+
+        // For regular users, always redirect to the main dashboard after successful login
+        return redirect('/dashboard')->with('success', 'Login berhasil. Selamat datang di IdSpora Academy!');
     }
 
     public function register(Request $request)

@@ -12,9 +12,111 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <style>
+        
+        body {
+            overflow-x: hidden; 
+            margin: 0;
+            padding: 0;
+           
+        }
+        .search-banner-container {
+            margin-top: 100px; 
+            margin-bottom: 20px;
+        }   
+        .footer-section {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            margin-top: 40px; 
+        }
+
+        /* --- DASHBOARD STYLES --- */
+        /* Event Dashboard Image Size */
+        .event .event-list {row-gap:38px; padding:0 18px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));}
+        @media (max-width: 576px){
+            .event .event-list {grid-template-columns: 1fr;}
+        }
+        .event .card-event .thumb-wrapper {position:relative;height:360px;}
+        .event .card-event .card-image-event {width:100%;height:100%;object-fit:cover;}
+        .event .card-event .card-body {padding-top:20px;}
+        @media (max-width:1200px){ 
+            .event .card-event .thumb-wrapper {height:340px;}
+         }
+        @media (max-width:992px){ 
+            .event .card-event .thumb-wrapper {height:320px;}
+         }
+        @media (max-width:768px){ 
+            .event .card-event .thumb-wrapper {height:260px;} }
+        
+        /* Discount badge styling */
+        .event .card-event .thumb-wrapper {overflow:hidden;}
+        .event .card-event .discount-badge {
+            position:absolute;
+            bottom:12px;
+            left:12px;
+            background:#212f4d;
+            color:#d6bc3a;
+            font-size:13px;
+            font-weight:600;
+            padding:6px 10px 5px;
+            border-radius:6px;
+            line-height:1;
+            letter-spacing:.5px;
+            box-shadow:0 2px 6px rgba(0,0,0,.25);
+            display:inline-flex;
+            align-items:center;
+            gap:4px;
+            text-transform:uppercase;
+        }
+        .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
+        .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
+        
+      
+        .event .card-event .manage-badge {
+            position:absolute; top:12px; left:12px; color:#fff; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;
+        }
+        .event .card-event .manage-badge.manage {
+            background:#0d6efd;
+        }
+        .event .card-event .manage-badge.create {
+            background:#6f42c1;
+        }
+        .countdown-wrapper {
+            margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;
+        }
+        .countdown-label {
+            color:#555; font-weight:500;
+        }
+        .countdown-timer {
+            background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:150px; text-align:center;
+        }
+        .countdown-timer.started {
+            background:#198754; color:#fff;}
+        .countdown-timer.expired {background:#6c757d; color:#fff;
+    }
+        .price-free {
+            color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;
+        }
+        .price-now:not(.price-free){ 
+            color:#ffd54f; font-weight:700; 
+        }
+        .price-old{
+             color:#6c757d; text-decoration: line-through;
+             }
+        .event .card-event .tags .tag { 
+            background-color:#E4E4E6 !important; color:#3B3B43;
+         }
+    </style>
 </head>
 
 <body>
+    {{-- Navbar di include di dalam body --}}
+    @include("partials.navbar-after-login")
+
     <div class="search-banner-container">
         <form class="search-banner-form" action="{{ route('events.searchRedirect') }}" method="get" autocomplete="off">
             <div class="search-wrap">
@@ -82,7 +184,7 @@
                 data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
-            </button>e
+            </button>
         </div>
     </section>
 
@@ -197,68 +299,6 @@
                                 src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
                                 alt="Profile">
                             <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg>
-                                <span style="font-size:13px;">10 videos</span>
-                            </div>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                    </div>
-                </article>
-            </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
                             <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
                                     xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                                     viewBox="0 0 16 16">
@@ -266,127 +306,6 @@
                                     <path
                                         d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
                                 </svg> <span style="font-size:13px;">10 videos</span> </div>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                    </div>
-                </article>
-            </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
-                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span> </div>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
-                    </div>
-                    </div>
-                </article>
-            </li>
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
-                            </div>
-                        </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span>
-                            </div>
                         </div>
                         <div class="progress-wrapper">
                             <div class="progress">
@@ -545,58 +464,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-    /* === Dashboard Event Card Image Size (Reduced Slightly) & Horizontal Spacing === */
-    .event .event-list {row-gap:38px; padding:0 18px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));}
-    @media (max-width: 576px){
-        .event .event-list {grid-template-columns: 1fr;} /* keep single column on very small devices */
-    }
-    .event .card-event .thumb-wrapper {position:relative;height:360px;} /* was 400px */
-    .event .card-event .card-image-event {width:100%;height:100%;object-fit:cover;}
-    .event .card-event .card-body {padding-top:20px;} /* slightly reduced */
-    @media (max-width:1200px){ .event .card-event .thumb-wrapper {height:340px;} }
-    @media (max-width:992px){ .event .card-event .thumb-wrapper {height:320px;} }
-    @media (max-width:768px){ .event .card-event .thumb-wrapper {height:260px;} }
-    /* Discount badge styling */
-    .event .card-event .thumb-wrapper {overflow:hidden;}
-    .event .card-event .discount-badge {
-        position:absolute;
-        bottom:12px;
-        left:12px;
-        background:#212f4d;
-        color:#d6bc3a;
-        font-size:13px;
-        font-weight:600;
-        padding:6px 10px 5px;
-        border-radius:6px;
-        line-height:1;
-        letter-spacing:.5px;
-        box-shadow:0 2px 6px rgba(0,0,0,.25);
-        display:inline-flex;
-        align-items:center;
-        gap:4px;
-        text-transform:uppercase;
-    }
-    .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
-    .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
-    /* Manage/Create banner (small ribbon) */
-    .event .card-event .manage-badge {position:absolute; top:12px; left:12px; color:#fff; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;}
-    .event .card-event .manage-badge.manage {background:#0d6efd;}
-    .event .card-event .manage-badge.create {background:#6f42c1;}
-    /* Countdown styles */
-    .countdown-wrapper {margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;}
-    .countdown-label {color:#555; font-weight:500;}
-    .countdown-timer {background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:150px; text-align:center;}
-    .countdown-timer.started {background:#198754; color:#fff;}
-    .countdown-timer.expired {background:#6c757d; color:#fff;}
-    /* FREE price styling (matches landing page) */
-    .price-free {color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;}
-    /* Event price styling */
-    .price-now:not(.price-free){ color:#ffd54f; font-weight:700; }
-    .price-old{ color:#6c757d; text-decoration: line-through; }
-        /* Tag badge background and text (speaker/location) */
-        .event .card-event .tags .tag { background-color:#E4E4E6 !important; color:#3B3B43; }
-    </style>
+    
     <script>
         // Submit search to redirect route on icon click or Enter
         (function(){
@@ -665,7 +533,7 @@
         });
     </script>
     <script>
-       
+        
         (function(){
             function formatDiff(totalSec){
                 if(totalSec <= 0) return 'Dimulai';
@@ -704,8 +572,7 @@
             });
         })();
     </script>
-
+@include('partials.footer-before-login')
 </body>
 
 </html>
-@include('partials.footer-before-login')

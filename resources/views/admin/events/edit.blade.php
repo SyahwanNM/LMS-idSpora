@@ -1,7 +1,33 @@
 @extends('layouts.admin')
 @section('title','Edit Event')
 @section('content')
+ @include('partials.navbar-admin-event')
 <div class="container-fluid py-4">
+    @if(session('success'))
+        <div aria-live="polite" aria-atomic="true" class="position-relative">
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+                <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            {{ session('success') }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                try{
+                    var el = document.getElementById('eventUpdatedToast');
+                    if(window.bootstrap && el){
+                        var t = new bootstrap.Toast(el);
+                        t.show();
+                    }
+                }catch(e){}
+            });
+        </script>
+    @endif
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
         <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
