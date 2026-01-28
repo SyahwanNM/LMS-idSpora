@@ -362,19 +362,28 @@
             <h6>Kursus terpopuler dengan rating tertinggi</h6>
         </div>
 
+        @php
+            $publishedFeaturedCourses = isset($featuredCourses)
+                ? collect($featuredCourses)->filter(function($c){ return ($c->status ?? null) === 'active'; })
+                : collect();
+        @endphp
         <ul class="course-list">
-            @forelse($featuredCourses as $course)
+            @forelse($publishedFeaturedCourses as $course)
             <li>
+                <a href="{{ route('course.detail', $course->id) }}" style="text-decoration:none;color:inherit;">
                 <article class="course-card">
                     <div class="thumb-wrapper">
-                        @if($course->image)
-                            <img class="thumb" src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                        @php
+                            $cardImage = $course->card_thumbnail ?? $course->image;
+                        @endphp
+                        @if($cardImage)
+                            <img class="thumb" src="{{ Storage::url($cardImage) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         @else
                             <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         @endif
                         <div class="badge-save-group" style="gap:12px;">
                             <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
-                            <button class="save-btn" aria-label="Save course">
+                            <button class="save-btn" aria-label="Save course" type="button">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                     viewBox="0 0 16 16">
                                     <path d="M2 2v13.5l6-3 6 3V2z" />
@@ -421,10 +430,11 @@
                             <div class="price-col">
                                 <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                             </div>
-                            <button class="btn-enroll">Enroll Now</button>
+                            <a href="{{ route('course.detail', $course->id) }}" class="btn-enroll" style="text-decoration:none;">Enroll Now</a>
                         </div>
                     </div>
                 </article>
+                </a>
             </li>
             @empty
             <li>

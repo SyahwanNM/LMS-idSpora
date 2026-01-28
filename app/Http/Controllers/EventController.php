@@ -410,12 +410,33 @@ class EventController extends Controller
         }
 
         // Event gratis: langsung daftarkan
-        $reg = EventRegistration::create([
-            'user_id' => $user->id,
-            'event_id' => $event->id,
-            'status' => 'active',
-            'registration_code' => 'EVT-'.strtoupper(uniqid())
-        ]);
+        if($isFree){
+            $reg = EventRegistration::create([
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'active',
+                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'total_price' => 0.00,
+            ]);
+        } else {
+            // Paid event: create pending registration and accept uploaded proof if provided
+            $regData = [
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'pending',
+                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'total_price' => $event->discounted_price ?? $event->price,
+            ];
+            // handle proof upload if present (this API used by web/mobile)
+            if($request->hasFile('payment_proof')){
+                $file = $request->file('payment_proof');
+                if($file->isValid()){
+                    $path = $file->store('payments', 'public');
+                    $regData['payment_proof'] = $path;
+                }
+            }
+            $reg = EventRegistration::create($regData);
+        }
         
         // Add points for event registration
         try {
@@ -583,5 +604,77 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Gagal memproses link.'], 422);
         }
+    }
+
+    /**
+     * Admin: Approve a pending event registration (manual proof verification).
+     */
+    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if($registration->event_id !== $event->id){
+            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+        }
+        $registration->status = 'active';
+        $registration->payment_verified_at = now();
+        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
+        $registration->save();
+
+        // mark any related manual payments as settled
+        try {
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $m->status = 'settled';
+                $m->save();
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try{
+            UserNotification::create([
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_verified',
+                'title' => 'Pembayaran Diterima',
+                'message' => 'Pembayaran Anda untuk event "'.$event->title.'" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        return back()->with('success', 'Pendaftaran berhasil diverifikasi dan diaktifkan.');
+    }
+
+    /**
+     * Admin: Reject a pending event registration (manual proof verification).
+     */
+    public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if($registration->event_id !== $event->id){
+            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+        }
+        $registration->status = 'rejected';
+        $registration->payment_verified_at = now();
+        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
+        $registration->save();
+
+        // mark any related manual payments as rejected
+        try {
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $m->status = 'rejected';
+                $m->save();
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try{
+            UserNotification::create([
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_rejected',
+                'title' => 'Pembayaran Ditolak',
+                'message' => 'Pembayaran Anda untuk event "'.$event->title.'" telah ditolak oleh admin. Silakan unggah bukti yang valid atau hubungi penyelenggara.',
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        return back()->with('success', 'Pendaftaran ditolak. Pengguna diberi tahu.');
     }
 }

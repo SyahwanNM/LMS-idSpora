@@ -10,7 +10,9 @@ class PublicCourseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Course::query()->with('category');
+        // Only show published courses to users
+        $query = Course::query()->with(['category','modules'])
+            ->where('status','active');
 
         if($search = $request->get('search')){
             $query->where(function($q) use ($search){
@@ -39,9 +41,12 @@ class PublicCourseController extends Controller
         }
 
         $courses = $query->paginate(12)->withQueryString();
-        // Sementara: pakai list yang sama sebagai featured agar variable tidak undefined.
-        // Bisa diganti logika berbeda (misal: where('is_featured',true)->take(8)) nanti.
-        $featuredCourses = $courses;
+        // Featured: published-only, most recently updated
+        $featuredCourses = Course::with(['category','modules'])
+            ->where('status','active')
+            ->orderBy('updated_at','desc')
+            ->take(8)
+            ->get();
 
         // Get carousel images for course page
         $courseCarousels = Carousel::active()
