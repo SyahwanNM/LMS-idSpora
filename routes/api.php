@@ -4,12 +4,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CallbackController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Models\Event;
 
 
-// Route Khusus untuk Midtrans (Jangan dikasih Middleware Auth!)
-Route::post('/midtrans-callback', [CallbackController::class, 'callback']);
+// Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
 
 
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
@@ -36,6 +35,13 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/events/{id}/registration/status', [EventController::class, 'registrationStatus']);
     Route::post('/events/{id}/payment', [EventController::class, 'createPayment']);
     Route::post('/events/{id}/cancel', [EventController::class, 'cancelRegistration']);
+
+    // Manual Payment Endpoints
+    Route::get('/payments', [PaymentController::class, 'index']);
+    Route::get('/payments/{id}', [PaymentController::class, 'show']);
+    Route::post('/manual-payment', [PaymentController::class, 'store']);
+    Route::post('/manual-payment/{id}', [PaymentController::class, 'update']);
+    Route::delete('/manual-payment/{id}', [PaymentController::class, 'destroy']);
 });
 
 // Admin Manage Events API (CRUD)
