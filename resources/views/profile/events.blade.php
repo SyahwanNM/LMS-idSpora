@@ -431,7 +431,7 @@
                                 // Check if event is paid or free
                                 $isPaid = $event && $event->price > 0;
                                 $payment = isset($payments[$event->id ?? 0]) ? $payments[$event->id] : null;
-                                $amountPaid = $payment ? $payment->gross_amount : 0;
+                                $amountPaid = $payment ? $payment->amount : 0;
                                 $finalPrice = $event ? ($event->hasDiscount() ? $event->discounted_price : $event->price) : 0;
                             @endphp
                             <div class="glass-card rounded-2xl p-6 shadow-lg event-card">

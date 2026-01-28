@@ -8,6 +8,7 @@
     <title>Scan QR Event</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body { background: #f8fafc; }
         .scan-container { max-width: 860px; margin: 24px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
@@ -24,6 +25,8 @@
         .success-anim .check { stroke: #22c55e; stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawCheck 600ms 500ms ease-out forwards; }
         @keyframes drawCircle { to { stroke-dashoffset: 0; } }
         @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+        /* Disable-style for label acting as upload button */
+        .btn.disabled { pointer-events: none; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -56,11 +59,26 @@
             <div class="status ok mt-2">Absensi Berhasil Dilakukan</div>
         </div>
         <div class="mt-3 d-flex align-items-center" style="gap:12px;">
-            <label class="btn btn-outline-primary btn-sm mb-0" for="file-input">Upload Foto untuk Scan</label>
-            <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;">
-            <button id="start-btn" class="btn btn-outline-success btn-sm" type="button">Mulai Kamera</button>
-            <button id="stop-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled>Hentikan Kamera</button>
-            <button id="swap-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled>Ganti Kamera</button>
+            <label class="btn btn-outline-primary btn-sm mb-0 {{ !$canScan ? 'disabled' : '' }}" for="file-input" title="Upload Foto untuk Scan" aria-label="Upload Foto untuk Scan">
+                <i class="bi bi-upload"></i>
+                <span class="visually-hidden">Upload Foto untuk Scan</span>
+            </label>
+            <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;" @if(!$canScan) disabled @endif>
+
+            <button id="start-btn" class="btn btn-outline-success btn-sm" type="button" @if(!$canScan) disabled @endif title="Mulai Kamera" aria-label="Mulai Kamera">
+                <i class="bi bi-camera-video"></i>
+                <span class="visually-hidden">Mulai Kamera</span>
+            </button>
+
+            <button id="stop-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Hentikan Kamera" aria-label="Hentikan Kamera">
+                <i class="bi bi-stop-circle"></i>
+                <span class="visually-hidden">Hentikan Kamera</span>
+            </button>
+
+            <button id="swap-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Ganti Kamera" aria-label="Ganti Kamera">
+                <i class="bi bi-arrow-repeat"></i>
+                <span class="visually-hidden">Ganti Kamera</span>
+            </button>
         </div>
         <div class="mt-3">
             <div id="scan-result" class="status"></div>
@@ -78,6 +96,7 @@
     const stopBtn = document.getElementById('stop-btn');
     const swapBtn = document.getElementById('swap-btn');
     const fileInput = document.getElementById('file-input');
+    const fileLabel = document.querySelector('label[for="file-input"]');
     let html5Qr = null;
     let activeCameraId = null;
     let cameras = [];
@@ -92,6 +111,16 @@
     function setResult(text, cls){
         resultEl.textContent = text;
         resultEl.className = 'status' + (cls ? (' ' + cls) : '');
+    }
+
+    function setUploadEnabled(enabled){
+        try {
+            if (fileInput) fileInput.disabled = !enabled;
+            if (fileLabel) {
+                if (enabled) fileLabel.classList.remove('disabled');
+                else fileLabel.classList.add('disabled');
+            }
+        } catch(_) {}
     }
 
     async function startCamera(cameraId){
@@ -128,6 +157,8 @@
             stopBtn.disabled = false;
             startBtn.disabled = true;
             swapBtn.disabled = !(cameras && cameras.length > 1);
+            // Disable upload while camera is active
+            setUploadEnabled(false);
             setStatus('Kamera aktif, Scan pada QR Code yang diberikan oleh Panitia Penyelenggara Event', 'ok');
         } catch (e) {
             setStatus('Gagal membuka kamera: ' + (e && e.message ? e.message : e), 'err');
@@ -143,6 +174,8 @@
                 stopBtn.disabled = true;
                 swapBtn.disabled = true;
                 startBtn.disabled = false;
+                // Re-enable upload when camera stops
+                setUploadEnabled(true);
                 setStatus('Kamera dihentikan.', 'warn');
             }
         } catch (e) {
@@ -156,6 +189,10 @@
         if (canScan) {
             startCamera();
             startBtn.disabled = true;
+        } else {
+            // Ensure controls are disabled when event not eligible
+            if (startBtn) startBtn.disabled = true;
+            setUploadEnabled(false);
         }
     });
 
@@ -215,6 +252,10 @@
     });
 
     startBtn.addEventListener('click', function(){
+        if (!canScan) {
+            setStatus('Scan kamera tersedia saat acara dimulai dan Anda terdaftar aktif.', 'warn');
+            return;
+        }
         startCamera();
     });
 
