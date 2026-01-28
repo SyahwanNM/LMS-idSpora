@@ -27,6 +27,19 @@
     --split: clamp(55px, 15vh, 120px);
 }
 
+@media (max-width: 768px) {
+    /* Memaksa heading bawaan mengecil di HP */
+    h1 { font-size: 28px !important; }
+    h2 { font-size: 24px !important; }
+    h3 { font-size: 20px !important; } /* Saldo */
+    h4, h5 { font-size: 16px !important; } /* Judul Card */
+    h6 { font-size: 14px !important; }
+
+    /* Memaksa class custom tim kamu mengecil di HP */
+    .fs-40 { font-size: 24px !important; }
+    .fs-32 { font-size: 20px !important; }
+}
+
 body.bg-split-horizontal {
     background: linear-gradient(to bottom, #f5c52f 75%, var(--white) 100%);
     background-size: 100% 100svh;

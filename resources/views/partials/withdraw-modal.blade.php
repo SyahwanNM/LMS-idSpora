@@ -58,7 +58,7 @@
                 </div>
 
                 {{-- CTA --}}
-                <button class="btn btn-warning w-100 rounded-pill fw-semibold">
+                <button class="btn btn-warning w-100 fw-semibold">
                     Lanjut ke Konfirmasi
                 </button>
 

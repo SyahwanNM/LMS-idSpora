@@ -20,7 +20,7 @@
     <div class="hero-box" aria-hidden="true"></div>
     <main class="container-xxl pt-5 mt-4">
         <!-- Navbar -->
-        {{-- <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4 rounded-4 p-2 mt-3 navbar-bg">
+        {{-- <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4 p-2 mt-3 navbar-bg">
             <div class="container-fluid">
                 <a class="navbar-brand me-auto" href="#">
                     <img src="img/logo.png" alt="IdSpora" height="50">
@@ -56,7 +56,7 @@
 
         <div class="container-xl">
             <!-- Card for Target Komisi Bulan Ini -->
-            {{-- <div class="card mb-4 border-0 shadow-sm rounded-4">
+            {{-- <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-bullseye fs-1 text-warning"></i>
@@ -80,14 +80,14 @@
             <!-- End of Card for Target Komisi Bulan Ini -->
 
             <!-- Withdraw Section -->
-            <div class="card mb-4 border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h5 class="mb-3 d-flex align-items-center gap-2">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body p-4 mt-2">
+                    <h5 class="mb-3 d-flex align-items-start gap-2">
                         <i class="bi bi-cash-coin text-warning fs-1"></i>
-                        <span class="ms-2">Withdraw Komisi</span>
+                        <span class="fw-bold">Withdraw Komisi</span>
                     </h5>
 
-                    <div class="row g-4 align-items-center">
+                    <div class="row g-4 align-items-end">
                         <div class="col-md-4">
                             <div class="border rounded-3 p-3 h-100">
                                 <small class="text-muted">Saldo Bisa Ditarik</small>
@@ -102,24 +102,39 @@
                             </div>
                         </div>
 
-                        <div class="col-md-4 text-end">
-                            <button class="btn btn-warning rounded-pill px-5 py-2" data-bs-toggle="modal"
-                                data-bs-target="#withdrawModal">
-                                <i class="bi bi-wallet2 me-1"></i>
-                                Tarik Komisi
-                            </button>
+                        <div class="col-md-4">
                             <div class="small text-muted mt-2">
                                 Minimal penarikan Rp 50.000
                             </div>
+                            <button class="btn btn-warning px-5 py-2 w-100 fw-bold" data-bs-toggle="modal"
+                                data-bs-target="#withdrawModal">
+                                <i class="bi bi-wallet-fill me-1"></i>
+                                Tarik Komisi
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Cards Section -->
-            <div class="row row-cols-1 row-cols-md-3 mb-4">
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
+            <div class="row row-cols-1 row-cols-md-3">
+                <div class="col mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
+                                <h3 class="card-title">Rp 5.000.000</h3>
+                                <p class="card-text text-success mb-0">+Rp 520k bulan ini</p>
+                            </div>
+                            <i class="bi bi-cash-stack fs-1 text-warning"></i>
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-body-secondary">Pembaruan terakhir: 09:40:05 WIB</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary mb-1">Total Referrals</h6>
@@ -138,23 +153,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
-                                <h3 class="card-title">Rp 5.000.000</h3>
-                                <p class="card-text text-success mb-0">+Rp 520k bulan ini</p>
-                            </div>
-                            <i class="bi bi-cash-stack fs-1 text-warning"></i>
-                        </div>
-                        <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: 09:40:05 WIB</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                <div class="col mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Conversion Rate</h6>
@@ -173,9 +173,10 @@
 
 
             <!-- Referral Tools Section -->
-            <div class="card mb-4 border-0 shadow-sm rounded-4">
+            <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body mt-3 mb-2">
-                    <h5 class="card-title mb-0">Referrals Tools</h5>
+                    <h5 class="fw-bold"><i class="bi bi-megaphone-fill text-warning text-secondary me-2"></i>Referral
+                        Tools</h5>
                     <div class="row g-4 mt-1 align-items-end">
                         <div class="col-lg-4">
                             <label for="referralCode"
@@ -224,8 +225,8 @@
                         </div>
                     </div>
                     <hr>
-                    <h5 class="card-title mb-0">How It Works</h5>
-                    <div class="row row-cols-1 row-cols-md-3 g-4 mt-1">
+                    <h5 class="card-title mb-3">How It Works</h5>
+                    <div class="row row-cols-1 g-4 mt-1">
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-share-fill fs-1 mb-2 text-warning"></i><br>
                             <p>Share your referral code with friends and family or on social media to earn rewards!</p>
@@ -251,207 +252,326 @@
             <!-- End of Referral Tools Section -->
 
             <!-- Recent Referrals Table-->
-            <div class="card mb-4 border-0 shadow-sm rounded-4">
-                <div class="card-body mt-3 mb-2">
-                    <h5 class="card-title mb-1 fw-semibold">Riwayat Komisi Terbaru</h5>
-                    <p class="text-muted-sm mb-4">Detail transaksi dan komisi yang Anda peroleh
-                    </p>
-                    <div class="table-responsive">
-                        <table class="table align-middle text-center table-hover">
-                            <thead>
-                                <tr>
-                                    <th class="fw-semibold small">Tanggal</th>
-                                    <th class="fw-semibold small">Nama Pembeli</th>
-                                    <th class="fw-semibold small">Kursus / Event</th>
-                                    <th class="fw-semibold small">Jumlah Pembelian</th>
-                                    <th class="fw-semibold small">Komisi</th>
-                                    <th class="fw-semibold small">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>28 Nov 2025</td>
-                                    <td>Vero Glorify</td>
-                                    <td>Workshop Figma 101</td>
-                                    <td>Rp200.000</td>
-                                    <td class="fw-semibold text-success">Rp25.000</td>
-                                    <td class="text-center"><span
-                                            class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>27 Nov 2025</td>
-                                    <td>Maria S.</td>
-                                    <td>Workshop SLR & Bibliometrik</td>
-                                    <td>Rp200.000</td>
-                                    <td class="fw-semibold text-success">Rp25.000</td>
-                                    <td class="text-center"><span
-                                            class="badge bg-success bg-opacity-10 text-success px-4 py-2 rounded-pill">Dibayar</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>26 Nov 2025</td>
-                                    <td>Agvin P.</td>
-                                    <td>Workshop Web Design vol 2</td>
-                                    <td>Rp500.000</td>
-                                    <td class="fw-semibold text-success">Rp40.000</td>
-                                    <td class="text-center"><span
-                                            class="badge bg-warning bg-opacity-10 text-warning px-4 py-2 rounded-pill">Menunggu</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <div class="row g-4 mb-4">
+
+                <div class="col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-4">Level Anda</h5>
+
+                            <div class="text-center mb-4">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm"
+                                        style="width: 80px; height: 80px; background: linear-gradient(135deg, #8B4513 0%, #CD853F 100%); color: white;">
+                                        <i class="bi bi-person-fill fs-1"></i>
+                                    </div>
+                                    <span
+                                        class="position-absolute bottom-0 start-50 translate-middle-x badge bg-white text-dark border shadow-sm rounded-pill px-3 py-1 mt-2">
+                                        Bronze
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold mb-0">Sutupani</h5>
+                                <p class="text-muted small">10 Referrals</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between small fw-bold mb-1">
+                                    <span>Progress ke Silver</span>
+                                    <span class="text-warning">36 lagi</span>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 8px; background-color: #f0f0f0;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 24%"></div>
+                                </div>
+                            </div>
+
+                            <hr class="border-secondary-subtle border-dashed">
+
+                            <h6 class="fw-semibold small text-muted mb-3">Sistem Tiers</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <div
+                                    class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-star-fill text-warning me-2"></i>
+                                        <div class="lh-1">
+                                            <span class="d-block fw-bold small text-dark">Bronze (0-50)</span>
+                                            <span class="d-block text-muted" style="font-size: 10px;">Komisi 10%</span>
+                                        </div>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill text-warning"></i>
+                                </div>
+                                <div
+                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center opacity-75">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-star-half text-secondary me-2"></i>
+                                        <div class="lh-1">
+                                            <span class="d-block fw-bold small text-dark">Silver (51-150)</span>
+                                            <span class="d-block text-muted" style="font-size: 10px;">Komisi 12%</span>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 10px;"><i
+                                            class="bi bi-lock-fill"></i></small>
+                                </div>
+                                <div
+                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center opacity-50">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-star text-secondary me-2"></i>
+                                        <div class="lh-1">
+                                            <span class="d-block fw-bold small text-dark">Gold (151+)</span>
+                                            <span class="d-block text-muted" style="font-size: 10px;">Komisi 15%</span>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 10px;"><i
+                                            class="bi bi-lock-fill"></i></small>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
-            </div>
-            <!-- End Recent Referrals Table -->
 
-            <div class="row">
-                <div class="col-md-6 mb-4">
+                <div class="col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0">Top Resellers</h5>
+                                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                            </div>
 
-
-                    {{-- Peringkat Reseller Bulan Ini --}}
-                    <div class="card rounded-4 mb-4 h-100 border-0 shadow-sm rounded-4">
-                        <div class="card-body p-4">
-                            <h5 class="fw-semibold">Peringkat Reseller Bulan Ini</h5>
-                            <p class="text-muted mb-4">Top 3 reseller dengan performa terbaik</p>
-
-                            <ul class="list-group list-group-flush">
-
-                                <!-- #1 -->
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 fw-bold text-warning fs-5">#1</div>
-                                        <div>
-                                            <div class="fw-semibold small">Stephanie A. Tarigan</div>
-                                            <small class="text-muted">245 referrals</small>
-                                        </div>
+                            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
+                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                    <div class="text-warning fst-italic me-2" style="min-width: 30px;">#1</div>
+                                    <div class="rounded-circle bg-warning text-white fw-bold d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">JO</div>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">Jocua Cuherman</div>
+                                        <small class="text-muted" style="font-size: 11px;">245 referrals</small>
                                     </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-warning text-dark rounded-pill">Gold</span>
-                                        <div class="fw-semibold">Rp 1.225.000</div>
-                                    </div>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill">Rp
+                                        1.2M</span>
                                 </li>
 
-                                <!-- #2 -->
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 fw-bold text-secondary fs-5">#2</div>
-                                        <div>
-                                            <div class="fw-semibold small">Vero Glorify S.</div>
-                                            <small class="text-muted">198 referrals</small>
-                                        </div>
+                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#2
                                     </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-secondary rounded-pill">Silver</span>
-                                        <div class="fw-semibold">Rp 990.000</div>
+                                    <div class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">VS</div>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">Ver Sianu</div>
+                                        <small class="text-muted" style="font-size: 11px;">198 referrals</small>
                                     </div>
+                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 990k</span>
                                 </li>
 
-                                <!-- #3 -->
-                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 fw-bold text-secondary fs-5">#3</div>
-                                        <div>
-                                            <div class="fw-semibold small">Tayo Wenas</div>
-                                            <small class="text-muted">100 referrals</small>
-                                        </div>
+                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#3
                                     </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-secondary rounded-pill">Silver</span>
-                                        <div class="fw-semibold">Rp 500.000</div>
+                                    <div class="rounded-circle bg-warning bg-opacity-75 text-white fw-bold d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">TR</div>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">Tayo Rapes</div>
+                                        <small class="text-muted" style="font-size: 11px;">100 referrals</small>
                                     </div>
-                                </li>
-                                <!-- #50 user -->
-                                <li
-                                    class="list-group-item d-flex justify-content-between align-items-center py-3 bg-light border rounded-3 mt-2">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3 fw-bold text-warning fs-5">#50</div>
-                                        <div>
-                                            <div class="fw-semibold small">You (Sutupani)</div>
-                                            <small class="text-muted">10 referrals</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-warning text-dark rounded-pill">Bronze</span>
-                                        <div class="fw-semibold">Rp 50.000</div>
-                                    </div>
+                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 500k</span>
                                 </li>
 
+                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#4
+                                    </div>
+                                    <div class="rounded-circle bg-secondary bg-opacity-50 text-white fw-bold d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">BU</div>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">Budi Udin</div>
+                                        <small class="text-muted" style="font-size: 11px;">80 referrals</small>
+                                    </div>
+                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 400k</span>
+                                </li>
+
+                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center opacity-75">
+                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#5
+                                    </div>
+                                    <div class="rounded-circle bg-light text-secondary border fw-bold d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">AY</div>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">Ailop Yu</div>
+                                        <small class="text-muted" style="font-size: 11px;">65 referrals</small>
+                                    </div>
+                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 320k</span>
+                                </li>
+                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center opacity-75">
+                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#6
+                                    </div>
+                                    <div class="rounded-circle bg-light text-secondary border fw-bold d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">CS</div>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">Citra Schoolastika</div>
+                                        <small class="text-muted" style="font-size: 11px;">50 referrals</small>
+                                    </div>
+                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 250k</span>
+                                </li>
                             </ul>
+                            <hr>
+                            <div class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
+                                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#50</div>
+                                <div class="rounded-circle bg-white text-warning border border-warning fw-bold d-flex align-items-center justify-content-center me-3"
+                                    style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div class="flex-grow-1 lh-sm">
+                                    <div class="fw-bold text-dark small mb-0">Sutupani</div>
+                                    <small class="text-dark opacity-75" style="font-size: 11px;">10 referrals</small>
+                                </div>
+                                <div class="d-flex flex-column align-items-end gap-1">
+                                    <span class="badge bg-white text-warning border border-warning rounded-pill"
+                                        style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
+                                    <span class="badge bg-light text-dark border border-warning rounded-pill">Rp 50k</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <!-- End of Peringkat Reseller Bulan Ini -->
                 </div>
-                <div class="col-md-6 mb-4">
-                    <!-- Sistem Tingkat (Tiers) Section -->
-                    <div class="card rounded-4 mb-4 h-100 border-0 shadow-sm rounded-4">
-                        <div class="card-body p-4">
 
-                            <h5 class="fw-semibold">Sistem Tingkat (Tiers)</h5>
-                            <p class="text-muted mb-4">Tingkat Anda saat ini: <span
-                                    class="fw-bold text-warning">Bronze</span>
-                            </p>
-
-                            <div class="row text-center mb-2">
-
-                                <div class="col-md-4 mb-3">
-                                    <div class="border rounded-3 p-3 h-100 border-warning shadow-sm">
-                                        <h6 class="fw-bold text-warning">Bronze</h6>
-                                        <p class="mb-1">0-50 referrals</p>
-                                        <small class="text-muted">Komisi: 10%</small>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <div class="border rounded-3 p-3 h-100">
-                                        <h6 class="fw-bold text-secondary">Silver</h6>
-                                        <p class="mb-1">51-150 referrals</p>
-                                        <small class="text-muted">Komisi: 12%</small>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <div class="border rounded-3 p-3 h-100">
-                                        <h6 class="fw-bold text-warning">Gold</h6>
-                                        <p class="mb-1">151+ referrals</p>
-                                        <small class="text-muted">Komisi: 15%</small>
-                                    </div>
-                                </div>
-
+                <div class="col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold mb-0">Riwayat</h5>
+                                <a href="#" class="text-decoration-none text-warning fw-bold small">Lihat Semua</a>
                             </div>
 
-                            <p class="fw-semibold mb-1">Progress ke Silver</p>
-                            <div class="progress mb-2 progress-h-sm">
-                                <div class="progress-bar bg-dark" style="width: 76%;"></div>
+                            <div class="d-flex flex-column gap-3 flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="bi bi-check-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">Vero Mupon</div>
+                                            <small class="text-muted" style="font-size: 11px;">28 Nov • Figma
+                                                101</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-success small">+Rp 25.000</div>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
+                                            style="font-size: 9px;">Paid</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="bi bi-check-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">Maria Sibowo</div>
+                                            <small class="text-muted" style="font-size: 11px;">27 Nov • SLR WS</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-success small">+Rp 25.000</div>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
+                                            style="font-size: 9px;">Paid</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center me-3"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="bi bi-clock-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">Agvin Amal</div>
+                                            <small class="text-muted" style="font-size: 11px;">26 Nov • Web Vol
+                                                2</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-secondary small">+Rp 40.000</div>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning rounded-1"
+                                            style="font-size: 9px;">Pending</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="bi bi-check-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">Misyu Somat</div>
+                                            <small class="text-muted" style="font-size: 11px;">25 Nov • Python
+                                                101</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-success small">+Rp 35.000</div>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
+                                            style="font-size: 9px;">Paid</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="bi bi-check-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">Siti Aminah</div>
+                                            <small class="text-muted" style="font-size: 11px;">24 Nov • Data Sc</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-success small">+Rp 50.000</div>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
+                                            style="font-size: 9px;">Paid</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="bi bi-check-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark small">Rina Nose</div>
+                                            <small class="text-muted" style="font-size: 11px;">22 Nov • UI/UX</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-success small">+Rp 25.000</div>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
+                                            style="font-size: 9px;">Paid</span>
+                                    </div>
+                                </div>
                             </div>
-
-                            <small class="text-muted">
-                                Anda butuh <span class="text-success fw-bold">36 referrals</span> lagi untuk naik ke
-                                Silver dan
-                                mendapatkan <span class="fw-bold">+2% komisi!</span>
-                            </small>
+                            <hr>
+                            <div class="mt-3">
+                                <button class="btn btn-warning w-100 rounded-pill fw-bold text-dark shadow-sm py-2">
+                                    <i class="bi bi-cloud-arrow-down-fill me-2"></i>Download Laporan
+                                </button>
+                            </div>
 
                         </div>
                     </div>
-                    <!-- End of Sistem Tingkat (Tiers) Section -->
                 </div>
+
             </div>
 
 
 
-            {{-- <div class="card rounded-4 mb-4"> --}}
+            {{-- <div class="card mb-4"> --}}
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-body p-4">
-                        <h6 class="fw-semibold mb-3">
-                            <i class="bi bi-question-circle text-warning me-1"></i>
+                        <h6 class="fw-semibold mb-3 align-items-center d-flex">
+                            <i class="bi bi-question-circle text-warning fs-20 me-4"></i>
                             Frequently Asked Questions
                         </h6>
 
                         <div class="accordion" id="faqAccordion">
 
                             <div class="accordion-item mb-2">
-                                <h2 class="accordion-header">
+                                <h2 class="display-2 accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq1">
                                         Bagaimana cara menarik dana komisi saya?
@@ -465,7 +585,7 @@
                             </div>
 
                             <div class="accordion-item mb-2">
-                                <h2 class="accordion-header">
+                                <h2 class="display-2 accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq2">
                                         Kapan saya mendapatkan komisi dari referral?
@@ -527,7 +647,7 @@
                                 <div class="fw-semibold">Masih ada pertanyaan?</div>
                                 <small class="text-muted">Tim support kami siap membantu Anda 24/7</small>
                             </div>
-                            <button class="btn btn-warning rounded-pill px-4">Hubungi Support</button>
+                            <button class="btn btn-warning px-4">Hubungi Support</button>
                         </div>
 
                     </div>
@@ -537,13 +657,12 @@
 
             </div>
     </main>
+
+
+
+
     @include('partials.withdraw-modal')
-
-
-
-
-
-    @include ('partials.footer-before-login')
+    @include ('partials.footer-after-login')
     <script>
         function copyToClipboard(button, elementId) {
             // 1. Ambil teks dan copy
