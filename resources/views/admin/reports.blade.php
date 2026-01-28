@@ -148,9 +148,13 @@
                     $seriesProfit[] = $r - $e;
                 }
             @endphp
+            <div class="card mb-3">
+                <div class="card-body">
+                    <canvas id="laporanChart" height="90"></canvas>
+                </div>
+            </div>
 
             <div style="margin-bottom:12px;">
-                <canvas id="trendChart" height="100"></canvas>
             </div>
 
             <div class="recap-card-box" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;">
@@ -379,9 +383,13 @@
                     $freeEvents[] = \App\Models\Event::whereYear('created_at',$d->year)->whereMonth('created_at',$d->month)->where(function($q){ $q->whereNull('price')->orWhere('price',0); })->count();
                 }
             @endphp
-            <div style="margin-bottom:14px;">
-                <canvas id="growthChart" height="110"></canvas>
-            </div>
+                <div class="box-diagram-pertumbuhan col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <canvas id="chartEvent" height="90"></canvas>
+                        </div>
+                    </div>
+                </div>
 
             <div class="data-box">
                 <div class="data-pengguna">
@@ -556,6 +564,17 @@
         <div id="operasional" class="rekap-box">
             <div>
                 <h5>Aktivitas Acara</h5>
+                <div class="box-diagram-operasional col-md-8 mt-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h6 class="mb-3">Total Event Create vs Manage</h6>
+                            <canvas id="chartEventCreateManage" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+                
                 <div class="info-operasional-box" style="display:flex; gap:12px;">
                     <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
                         <h4>{{ $activeCount ?? 0 }}</h4>
@@ -807,6 +826,164 @@
 </div>
 @endsection
 @section('scripts')
+
+<script>
+    //diagram report operasional event
+document.addEventListener("DOMContentLoaded", function () {
+
+    new Chart(document.getElementById('chartEventCreateManage'), {
+        type: 'line',
+        data: {
+            labels: ['Aug', 'Sept', 'Oct', 'Nov', 'Dec'],
+            datasets: [
+                {
+                    label: 'Total Event Create',
+                    data: [120, 180, 160, 210, 190],
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 3
+                },
+                {
+                    label: 'Total Event Manage',
+                    data: [200, 220, 210, 260, 240],
+                    borderColor: '#198754',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 50
+                    }
+                }
+            }
+        }
+    });
+
+});
+</script>
+
+<script>
+    //diagram report pertumbuhan event
+document.addEventListener("DOMContentLoaded", function () {
+
+    new Chart(document.getElementById('chartEvent'), {
+        type: 'line',
+        data: {
+            labels: ['Aug', 'Sept', 'Oct', 'Nov', 'Dec'],
+            datasets: [
+                {
+                    label: 'Total Event Free',
+                    data: [320, 280, 260, 350, 180],
+                    borderColor: '#6f42c1',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 3
+                },
+                {
+                    label: 'Total Event Berbayar',
+                    data: [450, 340, 420, 180, 520],
+                    borderColor: '#fd7e14',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 100
+                    }
+                }
+            }
+        }
+    });
+
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById('laporanChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: @json($labels), 
+            datasets: [
+                {
+                    label: 'Pendapatan',
+                    data: @json($seriesRevenue),
+                    borderWidth: 2,
+                    tension: 0.4
+                },
+                {
+                    label: 'Pengeluaran',
+                    data: @json($seriesExpense),
+                    borderWidth: 2,
+                    tension: 0.4
+                },
+                {
+                    label: 'Keuntungan',
+                    data: @json($seriesProfit),
+                    borderWidth: 2,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
 <script>
 // QRCode library (client-side render)
 </script>
@@ -1049,92 +1226,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 });
 </script>
-<script>
-    // Render trend chart using server-side computed arrays
-    (function(){
-        const labels = {!! json_encode($labels ?? []) !!};
-        const revenue = {!! json_encode($seriesRevenue ?? []) !!};
-        const expense = {!! json_encode($seriesExpense ?? []) !!};
-        const profit = {!! json_encode($seriesProfit ?? []) !!};
 
-        const ctx = document.getElementById('trendChart');
-        if(!ctx) return;
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Pendapatan',
-                        data: revenue,
-                        borderColor: '#6B7CFF',
-                        backgroundColor: 'rgba(107,124,255,0.08)',
-                        tension: 0.25,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointHoverRadius: 4,
-                    },
-                    {
-                        label: 'Pengeluaran',
-                        data: expense,
-                        borderColor: '#FF7A7A',
-                        backgroundColor: 'rgba(255,122,122,0.08)',
-                        tension: 0.25,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointHoverRadius: 4,
-                    },
-                    {
-                        label: 'Keuntungan',
-                        data: profit,
-                        borderColor: '#3BD1C6',
-                        backgroundColor: 'rgba(59,209,198,0.08)',
-                        tension: 0.25,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointHoverRadius: 4,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { ticks: { callback: function(v){ return new Intl.NumberFormat('id-ID').format(v); } } }
-                },
-                plugins: { legend: { position: 'right' } }
-            }
-        });
-    })();
-</script>
-<script>
-    // Growth chart (free vs paid events per month)
-    (function(){
-        const labelsGrowth = {!! json_encode($months ?? []) !!};
-        const paid = {!! json_encode($paidEvents ?? []) !!};
-        const free = {!! json_encode($freeEvents ?? []) !!};
-        const ctxG = document.getElementById('growthChart');
-        if(!ctxG) return;
-        new Chart(ctxG, {
-            type: 'line',
-            data: {
-                labels: labelsGrowth,
-                datasets: [
-                    { label: 'Total Event Berbayar', data: paid, borderColor: '#FF8A80', backgroundColor: 'rgba(255,138,128,0.08)', tension:0.25, fill:true, borderWidth:2, pointRadius:2, pointHoverRadius:4 },
-                    { label: 'Total Event Free', data: free, borderColor: '#8A8CFF', backgroundColor: 'rgba(138,140,255,0.08)', tension:0.25, fill:true, borderWidth:2, pointRadius:2, pointHoverRadius:4 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top' } },
-                scales: { x: { grid: { display:false } }, y: { beginAtZero:true } }
-            }
-        });
-    })();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 @endsection
