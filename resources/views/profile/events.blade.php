@@ -449,7 +449,7 @@
                                         </button>
                                     </div>
                                     <div class="flex items-center justify-between mt-3">
-                                        <a href="{{ route('events.show', $sevent) }}" class="px-3 py-2 rounded-lg border-2 text-xs font-semibold" style="border-color:#d1d5db; color:#374151; text-decoration:none;">Detail</a>
+                                        <a href="{{ route('events.show', $sevent->id) }}" class="px-3 py-2 rounded-lg border-2 text-xs font-semibold" style="border-color:#d1d5db; color:#374151; text-decoration:none;">Detail</a>
                                         <span class="text-xs" style="color:#6b7280;">Disimpan: {{ \Carbon\Carbon::parse($sevent->saved_at)->diffForHumans() }}</span>
                                     </div>
                                 </div>
@@ -628,7 +628,7 @@
                                     <div class="flex items-center space-x-3 flex-wrap">
                                         @if($event)
                                             <a 
-                                                href="{{ route('events.show', $event) }}" 
+                                                href="{{ route('events.show', $event->id) }}" 
                                                 class="px-4 py-2 rounded-lg border-2 font-semibold transition-all duration-300 text-sm"
                                                 style="border-color: #d1d5db; color: #374151; text-decoration: none;"
                                                 onmouseover="this.style.backgroundColor='#f9fafb'"

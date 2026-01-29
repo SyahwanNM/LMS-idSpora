@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -115,7 +115,7 @@
 
 <body>
     {{-- Navbar di include di dalam body --}}
-    @include("partials.navbar-after-login")
+    @include('partials.navbar-after-login')
 
     <div class="search-banner-container">
         <form class="search-banner-form" action="{{ route('events.searchRedirect') }}" method="get" autocomplete="off">

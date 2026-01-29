@@ -30,13 +30,8 @@ class PublicEventController extends Controller
 			$query->whereRaw("$startExpr <= ? AND $endExpr >= ?", [$now, $now]);
 		} elseif ($status === 'upcoming') {
 			$query->whereRaw("$startExpr > ?", [$now]);
-		} else {
-			// Default: only events not finished yet
-			$query->where(function($q) use ($now, $endExpr){
-				$q->whereNull('event_date')
-				  ->orWhereRaw("$endExpr >= ?", [$now]);
-			});
 		}
+        // else: show all (upcoming + finished)
 
 		// Search
 		if ($search = $request->get('search')) {
@@ -100,8 +95,19 @@ class PublicEventController extends Controller
 			// For finished, show most recently finished first by end time; else newest created
 			if ($status === 'finished') {
 				$query->orderByRaw("$endExpr DESC");
-			} else {
-				$query->latest();
+			} elseif ($status === 'ongoing' || $status === 'upcoming') {
+                $query->orderByRaw("$startExpr ASC");
+            } else {
+                // "Semua Status" or default:
+                // Group 1: Active (Upcoming/Ongoing) -> Order 0
+                // Group 2: Finished -> Order 1
+                // Inside Active: Sort by Start Date ASC (Soonest first)
+                // Inside Finished: Sort by End Date DESC (Recently finished first)
+                $query->orderByRaw("
+                    CASE WHEN $endExpr < '$now' THEN 1 ELSE 0 END ASC,
+                    CASE WHEN $endExpr < '$now' THEN $endExpr END DESC,
+                    CASE WHEN $endExpr >= '$now' OR event_date IS NULL THEN $startExpr END ASC
+                ");
 			}
 		}
 
@@ -110,7 +116,9 @@ class PublicEventController extends Controller
 
 		// Tandai event yang sudah diregistrasi user login
 		if($request->user()){
-			$userRegEventIds = $request->user()->eventRegistrations()->pluck('event_id')->toArray();
+			$userRegEventIds = $request->user()->eventRegistrations()
+                ->where('status', '!=', 'rejected')
+                ->pluck('event_id')->toArray();
 			$events->getCollection()->transform(function($ev) use ($userRegEventIds){
 				$ev->is_registered = in_array($ev->id, $userRegEventIds);
 				return $ev;
@@ -164,7 +172,10 @@ class PublicEventController extends Controller
 		// Tandai sudah terdaftar (reuse logic ringkas)
 		$isRegistered = false;
 		if($request->user()){
-			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
+			$isRegistered = $request->user()->eventRegistrations()
+                ->where('event_id',$event->id)
+                ->where('status', '!=', 'rejected')
+                ->exists();
 		}
 		$event->is_registered = $isRegistered;
 		// Load feedbacks for display on the event detail page
