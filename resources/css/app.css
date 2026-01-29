@@ -2232,9 +2232,9 @@ label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
+    width: 95%;
     gap: 10px;
-    margin-top: 5px;
+    margin-top: 4px;
 }
 
 .info-text {
@@ -4369,6 +4369,7 @@ input[type="time"] {
     align-items: center;
 }
 .cari_course {
+    margin-top: 3px;
     width: 800px;
     padding: 5px;
     border-radius: 5px;
@@ -4437,6 +4438,24 @@ input[type="time"] {
 /*REPORT PERTUMBUHAN*/
 .box-diagram-pertumbuhan{
     width: 100%;
+}
+.box_pertumbuhan{
+    margin-top: 20px;
+    display: flex;
+    gap: 1050px;
+}
+.box_unduh_pertumbuhan{
+    display:flex ;
+    gap: 20px;
+}
+
+.btn_unduh_pertumbuhan{
+    display: flex;
+    gap: 10px;
+    background-color: white;
+    border: 1px solid gray;
+    border-radius: 5px;
+    align-items: center;
 }
 .detail_laporan_pertumbuhan {
     background-color: white;
@@ -4845,6 +4864,775 @@ p {
     .tabel_paling_atas {
         grid-template-columns: 1fr 1fr;
     }
+}
+
+.box_tambah_pertanyaan{
+    display: flex;
+    gap: 10px;
+    padding: 5px;
+    width: 865px;
+    background-color:white;
+    border-radius: 5px;
+    border: 1px solid rgb(221, 220, 220);
+    margin-bottom: 30px;
+    height: 50px;
+}
+.box_tambah_pertanyaan svg{
+    margin-left: 370px;
+    margin-top: 10px;
+}
+.box_luar_tambah_kuis{
+    padding: 40px;
+    background-color: #F8FAFC;
+}
+.box_dalam_pertanyaan_kuis{
+    display: flex;
+    gap: 570px;
+}
+.box_luar_answer_option{
+    margin-top: 30px;
+}
+.answer_option{
+    display: flex;
+    gap: 10px;
+}
+.box_option{
+    background-color: #e5e7ea;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    width: 800px;
+    padding: 5px;
+    border-radius: 5px;
+    height: 50px;
+}
+.box_option p{
+    margin-top: 10px;
+    margin-left: 10px;
+}
+.radio_button_kuis{
+    border: 1px solid #000;
+}
+.text_label{
+    color: black;
+}
+.form-check{
+    margin-top: 10px;
+}
+.sanity-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dc2626;
+    display: none;
+        }
+
+        .sanity-dot.show {
+            display: inline-block;
+        }
+
+        .sanity-msg {
+            font-size: 0.8rem;
+            color: #dc2626;
+            display: none;
+        }
+
+        .sanity-msg.show {
+            display: block;
+        }
+
+        .form-control,
+        .form-select,
+        textarea {
+            color: #000 !important;
+        }
+
+        .form-control::placeholder,
+        textarea::placeholder {
+            color: #000 !important;
+            opacity: 1;
+        }
+
+        .drop-zone {
+            border: 2px dashed #ced4da;
+            border-radius: 0.5rem;
+            padding: 24px;
+            text-align: center;
+            color: #000;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+
+        .drop-zone.hover {
+            border-color: #6f42c1;
+            background: #f3f0ff;
+        }
+
+        .drop-zone .icon {
+            font-size: 2rem;
+            color: #000;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .drop-zone .text-muted {
+            color: #000 !important;
+        }
+
+        #video-file-name {
+            color: #000;
+        }
+
+        /* Stronger selectors inside the Add Video modal */
+        #addVideoModal .modal-title,
+        #addVideoModal .modal-header,
+        #addVideoModal .modal-body,
+        #addVideoModal .modal-footer,
+        #addVideoModal .form-label,
+        #addVideoModal .form-text,
+        #addVideoModal .small,
+        #addVideoModal .text-muted {
+            color: #000 !important;
+        }
+
+        #addVideoModal .form-control,
+        #addVideoModal .form-select,
+        #addVideoModal textarea {
+            color: #000 !important;
+        }
+
+        #addVideoModal .form-control::placeholder,
+        #addVideoModal textarea::placeholder {
+            color: #000 !important;
+            opacity: 1;
+        }
+
+        #addVideoModal .drop-zone .icon {
+            color: #000 !important;
+        }
+
+        /* Stronger selectors inside the Add PDF modal */
+        #addPdfModal .modal-title,
+        #addPdfModal .modal-header,
+        #addPdfModal .modal-body,
+        #addPdfModal .modal-footer,
+        #addPdfModal .form-label,
+        #addPdfModal .form-text,
+        #addPdfModal .small,
+        #addPdfModal .text-muted {
+            color: #000 !important;
+        }
+
+        #addPdfModal .form-control,
+        #addPdfModal .form-select,
+        #addPdfModal textarea {
+            color: #000 !important;
+        }
+
+        #addPdfModal .form-control::placeholder,
+        #addPdfModal textarea::placeholder {
+            color: #000 !important;
+            opacity: 1;
+        }
+
+        #addPdfModal .drop-zone .icon {
+            color: #000 !important;
+        }
+
+    /*ADD VIEW QUIZ*/
+.judul_nama_quiz{
+    color: black;
+}
+.deskripsi_judul{
+    
+}
+.box_kanan_detail_course {
+    flex: 1; 
+    background-color: white;
+    border: solid 2px #FFD33B;
+    margin-top: 30px;
+    border-radius: 10px; 
+    margin-right: 60px;
+    padding: 30px;
+}
+/*ADD QUIZ INDEX COURSES*/
+ .modal-dialog {
+        max-width: 950px;
+        margin: 30px auto;
+    }
+
+.modal-content {
+        border-radius: 24px;
+        border: none;
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        padding: 10px;
+        box-shadow: 0px 20px 50px rgba(0, 0, 0, 0.1);
+    }
+.modal-header {
+        border-bottom: 1px solid #f0f0f5;
+        padding: 24px 32px;
+    }
+ .modal-header .modal-title {
+        font-weight: 800;
+        color: #1a1a1a;
+        font-size: 24px;
+        letter-spacing: -0.5px;
+    }
+.option {
+        padding: 0px 32px;
+    }
+
+    .list-option {
+        display: flex;
+        gap: 30px;
+        border-bottom: 2px solid #f0f0f5;
+    }
+
+    .list-option button {
+        background: none;
+        border: none;
+        padding: 16px 4px;
+        font-weight: 700;
+        font-size: 16px;
+        color: #94a3b8;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    /* Styling untuk tab yang aktif */
+    .list-option button.active {
+        color: #4f46e5 !important;
+    }
+
+    .list-option button.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, #4f46e5, #818cf8);
+        border-radius: 10px;
+    }
+
+    /* Sembunyikan semua tab content secara default, kecuali yang aktif */
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        background-color: transparent;
+    }
+
+    /* Hilangkan underline default dari tombol pertama di CSS lama Anda agar tidak konflik */
+    .list-option button:first-child::after {
+        display: none;
+    }
+
+    .list-option button.active::after {
+        display: block;
+    }
+
+    .modal-body {
+        padding: 32px;
+    }
+
+    .modal-body h3 {
+        font-weight: 800;
+        margin-bottom: 8px;
+        font-size: 28px;
+        color: #1e1b4b;
+    }
+
+    .modal-body p {
+        color: #64748b;
+        font-size: 16px;
+        margin-bottom: 32px;
+    }
+
+    .info-detail {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .list-info {
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-purple {
+        background-color: #f5f3ff;
+        border-color: #ddd6fe;
+    }
+
+    .info-purple h4 {
+        color: #7c3aed;
+    }
+
+    .info-blue {
+        background-color: #eff6ff;
+        border-color: #dbeafe;
+    }
+
+    .info-blue h4 {
+        color: #2563eb;
+    }
+
+    .info-green {
+        background-color: #f0fdf4;
+        border-color: #dcfce7;
+    }
+
+    .info-green h4 {
+        color: #16a34a;
+    }
+
+    .info-yellow {
+        background-color: #fffbeb;
+        border-color: #fef3c7;
+    }
+
+    .info-yellow h4 {
+        color: #d97706;
+    }
+
+    .list-info h5 {
+        font-size: 13px;
+        font-weight: 500;
+        color: #64748b;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .list-info h4 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .ringkasan-konten {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 24px;
+    }
+
+    .ringkasan-konten h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 24px;
+    }
+
+    .info-ringkasan {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .list-ringkasan {
+        text-align: left;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .list-ringkasan svg {
+        width: 32px;
+        height: 32px;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+
+    .detail-ringkasan h5 {
+        font-size: 22px;
+        font-weight: 800;
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .detail-ringkasan p {
+        font-size: 13px;
+        margin: 0;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .pdf-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .list-pdf {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.2s ease;
+        cursor: default;
+    }
+
+    .list-pdf:hover {
+        border-color: #4f46e5;
+        background-color: #f8faff;
+        transform: translateX(5px);
+    }
+
+    .list-pdf svg {
+        color: #ef4444;
+        /* Warna merah untuk icon PDF */
+        background: #fef2f2;
+        padding: 10px;
+        border-radius: 12px;
+        width: 44px;
+        height: 44px;
+    }
+
+    .detail-pdf h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 2px 0;
+    }
+
+    .detail-pdf p {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .video-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 0;
+    }
+
+    .list-video {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.2s ease;
+        cursor: default;
+    }
+
+    .list-video:hover {
+        border-color: #4f46e5;
+        background-color: #f8faff;
+        transform: translateX(5px);
+    }
+
+    .list-video svg {
+        color: #3730a3;
+        background: #f8f4ff;
+        padding: 10px;
+        border-radius: 12px;
+        width: 44px;
+        height: 44px;
+    }
+
+    .detail-video h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 2px 0;
+    }
+
+    .detail-video p {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .kuis-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .list-kuis {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 18px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .list-kuis:hover {
+        border-color: #4f46e5;
+        background-color: #f8faff;
+        transform: translateX(5px);
+    }
+
+    .list-kuis svg {
+        color: #16a34a;
+        /* Warna hijau kuis */
+        background: #f0fdf4;
+        padding: 10px;
+        border-radius: 12px;
+        width: 46px;
+        height: 46px;
+        flex-shrink: 0;
+    }
+
+    .detail-kuis {
+        flex-grow: 1;
+    }
+
+    .detail-kuis h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 8px 0;
+    }
+
+    .soal-passing {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+    }
+
+
+    .info-item p {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #94a3b8;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .info-item h5 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #334155;
+        margin: 0;
+    }
+
+    .passing-score h5 {
+        color: #4f46e5;
+    }
+
+    .modal-footer {
+        border-top: none;
+        padding: 8px 32px 32px;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important;
+        border: none;
+        width: 100%;
+        padding: 16px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 16px;
+        color: #ffffff;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+        filter: brightness(1.1);
+    }
+
+/*REPORT PENDAPATAN*/
+.box_luar_report{
+    padding: 30px;
+}
+.judul_report{
+    font-weight: 500;
+    margin-left: 50px;
+
+}
+.keterangan_judul{
+    font-size: 20px;
+    font-weight: 400;
+    margin-left: 50px;
+}
+.btn_box_report{
+    margin-left: 50px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+.btn_report{
+    background-color: white;
+    border: 1px solid gray;
+    padding: 10px;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+.btn_report.active{
+    background-color: #5b35d5;
+    padding: 10px;
+    border-radius: 5px;
+    margin-right: 10px;
+    color: white;
+    border: none;
+}
+.box_report{
+    margin-left: 50px;
+}
+.box_report {
+    display: none;
+}
+
+.box_report.active {
+    display: block;
+}
+.box_pendapatan{
+    margin-top: 20px;
+    display: flex;
+}
+.btn_laporan{
+    background-color: white;
+    border: 1px solid gray;
+    padding: 10px;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+.btn_laporan.active{
+    background-color: #5b35d5;
+    padding: 10px;
+    border-radius: 5px;
+    margin-right: 10px;
+    color: white;
+
+    border: none;
+}
+.box_unduh{
+    margin-left: 1070px;
+    display:flex ;
+    gap: 20px;
+}
+
+.btn_unduh{
+    display: flex;
+    gap: 10px;
+    background-color: white;
+    border: 1px solid gray;
+    border-radius: 5px;
+    align-items: center;
+}
+.btn_unduh p{
+    margin-top: -2px;
+}
+.box_detail_laporan{
+    margin-top: 30px;
+    display: flex;
+    gap: 30px;
+}
+.box_pendapatan_per_course{
+   display: flex;
+   gap: 5px;
+}
+.box_pendapatan_per_course svg{
+    margin-top: 7px;
+}
+
+/* Container Modal (Card) */
+.card-logout-style {
+    border: none;
+    border-radius: 12px; /* Membuat sudut modal lebih melengkung */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Bayangan halus */
+    overflow: hidden;
+}
+
+/* Header Kuning Pastel */
+.header-logout-warning {
+    background-color: #fff8d5; /* Warna kuning lembut sesuai screenshot */
+    border-bottom: 1px solid #f0e6c5; /* Garis pemisah tipis */
+    padding: 1rem 1.5rem;
+}
+
+.title-logout-text {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Body Modal */
+.body-logout-content {
+    padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    background-color: #ffffff;
+}
+
+.logout-main-question {
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.logout-sub-desc {
+    font-size: 0.95rem;
+    color: #6c757d; /* Warna abu-abu muted */
+    margin-bottom: 0;
+}
+
+/* Footer & Tombol */
+.footer-logout-action {
+    background-color: #ffffff;
+    border-top: none; /* Menghilangkan garis default bootstrap */
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Tombol Batal (Putih dengan Border) */
+.btn-action-cancel {
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    color: #495057;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-action-cancel:hover {
+    background-color: #f8f9fa;
+    border-color: #b6babc;
+    color: #212529;
+}
+
+/* Tombol Ya, Logout (Merah) */
+.btn-action-confirm {
+    background-color: #dc3545;
+    border: 1px solid #dc3545;
+    color: #ffffff;
+    padding: 0.5rem 1.2rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-action-confirm:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
 }
 /*FOOTER*/
 .footer-section {

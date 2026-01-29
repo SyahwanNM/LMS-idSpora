@@ -11,50 +11,7 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <style>
-        .sanity-dot { width:8px; height:8px; border-radius:50%; background:#dc2626; display:none; }
-        .sanity-dot.show { display:inline-block; }
-        .sanity-msg { font-size:0.8rem; color:#dc2626; display:none; }
-        .sanity-msg.show { display:block; }
-        /* Force text and placeholder to black */
-        .form-control, .form-select, textarea { color:#000 !important; }
-        .form-control::placeholder, textarea::placeholder { color:#000 !important; opacity:1; }
-        .drop-zone { border:2px dashed #ced4da; border-radius:0.5rem; padding:24px; text-align:center; color:#000; cursor:pointer; background:#f8f9fa; }
-        .drop-zone.hover { border-color:#6f42c1; background:#f3f0ff; }
-        .drop-zone .icon { font-size:2rem; color:#000; display:block; margin-bottom:6px; }
-        .drop-zone .text-muted { color:#000 !important; }
-        #video-file-name { color:#000; }
-        /* Stronger selectors inside the Add Video modal */
-        #addVideoModal .modal-title,
-        #addVideoModal .modal-header,
-        #addVideoModal .modal-body,
-        #addVideoModal .modal-footer,
-        #addVideoModal .form-label,
-        #addVideoModal .form-text,
-        #addVideoModal .small,
-        #addVideoModal .text-muted { color:#000 !important; }
-        #addVideoModal .form-control,
-        #addVideoModal .form-select,
-        #addVideoModal textarea { color:#000 !important; }
-        #addVideoModal .form-control::placeholder,
-        #addVideoModal textarea::placeholder { color:#000 !important; opacity:1; }
-        #addVideoModal .drop-zone .icon { color:#000 !important; }
-        /* Stronger selectors inside the Add PDF modal */
-        #addPdfModal .modal-title,
-        #addPdfModal .modal-header,
-        #addPdfModal .modal-body,
-        #addPdfModal .modal-footer,
-        #addPdfModal .form-label,
-        #addPdfModal .form-text,
-        #addPdfModal .small,
-        #addPdfModal .text-muted { color:#000 !important; }
-        #addPdfModal .form-control,
-        #addPdfModal .form-select,
-        #addPdfModal textarea { color:#000 !important; }
-        #addPdfModal .form-control::placeholder,
-        #addPdfModal textarea::placeholder { color:#000 !important; opacity:1; }
-        #addPdfModal .drop-zone .icon { color:#000 !important; }
-    </style>
+
 </head>
 
 <body>
@@ -110,13 +67,13 @@
                             <select id="course-category" name="category_id" class="form-select">
                                 <option selected disabled>Pilih kategori</option>
                                 @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                 @endforeach
                             </select>
                             <div class="sanity-msg" data-for="course-category"></div>
                         </div>
                         @else
-                            <input type="hidden" name="category_id" value="1">
+                        <input type="hidden" name="category_id" value="1">
                         @endif
 
                         <div class="mb-3">
@@ -179,6 +136,10 @@
 
                                 <button type="button" id="open-add-video-modal" class="btn btn-outline-secondary">
                                     <i class="bi bi-plus-lg me-1"></i> Add Video
+                                </button>
+
+                                <button type="button" id="open-add-quiz-modal" class="btn btn-outline-secondary">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Quiz
                                 </button>
                             </div>
 
@@ -276,51 +237,188 @@
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    (function(){
-        const modules = [];
-        const listEl = document.getElementById('modules-list');
-        const payloadEl = document.getElementById('modules-payload');
-        const fileBucket = document.getElementById('module-file-bucket');
-        // Video modal elements
-        const openVideoBtn = document.getElementById('open-add-video-modal');
-        const videoModalEl = document.getElementById('addVideoModal');
-        const videoModalTitle = document.getElementById('video-modal-title');
-        const videoModalDesc = document.getElementById('video-modal-desc');
-        const videoModalOrder = document.getElementById('video-modal-order');
-        let videoModalFile = document.getElementById('video-modal-file');
-        const videoDropZone = document.getElementById('video-drop-zone');
-        const videoFileName = document.getElementById('video-file-name');
-        const videoAddBtn = document.getElementById('video-modal-add-btn');
-        // PDF modal elements
-        const openPdfBtn = document.getElementById('open-add-pdf-modal');
-        const pdfModalEl = document.getElementById('addPdfModal');
-        const pdfModalTitle = document.getElementById('pdf-modal-title');
-        const pdfModalDesc = document.getElementById('pdf-modal-desc');
-        const pdfModalOrder = document.getElementById('pdf-modal-order');
-        let pdfModalFile = document.getElementById('pdf-modal-file');
-        const pdfDropZone = document.getElementById('pdf-drop-zone');
-        const pdfFileName = document.getElementById('pdf-file-name');
-        const pdfAddBtn = document.getElementById('pdf-modal-add-btn');
-        let selectedVideoFile = null;
-        let selectedPdfFile = null;
-        let videoModalInstance = null;
-        let pdfModalInstance = null;
-        if (window.bootstrap && bootstrap.Modal) {
-            videoModalInstance = new bootstrap.Modal(videoModalEl);
-            pdfModalInstance = new bootstrap.Modal(pdfModalEl);
-        }
 
-        function updatePayload(){
-            try { payloadEl.value = JSON.stringify(modules); } catch(_) { payloadEl.value = '[]'; }
-        }
+    <!-- Add Quiz Modal -->
+    <div class="modal fade" id="addQuizModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Quiz</h5>
+                    <div>
+                        <p class="deskripsi_judul modal-title">Set up quiz details</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-        function makeModuleCard(mod){
-            const idx = modules.indexOf(mod);
-            const wrapper = document.createElement('div');
-            wrapper.className = 'border rounded p-2 d-flex align-items-start gap-2';
-            wrapper.innerHTML = `
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="judul_nama_quiz form-label">Judul Quiz</label>
+                        <input type="text" id="quiz-modal-title" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="judul_nama_quiz form-label">Quiz Description</label>
+                        <textarea id="quiz-modal-desc" class="form-control"></textarea>
+                    </div>
+                    <button class="box_tambah_pertanyaan">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-plus" viewBox="0 0 16 16">
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+                        </svg>
+                        <p style="color: black; margin-top: 8px;">Add Question</p>
+                    </button>
+                    <div class="box_luar_tambah_kuis">
+                        <div class="box_dalam_pertanyaan_kuis">
+                            <h5>Quiz #1</h5>
+                            <p>Fill all fields to add</p>
+                        </div>
+                        <h5>Question Text</h5>
+                        <div class="isi_pertanyaan_kuis">
+                            <textarea class="form-control" rows="3">Enter Your Question... </textarea>
+                        </div>
+                        <div class="box_luar_answer_option">
+                            <h5>Answer Option</h5>
+                            <div class="answer_option">
+                                <div class="box_option">
+                                    <p>Option 1</p>
+                                </div>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="radio_button_kuis form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
+                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
+                                            Correct
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box_luar_answer_option">
+                            <div class="answer_option">
+                                <div class="box_option">
+                                    <p>Option 2</p>
+                                </div>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="radio_button_kuis form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
+                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
+                                            Correct
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box_luar_answer_option">
+                            <div class="answer_option">
+                                <div class="box_option">
+                                    <p>Option 3</p>
+                                </div>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="radio_button_kuis form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
+                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
+                                            Correct
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box_luar_answer_option">
+                            <div class="answer_option">
+                                <div class="box_option">
+                                    <p>Option 4</p>
+                                </div>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
+                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
+                                            Correct
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="quiz-modal-add-btn" class="btn btn-primary">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            (function() {
+                const modules = [];
+                const listEl = document.getElementById('modules-list');
+                const payloadEl = document.getElementById('modules-payload');
+                const fileBucket = document.getElementById('module-file-bucket');
+                // Video modal elements
+                const openVideoBtn = document.getElementById('open-add-video-modal');
+                const videoModalEl = document.getElementById('addVideoModal');
+                const videoModalTitle = document.getElementById('video-modal-title');
+                const videoModalDesc = document.getElementById('video-modal-desc');
+                const videoModalOrder = document.getElementById('video-modal-order');
+                let videoModalFile = document.getElementById('video-modal-file');
+                const videoDropZone = document.getElementById('video-drop-zone');
+                const videoFileName = document.getElementById('video-file-name');
+                const videoAddBtn = document.getElementById('video-modal-add-btn');
+                // Quiz modal elements
+                const openQuizBtn = document.getElementById('open-add-quiz-modal');
+                const quizModalEl = document.getElementById('addQuizModal');
+                const quizModalTitle = document.getElementById('quiz-modal-title');
+                const quizModalDesc = document.getElementById('quiz-modal-desc');
+                const quizModalOrder = document.getElementById('quiz-modal-order');
+                let quizModalFile = document.getElementById('quiz-modal-file');
+                const quizDropZone = document.getElementById('quiz-drop-zone');
+                const quizFileName = document.getElementById('quiz-file-name');
+                const quizAddBtn = document.getElementById('quiz-modal-add-btn');
+                // PDF modal elements
+                const openPdfBtn = document.getElementById('open-add-pdf-modal');
+                const pdfModalEl = document.getElementById('addPdfModal');
+                const pdfModalTitle = document.getElementById('pdf-modal-title');
+                const pdfModalDesc = document.getElementById('pdf-modal-desc');
+                const pdfModalOrder = document.getElementById('pdf-modal-order');
+                let pdfModalFile = document.getElementById('pdf-modal-file');
+                const pdfDropZone = document.getElementById('pdf-drop-zone');
+                const pdfFileName = document.getElementById('pdf-file-name');
+                const pdfAddBtn = document.getElementById('pdf-modal-add-btn');
+                let quizModalInstance = null;
+
+                if (window.bootstrap && bootstrap.Modal) {
+                    quizModalInstance = new bootstrap.Modal(quizModalEl);
+                }
+
+                if (openQuizBtn) {
+                    openQuizBtn.addEventListener('click', () => {
+                        if (quizModalInstance) quizModalInstance.show();
+                    });
+                }
+
+                let selectedVideoFile = null;
+                let selectedPdfFile = null;
+                let videoModalInstance = null;
+                let pdfModalInstance = null;
+                if (window.bootstrap && bootstrap.Modal) {
+                    videoModalInstance = new bootstrap.Modal(videoModalEl);
+                    pdfModalInstance = new bootstrap.Modal(pdfModalEl);
+                }
+
+                function updatePayload() {
+                    try {
+                        payloadEl.value = JSON.stringify(modules);
+                    } catch (_) {
+                        payloadEl.value = '[]';
+                    }
+                }
+
+                function makeModuleCard(mod) {
+                    const idx = modules.indexOf(mod);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'border rounded p-2 d-flex align-items-start gap-2';
+                    wrapper.innerHTML = `
                 <div class="bg-light rounded p-2 d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
                     <i class="bi ${mod.type==='pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-play'}" style="font-size:1.25rem;"></i>
                 </div>
@@ -336,331 +434,388 @@
                     <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove"><i class="bi bi-trash"></i></button>
                 </div>
             `;
-            const removeBtn = wrapper.querySelector('button');
-            removeBtn.addEventListener('click', () => {
-                const i = modules.indexOf(mod);
-                if (i >= 0) { modules.splice(i,1); renderList(); }
-            });
-            return wrapper;
-        }
+                    const removeBtn = wrapper.querySelector('button');
+                    removeBtn.addEventListener('click', () => {
+                        const i = modules.indexOf(mod);
+                        if (i >= 0) {
+                            modules.splice(i, 1);
+                            renderList();
+                        }
+                    });
+                    return wrapper;
+                }
 
-        function renderList(){
-            listEl.innerHTML = '';
-            const sorted = [...modules].sort((a,b)=> (a.order ?? 1e9) - (b.order ?? 1e9));
-            sorted.forEach(m => listEl.appendChild(makeModuleCard(m)));
-            updatePayload();
-        }
+                function renderList() {
+                    listEl.innerHTML = '';
+                    const sorted = [...modules].sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9));
+                    sorted.forEach(m => listEl.appendChild(makeModuleCard(m)));
+                    updatePayload();
+                }
 
-        function addModuleFromFile(file, type){
-            if(!file) return;
-            const titleBase = file.name.replace(/\.[^.]+$/, '') || (type==='pdf' ? 'PDF Module' : 'Video Module');
-            const nextOrder = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
-            const mod = {
-                type, // 'pdf' | 'video'
-                title: titleBase,
-                subtitle: type==='pdf' ? 'Dokumen materi' : 'Video pembelajaran',
-                filename: file.name,
-                mime: file.type || '',
-                order: nextOrder,
-            };
-            modules.push(mod);
-            renderList();
-        }
+                function addModuleFromFile(file, type) {
+                    if (!file) return;
+                    const titleBase = file.name.replace(/\.[^.]+$/, '') || (type === 'pdf' ? 'PDF Module' : 'Video Module');
+                    const nextOrder = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                    const mod = {
+                        type, // 'pdf' | 'video'
+                        title: titleBase,
+                        subtitle: type === 'pdf' ? 'Dokumen materi' : 'Video pembelajaran',
+                        filename: file.name,
+                        mime: file.type || '',
+                        order: nextOrder,
+                    };
+                    modules.push(mod);
+                    renderList();
+                }
 
-        // --- Add PDF Modal logic ---
-        function resetPdfModal(){
-            selectedPdfFile = null;
-            pdfModalTitle.value = '';
-            pdfModalDesc.value = '';
-            pdfModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
-            pdfModalFile.value = '';
-            pdfFileName.textContent = '';
-        }
+                // --- Add PDF Modal logic ---
+                function resetPdfModal() {
+                    selectedPdfFile = null;
+                    pdfModalTitle.value = '';
+                    pdfModalDesc.value = '';
+                    pdfModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                    pdfModalFile.value = '';
+                    pdfFileName.textContent = '';
+                }
 
-        function setSelectedPdf(file){
-            if (!file) return;
-            selectedPdfFile = file;
-            pdfFileName.textContent = file.name;
-            if (!pdfModalTitle.value) {
-                pdfModalTitle.value = file.name.replace(/\.[^.]+$/, '');
-            }
-        }
-
-        function bindPdfFileInput(el){
-            el.addEventListener('change', (e)=>{
-                const f = e.target.files && e.target.files[0];
-                setSelectedPdf(f);
-            });
-        }
-
-        if (openPdfBtn) {
-            openPdfBtn.addEventListener('click', () => {
-                resetPdfModal();
-                if (pdfModalInstance) pdfModalInstance.show();
-                else pdfModalEl.style.display = 'block';
-            });
-        }
-        if (pdfDropZone) {
-            ['dragenter','dragover'].forEach(evt => pdfDropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); pdfDropZone.classList.add('hover'); }));
-            ['dragleave','drop'].forEach(evt => pdfDropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); pdfDropZone.classList.remove('hover'); }));
-            pdfDropZone.addEventListener('click', () => pdfModalFile.click());
-            pdfDropZone.addEventListener('drop', (e) => {
-                const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-                if (f) setSelectedPdf(f);
-            });
-        }
-        if (pdfModalFile) { bindPdfFileInput(pdfModalFile); }
-        if (pdfAddBtn) {
-            pdfAddBtn.addEventListener('click', () => {
-                const title = (pdfModalTitle.value || '').trim();
-                const desc = (pdfModalDesc.value || '').trim();
-                const order = parseInt(pdfModalOrder.value || '1', 10) || 1;
-                if (title.length < 3) { alert('Judul minimal 3 karakter.'); return; }
-                if (!selectedPdfFile) { alert('Silakan pilih file PDF.'); return; }
-                const uid = 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-                // move the actual input with the selected file into the hidden form bucket so it submits
-                if (pdfModalFile && fileBucket) {
-                    pdfModalFile.name = `module_files[${uid}]`;
-                    fileBucket.appendChild(pdfModalFile);
-                    // create a fresh input back into modal for next time
-                    const newInput = document.createElement('input');
-                    newInput.type = 'file';
-                    newInput.id = 'pdf-modal-file';
-                    newInput.accept = 'application/pdf';
-                    newInput.style.display = 'none';
-                    pdfModalFile = newInput;
-                    // insert it after drop-zone
-                    const parent = document.getElementById('addPdfModal').querySelector('.modal-body .mb-3:last-of-type');
-                    // safer: place after drop zone container
-                    const afterEl = document.getElementById('pdf-drop-zone');
-                    if (afterEl && afterEl.parentNode) {
-                        afterEl.parentNode.insertBefore(newInput, afterEl.nextSibling);
+                function setSelectedPdf(file) {
+                    if (!file) return;
+                    selectedPdfFile = file;
+                    pdfFileName.textContent = file.name;
+                    if (!pdfModalTitle.value) {
+                        pdfModalTitle.value = file.name.replace(/\.[^.]+$/, '');
                     }
+                }
+
+                function bindPdfFileInput(el) {
+                    el.addEventListener('change', (e) => {
+                        const f = e.target.files && e.target.files[0];
+                        setSelectedPdf(f);
+                    });
+                }
+
+                if (openPdfBtn) {
+                    openPdfBtn.addEventListener('click', () => {
+                        resetPdfModal();
+                        if (pdfModalInstance) pdfModalInstance.show();
+                        else pdfModalEl.style.display = 'block';
+                    });
+                }
+                if (pdfDropZone) {
+                    ['dragenter', 'dragover'].forEach(evt => pdfDropZone.addEventListener(evt, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        pdfDropZone.classList.add('hover');
+                    }));
+                    ['dragleave', 'drop'].forEach(evt => pdfDropZone.addEventListener(evt, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        pdfDropZone.classList.remove('hover');
+                    }));
+                    pdfDropZone.addEventListener('click', () => pdfModalFile.click());
+                    pdfDropZone.addEventListener('drop', (e) => {
+                        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                        if (f) setSelectedPdf(f);
+                    });
+                }
+                if (pdfModalFile) {
                     bindPdfFileInput(pdfModalFile);
                 }
-                modules.push({
-                    type: 'pdf',
-                    title: title,
-                    subtitle: desc || 'Dokumen materi',
-                    filename: selectedPdfFile.name,
-                    mime: selectedPdfFile.type || 'application/pdf',
-                    order: order,
-                    uid: uid,
-                });
-                renderList();
-                if (pdfModalInstance) pdfModalInstance.hide();
-                resetPdfModal();
-            });
-        }
+                if (pdfAddBtn) {
+                    pdfAddBtn.addEventListener('click', () => {
+                        const title = (pdfModalTitle.value || '').trim();
+                        const desc = (pdfModalDesc.value || '').trim();
+                        const order = parseInt(pdfModalOrder.value || '1', 10) || 1;
+                        if (title.length < 3) {
+                            alert('Judul minimal 3 karakter.');
+                            return;
+                        }
+                        if (!selectedPdfFile) {
+                            alert('Silakan pilih file PDF.');
+                            return;
+                        }
+                        const uid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                        // move the actual input with the selected file into the hidden form bucket so it submits
+                        if (pdfModalFile && fileBucket) {
+                            pdfModalFile.name = `module_files[${uid}]`;
+                            fileBucket.appendChild(pdfModalFile);
+                            // create a fresh input back into modal for next time
+                            const newInput = document.createElement('input');
+                            newInput.type = 'file';
+                            newInput.id = 'pdf-modal-file';
+                            newInput.accept = 'application/pdf';
+                            newInput.style.display = 'none';
+                            pdfModalFile = newInput;
+                            // insert it after drop-zone
+                            const parent = document.getElementById('addPdfModal').querySelector('.modal-body .mb-3:last-of-type');
+                            // safer: place after drop zone container
+                            const afterEl = document.getElementById('pdf-drop-zone');
+                            if (afterEl && afterEl.parentNode) {
+                                afterEl.parentNode.insertBefore(newInput, afterEl.nextSibling);
+                            }
+                            bindPdfFileInput(pdfModalFile);
+                        }
+                        modules.push({
+                            type: 'pdf',
+                            title: title,
+                            subtitle: desc || 'Dokumen materi',
+                            filename: selectedPdfFile.name,
+                            mime: selectedPdfFile.type || 'application/pdf',
+                            order: order,
+                            uid: uid,
+                        });
+                        renderList();
+                        if (pdfModalInstance) pdfModalInstance.hide();
+                        resetPdfModal();
+                    });
+                }
 
-        // --- Add Video Modal logic ---
-        function resetVideoModal(){
-            selectedVideoFile = null;
-            videoModalTitle.value = '';
-            videoModalDesc.value = '';
-            videoModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
-            videoModalFile.value = '';
-            videoFileName.textContent = '';
-        }
+                // --- Add Video Modal logic ---
+                function resetVideoModal() {
+                    selectedVideoFile = null;
+                    videoModalTitle.value = '';
+                    videoModalDesc.value = '';
+                    videoModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                    videoModalFile.value = '';
+                    videoFileName.textContent = '';
+                }
 
-        function setSelectedVideo(file){
-            if (!file) return;
-            selectedVideoFile = file;
-            videoFileName.textContent = file.name;
-            if (!videoModalTitle.value) {
-                videoModalTitle.value = file.name.replace(/\.[^.]+$/, '');
-            }
-        }
-
-        function bindVideoFileInput(el){
-            el.addEventListener('change', (e)=>{
-                const f = e.target.files && e.target.files[0];
-                setSelectedVideo(f);
-            });
-        }
-
-        if (openVideoBtn) {
-            openVideoBtn.addEventListener('click', () => {
-                resetVideoModal();
-                if (videoModalInstance) videoModalInstance.show();
-                else videoModalEl.style.display = 'block';
-            });
-        }
-        // drag & drop handlers
-        if (videoDropZone) {
-            ['dragenter','dragover'].forEach(evt => videoDropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); videoDropZone.classList.add('hover'); }));
-            ['dragleave','drop'].forEach(evt => videoDropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); videoDropZone.classList.remove('hover'); }));
-            videoDropZone.addEventListener('click', () => videoModalFile.click());
-            videoDropZone.addEventListener('drop', (e) => {
-                const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-                if (f) setSelectedVideo(f);
-            });
-        }
-        if (videoModalFile) { bindVideoFileInput(videoModalFile); }
-        if (videoAddBtn) {
-            videoAddBtn.addEventListener('click', () => {
-                const title = (videoModalTitle.value || '').trim();
-                const desc = (videoModalDesc.value || '').trim();
-                const order = parseInt(videoModalOrder.value || '1', 10) || 1;
-                if (title.length < 3) { alert('Judul minimal 3 karakter.'); return; }
-                if (!selectedVideoFile) { alert('Silakan pilih file video.'); return; }
-                const uid = 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-                // move the actual input with selected file into the bucket
-                if (videoModalFile && fileBucket) {
-                    videoModalFile.name = `module_files[${uid}]`;
-                    fileBucket.appendChild(videoModalFile);
-                    // create a fresh input back into modal for next time
-                    const newInput = document.createElement('input');
-                    newInput.type = 'file';
-                    newInput.id = 'video-modal-file';
-                    newInput.accept = 'video/mp4,video/webm,video/ogg';
-                    newInput.style.display = 'none';
-                    videoModalFile = newInput;
-                    const afterEl = document.getElementById('video-drop-zone');
-                    if (afterEl && afterEl.parentNode) {
-                        afterEl.parentNode.insertBefore(newInput, afterEl.nextSibling);
+                function setSelectedVideo(file) {
+                    if (!file) return;
+                    selectedVideoFile = file;
+                    videoFileName.textContent = file.name;
+                    if (!videoModalTitle.value) {
+                        videoModalTitle.value = file.name.replace(/\.[^.]+$/, '');
                     }
+                }
+
+                function bindVideoFileInput(el) {
+                    el.addEventListener('change', (e) => {
+                        const f = e.target.files && e.target.files[0];
+                        setSelectedVideo(f);
+                    });
+                }
+
+                if (openVideoBtn) {
+                    openVideoBtn.addEventListener('click', () => {
+                        resetVideoModal();
+                        if (videoModalInstance) videoModalInstance.show();
+                        else videoModalEl.style.display = 'block';
+                    });
+                }
+                // drag & drop handlers
+                if (videoDropZone) {
+                    ['dragenter', 'dragover'].forEach(evt => videoDropZone.addEventListener(evt, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        videoDropZone.classList.add('hover');
+                    }));
+                    ['dragleave', 'drop'].forEach(evt => videoDropZone.addEventListener(evt, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        videoDropZone.classList.remove('hover');
+                    }));
+                    videoDropZone.addEventListener('click', () => videoModalFile.click());
+                    videoDropZone.addEventListener('drop', (e) => {
+                        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                        if (f) setSelectedVideo(f);
+                    });
+                }
+                if (videoModalFile) {
                     bindVideoFileInput(videoModalFile);
                 }
-                modules.push({
-                    type: 'video',
-                    title: title,
-                    subtitle: desc || 'Video pembelajaran',
-                    filename: selectedVideoFile.name,
-                    mime: selectedVideoFile.type || '',
-                    order: order,
-                    uid: uid,
-                });
-                renderList();
-                if (videoModalInstance) videoModalInstance.hide();
-                resetVideoModal();
-            });
-        }
-    })();
-    </script>
-    <script>
-    (function(){
-        const fields = {
-            title: document.getElementById('course-title'),
-            status: document.getElementById('course-status'),
-            level: document.getElementById('course-level'),
-            price: document.getElementById('course-price'),
-            description: document.getElementById('course-description'),
-            thumbnail: document.getElementById('course-thumbnail'),
-            duration: document.getElementById('course-duration'),
-        };
+                if (videoAddBtn) {
+                    videoAddBtn.addEventListener('click', () => {
+                        const title = (videoModalTitle.value || '').trim();
+                        const desc = (videoModalDesc.value || '').trim();
+                        const order = parseInt(videoModalOrder.value || '1', 10) || 1;
+                        if (title.length < 3) {
+                            alert('Judul minimal 3 karakter.');
+                            return;
+                        }
+                        if (!selectedVideoFile) {
+                            alert('Silakan pilih file video.');
+                            return;
+                        }
+                        const uid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                        // move the actual input with selected file into the bucket
+                        if (videoModalFile && fileBucket) {
+                            videoModalFile.name = `module_files[${uid}]`;
+                            fileBucket.appendChild(videoModalFile);
+                            // create a fresh input back into modal for next time
+                            const newInput = document.createElement('input');
+                            newInput.type = 'file';
+                            newInput.id = 'video-modal-file';
+                            newInput.accept = 'video/mp4,video/webm,video/ogg';
+                            newInput.style.display = 'none';
+                            videoModalFile = newInput;
+                            const afterEl = document.getElementById('video-drop-zone');
+                            if (afterEl && afterEl.parentNode) {
+                                afterEl.parentNode.insertBefore(newInput, afterEl.nextSibling);
+                            }
+                            bindVideoFileInput(videoModalFile);
+                        }
+                        modules.push({
+                            type: 'video',
+                            title: title,
+                            subtitle: desc || 'Video pembelajaran',
+                            filename: selectedVideoFile.name,
+                            mime: selectedVideoFile.type || '',
+                            order: order,
+                            uid: uid,
+                        });
+                        renderList();
+                        if (videoModalInstance) videoModalInstance.hide();
+                        resetVideoModal();
+                    });
+                }
+            })();
+        </script>
+        <script>
+            (function() {
+                const fields = {
+                    title: document.getElementById('course-title'),
+                    status: document.getElementById('course-status'),
+                    level: document.getElementById('course-level'),
+                    price: document.getElementById('course-price'),
+                    description: document.getElementById('course-description'),
+                    thumbnail: document.getElementById('course-thumbnail'),
+                    duration: document.getElementById('course-duration'),
+                };
 
-        function dotEl(id){ return document.querySelector('.sanity-dot[data-for="'+id+'"]'); }
-        function msgEl(id){ return document.querySelector('.sanity-msg[data-for="'+id+'"]'); }
+                function dotEl(id) {
+                    return document.querySelector('.sanity-dot[data-for="' + id + '"]');
+                }
 
-        function setIndicator(id, ok, msg){
-            const d = dotEl(id); const m = msgEl(id);
-            if (d) d.classList.toggle('show', !ok);
-            if (m) { if (msg && !ok) { m.textContent = msg; m.classList.add('show'); } else { m.textContent=''; m.classList.remove('show'); } }
-        }
+                function msgEl(id) {
+                    return document.querySelector('.sanity-msg[data-for="' + id + '"]');
+                }
 
-        function validateTitle(){
-            const v = (fields.title.value||'').trim();
-            const ok = v.length >= 3;
-            setIndicator('course-title', ok, 'Minimal 3 karakter.');
-            return ok;
-        }
-        function validateStatus(){
-            const v = fields.status.value;
-            const ok = (v==='active' || v==='archive');
-            setIndicator('course-status', ok, 'Pilih status yang valid.');
-            return ok;
-        }
-        function validateLevel(){
-            const v = fields.level.value;
-            const ok = (v==='beginner' || v==='intermediate' || v==='advanced');
-            setIndicator('course-level', ok, 'Pilih level yang valid.');
-            return ok;
-        }
-        function validatePrice(){
-            const raw = (fields.price.value||'').trim();
-            const digits = raw.replace(/[^0-9]/g,'');
-            const val = parseInt(digits||'0',10);
-            const ok = val > 0;
-            setIndicator('course-price', ok, 'Harga harus angka > 0.');
-            return ok;
-        }
-        function validateDescription(){
-            const v = (fields.description.value||'').trim();
-            const ok = v.length >= 10;
-            setIndicator('course-description', ok, 'Minimal 10 karakter.');
-            return ok;
-        }
-        function validateThumbnail(){
-            const f = fields.thumbnail.files && fields.thumbnail.files[0];
-            if (!f) {
-                setIndicator('course-thumbnail', false, 'Pilih gambar atau video.');
-                return false;
-            }
-            const allowed = [
-                'image/jpeg','image/png','image/gif','image/webp','image/jpg',
-                'video/mp4','video/webm','video/ogg'
-            ];
-            if (!allowed.includes(f.type)) {
-                setIndicator('course-thumbnail', false, 'File harus gambar (jpg/png/webp/gif) atau video (mp4/webm/ogg).');
-                return false;
-            }
-            setIndicator('course-thumbnail', true);
-            return true;
-        }
-
-        function validateDuration(){
-            const raw = (fields.duration.value||'').trim();
-            const val = parseInt(raw||'0',10);
-            const ok = val > 0;
-            setIndicator('course-duration', ok, 'Durasi harus lebih dari 0 menit.');
-            return ok;
-        }
-
-        function validateAll(){
-            const checks = [validateTitle(), validateStatus(), validateLevel(), validatePrice(), validateDescription(), validateThumbnail(), validateDuration()];
-            return checks.every(Boolean);
-        }
-
-        // live validation
-        fields.title.addEventListener('input', validateTitle);
-        fields.status.addEventListener('change', validateStatus);
-        fields.level.addEventListener('change', validateLevel);
-        fields.price.addEventListener('input', validatePrice);
-        fields.description.addEventListener('input', validateDescription);
-        fields.thumbnail.addEventListener('change', validateThumbnail);
-        fields.duration.addEventListener('input', validateDuration);
-
-        // initial state
-        validateAll();
-
-        const formEl = document.querySelector('form.box_form');
-        if (formEl) {
-            formEl.addEventListener('submit', function(ev){
-                if (!validateAll()) {
-                    ev.preventDefault();
-                    const firstDot = document.querySelector('.sanity-dot.show');
-                    if (firstDot) {
-                        const parent = firstDot.closest('.mb-3, .col-md-6, .mb-1') || document.body;
-                        parent.scrollIntoView({ behavior:'smooth', block:'center' });
+                function setIndicator(id, ok, msg) {
+                    const d = dotEl(id);
+                    const m = msgEl(id);
+                    if (d) d.classList.toggle('show', !ok);
+                    if (m) {
+                        if (msg && !ok) {
+                            m.textContent = msg;
+                            m.classList.add('show');
+                        } else {
+                            m.textContent = '';
+                            m.classList.remove('show');
+                        }
                     }
-                    return;
                 }
-                // normalize price to digits
-                const priceInput = document.getElementById('course-price');
-                if (priceInput) {
-                    const digits = (priceInput.value||'').replace(/[^0-9]/g,'');
-                    priceInput.value = digits;
+
+                function validateTitle() {
+                    const v = (fields.title.value || '').trim();
+                    const ok = v.length >= 3;
+                    setIndicator('course-title', ok, 'Minimal 3 karakter.');
+                    return ok;
                 }
-                // ensure level value is valid
-                const levelSel = document.getElementById('course-level');
-                if (levelSel && levelSel.value === 'advance') {
-                    levelSel.value = 'advanced';
+
+                function validateStatus() {
+                    const v = fields.status.value;
+                    const ok = (v === 'active' || v === 'archive');
+                    setIndicator('course-status', ok, 'Pilih status yang valid.');
+                    return ok;
                 }
-            });
-        }
-    })();
-    </script>
+
+                function validateLevel() {
+                    const v = fields.level.value;
+                    const ok = (v === 'beginner' || v === 'intermediate' || v === 'advanced');
+                    setIndicator('course-level', ok, 'Pilih level yang valid.');
+                    return ok;
+                }
+
+                function validatePrice() {
+                    const raw = (fields.price.value || '').trim();
+                    const digits = raw.replace(/[^0-9]/g, '');
+                    const val = parseInt(digits || '0', 10);
+                    const ok = val > 0;
+                    setIndicator('course-price', ok, 'Harga harus angka > 0.');
+                    return ok;
+                }
+
+                function validateDescription() {
+                    const v = (fields.description.value || '').trim();
+                    const ok = v.length >= 10;
+                    setIndicator('course-description', ok, 'Minimal 10 karakter.');
+                    return ok;
+                }
+
+                function validateThumbnail() {
+                    const f = fields.thumbnail.files && fields.thumbnail.files[0];
+                    if (!f) {
+                        setIndicator('course-thumbnail', false, 'Pilih gambar atau video.');
+                        return false;
+                    }
+                    const allowed = [
+                        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg',
+                        'video/mp4', 'video/webm', 'video/ogg'
+                    ];
+                    if (!allowed.includes(f.type)) {
+                        setIndicator('course-thumbnail', false, 'File harus gambar (jpg/png/webp/gif) atau video (mp4/webm/ogg).');
+                        return false;
+                    }
+                    setIndicator('course-thumbnail', true);
+                    return true;
+                }
+
+                function validateDuration() {
+                    const raw = (fields.duration.value || '').trim();
+                    const val = parseInt(raw || '0', 10);
+                    const ok = val > 0;
+                    setIndicator('course-duration', ok, 'Durasi harus lebih dari 0 menit.');
+                    return ok;
+                }
+
+                function validateAll() {
+                    const checks = [validateTitle(), validateStatus(), validateLevel(), validatePrice(), validateDescription(), validateThumbnail(), validateDuration()];
+                    return checks.every(Boolean);
+                }
+
+                // live validation
+                fields.title.addEventListener('input', validateTitle);
+                fields.status.addEventListener('change', validateStatus);
+                fields.level.addEventListener('change', validateLevel);
+                fields.price.addEventListener('input', validatePrice);
+                fields.description.addEventListener('input', validateDescription);
+                fields.thumbnail.addEventListener('change', validateThumbnail);
+                fields.duration.addEventListener('input', validateDuration);
+
+                // initial state
+                validateAll();
+
+                const formEl = document.querySelector('form.box_form');
+                if (formEl) {
+                    formEl.addEventListener('submit', function(ev) {
+                        if (!validateAll()) {
+                            ev.preventDefault();
+                            const firstDot = document.querySelector('.sanity-dot.show');
+                            if (firstDot) {
+                                const parent = firstDot.closest('.mb-3, .col-md-6, .mb-1') || document.body;
+                                parent.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center'
+                                });
+                            }
+                            return;
+                        }
+                        // normalize price to digits
+                        const priceInput = document.getElementById('course-price');
+                        if (priceInput) {
+                            const digits = (priceInput.value || '').replace(/[^0-9]/g, '');
+                            priceInput.value = digits;
+                        }
+                        // ensure level value is valid
+                        const levelSel = document.getElementById('course-level');
+                        if (levelSel && levelSel.value === 'advance') {
+                            levelSel.value = 'advanced';
+                        }
+                    });
+                }
+            })();
+        </script>
 </body>
 
 </html>
