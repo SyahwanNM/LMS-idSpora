@@ -105,6 +105,12 @@ Route::get('/admin/view-modul-course', function () {
 Route::get('/admin/add-pdf-module', function () {
     return view('admin/add-pdf-module');
 })->name('add-pdf-module');
+Route::get('/admin/add-course2', function () {
+    return view('admin/add-course2');
+})->name('add-course2');
+Route::get('/admin/preview-pendapatan', function () {
+    return view('admin/preview-pendapatan');
+})->name('preview-pendapatan');
 Route::get('/admin/report', function () {
     $courses = \App\Models\Course::query()
         ->withCount([
