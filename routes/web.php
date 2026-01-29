@@ -177,6 +177,7 @@ Route::get('/', function () {
 
 Route::get('/kendala', [PublicPagesController::class, 'support'])->name('public.support');
 Route::post('/kendala', [PublicPagesController::class, 'storeSupport'])->name('public.support.store');
+Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide'])->name('public.guide');
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
