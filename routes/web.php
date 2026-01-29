@@ -18,6 +18,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\PublicPagesController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -114,6 +115,12 @@ Route::get('/admin/view-modul-course', function () {
 Route::get('/admin/add-pdf-module', function () {
     return view('admin/add-pdf-module');
 })->name('add-pdf-module');
+Route::get('/admin/add-course2', function () {
+    return view('admin/add-course2');
+})->name('add-course2');
+Route::get('/admin/preview-pendapatan', function () {
+    return view('admin/preview-pendapatan');
+})->name('preview-pendapatan');
 Route::get('/admin/report', function () {
     $courses = \App\Models\Course::query()
         ->withCount([
@@ -180,6 +187,12 @@ Route::get('/', function () {
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
+
+// Public pages
+
+Route::get('/kendala', [PublicPagesController::class, 'support'])->name('public.support');
+Route::post('/kendala', [PublicPagesController::class, 'storeSupport'])->name('public.support.store');
+Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide'])->name('public.guide');
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {

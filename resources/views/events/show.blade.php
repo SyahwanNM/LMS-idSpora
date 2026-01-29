@@ -5,7 +5,8 @@
     <title>{{ $event->title }} - Detail Event</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 @include('partials.navbar-after-login')
@@ -101,7 +102,6 @@
 </div>
 @endguest
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 @auth
 const btn = document.getElementById('registerBtn');

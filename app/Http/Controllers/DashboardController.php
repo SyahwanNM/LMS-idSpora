@@ -22,7 +22,7 @@ class DashboardController extends Controller
         // Event aktif: gunakan scope active agar yang sudah selesai (end_at < now) otomatis terhapus dari daftar.
         // Tetap ambil yang paling baru dibuat terlebih dahulu.
         $upcomingEvents = Event::active()
-            ->withCount('registrations')
+            ->withCount(['registrationsActive as registrations_count'])
             ->orderByDesc('created_at')
             ->limit(8)
             ->get();
@@ -32,6 +32,7 @@ class DashboardController extends Controller
             $registeredIds = EventRegistration::query()
                 ->where('user_id', Auth::id())
                 ->whereIn('event_id', $upcomingEvents->pluck('id'))
+                ->where('status', '!=', 'rejected') // Treat rejected as not registered so they can try again
                 ->pluck('event_id')
                 ->all();
 
