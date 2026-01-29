@@ -54,6 +54,15 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
     return view('/admin/add-users', compact('users'));
 })->name('admin.add-users');
 
+Route::get('/reseller', function () {
+    return view('reseller.index');
+});
+
+Route::get('/bandingin', function () {
+    return view('reseller.bandingin');
+});
+
+
 // Serve Add Event at a friendly URL using the canonical create form (auth+admin)
 Route::middleware(['auth','admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
 // History (finished events)
