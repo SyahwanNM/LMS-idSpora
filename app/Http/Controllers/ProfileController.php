@@ -248,7 +248,8 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         $validated = $request->validate([
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            // UI uses "Email Baru" (optional). If empty, keep current email.
+            'new_email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'current_password' => 'required_with:password',
             'password' => 'nullable|min:6|confirmed',
         ]);
@@ -261,7 +262,9 @@ class ProfileController extends Controller
             $user->password = Hash::make($validated['password']);
         }
         
-        $user->email = $validated['email'];
+        if (!empty($validated['new_email'])) {
+            $user->email = $validated['new_email'];
+        }
         $user->save();
         
         return redirect()->route('profile.account-settings')->with('success', 'Pengaturan akun berhasil diperbarui!');

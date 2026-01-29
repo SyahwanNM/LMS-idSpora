@@ -8,7 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import * as bootstrap from 'bootstrap';
+window.bootstrap = bootstrap;
 document.addEventListener("DOMContentLoaded", () => {
     const wrap = document.querySelector(".search-wrap");
     const input = document.getElementById("site-search");

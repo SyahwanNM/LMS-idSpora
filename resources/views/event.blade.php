@@ -139,247 +139,238 @@
                     </svg>
                 </span>
 
-                <ul id="search-suggest" class="search-suggest" role="listbox"></ul>
-            </div>
-        </form>
-    </div>
-</div>
-@if(auth()->check() && auth()->user()->role === 'admin')
-<div class="container my-3">
-    </div>
-</div>
-@endif
-<section class="event">
-    <div class="header-card">
-        <h3>Event</h3>
-        <div class="dropdown-box d-flex gap-2">
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" data-filter="day" data-value="">Any Day</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="day" data-value="today">Today</a></li>
-                </ul>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'onsite' ? 'Onsite' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="">Any Type</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="online">Online</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="onsite">Onsite</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
-                </ul>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" data-filter="category" data-value="">Any Category</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="category" data-value="training">Training</a></li>
-                    <li><a class="dropdown-item" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
-                </ul>
-            </div>
-            <div class="dropdown">
-                @php
-                    $reqStatus = request('status');
-                    $statusLabel = $reqStatus === 'upcoming' ? 'Mendatang' : ($reqStatus === 'ongoing' ? 'Sedang Berlangsung' : ($reqStatus === 'finished' ? 'Telah Selesai' : 'Semua Status'));
-                @endphp
-                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="statusFilterBtn">
-                    {{ $statusLabel }}
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" data-status-filter data-value="all">Semua Status</a></li>
-                    <li><a class="dropdown-item" href="#" data-status-filter data-value="upcoming">Mendatang</a></li>
-                    <li><a class="dropdown-item" href="#" data-status-filter data-value="ongoing">Sedang Berlangsung</a></li>
-                    <li><a class="dropdown-item" href="#" data-status-filter data-value="finished">Telah Selesai</a></li>
-                </ul>
-            </div>
+                    <ul id="search-suggest" class="search-suggest" role="listbox"></ul>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="event-list">
-        @php
-            // Pastikan variabel $events tersedia dari PublicEventController.
-            // Jika halaman ini dipakai reusable dan hanya punya $upcomingEvents, fallback sederhana.
-            $loopEvents = isset($events) ? $events : ($upcomingEvents ?? collect());
-            $separatorShown = false;
-        @endphp
-        @forelse($loopEvents as $event)
-            @php
-                $startAt = null;
-                if($event->event_date){
-                    $dateStr = $event->event_date->format('Y-m-d');
-                    if($event->event_time){
-                        $timeStr = method_exists($event->event_time,'format') ? $event->event_time->format('H:i:s') : (is_string($event->event_time) ? $event->event_time : '00:00:00');
-                    } else { $timeStr = '00:00:00'; }
-                    try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
-                }
-            @endphp
-            @php
-                $endAt = null;
-                if($startAt){
-                    $timeEndStr = null;
-                    if(!empty($event->event_time_end)){
-                        $timeEndStr = method_exists($event->event_time_end,'format') ? $event->event_time_end->format('H:i:s') : (is_string($event->event_time_end) ? $event->event_time_end : null);
-                    }
-                    if($timeEndStr){
-                        try { $endAt = \Carbon\Carbon::parse($startAt->format('Y-m-d'). ' ' . $timeEndStr, config('app.timezone')); } catch (Exception $e) { $endAt = $startAt->copy()->endOfDay(); }
-                    } else {
-                        $endAt = $startAt->copy()->endOfDay();
-                    }
-                }
-                $nowTs = \Carbon\Carbon::now();
-                $status = 'all';
-                if($startAt && $endAt){
-                    if($nowTs->lt($startAt)) $status = 'upcoming';
-                    elseif($nowTs->between($startAt, $endAt)) $status = 'ongoing';
-                    elseif($nowTs->gt($endAt)) $status = 'finished';
-                }
-            @endphp
-            @if(!$separatorShown && $status === 'finished' && !$loop->first)
-                <div style="grid-column: 1 / -1; margin: 30px 0 20px; text-align: center; position: relative;">
-                    <hr style="border-top: 2px solid #e9ecef; margin: 0; opacity: 1;">
-                    <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 16px; color: #6c757d; font-weight: 500; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Event Telah Selesai
-                    </span>
-                </div>
-                @php $separatorShown = true; @endphp
-            @endif
-            <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-status="{{ $status }}" data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
-                <div class="thumb-wrapper">
-                    @php $action = $event->manage_action ?? null; @endphp
-                    @if($action)
-                        <span class="manage-badge {{ $action === 'manage' ? 'manage' : 'create' }}">{{ $action === 'manage' ? 'Manage' : 'Create' }}</span>
-                    @endif
-                    @if($event->image_url)
-                        <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
-                    @else
-                        <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
-                    @endif
-                    @php
-                        $showDiscountBadge = method_exists($event,'hasDiscount') && $event->hasDiscount() && $event->price > 0 && $event->price > $event->discounted_price;
-                        $percentOff = $showDiscountBadge ? round((($event->price - $event->discounted_price) / $event->price) * 100) : 0;
-                    @endphp
-                    @if($showDiscountBadge && $percentOff > 0)
-                        <span class="discount-badge">{{ $percentOff }}% off</span>
-                    @endif
-                    <div class="badge-save-group" style="gap:12px;">
-                        <button class="save-btn" aria-label="Save event" type="button">
-                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M2 2v13.5l6-3 6 3V2z" />
-                            </svg>
-                        </button>
-                        
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h4 class="event-title" style="cursor:pointer;">{{ $event->title }}</h4>
-                    <div class="tags">
-                        <span class="tag">{{ $event->jenis ? Str::limit($event->jenis,18) : 'Jenis' }}</span>
-                        <span class="tag">{{ $event->materi ? Str::limit($event->materi,18) : 'Materi' }}</span>
-                        <div class="meta" style="margin-left:auto; gap:6px;">
-                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                            </svg>
-                            <span>{{ $event->registrations_count ?? ($event->registrations()->where('status','active')->distinct('user_id')->count('user_id')) }}</span>
-                        </div>
-                    </div>
-                    <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description,'<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
-                    <div class="keterangan keterangan-row">
-                        <div class="keterangan-item">
-                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                            </svg>
-                            <span>{{ $event->event_date?->format('d F Y') ?? '-' }}</span>
-                        </div>
-                        <div class="keterangan-item">
-                            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                            </svg>
-                            <span>
-                                @if($event->location)
-                                    {{ $event->location }}@if($event->event_time) • {{ $event->event_time?->format('H:i') }} WIB @endif
-                                @else
-                                    -
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-                    @if($startAt)
-                    <div class="countdown-wrapper" data-countdown-wrapper>
-                        <span class="countdown-label" data-countdown-label>Mulai dalam:</span>
-                        <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}" @if($endAt) data-end-ts="{{ $endAt->timestamp }}" @endif>--</span>
-                    </div>
-                    @endif
-                    <div class="price-row">
-                        <div class="price-col">
-                            @if(method_exists($event,'hasDiscount') && $event->hasDiscount())
-                                <span class="price-old">Rp{{ number_format($event->price,0,',','.') }}</span>
-                                <span class="price-now">Rp{{ number_format($event->discounted_price,0,',','.') }}</span>
-                            @else
-                                @php $isFree = (int)$event->price === 0; @endphp
-                                @if($isFree)
-                                    <span class="price-now price-free">Gratis</span>
-                                @else
-                                    <span class="price-now">{{ 'Rp'.number_format($event->price,0,',','.') }}</span>
-                                @endif
-                            @endif
-                        </div>
-                        @php 
-                            $registered = !empty($event->is_registered);
-                            $isFinished = ($status === 'finished');
-                        @endphp
-                        <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary') }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
-                            {{ $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar') }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        @empty
-            <div class="text-center py-5" style="grid-column:1/-1;">
-                <h5 class="mb-2">Belum ada event</h5>
-                <p class="text-muted mb-0">Event akan segera tersedia.</p>
-            </div>
-        @endforelse
+    @if(auth()->check() && auth()->user()->role === 'admin')
+    <div class="container my-3">
+        </div>
     </div>
-    @if(isset($events) && $events instanceof \Illuminate\Pagination\AbstractPaginator)
-        <div class="mt-4 d-flex justify-content-center">{!! $events->links() !!}</div>
     @endif
-<div class="modal fade" id="registrationSuccessModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white py-2">
-        <h6 class="modal-title">Pendaftaran Berhasil</h6>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p class="mb-0">Anda berhasil terdaftar pada event: <strong id="registeredEventTitle"></strong></p>
-      </div>
-      <div class="modal-footer py-2">
-        <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+    <section class="event">
+        <div class="header-card">
+            <h3>Daftar Event</h3>
+            <div class="dropdown-box d-flex gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="">Any Day</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="day" data-value="today">Today</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'onsite' ? 'Onsite' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="">Any Type</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="online">Online</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="onsite">Onsite</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="">Any Category</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="training">Training</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    @php
+                        $reqStatus = request('status');
+                        $statusLabel = $reqStatus === 'upcoming' ? 'Mendatang' : ($reqStatus === 'ongoing' ? 'Sedang Berlangsung' : ($reqStatus === 'finished' ? 'Telah Selesai' : 'Semua Status'));
+                    @endphp
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="statusFilterBtn">
+                        {{ $statusLabel }}
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="all">Semua Status</a></li>
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="upcoming">Mendatang</a></li>
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="ongoing">Sedang Berlangsung</a></li>
+                        <li><a class="dropdown-item" href="#" data-status-filter data-value="finished">Telah Selesai</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="event-list">
+            @php
+                // Pastikan variabel $events tersedia dari PublicEventController.
+                // Jika halaman ini dipakai reusable dan hanya punya $upcomingEvents, fallback sederhana.
+                $loopEvents = isset($events) ? $events : ($upcomingEvents ?? collect());
+            @endphp
+            @forelse($loopEvents as $event)
+                @php
+                    $startAt = null;
+                    if($event->event_date){
+                        $dateStr = $event->event_date->format('Y-m-d');
+                        if($event->event_time){
+                            $timeStr = method_exists($event->event_time,'format') ? $event->event_time->format('H:i:s') : (is_string($event->event_time) ? $event->event_time : '00:00:00');
+                        } else { $timeStr = '00:00:00'; }
+                        try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
+                    }
+                @endphp
+                @php
+                    $endAt = null;
+                    if($startAt){
+                        $timeEndStr = null;
+                        if(!empty($event->event_time_end)){
+                            $timeEndStr = method_exists($event->event_time_end,'format') ? $event->event_time_end->format('H:i:s') : (is_string($event->event_time_end) ? $event->event_time_end : null);
+                        }
+                        if($timeEndStr){
+                            try { $endAt = \Carbon\Carbon::parse($startAt->format('Y-m-d'). ' ' . $timeEndStr, config('app.timezone')); } catch (Exception $e) { $endAt = $startAt->copy()->endOfDay(); }
+                        } else {
+                            $endAt = $startAt->copy()->endOfDay();
+                        }
+                    }
+                    $nowTs = \Carbon\Carbon::now();
+                    $status = 'all';
+                    if($startAt && $endAt){
+                        if($nowTs->lt($startAt)) $status = 'upcoming';
+                        elseif($nowTs->between($startAt, $endAt)) $status = 'ongoing';
+                        elseif($nowTs->gt($endAt)) $status = 'finished';
+                    }
+                @endphp
+                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-status="{{ $status }}" data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
+                    <div class="thumb-wrapper">
+                        @php $action = $event->manage_action ?? null; @endphp
+                        @if($action)
+                            <span class="manage-badge {{ $action === 'manage' ? 'manage' : 'create' }}">{{ $action === 'manage' ? 'Manage' : 'Create' }}</span>
+                        @endif
+                        @if($event->image_url)
+                            <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
+                        @else
+                            <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
+                        @endif
+                        @php
+                            $showDiscountBadge = method_exists($event,'hasDiscount') && $event->hasDiscount() && $event->price > 0 && $event->price > $event->discounted_price;
+                            $percentOff = $showDiscountBadge ? round((($event->price - $event->discounted_price) / $event->price) * 100) : 0;
+                        @endphp
+                        @if($showDiscountBadge && $percentOff > 0)
+                            <span class="discount-badge">{{ $percentOff }}% off</span>
+                        @endif
+                        <div class="badge-save-group" style="gap:12px;">
+                            <button class="save-btn" aria-label="Save event" type="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
+                            
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h4 class="event-title" style="cursor:pointer;">{{ $event->title }}</h4>
+                        <div class="tags">
+                            <span class="tag">{{ $event->jenis ? Str::limit($event->jenis,18) : 'Jenis' }}</span>
+                            <span class="tag">{{ $event->materi ? Str::limit($event->materi,18) : 'Materi' }}</span>
+                            <div class="meta" style="margin-left:auto; gap:6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                </svg>
+                                <span>{{ $event->registrations_count ?? ($event->registrations()->where('status','active')->distinct('user_id')->count('user_id')) }}</span>
+                            </div>
+                        </div>
+                        <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description,'<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
+                        <div class="keterangan keterangan-row">
+                            <div class="keterangan-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16">
+                                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                                </svg>
+                                <span>{{ $event->event_date?->format('d F Y') ?? '-' }}</span>
+                            </div>
+                            <div class="keterangan-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                                </svg>
+                                <span>
+                                    @if($event->location)
+                                        {{ $event->location }}@if($event->event_time) • {{ $event->event_time?->format('H:i') }} WIB @endif
+                                    @else
+                                        -
+                                    @endif
+                                </span>
+                            </div>
+                        </div>
+                        @if($startAt)
+                        <div class="countdown-wrapper" data-countdown-wrapper>
+                            <span class="countdown-label" data-countdown-label>Mulai dalam:</span>
+                            <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}" @if($endAt) data-end-ts="{{ $endAt->timestamp }}" @endif>--</span>
+                        </div>
+                        @endif
+                        <div class="price-row">
+                            <div class="price-col">
+                                @if(method_exists($event,'hasDiscount') && $event->hasDiscount())
+                                    <span class="price-old">Rp{{ number_format($event->price,0,',','.') }}</span>
+                                    <span class="price-now">Rp{{ number_format($event->discounted_price,0,',','.') }}</span>
+                                @else
+                                    @php $isFree = (int)$event->price === 0; @endphp
+                                    @if($isFree)
+                                        <span class="price-now price-free">Gratis</span>
+                                    @else
+                                        <span class="price-now">{{ 'Rp'.number_format($event->price,0,',','.') }}</span>
+                                    @endif
+                                @endif
+                            </div>
+                            @php 
+                                $registered = !empty($event->is_registered);
+                                $isFinished = ($status === 'finished');
+                            @endphp
+                            <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary') }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
+                                {{ $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-5" style="grid-column:1/-1;">
+                    <h5 class="mb-2">Belum ada event</h5>
+                    <p class="text-muted mb-0">Event akan segera tersedia.</p>
+                </div>
+            @endforelse
+        </div>
+        @if(isset($events) && $events instanceof \Illuminate\Pagination\AbstractPaginator)
+            <div class="mt-4 d-flex justify-content-center">{!! $events->links() !!}</div>
+        @endif
+    <!-- Success Registration Modal -->
+    <div class="modal fade" id="registrationSuccessModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white py-2">
+            <h6 class="modal-title">Pendaftaran Berhasil</h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">Anda berhasil terdaftar pada event: <strong id="registeredEventTitle"></strong></p>
+          </div>
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-</section>
-<script src="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js)"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-    // Search submit behavior (icon click or Enter)
-    (function(){
-        const searchForm = document.querySelector('.search-form');
-        const input = document.getElementById('site-search');
-        const trigger = document.getElementById('search-submit-trigger');
-        const suggest = document.getElementById('search-suggest');
-        const LS_KEY = 'events_search_history_v1';
-        const LIMIT = 10;
+    </section>
+    @include('partials.footer-before-login')
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        // Search submit behavior (icon click or Enter)
+        (function(){
+            const searchForm = document.querySelector('.search-form');
+            const input = document.getElementById('site-search');
+            const trigger = document.getElementById('search-submit-trigger');
+            const suggest = document.getElementById('search-suggest');
+            const LS_KEY = 'events_search_history_v1';
+            const LIMIT = 10;
 
         function loadHistory(){
             try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
