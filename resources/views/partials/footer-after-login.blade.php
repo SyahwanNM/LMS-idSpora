@@ -39,7 +39,7 @@
                     <li><a href="#" class="text-light">E-Learning</a></li>
                     <li><a href="#" class="text-light">Video Production</a></li>
                 </ul>
-            </div>
+            </div> 
             <div class="col-lg-3 col-md-6 mb-4">
                 <h6 class="text-white mb-3">Hubungi Kami</h6>
                 <p class="text-light mb-2">

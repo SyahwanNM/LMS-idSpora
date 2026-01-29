@@ -127,26 +127,7 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-4">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="bi bi-currency-dollar text-success me-2"></i>
-                                        <small class="text-muted">Harga Tiket</small>
-                                    </div>
-                                    @php
-                                        $isFree = (int)$event->price === 0;
-                                    @endphp
-                                    @if($isFree)
-                                        <h4 class="text-success mb-0">Gratis</h4>
-                                    @elseif($event->hasDiscount())
-                                        <div class="d-flex align-items-baseline flex-wrap gap-2">
-                                            <span class="text-muted text-decoration-line-through">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                            <h4 class="text-success mb-0">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</h4>
-                                            <span class="badge bg-danger">-{{ $event->discount_percentage }}%</span>
-                                        </div>
-                                    @else
-                                        <h4 class="text-success mb-0">Rp{{ number_format($event->price, 0, ',', '.') }}</h4>
-                                    @endif
-                                </div>
+                                <!-- Old Harga Tiket section removed -->
                             </div>
                         </div>
                     </div>
@@ -155,7 +136,24 @@
                     <div class="row mt-3 g-3">
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-3"><i class="bi bi-info-circle me-2"></i>Detail Tambahan</h6>
+                                <h6 class="text-dark mb-3"><i class="bi bi-tag me-2"></i>Harga</h6>
+                                <div class="mb-3">
+                                    @php $isFree = (int)$event->price === 0; @endphp
+                                    @if($isFree)
+                                        <h3 class="text-success mb-0 fw-bold">Gratis</h3>
+                                    @elseif($event->hasDiscount())
+                                        <div class="d-flex flex-column">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h3 class="text-success mb-0 fw-bold">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</h3>
+                                                <span class="badge bg-danger">-{{ $event->discount_percentage }}%</span>
+                                            </div>
+                                            <small class="text-muted text-decoration-line-through">Rp{{ number_format($event->price, 0, ',', '.') }}</small>
+                                        </div>
+                                    @else
+                                        <h3 class="text-success mb-0 fw-bold">Rp{{ number_format($event->price, 0, ',', '.') }}</h3>
+                                    @endif
+                                </div>
+                                <hr class="my-3 text-muted opacity-25">
                                 <ul class="list-unstyled mb-0">
                                     {{-- Level removed per request --}}
                                     @if(!empty($event->discount_until))
@@ -871,24 +869,39 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+    // Generic action modal
     var actionModalEl = document.getElementById('registrationActionModal');
-    if(!actionModalEl) return;
-    var actionModal = new bootstrap.Modal(actionModalEl);
+    var actionModal = actionModalEl ? new bootstrap.Modal(actionModalEl) : null;
     var actionForm = document.getElementById('registrationActionForm');
     var actionMessage = document.getElementById('registrationActionMessage');
     var actionLabel = document.getElementById('registrationActionLabel');
 
+    // Reject reason modal
+    var rejectModalEl = document.getElementById('rejectRegistrationModal');
+    var rejectModal = rejectModalEl ? new bootstrap.Modal(rejectModalEl) : null;
+    var rejectForm = document.getElementById('rejectRegistrationForm');
+    var rejectReasonHtml = document.getElementById('rejectionReason');
+
     document.querySelectorAll('.btn-action').forEach(function(btn){
         btn.addEventListener('click', function(){
+            var variant = btn.getAttribute('data-variant'); // 'approve' or 'reject'
             var action = btn.getAttribute('data-action');
-            var title = btn.getAttribute('data-title') || 'Konfirmasi';
-            var message = btn.getAttribute('data-message') || 'Lanjutkan tindakan ini?';
-            // Set form action and modal text
-            actionForm.setAttribute('action', action);
-            actionLabel.textContent = title;
-            actionMessage.textContent = message;
-            // show modal
-            actionModal.show();
+
+            if(variant === 'reject') {
+                // Open rejection modal
+                if(rejectForm) rejectForm.setAttribute('action', action);
+                if(rejectReasonHtml) rejectReasonHtml.value = ''; // clear previous text
+                if(rejectModal) rejectModal.show();
+            } else {
+                // Open standard confirmation modal
+                var title = btn.getAttribute('data-title') || 'Konfirmasi';
+                var message = btn.getAttribute('data-message') || 'Lanjutkan tindakan ini?';
+                
+                if(actionForm) actionForm.setAttribute('action', action);
+                if(actionLabel) actionLabel.textContent = title;
+                if(actionMessage) actionMessage.textContent = message;
+                if(actionModal) actionModal.show();
+            }
         });
     });
 });
@@ -947,6 +960,33 @@ document.addEventListener('DOMContentLoaded', function(){
                         <button type="submit" class="btn btn-primary" id="registrationActionConfirmBtn">Konfirmasi</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejection Reason Modal -->
+    <div class="modal fade" id="rejectRegistrationModal" tabindex="-1" aria-labelledby="rejectRegistrationLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectRegistrationLabel">Tolak Pendaftaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectRegistrationForm" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <p>Apakah Anda yakin ingin menolak pendaftaran ini?</p>
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label text-danger">Alasan Penolakan <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="rejectionReason" name="reason" rows="3" required placeholder="Contoh: Bukti transfer tidak terbaca"></textarea>
+                            <div class="form-text">Alasan ini akan dikirimkan kepada pendaftar melalui notifikasi.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger">Tolak Pendaftaran</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

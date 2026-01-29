@@ -79,11 +79,11 @@
                             style="background: none; border: none; color: white; padding: 0.25rem 0.5rem;"
                             onclick="toggleUserDropdown()">
                         <img src="{{ Auth::user()->avatar_url }}"
-                            alt="Avatar" class="rounded-circle me-2"
+                            alt="Avatar" class="rounded-circle me-2 avatar-navbar"
                             referrerpolicy="no-referrer"
                             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff&format=png';"
-                            style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
-                        <span class="text-white d-none d-md-inline">{{ Auth::user()->name }}</span>
+                            style="width:40px !important; height:40px !important; object-fit:cover !important; border:2px solid #fff !important; background:#eee !important; border-radius:50% !important; aspect-ratio:1/1 !important;">
+                        <span class="text-white d-none d-md-inline" style="cursor:pointer;" onclick="event.stopPropagation();toggleUserDropdown();">{{ Auth::user()->name }}</span>
                         <svg class="ms-2 d-none d-md-inline" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
                             <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
                         </svg>

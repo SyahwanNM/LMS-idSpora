@@ -32,6 +32,7 @@ class DashboardController extends Controller
             $registeredIds = EventRegistration::query()
                 ->where('user_id', Auth::id())
                 ->whereIn('event_id', $upcomingEvents->pluck('id'))
+                ->where('status', '!=', 'rejected') // Treat rejected as not registered so they can try again
                 ->pluck('event_id')
                 ->all();
 

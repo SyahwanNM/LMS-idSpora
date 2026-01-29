@@ -14,6 +14,7 @@ class Event extends Model
         'image',
         'vbg_path',
         'certificate_path',
+        'attendance_path',
         'certificate_logo',
         'certificate_signature',
         'speaker',
