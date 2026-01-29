@@ -140,7 +140,7 @@
                         <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="1"></button>
                     </div>
                     <div class="carousel-inner">
-                        <div class="carousel-item active" style="height: 300px;">
+                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 400px);">
                             <div class="d-flex align-items-center h-100 px-5 text-white"
                                 style="background: radial-gradient(circle at 50% 50%, #51376c 0%, #2e2050 100%); position: relative;">
                                 <div class="position-absolute top-0 end-0 p-5 opacity-25">
@@ -161,7 +161,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="carousel-item" style="height: 300px;">
+                        <div class="carousel-item" style="height: clamp(250px, 40vh, 400px);">
                             <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
                                 class="d-block w-100 h-100" style="object-fit: cover; filter: brightness(0.6);"
                                 alt="...">

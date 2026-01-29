@@ -36,15 +36,44 @@
     --text-muted: #64748b;
     /* Slate 500 */
 
-    /* Font Sizes */
-    --fs-title: clamp(2.5rem, 5vw, 4rem);
-    --fs-heading: clamp(2rem, 4vw, 3rem);
-    --fs-subheading: clamp(1.5rem, 3vw, 2.25rem);
-    --fs-body: 1rem;
+    /* Font Sizes - More Fluid Scaling for Laptops */
+    --fs-title: clamp(2rem, 4.5vw, 4rem);
+    --fs-heading: clamp(1.75rem, 3.5vw, 3rem);
+    --fs-subheading: clamp(1.25rem, 2.5vw, 2.25rem);
+    --fs-body: clamp(0.9rem, 1.1vw, 1.1rem);
 
     --navy: #1e1b4b;
     /* Re-mapped to dark purple */
     --white: #fff;
+}
+
+/* RESPONSIVE LAPTOP OPTIMIZATIONS (1024px to 1600px) */
+@media (min-width: 1024px) {
+
+    .container,
+    .container-lg,
+    .container-xl,
+    .container-xxl {
+        max-width: 90%;
+        /* Allow more breath room on laptop screens */
+    }
+}
+
+@media (min-width: 1366px) {
+    .container {
+        max-width: 1240px;
+    }
+}
+
+@media (min-width: 1536px) {
+    .container {
+        max-width: 1400px;
+    }
+}
+
+/* Fluid Spacing Utility */
+.section-padding {
+    padding: clamp(40px, 8vw, 100px) 0;
 }
 
 /* LANDING PAGE UTILITIES */
@@ -132,6 +161,8 @@ body {
     font-family: var(--font-main), poppins;
     background-color: var(--bg-main);
     min-height: 100vh;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
 @supports (height: 1svh) {
@@ -338,15 +369,14 @@ body {
     font-weight: 400;
 }
 
-/*SEARCH BAR*/
-
+/* SEARCH BAR - IMPROVED SCALING */
 .search-banner-container {
-    width: 100%;
+    width: 90%;
     max-width: 600px;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 32px auto 0 auto;
+    margin: clamp(20px, 4vw, 40px) auto 0 auto;
     box-sizing: border-box;
 }
 

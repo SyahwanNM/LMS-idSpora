@@ -35,7 +35,7 @@
         /* Hero Section */
         .guide-hero {
             background: linear-gradient(135deg, #f8fafc 0%, #F5F3FF 100%);
-            padding: 160px 0 80px; /* Increased top padding to accommodate fixed navbar */
+            padding: clamp(100px, 15vh, 160px) 0 clamp(40px, 8vh, 80px); /* Responsive padding for laptops */
             position: relative;
             overflow: hidden;
         }
@@ -72,7 +72,7 @@
         }
 
         .hero-title {
-            font-size: 3rem;
+            font-size: clamp(2rem, 5vw, 3.5rem); /* Scalable title */
             font-weight: 800;
             color: var(--navy);
             margin-bottom: 20px;
@@ -94,7 +94,7 @@
             background: white;
             border-radius: 28px;
             border: 1px solid #f1f5f9;
-            padding: 48px;
+            padding: clamp(24px, 4vw, 48px); /* Responsive inner padding */
             margin-bottom: 32px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
