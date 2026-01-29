@@ -2388,9 +2388,9 @@ label {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
+    width: 95%;
     gap: 10px;
-    margin-top: 5px;
+    margin-top: 4px;
 }
 
 .info-item svg {
@@ -4763,6 +4763,7 @@ input[type="time"] {
 }
 
 .cari_course {
+    margin-top: 3px;
     width: 800px;
     padding: 5px;
     border-radius: 5px;
