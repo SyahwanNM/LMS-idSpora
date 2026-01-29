@@ -191,14 +191,6 @@ class ProfileController extends Controller
             ->with(['event', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
-
-        // Saved events (Event Tersimpan)
-        $savedEvents = \DB::table('user_saved_events')
-            ->where('user_id', $user->id)
-            ->join('events', 'user_saved_events.event_id', '=', 'events.id')
-            ->select('events.*', 'user_saved_events.created_at as saved_at')
-            ->orderBy('user_saved_events.created_at', 'desc')
-            ->get();
         
         // Get all payments for this user
         $payments = \App\Models\Payment::where('user_id', $user->id)
@@ -234,8 +226,7 @@ class ProfileController extends Controller
             'freeEvents',
             'attendedEvents',
             'certifiedEvents',
-            'feedbackSubmitted',
-            'savedEvents'
+            'feedbackSubmitted'
         ));
     }
     
@@ -257,7 +248,8 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         $validated = $request->validate([
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            // UI uses "Email Baru" (optional). If empty, keep current email.
+            'new_email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
             'current_password' => 'required_with:password',
             'password' => 'nullable|min:6|confirmed',
         ]);
@@ -270,7 +262,9 @@ class ProfileController extends Controller
             $user->password = Hash::make($validated['password']);
         }
         
-        $user->email = $validated['email'];
+        if (!empty($validated['new_email'])) {
+            $user->email = $validated['new_email'];
+        }
         $user->save();
         
         return redirect()->route('profile.account-settings')->with('success', 'Pengaturan akun berhasil diperbarui!');

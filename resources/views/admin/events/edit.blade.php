@@ -1,7 +1,6 @@
 @extends('layouts.admin')
 @section('title','Edit Event')
 @section('content')
- @include('partials.navbar-admin-event')
 <div class="container-fluid py-4">
     @if(session('success'))
         <div aria-live="polite" aria-atomic="true" class="position-relative">
@@ -109,9 +108,9 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Waktu Mulai & Selesai <span class="text-danger">*</span></label>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time',$event->event_time) }}">
+                            <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time', $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '') }}">
                             <span>s/d</span>
-                            <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end',$event->event_time_end) }}">
+                            <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -335,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Flatpickr init for tanggal & discount_until
     let eventDateFp=null, discountUntilFp=null;
     if(window.flatpickr){
-        eventDateFp = flatpickr('#tanggal', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', minDate:'today', disableMobile:true });
+        eventDateFp = flatpickr('#tanggal', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', disableMobile:true });
         discountUntilFp = flatpickr('#discount_until', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', disableMobile:true, clickOpens:true });
     }
     function updateDiscountUntilBounds(){
@@ -384,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const benefitsContainer=document.getElementById('benefitsContainer');
     const addBenefitBtn=document.getElementById('addBenefitRow');
     const benefitHidden=document.getElementById('benefitHidden');
-    function addBenefitRow(prefill=''){
+    function renderBenefitRow(prefill=''){
         if(!benefitsContainer) return;
         const row=document.createElement('div');
         row.className='input-group mb-2 benefit-row';
@@ -401,8 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!benefitsContainer) return;
         const raw=benefitHidden?.value||'';
         const parts=(raw.includes('|')?raw.split('|'):raw.split(/\r?\n/)).map(s=>s.trim()).filter(Boolean);
-        if(parts.length){ parts.forEach(p=>addBenefitRow(p)); }
-        else { addBenefitRow(''); }
+        if(parts.length){ parts.forEach(p=>renderBenefitRow(p)); }
+        else { renderBenefitRow(''); }
     })();
 
     // Validation & submit state
@@ -464,6 +463,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ['input','change','blur'].forEach(ev=> shortDescEl2?.addEventListener(ev,()=>{ updateShortDescCount(); window.updateSubmitState(); }));
         updateShortDescCount();
     }
+    // Event listener for add benefit button
+    addBenefitBtn?.addEventListener('click', () => renderBenefitRow());
+
 });
 </script>
 @endsection

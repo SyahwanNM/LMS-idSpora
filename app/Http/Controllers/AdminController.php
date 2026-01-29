@@ -232,32 +232,90 @@ class AdminController extends Controller
         return redirect()->route('admin.dashboard')->with('success', 'Event created successfully!');
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
-        // Build revenue per event and basic finance overview for the report
+        // Handle Period Filter
+        $periodParam = $request->input('period');
+        if($periodParam && preg_match('/^(\d{4})-(\d{2})$/', $periodParam, $m)){
+            $year = (int)$m[1];
+            $month = (int)$m[2];
+            $selectedDate = Carbon::create($year, $month, 1, 0, 0, 0);
+        } else {
+            $selectedDate = Carbon::now();
+        }
+
+        // Active Tab
+        $activeTab = $request->input('tab', 'pendapatan');
+
         // Paid statuses based on Midtrans typical values
         $paidStatuses = ['settlement', 'capture', 'success'];
 
         // Sum revenue from manual payments (use settled manual payments)
+        // Note: This sums ALL revenue (not filtered by date yet here, but map lookup is by event_id)
         $revenueMap = \App\Models\ManualPayment::query()
             ->selectRaw('event_id, SUM(COALESCE(amount, 0)) as total')
             ->where('status', 'settled')
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
-        // Get events with participants count
+        // Get events with participants count, Filtered by Selected Month
         $events = \App\Models\Event::query()
             ->withCount('registrations')
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
             ->orderBy('event_date', 'asc')
             ->get();
 
-        // Categorize events: upcoming, active, completed
+        // Specific Metrics for Operational
+        // Logic: Total events in the *Selected Month* (displayed in info boxes)
+        $totalEventCreate = $events->where('manage_action', 'create')->count();
+        $totalEventManage = $events->where('manage_action', 'manage')->count();
+
+        // Trend Chart Data: "Total Event Create vs Manage" (Last 6 months ending at selected month)
+        $chartLabels = [];
+        $chartCreateData = [];
+        $chartManageData = [];
+        $chartFreeData = [];
+        $chartPaidData = [];
+        
+        // Start 5 months ago
+        $startWindow = (clone $selectedDate)->subMonths(5)->startOfMonth();
+        $endWindow = (clone $selectedDate)->endOfMonth();
+
+        // Fetch ALL events in range (safer than SQL grouping if dates vary)
+        $eventsInRange = \App\Models\Event::query()
+            ->whereBetween('event_date', [$startWindow, $endWindow])
+            ->get();
+
+        // Monthly Totals (Discrete count per month)
+        // This shows the activity volume for each month
+        for($i=0; $i<6; $i++){
+            $d = (clone $startWindow)->addMonths($i);
+            $key = $d->format('Y-m');
+            $chartLabels[] = $d->translatedFormat('F'); // "December"
+
+            // Filter collection for this month
+            // Note: event_date is cast to Carbon in model usually
+            $monthEvents = $eventsInRange->filter(function($e) use ($key){
+                return $e->event_date && $e->event_date->format('Y-m') === $key;
+            });
+
+            // Count events for this specific month ONLY
+            $chartCreateData[] = $monthEvents->filter(fn($e) => strtolower($e->manage_action ?? '') === 'create')->count();
+            $chartManageData[] = $monthEvents->filter(fn($e) => strtolower($e->manage_action ?? '') === 'manage')->count();
+
+            // Growth Chart Data (Free vs Paid)
+            $chartFreeData[] = $monthEvents->filter(fn($e) => $e->price <= 0)->count();
+            $chartPaidData[] = $monthEvents->filter(fn($e) => $e->price > 0)->count();
+        }
+
+        // Categorize events: upcoming, active, completed (relative to now, but limited to the selected month's events)
         $now = Carbon::now();
         $activeCount = 0; $completedCount = 0; $upcomingCount = 0; $totalEventsAll = $events->count();
         foreach ($events as $e) {
             if (empty($e->event_date)) { continue; }
-            $start = $e->start_at; // accessor from model combines date + time safely
-            $end = $e->end_at;     // accessor from model handles fallback to endOfDay
+            $start = $e->start_at; 
+            $end = $e->end_at;     
             if ($start && $end) {
                 if ($now->lt($start)) { $upcomingCount++; }
                 else if ($now->gt($end)) { $completedCount++; }
@@ -274,7 +332,6 @@ class AdminController extends Controller
         $eventRows = $events->map(function($e) use ($revenueMap){
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
-            // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
             $expense = (float) ($e->expenses_total ?? 0.0);
             $profit = $revenue - $expense;
             return [
@@ -289,7 +346,7 @@ class AdminController extends Controller
             ];
         });
 
-        // Build rows for Pertumbuhan table (growth metrics per event)
+        // Build rows for Pertumbuhan table
         $growthRows = $events->map(function($e){
             return [
                 'id' => $e->id,
@@ -297,24 +354,35 @@ class AdminController extends Controller
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
                 'speaker' => $e->speaker,
-                'event_rating' => null, // placeholder until rating source available
-                'speaker_rating' => null, // placeholder
+                'event_rating' => null, 
+                'speaker_rating' => null, 
             ];
         });
 
-        // Build rows for Operasional table (document completeness per event)
+        // Build rows for Operasional table
         $operationalRows = $events->map(function($e){
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'type' => $e->jenis ?? 'N/A',
-                'documents_percent' => $e->documents_completion_percent, // accessor from model
+                'documents_percent' => $e->documents_completion_percent, 
+                'vbg_url' => !empty($e->vbg_path) ? \Illuminate\Support\Facades\Storage::url($e->vbg_path) : '',
+                'cert_url' => !empty($e->certificate_path) ? \Illuminate\Support\Facades\Storage::url($e->certificate_path) : '',
+                'abs_url' => !empty($e->attendance_path) ? \Illuminate\Support\Facades\Storage::url($e->attendance_path) : '',
                 'has_vbg' => !empty($e->vbg_path),
                 'has_cert' => !empty($e->certificate_path),
                 'has_abs' => !empty($e->attendance_path),
+                'qr_image_url' => !empty($e->attendance_qr_image) ? asset('storage/'.$e->attendance_qr_image) : '',
             ];
         });
+
+        // Prepare Data for Pendapatan Chart (Revenue per Event in selected month)
+        $chartDataRevenue = $eventRows->values();
+        $labels = $chartDataRevenue->pluck('name');
+        $seriesRevenue = $chartDataRevenue->pluck('revenue');
+        $seriesExpense = $chartDataRevenue->pluck('expense');
+        $seriesProfit = $chartDataRevenue->pluck('profit');
 
         return view('admin.reports', compact(
             'eventRows',
@@ -324,7 +392,21 @@ class AdminController extends Controller
             'completedCount',
             'upcomingCount',
             'percentCompleted',
-            'percentNotCompleted'
+            'percentNotCompleted',
+            'totalEventCreate',
+            'totalEventManage',
+            'selectedDate',
+            'activeTab',
+            'chartLabels',
+            'chartCreateData',
+            'chartManageData',
+            'chartFreeData',
+            'chartFreeData',
+            'chartPaidData',
+            'labels',
+            'seriesRevenue',
+            'seriesExpense',
+            'seriesProfit'
         ));
     }
 
