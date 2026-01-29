@@ -5,574 +5,1153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Dashboard Learner</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        
-        body {
-            overflow-x: hidden; 
-            margin: 0;
-            padding: 0;
-           
-        }
-        .search-banner-container {
-            margin-top: 100px; 
-            margin-bottom: 20px;
-        }   
-        .footer-section {
-            width: 100vw;
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            margin-top: 40px; 
+        /* Animasi hover pada kartu */
+        .card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* --- DASHBOARD STYLES --- */
-        /* Event Dashboard Image Size */
-        .event .event-list {row-gap:38px; padding:0 18px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));}
-        @media (max-width: 576px){
-            .event .event-list {grid-template-columns: 1fr;}
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
         }
-        .event .card-event .thumb-wrapper {position:relative;height:360px;}
-        .event .card-event .card-image-event {width:100%;height:100%;object-fit:cover;}
-        .event .card-event .card-body {padding-top:20px;}
-        @media (max-width:1200px){ 
-            .event .card-event .thumb-wrapper {height:340px;}
-         }
-        @media (max-width:992px){ 
-            .event .card-event .thumb-wrapper {height:320px;}
-         }
-        @media (max-width:768px){ 
-            .event .card-event .thumb-wrapper {height:260px;} }
-        
-        /* Discount badge styling */
-        .event .card-event .thumb-wrapper {overflow:hidden;}
-        .event .card-event .discount-badge {
-            position:absolute;
-            bottom:12px;
-            left:12px;
-            background:#212f4d;
-            color:#d6bc3a;
-            font-size:13px;
-            font-weight:600;
-            padding:6px 10px 5px;
-            border-radius:6px;
-            line-height:1;
-            letter-spacing:.5px;
-            box-shadow:0 2px 6px rgba(0,0,0,.25);
-            display:inline-flex;
-            align-items:center;
-            gap:4px;
-            text-transform:uppercase;
+
+        /* Animasi hover pada tombol */
+        .btn {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
-        .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
-        
-      
-        .event .card-event .manage-badge {
-            position:absolute; top:12px; left:12px; color:#fff; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;
+
+        .btn:hover {
+            transform: translateY(-2px);
         }
-        .event .card-event .manage-badge.manage {
-            background:#0d6efd;
+
+        .btn:active {
+            transform: translateY(0);
         }
-        .event .card-event .manage-badge.create {
-            background:#6f42c1;
+
+        /* Transisi smooth untuk elemen interaktif */
+        a,
+        button,
+        input,
+        textarea,
+        select {
+            transition: all 0.25s ease;
         }
-        .countdown-wrapper {
-            margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;
+
+        /* Animasi progress bar */
+        .progress-bar {
+            transition: width 0.6s ease;
         }
-        .countdown-label {
-            color:#555; font-weight:500;
+
+        /* Efek hover pada baris tabel */
+        .table tbody tr {
+            transition: background-color 0.25s ease;
         }
-        .countdown-timer {
-            background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:150px; text-align:center;
+
+        .table tbody tr:hover {
+            background-color: rgba(81, 55, 108, 0.05);
         }
-        .countdown-timer.started {
-            background:#198754; color:#fff;}
-        .countdown-timer.expired {background:#6c757d; color:#fff;
-    }
-        .price-free {
-            color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;
+
+        /* Transisi smooth carousel */
+        .carousel-item {
+            transition: opacity 0.6s ease-in-out;
         }
-        .price-now:not(.price-free){ 
-            color:#ffd54f; font-weight:700; 
+
+        /* Zoom image saat card dihover */
+        .card img {
+            transition: transform 0.3s ease;
         }
-        .price-old{
-             color:#6c757d; text-decoration: line-through;
-             }
-        .event .card-event .tags .tag { 
-            background-color:#E4E4E6 !important; color:#3B3B43;
-         }
+
+        .card:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Animasi badge */
+        .badge {
+            transition: all 0.25s ease;
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Animasi icon button */
+        .btn-circle,
+        .btn-light {
+            transition: all 0.25s ease;
+        }
+
+        .btn-circle:hover,
+        .btn-light:hover {
+            transform: scale(1.1);
+        }
+
+        /* Transisi card body */
+        .card-body {
+            transition: all 0.3s ease;
+        }
+
+        /* Animasi statistik card */
+        .card[style*="background-color"] {
+            transition: all 0.3s ease;
+        }
+
+        /* Efek glow pada tombol daftar */
+        .bg-warning.text-dark {
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
+
+        .bg-warning.text-dark:hover {
+            background-color: #ffb300 !important;
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.6), 0 4px 12px rgba(255, 193, 7, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .bg-warning.text-dark:active {
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.4), 0 2px 6px rgba(255, 193, 7, 0.3);
+            transform: translateY(0);
+        }
     </style>
 </head>
 
-<body>
-    {{-- Navbar di include di dalam body --}}
-    @include("partials.navbar-after-login")
+<body style="background-color: var(--bg-main);">
 
-    <div class="search-banner-container">
-        <form class="search-banner-form" action="{{ route('events.searchRedirect') }}" method="get" autocomplete="off">
-            <div class="search-wrap">
-                <input id="site-search" class="form-control search-input" type="search" name="search"
-                    placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest">
-                <span class="search-icon" ariza-hidden="false" id="search-submit-trigger" tabindex="0" role="button">
-                    <svg id="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                        fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
-                        <path
-                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
-                    </svg>
-                </span>
+    <main class="container-xxl">
+        <div class="container pb-5">
 
-                <ul id="search-suggest" class="search-suggest" role="listbox"></ul>
-            </div>
-        </form>
-    </div>
-    <section class="hero-carousel">
-        <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @if(isset($dashboardCarousels) && $dashboardCarousels->count() > 0)
-                    @foreach($dashboardCarousels as $i => $carousel)
-                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
-                            @if($carousel->link_url)
-                                <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;">
-                                    <img src="{{ $carousel->image_url }}" 
-                                         class="d-block" 
-                                         alt="{{ $carousel->title ?? 'Carousel' }}" 
-                                         onerror="this.src='{{ asset('aset/poster.png') }}'">
-                                </a>
-                            @else
-                                <img src="{{ $carousel->image_url }}" 
-                                     class="d-block" 
-                                     alt="{{ $carousel->title ?? 'Carousel' }}" 
-                                     onerror="this.src='{{ asset('aset/poster.png') }}'">
-                            @endif
-                        </div>
-                    @endforeach
-                @elseif(isset($upcomingEvents) && $upcomingEvents->count() > 0)
-                    @foreach($upcomingEvents->take(5) as $i => $evt)
-                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
-                            <img src="{{ $evt->image_url ? $evt->image_url : asset('aset/poster.png') }}"
-                                class="d-block" alt="{{ $evt->title ?? 'Event' }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
-                        </div>
-                    @endforeach
-                @else
-                    <div class="carousel-item active" data-bs-interval="10000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+            {{-- /* Banner Promo */ --}}
+            <section class="mt-4 mb-4 rounded-4 overflow-hidden shadow-lg">
+                <div id="promoCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="0" class="active"
+                            aria-current="true"></button>
+                        <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="1"></button>
                     </div>
-                    <div class="carousel-item" data-bs-interval="2000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
-                    </div>
-                    <div class="carousel-item">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
-                    </div>
-                @endif
-            </div>
-
-            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
-    </section>
-
-    <div class="container">
-
-        <div class="box2">
-            <div class="row justify-content-center gx-4">
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="kotak h-100">
-                        <h3 class="judul">Task Progress</h3>
-                        <div class="task-item"> <span class="task-title">Web Programming</span> <span class="task-score">5/10</span>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 50%"></div>
+                    <div class="carousel-inner">
+                        <div class="carousel-item active" style="height: 300px;">
+                            <div class="d-flex align-items-center h-100 px-5 text-white"
+                                style="background: radial-gradient(circle at 50% 50%, #51376c 0%, #2e2050 100%); position: relative;">
+                                <div class="position-absolute top-0 end-0 p-5 opacity-25">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" fill="currentColor"
+                                        class="bi bi-code-slash" viewBox="0 0 16 16">
+                                        <path
+                                            d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z" />
+                                    </svg>
+                                </div>
+                                <div style="z-index: 2; max-width: 600px;">
+                                    <span class="badge bg-warning text-dark mb-2">Promo Spesial</span>
+                                    <h1 class="fw-bold">Unlock 1,000+ Premium Courses</h1>
+                                    <p class="mb-4">Pelajari skill baru dari mentor expert industri. Diskon 50% untuk
+                                        pendaftaran minggu ini!</p>
+                                    <button class="btn btn-warning fw-bold px-4 py-2"
+                                        style="background-color: #f4c430; border: none; color: #2e2050;">Lihat
+                                        Promo</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="task-item"> <span class="task-title">Data and Structure</span> <span class="task-score">4/15</span>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 20%"></div>
+                        <div class="carousel-item" style="height: 300px;">
+                            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
+                                class="d-block w-100 h-100" style="object-fit: cover; filter: brightness(0.6);"
+                                alt="...">
+                            <div class="carousel-caption d-none d-md-block text-start"
+                                style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">Webinar Series: AI for Future</h2>
+                                <p>Gabung diskusi panel eksklusif bersama pakar AI global.</p>
+                                <button class="btn btn-light fw-bold">Daftar Sekarang</button>
                             </div>
                         </div>
-                        <div class="task-item"> <span class="task-title">Artificiall Intelligence</span> <span class="task-score">2/15</span>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 30%"></div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#promoCarousel"
+                        data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#promoCarousel"
+                        data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </section>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+
+                    {{-- /* Section Lanjutkan Belajar */ --}}
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Lanjutkan Belajar</h5>
+                            <a href="#" class="text-decoration-none fw-semibold"
+                                style="color: var(--primary); font-size: 14px;">Lihat Semua &raquo;</a>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr style="font-size: 13px; color: #666;">
+                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Course Name</th>
+                                            <th class="border-0 py-3" style="width: 35%;">Progress</th>
+                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="ps-4 py-3">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="rounded-3 overflow-hidden flex-shrink-0"
+                                                        style="width: 48px; height: 48px;">
+                                                        <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=100"
+                                                            class="w-100 h-100 object-fit-cover" alt="Thumb">
+                                                    </div>
+                                                    <h6 class="fw-semibold mb-0"
+                                                        style="font-size: 14px; color: var(--navy);">Web Programming
+                                                    </h6>
+                                                </div>
+                                            </td>
+                                            <td class="py-3">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="progress flex-grow-1"
+                                                        style="height: 8px; background-color: #f1f5f9;">
+                                                        <div class="progress-bar"
+                                                            style="width: 50%; background-color: var(--secondary);">
+                                                        </div>
+                                                    </div>
+                                                    <small class="fw-bold text-muted"
+                                                        style="font-size: 12px; min-width: 35px; text-align: right;">50%</small>
+                                                </div>
+                                            </td>
+                                            <td class="text-center pe-4 py-3">
+                                                <a href="/course/web-programming"
+                                                    class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                    style="width: 36px; height: 36px; background-color: var(--navy);">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        fill="currentColor" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                    </svg>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 py-3">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="rounded-3 overflow-hidden flex-shrink-0"
+                                                        style="width: 48px; height: 48px;">
+                                                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=100"
+                                                            class="w-100 h-100 object-fit-cover" alt="Thumb">
+                                                    </div>
+                                                    <h6 class="fw-semibold mb-0"
+                                                        style="font-size: 14px; color: var(--navy);">Data Structure</h6>
+                                                </div>
+                                            </td>
+                                            <td class="py-3">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="progress flex-grow-1"
+                                                        style="height: 8px; background-color: #f1f5f9;">
+                                                        <div class="progress-bar"
+                                                            style="width: 25%; background-color: var(--secondary);">
+                                                        </div>
+                                                    </div>
+                                                    <small class="fw-bold text-muted"
+                                                        style="font-size: 12px; min-width: 35px; text-align: right;">25%</small>
+                                                </div>
+                                            </td>
+                                            <td class="text-center pe-4 py-3">
+                                                <a href="/course/data-structure"
+                                                    class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                    style="width: 36px; height: 36px; background-color: var(--navy);">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        fill="currentColor" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                    </svg>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- /* Section Rekomendasi Course */ --}}
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Rekomendasi Course</h5>
+                            <a href="/courses" class="btn btn-sm btn-outline-warning rounded-pill px-3"
+                                style="color: var(--primary); border-color: var(--secondary);">Lihat Lainnya</a>
+                        </div>
+
+                        <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
+
+                            <div class="flex-shrink-0" style="width: 280px;">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div class="position-relative" style="height: 160px;">
+                                        <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=600"
+                                            class="w-100 h-100 object-fit-cover" alt="AI Course">
+                                        <span
+                                            class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
+                                            style="font-size: 11px;">Beginner</span>
+                                        <button
+                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                            style="width: 32px; height: 32px; padding: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                fill="currentColor" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="card-body p-3 d-flex flex-column">
+                                        <h6 class="fw-bold mb-3 text-wrap"
+                                            style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            Mastering Artificial Intelligence with Python</h6>
+
+                                        <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
+                                            style="font-size: 11px;">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <img src="https://ui-avatars.com/api/?name=Agnes&background=random"
+                                                    class="rounded-circle" width="18" height="18" alt="Instructor">
+                                                <span>Agnes M.</span>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="#fbbf24" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                    </svg>
+                                                    <span>4.8</span>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="currentColor" class="bi bi-people-fill"
+                                                        viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                                    </svg>
+                                                    <span>1.2k</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                            <div class="fw-bold" style="color: var(--primary); font-size: 16px;">Rp
+                                                250.000</div>
+                                            <button
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Detail</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0" style="width: 280px;">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div class="position-relative" style="height: 160px;">
+                                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=600"
+                                            class="w-100 h-100 object-fit-cover" alt="UI/UX">
+                                        <span
+                                            class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
+                                            style="font-size: 11px;">Advanced</span>
+                                        <span
+                                            class="badge position-absolute bottom-0 start-0 m-2 bg-danger shadow-sm fw-bold"
+                                            style="font-size: 10px;">50% OFF</span>
+
+                                        <button
+                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                            style="width: 32px; height: 32px; padding: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                fill="currentColor" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="card-body p-3 d-flex flex-column">
+                                        <h6 class="fw-bold mb-3 text-wrap"
+                                            style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            UI/UX Design Systems in Figma</h6>
+
+                                        <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
+                                            style="font-size: 11px;">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <img src="https://ui-avatars.com/api/?name=Budi&background=random"
+                                                    class="rounded-circle" width="18" height="18" alt="Instructor">
+                                                <span>Budi S.</span>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="#fbbf24" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                    </svg>
+                                                    <span>4.9</span>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="currentColor" class="bi bi-people-fill"
+                                                        viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                                    </svg>
+                                                    <span>850</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="mt-auto pt-2 border-top d-flex justify-content-between align-items-end">
+                                            <div class="d-flex flex-column">
+                                                <small class="text-muted text-decoration-line-through"
+                                                    style="font-size: 11px;">Rp 500.000</small>
+                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">Rp
+                                                    250.000</div>
+                                            </div>
+                                            <button
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Detail</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0" style="width: 280px;">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div class="position-relative" style="height: 160px;">
+                                        <img src="https://images.unsplash.com/photo-1579389083078-4e7018379f7e?q=80&w=600"
+                                            class="w-100 h-100 object-fit-cover" alt="Marketing">
+                                        <span
+                                            class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
+                                            style="font-size: 11px;">Intermediate</span>
+
+                                        <button
+                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                            style="width: 32px; height: 32px; padding: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                fill="currentColor" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="card-body p-3 d-flex flex-column">
+                                        <h6 class="fw-bold mb-3 text-wrap"
+                                            style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            Digital Marketing 101: SEO & Ads</h6>
+
+                                        <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
+                                            style="font-size: 11px;">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <img src="https://ui-avatars.com/api/?name=Sarah&background=random"
+                                                    class="rounded-circle" width="18" height="18" alt="Instructor">
+                                                <span>Sarah L.</span>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="#fbbf24" class="bi bi-star-fill" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                                    </svg>
+                                                    <span>4.7</span>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="currentColor" class="bi bi-people-fill"
+                                                        viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                                    </svg>
+                                                    <span>2.1k</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                            <div class="fw-bold text-success" style="font-size: 16px;">Gratis</div>
+                                            <button
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Detail</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {{-- /* Section Event Terbaru */ --}}
+                    <div class="mb-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Event Terbaru</h5>
+                            <a href="/events" class="btn btn-sm btn-outline-warning rounded-pill px-3"
+                                style="color: var(--primary); border-color: var(--secondary);">Lihat Lainnya</a>
+                        </div>
+
+                        <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
+
+                            <div class="flex-shrink-0" style="width: 320px;">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                                    style="background:white;">
+
+                                    <div class="position-relative overflow-hidden" style="height: 180px;">
+                                        <img src="https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=1000"
+                                            class="w-100 h-100 object-fit-cover" alt="event">
+
+                                        <span
+                                            style="position:absolute; bottom:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;">
+                                            50% OFF
+                                        </span>
+                                        <span
+                                            style="position:absolute; top:12px; left:12px; background:#0d6efd; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
+                                            WEBINAR
+                                        </span>
+                                        <button
+                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                            style="width: 32px; height: 32px; padding: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                fill="currentColor" class="bi bi-bookmark" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="card-body pt-3 d-flex flex-column">
+                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4;">Build Your First
+                                            React App</h6>
+
+                                        <div class="mb-3 d-flex gap-2">
+                                            <span class="badge"
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Coding</span>
+                                            <span class="badge"
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Frontend</span>
+                                        </div>
+
+                                        <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                                    <path
+                                                        d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                                                </svg>
+                                                <span>28 Februari 2026</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                                                </svg>
+                                                <span>Zoom • 13:00 WIB</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1"
+                                                style="font-size: 11px;">
+                                                <div class="d-flex align-items-center gap-1 text-muted">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="currentColor" class="bi bi-people-fill"
+                                                        viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                                    </svg>
+                                                    <span>Kuota Terisi</span>
+                                                </div>
+                                                <span class="fw-bold text-primary">85/100</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px; background-color: #f1f5f9;">
+                                                <div class="progress-bar bg-primary" role="progressbar"
+                                                    style="width: 85%" aria-valuenow="85" aria-valuemin="0"
+                                                    aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
+                                            style="background:#f8f9fa;">
+                                            <span class="small fw-bold text-muted">Mulai:</span>
+                                            <span class="font-monospace px-2 py-1 rounded"
+                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">02
+                                                Hari 10 Jam</span>
+                                        </div>
+
+                                        <div
+                                            class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
+                                            <div class="d-flex flex-column">
+                                                <span
+                                                    style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
+                                                    150.000</span>
+                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
+                                                    75.000</span>
+                                            </div>
+                                            <button
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Daftar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0" style="width: 320px;">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                                    style="background:white;">
+
+                                    <div class="position-relative overflow-hidden" style="height: 180px;">
+                                        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1000"
+                                            class="w-100 h-100 object-fit-cover" alt="event">
+
+                                        <span
+                                            style="position:absolute; top:12px; left:12px; background:var(--secondary); color:#000; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
+                                            SEMINAR
+                                        </span>
+                                        <button
+                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                            style="width: 32px; height: 32px; padding: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                fill="currentColor" class="bi bi-bookmark" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="card-body pt-3 d-flex flex-column">
+                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4;">Tech Meetup:
+                                            Startups 2026</h6>
+
+                                        <div class="mb-3 d-flex gap-2">
+                                            <span class="badge"
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Business</span>
+                                            <span class="badge"
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Network</span>
+                                        </div>
+
+                                        <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                                    <path
+                                                        d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                                                </svg>
+                                                <span>15 Maret 2026</span>
+                                            </div>
+                                            <div class="d-flex align-items-start gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                    fill="currentColor" class="mt-1 flex-shrink-0" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                                                </svg>
+                                                <span style="line-height: 1.2;">Auditorium TULT, Telkom Univ</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1"
+                                                style="font-size: 11px;">
+                                                <div class="d-flex align-items-center gap-1 text-muted">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="currentColor" class="bi bi-people-fill"
+                                                        viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                                    </svg>
+                                                    <span>Kuota Terisi</span>
+                                                </div>
+                                                <span class="fw-bold text-success">25/200</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px; background-color: #f1f5f9;">
+                                                <div class="progress-bar bg-success" role="progressbar"
+                                                    style="width: 12.5%" aria-valuenow="25" aria-valuemin="0"
+                                                    aria-valuemax="200"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
+                                            style="background:#f8f9fa;">
+                                            <span class="small fw-bold text-muted">Mulai:</span>
+                                            <span class="font-monospace px-2 py-1 rounded"
+                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">15
+                                                Hari 09 Jam</span>
+                                        </div>
+
+                                        <div
+                                            class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
+                                            <div class="d-flex flex-column">
+                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
+                                                    150.000</span>
+                                            </div>
+                                            <button
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Daftar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0" style="width: 320px;">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                                    style="background:white;">
+
+                                    <div class="position-relative overflow-hidden" style="height: 180px;">
+                                        <img src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=1000"
+                                            class="w-100 h-100 object-fit-cover" alt="community">
+
+                                        <span
+                                            style="position:absolute; bottom:12px; left:12px; background:#198754; color:#fff; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;">
+                                            FREE
+                                        </span>
+                                        <span
+                                            style="position:absolute; top:12px; left:12px; background:#6f42c1; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
+                                            ONSITE
+                                        </span>
+                                        <button
+                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                            style="width: 32px; height: 32px; padding: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                fill="currentColor" class="bi bi-bookmark" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="card-body pt-3 d-flex flex-column">
+                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4;">Community Talk:
+                                            Career in Tech</h6>
+
+                                        <div class="mb-3 d-flex gap-2">
+                                            <span class="badge"
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Career</span>
+                                            <span class="badge"
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Discussion</span>
+                                        </div>
+
+                                        <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                    fill="currentColor" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
+                                                    <path
+                                                        d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                                                </svg>
+                                                <span>10 Maret 2026</span>
+                                            </div>
+                                            <div class="d-flex align-items-start gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                    fill="currentColor" class="mt-1 flex-shrink-0" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+                                                </svg>
+                                                <span style="line-height: 1.2;">Gedung Serbaguna, Bandung</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1"
+                                                style="font-size: 11px;">
+                                                <div class="d-flex align-items-center gap-1 text-muted">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                        fill="currentColor" class="bi bi-people-fill"
+                                                        viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                                                    </svg>
+                                                    <span>Kuota Terisi</span>
+                                                </div>
+                                                <span class="fw-bold text-warning">90/100</span>
+                                            </div>
+                                            <div class="progress" style="height: 6px; background-color: #f1f5f9;">
+                                                <div class="progress-bar bg-warning" role="progressbar"
+                                                    style="width: 90%" aria-valuenow="90" aria-valuemin="0"
+                                                    aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
+                                            style="background:#f8f9fa;">
+                                            <span class="small fw-bold text-muted">Mulai:</span>
+                                            <span class="font-monospace px-2 py-1 rounded"
+                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">10
+                                                Hari 08 Jam</span>
+                                        </div>
+
+                                        <div
+                                            class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
+                                            <div class="d-flex flex-column">
+                                                <span
+                                                    style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
+                                            </div>
+                                            <button
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Daftar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="kotak h-100">
-                        <h3 class="judul">Statistics</h3>
-                        <p class="bulan">Januari - Juni 2025</p>
-                        <div class="stat-container">
-                            <div class="keterangan">
-                                <div class="stat-item"> <img src="{{ asset('aset/logo-kehadiran.png') }}" alt="Kehadiran">
-                                    <div class="stat-text">
-                                        <p class="label">Kehadiran</p>
-                                        <p class="value">90%</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item"> <img src="{{ asset('aset/logo-ujian.png') }}" alt="Tugas & Ujian">
-                                    <div class="stat-text">
-                                        <p class="label">Tugas & Ujian</p>
-                                        <p class="value">70%</p>
-                                    </div>
-                                </div>
-                                <div class="stat-item"> <img src="{{ asset('aset/logo-kuis.png') }}" alt="Kuis">
-                                    <div class="stat-text">
-                                        <p class="label">Kuis</p>
-                                        <p class="value">85%</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="chart-wrapper"> <canvas id="gradesChart"></canvas> </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-12 mb-4">
-                    <div class="kotak h-100">
-                        <h3 class="judul">Hours Spent</h3> <canvas id="hoursChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
+                <div class="col-lg-4">
 
-    <section class="kursus-pelatihan">
-        <div class="header-card d-flex align-items-center justify-content-between" style="gap:16px;">
-            <h3 class="mb-0">Lanjutkan Belajar</h3>
-            <a href="#" class="see-more-link text-decoration-none">Lihat Lainnya &raquo;</a>
-        </div>
-
-        <ul class="course-list">
-            <li>
-                <article class="course-card">
-                    <div class="thumb-wrapper">
-                        <img class="thumb"
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSCIDIbCVbsnQYeBqKi7-yTQpyeMCH02BEug&s"
-                            alt="thumb">
-                        <div class="badge-save-group" style="gap:12px;">
-                            <span class="course-badge beginner">Beginner</span>
-                            <button class="save-btn" aria-label="Save course">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                    {{-- /* Sidebar - Kalender Events */ --}}
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Events</h5>
+                            <button class="btn btn-sm p-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#999"
+                                    class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+                                    <path
+                                        d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
                                 </svg>
                             </button>
                         </div>
-                    </div>
 
-                    <div class="inner">
-                        <h5 class="title">Learn Artificial Intelligence Python</h5>
-                        <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                            incididun</p>
-                        <div class="tags"> <span class="tag">Programming</span> <span class="tag">AI</span>
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>118</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path
-                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                </svg>
-                                <span>5.0</span>
+                        <div class="d-flex justify-content-between text-center mb-4">
+                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Sun<br><span
+                                    class="fw-bold fs-6">21</span></div>
+                            <div class="p-2 rounded-4 text-white"
+                                style="font-size: 13px; background-color: #d8b4fe; color: #5b21b6 !important;">
+                                Mon<br><span class="fw-bold fs-6">22</span>
+                            </div>
+                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Tue<br><span
+                                    class="fw-bold fs-6">23</span></div>
+                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Wed<br><span
+                                    class="fw-bold fs-6">24</span></div>
+                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Thu<br><span
+                                    class="fw-bold fs-6">25</span></div>
+                        </div>
+
+                        <div class="d-flex flex-column gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 45px; height: 45px; background-color: #eef2ff; color: #6366f1;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-question-lg" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M4.475 5.458c-.284 0-.514-.237-.47-.517C4.28 3.24 5.576 2.5 7.5 2.5c1.689 0 2.974 1.25 3.816 2.485.68.997 1.419 2.627 1.615 4.58.113 1.127.154 2.144.05 2.875h-.002a.5.5 0 0 1-.995-.05c.097-.7.06-1.634-.047-2.676-.178-1.784-.866-3.18-1.423-3.992-.59-.855-1.549-1.662-2.828-1.662-1.311 0-2.383.91-2.91 2.444-.06.173-.289.338-.521.338Z" />
+                                        <path
+                                            d="M7.658 11.19c.72 0 1.299.566 1.299 1.296 0 .729-.58 1.299-1.3 1.299-.719 0-1.299-.57-1.299-1.299 0-.73.58-1.299 1.3-1.299Z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0" style="font-size: 14px;">UI Basics Quiz</h6>
+                                    <small class="text-muted" style="font-size: 12px;">5 quick MCQs on design.</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 45px; height: 45px; background-color: #fff7ed; color: #f97316;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                        class="bi bi-file-earmark-text" viewBox="0 0 16 16">
+                                        <path
+                                            d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5" />
+                                        <path
+                                            d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0" style="font-size: 14px;">Framer Homework</h6>
+                                    <small class="text-muted" style="font-size: 12px;">Make 3 Wireframes</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 45px; height: 45px; background-color: #ecfccb; color: #65a30d;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                        class="bi bi-code-square" viewBox="0 0 16 16">
+                                        <path
+                                            d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                                        <path
+                                            d="M6.854 4.646a.5.5 0 0 1 0 .708L4.207 8l2.647 2.646a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 0 1 .708 0m2.292 0a.5.5 0 0 0 0 .708L11.793 8l-2.647 2.646a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0" style="font-size: 14px;">CSS Live Code</h6>
+                                    <small class="text-muted" style="font-size: 12px;">Create interactive card</small>
+                                </div>
                             </div>
                         </div>
-                        <div class="author"> <img
-                                src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2"
-                                alt="Profile">
-                            <h6 class="mb-0" style="font-size:13px; font-weight:500;">Agnes Mauaja</h6>
-                            <div style="margin-left:auto; display:flex; align-items:center; gap:6px;"> <svg
-                                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                                    <path
-                                        d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445" />
-                                </svg> <span style="font-size:13px;">10 videos</span> </div>
-                        </div>
-                        <div class="progress-wrapper">
-                            <div class="progress">
-                                <div class="progress-bar"></div>
-                            </div>
-                            <p>30% selesai</p>
-                        </div>
-                        <button class="btn-lanjut">Lanjutkan</button>
                     </div>
-                </article>
-            </li>
-        </ul>
-    </section>
 
-    <section class="event">
-        <div class="header-card d-flex align-items-center justify-content-between" style="gap:16px;">
-            <h3 class="mb-0">Event Mendatang</h3>
-            <a href="{{ route('events.index') }}" class="see-more-link text-decoration-none">Lihat Lainnya &raquo;</a>
-        </div>
-        <div class="event-list">
-            @forelse($upcomingEvents as $event)
-                @php
-                    $startAt = null;
-                    if($event->event_date){
-                        $dateStr = $event->event_date->format('Y-m-d');
-                        if($event->event_time){
-                            // Ensure we have H:i:s
-                            $timeStr = method_exists($event->event_time,'format') ? $event->event_time->format('H:i:s') : (is_string($event->event_time)? $event->event_time : '00:00:00');
-                        } else {
-                            $timeStr = '00:00:00';
-                        }
-                        try { $startAt = \Carbon\Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (Exception $e) { $startAt = null; }
-                    }
-                @endphp
-                <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
-                    <div class="thumb-wrapper">
-                        @php $action = $event->manage_action ?? null; @endphp
-                        @if($action)
-                            <span class="manage-badge {{ $action === 'manage' ? 'manage' : 'create' }}">{{ $action === 'manage' ? 'Manage' : 'Create' }}</span>
-                        @endif
-                        @if($event->image_url)
-                            <img class="card-image-event" src="{{ $event->image_url }}" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/poster.png') }}'">
-                        @else
-                            <img class="card-image-event" src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}">
-                        @endif
-                        @php
-                            $showDiscountBadge = $event->hasDiscount() && $event->price > 0 && $event->price > $event->discounted_price;
-                            $percentOff = $showDiscountBadge ? round((($event->price - $event->discounted_price) / $event->price) * 100) : 0;
-                        @endphp
-                        @if($showDiscountBadge && $percentOff > 0)
-                            <span class="discount-badge">{{ $percentOff }}% off</span>
-                        @endif
-                        <div class="badge-save-group" style="gap:12px;">
-                            <button class="save-btn" aria-label="Save event" type="button">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                    {{-- /* Sidebar - Statistik Belajar */ --}}
+                    <div class="mb-4">
+                        <h5 class="fw-bold mb-3" style="color: var(--navy);">Statistik Belajar</h5>
+
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 50px; height: 50px; background-color: #e0e7ff;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--primary)"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-0" style="font-size: 12px;">Kehadiran</h6>
+                                    <h4 class="fw-bold mb-0">90%</h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 50px; height: 50px; background-color: #fef9c3;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#ca8a04"
+                                        class="bi bi-file-earmark-text-fill" viewBox="0 0 16 16">
+                                        <path
+                                            d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M4.5 9a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 11a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 13a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-0" style="font-size: 12px;">Tugas & Ujian</h6>
+                                    <h4 class="fw-bold mb-0">85%</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- /* Sidebar - Chart Waktu Belajar */ --}}
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Waktu Belajar</h5>
+                            <select class="form-select form-select-sm border-0 bg-light rounded-pill"
+                                style="width: auto; font-size: 12px; font-weight: 500;">
+                                <option>Minggu Ini</option>
+                                <option>Bulan Ini</option>
+                            </select>
+                        </div>
+
+                        <div style="height: 200px; width: 100%;">
+                            <canvas id="learningChart"></canvas>
+                        </div>
+                    </div>
+
+                    {{-- /* Sidebar - Topik Populer */ --}}
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Topik Populer</h5>
+                            <button class="btn btn-sm p-0 text-muted">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                    class="bi bi-three-dots" viewBox="0 0 16 16">
+                                    <path
+                                        d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
                                 </svg>
                             </button>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <h4>{{ $event->title }}</h4>
-                        <div class="tags">
-                            @if(!empty($event->jenis))
-                                <span class="tag">{{ Str::limit(trim($event->jenis), 18) }}</span>
-                            @endif
-                            @if(!empty($event->materi))
-                                <span class="tag">{{ Str::limit(trim($event->materi), 18) }}</span>
-                            @endif
-                            <div class="meta" style="margin-left:auto; gap:6px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                </svg>
-                                <span>{{ $event->registrations_count ?? 0 }}</span>
-                            </div>
-                        </div>
-                        <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description, '<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
-                        <div class="keterangan keterangan-row">
-                            <div class="keterangan-item">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16">
-                                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                                </svg>
-                                <span>{{ $event->event_date?->format('d F Y') }}</span>
-                            </div>
-                            <div class="keterangan-item">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                                </svg>
-                                <span>{{ $event->location ? ($event->event_time ? $event->location.' • '.$event->event_time?->format('H:i').' WIB' : $event->location) : '-' }}</span>
-                            </div>
-                        </div>
-                        @if($startAt)
-                        <div class="countdown-wrapper" data-countdown-wrapper>
-                            <span class="countdown-label">Mulai dalam:</span>
-                            <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}">--:--:--</span>
-                        </div>
-                        @endif
-                        <div class="price-row">
-                            <div class="price-col">
-                                @php
-                                    $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
-                                @endphp
-                                @if((int)$finalPrice === 0)
-                                    @if($event->hasDiscount() && (int)$event->price > 0)
-                                        <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                    @endif
-                                    <span class="price-now price-free" aria-label="Gratis">FREE</span>
-                                @else
-                                    @if($event->hasDiscount())
-                                        <span class="price-old">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
-                                        <span class="price-now">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
-                                    @else
-                                        <span class="price-now">Rp{{ number_format($finalPrice, 0, ',', '.') }}</span>
-                                    @endif
-                                @endif
-                            </div>
-                            @php $registered = !empty($event->is_registered); @endphp
-                            <button class="btn-register btn {{ $registered ? 'btn-success' : 'btn-primary' }}" type="button" {{ $registered ? 'disabled' : '' }}>
-                                {{ $registered ? 'Anda Terdaftar' : 'Daftar' }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="text-center py-5" style="grid-column:1/-1;">
-                    <h5 class="mb-3">Belum ada event tersedia</h5>
-                    <p class="text-muted">Event akan segera hadir!</p>
-                </div>
-            @endforelse
-        </div>
-    </section>
 
-    <section class="pelatihan">
-        <div class="section-title">
-            <h3>Jenis & Materi Pelatihan</h3>
-            <h6>Data diambil otomatis dari event yang tersedia</h6>
-        </div>
-        <ul class="kategori-list">
-            @php $hasAny = false; @endphp
-            @foreach(($jenisList ?? []) as $jenis)
-                @php $hasAny = true; @endphp
-                <li><div class="kategori-item">{{ $jenis }}</div></li>
-            @endforeach
-            @foreach(($materiList ?? []) as $materi)
-                @php $hasAny = true; @endphp
-                <li><div class="kategori-item">{{ $materi }}</div></li>
-            @endforeach
-            @if(!$hasAny)
-                <li style="grid-column:1/-1;">
-                    <div class="kategori-item">Belum ada data jenis/materi event.</div>
-                </li>
-            @endif
-        </ul>
-    </section>
+                        <div class="d-flex flex-column gap-3">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                            <a href="#"
+                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
+                                style="transition: 0.2s;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 48px; height: 48px; background-color: #fce7f3; color: #db2777;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-palette-fill" viewBox="0 0 16 16">
+                                        <path
+                                            d="M12.433 10.07C14.133 10.585 16 11.15 16 8a8 8 0 1 0-8 8c1.996 0 1.826-1.504 1.649-3.08-.124-1.101-.252-2.237.351-2.92.465-.527 1.42-.237 2.433.07zM8 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 0 3zm.5 6.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">UI/UX Design</h6>
+                                    <small class="text-muted" style="font-size: 12px;">120 Courses</small>
+                                </div>
+                                <div class="text-muted">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                            </a>
+
+                            <a href="#"
+                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
+                                style="transition: 0.2s;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 48px; height: 48px; background-color: #e0f2fe; color: #0284c7;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-code-slash" viewBox="0 0 16 16">
+                                        <path
+                                            d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Web Development</h6>
+                                    <small class="text-muted" style="font-size: 12px;">95 Courses</small>
+                                </div>
+                                <div class="text-muted">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                            </a>
+
+                            <a href="#"
+                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
+                                style="transition: 0.2s;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 48px; height: 48px; background-color: #dcfce7; color: #16a34a;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-graph-up-arrow" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M0 0h1v15h15v1H0V0Zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5Z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Data Science</h6>
+                                    <small class="text-muted" style="font-size: 12px;">80 Courses</small>
+                                </div>
+                                <div class="text-muted">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                            </a>
+
+                            <a href="#"
+                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
+                                style="transition: 0.2s;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width: 48px; height: 48px; background-color: #fef3c7; color: #d97706;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-megaphone-fill" viewBox="0 0 16 16">
+                                        <path
+                                            d="M13 2.5a1.5 1.5 0 0 1 3 0v11a1.5 1.5 0 0 1-3 0v-11zm-1 .724c-2.067.95-4.539 1.481-7 1.656v6.237a25.222 25.222 0 0 1 1.088.085c2.053.204 4.038.668 5.912 1.56V3.224zm-8 7.841V4.934c-.68.027-1.399.043-2.008.053A2.02 2.02 0 0 0 0 7v2c0 1.106.896 1.996 1.994 2.009a68.14 68.14 0 0 1 .496.008 64 64 0 0 1 1.51.048zm1.39 1.081c.285.021.569.047.85.078l.253 1.69a1 1 0 0 1-.983 1.187h-.548a1 1 0 0 1-.916-.599l-1.314-2.48a65.81 65.81 0 0 1 1.692.064c.327.017.65.037.966.06z" />
+                                    </svg>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Digital Marketing</h6>
+                                    <small class="text-muted" style="font-size: 12px;">65 Courses</small>
+                                </div>
+                                <div class="text-muted">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                            </a>
+
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    @include('partials.footer-after-login')
+
+    {{-- /* Script - Library Chart.js untuk Visualisasi Data */ --}}
+    {{--
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script> --}}
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <script>
-        // Submit search to redirect route on icon click or Enter
-        (function(){
-            const form = document.querySelector('.search-banner-form');
-            const input = document.getElementById('site-search');
-            const trigger = document.getElementById('search-submit-trigger');
-            function submitIfNotEmpty(){
-                if(!input) return;
-                const q = (input.value || '').trim();
-                if(q.length === 0){ input.focus(); return; }
-                form?.submit();
-            }
-            trigger?.addEventListener('click', submitIfNotEmpty);
-            trigger?.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); submitIfNotEmpty(); }});
-            input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); submitIfNotEmpty(); }});
-        })();
-    </script>
-    <script>
-        const hoursCtx = document.getElementById('hoursChart');
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById('learningChart').getContext('2d');
 
-        new Chart(hoursCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                datasets: [{
-                        label: 'Study',
-                        data: [40, 20, 65, 35, 15],
-                        backgroundColor: '#F4C430'
-                    },
-                    {
-                        label: 'Online Test',
-                        data: [30, 20, 20, 25, 10],
-                        backgroundColor: '#e6e6e6'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        stacked: true
-                    },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        ticks: {
-                            callback: value => value + ' Hr'
-                        }
-                    }
+            // Data Dummy (Jam Belajar)
+            const dataValues = [4, 6, 8.5, 5, 7, 3, 2];
+
+            // Logika Warna (Sesuai desain Anda: Rab & Sel berwarna, sisanya abu)
+            // Rab = Index 2 (Highest), Sel = Index 1
+            const backgroundColors = dataValues.map((value, index) => {
+                if (index === 2) return '#f4c430'; // Secondary/Yellow (Highest)
+                if (index === 1) return '#51376c'; // Primary/Purple
+                return '#e2e8f0'; // Grey (Default)
+            });
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                    datasets: [{
+                        label: 'Jam Belajar',
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderRadius: 8, // Membuat sudut bar membulat
+                        borderSkipped: false,
+                        barThickness: 25, // Lebar batang
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            pointStyle: 'rectRounded'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }, // Sembunyikan legenda
+                        tooltip: {
+                            backgroundColor: '#2e2050',
+                            titleFont: { family: 'Poppins' },
+                            bodyFont: { family: 'Poppins' },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return context.raw + ' Jam';
+                                }
+                            }
                         }
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: context => context.parsed.y + ' Hr'
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                borderDash: [5, 5], // Garis putus-putus
+                                drawBorder: false,
+                                color: '#f1f5f9'
+                            },
+                            ticks: {
+                                font: { family: 'Poppins', size: 10 },
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: { display: false }, // Hilangkan garis vertikal
+                            ticks: {
+                                font: { family: 'Poppins', size: 11 },
+                                color: '#64748b'
+                            }
                         }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
                     }
                 }
-            }
+            });
         });
     </script>
-    <script>
-        
-        (function(){
-            function formatDiff(totalSec){
-                if(totalSec <= 0) return 'Dimulai';
-                let sec = totalSec;
-                const days = Math.floor(sec/86400); sec%=86400;
-                const hours = Math.floor(sec/3600); sec%=3600;
-                const minutes = Math.floor(sec/60);
-                if(minutes === 0 && hours === 0 && days === 0) return '< 1 menit';
-                const parts = [];
-                if(days > 0) parts.push(days + ' hari');
-                if(hours > 0 || days > 0) parts.push(hours + ' jam');
-                parts.push(minutes + ' menit');
-                return parts.join(' ');
-            }
-            function update(){
-                const now = Math.floor(Date.now()/1000);
-                document.querySelectorAll('[data-countdown]').forEach(el=>{
-                    const start = parseInt(el.getAttribute('data-start-ts'),10);
-                    if(!start) return;
-                    const diff = start - now;
-                    if(diff <= 0){
-                        el.textContent = 'Dimulai';
-                        el.classList.add('started');
-                        return;
-                    }
-                    el.textContent = formatDiff(diff);
-                });
-            }
-            update();
-            setInterval(update,1000);
-            // Add click navigation for event cards
-            document.querySelectorAll('.event-list .card-event[data-detail-url]').forEach(card => {
-                const url = card.getAttribute('data-detail-url');
-                if(!url) return;
-                card.addEventListener('click', () => { window.location = url; });
-            });
-        })();
-    </script>
-@include('partials.footer-before-login')
 </body>
 
 </html>
