@@ -36,5 +36,10 @@ class PublicPagesController extends Controller
 
         return back()->with('success', 'Terima kasih! Pesan Anda sudah terkirim dan akan kami tindak lanjuti.');
     }
+
+    public function guide()
+    {
+        return view('public.guide');
+    }
 }
 
