@@ -253,6 +253,7 @@
         const fullName = form.querySelector('input[name="full_name"]');
         const dial = form.querySelector('select[name="dial_code"]');
         const wa = form.querySelector('input[name="whatsapp"]');
+        const proof = form.querySelector('input[name="payment_proof"]');
         const btn = form.querySelector('.btn-pay');
         const isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
 
@@ -263,7 +264,8 @@
             const nameOk = fullName && fullName.value.trim().length >= 3;
             const dialOk = dial && dial.value.trim() !== '';
             const waOk = wa && isValidPhone(wa.value);
-            const ok = nameOk && dialOk && waOk;
+            const proofOk = proof && proof.files.length > 0;
+            const ok = nameOk && dialOk && waOk && proofOk;
             if(btn){ btn.disabled = !ok; btn.style.opacity = ok ? '1' : '0.5'; }
             return ok;
         }
@@ -272,6 +274,7 @@
             if(fullName) fullName.addEventListener(evt, validate);
             if(dial) dial.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
+            if(proof) proof.addEventListener(evt, validate);
         });
 
         form.addEventListener('submit', function(e){

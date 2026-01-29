@@ -389,12 +389,17 @@ class EventController extends Controller
         }
         $existing = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->first();
         if($existing){
-            return response()->json([
-                'status' => 'already',
-                'message' => 'Sudah terdaftar',
-                'event_title' => $event->title,
-                'redirect' => route('events.show', $event)
-            ]);
+            if($existing->status === 'rejected'){
+                // Allow re-registration: delete old rejected record
+                $existing->delete();
+            } else {
+                return response()->json([
+                    'status' => 'already',
+                    'message' => 'Sudah terdaftar',
+                    'event_title' => $event->title,
+                    'redirect' => route('events.show', $event)
+                ]);
+            }
         }
         // Hitung final price (sesudah diskon bila ada)
         $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
@@ -470,6 +475,7 @@ class EventController extends Controller
         $validated = $request->validate([
             'virtual_background' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
             'certificate' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
+            'attendance' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
         ]);
 
         $updates = [];
@@ -478,6 +484,9 @@ class EventController extends Controller
         }
         if ($request->hasFile('certificate')) {
             $updates['certificate_path'] = $request->file('certificate')->store('events/docs', 'public');
+        }
+        if ($request->hasFile('attendance')) {
+            $updates['attendance_path'] = $request->file('attendance')->store('events/docs', 'public');
         }
 
         if (!empty($updates)) {
@@ -650,7 +659,15 @@ class EventController extends Controller
         if($registration->event_id !== $event->id){
             return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
         }
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $reason = $request->input('reason');
+
         $registration->status = 'rejected';
+        $registration->rejection_reason = $reason;
         $registration->payment_verified_at = now();
         $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
         $registration->save();
@@ -660,6 +677,7 @@ class EventController extends Controller
             $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
             foreach ($manuals as $m) {
                 $m->status = 'rejected';
+                $m->note = $reason; // Save reason to manual payment note as well if applicable
                 $m->save();
             }
         } catch (\Throwable $e) { /* ignore */ }
@@ -668,13 +686,13 @@ class EventController extends Controller
             UserNotification::create([
                 'user_id' => $registration->user_id,
                 'type' => 'event_registration_rejected',
-                'title' => 'Pembayaran Ditolak',
-                'message' => 'Pembayaran Anda untuk event "'.$event->title.'" telah ditolak oleh admin. Silakan unggah bukti yang valid atau hubungi penyelenggara.',
+                'title' => 'Pendaftaran Ditolak',
+                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. Alasan: ' . $reason,
                 'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
                 'expires_at' => now()->addDays(14),
             ]);
         } catch(\Throwable $e) { /* ignore notification errors */ }
 
-        return back()->with('success', 'Pendaftaran ditolak. Pengguna diberi tahu.');
+        return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
     }
 }
