@@ -257,10 +257,10 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     width: 70%;
 }
 
-/* Premium Search Input */
+/* Premium Search Input - Fluid for Laptops */
 .search-form-premium {
     position: relative;
-    width: 280px;
+    width: clamp(180px, 20vw, 280px);
 }
 
 .nav-input-premium {
