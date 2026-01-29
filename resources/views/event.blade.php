@@ -208,6 +208,7 @@
             // Pastikan variabel $events tersedia dari PublicEventController.
             // Jika halaman ini dipakai reusable dan hanya punya $upcomingEvents, fallback sederhana.
             $loopEvents = isset($events) ? $events : ($upcomingEvents ?? collect());
+            $separatorShown = false;
         @endphp
         @forelse($loopEvents as $event)
             @php
@@ -241,6 +242,15 @@
                     elseif($nowTs->gt($endAt)) $status = 'finished';
                 }
             @endphp
+            @if(!$separatorShown && $status === 'finished' && !$loop->first)
+                <div style="grid-column: 1 / -1; margin: 30px 0 20px; text-align: center; position: relative;">
+                    <hr style="border-top: 2px solid #e9ecef; margin: 0; opacity: 1;">
+                    <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 16px; color: #6c757d; font-weight: 500; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Event Telah Selesai
+                    </span>
+                </div>
+                @php $separatorShown = true; @endphp
+            @endif
             <div class="card-event" @if($startAt) data-event-start-ts="{{ $startAt->timestamp }}" @endif data-status="{{ $status }}" data-detail-url="{{ route('events.show',$event) }}" style="cursor:pointer;">
                 <div class="thumb-wrapper">
                     @php $action = $event->manage_action ?? null; @endphp
