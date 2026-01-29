@@ -7,7 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Reseller IdSpora</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
         integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
@@ -79,11 +79,11 @@
             </div> --}}
             <!-- End of Card for Target Komisi Bulan Ini -->
 
-            <!-- Withdraw Section -->
+            <!-- Withdraw Komisi Content -->
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body p-4 mt-2">
                     <h5 class="mb-3 d-flex align-items-start gap-2">
-                        <i class="bi bi-cash-coin text-warning fs-1"></i>
+                        <i class="bi bi-cash-coin text-warning fs-2"></i>
                         <span class="fw-bold">Withdraw Komisi</span>
                     </h5>
 
@@ -103,7 +103,7 @@
                         </div>
 
                         <div class="col-md-4">
-                            <div class="small text-muted mt-2">
+                            <div class="text-muted mt-2 mb-2 border border-warning rounded-3 p-2 text-center">
                                 Minimal penarikan Rp 50.000
                             </div>
                             <button class="btn btn-warning px-5 py-2 w-100 fw-bold" data-bs-toggle="modal"
@@ -177,6 +177,8 @@
                 <div class="card-body mt-3 mb-2">
                     <h5 class="fw-bold"><i class="bi bi-megaphone-fill text-warning text-secondary me-2"></i>Referral
                         Tools</h5>
+                    
+                    <!-- Referral Input Fields (Code, Link, Caption) -->
                     <div class="row g-4 mt-1 align-items-end">
                         <div class="col-lg-4">
                             <label for="referralCode"
@@ -225,6 +227,7 @@
                         </div>
                     </div>
                     <hr>
+                    <!-- How It Works Section -->
                     <h5 class="card-title mb-3">How It Works</h5>
                     <div class="row row-cols-1 g-4 mt-1">
                         <div class="col-lg-4 text-center">
@@ -253,7 +256,7 @@
 
             <!-- Recent Referrals Table-->
             <div class="row g-4 mb-4">
-
+                {{-- Level Section --}}
                 <div class="col-lg-4">
                     <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body p-4">
@@ -279,8 +282,11 @@
                                     <span>Progress ke Silver</span>
                                     <span class="text-warning">36 lagi</span>
                                 </div>
-                                <div class="progress rounded-pill" style="height: 8px; background-color: #f0f0f0;">
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 24%"></div>
+                                <div class="progress" role="progressbar" aria-label="Warning Animated striped"
+                                    aria-valuenow="24" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+                                        style="width: 24%">
+                                    </div>
                                 </div>
                             </div>
 
@@ -291,7 +297,7 @@
                                 <div
                                     class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center">
-                                        <i class="bi bi-star-fill text-warning me-2"></i>
+                                        <i class="bi bi-star text-warning me-2"></i>
                                         <div class="lh-1">
                                             <span class="d-block fw-bold small text-dark">Bronze (0-50)</span>
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 10%</span>
@@ -314,7 +320,7 @@
                                 <div
                                     class="p-2 rounded-3 border d-flex justify-content-between align-items-center opacity-50">
                                     <div class="d-flex align-items-center">
-                                        <i class="bi bi-star text-secondary me-2"></i>
+                                        <i class="bi bi-star-fill text-secondary me-2"></i>
                                         <div class="lh-1">
                                             <span class="d-block fw-bold small text-dark">Gold (151+)</span>
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 15%</span>
@@ -329,6 +335,7 @@
                     </div>
                 </div>
 
+                {{-- Top Resellers Section --}}
                 <div class="col-lg-4">
                     <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body p-4 d-flex flex-column">
@@ -410,7 +417,8 @@
                                 </li>
                             </ul>
                             <hr>
-                            <div class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
+                            <div
+                                class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
                                 <div class="text-dark fst-italic me-2" style="min-width: 30px;">#50</div>
                                 <div class="rounded-circle bg-white text-warning border border-warning fw-bold d-flex align-items-center justify-content-center me-3"
                                     style="width: 40px; height: 40px;">
@@ -423,13 +431,15 @@
                                 <div class="d-flex flex-column align-items-end gap-1">
                                     <span class="badge bg-white text-warning border border-warning rounded-pill"
                                         style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
-                                    <span class="badge bg-light text-dark border border-warning rounded-pill">Rp 50k</span>
+                                    <span class="badge bg-light text-dark border border-warning rounded-pill">Rp
+                                        50k</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
                     <div class="card h-100 border-0 shadow-sm rounded-4">
                         <div class="card-body p-4 d-flex flex-column">
@@ -547,8 +557,8 @@
                             </div>
                             <hr>
                             <div class="mt-3">
-                                <button class="btn btn-warning w-100 rounded-pill fw-bold text-dark shadow-sm py-2">
-                                    <i class="bi bi-cloud-arrow-down-fill me-2"></i>Download Laporan
+                                <button class="btn btn-warning w-100 fw-bold text-dark shadow-sm py-2">
+                                    <i class="bi bi-cloud-arrow-down-fill me-3"></i>Download Laporan
                                 </button>
                             </div>
 
