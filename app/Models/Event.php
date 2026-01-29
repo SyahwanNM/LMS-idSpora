@@ -102,6 +102,11 @@ class Event extends Model
     }
 
     // Relationship: event has many registrations
+    public function registrationsActive()
+    {
+        return $this->hasMany(EventRegistration::class)->where('status', 'active');
+    }
+
     public function registrations()
     {
         return $this->hasMany(EventRegistration::class);
