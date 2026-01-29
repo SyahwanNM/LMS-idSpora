@@ -179,6 +179,8 @@
             .stars { user-select: none; }
             .stars span { cursor: pointer; font-size: 20px; color: #c9c9c9; margin-right: 2px; }
             .stars span.selected { color: #FFD600; }
+            /* Push icons down slightly to align with text */
+            .info-item svg { margin-top: 12px; }
         </style>
 
     </head>

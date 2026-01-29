@@ -191,14 +191,6 @@ class ProfileController extends Controller
             ->with(['event', 'user'])
             ->orderBy('created_at', 'desc')
             ->get();
-
-        // Saved events (Event Tersimpan)
-        $savedEvents = \DB::table('user_saved_events')
-            ->where('user_id', $user->id)
-            ->join('events', 'user_saved_events.event_id', '=', 'events.id')
-            ->select('events.*', 'user_saved_events.created_at as saved_at')
-            ->orderBy('user_saved_events.created_at', 'desc')
-            ->get();
         
         // Get all payments for this user
         $payments = \App\Models\Payment::where('user_id', $user->id)
@@ -234,8 +226,7 @@ class ProfileController extends Controller
             'freeEvents',
             'attendedEvents',
             'certifiedEvents',
-            'feedbackSubmitted',
-            'savedEvents'
+            'feedbackSubmitted'
         ));
     }
     
