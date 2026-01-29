@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>History Event - idSPORA</title>
+    <title>Aktivitas & Histori - idSPORA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
@@ -20,184 +19,133 @@
         body {
             background-color: #f8fafc;
             min-height: 100vh;
-            padding-top: 70px;
+            padding-top: 85px; 
         }
-        
-        .navbar {
-            z-index: 1050 !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
+
+        /* Activity page: centered, not full-width */
+        .activity-container {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 1.25rem 1rem 2.75rem;
         }
-        
-        .navbar-gradient {
-            background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        .navbar-gradient .navbar-brand,
-        .navbar-gradient .nav-link,
-        .navbar-gradient .navbar-text {
-            color: #fff !important;
-        }
-        
-        .navbar-gradient .nav-link:hover,
-        .navbar-gradient .nav-link:focus {
-            color: #ffe8b3 !important;
-        }
-        
-        .navbar-gradient .nav-link.active {
-            font-weight: 600;
-            color: #ffe8b3 !important;
-        }
-        
-        #notifBtn,
-        #userDropdown {
-            color: white !important;
-        }
-        
-        #notifBtn:hover,
-        #userDropdown:hover {
-            color: #ffe8b3 !important;
-        }
-        
-        .navbar .form-control {
-            color: white !important;
-        }
-        
-        .navbar .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-        
-        .navbar .container-fluid {
-            display: flex !important;
-            visibility: visible !important;
-        }
-        
-        .navbar-brand,
-        .navbar-nav,
-        .navbar-collapse {
-            display: flex !important;
-            visibility: visible !important;
-        }
-        
-        .glass-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            border-radius: 0.75rem;
-        }
-        
-        .menu-item {
-            transition: all 0.2s ease;
-            color: #374151;
-            text-decoration: none;
-        }
-        
-        .menu-item:hover:not(.active) {
-            background-color: #f9fafb;
-        }
-        
-        .menu-item.active {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-left-color: #2563eb !important;
-        }
-        
-        .glass-sidebar {
+
+        .activity-card {
             background: #ffffff;
             border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border: 1px solid #eef2f7;
+            border-radius: 18px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .tab-button {
+            padding: 0.625rem 1.25rem;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 90px;
-            left: 0;
-            height: fit-content;
-            max-height: calc(100vh - 100px);
-            overflow-y: auto;
-            z-index: 100;
-            width: 280px;
-        }
-        
-        .sidebar-header {
-            padding: 1.25rem 1.25rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .main-content-with-sidebar {
-            padding: 2rem;
-            flex: 1;
-        }
-        
-        .flex.min-h-screen {
-            align-items: flex-start;
-        }
-        
-        /* Sidebar Menu Item - Minimalist Design */
-        .menu-item {
-            transition: all 0.2s ease;
-            color: #374151;
-            text-decoration: none;
-        }
-        
-        .menu-item:hover:not(.active) {
-            background-color: #f9fafb;
-        }
-        
-        .menu-item.active {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-left-color: #2563eb !important;
-        }
-        
-        
-        .event-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            transition: all 0.3s;
-        }
-        
-        .event-card:hover {
-            background: #f9fafb;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .gold-accent {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
-        }
-        
-        .gold-accent:hover {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
-            transform: translateY(-1px);
-        }
-        
-        .badge-status {
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
             font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+            color: #64748b;
         }
-        
-        .badge-status.active {
+
+        .tab-button.active {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .activity-item-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .activity-item-card:hover {
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .status-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge.completed {
             background: #d1fae5;
             color: #065f46;
         }
-        
-        .badge-status.pending {
-            background: #fef3c7;
-            color: #92400e;
+
+        .status-badge.upcoming {
+            background: #dbeafe;
+            color: #1e40af;
         }
-        
-        .badge-status.canceled {
-            background: #fee2e2;
-            color: #991b1b;
+
+        .btn-certificate {
+            background: #4f46e5;
+            color: #ffffff;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
         }
-        
+
+        .btn-certificate:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .btn-feedback {
+            background: #fbbf24;
+            color: #111827;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-feedback:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+
+        .btn-detail {
+            background: #f1f5f9;
+            color: #374151;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-detail:hover {
+            background: #e2e8f0;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -212,48 +160,13 @@
         .fade-in {
             animation: fadeIn 0.5s ease-out;
         }
-        
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            body {
-                padding-top: 70px;
-            }
-            .flex.min-h-screen {
-                flex-direction: column;
-            }
-            .glass-sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                top: 0;
-                margin: 1rem;
-                max-height: none;
-            }
-            .main-content-with-sidebar {
-                margin-left: 0;
-                margin-top: 0;
-                padding: 1.5rem;
-            }
-        }
-        
+
         @media (max-width: 768px) {
-            body {
-                padding-top: 70px;
+            .activity-container {
+                padding: 1rem 0.75rem 2rem;
             }
-            .flex.min-h-screen {
-                flex-direction: column;
-            }
-            .glass-sidebar {
-                width: 100%;
-            }
-            .main-content-with-sidebar {
+            .stat-card {
                 padding: 1rem;
-            }
-            .glass-card {
-                padding: 1.5rem !important;
-            }
-            .menu-item {
-                padding: 0.75rem !important;
             }
         }
     </style>
@@ -261,83 +174,11 @@
 <body>
     @include("partials.navbar-after-login")
     
-    <div class="flex min-h-screen" style="align-items: flex-start;">
-        <!-- Minimalist Sidebar -->
-        <aside class="glass-sidebar flex flex-col" style="width: 280px; background: #ffffff; flex-shrink: 0; margin: 2rem 0 2rem 2rem;">
-            <!-- Sidebar Header -->
-            <div class="sidebar-header" style="padding: 1.25rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
-                <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Navigasi Profil</h3>
-            </div>
-            
-            <!-- Badge Display in Sidebar -->
-            @php
-                $user = Auth::user();
-                $badgeInfo = $user->badge_info;
-                $nextBadgeInfo = $user->next_badge_info;
-                $currentPoints = $user->points ?? 0;
-                $currentBadge = $user->badge ?? 'beginner';
-            @endphp
-            <div class="sidebar-badge" style="margin: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
-                        <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                            <div style="color: #111827; font-size: 0.875rem; font-weight: 600;">
-                                {{ $badgeInfo['name'] }}
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="bi bi-star-fill" style="color: #fbbf24; font-size: 0.75rem;"></i>
-                            <span style="color: #374151; font-size: 0.75rem; font-weight: 500;">
-                                {{ number_format($currentPoints, 0, ',', '.') }} Poin
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Progress to Next Badge -->
-                @if($nextBadgeInfo)
-                @php
-                    $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
-                @endphp
-                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
-                            Menuju {{ $nextBadgeInfo['name'] }}
-                        </span>
-                        <span style="color: #111827; font-size: 0.75rem; font-weight: 700;">
-                            {{ $nextBadgeInfo['points_needed'] }} poin
-                        </span>
-                    </div>
-                    <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
-                        <div style="height: 100%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); width: {{ $progressPercent }}%; border-radius: 3px; transition: width 0.6s ease;"></div>
-                    </div>
-                </div>
-                @else
-                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
-                    <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
-                        🏆 Level tertinggi!
-                    </span>
-                </div>
-                @endif
-            </div>
-            
-            <!-- Menu Items -->
-            <nav style="padding: 0.5rem 0;">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
-                    <i class="bi bi-person" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
-                    <span style="font-size: 0.9375rem; font-weight: 500;">Profil Saya</span>
-                </a>
-                
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
-                    <i class="bi bi-clock-history" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
-                    <span style="font-size: 0.9375rem; font-weight: 500;">Aktivitas Saya</span>
-                </a>
-            </nav>
-        </aside>
+    @php
+        $user = Auth::user();
+        $currentFilter = request()->get('filter', 'all');
         
+<<<<<<< Updated upstream
         <!-- Main Content -->
         <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
             <div class="max-w-6xl mx-auto fade-in">
@@ -462,35 +303,35 @@
                         </div>
                     @endif
                 </div>
+=======
+        // Filter registrations based on tab
+        $filteredRegistrations = $registrations->filter(function($reg) use ($currentFilter) {
+            if (!$reg->event) return false;
+            $event = $reg->event;
+            
+            if ($currentFilter === 'completed') {
+                return $event->isFinished() || !empty($reg->certificate_issued_at);
+            } elseif ($currentFilter === 'upcoming') {
+                return !$event->isFinished() && empty($reg->certificate_issued_at);
+            }
+            return true; // 'all'
+        });
+>>>>>>> Stashed changes
 
-                <script>
-                    function unsaveEvent(btn){
-                        try {
-                            var id = btn.getAttribute('data-event-id');
-                            btn.disabled = true;
-                            var original = btn.textContent;
-                            btn.textContent = 'Removing...';
-                            fetch('/events/' + id + '/save', {
-                                method: 'POST',
-                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest', 'Accept':'application/json' },
-                                credentials: 'same-origin'
-                            })
-                            .then(function(r){ return r.json().catch(function(){ return {success:false}; }); })
-                            .then(function(data){
-                                if(data && data.success){
-                                    // remove card from UI
-                                    var card = btn.closest('.event-card');
-                                    if(card) card.remove();
-                                } else {
-                                    btn.textContent = original;
-                                }
-                            })
-                            .catch(function(){ btn.textContent = original; })
-                            .finally(function(){ btn.disabled = false; });
-                        } catch(_e) { /* noop */ }
-                    }
-                </script>
+        // Calculate points earned from events
+        $pointsEarned = 0;
+        foreach ($registrations as $reg) {
+            if ($reg->event) {
+                if ($reg->event->price > 0) {
+                    $pointsEarned += 30; // Paid event
+                } else {
+                    $pointsEarned += 10; // Free event
+                }
+            }
+        }
+    @endphp
 
+<<<<<<< Updated upstream
                 <!-- Events List -->
                 @if($registrations->count() > 0)
                     <div class="space-y-4">
@@ -581,130 +422,215 @@
                                             @endif
                                         @endif
                                     </div>
+=======
+    <div class="activity-container fade-in">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+                <h1 class="text-4xl font-bold mb-2" style="color: #0f172a;">Aktivitas & Histori</h1>
+                <p class="text-base" style="color: #64748b;">Kelola semua sertifikat dan perkembangan belajarmu di sini.</p>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="flex gap-2 mt-4 md:mt-0">
+                <button class="tab-button {{ $currentFilter === 'all' ? 'active' : '' }}" onclick="filterActivities('all')">
+                    SEMUA
+                </button>
+                <button class="tab-button {{ $currentFilter === 'completed' ? 'active' : '' }}" onclick="filterActivities('completed')">
+                    SELESAI
+                </button>
+                <button class="tab-button {{ $currentFilter === 'upcoming' ? 'active' : '' }}" onclick="filterActivities('upcoming')">
+                    AKAN DATANG
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3" style="width: 48px; height: 48px; margin: 0 auto; background: #eef2ff; border-radius: 12px; color: #4f46e5;">
+                    <i class="bi bi-calendar-event" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">{{ $totalEvents }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Event Diikuti</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3" style="width: 48px; height: 48px; margin: 0 auto; background: #fff7ed; border-radius: 12px; color: #f59e0b;">
+                    <i class="bi bi-award" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">{{ $certifiedEvents }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Sertifikat</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3" style="width: 48px; height: 48px; margin: 0 auto; background: #e0f2fe; border-radius: 12px; color: #0ea5e9;">
+                    <i class="bi bi-chat-left-text" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">{{ $feedbackSubmitted }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Feedback</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3" style="width: 48px; height: 48px; margin: 0 auto; background: #fee2e2; border-radius: 12px; color: #ef4444;">
+                    <i class="bi bi-lightning-charge-fill" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">+{{ number_format($pointsEarned, 0, ',', '.') }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Poin Masuk</div>
+            </div>
+        </div>
+
+        <!-- Activity List -->
+        <div class="mb-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="bi bi-clock-history" style="font-size: 1.25rem; color: #4f46e5;"></i>
+                <h2 class="text-xl font-bold" style="color: #0f172a;">Daftar Aktivitas Terbaru</h2>
+            </div>
+
+            @if($filteredRegistrations->count() > 0)
+                <div class="space-y-4">
+                    @foreach($filteredRegistrations as $registration)
+                        @php
+                            $event = $registration->event;
+                            if (!$event) continue;
+                            
+                            $isFinished = $event->isFinished();
+                            $isCompleted = $isFinished || !empty($registration->certificate_issued_at);
+                            $isUpcoming = !$isFinished && empty($registration->certificate_issued_at);
+                            
+                            $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : null;
+                            $eventImage = $event->image_url ?? 'https://via.placeholder.com/120x80?text=Event';
+                            $mentorName = $event->speaker ?? 'Expert Industry Leader';
+                            
+                            $isCertificateReady = false;
+                            if($event->event_date) {
+                                $eventDateObj = \Carbon\Carbon::parse($event->event_date);
+                                $isCertificateReady = now()->greaterThanOrEqualTo($eventDateObj->copy()->addDays(3));
+                            }
+                        @endphp
+                        
+                        <div class="activity-item-card p-5">
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <!-- Image Thumbnail -->
+                                <div class="flex-shrink-0">
+                                    <img 
+                                        src="{{ $eventImage }}" 
+                                        alt="{{ $event->title }}"
+                                        class="w-full md:w-32 h-24 object-cover rounded-xl"
+                                        style="min-width: 120px;"
+                                        onerror="this.onerror=null; this.src='https://via.placeholder.com/120x80/4f46e5/ffffff?text={{ urlencode(substr($event->title, 0, 10)) }}';"
+                                    >
+>>>>>>> Stashed changes
                                 </div>
                                 
-                                <div class="flex items-center justify-between pt-4 border-t" style="border-color: #e5e7eb;">
-                                    <div class="flex items-center space-x-4 flex-wrap">
-                                        <!-- Status Indicators -->
-                                        <div class="flex items-center space-x-2">
-                                            @if($registration->attendance_status)
-                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #dcfce7; color: #166534;">
-                                                    <i class="bi bi-check-circle me-1"></i>Hadir
-                                                </span>
-                                            @else
-                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #fef2f2; color: #991b1b;">
-                                                    <i class="bi bi-x-circle me-1"></i>Belum Hadir
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            @if($registration->certificate_issued_at)
-                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #fef3c7; color: #92400e;">
-                                                    <i class="bi bi-award me-1"></i>Sertifikat
-                                                </span>
-                                            @else
-                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #f3f4f6; color: #6b7280;">
-                                                    <i class="bi bi-award me-1"></i>Belum Ada Sertifikat
-                                                </span>
-                                            @endif
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            @if($registration->feedback_submitted_at)
-                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #dbeafe; color: #1e40af;">
-                                                    <i class="bi bi-chat-left-text me-1"></i>Feedback Terkirim
-                                                </span>
-                                            @else
-                                                <span class="text-xs px-2 py-1 rounded-full" style="background: #f3f4f6; color: #6b7280;">
-                                                    <i class="bi bi-chat-left-text me-1"></i>Belum Feedback
-                                                </span>
-                                            @endif
-                                        </div>
-                                        @if($registration->certificate_number)
-                                            <span class="text-xs" style="color: #6b7280;">
-                                                <i class="bi bi-hash"></i> No. Sertifikat: {{ $registration->certificate_number }}
-                                            </span>
+                                <!-- Content -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <span class="status-badge {{ $isCompleted ? 'completed' : 'upcoming' }}">
+                                            {{ $isCompleted ? 'COMPLETED' : 'UPCOMING' }}
+                                        </span>
+                                        @if($eventDate)
+                                            <span class="text-sm" style="color: #64748b;">{{ $eventDate }}</span>
                                         @endif
                                     </div>
-                                    <div class="flex items-center space-x-3 flex-wrap">
-                                        @if($event)
+                                    
+                                    <h3 class="text-xl font-bold mb-2" style="color: #0f172a;">{{ $event->title }}</h3>
+                                    <p class="text-sm mb-4" style="color: #64748b;">Mentor: {{ $mentorName }}</p>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="flex flex-wrap gap-2">
+                                        @if($isCompleted && $isCertificateReady && Route::has('certificates.download'))
                                             <a 
+                                                href="{{ route('certificates.download', [$event, $registration]) }}" 
+                                                class="btn-certificate inline-flex items-center gap-2"
+                                                style="text-decoration: none;"
+                                            >
+                                                <i class="bi bi-download"></i>
+                                                Sertifikat
+                                            </a>
+                                        @endif
+                                        
+                                        @if($isCompleted && !$registration->feedback_submitted_at && Route::has('events.show'))
+                                            <a 
+                                                href="{{ route('events.show', $event) }}#feedback" 
+                                                class="btn-feedback inline-flex items-center gap-2"
+                                                style="text-decoration: none;"
+                                            >
+                                                <i class="bi bi-chat-left-text"></i>
+                                                Kirim Feedback
+                                            </a>
+                                        @endif
+                                        
+                                        @if($isUpcoming && Route::has('events.show'))
+                                            <a 
+<<<<<<< Updated upstream
                                                 href="{{ route('events.show', $event->id) }}" 
                                                 class="px-4 py-2 rounded-lg border-2 font-semibold transition-all duration-300 text-sm"
                                                 style="border-color: #d1d5db; color: #374151; text-decoration: none;"
                                                 onmouseover="this.style.backgroundColor='#f9fafb'"
                                                 onmouseout="this.style.backgroundColor='transparent'"
+=======
+                                                href="{{ route('events.show', $event) }}" 
+                                                class="btn-detail inline-flex items-center gap-2"
+                                                style="text-decoration: none;"
+>>>>>>> Stashed changes
                                             >
-                                                <i class="bi bi-eye mr-2"></i>Detail
+                                                Lihat Detail
                                             </a>
                                         @endif
                                         
-                                        @if($event && Route::has('certificates.show'))
+                                        @if($isCompleted && Route::has('events.show'))
                                             <a 
-                                                href="{{ route('certificates.show', [$event, $registration]) }}" 
-                                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 text-sm"
-                                                style="background: #535088; color: #f4d24b; text-decoration: none;"
-                                                onmouseover="this.style.filter='brightness(1.1)'"
-                                                onmouseout="this.style.filter='brightness(1)'"
+                                                href="{{ route('events.show', $event) }}" 
+                                                class="btn-detail inline-flex items-center gap-2"
+                                                style="text-decoration: none;"
                                             >
-                                                <i class="bi bi-eye mr-2"></i>
-                                                <span>@if($isCertificateReady) Lihat / Unduh Sertifikat @else Preview Sertifikat @endif</span>
+                                                Lihat Detail
                                             </a>
-                                        @endif
-                                        
-                                        @if($event && Route::has('certificates.download'))
-                                            @if($isCertificateReady)
-                                                <a 
-                                                    href="{{ route('certificates.download', [$event, $registration]) }}" 
-                                                    class="gold-accent px-4 py-2 rounded-lg text-gray-900 font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
-                                                    style="text-decoration: none;"
-                                                >
-                                                    <i class="bi bi-download"></i>
-                                                    <span>Download Sertifikat</span>
-                                                </a>
-                                            @else
-                                                <a 
-                                                    href="{{ route('certificates.download', [$event, $registration]) }}?force=1" 
-                                                    class="px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
-                                                    style="background: #f59e0b; color: #fff; text-decoration: none;"
-                                                    title="Download untuk testing (bypass H+3)"
-                                                >
-                                                    <i class="bi bi-download"></i>
-                                                    <span>Download (Testing)</span>
-                                                </a>
-                                            @endif
-                                        @endif
-                                        
-                                        @if($event && !$isCertificateReady)
-                                            <span 
-                                                class="px-4 py-2 rounded-lg font-semibold text-sm"
-                                                style="background: #f3f4f6; color: #9ca3af; cursor: not-allowed;"
-                                            >
-                                                <i class="bi bi-clock mr-2"></i>Sertifikat belum tersedia (H+3)
-                                            </span>
                                         @endif
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="glass-card rounded-2xl p-12 text-center">
-                        <i class="bi bi-calendar-x text-6xl mb-4" style="color: #d1d5db;"></i>
-                        <h3 class="text-xl font-bold mb-2" style="color: #111827;">Belum Ada Event</h3>
-                        <p class="text-sm mb-6" style="color: #6b7280;">Anda belum mengikuti event apapun</p>
-                        <a 
-                            href="{{ route('events.index') }}" 
-                            class="gold-accent px-6 py-3 rounded-xl text-gray-900 font-semibold inline-flex items-center space-x-2 transition-all duration-300"
-                            style="text-decoration: none;"
-                        >
-                            <i class="bi bi-calendar-plus"></i>
-                            <span>Lihat Event</span>
-                        </a>
-                    </div>
-                @endif
-            </div>
-        </main>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="activity-card p-12 text-center">
+                    <i class="bi bi-calendar-x text-6xl mb-4" style="color: #d1d5db;"></i>
+                    <h3 class="text-xl font-bold mb-2" style="color: #0f172a;">
+                        @if($currentFilter === 'completed')
+                            Belum Ada Aktivitas yang Selesai
+                        @elseif($currentFilter === 'upcoming')
+                            Belum Ada Aktivitas yang Akan Datang
+                        @else
+                            Belum Ada Aktivitas
+                        @endif
+                    </h3>
+                    <p class="text-sm mb-6" style="color: #64748b;">
+                        @if($currentFilter === 'all')
+                            Anda belum mengikuti event apapun
+                        @else
+                            Tidak ada aktivitas yang sesuai dengan filter ini
+                        @endif
+                    </p>
+                    @if($currentFilter !== 'all')
+                        <button onclick="filterActivities('all')" class="btn-certificate inline-flex items-center gap-2" style="text-decoration: none;">
+                            Lihat Semua Aktivitas
+                        </button>
+                    @endif
+                </div>
+            @endif
+        </div>
     </div>
+
+    <script>
+        function filterActivities(filter) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('filter', filter);
+            window.location.href = url.toString();
+        }
+    </script>
+    
     @include('partials.footer-after-login')
 </body>
 </html>

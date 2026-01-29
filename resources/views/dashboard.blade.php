@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -114,9 +113,7 @@
 </head>
 
 <body>
-    {{-- Navbar di include di dalam body --}}
-    @include('partials.navbar-after-login')
-
+    @include("partials.navbar-after-login")
     <div class="search-banner-container">
         <form class="search-banner-form" action="{{ route('events.searchRedirect') }}" method="get" autocomplete="off">
             <div class="search-wrap">
@@ -462,9 +459,59 @@
         </ul>
     </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <style>
+    /* === Dashboard Event Card Image Size (Reduced Slightly) & Horizontal Spacing === */
+    .event .event-list {row-gap:38px; padding:0 18px; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));}
+    @media (max-width: 576px){
+        .event .event-list {grid-template-columns: 1fr;} /* keep single column on very small devices */
+    }
+    .event .card-event .thumb-wrapper {position:relative;height:360px;} /* was 400px */
+    .event .card-image-event {width:100%;height:100%;object-fit:cover;}
+    .event .card-event .card-body {padding-top:20px;} /* slightly reduced */
+    @media (max-width:1200px){ .event .card-event .thumb-wrapper {height:340px;} }
+    @media (max-width:992px){ .event .card-event .thumb-wrapper {height:320px;} }
+    @media (max-width:768px){ .event .card-event .thumb-wrapper {height:260px;} }
+    /* Discount badge styling */
+    .event .card-event .thumb-wrapper {overflow:hidden;}
+    .event .card-event .discount-badge {
+        position:absolute;
+        bottom:12px;
+        left:12px;
+        background:#212f4d;
+        color:#d6bc3a;
+        font-size:13px;
+        font-weight:600;
+        padding:6px 10px 5px;
+        border-radius:6px;
+        line-height:1;
+        letter-spacing:.5px;
+        box-shadow:0 2px 6px rgba(0,0,0,.25);
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        text-transform:uppercase;
+    }
+    .see-more-link {font-size:14px; font-weight:500; color:#0d6efd; transition:color .25s;}
+    .see-more-link:hover {color:#0a58ca; text-decoration:underline;}
+    /* Manage/Create banner (small ribbon) */
+    .event .card-event .manage-badge {position:absolute; top:12px; left:12px; color:#fff; font-size:12px; font-weight:600; padding:5px 10px; border-radius:6px; line-height:1; letter-spacing:.5px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;}
+    .event .card-event .manage-badge.manage {background:#0d6efd;}
+    .event .card-event .manage-badge.create {background:#6f42c1;}
+    /* Countdown styles */
+    .countdown-wrapper {margin-top:10px; display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;}
+    .countdown-label {color:#555; font-weight:500;}
+    .countdown-timer {background:#212f4d; color:#ffd54f; padding:2px 8px; border-radius:4px; font-family:monospace; letter-spacing:1px; min-width:150px; text-align:center;}
+    .countdown-timer.started {background:#198754; color:#fff;}
+    .countdown-timer.expired {background:#6c757d; color:#fff;}
+    /* FREE price styling (matches landing page) */
+    .price-free {color:#15803d;font-weight:600;letter-spacing:.5px;background:#dcfce7;padding:4px 10px;border-radius:30px;font-size:.78rem;display:inline-block;line-height:1.05;box-shadow:0 0 0 1px #bbf7d0 inset;}
+    /* Event price styling */
+    .price-now:not(.price-free){ color:#ffd54f; font-weight:700; }
+    .price-old{ color:#6c757d; text-decoration: line-through; }
+        /* Tag badge background and text (speaker/location) */
+        .event .card-event .tags .tag { background-color:#E4E4E6 !important; color:#3B3B43; }
+    </style>
     <script>
         // Submit search to redirect route on icon click or Enter
         (function(){
