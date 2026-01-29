@@ -22,7 +22,7 @@ class DashboardController extends Controller
         // Event aktif: gunakan scope active agar yang sudah selesai (end_at < now) otomatis terhapus dari daftar.
         // Tetap ambil yang paling baru dibuat terlebih dahulu.
         $upcomingEvents = Event::active()
-            ->withCount('registrations')
+            ->withCount(['registrationsActive as registrations_count'])
             ->orderByDesc('created_at')
             ->limit(8)
             ->get();
