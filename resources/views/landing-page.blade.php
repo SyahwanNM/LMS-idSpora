@@ -14,7 +14,7 @@
             background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
             position: relative;
             overflow: hidden;
-            padding: 120px 0 80px;
+            padding: clamp(80px, 12vh, 140px) 0 clamp(40px, 8vh, 100px);
         }
         .hero-blob {
             position: absolute;
@@ -84,7 +84,7 @@
             transform: translateY(-5px);
         }
         .ec-thumb {
-            height: 220px;
+            height: clamp(180px, 20vh, 240px);
             position: relative;
             overflow: hidden;
         }
