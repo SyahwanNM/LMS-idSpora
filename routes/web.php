@@ -18,6 +18,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\PublicPagesController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -171,6 +172,11 @@ Route::get('/', function () {
     }
     return app(\App\Http\Controllers\LandingPageController::class)->index(request());
 })->name('landing-page');
+
+// Public pages
+
+Route::get('/kendala', [PublicPagesController::class, 'support'])->name('public.support');
+Route::post('/kendala', [PublicPagesController::class, 'storeSupport'])->name('public.support.store');
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function(Event $event) {

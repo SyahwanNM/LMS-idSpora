@@ -1,29 +1,119 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 
 :root {
-    --primary-gradient: radial-gradient(
-        circle at 50% 50%,
-        #51376c 0%,
-        #2e2050 100%
-    );
-    --primary: #51376c;
-    --primary-dark: #2e2050;
-    --secondary: #f4c430;
+    /* Brand Colors - Purple & Yellow Theme */
+    --primary: #6d28d9;
+    /* Purple 700 - Vibrant Purple */
+    --primary-dark: #4c1d95;
+    /* Purple 900 */
+    --primary-light: #8b5cf6;
+    /* Purple 500 */
+    --primary-subtle: #f3e8ff;
+    /* Purple 100 */
+
+    --secondary: #fbbf24;
+    /* Amber 400 - Vibrant Yellow/Gold */
+    --secondary-hover: #f59e0b;
+    /* Amber 500 */
+
+    --success: #10b981;
+    /* Emerald 500 */
     --danger: #ef4444;
-    --success: #22c55e;
-    --font-main: "Poppins";
+    /* Red 500 */
+    --info: #3b82f6;
+    /* Blue 500 */
+
+    /* Typography */
+    --font-main: 'Plus Jakarta Sans', 'Poppins', sans-serif;
+
+    /* Backgrounds & Text */
     --bg-main: #f8fafc;
+    /* Slate 50 */
+    --bg-surface: #ffffff;
+    --text-main: #1e1b4b;
+    /* Dark Purple/Navy for text */
+    --text-muted: #64748b;
+    /* Slate 500 */
 
-    --fs-title: 64px;
-    --fs-heading: 40px;
-    --fs-subheading: 32px;
-    --fs-body: 18px;
-    --fs-caption: 14px;
-    --fs-small: 12px;
+    /* Font Sizes */
+    --fs-title: clamp(2.5rem, 5vw, 4rem);
+    --fs-heading: clamp(2rem, 4vw, 3rem);
+    --fs-subheading: clamp(1.5rem, 3vw, 2.25rem);
+    --fs-body: 1rem;
 
-    --navy: #0b1b3f;
+    --navy: #1e1b4b;
+    /* Re-mapped to dark purple */
     --white: #fff;
-    --split: clamp(55px, 15vh, 120px);
+}
+
+/* LANDING PAGE UTILITIES */
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+}
+
+.shadow-soft {
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-hover {
+    transition: all 0.3s ease;
+}
+
+.shadow-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12);
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.section-padding {
+    padding: 80px 0;
+}
+
+/* BUTTONS REDESIGN */
+.btn-primary-new {
+    background: var(--primary);
+    color: white;
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary-new:hover {
+    background: var(--primary-dark);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+}
+
+.btn-outline-new {
+    background: transparent;
+    color: var(--primary);
+    padding: 12px 32px;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid var(--primary);
+}
+
+.btn-outline-new:hover {
+    background: var(--primary-subtle);
+    color: var(--primary-dark);
+    transform: translateY(-2px);
 }
 
 body.bg-split-horizontal {
@@ -74,22 +164,27 @@ body {
     padding: 20px;
     margin-top: -56px;
 }
+
 .navbar-admin ul {
     list-style: none;
     display: flex;
     gap: 50px;
     margin-top: 10px;
 }
+
 .navbar-admin li {
     color: white;
     display: flex;
 }
+
 .navbar-admin img {
     width: 80px;
 }
+
 .navbar-admin ul a {
     text-decoration: none;
 }
+
 /* CUSTOM BUTTON */
 .btn {
     border-radius: 10px;
@@ -146,7 +241,8 @@ body {
 
 .btn-outline-purple:active {
     color: #fff;
-    background-color: #3b2a57; /* slightly darker than var(--primary) */
+    background-color: #3b2a57;
+    /* slightly darker than var(--primary) */
     border-color: #3b2a57;
     transform: translateY(1px);
 }
@@ -401,7 +497,7 @@ body {
         max-width: 100vw;
     }
 
-    .testimoni-section .carousel .reviews > li {
+    .testimoni-section .carousel .reviews>li {
         flex: 0 1 100%;
         max-width: 360px;
     }
@@ -461,7 +557,7 @@ body {
     width: 100%;
 }
 
-.reviews > li {
+.reviews>li {
     flex: 1 1 calc((100% - (4 * var(--gap))) / 5);
     max-width: calc((100% - (4 * var(--gap))) / 5);
     min-width: 0;
@@ -1096,15 +1192,19 @@ body {
 
 .card-event .btn-register:hover,
 .card-event .btn-register:focus {
-    background: #1d2540; /* sedikit lebih gelap dari var(--secondary) */
+    background: #1d2540;
+    /* sedikit lebih gelap dari var(--secondary) */
     color: var(--white);
     outline: none;
     box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.35);
 }
+
 .card-event .btn-register:active {
-    background: #161d33; /* lebih gelap saat ditekan */
+    background: #161d33;
+    /* lebih gelap saat ditekan */
     transform: translateY(1px);
 }
+
 .card-event .btn-register:disabled {
     opacity: 0.55;
     cursor: not-allowed;
@@ -1149,7 +1249,7 @@ body {
         padding: 0 16px;
     }
 
-    .reviews > li {
+    .reviews>li {
         flex-basis: 200px;
         max-width: 200px;
     }
@@ -1535,7 +1635,7 @@ label {
     margin-top: 30px;
 }
 
-.info-box > div {
+.info-box>div {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
@@ -1724,12 +1824,15 @@ label {
     font-weight: 600;
     color: #000;
 }
-.card-custom h3{
+
+.card-custom h3 {
     margin-top: 20px;
 }
-.wa-group{
+
+.wa-group {
     margin-bottom: 20px;
 }
+
 .box-payment {
     background: #fff;
     border-radius: 20px;
@@ -1741,12 +1844,13 @@ label {
     gap: 40px;
     width: 1200px;
 }
-.upload-bukti{
+
+.upload-bukti {
     width: 100%;
     border: solid 1px #f4c430;
     border-radius: 5px;
     margin-bottom: 10px;
-    background-color:#f3ebd3;
+    background-color: #f3ebd3;
     padding: 10px;
 }
 
@@ -1955,6 +2059,7 @@ label {
     padding: 5px;
     margin-top: 18px;
 }
+
 .link-box {
     display: flex;
     align-items: center;
@@ -1964,26 +2069,32 @@ label {
     color: white;
     margin-top: 50px;
 }
+
 .link-box a {
     text-decoration: none;
     color: white;
 }
+
 .link-box a:hover {
     color: #ffcc00;
 }
+
 .link-box a.active {
     font-weight: 600;
     color: white;
 }
+
 .box-event-creator {
     margin-left: 70px;
     display: flex;
     justify-content: space-between;
 }
+
 .event-creator {
     display: flex;
     color: white;
 }
+
 .highlite-yellow {
     color: black;
     background-color: #ffd33b;
@@ -1991,10 +2102,12 @@ label {
     border-radius: 10px;
     font-weight: bold;
 }
+
 .add-calender {
     margin-right: 50px;
     margin-top: -30px;
 }
+
 .add-calender button {
     display: flex;
     background-color: transparent;
@@ -2003,31 +2116,39 @@ label {
     align-items: center;
     gap: 10px;
 }
+
 .add-calender p {
     color: white;
     margin-top: 20px;
     font-size: small;
     margin-right: 10px;
 }
+
 .add-calender svg {
     color: white;
 }
+
 .ikon-calender-event {
     width: 50px;
 }
+
 .event-title {
     color: white;
     margin-left: 70px;
 }
+
 .event-title h4 {
     margin-bottom: 20px;
 }
+
 .event-title p {
     max-width: 900px;
 }
+
 .detail-box {
     display: flex;
 }
+
 .detail-box-left {
     flex: 4;
 }
@@ -2046,18 +2167,21 @@ label {
         width: 65%;
     }
 }
+
 @media (max-width: 992px) {
     .detail-box-left img {
         width: 70%;
         max-width: 520px;
     }
 }
+
 @media (max-width: 768px) {
     .detail-box-left img {
         width: 80%;
         max-width: 480px;
     }
 }
+
 @media (max-width: 576px) {
     .detail-box-left img {
         width: 100%;
@@ -2073,6 +2197,7 @@ label {
         margin: 20px 0;
     }
 }
+
 .detail-box-right {
     flex: 1;
     margin-right: 100px;
@@ -2095,33 +2220,44 @@ label {
     width: 82%;
     margin-left: 75px;
     margin-top: 25px;
-    position: relative; /* anchor for absolute elements */
+    position: relative;
+    /* anchor for absolute elements */
 }
+
 .progress-box h5 {
     margin-top: 15px;
     margin-left: 20px;
     margin-bottom: 50px;
 }
+
 .progress-line {
     /* Hidden in favor of per-step connectors to ensure the bar touches circles */
     display: none;
 }
+
 .progress-steps {
     display: flex;
     justify-content: space-between;
     position: relative;
     z-index: 2;
 }
+
 .progress-steps::before {
-    content: "";
+    content: '';
     position: absolute;
-    top: 20px; /* vertical center of 40px circles */
-    left: 12.5%; /* from center of first step */
-    right: 12.5%; /* to center of last step */
+    top: 20px;
+    /* vertical center of 40px circles */
+    left: 12.5%;
+    /* from center of first step */
+    right: 12.5%;
+    /* to center of last step */
     height: 6px;
-    background-color: #f4c430; /* yellow bar */
-    z-index: 1; /* behind circles */
-    transform: translateY(-3px); /* fine-tune alignment */
+    background-color: #f4c430;
+    /* yellow bar */
+    z-index: 1;
+    /* behind circles */
+    transform: translateY(-3px);
+    /* fine-tune alignment */
 }
 
 .step {
@@ -2141,6 +2277,7 @@ label {
     position: relative;
     z-index: 2;
 }
+
 .step .circle p {
     margin: 0;
     font-size: 45px;
@@ -2148,12 +2285,15 @@ label {
     color: #99a1af;
     margin-top: -5.5px;
 }
+
 .step.active .circle {
     background-color: #f4c430;
 }
+
 .step.active .circle p {
     color: black;
 }
+
 .step p {
     margin-top: 15px;
     margin-left: 10px;
@@ -2163,24 +2303,33 @@ label {
 .progress-steps .step {
     position: relative;
 }
+
 .progress-steps .step::after {
     content: "";
     position: absolute;
     top: 20px;
+    /* vertical center of 40px circle */
     left: 50%;
+    /* start from center of this step */
     width: 100%;
+    /* reach center of next step */
     height: 6px;
     background-color: #f4c430;
     z-index: 1;
+    /* below circles */
     display: none;
     transform: translateY(-3px);
+    /* fine-tune alignment */
 }
+
 .progress-steps .step.active::after {
     display: block;
 }
+
 .progress-steps .step:last-child::after {
     display: none;
 }
+
 .info-price-box {
     display: flex;
     align-items: center;
@@ -2200,14 +2349,17 @@ label {
     align-items: center;
     color: red;
 }
+
 .diskon-time svg {
     margin-top: -20px;
 }
+
 .diskon-time p {
     font-size: smaller;
     margin-left: 10px;
     width: 195px;
 }
+
 .diskon-event {
     background-color: #252346;
     height: 45px;
@@ -2216,18 +2368,22 @@ label {
     font-size: small;
     margin-left: 70px;
 }
+
 .diskon-event p {
     color: #ffcc00;
     margin-top: 12px;
 }
+
 .line-info {
     margin-top: 10px;
 }
+
 .info-box {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .info-item {
     display: flex;
     align-items: center;
@@ -2235,6 +2391,11 @@ label {
     width: 100%;
     gap: 10px;
     margin-top: 5px;
+}
+
+.info-item svg {
+    margin-bottom: 0px;
+    margin-top: 10px;
 }
 
 .info-text {
@@ -2264,6 +2425,7 @@ label {
     padding: 10px;
     width: 390px;
 }
+
 .save {
     background-color: #252346;
     border: none;
@@ -2271,9 +2433,11 @@ label {
     color: #ffcc00;
     width: 390px;
 }
+
 .include-isi {
     display: flex;
 }
+
 .include-isi p {
     margin-left: 10px;
     font-size: smaller;
@@ -2281,10 +2445,13 @@ label {
     margin-bottom: 15px;
 }
 
-.share-title,
-.copy-title {
-    font-size: 14px;
-    margin-bottom: 10px;
+.share {
+    margin-top: -8px;
+}
+
+.copy {
+    text-decoration: none;
+    margin-top: 15px;
 }
 
 .share-icons {
@@ -2308,15 +2475,19 @@ label {
 .fb {
     background: #1877f2;
 }
+
 .tw {
     background: #01131f;
 }
+
 .ig {
     background: #e1306c;
 }
+
 .wa {
     background: #25d366;
 }
+
 .tg {
     background: #229ed9;
 }
@@ -2367,6 +2538,7 @@ label {
 .terms-condition p {
     font-size: small;
 }
+
 .terms-box {
     padding: 20px;
     width: 100%;
@@ -2374,6 +2546,7 @@ label {
     height: 50%;
     margin-top: -30px;
 }
+
 .desc-box {
     margin-top: 50px;
     margin-left: 70px;
@@ -2383,36 +2556,27 @@ label {
     border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08);
 }
+
 .nav-tabs .nav-link.active {
     color: #f4c430 !important;
     font-weight: bold;
     box-shadow: 0 0 8px 2px rgba(0, 0, 0, 0.06);
 }
+
 .nav-event {
     color: black;
     width: 250px;
     padding: 20px;
     font-size: small;
 }
+
 .nav-tabs .nav-link:hover,
 .nav-event:hover {
     color: black;
 }
+
 .tab-pane p {
     margin-left: 30px;
-}
-.tab-content > .tab-pane {
-    min-height: 400px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.overview-box,
-.terms-box,
-.scroll-schedule-box {
-    height: 50%;
-    max-height: 50%;
-    overflow-y: auto;
 }
 
 .overview-box {
@@ -2430,9 +2594,11 @@ label {
     overflow-y: auto;
     padding-right: 10px;
 }
+
 .scroll-schedule-box::-webkit-scrollbar {
     width: 6px;
 }
+
 .schedule-box {
     padding: 20px;
     width: 95%;
@@ -2440,12 +2606,15 @@ label {
     max-height: 50%;
     height: 50%;
 }
+
 .schedule-item-box {
     display: flex;
 }
+
 .schedule-item {
     margin-top: 1px;
 }
+
 .schedule-line {
     background-color: #f4c430;
     color: #f4c430;
@@ -2454,13 +2623,16 @@ label {
     margin-left: 35px;
     margin-top: 5px;
 }
+
 .schedule-item .time {
     margin-bottom: 0px;
 }
+
 .schedule-item .activity {
     margin-bottom: 0px;
     font-size: 15px;
 }
+
 .schedule-item .desc {
     margin-bottom: 0px;
     font-size: 14px;
@@ -2485,6 +2657,7 @@ label {
     margin-left: 25px;
     margin-bottom: 10px;
 }
+
 .participant-resources {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -2503,56 +2676,66 @@ label {
     margin-left: 20px;
     width: 400px;
 }
+
 .resource-card .share-bi {
     margin-left: 70px;
     margin-right: 10px;
 }
+
 .resource-card .lock-bi {
     margin-left: 95px;
     margin-right: 10px;
 }
+
 .resource-card.locked {
     background-color: #f3f4f6;
     color: grey;
     cursor: not-allowed;
     pointer-events: none;
 }
+
 .img-resource {
     margin-left: 10px;
     background-color: #f3f4f6;
     padding: 10px;
     border-radius: 10px;
 }
+
 .resource-value {
     margin-left: 15px;
 }
+
 .resource-value h6 {
     margin: 0;
     margin-top: 10px;
     font-size: small;
 }
+
 .resource-value p {
     font-size: small;
     width: 130%;
 }
+
 .link-share {
     text-decoration: none;
     color: black;
 }
+
 .feedback-group {
     width: 420px;
     padding: 22px;
     background: white;
     border-radius: 12px;
-    font-family: "Inter", sans-serif;
+    font-family: 'Inter', sans-serif;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
+
 .feedback-modal {
     width: 420px;
     padding: 22px;
     background: white;
     border-radius: 12px;
-    font-family: "Inter", sans-serif;
+    font-family: 'Inter', sans-serif;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
@@ -2617,7 +2800,7 @@ textarea {
 
 .btn-fill {
     padding: 10px 20px;
-    background: #ffd43b;
+    background: #FFD43B;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -2628,6 +2811,7 @@ textarea {
 .box-manage {
     padding: 30px;
 }
+
 .box-title-add {
     padding: 20px;
     margin-top: 40px;
@@ -2640,23 +2824,7 @@ textarea {
     border: none;
     padding: 15px;
 }
-.box-serach-users{
-    display: flex;
-    align-items: center;
-}
-.box-logo-search{
-    background-color: #6c3cff;
-    padding: 5px;
-    height: 50px;
-    width: 45px;
-    border-radius: 5px;
-    
-}
-.box-logo-search svg{
-    color: white;
-    margin-top: 10px;
-    margin-left: 6px;  
-}
+
 .input-search {
     border-radius: 5px;
     margin-left: 500px;
@@ -2670,6 +2838,7 @@ textarea {
     border: none;
     padding: 22px 15px;
 }
+
 .add-button {
     background-color: #4b2dbf;
     color: white;
@@ -2677,28 +2846,34 @@ textarea {
     padding: 15px 20px;
     margin-left: 20px;
 }
+
 .add-button:hover {
     box-shadow: 0 0 10px grey;
 }
+
 .table-daftar {
     width: 100%;
     margin-left: 20px;
 }
+
 .table-daftar thead th {
     position: sticky;
     top: 0;
     vertical-align: middle;
     text-align: center;
 }
+
 .table-daftar td {
     text-align: center;
 }
+
 .scroll-add-box {
     max-height: 500px;
     overflow-y: auto;
     padding-right: 10px;
     margin-top: 15px;
 }
+
 .scroll-add-box::-webkit-scrollbar {
     width: 6px;
 }
@@ -2711,28 +2886,34 @@ textarea {
     margin-bottom: 5px;
     font-size: 14px;
 }
+
 /*MODAL VIEW USERS*/
-.view-modal-user-event{
+.view-modal-user-event {
     margin-top: 15%;
     max-height: 550px;
     height: 550px;
 }
+
 .box-modal-view {
     display: flex;
 }
+
 .modal-dialog.custom-modal {
     max-width: 60%;
     width: 60%;
 }
+
 .box-view-kiri {
     width: 45%;
     margin: -20px 0px -20px -20px;
 }
+
 .box-view-kiri h5 {
     text-align: center;
     margin-bottom: 50px;
     margin-top: 50px;
 }
+
 .profile-biodata {
     width: 120px;
     max-width: 150px;
@@ -2740,24 +2921,30 @@ textarea {
     margin-left: 140px;
     margin-bottom: 20px;
 }
+
 .box-view-kiri h6 {
     margin: 0px;
 }
+
 .box-view-kiri p {
     margin: 0px;
 }
+
 .box-biodata {
     margin: 0px;
     text-align: center;
 }
+
 .box-view-kanan {
     margin-left: 30px;
     padding: 20px;
     border: solid 1.5px #cecdcb;
 }
+
 .box-total h6 {
     font-weight: bold;
 }
+
 .table-daftar-acara thead th {
     position: sticky;
     top: 0;
@@ -2765,6 +2952,7 @@ textarea {
     font-size: medium;
     font-weight: 500;
 }
+
 .table-daftar-acara {
     font-size: small;
 }
@@ -2775,6 +2963,7 @@ textarea {
     padding-right: 10px;
     margin-top: 15px;
 }
+
 .scroll-view-box::-webkit-scrollbar {
     width: 6px;
 }
@@ -2797,12 +2986,14 @@ input[type="time"] {
 .separator {
     color: #333;
 }
+
 .add-schedule {
     background-color: #4b2dbf;
     color: white;
     border-radius: 10px;
     border: none;
 }
+
 .modal-add-event label.form-label {
     display: block;
     color: #333 !important;
@@ -2810,6 +3001,7 @@ input[type="time"] {
     margin-bottom: 5px;
     font-size: 14px;
 }
+
 .content-event {
     width: 200%;
     margin-left: -250px;
@@ -2823,20 +3015,25 @@ input[type="time"] {
     height: 250px;
     border-radius: 20px;
 }
+
 .view-event {
     width: 60%;
     margin-left: 20%;
 }
+
 .box-event-info h4 {
     font-weight: 600;
     margin-top: 15px;
 }
+
 .box-event-info p {
     font-size: smaller;
 }
+
 .info-view-event-box {
     margin-top: -40px;
 }
+
 .info-view-event {
     display: flex;
     align-items: center;
@@ -2852,6 +3049,7 @@ input[type="time"] {
 .info-view-event:has(.detail-btn) {
     justify-content: space-between;
 }
+
 .info-view-event:has(.detail-ikon) {
     justify-content: space-between;
     margin-right: 30px;
@@ -2874,14 +3072,17 @@ input[type="time"] {
     border: none;
     border-radius: 10px;
 }
+
 .detail-btn:hover {
     background-color: #271278;
     box-shadow: 0 0 3px black;
     color: white;
 }
+
 .link-ikon {
     width: 30px;
 }
+
 .tabel-view-schedule {
     width: 550px;
     font-size: smaller;
@@ -2891,6 +3092,7 @@ input[type="time"] {
 .box-report {
     padding: 30px;
 }
+
 .box-report h5 {
     margin: 0px;
     font-weight: 600;
@@ -2930,6 +3132,7 @@ input[type="time"] {
         opacity: 0;
         transform: translateY(5px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -2943,6 +3146,7 @@ input[type="time"] {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     width: 350px;
 }
+
 .recap-card-box {
     display: flex;
     gap: 60px;
@@ -2950,29 +3154,36 @@ input[type="time"] {
     margin-bottom: 20px;
     margin-top: 50px;
 }
+
 .recap-title {
     display: flex;
     gap: 10px;
 }
+
 .recap-title svg {
     margin-top: 5px;
 }
+
 .recap-card h3 {
     color: #4b2dbf;
 }
+
 .recap-increase {
     display: flex;
     gap: 10px;
 }
+
 .recap-increase svg {
     margin-top: 5px;
 }
+
 .tabel-pendapatan {
     width: 95%;
     text-align: center;
     margin-left: 20px;
     margin-top: 20px;
 }
+
 .data-box {
     display: flex;
     gap: 400px;
@@ -2984,37 +3195,46 @@ input[type="time"] {
     height: 180px;
     margin: 50px 20px 20px 20px;
 }
+
 .data-pengguna {
     display: flex;
     gap: 80px;
 }
+
 .data-pengguna-kiri {
     width: 200px;
     margin-left: 20px;
     margin-top: 20px;
 }
+
 .data-pengguna h4 {
     font-weight: 800;
     color: #271278;
 }
+
 .data-pengguna h5 {
     margin-top: -10px;
 }
+
 .deskripsi-kenaikan {
     display: flex;
     gap: 15px;
     margin: 0px;
 }
+
 .deskripsi-kenaikan svg {
     margin-top: 7px;
 }
+
 .deskripsi-kenaikan p {
     color: blue;
 }
+
 .pertumbuhan-box {
     display: flex;
     gap: 50px;
 }
+
 .data-pengguna-kanan {
     display: flex;
     gap: 400px;
@@ -3027,30 +3247,38 @@ input[type="time"] {
     margin-top: -20px;
     margin-left: 150px;
 }
+
 .pertumbuhan-acara h5 {
     margin-bottom: 20px;
 }
+
 .deskripsi-kenaikan .naik {
     margin-top: -2px;
     margin-left: 30px;
 }
+
 .pertumbuhan-box-isi {
     font-size: smaller;
 }
+
 .pertumbuhan-box-isi h4 {
     margin: 0px;
     text-align: center;
 }
+
 .pertumbuhan-box-isi p {
     margin: 0px;
     text-align: center;
 }
+
 .pertumbuhan-box svg {
     margin-top: 20px;
 }
+
 .title-laporan-metrik {
     margin-left: 50px;
 }
+
 .info-operasional-box {
     display: flex;
     gap: 100px;
@@ -3066,27 +3294,33 @@ input[type="time"] {
     margin: 30px;
     width: 350px;
 }
+
 .info-operasional h4 {
     font-weight: 700;
 }
+
 .proggress-box-operasional {
     display: flex;
     gap: 170px;
     margin-left: 580px;
 }
+
 .title-prog-operasional {
     font-weight: 500;
 }
+
 .line-proggress-abu {
     background-color: #bab3d5;
     width: 350px;
     height: 10px;
 }
+
 .line-proggress {
     background-color: #4b2dbf;
     width: 200px;
     height: 10px;
 }
+
 .add-dokumen {
     background-color: #4b2dbf;
     color: white;
@@ -3096,6 +3330,7 @@ input[type="time"] {
     border-radius: 10px;
     padding: 5px;
 }
+
 .add-dokumen:hover {
     background-color: #150651;
 }
@@ -3105,28 +3340,34 @@ input[type="time"] {
     width: 100%;
     margin-top: 10%;
 }
+
 .tabel-pemasukkan th {
     vertical-align: middle;
     text-align: center;
 }
+
 .tabel-pemasukan table {
     padding: 20px;
     width: 450px;
 }
+
 .tabel-pemasukan td {
     vertical-align: middle;
     text-align: center;
     margin-left: 20px;
 }
+
 .tabel-pemasukan th {
     vertical-align: middle;
     text-align: center;
     margin-left: 20px;
 }
+
 .row-harga {
     font-weight: bold;
     background-color: #dcd6f0;
 }
+
 .tabel-pengeluaran table {
     padding: 20px;
     width: 450px;
@@ -3138,9 +3379,11 @@ input[type="time"] {
     text-align: center;
     margin-left: 20px;
 }
+
 .tabel-pengeluaran h5 {
     margin-left: 50px;
 }
+
 .tabel-pengeluaran th {
     vertical-align: middle;
     text-align: center;
@@ -3150,6 +3393,7 @@ input[type="time"] {
 .box-rekap-pendapatan {
     display: flex;
 }
+
 .keuntungan {
     background-color: #dcd6f0;
     margin-top: 50px;
@@ -3158,6 +3402,7 @@ input[type="time"] {
     width: 80%;
     margin-left: 100px;
 }
+
 .keterangan h6 {
     font-weight: 800;
 }
@@ -3168,29 +3413,37 @@ input[type="time"] {
     margin-left: 500px;
     margin-top: 200px;
 }
+
 .isi-modal-view {
     margin-left: 250px;
 }
+
 .title-modal-view {
     margin-left: 250px;
 }
+
 .btn-close-view {
     width: 20px;
     height: 20px;
 }
+
 .pertumbuhan-dialog-card {
     display: flex;
     gap: 15px;
 }
+
 .pertumbuhan-dialog-card svg {
     margin-top: 30px;
 }
+
 .view-pertumbuhan {
     margin-top: 20px;
 }
+
 .view-pertumbuhan p {
     margin: 0px;
 }
+
 .label-view {
     color: black;
     font-weight: 700;
@@ -3203,14 +3456,17 @@ input[type="time"] {
     margin-left: 380px;
     margin-top: 200px;
 }
+
 .box-kelengkapan {
     display: flex;
     gap: 30px;
     justify-content: space-between;
 }
+
 .box-kelengkapan h6 {
     margin-top: 20px;
 }
+
 .box-kelengkapan .btn-selesai {
     background-color: green;
     color: white;
@@ -3221,6 +3477,7 @@ input[type="time"] {
     padding: 5px;
     height: 35px;
 }
+
 .box-kelengkapan .btn-pending {
     background-color: #ec0606;
     color: white;
@@ -3238,9 +3495,11 @@ input[type="time"] {
     margin-top: 80px;
     margin-left: 350px;
 }
+
 .box-up label {
     color: black;
 }
+
 /*DETAIL-EVENT-ADMIN*/
 .banner-detail {
     position: relative;
@@ -3346,6 +3605,7 @@ input[type="time"] {
     padding: 10px;
     border-bottom: 1px solid #eee;
 }
+
 .benefit-box {
     background-color: white;
     padding: 30px;
@@ -3354,6 +3614,7 @@ input[type="time"] {
     margin-top: 20px;
     margin-bottom: 20px;
 }
+
 .certificate-btn {
     background-color: rgb(130, 216, 130);
     border: none;
@@ -3361,6 +3622,7 @@ input[type="time"] {
     font-size: small;
     margin: 5px;
 }
+
 .registered-btn {
     background-color: rgb(87, 210, 223);
     border: none;
@@ -3368,6 +3630,7 @@ input[type="time"] {
     font-size: small;
     margin: 5px;
 }
+
 .attended-btn {
     background-color: rgb(232, 154, 80);
     border: none;
@@ -3375,6 +3638,7 @@ input[type="time"] {
     font-size: small;
     margin: 5px;
 }
+
 .feedback-btn {
     background-color: rgb(255, 234, 6);
     border: none;
@@ -3388,13 +3652,16 @@ input[type="time"] {
     margin-top: 5px;
     display: flex;
 }
+
 .filter-form {
     display: flex;
     margin-bottom: 20px;
 }
+
 .filter-group {
     width: 200px;
 }
+
 .filter-label {
     font-size: 14px;
     margin-bottom: 6px;
@@ -3416,13 +3683,16 @@ input[type="time"] {
 .filter-select:focus {
     border-color: #0a3eb6;
 }
+
 .filter-kiri {
     display: flex;
 }
+
 .filter-kanan {
     display: flex;
     margin-left: 48%;
 }
+
 .btn-apply {
     color: #fff;
     border: none;
@@ -3433,9 +3703,11 @@ input[type="time"] {
     margin-top: 35px;
     background-color: #4b2dbf;
 }
+
 .btn-apply:hover {
     background-color: #2b156e;
 }
+
 .btn-cari {
     background-color: #4b2dbf;
     color: white;
@@ -3463,12 +3735,10 @@ input[type="time"] {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        var(--primary-yellow),
-        transparent
-    );
+    background: linear-gradient(90deg,
+            transparent,
+            var(--primary-yellow),
+            transparent);
 }
 
 .footer-section a {
@@ -3478,28 +3748,34 @@ input[type="time"] {
 .footer-section a:hover {
     text-decoration: none !important;
 }
+
 /*NAVBAR ADMIN COURSE*/
 .navbar-admin-course {
     background-color: #4b2dbf;
     padding: 20px;
     margin-top: -56px;
 }
+
 .navbar-admin-course ul {
     list-style: none;
     display: flex;
     gap: 50px;
     margin-top: 10px;
 }
+
 .navbar-admin-course li {
     color: white;
     display: flex;
 }
+
 .navbar-admin-course img {
     width: 80px;
 }
+
 .navbar-admin-course ul a {
     text-decoration: none;
 }
+
 /*QUIZ COURSE*/
 .box_luar_kuis {
     display: flex;
@@ -3563,13 +3839,14 @@ input[type="time"] {
     transform: rotate(180deg);
 }
 
+
 .box_kuis_kanan {
     margin-left: 150px;
     margin-top: 90px;
 }
 
 .waktu_kuis {
-    background-color: #ba0004;
+    background-color: #BA0004;
     border-radius: 20px;
     width: 80px;
     padding: 10px;
@@ -3636,6 +3913,7 @@ input[type="time"] {
     border: none;
     font-size: 20px;
     text-align: center;
+
 }
 
 .tombol_kuis {
@@ -3644,6 +3922,7 @@ input[type="time"] {
     gap: 20px;
     margin-top: 80px;
     margin-bottom: 80px;
+
 }
 
 .previous_question {
@@ -3671,18 +3950,22 @@ input[type="time"] {
     cursor: pointer;
     margin-bottom: 20px;
 }
+
 /*ADMIN COURSE BUILDER*/
 .box_luar_course_builder {
     padding: 30px;
 }
+
 .judul_course_builder {
     font-weight: 500;
     margin-left: 70px;
 }
+
 .deskripsi_course_builder {
     margin-left: 70px;
     font-size: 20px;
 }
+
 .tambah_course {
     display: flex;
     gap: 10px;
@@ -3695,35 +3978,43 @@ input[type="time"] {
     border: none;
     margin-top: 50px;
 }
+
 .tambah_course svg {
     margin-top: 15px;
     margin-left: 13px;
 }
+
 .tambah_course p {
     margin-top: 12px;
 }
+
 .box_daftar_course {
     margin-left: 70px;
     margin-top: 50px;
 }
+
 .judul_daftar_course {
     font-weight: 500;
 }
+
 .tabel_daftar_course {
     border-collapse: collapse;
     width: 95%;
     margin-top: 30px;
 }
+
 .tabel_daftar_course thead th {
     background-color: white;
     padding: 14px 20px;
     border-bottom: 1px solid gray;
 }
+
 .tabel_daftar_course tbody td {
     background-color: rgb(246, 244, 244);
     padding: 14px 20px;
     border-bottom: 1px solid gray;
 }
+
 .status_kelengkapan_complete {
     background-color: green;
     width: 150px;
@@ -3733,6 +4024,7 @@ input[type="time"] {
     text-align: center;
     border: none;
 }
+
 .status_kelengkapan_inprogress {
     background-color: orange;
     width: 150px;
@@ -3742,6 +4034,7 @@ input[type="time"] {
     text-align: center;
     border: none;
 }
+
 .status_kelengkapan_miss {
     background-color: red;
     width: 150px;
@@ -3751,6 +4044,7 @@ input[type="time"] {
     text-align: center;
     border: none;
 }
+
 .aksi_daftar_course svg {
     margin: 5px;
 }
@@ -3759,30 +4053,38 @@ input[type="time"] {
 .box_luar_add_course {
     padding: 40px;
 }
+
 .box_link {
     display: flex;
     margin-left: 50px;
 }
+
 .box_link a {
     text-decoration: none;
     color: black;
 }
+
 .box_judul {
     margin-left: 50px;
 }
+
 .box_judul h1 {
     font-weight: 500;
 }
+
 .box_judul p {
     margin-top: 10px;
 }
+
 .box_form {
     margin-left: 50px;
     margin-top: 50px;
 }
+
 .box_form p {
     font-weight: 500;
 }
+
 .box_form input {
     width: 95%;
     padding: 10px;
@@ -3790,6 +4092,7 @@ input[type="time"] {
     margin-top: 5px;
     margin-bottom: 30px;
 }
+
 .box_form textarea {
     width: 95%;
     padding: 10px;
@@ -3798,9 +4101,11 @@ input[type="time"] {
     margin-top: 5px;
     margin-bottom: 30px;
 }
+
 .select_box {
     text-align: left;
 }
+
 .select_level {
     width: 410%;
     padding: 10px;
@@ -3811,9 +4116,11 @@ input[type="time"] {
     margin-bottom: 30px;
     background-color: white;
 }
+
 .box_select_level_status {
     display: flex;
 }
+
 .choose_level {
     background-color: white;
     width: 410%;
@@ -3821,13 +4128,16 @@ input[type="time"] {
     border: 1px solid gray;
     margin-bottom: 10px;
 }
+
 .box_select_status {
     margin-left: 600px;
 }
+
 .box_button {
     margin-left: 84%;
     margin-top: 90px;
 }
+
 .box_button .cancel {
     background-color: white;
     border: 1px solid gray;
@@ -3836,8 +4146,9 @@ input[type="time"] {
     border-radius: 5px;
     font-weight: 450;
 }
+
 .box_button .save_add {
-    background-color: #4b2dbf;
+    background-color: #4B2DBF;
     border: 1px solid gray;
     padding: 10px;
     width: 90px;
@@ -3851,10 +4162,12 @@ input[type="time"] {
     padding: 20px;
     margin-left: 50px;
 }
+
 .back_view_modul {
     display: flex;
     gap: 10px;
 }
+
 .back_view_modul svg {
     margin-top: 2px;
     background-color: white;
@@ -3862,6 +4175,7 @@ input[type="time"] {
     border-radius: 8px;
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
 }
+
 .box_view_modul {
     background-color: white;
     border-radius: 15px;
@@ -3870,102 +4184,121 @@ input[type="time"] {
     height: 150px;
     margin-bottom: 20px;
 }
+
 .isi_view_modul {
     display: flex;
 }
+
 .keterangan_view_modul {
     display: flex;
     gap: 20px;
     margin-top: 20px;
 }
+
 .box_svg_modul {
-    background-color: #f3e8ff;
+    background-color: #F3E8FF;
     width: 50px;
     height: 50px;
     margin-left: 20px;
     margin-top: 10px;
     border-radius: 10px;
 }
+
 .box_svg_video_modul {
-    background-color: #fff4e6;
+    background-color: #FFF4E6;
     width: 50px;
     height: 50px;
     margin-left: 20px;
     margin-top: 10px;
     border-radius: 10px;
 }
+
 .box_svg_modul svg {
     margin-top: 10px;
     margin-left: 8px;
 }
+
 .box_svg_video_modul svg {
     margin-top: 10px;
     margin-left: 8px;
 }
+
 .judul_view_modul p {
     color: gray;
 }
+
 .info_view_modul {
     display: flex;
     color: gray;
     margin-left: 90px;
     gap: 20px;
 }
+
 .box_informasi_view {
     display: flex;
     gap: 20px;
 }
+
 .icon_hapus_edit {
     margin-left: 73%;
     display: flex;
     gap: 10px;
 }
+
 .icon_hapus_edit svg {
     margin-left: 10px;
     margin-top: 10px;
 }
+
 .edit_view {
-    background-color: #f8f9fa;
+    background-color: #F8F9FA;
     border-radius: 5px;
     width: 40px;
     height: 40px;
 }
+
 .hapus_view {
-    background-color: #ffe6e6;
+    background-color: #FFE6E6;
     border-radius: 5px;
     width: 40px;
     height: 40px;
 }
+
 .pdf_view_modul {
-    background-color: #f3e8ff;
-    color: #6a4cff;
+    background-color: #F3E8FF;
+    color: #6A4CFF;
     margin-left: 70%;
     width: 50px;
     height: 25px;
     margin-top: 20px;
     border-radius: 7px;
 }
+
 .pdf_view_modul p {
     margin-left: 10px;
 }
+
 .video_view_modul {
-    background-color: #fff4e6;
-    color: #f59e0b;
+    background-color: #FFF4E6;
+    color: #F59E0B;
     margin-left: 70%;
     width: 65px;
     height: 25px;
     margin-top: 20px;
     border-radius: 7px;
 }
+
 .video_view_modul p {
     margin-left: 10px;
 }
+
 .fab-container {
     position: fixed;
     bottom: 25px;
     right: 100px;
     position: fixed;
 }
+
 .icon_tambah_view {
     background-color: #6a4cff;
     width: 55px;
@@ -3979,6 +4312,7 @@ input[type="time"] {
     position: relative;
     z-index: 20;
 }
+
 .fab-options {
     position: absolute;
     bottom: 70px;
@@ -3989,6 +4323,7 @@ input[type="time"] {
     gap: 10px;
     align-items: center;
 }
+
 .fab-item {
     background-color: white;
     width: 110px;
@@ -3996,30 +4331,38 @@ input[type="time"] {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     border-radius: 10px;
 }
+
 /*ADD PDF MODUL*/
 .box_luar_add_modul {
     padding: 40px;
 }
+
 .box_link {
     display: flex;
     margin-left: 50px;
 }
+
 .box_link a {
     text-decoration: none;
     color: black;
 }
+
 .deskripsi_view_modul {
     margin-left: 20px;
 }
+
 .deskripsi_view_modul h1 {
     font-weight: 500;
 }
+
 .deskripsi_view_modul p {
     margin-top: 5px;
 }
+
 .informasi_modul {
     margin-left: 30px;
 }
+
 .box_add_modul {
     background-color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -4028,10 +4371,12 @@ input[type="time"] {
     padding: 50px;
     width: 1700px;
 }
+
 .informasi_modul p {
     font-weight: 500;
     font-size: 20px;
 }
+
 .informasi_modul input {
     padding: 10px;
     width: 1550px;
@@ -4040,6 +4385,7 @@ input[type="time"] {
     background-color: rgb(246, 245, 245);
     border-radius: 10px;
 }
+
 .informasi_modul textarea {
     padding: 10px;
     width: 1550px;
@@ -4048,33 +4394,40 @@ input[type="time"] {
     background-color: rgb(246, 245, 245);
     border-radius: 10px;
 }
+
 .upload_file {
     background-color: rgb(246, 245, 245);
     padding: 30px;
 }
+
 .upload_file svg {
     margin-left: 750px;
     margin-top: 30px;
 }
+
 .upload_file h5 {
     margin-left: 600px;
     margin-top: 30px;
 }
+
 .upload_file p {
     color: #9d9a9a;
     font-weight: 100;
     margin-left: 680px;
 }
+
 .upload_file input {
     margin-left: 700px;
     width: 120px;
 }
+
 .box_tombol_save_pdf {
     display: flex;
     gap: 30px;
     margin-left: 1370px;
     margin-top: 50px;
 }
+
 .tombol_cancel {
     background-color: rgb(200, 198, 198);
     color: black;
@@ -4083,14 +4436,16 @@ input[type="time"] {
     width: 100px;
     height: 50px;
 }
+
 .tombol_save_pdf {
-    background-color: #6a4cff;
+    background-color: #6A4CFF;
     color: white;
     border-radius: 10px;
     border: none;
     width: 200px;
     height: 50px;
 }
+
 .tombol_save_pdf div {
     display: flex;
     gap: 10px;
@@ -4100,8 +4455,11 @@ input[type="time"] {
 
 /*HASIL COURSE*/
 .box_luar_hasil {
+
+
     display: flex;
 }
+
 .box_kiri_hasil {
     padding: 30px;
     background-color: white;
@@ -4112,40 +4470,37 @@ input[type="time"] {
     height: 1500px;
     width: 700px;
 }
+
 .box_kiri_hasil h5 {
     margin-left: 30px;
 }
+
 .informasi_hasil {
     display: flex;
     margin-left: 180px;
     gap: 100px;
     margin-top: 50px;
 }
+
 .score_hasil h3 {
     font-weight: 900;
     margin-left: 10px;
 }
+
 .score_hasil p {
     font-size: 20px;
 }
+
 .score_hasil .deactive {
     margin-left: 35px;
 }
+
 .batas_minimum_nilai {
     color: green;
     width: 500px;
     margin-top: 30px;
     font-size: 20px;
     margin-left: 30px;
-}
-.box_kanan_detail_course {
-    flex: 1;
-    background-color: white;
-    border: solid 2px #ffd33b;
-    margin-top: 30px;
-    border-radius: 10px;
-    margin-right: 60px;
-    padding: 30px;
 }
 
 .box_kanan_hasil {
@@ -4156,6 +4511,7 @@ input[type="time"] {
     height: 900px;
     width: 700px;
 }
+
 .card_soal {
     background-color: white;
     border: 1px solid gray;
@@ -4164,9 +4520,11 @@ input[type="time"] {
     width: 950px;
     margin-bottom: 20px;
 }
+
 .soal_hasil {
     display: flex;
 }
+
 .soal_hasil .true {
     background-color: rgb(27, 211, 27);
     color: white;
@@ -4176,6 +4534,7 @@ input[type="time"] {
     margin-left: 400px;
     border-radius: 3px;
 }
+
 .soal_hasil .false {
     background-color: rgb(211, 27, 27);
     color: white;
@@ -4185,12 +4544,14 @@ input[type="time"] {
     margin-left: 400px;
     border-radius: 3px;
 }
+
 .pilihan_jawaban {
     display: flex;
     gap: 20px;
     margin-left: 30px;
     margin-top: -20px;
 }
+
 .pilihan_jawaban_benar {
     display: flex;
     gap: 20px;
@@ -4200,16 +4561,19 @@ input[type="time"] {
     height: 35px;
     margin-bottom: 20px;
 }
+
 .bulatan_jawaban_benar {
     color: rgb(6, 130, 6);
     font-size: 40px;
     margin-top: -15px;
 }
+
 .jawaban_pilihan_benar {
     color: green;
     font-size: 20px;
     margin-top: -2px;
 }
+
 .pilihan_jawaban_salah {
     display: flex;
     gap: 20px;
@@ -4219,38 +4583,45 @@ input[type="time"] {
     height: 35px;
     margin-bottom: 20px;
 }
+
 .bulatan_jawaban_salah {
     color: rgb(130, 6, 6);
     font-size: 40px;
     margin-top: -15px;
 }
+
 .jawaban_pilihan_salah {
     color: rgb(128, 0, 0);
     font-size: 20px;
     margin-top: -2px;
 }
+
 .bulatan_jawaban {
-    color: #ffd33b;
+    color: #FFD33B;
     font-size: 40px;
 }
+
 .jawaban_pilihan {
     font-size: 20px;
     margin-top: 18px;
 }
+
 .kembali_course {
-    background-color: #ffd33b;
+    background-color: #FFD33B;
     border: none;
     border-radius: 10px;
     width: 200px;
     margin-bottom: 30px;
     margin-left: 750px;
 }
+
 .kembali_course div {
     display: flex;
     gap: 10px;
     margin-left: 20px;
     margin-top: 15px;
 }
+
 .kembali_course svg {
     margin-top: 5px;
 }
@@ -4259,20 +4630,24 @@ input[type="time"] {
 .box_luar_report {
     padding: 30px;
 }
+
 .judul_report {
     font-weight: 500;
     margin-left: 50px;
 }
+
 .keterangan_judul {
     font-size: 20px;
     font-weight: 400;
     margin-left: 50px;
 }
+
 .btn_box_report {
     margin-left: 50px;
     margin-top: 30px;
     margin-bottom: 30px;
 }
+
 .btn_report {
     background-color: white;
     border: 1px solid gray;
@@ -4280,6 +4655,7 @@ input[type="time"] {
     border-radius: 5px;
     margin-right: 10px;
 }
+
 .btn_report.active {
     background-color: #5b35d5;
     padding: 10px;
@@ -4288,9 +4664,11 @@ input[type="time"] {
     color: white;
     border: none;
 }
+
 .box_report {
     margin-left: 50px;
 }
+
 .box_report {
     display: none;
 }
@@ -4298,10 +4676,12 @@ input[type="time"] {
 .box_report.active {
     display: block;
 }
+
 .box_pendapatan {
     margin-top: 20px;
     display: flex;
 }
+
 .btn_laporan {
     background-color: white;
     border: 1px solid gray;
@@ -4309,6 +4689,7 @@ input[type="time"] {
     border-radius: 5px;
     margin-right: 10px;
 }
+
 .btn_laporan.active {
     background-color: #5b35d5;
     padding: 10px;
@@ -4318,12 +4699,15 @@ input[type="time"] {
 
     border: none;
 }
+
 .box_unduh {
     margin-left: 1100px;
     display: flex;
     gap: 20px;
 }
+
 .btn_unduh {
+
     display: flex;
     gap: 10px;
     background-color: white;
@@ -4331,15 +4715,19 @@ input[type="time"] {
     border-radius: 5px;
     align-items: center;
 }
+
 .btn_unduh p {
     margin-top: 14px;
 }
+
 .box_detail_laporan {
     margin-top: 30px;
     display: flex;
     gap: 30px;
 }
+
 .detail_laporan {
+
     background-color: white;
     border: 1px solid gray;
     width: 400px;
@@ -4347,42 +4735,51 @@ input[type="time"] {
     border-radius: 10px;
     height: 200px;
 }
+
 .informasi_kenaikan_pendapatan {
     display: flex;
     color: green;
     gap: 10px;
 }
+
 .informasi_penurunan_pendapatan {
     display: flex;
     color: red;
     gap: 10px;
 }
+
 .total_kenaikan {
     margin-top: 50px;
 }
+
 .box_cari_pendapatan {
     margin-top: 50px;
 }
+
 .cari_pendapatan {
     display: flex;
     gap: 30px;
     align-items: center;
 }
+
 .cari_course {
     width: 800px;
     padding: 5px;
     border-radius: 5px;
     border: 1px solid gray;
 }
+
 .mulai_course {
     margin-top: 15px;
 }
+
 .tanggal_course {
     padding: 5px;
     border: 1px solid gray;
     width: 180px;
     border-radius: 5px;
 }
+
 .btn_terapkan {
     background-color: #5b35d5;
     border: none;
@@ -4390,15 +4787,13 @@ input[type="time"] {
     color: white;
     padding: 10px;
 }
+
 .tabel_pendapatan {
     width: 98%;
     margin-top: 40px;
 }
 
 /*REPORT ORGANIZE*/
-.box-diagram-operasional{
-    width: 100%;
-}
 .status_lengkap {
     background-color: green;
     color: white;
@@ -4406,6 +4801,7 @@ input[type="time"] {
     border-radius: 10px;
     padding: 5px;
 }
+
 .status_progress {
     background-color: orange;
     color: white;
@@ -4413,6 +4809,7 @@ input[type="time"] {
     border-radius: 10px;
     padding: 5px;
 }
+
 .status_missing {
     background-color: red;
     color: white;
@@ -4420,24 +4817,24 @@ input[type="time"] {
     border-radius: 10px;
     padding: 5px;
 }
+
 .box_pencarian {
     display: flex;
     justify-content: space-between;
     margin-top: 20px;
 }
+
 .tabel_organize {
     width: 98%;
     margin-top: 40px;
 }
+
 .box_kelengkapan {
     margin-top: 30px;
     margin-left: 50px;
 }
 
 /*REPORT PERTUMBUHAN*/
-.box-diagram-pertumbuhan{
-    width: 100%;
-}
 .detail_laporan_pertumbuhan {
     background-color: white;
     border: 1px solid gray;
@@ -4445,6 +4842,7 @@ input[type="time"] {
     padding: 20px;
     width: 400px;
 }
+
 .angka_penilaian_pertumbuhan {
     display: flex;
     justify-content: space-between;
@@ -4452,16 +4850,20 @@ input[type="time"] {
     margin: 10px 0;
     margin-top: -15px;
 }
+
 .total_perhitungan {
     text-align: right;
 }
+
 .analisis_pertumbuhan {
     margin-top: 50px;
 }
+
 .durasi_menonton {
     margin-bottom: 16px;
     margin-top: 20px;
 }
+
 .analisis_durasi {
     display: flex;
     justify-content: space-between;
@@ -4472,6 +4874,7 @@ input[type="time"] {
 .box_progress {
     width: 100%;
 }
+
 .progress_bg {
     width: 100%;
     height: 6px;
@@ -4487,17 +4890,21 @@ input[type="time"] {
     width: 90%;
     margin-top: -10px;
 }
+
 .box_tabel_pertumbuhan {
     margin-top: 30px;
 }
+
 .tabel_performa {
     margin-left: 50px;
     margin-top: 50px;
 }
+
 .tabel_pertumbuhan {
     margin-left: 60px;
     width: 96%;
 }
+
 .persentase {
     background-color: #d1c6f7;
     color: #5b35d5;
@@ -4506,346 +4913,6 @@ input[type="time"] {
     padding: 5px;
 }
 
-body {
-    font-family: "Poppins", sans-serif;
-    background-color: #f8f9fa;
-    color: #1e1e1e;
-    margin: 0;
-    padding: 20px;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-p {
-    margin: 0;
-    padding: 0;
-}
-
-.box_luar_view_pendapatan {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    background: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    box-sizing: border-box;
-}
-
-.judul_view {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.deskripsi_view {
-    font-size: 14px;
-    color: #6c757d;
-    margin-bottom: 25px;
-}
-
-.tabel_paling_atas {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 30px;
-}
-
-.tabel_paling_atas > div {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 15px;
-    background: #fff;
-}
-
-.tabel_paling_atas p {
-    font-size: 12px;
-    color: #6c757d;
-    margin-bottom: 5px;
-}
-
-.tabel_paling_atas h5 {
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.status_view h5 {
-    color: #22c55e;
-}
-
-.box_luar_breakdown_pendapatan,
-.box_luar_breakdown_pengeluaran,
-.box_luar_analisis_keuntungan,
-.box_luar_financial {
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 25px;
-    background-color: #fff;
-}
-
-.box_judul_breakdown_pendapatan,
-.box_judul_breakdown_pengeluaran {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.box_judul_breakdown_pendapatan h2,
-.box_judul_breakdown_pengeluaran h2,
-.box_luar_analisis_keuntungan h2,
-.box_luar_financial h2 {
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.box_dalam_breakdown_pendapatan {
-    background-color: #dcfce7;
-    border: 1px solid #86efac;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-}
-
-.box_dalam_breakdown_pendapatan h5 {
-    font-size: 14px;
-    font-weight: 600;
-    color: #166534;
-    margin-bottom: 5px;
-}
-
-.box_dalam_breakdown_pendapatan h3 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #14532d;
-    margin-bottom: 15px;
-}
-
-.isi_box_pendapatan,
-.isi_harga_perunit,
-.isi_kalkulasi {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    color: #14532d;
-    margin-bottom: 4px;
-}
-
-.isi_box_pendapatan p:first-child,
-.isi_harga_perunit p:first-child,
-.isi_kalkulasi p:first-child {
-    width: 100px;
-    font-weight: 500;
-}
-
-.box_dalam_breakdown_pendapatan .garis_abu {
-    margin-top: 15px;
-    height: 4px;
-    background-color: #bbf7d0;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.box_dalam_breakdown_pendapatan .garis_hijau {
-    width: 100%;
-    height: 100%;
-    background-color: #22c55e;
-}
-
-.box_dalam_pendapatan {
-    background-color: #ced4ff;
-    border-radius: 8px;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.box_dalam_pendapatan h4 {
-    font-size: 14px;
-    font-weight: 700;
-    color: #312e81;
-}
-
-.box_isi_pengeluaran {
-    border: 1px solid #f3f4f6;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    background: #fff;
-}
-
-.judul_pertama {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-}
-
-.subjudul_pertama {
-    font-size: 12px;
-    color: #6b7280;
-}
-
-.persentase_box {
-    font-size: 12px;
-    color: #9ca3af;
-}
-
-.box_isi_pengeluaran h5 {
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 10px;
-}
-
-.garis_abu {
-    width: 100%;
-    height: 4px;
-    background-color: #e5e7eb;
-    border-radius: 2px;
-    position: relative;
-}
-
-.garis_abu > div {
-    height: 100%;
-    border-radius: 2px;
-}
-
-.garis_orange {
-    width: 40%;
-    background-color: #ef4444;
-}
-.garis_kuning {
-    width: 20%;
-    background-color: #fbbf24;
-}
-.garis_ungu {
-    width: 15%;
-    background-color: #a855f7;
-}
-.garis_biru {
-    width: 15%;
-    background-color: #3b82f6;
-}
-.garis_pink {
-    width: 10%;
-    background-color: #ec4899;
-}
-
-.box_dalam_pengeluaran {
-    background-color: #fee2e2;
-    border-radius: 8px;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 15px;
-}
-
-.box_dalam_pengeluaran h4 {
-    font-size: 14px;
-    font-weight: 700;
-    color: #991b1b;
-}
-
-.box_isi_untung {
-    background-color: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 8px;
-    padding: 20px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-
-.box_status {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.box_status h5 {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.box_validasi_status h5 {
-    color: #22c55e;
-    border: 1px solid #22c55e;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    background-color: #fff;
-}
-
-.box_isi_untung h3 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #15803d;
-}
-
-.box_dalam_perhitungan {
-    background-color: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 20px;
-}
-
-.box_dalam_perhitungan > h5 {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 15px;
-}
-
-.pendapatan_kotor,
-.total_pengeluaran,
-.keuntungan_bersih {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.pendapatan_kotor p,
-.total_pengeluaran p,
-.keuntungan_bersih p {
-    font-size: 12px;
-    color: #6b7280;
-}
-
-.pendapatan_kotor h5,
-.total_pengeluaran h5 {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.keuntungan_bersih {
-    background-color: #f0fdf4;
-    border-color: #bbf7d0;
-}
-
-.keuntungan_bersih h5 {
-    color: #16a34a;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.box_chart_financial {
-    margin-top: 15px;
-}
-
-@media (max-width: 768px) {
-    .tabel_paling_atas {
-        grid-template-columns: 1fr 1fr;
-    }
-}
 /*FOOTER*/
 .footer-section {
     background: var(--primary-dark);
