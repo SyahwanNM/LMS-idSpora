@@ -4,8 +4,8 @@
 
             {{-- Header --}}
             <div class="modal-header border-0">
-                <h6 class="modal-title fw-semibold d-flex align-items-center gap-2">
-                    <i class="bi bi-wallet2"></i>
+                <h6 class="modal-title fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-wallet-fill"></i>
                     Tarik Komisi
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -15,28 +15,65 @@
             <div class="modal-body px-4">
 
                 {{-- Saldo --}}
-                <div class="d-flex justify-content-between align-items-center bg-light rounded-3 px-3 py-2 mb-3">
-                    <small class="text-muted">Saldo Tersedia</small>
-                    <span class="fw-semibold text-primary">
-                        Rp {{ number_format($availableBalance ?? 1200000, 0, ',', '.') }}
-                    </span>
+                <div class="text-center mb-4 p-3 bg-light rounded-4 border border-light-subtle">
+                            <span class="text-muted d-block small mb-1 fw-medium">Saldo Tersedia</span>
+                            <h2 class="fw-bold text-success mb-0">
+                                Rp {{ number_format(auth()->user()->wallet_balance ?? 0, 0, ',', '.') }}
+                            </h2>
                 </div>
 
                 {{-- Metode --}}
-                <div class="mb-3">
+                {{-- <div class="mb-3">
                     <label class="form-label small">Metode Penarikan</label>
                     <select class="form-select">
                         <option selected disabled>Pilih Metode</option>
                         <option value="bank">Transfer Bank</option>
                         <option value="ewallet">E-Wallet</option>
                     </select>
-                </div>
+                </div> --}}
+
+                <div class="mb-3">
+                            <label for="bank_name" class="form-label fw-semibold small text-muted">Bank Tujuan</label>
+                            <select class="form-select bg-light border-0 py-2" id="bank_name" name="bank_name" required>
+                                <option value="" disabled selected>Pilih Bank / E-Wallet</option>
+                                <option value="BCA">BCA</option>
+                                <option value="Mandiri">Mandiri</option>
+                                <option value="BNI">BNI</option>
+                                <option value="BRI">BRI</option>
+                                <option value="SeaBank">SeaBank</option>
+                                <option value="OVO">OVO</option>
+                                <option value="GoPay">GoPay</option>
+                                <option value="Dana">DANA</option>
+                                <option value="ShopeePay">ShopeePay</option>
+                            </select>
+                        </div>
+
+
+
+
+
+
+
+
+                
 
                 {{-- Rekening --}}
-                <div class="mb-3">
+                {{-- <div class="mb-3">
                     <label class="form-label small">Nomor Rekening</label>
                     <input type="text" class="form-control" placeholder="Contoh: 1234 5678 90">
-                </div>
+                </div> --}}
+
+
+                <div class="row g-3">
+                            <div class="col-7">
+                                <label for="account_number" class="form-label fw-semibold small text-muted">Nomor Rekening</label>
+                                <input type="number" class="form-control bg-light border-0 py-2" id="account_number" name="account_number" placeholder="Contoh: 1234567890" required>
+                            </div>
+                            <div class="col-5">
+                                <label for="account_holder" class="form-label fw-semibold small text-muted">Atas Nama</label>
+                                <input type="text" class="form-control bg-light border-0 py-2" id="account_holder" name="account_holder" placeholder="Nama Pemilik" required>
+                            </div>
+                        </div>
 
                 {{-- Jumlah --}}
                 <div class="mb-2">
