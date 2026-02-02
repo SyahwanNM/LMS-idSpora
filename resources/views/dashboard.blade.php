@@ -504,43 +504,39 @@
                         </div>
 
                         <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
+                            @forelse($upcomingEvents as $event)
 
                             <div class="flex-shrink-0" style="width: 320px;">
                                 <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                     style="background:white;">
 
                                     <div class="position-relative overflow-hidden" style="height: 180px;">
-                                        <img src="https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=1000"
-                                            class="w-100 h-100 object-fit-cover" alt="event">
+                                        <img src="{{ $event->image_url ?? asset('aset/poster.png') }}"
+                                            class="w-100 h-100 object-fit-cover" alt="{{ $event->title }}"
+                                            onerror="this.onerror=null;this.src='{{ asset('aset/poster.png') }}';">
 
+                                        @if($event->original_price && $event->price < $event->original_price)
                                         <span
                                             style="position:absolute; bottom:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;">
-                                            50% OFF
+                                            {{ round((($event->original_price - $event->price) / $event->original_price) * 100) }}% OFF
                                         </span>
+                                        @elseif($event->price == 0)
+                                        @endif
+
                                         <span
-                                            style="position:absolute; top:12px; left:12px; background:#0d6efd; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
-                                            WEBINAR
+                                            style="position:absolute; top:12px; left:12px; background:{{ ($event->manage_action == 'create') ? '#6F42C1' : '#0D6EFD' }}; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
+                                            {{ $event->manage_action ?? 'EVENT' }}
                                         </span>
-                                        <button
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                            style="width: 32px; height: 32px; padding: 0;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                fill="currentColor" class="bi bi-bookmark" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
-                                            </svg>
-                                        </button>
                                     </div>
 
                                     <div class="card-body pt-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4;">Build Your First
-                                            React App</h6>
+                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4; white-space: normal;">{{ $event->title }}</h6>
 
                                         <div class="mb-3 d-flex gap-2">
                                             <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Coding</span>
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">{{ $event->materi }}</span>
                                             <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Frontend</span>
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">{{ $event->jenis }}</span>
                                         </div>
 
                                         <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
@@ -552,7 +548,7 @@
                                                     <path
                                                         d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
                                                 </svg>
-                                                <span>28 Februari 2026</span>
+                                                <span>{{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : 'TBA' }}</span>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -560,11 +556,17 @@
                                                     <path
                                                         d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
                                                 </svg>
-                                                <span>Zoom • 13:00 WIB</span>
+                                                <span class="text-truncate" style="max-width: 200px;">{{ $event->location ?? 'Online' }} • {{ $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') . ' WIB' : '' }}</span>
                                             </div>
                                         </div>
 
                                         <div class="mb-3">
+                                            @php
+                                                $quota = $event->quota ?? 100;
+                                                $registered = $event->registrations_count ?? 0;
+                                                $percentage = $quota > 0 ? min(100, round(($registered / $quota) * 100)) : 100;
+                                                $isFull = $registered >= $quota;
+                                            @endphp
                                             <div class="d-flex justify-content-between align-items-center mb-1"
                                                 style="font-size: 11px;">
                                                 <div class="d-flex align-items-center gap-1 text-muted">
@@ -574,13 +576,15 @@
                                                         <path
                                                             d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
                                                     </svg>
-                                                    <span>Kuota Terisi</span>
+                                                    <span>{{ $isFull ? 'Kuota Penuh' : 'Kuota Terisi' }}</span>
                                                 </div>
-                                                <span class="fw-bold text-primary">85/100</span>
+                                                <span class="fw-bold {{ $isFull ? 'text-danger' : ($percentage > 80 ? 'text-warning' : 'text-primary') }}">
+                                                    {{ $registered }}/{{ $quota }}
+                                                </span>
                                             </div>
                                             <div class="progress" style="height: 6px; background-color: #f1f5f9;">
-                                                <div class="progress-bar bg-primary" role="progressbar"
-                                                    style="width: 85%" aria-valuenow="85" aria-valuemin="0"
+                                                <div class="progress-bar {{ $isFull ? 'bg-danger' : ($percentage > 80 ? 'bg-warning' : 'bg-primary') }}" role="progressbar"
+                                                    style="width: {{ $percentage }}%" aria-valuenow="{{ $percentage }}" aria-valuemin="0"
                                                     aria-valuemax="100"></div>
                                             </div>
                                         </div>
@@ -589,224 +593,39 @@
                                             style="background:#f8f9fa;">
                                             <span class="small fw-bold text-muted">Mulai:</span>
                                             <span class="font-monospace px-2 py-1 rounded"
-                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">02
-                                                Hari 10 Jam</span>
+                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">
+                                                {{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->diffForHumans(null, true, true) : '-' }}
+                                            </span>
                                         </div>
 
                                         <div
                                             class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
                                             <div class="d-flex flex-column">
-                                                <span
-                                                    style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
-                                                    150.000</span>
-                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
-                                                    75.000</span>
+                                                @if($event->price == 0)
+                                                    <span style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
+                                                @else
+                                                    @if($event->original_price && $event->original_price > $event->price)
+                                                        <span
+                                                            style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
+                                                            {{ number_format($event->original_price, 0, ',', '.') }}</span>
+                                                    @endif
+                                                    <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
+                                                        {{ number_format($event->price, 0, ',', '.') }}</span>
+                                                @endif
                                             </div>
-                                            <button
-                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Daftar</button>
+                                            <a href="{{ route('events.show', $event->id) }}"
+                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold {{ $isFull ? 'disabled' : '' }}">
+                                                {{ $isFull ? 'Penuh' : 'Detail' }}
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="flex-shrink-0" style="width: 320px;">
-                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
-                                    style="background:white;">
-
-                                    <div class="position-relative overflow-hidden" style="height: 180px;">
-                                        <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1000"
-                                            class="w-100 h-100 object-fit-cover" alt="event">
-
-                                        <span
-                                            style="position:absolute; top:12px; left:12px; background:var(--secondary); color:#000; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
-                                            SEMINAR
-                                        </span>
-                                        <button
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                            style="width: 32px; height: 32px; padding: 0;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                fill="currentColor" class="bi bi-bookmark" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div class="card-body pt-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4;">Tech Meetup:
-                                            Startups 2026</h6>
-
-                                        <div class="mb-3 d-flex gap-2">
-                                            <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Business</span>
-                                            <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Network</span>
-                                        </div>
-
-                                        <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                    fill="currentColor" viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                                    <path
-                                                        d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                                                </svg>
-                                                <span>15 Maret 2026</span>
-                                            </div>
-                                            <div class="d-flex align-items-start gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                    fill="currentColor" class="mt-1 flex-shrink-0" viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                                                </svg>
-                                                <span style="line-height: 1.2;">Auditorium TULT, Telkom Univ</span>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-1"
-                                                style="font-size: 11px;">
-                                                <div class="d-flex align-items-center gap-1 text-muted">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="currentColor" class="bi bi-people-fill"
-                                                        viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                                    </svg>
-                                                    <span>Kuota Terisi</span>
-                                                </div>
-                                                <span class="fw-bold text-success">25/200</span>
-                                            </div>
-                                            <div class="progress" style="height: 6px; background-color: #f1f5f9;">
-                                                <div class="progress-bar bg-success" role="progressbar"
-                                                    style="width: 12.5%" aria-valuenow="25" aria-valuemin="0"
-                                                    aria-valuemax="200"></div>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
-                                            style="background:#f8f9fa;">
-                                            <span class="small fw-bold text-muted">Mulai:</span>
-                                            <span class="font-monospace px-2 py-1 rounded"
-                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">15
-                                                Hari 09 Jam</span>
-                                        </div>
-
-                                        <div
-                                            class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
-                                            <div class="d-flex flex-column">
-                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
-                                                    150.000</span>
-                                            </div>
-                                            <button
-                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Daftar</button>
-                                        </div>
-                                    </div>
-                                </div>
+                            @empty
+                            <div class="text-center w-100 py-5">
+                                <p class="text-muted">Belum ada event terbaru saat ini.</p>
                             </div>
-
-                            <div class="flex-shrink-0" style="width: 320px;">
-                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
-                                    style="background:white;">
-
-                                    <div class="position-relative overflow-hidden" style="height: 180px;">
-                                        <img src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=1000"
-                                            class="w-100 h-100 object-fit-cover" alt="community">
-
-                                        <span
-                                            style="position:absolute; bottom:12px; left:12px; background:#198754; color:#fff; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;">
-                                            FREE
-                                        </span>
-                                        <span
-                                            style="position:absolute; top:12px; left:12px; background:#6f42c1; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
-                                            ONSITE
-                                        </span>
-                                        <button
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                            style="width: 32px; height: 32px; padding: 0;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                fill="currentColor" class="bi bi-bookmark" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div class="card-body pt-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4;">Community Talk:
-                                            Career in Tech</h6>
-
-                                        <div class="mb-3 d-flex gap-2">
-                                            <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Career</span>
-                                            <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">Discussion</span>
-                                        </div>
-
-                                        <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                    fill="currentColor" viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                                                    <path
-                                                        d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                                                </svg>
-                                                <span>10 Maret 2026</span>
-                                            </div>
-                                            <div class="d-flex align-items-start gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                    fill="currentColor" class="mt-1 flex-shrink-0" viewBox="0 0 16 16">
-                                                    <path
-                                                        d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
-                                                </svg>
-                                                <span style="line-height: 1.2;">Gedung Serbaguna, Bandung</span>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-1"
-                                                style="font-size: 11px;">
-                                                <div class="d-flex align-items-center gap-1 text-muted">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="currentColor" class="bi bi-people-fill"
-                                                        viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                                    </svg>
-                                                    <span>Kuota Terisi</span>
-                                                </div>
-                                                <span class="fw-bold text-warning">90/100</span>
-                                            </div>
-                                            <div class="progress" style="height: 6px; background-color: #f1f5f9;">
-                                                <div class="progress-bar bg-warning" role="progressbar"
-                                                    style="width: 90%" aria-valuenow="90" aria-valuemin="0"
-                                                    aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
-                                            style="background:#f8f9fa;">
-                                            <span class="small fw-bold text-muted">Mulai:</span>
-                                            <span class="font-monospace px-2 py-1 rounded"
-                                                style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">10
-                                                Hari 08 Jam</span>
-                                        </div>
-
-                                        <div
-                                            class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
-                                            <div class="d-flex flex-column">
-                                                <span
-                                                    style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
-                                            </div>
-                                            <button
-                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Daftar</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                            @endforelse
                         </div>
                     </div>
                 </div>
