@@ -127,7 +127,11 @@
                         <div class="mt-4">
                             <h5 class="mb-2">Course Modules</h5>
                             <p class="small text-muted mb-2">Tambahkan materi untuk menyusun konten course Anda.</p>
-                            <div id="modules-list" class="d-flex flex-column gap-2 mb-3"></div>
+                            <div id="modules-empty-state" class="text-center py-5 border rounded-3 mb-3" style="border-style: dashed !important; border-color: #dee2e6; background-color: #fff;">
+                                <h6 class="text-muted fw-normal mb-1">No modules yet</h6>
+                                <p class="text-muted small mb-0">Add your first module to structure your course</p>
+                            </div>
+                            <div id="modules-list" class="d-flex flex-column gap-2 mb-3" style="display:none;"></div>
 
                             <div class="d-flex align-items-center gap-2">
                                 <button type="button" id="open-add-pdf-modal" class="btn btn-primary">
@@ -238,115 +242,110 @@
         </div>
     </div>
 
-    <!-- Add Quiz Modal -->
-    <div class="modal fade" id="addQuizModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Quiz</h5>
+    <!-- Add Quiz Modal (Multi-step) -->
+    <div class="modal fade" id="addQuizModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
                     <div>
-                        <p class="deskripsi_judul modal-title">Set up quiz details</p>
+                        <h5 class="modal-title fw-bold" id="quizModalTitle">Create Quiz</h5>
+                        <p class="text-muted small mb-0" id="quizModalSubtitle">Add Question and Answer</p>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="judul_nama_quiz form-label">Judul Quiz</label>
-                        <input type="text" id="quiz-modal-title" class="form-control">
+                <div class="modal-body pt-3">
+                    <!-- Step 1: Quiz Overview (Title, Desc, List of Questions) -->
+                    <div id="quiz-step-1">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-dark">Judul Quiz</label>
+                            <input type="text" id="quiz-title-input" class="form-control" placeholder="Masukkan Judul Quiz">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-dark">Quiz Description</label>
+                            <textarea id="quiz-desc-input" class="form-control" rows="3" style="resize:none;"></textarea>
+                        </div>
+                        
+                        <!-- List of Added Questions -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-dark d-flex justify-content-between align-items-center">
+                                <span>Question Added (<span id="quiz-question-count">0</span>)</span>
+                                <span class="badge bg-light text-success border border-success px-2 rounded-pill" style="font-weight:500;">Ready to add more</span>
+                            </label>
+                            <div id="quiz-questions-list" class="d-flex flex-column gap-2">
+                                <!-- Questions will be rendered here -->
+                            </div>
+                        </div>
+
+                        <button type="button" id="btn-goto-add-question" class="btn btn-outline-secondary w-100 py-3 border-dashed d-flex align-items-center justify-content-center gap-2" style="border-style:dashed;">
+                            <i class="bi bi-plus-lg"></i> Add Question
+                        </button>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="judul_nama_quiz form-label">Quiz Description</label>
-                        <textarea id="quiz-modal-desc" class="form-control"></textarea>
-                    </div>
-                    <button class="box_tambah_pertanyaan">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-plus" viewBox="0 0 16 16">
-                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-                        </svg>
-                        <p style="color: black; margin-top: 8px;">Add Question</p>
-                    </button>
-                    <div class="box_luar_tambah_kuis">
-                        <div class="box_dalam_pertanyaan_kuis">
-                            <h5>Quiz #1</h5>
-                            <p>Fill all fields to add</p>
-                        </div>
-                        <h5>Question Text</h5>
-                        <div class="isi_pertanyaan_kuis">
-                            <textarea class="form-control" rows="3">Enter Your Question... </textarea>
-                        </div>
-                        <div class="box_luar_answer_option">
-                            <h5>Answer Option</h5>
-                            <div class="answer_option">
-                                <div class="box_option">
-                                    <p>Option 1</p>
-                                </div>
-                                <div>
-                                    <div class="form-check">
-                                        <input class="radio_button_kuis form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
-                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
-                                            Correct
-                                        </label>
-                                    </div>
-                                </div>
+                    <!-- Step 2: Add/Edit Question Form -->
+                    <div id="quiz-step-2" style="display:none;">
+                        <div class="bg-light p-3 rounded-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0" id="quiz-question-number-title">Quiz #1</h6>
+                                <small class="text-muted">Fill all fields to add</small>
                             </div>
-                        </div>
-                        <div class="box_luar_answer_option">
-                            <div class="answer_option">
-                                <div class="box_option">
-                                    <p>Option 2</p>
-                                </div>
-                                <div>
-                                    <div class="form-check">
-                                        <input class="radio_button_kuis form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
-                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
-                                            Correct
-                                        </label>
-                                    </div>
-                                </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-dark">Question Text</label>
+                                <textarea id="q-text-input" class="form-control" rows="3" placeholder="Enter Your Question..."></textarea>
                             </div>
-                        </div>
-                        <div class="box_luar_answer_option">
-                            <div class="answer_option">
-                                <div class="box_option">
-                                    <p>Option 3</p>
-                                </div>
-                                <div>
-                                    <div class="form-check">
-                                        <input class="radio_button_kuis form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
-                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
-                                            Correct
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="box_luar_answer_option">
-                            <div class="answer_option">
-                                <div class="box_option">
-                                    <p>Option 4</p>
-                                </div>
-                                <div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="radioDisabled" id="radioCheckedDisabled" checked disabled>
-                                        <label class="text_label form-check-label" for="radioCheckedDisabled">
-                                            Correct
-                                        </label>
-                                    </div>
-                                </div>
+
+                            <label class="form-label fw-bold small text-dark">Answer Option</label>
+                            <div class="d-flex flex-column gap-2" id="q-options-container">
+                                <!-- Generated by JS -->
                             </div>
                         </div>
                     </div>
 
+                    <!-- Step 3: Review -->
+                    <div id="quiz-step-3" style="display:none;">
+                        <div class="bg-light p-4 rounded-3 mb-4">
+                            <div class="mb-2">
+                                <small class="text-muted d-block">Quiz Title</small>
+                                <h6 class="fw-bold" id="review-quiz-title">-</h6>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted d-block">Quiz Description</small>
+                                <p class="mb-0 small text-dark" id="review-quiz-desc">-</p>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Total Question</small>
+                                <h6 class="fw-bold mb-0"><span id="review-total-q">0</span> questions</h6>
+                            </div>
+                        </div>
 
+                        <h6 class="fw-bold mb-3">Question Overview</h6>
+                        <div id="review-questions-list" class="border rounded-3 p-0 overflow-hidden">
+                            <!-- Review list rendered here -->
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="modal-footer">
-                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" id="quiz-modal-add-btn" class="btn btn-primary">Save</button>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 justify-content-between">
+                    <!-- Footer Buttons Dynamic based on Step -->
+                    <div id="quiz-footer-step-1" class="w-100 d-flex justify-content-between">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="btn-goto-review" class="btn btn-primary px-4" style="background-color: #4B2DBF; border-color: #4B2DBF;">Next Review</button>
+                    </div>
+
+                    <div id="quiz-footer-step-2" class="w-100 d-flex justify-content-end gap-2" style="display:none !important;">
+                         <button type="button" id="btn-cancel-question" class="btn btn-light px-4">Cancel</button>
+                         <button type="button" id="btn-save-question" class="btn btn-primary px-4" style="background-color: #4B2DBF; border-color: #4B2DBF;">+ Add Question</button>
+                    </div>
+
+                    <div id="quiz-footer-step-3" class="w-100 d-flex justify-content-between" style="display:none !important;">
+                        <button type="button" id="btn-back-to-step-1" class="btn btn-light px-4">Back</button>
+                        <button type="button" id="btn-final-save-quiz" class="btn btn-success px-4 bg-success border-success text-white">Save Quiz</button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
@@ -420,18 +419,18 @@
                     wrapper.className = 'border rounded p-2 d-flex align-items-start gap-2';
                     wrapper.innerHTML = `
                 <div class="bg-light rounded p-2 d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
-                    <i class="bi ${mod.type==='pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-play'}" style="font-size:1.25rem;"></i>
+                    <i class="bi ${mod.type==='pdf' ? 'bi-file-earmark-pdf' : (mod.type==='quiz'?'bi-patch-question':'bi-file-earmark-play')}" style="font-size:1.25rem;color:${mod.type==='pdf'?'#F40F02':(mod.type==='quiz'?'#4B2DBF':'#0d6efd')};"></i>
                 </div>
                 <div class="flex-grow-1">
                     <div class="d-flex align-items-center gap-2">
                         <strong class="me-2">${mod.title}</strong>
-                        <span class="badge bg-secondary">#${(mod.order ?? (idx+1))}</span>
+                        <span class="badge bg-light text-secondary border">#${(mod.order ?? 1)}</span>
                     </div>
                     <div class="text-muted small">${mod.subtitle || ''}</div>
-                    <div class="text-muted small">${mod.filename}</div>
+                    <div class="text-muted small">${mod.type === 'quiz' ? 'Quiz Interactive' : (mod.filename || 'File not found (reload)')}</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Remove"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0" aria-label="Remove"><i class="bi bi-trash"></i></button>
                 </div>
             `;
                     const removeBtn = wrapper.querySelector('button');
@@ -445,11 +444,87 @@
                     return wrapper;
                 }
 
+                // LocalStorage Key
+                const STORAGE_KEY = 'course_draft_modules';
+
+                function saveDraft() {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(modules));
+                    updatePayload();
+                }
+
+                function loadDraft() {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            // Ensure structure is arrays
+                            if (Array.isArray(parsed)) {
+                                modules.splice(0, modules.length, ...parsed);
+                                renderList();
+                            }
+                        } catch (e) { console.error('Failed to load draft', e); }
+                    }
+                }
+
                 function renderList() {
                     listEl.innerHTML = '';
-                    const sorted = [...modules].sort((a, b) => (a.order ?? 1e9) - (b.order ?? 1e9));
-                    sorted.forEach(m => listEl.appendChild(makeModuleCard(m)));
-                    updatePayload();
+                    
+                    const emptyState = document.getElementById('modules-empty-state');
+                    if (modules.length === 0) {
+                        if (emptyState) emptyState.style.display = 'block';
+                        listEl.style.display = 'none';
+                        saveDraft();
+                        return;
+                    }
+
+                    if (emptyState) emptyState.style.display = 'none';
+                    listEl.style.display = 'flex';
+
+                    // Grouping
+                    const pdfs = modules.filter(m => m.type === 'pdf').sort((a,b) => (a.order||0)-(b.order||0));
+                    const videos = modules.filter(m => m.type === 'video').sort((a,b) => (a.order||0)-(b.order||0));
+                    const quizzes = modules.filter(m => m.type === 'quiz').sort((a,b) => (a.order||0)-(b.order||0));
+
+                    const createSection = (title, items) => {
+                         const section = document.createElement('div');
+                         section.className = 'mb-4';
+                         section.innerHTML = `<h6 class="fw-bold mb-3">${title}</h6>`;
+                         const container = document.createElement('div');
+                         container.className = 'd-flex flex-column gap-3';
+                         items.forEach(m => container.appendChild(makeModuleCard(m)));
+                         section.appendChild(container);
+                         return section;
+                    };
+
+                    if(pdfs.length > 0) listEl.appendChild(createSection('PDF Document', pdfs));
+                    if(videos.length > 0) listEl.appendChild(createSection('Video Lesson', videos));
+                    if(quizzes.length > 0) listEl.appendChild(createSection('Quizzes', quizzes));
+
+                    saveDraft();
+                }
+
+                // Initial Load
+                loadDraft();
+                
+                // Clear draft on submit success (optional, or rely on page navigation)
+                const mainForm = document.querySelector('form[action]'); 
+                // There might be multiple forms, find the one wrapping this input
+                // Or just assume the main one. Let's try to find if there is a main form
+                if(mainForm) {
+                    mainForm.addEventListener('submit', () => {
+                        // We don't clear immediately in case validation fails, 
+                        // but usually if it redirects, it's fine. 
+                        // If it's an AJAX submit, we clear in the success callback.
+                        // For now we keep it simple: persistence is for accidental refresh.
+                        // If user submits, and it succeeds, they go to index. 
+                        // If they come back to ADD page, maybe they want a fresh start?
+                        // Yes, usually "Add" page should start fresh.
+                        // So we clear it only if we detect a successful submission or explicitly.
+                        // Actually, if we are on "Add Course" page, we probably want to load draft only if it exists.
+                        // But if the user successfully created a course, we should clear it.
+                        // For now, let's leave it. If they come back, they see their draft. 
+                        // They can manually delete if they want.
+                    });
                 }
 
                 function addModuleFromFile(file, type) {
@@ -669,6 +744,225 @@
                         resetVideoModal();
                     });
                 }
+
+                // --- Quiz Logic (Multi-step) ---
+                let quizDraft = {
+                    title: '',
+                    description: '',
+                    questions: []
+                };
+
+                // Elements
+                const quizStep1 = document.getElementById('quiz-step-1');
+                const quizStep2 = document.getElementById('quiz-step-2');
+                const quizStep3 = document.getElementById('quiz-step-3');
+                
+                const quizFooter1 = document.getElementById('quiz-footer-step-1');
+                const quizFooter2 = document.getElementById('quiz-footer-step-2');
+                const quizFooter3 = document.getElementById('quiz-footer-step-3');
+
+                const quizTitleInput = document.getElementById('quiz-title-input');
+                const quizDescInput = document.getElementById('quiz-desc-input');
+                const quizQuestionsList = document.getElementById('quiz-questions-list');
+                const quizQuestionCount = document.getElementById('quiz-question-count');
+
+                // Buttons
+                const btnGoToAddQuestion = document.getElementById('btn-goto-add-question');
+                const btnGotoReview = document.getElementById('btn-goto-review');
+                const btnCancelQuestion = document.getElementById('btn-cancel-question');
+                const btnSaveQuestion = document.getElementById('btn-save-question');
+                const btnBackToStep1 = document.getElementById('btn-back-to-step-1');
+                const btnFinalSaveQuiz = document.getElementById('btn-final-save-quiz');
+
+                // Step 2 Inputs
+                const qTextInput = document.getElementById('q-text-input');
+                const qOptionsContainer = document.getElementById('q-options-container');
+                const quizQuestionNumberTitle = document.getElementById('quiz-question-number-title');
+
+                // Review Elements
+                const reviewQuizTitle = document.getElementById('review-quiz-title');
+                const reviewQuizDesc = document.getElementById('review-quiz-desc');
+                const reviewTotalQ = document.getElementById('review-total-q');
+                const reviewQuestionsList = document.getElementById('review-questions-list');
+
+                function switchStep(step) {
+                    [quizStep1, quizStep2, quizStep3].forEach(el => el.style.display = 'none');
+                    [quizFooter1, quizFooter2, quizFooter3].forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+                    if(step === 1) {
+                        quizStep1.style.display = 'block';
+                        quizFooter1.style.display = 'flex';
+                        renderQuestionsMinimal();
+                    } else if(step === 2) {
+                        quizStep2.style.display = 'block';
+                        quizFooter2.style.display = 'flex';
+                        // Update Quiz #X title
+                        const nextNum = quizDraft.questions.length + 1;
+                        if(quizQuestionNumberTitle) quizQuestionNumberTitle.textContent = `Quiz #${nextNum}`;
+                        
+                        resetQuestionForm();
+                    } else if(step === 3) {
+                        quizStep3.style.display = 'block';
+                        quizFooter3.style.display = 'flex';
+                        renderReview();
+                    }
+                }
+
+                function resetQuizDraft() {
+                    quizDraft = { title: '', description: '', questions: [] };
+                    quizTitleInput.value = '';
+                    quizDescInput.value = '';
+                    switchStep(1);
+                }
+
+                function renderQuestionsMinimal() {
+                    if (quizDraft.questions.length === 0) {
+                        quizQuestionsList.innerHTML = '<div class="alert alert-light border text-center text-muted small py-3">No questions added yet.</div>';
+                    } else {
+                        quizQuestionsList.innerHTML = quizDraft.questions.map((q, idx) => `
+                            <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3 border">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:24px;height:24px;">
+                                        <i class="bi bi-check-lg" style="font-size:0.75rem;"></i>
+                                    </span>
+                                    <span class="fw-semibold text-dark">Q${idx + 1}. ${q.text.substring(0, 30)}${q.text.length > 30 ? '...' : ''}</span>
+                                </div>
+                                <button type="button" class="btn btn-sm text-danger" onclick="removeDraftQuestion(${idx})"><i class="bi bi-trash"></i></button>
+                            </div>
+                        `).join('');
+                    }
+                    quizQuestionCount.textContent = quizDraft.questions.length;
+                    
+                    // Add listener for remove button (since inline onclick won't verify easily with scoping)
+                    // We will use delegation
+                }
+                
+                quizQuestionsList.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.btn.text-danger');
+                    if(btn) {
+                        // find index
+                        // Simple way: re-render with onclick or data-index
+                        // Re-render approach with valid delegation:
+                        // Let's assume we render data-index
+                    }
+                });
+
+                // Global function for remove (attached to window for simplicity in this scope or use delegation)
+                window.removeDraftQuestion = function(idx) {
+                    quizDraft.questions.splice(idx, 1);
+                    renderQuestionsMinimal();
+                };
+
+                function resetQuestionForm() {
+                    qTextInput.value = '';
+                    qOptionsContainer.innerHTML = [1, 2, 3, 4].map(i => `
+                        <div class="input-group">
+                            <input type="text" class="form-control question-option-input" placeholder="Option ${i}" data-index="${i}">
+                            <div class="input-group-text bg-white">
+                                <input class="form-check-input mt-0 question-correct-radio" type="radio" name="correctOption" value="${i}" aria-label="Correct answer">
+                                <span class="ms-2 small text-muted">Correct</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                // Event Listeners
+                if (openQuizBtn) {
+                     // Override default
+                     openQuizBtn.replaceWith(openQuizBtn.cloneNode(true)); // remove old listeners
+                     document.getElementById('open-add-quiz-modal').addEventListener('click', () => {
+                         resetQuizDraft();
+                         if(quizModalInstance) quizModalInstance.show();
+                     });
+                }
+
+                btnGoToAddQuestion.addEventListener('click', () => switchStep(2));
+                btnCancelQuestion.addEventListener('click', () => switchStep(1));
+                
+                btnSaveQuestion.addEventListener('click', () => {
+                    const text = qTextInput.value.trim();
+                    if(!text) { alert('Please enter question text'); return; }
+                    
+                    const options = [];
+                    let correctIdx = -1;
+                    
+                    const optInputs = qOptionsContainer.querySelectorAll('.question-option-input');
+                    const radios = qOptionsContainer.querySelectorAll('.question-correct-radio');
+                    
+                    let allFilled = true;
+                    optInputs.forEach((inp, idx) => {
+                        const val = inp.value.trim();
+                        if(!val) allFilled = false;
+                        options.push(val);
+                        if(radios[idx].checked) correctIdx = idx;
+                    });
+
+                    if(!allFilled) { alert('Please fill all 4 options'); return; }
+                    if(correctIdx === -1) { alert('Please select the correct answer'); return; }
+
+                    quizDraft.questions.push({
+                        text: text,
+                        options: options,
+                        correctIndex: correctIdx
+                    });
+                    
+                    switchStep(1);
+                });
+
+                btnGotoReview.addEventListener('click', () => {
+                    // Update Draft info
+                    quizDraft.title = quizTitleInput.value.trim();
+                    quizDraft.description = quizDescInput.value.trim();
+
+                    if(!quizDraft.title) { alert('Please enter Quiz Title'); return; }
+                    if(quizDraft.questions.length === 0) { alert('Please add at least one question'); return; }
+
+                    switchStep(3);
+                });
+
+                btnBackToStep1.addEventListener('click', () => switchStep(1));
+
+                function renderReview() {
+                    reviewQuizTitle.textContent = quizDraft.title;
+                    reviewQuizDesc.textContent = quizDraft.description || '-';
+                    reviewTotalQ.textContent = quizDraft.questions.length;
+
+                    reviewQuestionsList.innerHTML = quizDraft.questions.map((q, i) => `
+                        <div class="p-3 border-bottom bg-white">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-light text-dark border">Q${i+1}</span>
+                                <span class="fw-semibold">${q.text}</span>
+                            </div>
+                            <div class="ps-4">
+                                ${q.options.map((opt, optI) => `
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <div style="width:16px;height:16px;border:1px solid #ccc;border-radius:4px;background-color:${optI === q.correctIndex ? '#d1e7dd' : '#fff'};border-color:${optI === q.correctIndex ? '#198754' : '#ccc'};"></div>
+                                        <span class="small ${optI === q.correctIndex ? 'text-success fw-bold' : 'text-muted'}">${opt}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                btnFinalSaveQuiz.addEventListener('click', () => {
+                    const nextOrder = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                    const uid = 'q' + Date.now().toString(36);
+                    
+                    modules.push({
+                        type: 'quiz',
+                        title: quizDraft.title,
+                        subtitle: `${quizDraft.questions.length} questions`,
+                        filename: 'Quiz Module', // Placeholder
+                        mime: 'application/json', // Virtual
+                        order: nextOrder,
+                        uid: uid,
+                        data: JSON.parse(JSON.stringify(quizDraft)) // Deep copy
+                    });
+                    
+                    renderList();
+                    if(quizModalInstance) quizModalInstance.hide();
+                });
             })();
         </script>
         <script>
