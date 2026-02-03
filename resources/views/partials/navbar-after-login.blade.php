@@ -35,7 +35,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-1.203-3.92L10 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
                 </svg>
-                <span class="position-absolute translate-middle badge rounded-pill bg-danger badge-custom" id="notificationBadgeMobile" style="display: none;">0</span>
+                <span class="position-absolute translate-middle badge rounded-pill bg-danger badge-custom" id="notificationBadgeMobile" style="{{ $unreadNotificationCount > 0 ? '' : 'display: none;' }}">{{ $unreadNotificationCount }}</span>
             </button>
 
             <!-- Burger Menu Toggler -->
@@ -86,7 +86,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-1.203-3.92L10 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
                             </svg>
-                            <span class="position-absolute translate-middle badge rounded-pill bg-danger badge-custom" id="notificationBadge" style="display: none;">0</span>
+                            <span class="position-absolute translate-middle badge rounded-pill bg-danger badge-custom" id="notificationBadge" style="{{ $unreadNotificationCount > 0 ? '' : 'display: none;' }}">{{ $unreadNotificationCount }}</span>
                         </button>
                         
                         <!-- Notif Dropdown -->
@@ -95,15 +95,35 @@
                                 <span>Notifications</span>
                                 <button class="btn btn-link btn-sm p-0 text-warning" onclick="markAllAsRead()">Mark all as read</button>
                             </div>
-                            <div id="notificationList" class="notif-list-container">
-                                <!-- Dynamic List -->
-                                <div class="px-3 py-4 text-center text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" class="mb-2 opacity-50">
-                                        <path d="M4 8.5V7a4 4 0 1 1 8 0v1.5H4zm1 0h6V7a3 3 0 1 0-6 0v1.5zM3.5 10a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9z"/>
-                                        <path d="M8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                                    </svg>
-                                    <p class="small mb-0">No new notifications</p>
-                                </div>
+<div id="notificationList" class="notif-list-container" style="max-height: 350px; overflow-y: auto;">
+                                @forelse($notifications as $notification)
+                                    <div class="dropdown-item p-3 border-bottom {{ is_null($notification->read_at) ? 'bg-opacity-10 bg-primary' : '' }}" style="white-space: normal;">
+                                        <div class="d-flex w-100 justify-content-between align-items-start">
+                                            <div class="d-flex align-items-center">
+                                                @if($notification->read_at)
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill text-success me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill text-warning me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                                    </svg>
+                                                @endif
+                                                <h6 class="mb-1 fw-bold text-white small">{{ $notification->title }}</h6>
+                                            </div>
+                                            <small class="text-white-50 ms-2" style="font-size: 0.7rem; white-space: nowrap;">{{ $notification->created_at->diffForHumans() }}</small>
+                                        </div>
+                                        <p class="mb-1 small text-white-50 ms-4">{{ Str::limit($notification->message, 80) }}</p>
+                                    </div>
+                                @empty
+                                    <div class="px-3 py-4 text-center text-muted">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" class="mb-2 opacity-50">
+                                            <path d="M4 8.5V7a4 4 0 1 1 8 0v1.5H4zm1 0h6V7a3 3 0 1 0-6 0v1.5zM3.5 10a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9z"/>
+                                            <path d="M8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                        </svg>
+                                        <p class="small mb-0">No new notifications</p>
+                                    </div>
+                                @endforelse
                             </div>
                         </div>
                     </div>
@@ -663,8 +683,40 @@ function toggleNotificationDropdown() {
     dropdown.style.display = isVisible ? 'none' : 'block';
     
     if (!isVisible && typeof loadNotifications === 'function') {
-        loadNotifications();
+        // loadNotifications(); // Disabled as we are using View Composer
     }
+}
+
+function markAllAsRead() {
+    fetch('{{ route("notifications.markAllRead") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            // Update UI: hide badges
+            const badges = document.querySelectorAll('.badge-custom');
+            badges.forEach(b => b.style.display = 'none');
+            
+            // Update icons to green
+            const icons = document.querySelectorAll('#notificationList .text-warning');
+            icons.forEach(icon => {
+                icon.classList.remove('text-warning');
+                icon.classList.add('text-success');
+            });
+            
+            // Remove unread background styling
+            const items = document.querySelectorAll('#notificationList .bg-opacity-10.bg-primary');
+            items.forEach(item => {
+                item.classList.remove('bg-opacity-10', 'bg-primary');
+            });
+        }
+    })
+    .catch(error => console.error('Error marking notifications as read:', error));
 }
 
 function toggleUserDropdown() {
