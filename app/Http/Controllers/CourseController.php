@@ -3,6 +3,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\CourseModule;
+use App\Models\QuizQuestion;
+use App\Models\QuizAnswer;
 use Illuminate\Support\Str;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -92,7 +94,7 @@ class CourseController extends Controller
 
     public function index()
     {
-        $courses = Course::with('category', 'modules')->paginate(10);
+        $courses = Course::with('category', 'modules.quizQuestions')->paginate(10);
         return view('admin.courses.index', compact('courses'));
     }
 
@@ -189,7 +191,7 @@ class CourseController extends Controller
                         if (is_int($dur) && $dur > 0) { $durationSeconds = $dur; }
                     }
                 }
-                CourseModule::create([
+                $currMod = CourseModule::create([
                     'course_id' => $course->id,
                     'order_no' => $order,
                     'title' => $title,
@@ -203,6 +205,37 @@ class CourseController extends Controller
                     'preview_pages' => 0,
                     'duration' => $durationSeconds,
                 ]);
+
+                // Save Quiz Data
+                if ($type === 'quiz' && isset($m['data']) && is_array($m['data'])) {
+                    $quizData = $m['data'];
+                    if (isset($quizData['questions']) && is_array($quizData['questions'])) {
+                        foreach ($quizData['questions'] as $qIdx => $q) {
+                            $questionText = $q['text'] ?? '';
+                            if (!empty($questionText)) {
+                                $quizQ = QuizQuestion::create([
+                                    'course_module_id' => $currMod->id,
+                                    'question' => $questionText,
+                                    'explanation' => '',
+                                    'order_no' => $qIdx + 1,
+                                    'points' => 10,
+                                ]);
+                                
+                                $options = $q['options'] ?? [];
+                                $correctIdx = $q['correctIndex'] ?? -1;
+                                foreach ($options as $oIdx => $oText) {
+                                    if(trim($oText) === '') continue;
+                                    QuizAnswer::create([
+                                        'quiz_question_id' => $quizQ->id,
+                                        'answer_text' => $oText,
+                                        'is_correct' => ($oIdx == $correctIdx),
+                                        'order_no' => $oIdx + 1,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -212,7 +245,7 @@ class CourseController extends Controller
     public function edit(Course $course)
     {
         $categories = Category::all();
-        $course->load('modules');
+        $course->load('modules.quizQuestions.answers');
         return view('admin.courses.edit', compact('course', 'categories'));
     }
 
@@ -319,7 +352,7 @@ class CourseController extends Controller
                         if (is_int($dur) && $dur > 0) { $durationSeconds = $dur; }
                     }
                 }
-                CourseModule::create([
+                $currMod = CourseModule::create([
                     'course_id' => $course->id,
                     'order_no' => $order,
                     'title' => $title,
@@ -333,6 +366,37 @@ class CourseController extends Controller
                     'preview_pages' => 0,
                     'duration' => $durationSeconds,
                 ]);
+
+                // Save Quiz Data (Update)
+                if ($type === 'quiz' && isset($m['data']) && is_array($m['data'])) {
+                    $quizData = $m['data'];
+                    if (isset($quizData['questions']) && is_array($quizData['questions'])) {
+                        foreach ($quizData['questions'] as $qIdx => $q) {
+                            $questionText = $q['text'] ?? '';
+                            if (!empty($questionText)) {
+                                $quizQ = QuizQuestion::create([
+                                    'course_module_id' => $currMod->id,
+                                    'question' => $questionText,
+                                    'explanation' => '',
+                                    'order_no' => $qIdx + 1,
+                                    'points' => 10,
+                                ]);
+                                
+                                $options = $q['options'] ?? [];
+                                $correctIdx = $q['correctIndex'] ?? -1;
+                                foreach ($options as $oIdx => $oText) {
+                                    if(trim($oText) === '') continue;
+                                    QuizAnswer::create([
+                                        'quiz_question_id' => $quizQ->id,
+                                        'answer_text' => $oText,
+                                        'is_correct' => ($oIdx == $correctIdx),
+                                        'order_no' => $oIdx + 1,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

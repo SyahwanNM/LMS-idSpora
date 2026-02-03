@@ -120,14 +120,24 @@
                                 </a>
                                 @php
                                 $previewData = [
-                                'title' => $course->name,
-                                'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
-                                'description' => trim($course->description),
-                                'modules' => ($course->modules && $course->modules->count() > 0) ? $course->modules->implode('title', '||') : '',
-                                'published' => $isPublished ? '1' : '0',
-                                'level' => ucfirst($course->level),
-                                'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
-                                'duration' => $course->duration . ' jam',
+                                    'title' => $course->name,
+                                    'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                    'description' => trim($course->description),
+                                    'modules' => $course->modules->map(function($m) {
+                                        return [
+                                            'type' => $m->type, // pdf, video, quiz
+                                            'title' => $m->title,
+                                            'subtitle' => $m->description ?? '',
+                                            'duration' => $m->formatted_duration ?? '',
+                                            // Extra fields for Quiz if needed
+                                            'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
+                                        ];
+                                    })->values()->toArray(),
+                                    'published' => $isPublished ? '1' : '0',
+                                    'level' => ucfirst($course->level),
+                                    'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
+                                    'duration' => $course->duration . ' jam',
+                                    'status_text' => $isPublished ? 'Published' : ($hasModules ? 'Draft' : 'Incomplete'),
                                 ];
                                 @endphp
                                 <button type="button" class="btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
@@ -462,29 +472,136 @@
 
                 // Update UI Dasar
                 setText('coursePreviewLabel', 'Preview Course: ' + (data.title || ''));
-                // Gunakan ID yang ada di modal-body kamu
-                var mainTitle = modalEl.querySelector('.modal-body h3');
-                var mainDesc = modalEl.querySelector('.modal-body p');
-                if (mainTitle) mainTitle.textContent = data.title;
-                if (mainDesc) mainDesc.textContent = data.description;
+                setText('modal-course-name', data.title || '-');
+                setText('modal-course-desc', data.description || 'Tidak ada deskripsi.');
 
-                setText('cp-level', data.level);
-                setText('cp-price', data.price);
+                setText('cp-level', data.level || '-');
+                setText('cp-price', data.price || 'Rp0');
+                
+                // Status Color
+                var statusEl = document.getElementById('cp-status');
+                if(statusEl) {
+                    statusEl.textContent = data.status_text || '-';
+                    // Reset colors
+                    statusEl.parentElement.className = 'list-info'; // base
+                    if (data.published === '1') statusEl.parentElement.classList.add('info-green'); // Active
+                    else if (data.status_text === 'Incomplete') statusEl.parentElement.classList.add('info-yellow'); // Warning
+                    else statusEl.parentElement.classList.add('info-blue'); // Draft
+                }
 
-                // Logic menghitung modul untuk Ringkasan
-                var modsCount = 0;
-                if (data.modules) {
-                    var modsArray = data.modules.split('||').filter(Boolean);
-                    modsCount = modsArray.length;
+                // --- MODULES PARSING ---
+                var modules = data.modules || [];
+                
+                // 1. Hitung Ringkasan
+                var countPdf = modules.filter(m => m.type === 'pdf').length;
+                var countVideo = modules.filter(m => m.type === 'video').length;
+                var countQuiz = modules.filter(m => m.type === 'quiz').length;
 
-                    // Jika ingin mengisi list PDF secara dinamis di Tab PDF:
-                    var pdfListContainer = document.getElementById('list-pdf-content');
-                    if (pdfListContainer) {
-                        pdfListContainer.innerHTML = modsArray.map(m => `<li class="list-group-item">${m}</li>`).join('');
+                setText('count-pdf', countPdf);
+                setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
+                setText('count-quiz', countQuiz);   // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
+
+                // Fix: Update HTML Ringkasan agar ID-nya sesuai
+                // Kita akan update HTML ringkasan via JS jika ID tidak ditemukan, atau pengguna harus memastikan HTML punya ID
+                // Di HTML asli: 
+                // <h5 id="count-pdf">0</h5> -> OK
+                // <div class="detail-ringkasan"><h5>2</h5><p>Video Pembelajaran</p></div> -> Belum ada ID
+                // Mari kita cari elemennya secara manual jika ID tidak ada, atau inject konten ringkasan ulang.
+                
+                // Strategy: Re-render ringkasan numbers specific locations
+                // PDF
+                var pdfCountEl = document.getElementById('count-pdf');
+                if(pdfCountEl) pdfCountEl.textContent = countPdf;
+
+                // Video
+                // Cari elemen SVG video, lalu next sibling div > h5
+                // Cara lebih aman: Assign ID ke HTML (saya akan lakukan di chunk lain), 
+                // tapi di sini kita pakai selector pintar.
+                var summaryContainer = modalEl.querySelector('.info-ringkasan');
+                if(summaryContainer) {
+                    // Item 2: Video
+                    var vidSummary = summaryContainer.children[1]; 
+                    if(vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
+
+                    // Item 3: Quiz
+                    var quizSummary = summaryContainer.children[2];
+                    if(quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
+                }
+
+                // --- RENDER TAB CONTENTS ---
+                
+                // 1. PDF Tab
+                var pdfContainer = document.getElementById('list-pdf-container');
+                if(pdfContainer) {
+                    var pdfs = modules.filter(m => m.type === 'pdf');
+                    if(pdfs.length === 0) {
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada modul PDF.</p>';
+                    } else {
+                        pdfContainer.innerHTML = pdfs.map(m => `
+                             <div class="list-pdf">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
+                                </svg>
+                                <div class="detail-pdf">
+                                    <h4>${m.title}</h4>
+                                    <p>${m.subtitle || 'Dokumen Materi'}</p>
+                                </div>
+                            </div>
+                        `).join('');
                     }
                 }
-                // Update angka ringkasan
-                setText('count-pdf', modsCount);
+
+                // 2. Video Tab
+                var vidContainer = document.getElementById('list-video-container');
+                if(vidContainer) {
+                    var vids = modules.filter(m => m.type === 'video');
+                    if(vids.length === 0) {
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada video pembelajaran.</p>';
+                    } else {
+                        vidContainer.innerHTML = vids.map(m => `
+                            <div class="list-video">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
+                                </svg>
+                                <div class="detail-video">
+                                    <h4>${m.title}</h4>
+                                    <p>${m.subtitle || 'Video Lesson'}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // 3. Quiz Tab
+                var quizContainer = document.getElementById('list-kuis-container');
+                if(quizContainer) {
+                    var quizzes = modules.filter(m => m.type === 'quiz');
+                    if(quizzes.length === 0) {
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada kuis.</p>';
+                    } else {
+                        quizContainer.innerHTML = quizzes.map(m => `
+                             <div class="list-kuis">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
+                                </svg>
+                                <div class="detail-kuis">
+                                    <h4>${m.title}</h4>
+                                    <div class="soal-passing">
+                                        <div class="info-item">
+                                            <p>Jumlah Soal</p>
+                                            <h5>${m.question_count || 0} Soal</h5>
+                                        </div>
+                                        <div class="info-item passing-score">
+                                            <p>Passing Score</p>
+                                            <h5>75% (${Math.ceil((m.question_count || 0) * 0.75)} Soal)</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
 
                 showCourseModal();
             });
