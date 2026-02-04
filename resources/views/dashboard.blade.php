@@ -123,6 +123,9 @@
             box-shadow: 0 0 10px rgba(255, 193, 7, 0.4), 0 2px 6px rgba(255, 193, 7, 0.3);
             transform: translateY(0);
         }
+        .hero-carousel {
+            margin-top: 115px;
+        }
     </style>
 </head>
 
@@ -132,55 +135,63 @@
         {{-- <div class="container pb-5"> --}}
 
             {{-- /* Banner Promo */ --}}
-            <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4" data-bs-ride="carousel">
+            <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
-                        aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="1"
-                        aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="2"
-                        aria-label="Slide 3"></button>
+                    @forelse($dashboardCarousels as $index => $carousel)
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="{{ $index }}" 
+                            class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                            aria-label="Slide {{ $index + 1 }}"></button>
+                    @empty
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                            aria-current="true" aria-label="Slide 1"></button>
+                    @endforelse
                 </div>
 
                 <div class="carousel-inner">
-                    <!-- Slide 1 -->
-                    <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 1"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                    @forelse($dashboardCarousels as $index => $carousel)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            @php
+                                $btnUrl = $carousel->link_url ?? '#';
+                                $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
+                            @endphp
+                            
+                            @if($carousel->link_url)
+                                <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
+                            @endif
+                            
+                            <img src="{{ $carousel->image_url }}"
+                                alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
-                            <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
-                            <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            @if($carousel->title)
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">{{ $carousel->title }}</h2>
+                                @if($carousel->link_url)
+                                    <button class="btn btn-warning fw-bold mt-2">Lihat Detail</button>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($carousel->link_url)
+                                </a>
+                            @endif
                         </div>
-                    </div>
+                    @empty
+                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                                alt="Slide 1"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
 
-                    <!-- Slide 2 -->
-                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 2"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Webinar AI Masa Depan</h2>
-                            <p>Diskusi panel eksklusif bersama expert global.</p>
-                            <button class="btn btn-light fw-bold">Daftar Sekarang</button>
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                                <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                                <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            </div>
                         </div>
-                    </div>
+                    @endforelse
+                </div>
 
-                    <!-- Slide 3 -->
-                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 3"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Sertifikasi & Career Path</h2>
-                            <p>Bangun portofolio dan karier profesionalmu.</p>
-                            <button class="btn btn-outline-light fw-bold">Lihat Program</button>
-                        </div>
-                    </div>
                 </div>
 
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
@@ -219,79 +230,60 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td class="ps-4 py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="rounded-3 overflow-hidden flex-shrink-0"
-                                                        style="width: 48px; height: 48px;">
-                                                        <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=100"
-                                                            class="w-100 h-100 object-fit-cover" alt="Thumb">
-                                                    </div>
-                                                    <h6 class="fw-semibold mb-0"
-                                                        style="font-size: 14px; color: var(--navy);">Web Programming
-                                                    </h6>
-                                                </div>
-                                            </td>
-                                            <td class="py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="progress flex-grow-1"
-                                                        style="height: 8px; background-color: #f1f5f9;">
-                                                        <div class="progress-bar"
-                                                            style="width: 50%; background-color: var(--secondary);">
+                                        @forelse($userEnrollments as $enrollment)
+                                            @php
+                                                $progress = $enrollment->getProgressPercentage();
+                                                $course = $enrollment->course;
+                                            @endphp
+                                            <tr>
+                                                <td class="ps-4 py-3">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="rounded-3 overflow-hidden flex-shrink-0"
+                                                            style="width: 48px; height: 48px;">
+                                                            <img src="{{ $course->card_thumbnail ? (str_starts_with($course->card_thumbnail, 'http') ? $course->card_thumbnail : asset('storage/' . $course->card_thumbnail)) : asset('aset/poster.png') }}"
+                                                                class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
+                                                        <h6 class="fw-semibold mb-0"
+                                                            style="font-size: 14px; color: var(--navy);">{{ $course->name }}
+                                                        </h6>
                                                     </div>
-                                                    <small class="fw-bold text-muted"
-                                                        style="font-size: 12px; min-width: 35px; text-align: right;">50%</small>
-                                                </div>
-                                            </td>
-                                            <td class="text-center pe-4 py-3">
-                                                <a href="/course/web-programming"
-                                                    class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                    style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                        fill="currentColor" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                    </svg>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4 py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="rounded-3 overflow-hidden flex-shrink-0"
-                                                        style="width: 48px; height: 48px;">
-                                                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=100"
-                                                            class="w-100 h-100 object-fit-cover" alt="Thumb">
-                                                    </div>
-                                                    <h6 class="fw-semibold mb-0"
-                                                        style="font-size: 14px; color: var(--navy);">Data Structure</h6>
-                                                </div>
-                                            </td>
-                                            <td class="py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="progress flex-grow-1"
-                                                        style="height: 8px; background-color: #f1f5f9;">
-                                                        <div class="progress-bar"
-                                                            style="width: 25%; background-color: var(--secondary);">
+                                                </td>
+                                                <td class="py-3">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="progress flex-grow-1"
+                                                            style="height: 8px; background-color: #f1f5f9;">
+                                                            <div class="progress-bar"
+                                                                style="width: {{ $progress }}%; background-color: var(--secondary);">
+                                                            </div>
                                                         </div>
+                                                        <small class="fw-bold text-muted"
+                                                            style="font-size: 12px; min-width: 35px; text-align: right;">{{ $progress }}%</small>
                                                     </div>
-                                                    <small class="fw-bold text-muted"
-                                                        style="font-size: 12px; min-width: 35px; text-align: right;">25%</small>
-                                                </div>
-                                            </td>
-                                            <td class="text-center pe-4 py-3">
-                                                <a href="/course/data-structure"
-                                                    class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                    style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                        fill="currentColor" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                    </svg>
-                                                </a>
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td class="text-center pe-4 py-3">
+                                                    <a href="{{ route('user.modules.index', $course->id) }}"
+                                                        class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                        style="width: 36px; height: 36px; background-color: var(--navy);">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                            fill="currentColor" viewBox="0 0 16 16">
+                                                            <path
+                                                                d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="3" class="text-center py-5">
+                                                    <div class="mb-3 text-muted opacity-50">
+                                                        <i class="bi bi-journal-x" style="font-size: 40px;"></i>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Kursus</h6>
+                                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai tingkatkan keahlianmu hari ini!</p>
+                                                    <a href="{{ route('courses.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Kursus</a>
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
@@ -608,44 +600,7 @@
                         </div>
                     </div>
 
-                    {{-- /* Sidebar - Statistik Belajar */ --}}
-                    <div class="mb-4">
-                        <h5 class="fw-bold mb-3" style="color: var(--navy);">Statistik Belajar</h5>
-
-                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 50px; height: 50px; background-color: #e0e7ff;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--primary)"
-                                        viewBox="0 0 16 16">
-                                        <path
-                                            d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-0" style="font-size: 12px;">Kehadiran</h6>
-                                    <h4 class="fw-bold mb-0">90%</h4>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 50px; height: 50px; background-color: #fef9c3;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#ca8a04"
-                                        class="bi bi-file-earmark-text-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M4.5 9a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 11a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 13a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-0" style="font-size: 12px;">Tugas & Ujian</h6>
-                                    <h4 class="fw-bold mb-0">85%</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     {{-- /* Sidebar - Chart Waktu Belajar */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
@@ -668,111 +623,46 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="fw-bold mb-0" style="color: var(--navy);">Topik Populer</h5>
                             <button class="btn btn-sm p-0 text-muted">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                    class="bi bi-three-dots" viewBox="0 0 16 16">
-                                    <path
-                                        d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
-                                </svg>
+                                <i class="bi bi-three-dots" style="font-size: 20px;"></i>
                             </button>
                         </div>
 
                         <div class="d-flex flex-column gap-3">
+                            @php
+                                $topicStyles = [
+                                    ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'],
+                                    ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'],
+                                    ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-graph-up-arrow'],
+                                    ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'],
+                                ];
+                            @endphp
 
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #fce7f3; color: #db2777;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-palette-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M12.433 10.07C14.133 10.585 16 11.15 16 8a8 8 0 1 0-8 8c1.996 0 1.826-1.504 1.649-3.08-.124-1.101-.252-2.237.351-2.92.465-.527 1.42-.237 2.433.07zM8 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 0 3zm.5 6.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
-                                    </svg>
+                            @forelse($popularTopics as $index => $topic)
+                                @php
+                                    $style = $topicStyles[$index % count($topicStyles)];
+                                @endphp
+                                <a href="{{ route('courses.index', ['category' => $topic->name]) }}"
+                                    class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
+                                    style="transition: 0.2s;">
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                        style="width: 48px; height: 48px; background-color: {{ $style['bg'] }}; color: {{ $style['color'] }};">
+                                        <i class="bi {{ $style['icon'] }}" style="font-size: 20px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">{{ $topic->name }}</h6>
+                                        <small class="text-muted" style="font-size: 12px;">{{ $topic->courses_count }} Kursus • {{ $topic->enrollments_count }} Siswa</small>
+                                    </div>
+                                    <div class="text-muted">
+                                        <i class="bi bi-chevron-right" style="font-size: 14px;"></i>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="text-center py-3">
+                                    <small class="text-muted">Belum ada data topik.</small>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">UI/UX Design</h6>
-                                    <small class="text-muted" style="font-size: 12px;">120 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
-
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #e0f2fe; color: #0284c7;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-code-slash" viewBox="0 0 16 16">
-                                        <path
-                                            d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Web Development</h6>
-                                    <small class="text-muted" style="font-size: 12px;">95 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
-
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #dcfce7; color: #16a34a;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-graph-up-arrow" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M0 0h1v15h15v1H0V0Zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5Z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Data Science</h6>
-                                    <small class="text-muted" style="font-size: 12px;">80 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
-
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #fef3c7; color: #d97706;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-megaphone-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M13 2.5a1.5 1.5 0 0 1 3 0v11a1.5 1.5 0 0 1-3 0v-11zm-1 .724c-2.067.95-4.539 1.481-7 1.656v6.237a25.222 25.222 0 0 1 1.088.085c2.053.204 4.038.668 5.912 1.56V3.224zm-8 7.841V4.934c-.68.027-1.399.043-2.008.053A2.02 2.02 0 0 0 0 7v2c0 1.106.896 1.996 1.994 2.009a68.14 68.14 0 0 1 .496.008 64 64 0 0 1 1.51.048zm1.39 1.081c.285.021.569.047.85.078l.253 1.69a1 1 0 0 1-.983 1.187h-.548a1 1 0 0 1-.916-.599l-1.314-2.48a65.81 65.81 0 0 1 1.692.064c.327.017.65.037.966.06z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Digital Marketing</h6>
-                                    <small class="text-muted" style="font-size: 12px;">65 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
+                            @endforelse
+                        </div>
+                    </div>
 
                         </div>
                     </div>
@@ -794,15 +684,14 @@
         document.addEventListener("DOMContentLoaded", function () {
             const ctx = document.getElementById('learningChart').getContext('2d');
 
-            // Data Dummy (Jam Belajar)
-            const dataValues = [4, 6, 8.5, 5, 7, 3, 2];
+            // Data Riil (Jam Belajar)
+            const dataValues = @json($learningChartData);
 
-            // Logika Warna (Sesuai desain Anda: Rab & Sel berwarna, sisanya abu)
-            // Rab = Index 2 (Highest), Sel = Index 1
-            const backgroundColors = dataValues.map((value, index) => {
-                if (index === 2) return '#f4c430'; // Secondary/Yellow (Highest)
-                if (index === 1) return '#51376c'; // Primary/Purple
-                return '#e2e8f0'; // Grey (Default)
+            // Logika Warna (High value berwarna cerah, low berwarna gelap/abu)
+            const backgroundColors = dataValues.map((value) => {
+                if (value > 2) return '#f4c430'; // Secondary/Yellow (High intensity)
+                if (value > 0) return '#51376c'; // Primary/Purple (Active)
+                return '#e2e8f0'; // Grey (Inactive)
             });
 
             new Chart(ctx, {

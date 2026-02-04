@@ -7,6 +7,9 @@ use App\Models\Event;
 use App\Models\Course;
 use App\Models\EventRegistration;
 use App\Models\Carousel;
+use App\Models\Enrollment;
+use App\Models\Progress;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -75,10 +78,65 @@ class DashboardController extends Controller
             ->pluck('event')
             ->sortBy('event_date');
 
+        // Get active course enrollments for "Lanjutkan Belajar" section
+        $userEnrollments = Enrollment::query()
+            ->where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->with(['course.modules', 'progress'])
+            ->latest('enrolled_at')
+            ->limit(5)
+            ->get();
+
+        // Get learning statistics (hours spent per day in current week)
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $endOfWeek = Carbon::now()->endOfWeek();
+        
+        $learningProgress = Progress::query()
+            ->whereHas('enrollment', function($q) {
+                $q->where('user_id', Auth::id());
+            })
+            ->where('completed', true)
+            ->whereBetween('updated_at', [$startOfWeek, $endOfWeek])
+            ->with('module:id,duration')
+            ->get();
+            
+        $dailyLearning = [
+            'Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0, 'Sab' => 0, 'Min' => 0
+        ];
+        
+        $dayMap = [
+            1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 0 => 'Min'
+        ];
+        
+        foreach ($learningProgress as $record) {
+            $day = $record->updated_at->dayOfWeek;
+            $dayName = $dayMap[$day];
+            // Duration is in seconds, convert to hours (round to 1 decimal)
+            $durationHours = ($record->module->duration ?? 0) / 3600;
+            $dailyLearning[$dayName] += $durationHours;
+        }
+        
+        // Format to 1 decimal place
+        foreach ($dailyLearning as $day => $value) {
+            $dailyLearning[$day] = (float) number_format($value, 1);
+        }
+
+        $learningChartData = array_values($dailyLearning);
+
+        // Get popular topics (categories with most enrollments)
+        $popularTopics = \App\Models\Category::query()
+            ->withCount('enrollments')
+            ->orderByDesc('enrollments_count')
+            ->limit(4)
+            ->get();
+
         return view('dashboard', [
             'upcomingEvents' => $upcomingEvents,
             'featuredCourses' => $featuredCourses,
             'userEvents' => $userEvents,
+            'userEnrollments' => $userEnrollments,
+            'learningChartData' => $learningChartData,
+            'popularTopics' => $popularTopics,
             'materiList' => $materiList,
             'jenisList' => $jenisList,
             'dashboardCarousels' => $dashboardCarousels,
