@@ -1,4 +1,3 @@
-@include('partials.navbar-before-login')
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -157,6 +156,7 @@
     </style>
 </head>
 <body class="bg-surface">
+    @include('partials.navbar-before-login')
 
     <!-- HERO SECTION -->
     <section class="hero-section">

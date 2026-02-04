@@ -6,7 +6,7 @@
 
     /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
     .hero-carousel {
-        margin-top: 100px; /* Jarak dari atas */
+        margin-top: 115px; /* Jarak dari atas ditingkatkan untuk navbar premium */
     }
 
     /* Event page image enlargement (slightly taller) */

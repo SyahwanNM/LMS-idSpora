@@ -47,6 +47,8 @@ class DashboardController extends Controller
         // Featured courses sample (adjust logic as needed)
         $featuredCourses = Course::query()
             ->with(['category', 'modules'])
+            ->withCount('enrollments')
+            ->withAvg('reviews', 'rating')
             ->orderByDesc('created_at')
             ->limit(6)
             ->get();
@@ -61,9 +63,22 @@ class DashboardController extends Controller
             ->orderBy('order')
             ->get();
 
+        // Get events registered by the current user (only active registrations and future/ongoing events)
+        $userEvents = EventRegistration::query()
+            ->where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->with('event')
+            ->whereHas('event', function($q) {
+                $q->where('event_date', '>=', now()->startOfDay());
+            })
+            ->get()
+            ->pluck('event')
+            ->sortBy('event_date');
+
         return view('dashboard', [
             'upcomingEvents' => $upcomingEvents,
             'featuredCourses' => $featuredCourses,
+            'userEvents' => $userEvents,
             'materiList' => $materiList,
             'jenisList' => $jenisList,
             'dashboardCarousels' => $dashboardCarousels,

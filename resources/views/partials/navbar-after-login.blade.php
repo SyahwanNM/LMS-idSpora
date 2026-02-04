@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg premium-nav fixed-top">
     <div class="container-fluid px-2 px-lg-5">
         <!-- PART 1: LOGO & BRAND -->
-        <a class="navbar-brand d-flex align-items-center ms-lg-0 ms-3" href="{{ route('dashboard') }}">
+        <a class="navbar-brand d-flex align-items-center ms-lg-0 ms-3" href="{{ Auth::check() ? route('dashboard') : route('landing-page') }}">
             <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="Logo idSpora" 
                  class="img-fluid nav-logo" style="max-width:80px; height:auto;">
         </a>
@@ -54,6 +54,7 @@
                 
                 <!-- LEFT SIDE: NAV LINKS -->
                 <ul class="navbar-nav me-lg-auto mb-2 mb-lg-0 mt-3 mt-lg-0 ps-lg-4 align-items-start align-items-lg-center">
+                    @auth
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Dashboard</a>
                     </li>
@@ -63,6 +64,7 @@
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Events</a>
                     </li>
+                    @endauth
                 </ul>
 
                 <!-- RIGHT SIDE: DESKTOP ACTIONS (HIDDEN ON MOBILE TILL COLLAPSE) -->
@@ -109,6 +111,7 @@
                     </div>
 
                     <!-- User Profile (Desktop & Mobile inside menu) -->
+                    @if(Auth::check())
                     <div class="dropdown user-dropdown-premium w-100 w-lg-auto">
                         <button class="btn user-profile-btn d-flex align-items-center w-100" type="button" id="userDropdown" onclick="toggleUserDropdown()">
                             <img src="{{ Auth::user()->avatar_url }}" 
@@ -138,6 +141,13 @@
                             </li>
                         </ul>
                     </div>
+                    @else
+                    <div class="d-flex align-items-center">
+                        <a href="{{ route('login') }}" class="btn btn-outline-new btn-sm me-2 px-3 shadow-none border-2">Masuk</a>
+                        <a href="{{ route('register') }}" class="btn btn-primary-new btn-sm px-4 shadow-none">Daftar</a>
+                    </div>
+                    @endif
+
                 </div>
             </div>
         </div>
@@ -188,12 +198,12 @@
 PREMIUM DESIGN SYSTEM - AUTH NAVBAR
 ==================================== */
 
-/* Use same font as Dashboard */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+/* Use same font as Landing Page */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 .premium-nav {
-    font-family: 'Poppins', sans-serif;
-    background: radial-gradient(circle at 10% 10%, #42327D 0%, #1A182E 100%) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: radial-gradient(circle at 10% 10%, #51376c 0%, #2e2050 100%) !important;
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -222,7 +232,7 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
 
 /* Nav Link Styling */
 .premium-nav .nav-link {
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
     font-size: 0.95rem;
     font-weight: 500;
     padding: 0.6rem 1.2rem !important;

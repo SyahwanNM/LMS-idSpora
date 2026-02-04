@@ -17,6 +17,7 @@ class Event extends Model
         'attendance_path',
         'certificate_logo',
         'certificate_signature',
+        'certificate_template',
         'speaker',
         'materi',
         'jenis',

@@ -74,6 +74,7 @@
                                 <br>
                                 <p>Profesi: {{ $user->profession ?? '-' }}</p>
                                 <p>Institusi: {{ $user->institution ?? '-' }}</p>
+                                <p>Bio: {{ $user->bio ?? '-' }}</p>
                                 <p>Bergabung Sejak: {{ optional($user->created_at)->translatedFormat('d F Y') }}</p>
                             </div>
                         </div>
