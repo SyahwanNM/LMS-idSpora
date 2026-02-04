@@ -12,6 +12,7 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #f8fafc;
+            padding-top: 110px; /* Increased spacer for fixed premium navbar */
         }
 
         .activity-container {
@@ -135,7 +136,7 @@
         }
     @endphp
 
-    <div class="activity-container fade-in">
+    <div class="activity-container fade-in mt-4 lg:mt-6">
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div>
@@ -213,8 +214,13 @@
                                     <h3 class="text-xl font-bold mb-1 text-slate-800">{{ $event->title }}</h3>
                                     <p class="text-sm text-slate-500 mb-4 line-clamp-2">{{ $event->short_description ?? 'Learn amazing skills in this event.' }}</p>
                                     <div class="flex flex-wrap gap-2">
-                                        @if($isCompleted && Route::has('certificates.download'))
-                                            <a href="#" class="btn-certificate">Download Sertifikat</a>
+                                        @if($isCompleted)
+                                            <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition" target="_blank">
+                                                <i class="bi bi-eye me-1"></i> Lihat Sertifikat
+                                            </a>
+                                            <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="inline-flex items-center px-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition" target="_blank">
+                                                <i class="bi bi-download me-1"></i> Unduh PDF
+                                            </a>
                                         @endif
                                         <a href="{{ route('events.show', $event->id) }}" class="px-4 py-2 border rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50">Detail Event</a>
                                     </div>
@@ -270,6 +276,12 @@
             const url = new URL(window.location.href);
             url.searchParams.set('filter', filter);
             window.location.href = url.toString();
+        }
+
+        function unsaveEvent(btn) {
+            const eventId = btn.getAttribute('data-event-id');
+            // Assuming there's an endpoint for this, if not, this is just UI logic placeholder
+            alert('Fitur unsave event ID: ' + eventId);
         }
     </script>
     
