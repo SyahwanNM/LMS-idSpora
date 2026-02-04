@@ -223,8 +223,4 @@
 </body>
 
 
-<<<<<<< HEAD
 </html>
-=======
-</html>wq
->>>>>>> f587188d4cab519fdc0662389f336cb06bb0dcca

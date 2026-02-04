@@ -1,6 +1,6 @@
 @unless(request()->routeIs('admin.*'))
 @php
-    $hasMessages = session('success') || session('error') || $errors->any();
+    $hasMessages = session('success') || session('error') || session('info') || session('warning') || $errors->any();
 @endphp
 @if($hasMessages)
     <div class="flash-toast-container" aria-live="polite" aria-atomic="true">
@@ -29,6 +29,21 @@
                 <div class="flash-body">
                     <div class="flash-title">Gagal</div>
                     <div class="flash-message">{{ session('error') }}</div>
+                </div>
+                <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
+                <div class="flash-progress"></div>
+            </div>
+        @endif
+        @if(session('info') || session('warning'))
+            <div class="flash-toast flash-warning" data-timeout="6000" role="alert">
+                <div class="flash-icon">
+                    <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="currentColor" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.308.41l.742-.448.33.642-1.387.832c-.813.489-1.29.213-1.082-.746l1.058-4.946c.105-.49-.101-.733-.518-.612l-.742.448-.33-.642 1.387-.832c.813-.489 1.178-.252 1.022.489zM8 3c-.535 0-.954.462-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 3"/>
+                    </svg>
+                </div>
+                <div class="flash-body">
+                    <div class="flash-title">Perhatian</div>
+                    <div class="flash-message">{{ session('info') ?: session('warning') }}</div>
                 </div>
                 <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
                 <div class="flash-progress"></div>

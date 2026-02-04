@@ -1,4 +1,3 @@
-@include('partials.navbar-before-login')
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -157,6 +156,60 @@
     </style>
 </head>
 <body class="bg-surface">
+
+    <!-- HERO CAROUSEL (DYNAMIS) -->
+    @if(isset($landingCarousels) && $landingCarousels->isNotEmpty())
+    <section class="hero-carousel-section mt-0">
+        <div id="landingHeroCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                @foreach($landingCarousels as $index => $carousel)
+                    <button type="button" data-bs-target="#landingHeroCarousel" data-bs-slide-to="{{ $index }}" 
+                        class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                        aria-label="Slide {{ $index + 1 }}"></button>
+                @endforeach
+            </div>
+            <div class="carousel-inner">
+                @foreach($landingCarousels as $index => $carousel)
+                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(350px, 60vh, 600px); position: relative;">
+                    @php
+                        $btnUrl = $carousel->link_url ?? '#';
+                        $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
+                    @endphp
+                    
+                    @if($carousel->link_url)
+                        <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
+                    @endif
+                    
+                    <img src="{{ $carousel->image_url }}" class="d-block w-100 h-100 object-fit-cover" 
+                        alt="{{ $carousel->title ?? 'Promo banner' }}"
+                        style="filter: brightness(0.7);">
+                    
+                    @if($carousel->title)
+                    <div class="carousel-caption d-none d-md-block text-start" style="bottom: 80px; left: 10%; max-width: 500px;">
+                        <h1 class="display-4 fw-bold mb-3">{{ $carousel->title }}</h1>
+                        @if($carousel->link_url)
+                        <button class="btn btn-warning btn-lg fw-bold rounded-pill px-4">Info Selengkapnya</button>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if($carousel->link_url)
+                        </a>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#landingHeroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#landingHeroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </section>
+    @endif
 
     <!-- HERO SECTION -->
     <section class="hero-section">

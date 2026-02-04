@@ -36,5 +36,28 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Course::class);
     }
+
+    /**
+     * Get the progress records for this enrollment.
+     */
+    public function progress()
+    {
+        return $this->hasMany(Progress::class);
+    }
+
+    /**
+     * Calculate the progress percentage of the course.
+     */
+    public function getProgressPercentage(): int
+    {
+        $totalModules = $this->course->modules()->count();
+        if ($totalModules === 0) {
+            return 0;
+        }
+
+        $completedModules = $this->progress()->where('completed', true)->count();
+        
+        return (int) round(($completedModules / $totalModules) * 100);
+    }
 }
 

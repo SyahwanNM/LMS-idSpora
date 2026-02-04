@@ -1,6 +1,5 @@
-    @include("partials.navbar-after-login")
-    <!DOCTYPE html>
-    <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
     <head>
                 <style>
@@ -45,9 +44,9 @@
             html, body { margin: 0; padding: 0; }
             .container-ungu { margin-top: 0 !important; }
             /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-            .container-ungu .link-box { padding-top: 80px; }
+            .container-ungu .link-box { padding-top: 120px; }
             @media (max-width: 576px){
-                .container-ungu .link-box { padding-top: 64px; }
+                .container-ungu .link-box { padding-top: 100px; }
             }
             /* Add breathing space inside tab panes (Overview, etc.) */
             .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
@@ -186,6 +185,8 @@
     </head>
 
     <body>
+    @include("partials.navbar-after-login")
+    <div class="all">
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
@@ -781,29 +782,27 @@
                     
                     <div class="resource-value">
                         <h6>Certificate</h6>
-                        @php
-                            // Show certificate availability only when user registered and has submitted feedback (post-event)
-                            // $isRegistered and $hasFeedback are computed earlier in the view
-                        @endphp
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                @if(!empty($event->certificate_path))
-                                    <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
+                                @php
+                                    $certReady = $event->event_date && now()->greaterThanOrEqualTo($event->event_date->copy()->addDays(3));
+                                @endphp
+                                @if($certReady)
+                                    <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
+                                        <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                                    </div>
                                 @else
-                                    <p>Your certificate will be available soon.</p>
+                                    <p>Sertifikat akan tersedia 3 hari setelah acara selesai.</p>
                                 @endif
                             @else
-                                <p>Available after you submit feedback for this event.</p>
+                                <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
                             @endif
                         @else
-                            <p>Available after event completion.</p>
+                            <p>Tersedia setelah acara selesai.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
                 </div>
             
             <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">

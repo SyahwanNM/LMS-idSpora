@@ -47,7 +47,7 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
     $users = \App\Models\User::with(['eventRegistrations' => function($q){
             $q->with('event')->orderBy('created_at','desc');
         }])
-        ->select('id','name','email','phone','profession','institution','avatar','created_at')
+        ->select('id','name','email','phone','profession','institution','avatar','created_at','bio')
         ->where('role', '!=', 'admin')
         ->orderBy('name')
         ->get();
