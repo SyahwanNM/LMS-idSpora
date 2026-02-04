@@ -36,52 +36,81 @@
 <body>
     @include ('partials.navbar-after-login')
 
-    <section class="hero-carousel">
-        <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @if(isset($courseCarousels) && $courseCarousels->count() > 0)
-                    @foreach($courseCarousels as $i => $carousel)
-                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
-                            @if($carousel->link_url)
-                                <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;">
-                                    <img src="{{ $carousel->image_url }}" 
-                                         class="d-block" 
-                                         alt="{{ $carousel->title ?? 'Carousel' }}" 
-                                         onerror="this.src='{{ asset('aset/poster.png') }}'">
-                                </a>
-                            @else
-                                <img src="{{ $carousel->image_url }}" 
-                                     class="d-block" 
-                                     alt="{{ $carousel->title ?? 'Carousel' }}" 
-                                     onerror="this.src='{{ asset('aset/poster.png') }}'">
-                            @endif
+    <div class="container-fluid page-content pb-5">
+        <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                        aria-current="true" aria-label="Slide 1"></button>
+                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="1"
+                        aria-label="Slide 2"></button>
+                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="2"
+                        aria-label="Slide 3"></button>
+                </div>
+
+                <div class="carousel-inner">
+                    <!-- Slide 1 -->
+                    <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                            alt="Slide 1"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                            <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                            <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                            <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
                         </div>
-                    @endforeach
-                @else
-                    <div class="carousel-item active" data-bs-interval="10000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
                     </div>
-                    <div class="carousel-item" data-bs-interval="2000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+
+                    <!-- Slide 2 -->
+                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
+                            alt="Slide 2"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                            <h2 class="fw-bold">Webinar AI Masa Depan</h2>
+                            <p>Diskusi panel eksklusif bersama expert global.</p>
+                            <button class="btn btn-light fw-bold">Daftar Sekarang</button>
+                        </div>
                     </div>
-                    <div class="carousel-item">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
+
+                    <!-- Slide 3 -->
+                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1600&auto=format&fit=crop"
+                            alt="Slide 3"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                            <h2 class="fw-bold">Sertifikasi & Career Path</h2>
+                            <p>Bangun portofolio dan karier profesionalmu.</p>
+                            <button class="btn btn-outline-light fw-bold">Lihat Program</button>
+                        </div>
                     </div>
-                @endif
+                </div>
+
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
 
-            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
+        <div class="row justify-content-center mb-5" style="margin-top: -30px; position: relative; z-index: 10;">
+            <div class="col-lg-8">
+                <form action="#" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
+                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                    <button class="btn rounded-pill px-4 fw-bold" type="submit" style="background-color: #51376c; color: white;">
+                        Cari
+                    </button>
+                </form>
+            </div>
         </div>
-    </section>
     
     <div class="filter-container">
         <div class="filter-box">
