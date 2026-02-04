@@ -2,174 +2,296 @@
 
 @section('title', 'CRM Dashboard')
 
+@section('styles')
+<style>
+    .kpi-card {
+        padding: 1.5rem;
+        height: 100%;
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .kpi-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--crm-text-muted);
+        margin-bottom: 0.25rem;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--crm-navy);
+    }
+    .table-responsive {
+        border-radius: 12px;
+    }
+    .customer-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+    .top-customer-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--crm-border);
+    }
+    .top-customer-item:last-child {
+        border-bottom: none;
+    }
+    .trend-indicator {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+</style>
+@endsection
+
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-2 text-dark fw-bold">
-            <i class="bi bi-speedometer2 me-2 text-primary"></i>CRM Dashboard
-        </h2>
-        <p class="text-muted mb-0">Overview customer dan aktivitas registrasi</p>
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h3 class="fw-bold text-navy mb-1">CRM Overview</h3>
+        <p class="text-muted small mb-0">Manajemen hubungan pelanggan dan analitik operasional</p>
+    </div>
+    <div class="col-auto">
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm bg-white">
+                <i class="bi bi-download me-1"></i> Laporan
+            </button>
+            <button class="btn btn-sm px-3" style="background: var(--crm-primary); color: white;">
+                <i class="bi bi-plus-lg me-1"></i> Tambah Data
+            </button>
+        </div>
     </div>
 </div>
 
 @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+    <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            <span>{{ session('success') }}</span>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
 
-<!-- Statistics Cards with 3D Effect -->
+<!-- Strategic Statistics -->
 <div class="row g-4 mb-4">
     <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center">
-                <div class="stat-icon me-3 bg-primary">
-                    <i class="bi bi-people-fill"></i>
+        <div class="card-minimal kpi-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon" style="background: var(--crm-accent-light); color: var(--crm-primary);">
+                    <i class="bi bi-people"></i>
                 </div>
-                <div>
-                    <div class="text-muted small mb-1">Total Customer</div>
-                    <div class="h3 mb-0 fw-bold text-dark">{{ number_format($totalCustomers) }}</div>
-                </div>
+                <span class="trend-indicator" style="background: #ecfdf5; color: #10b981;">
+                    <i class="bi bi-arrow-up"></i> 12%
+                </span>
+            </div>
+            <div class="kpi-title">TOTAL CUSTOMER</div>
+            <div class="kpi-value">{{ number_format($totalCustomers) }}</div>
+            <div class="mt-2 small text-muted">
+                <span class="text-dark fw-medium">{{ number_format($activeCustomersCount) }}</span> aktif berinteraksi
             </div>
         </div>
     </div>
     <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center">
-                <div class="stat-icon me-3 bg-success">
-                    <i class="bi bi-person-check-fill"></i>
+        <div class="card-minimal kpi-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon" style="background: #fffbeb; color: var(--crm-secondary);">
+                    <i class="bi bi-calendar2-check"></i>
                 </div>
-                <div>
-                    <div class="text-muted small mb-1">Customer Aktif</div>
-                    <div class="h3 mb-0 fw-bold text-dark">{{ number_format($activeCustomers) }}</div>
-                </div>
+            </div>
+            <div class="kpi-title">REGISTRASI EVENT</div>
+            <div class="kpi-value">{{ number_format($totalRegistrations) }}</div>
+            <div class="mt-2 small text-muted">
+                Peserta aktif di semua event
             </div>
         </div>
     </div>
     <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center">
-                <div class="stat-icon me-3 bg-info">
-                    <i class="bi bi-calendar-check-fill"></i>
+        <div class="card-minimal kpi-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon" style="background: var(--crm-accent-light); color: var(--crm-primary);">
+                    <i class="bi bi-journal-bookmark"></i>
                 </div>
-                <div>
-                    <div class="text-muted small mb-1">Registrasi Event</div>
-                    <div class="h3 mb-0 fw-bold text-dark">{{ number_format($totalRegistrations) }}</div>
-                </div>
+            </div>
+            <div class="kpi-title">ENROLLMENT COURSE</div>
+            <div class="kpi-value">{{ number_format($totalEnrollments) }}</div>
+            <div class="mt-2 small text-muted">
+                Total pembelajaran aktif
             </div>
         </div>
     </div>
     <div class="col-md-6 col-lg-3">
-        <div class="stat-card">
-            <div class="d-flex align-items-center">
-                <div class="stat-icon me-3 bg-warning">
-                    <i class="bi bi-journal-text"></i>
+        <div class="card-minimal kpi-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon" style="background: #fffbeb; color: var(--crm-secondary);">
+                    <i class="bi bi-chat-dots"></i>
                 </div>
-                <div>
-                    <div class="text-muted small mb-1">Enrollment Course</div>
-                    <div class="h3 mb-0 fw-bold text-dark">{{ number_format($totalEnrollments) }}</div>
-                </div>
+                @if($newSupportMessages > 0)
+                <span class="badge rounded-pill shadow-sm" style="background: var(--crm-primary); color: white;">{{ $newSupportMessages }} Baru</span>
+                @endif
+            </div>
+            <div class="kpi-title">SUPPORT TICKET</div>
+            <div class="kpi-value">{{ number_format($newSupportMessages) }}</div>
+            <div class="mt-2 small text-muted">
+                Pesan bantuan yang perlu dibalas
             </div>
         </div>
     </div>
 </div>
 
 <div class="row g-4">
-    <!-- Recent Registrations -->
-    <div class="col-12 col-xl-8">
-        <div class="card-3d">
-            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4">
-                <h5 class="card-title mb-0 fw-semibold text-dark">
-                    Registrasi Terbaru
-                </h5>
-                <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-sm btn-outline-primary">
-                    Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
-                </a>
+    <!-- Main Activity Section -->
+    <div class="col-lg-8">
+        <div class="card-minimal mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Registrasi Terbaru</h5>
+                <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-link btn-sm text-decoration-none p-0">Lihat Semua</a>
             </div>
-            <div class="card-body">
-                @if($recentRegistrations->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Customer</th>
-                                    <th>Event</th>
-                                    <th>Tanggal</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentRegistrations as $registration)
-                                    <tr style="transition: all 0.3s ease;">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-circle me-3" style="width:40px;height:40px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                                                    <img src="{{ $registration->user->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
-                                                </div>
-                                                <div>
-                                                    <div class="fw-semibold text-dark">{{ $registration->user->name }}</div>
-                                                    <small class="text-muted">{{ $registration->user->email }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="fw-semibold">{{ $registration->event?->title ?? 'Event tidak ditemukan' }}</div>
-                                            <small class="text-muted">{{ $registration->event?->event_date ? \Carbon\Carbon::parse($registration->event->event_date)->format('d M Y') : '-' }}</small>
-                                        </td>
-                                        <td>
-                                            <small>{{ $registration->created_at->format('d M Y H:i') }}</small>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success">
-                                                {{ ucfirst($registration->status) }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+            <div class="card-body px-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light bg-opacity-50">
+                            <tr>
+                                <th class="ps-4">Pelanggan</th>
+                                <th>Event / Program</th>
+                                <th>Tanggal</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentRegistrations as $registration)
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ $registration->user->avatar_url }}" class="customer-avatar me-3 border" alt="user">
+                                        <div>
+                                            <div class="fw-bold text-navy small">{{ $registration->user->name }}</div>
+                                            <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $registration->user->email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold small text-truncate" style="max-width: 200px;">{{ $registration->event?->title ?? 'N/A' }}</div>
+                                    <div class="text-muted smaller" style="font-size: 0.7rem;">IDSPora Program</div>
+                                </td>
+                                <td>
+                                    <div class="small fw-medium">{{ $registration->created_at->format('d M') }}</div>
+                                    <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $registration->created_at->format('H:i') }}</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1 px-2 rounded-2" style="font-size: 0.65rem;">
+                                        AKTIF
+                                    </span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" style="width: 48px; opacity: 0.3;" alt="empty">
+                                    <p class="text-muted small mt-2">Belum ada registrasi baru</p>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card-minimal p-4">
+                    <h6 class="fw-bold mb-3">Breakdown Peran User</h6>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person text-primary me-2"></i>
+                                <span class="small fw-medium">Customer Umum</span>
+                            </div>
+                            <span class="fw-bold">{{ $totalCustomers }}</span>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-box-seam text-warning me-2"></i>
+                                <span class="small fw-medium">Reseller Affiliate</span>
+                            </div>
+                            <span class="fw-bold">{{ $totalResellers }}</span>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-workspace text-info me-2"></i>
+                                <span class="small fw-medium">Trainer / Pemateri</span>
+                            </div>
+                            <span class="fw-bold">{{ $totalTrainers }}</span>
+                        </div>
                     </div>
-                @else
-                    <div class="text-center py-4">
-                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                        <p class="text-muted mt-3">Belum ada registrasi</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card-minimal p-4 h-100">
+                    <h6 class="fw-bold mb-3">Event Paling Populer</h6>
+                    @forelse($topEvents as $event)
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-truncate me-2" style="max-width: 180px;">
+                            <div class="small fw-bold">{{ $event->title }}</div>
+                            <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d M') : 'Online' }}</div>
+                        </div>
+                        <span class="badge bg-primary rounded-pill smaller">{{ $event->registrations_count }} Peserta</span>
                     </div>
-                @endif
+                    @empty
+                    <p class="text-muted small">Belum ada data event.</p>
+                    @endforelse
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Top Events -->
-    <div class="col-12 col-xl-4">
-        <div class="card-3d h-100">
+    <!-- Side Content / Analytics -->
+    <div class="col-lg-4">
+        <div class="card-minimal h-100">
             <div class="card-header bg-transparent border-0 pt-4 px-4">
-                <h5 class="card-title mb-0 fw-semibold text-dark">
-                    Event Terpopuler
-                </h5>
+                <h5 class="fw-bold mb-0">Pelanggan Teraktif</h5>
+                <p class="text-muted smaller mb-0">Berdasarkan total aktivitas program</p>
             </div>
-            <div class="card-body">
-                @if($topEvents->count() > 0)
-                    <div class="list-group list-group-flush">
-                        @foreach($topEvents as $event)
-                            <div class="list-group-item px-0 border-0 border-bottom">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <div class="fw-semibold">{{ $event->title }}</div>
-                                        <small class="text-muted">{{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d M Y') : '-' }}</small>
-                                    </div>
-                                    <span class="badge bg-primary">
-                                        {{ $event->registrations_count }} peserta
-                                    </span>
-                                </div>
+            <div class="card-body px-4">
+                @forelse($topCustomers as $customer)
+                <div class="top-customer-item">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ $customer->avatar_url }}" class="customer-avatar me-3 border" style="width: 45px; height: 45px; border-radius: 50%;">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-navy small">{{ $customer->name }}</div>
+                            <div class="text-muted smaller d-flex gap-2">
+                                <span><i class="bi bi-calendar-event me-1"></i> {{ $customer->event_registrations_count }}</span>
+                                <span><i class="bi bi-journal-bookmark me-1"></i> {{ $customer->enrollments_count }}</span>
                             </div>
-                        @endforeach
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ route('admin.crm.customers.show', $customer->id) }}" class="btn btn-outline-primary btn-sm p-1 rounded-circle" style="width: 28px; height: 28px; line-height: 1;">
+                                <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+                            </a>
+                        </div>
                     </div>
-                    <div class="text-center py-4">
-                        <i class="bi bi-calendar-x" style="font-size: 2rem; color: #ccc;"></i>
-                        <p class="text-muted mt-3 small">Belum ada event</p>
+                </div>
+                @empty
+                <p class="text-center text-muted py-4">Belum ada data aktivitas</p>
+                @endforelse
+                
+                <div class="mt-4 p-4 rounded-4 text-center" style="background: var(--crm-accent-light); border: 1px solid rgba(109, 40, 217, 0.1);">
+                    <div class="avatar-circle mx-auto mb-3 bg-white d-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px; border-color: var(--crm-secondary);">
+                        <i class="bi bi-stars" style="color: var(--crm-primary); font-size: 1.75rem;"></i>
                     </div>
-                @endif
+                    <h6 class="fw-bold mb-2" style="color: var(--crm-primary);">Tips Pengelolaan</h6>
+                    <p class="smaller text-muted mb-3">Gunakan filter pada halaman Pelanggan untuk mengekspor data berdasarkan role reseller.</p>
+                    <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-sm w-100 rounded-pill" style="background: var(--crm-primary); color: white;">Kelola Sekarang</a>
+                </div>
             </div>
         </div>
     </div>
