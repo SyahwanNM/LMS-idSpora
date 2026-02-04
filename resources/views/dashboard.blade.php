@@ -128,61 +128,74 @@
 
 <body style="background-color: var(--bg-main);">
 
-    <main class="container-xxl">
-        <div class="container pb-5">
+    <main class="container-xl">
+        {{-- <div class="container pb-5"> --}}
 
             {{-- /* Banner Promo */ --}}
-            <section class="mt-4 mb-4 rounded-4 overflow-hidden shadow-lg">
-                <div id="promoCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-indicators">
-                        <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="0" class="active"
-                            aria-current="true"></button>
-                        <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="1"></button>
-                    </div>
-                    <div class="carousel-inner">
-                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 400px);">
-                            <div class="d-flex align-items-center h-100 px-5 text-white"
-                                style="background: radial-gradient(circle at 50% 50%, #51376c 0%, #2e2050 100%); position: relative;">
-                                <div class="position-absolute top-0 end-0 p-5 opacity-25">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" fill="currentColor"
-                                        class="bi bi-code-slash" viewBox="0 0 16 16">
-                                        <path
-                                            d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z" />
-                                    </svg>
-                                </div>
-                                <div style="z-index: 2; max-width: 600px;">
-                                    <span class="badge bg-warning text-dark mb-2">Promo Spesial</span>
-                                    <h1 class="fw-bold">Unlock 1,000+ Premium Courses</h1>
-                                    <p class="mb-4">Pelajari skill baru dari mentor expert industri. Diskon 50% untuk
-                                        pendaftaran minggu ini!</p>
-                                    <button class="btn btn-warning fw-bold px-4 py-2"
-                                        style="background-color: #f4c430; border: none; color: #2e2050;">Lihat
-                                        Promo</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="carousel-item" style="height: clamp(250px, 40vh, 400px);">
-                            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
-                                class="d-block w-100 h-100" style="object-fit: cover; filter: brightness(0.6);"
-                                alt="...">
-                            <div class="carousel-caption d-none d-md-block text-start"
-                                style="bottom: 40px; left: 60px;">
-                                <h2 class="fw-bold">Webinar Series: AI for Future</h2>
-                                <p>Gabung diskusi panel eksklusif bersama pakar AI global.</p>
-                                <button class="btn btn-light fw-bold">Daftar Sekarang</button>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#promoCarousel"
-                        data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#promoCarousel"
-                        data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    </button>
+            <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                        aria-current="true" aria-label="Slide 1"></button>
+                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="1"
+                        aria-label="Slide 2"></button>
+                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="2"
+                        aria-label="Slide 3"></button>
                 </div>
-            </section>
+
+                <div class="carousel-inner">
+                    <!-- Slide 1 -->
+                    <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                            alt="Slide 1"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                            <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                            <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                            <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 2 -->
+                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
+                            alt="Slide 2"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                            <h2 class="fw-bold">Webinar AI Masa Depan</h2>
+                            <p>Diskusi panel eksklusif bersama expert global.</p>
+                            <button class="btn btn-light fw-bold">Daftar Sekarang</button>
+                        </div>
+                    </div>
+
+                    <!-- Slide 3 -->
+                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1600&auto=format&fit=crop"
+                            alt="Slide 3"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                            <h2 class="fw-bold">Sertifikasi & Career Path</h2>
+                            <p>Bangun portofolio dan karier profesionalmu.</p>
+                            <button class="btn btn-outline-light fw-bold">Lihat Program</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+
 
             <div class="row g-4">
                 <div class="col-lg-8">
@@ -516,27 +529,31 @@
                                             onerror="this.onerror=null;this.src='{{ asset('aset/poster.png') }}';">
 
                                         @if($event->original_price && $event->price < $event->original_price)
-                                        <span
-                                            style="position:absolute; bottom:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;">
-                                            {{ round((($event->original_price - $event->price) / $event->original_price) * 100) }}% OFF
-                                        </span>
-                                        @elseif($event->price == 0)
-                                        @endif
+                                            <span
+                                                style="position:absolute; bottom:12px; left:12px; background:#212f4d; color:#d6bc3a; font-size:11px; font-weight:700; padding:6px 10px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,.25); text-transform:uppercase;">
+                                                {{ round((($event->original_price - $event->price) /
+                                                $event->original_price) * 100) }}% OFF
+                                            </span>
+                                            @elseif($event->price == 0)
+                                            @endif
 
-                                        <span
-                                            style="position:absolute; top:12px; left:12px; background:{{ ($event->manage_action == 'create') ? '#6F42C1' : '#0D6EFD' }}; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
-                                            {{ $event->manage_action ?? 'EVENT' }}
-                                        </span>
+                                            <span
+                                                style="position:absolute; top:12px; left:12px; background:{{ ($event->manage_action == 'create') ? '#6F42C1' : '#0D6EFD' }}; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
+                                                {{ $event->manage_action ?? 'EVENT' }}
+                                            </span>
                                     </div>
 
                                     <div class="card-body pt-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-2 text-wrap" style="line-height: 1.4; white-space: normal;">{{ $event->title }}</h6>
+                                        <h6 class="fw-bold mb-2 text-wrap"
+                                            style="line-height: 1.4; white-space: normal;">{{ $event->title }}</h6>
 
                                         <div class="mb-3 d-flex gap-2">
                                             <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">{{ $event->materi }}</span>
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">{{
+                                                $event->materi }}</span>
                                             <span class="badge"
-                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">{{ $event->jenis }}</span>
+                                                style="background-color:#f3f4f6; color:#4b5563; font-weight: 500;">{{
+                                                $event->jenis }}</span>
                                         </div>
 
                                         <div class="d-flex flex-column gap-2 mb-3 text-muted" style="font-size:13px;">
@@ -548,7 +565,9 @@
                                                     <path
                                                         d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
                                                 </svg>
-                                                <span>{{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : 'TBA' }}</span>
+                                                <span>{{ $event->event_date ?
+                                                    \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y')
+                                                    : 'TBA' }}</span>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -556,16 +575,20 @@
                                                     <path
                                                         d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
                                                 </svg>
-                                                <span class="text-truncate" style="max-width: 200px;">{{ $event->location ?? 'Online' }} • {{ $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') . ' WIB' : '' }}</span>
+                                                <span class="text-truncate" style="max-width: 200px;">{{
+                                                    $event->location ?? 'Online' }} • {{ $event->event_time ?
+                                                    \Carbon\Carbon::parse($event->event_time)->format('H:i') . ' WIB' :
+                                                    '' }}</span>
                                             </div>
                                         </div>
 
                                         <div class="mb-3">
                                             @php
-                                                $quota = $event->quota ?? 100;
-                                                $registered = $event->registrations_count ?? 0;
-                                                $percentage = $quota > 0 ? min(100, round(($registered / $quota) * 100)) : 100;
-                                                $isFull = $registered >= $quota;
+                                            $quota = $event->quota ?? 100;
+                                            $registered = $event->registrations_count ?? 0;
+                                            $percentage = $quota > 0 ? min(100, round(($registered / $quota) * 100)) :
+                                            100;
+                                            $isFull = $registered >= $quota;
                                             @endphp
                                             <div class="d-flex justify-content-between align-items-center mb-1"
                                                 style="font-size: 11px;">
@@ -578,13 +601,15 @@
                                                     </svg>
                                                     <span>{{ $isFull ? 'Kuota Penuh' : 'Kuota Terisi' }}</span>
                                                 </div>
-                                                <span class="fw-bold {{ $isFull ? 'text-danger' : ($percentage > 80 ? 'text-warning' : 'text-primary') }}">
+                                                <span
+                                                    class="fw-bold {{ $isFull ? 'text-danger' : ($percentage > 80 ? 'text-warning' : 'text-primary') }}">
                                                     {{ $registered }}/{{ $quota }}
                                                 </span>
                                             </div>
                                             <div class="progress" style="height: 6px; background-color: #f1f5f9;">
-                                                <div class="progress-bar {{ $isFull ? 'bg-danger' : ($percentage > 80 ? 'bg-warning' : 'bg-primary') }}" role="progressbar"
-                                                    style="width: {{ $percentage }}%" aria-valuenow="{{ $percentage }}" aria-valuemin="0"
+                                                <div class="progress-bar {{ $isFull ? 'bg-danger' : ($percentage > 80 ? 'bg-warning' : 'bg-primary') }}"
+                                                    role="progressbar" style="width: {{ $percentage }}%"
+                                                    aria-valuenow="{{ $percentage }}" aria-valuemin="0"
                                                     aria-valuemax="100"></div>
                                             </div>
                                         </div>
@@ -594,7 +619,9 @@
                                             <span class="small fw-bold text-muted">Mulai:</span>
                                             <span class="font-monospace px-2 py-1 rounded"
                                                 style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">
-                                                {{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->diffForHumans(null, true, true) : '-' }}
+                                                {{ $event->event_date ?
+                                                \Carbon\Carbon::parse($event->event_date)->diffForHumans(null, true,
+                                                true) : '-' }}
                                             </span>
                                         </div>
 
@@ -602,15 +629,16 @@
                                             class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
                                             <div class="d-flex flex-column">
                                                 @if($event->price == 0)
-                                                    <span style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
+                                                <span
+                                                    style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
                                                 @else
-                                                    @if($event->original_price && $event->original_price > $event->price)
-                                                        <span
-                                                            style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
-                                                            {{ number_format($event->original_price, 0, ',', '.') }}</span>
-                                                    @endif
-                                                    <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
-                                                        {{ number_format($event->price, 0, ',', '.') }}</span>
+                                                @if($event->original_price && $event->original_price > $event->price)
+                                                <span
+                                                    style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
+                                                    {{ number_format($event->original_price, 0, ',', '.') }}</span>
+                                                @endif
+                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
+                                                    {{ number_format($event->price, 0, ',', '.') }}</span>
                                                 @endif
                                             </div>
                                             <a href="{{ route('events.show', $event->id) }}"
@@ -884,7 +912,7 @@
 
                 </div>
             </div>
-        </div>
+        {{-- </div> --}}
     </main>
 
     @include('partials.footer-after-login')
