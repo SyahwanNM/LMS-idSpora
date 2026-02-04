@@ -45,6 +45,9 @@
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
+                    </li>
                     @endif
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">

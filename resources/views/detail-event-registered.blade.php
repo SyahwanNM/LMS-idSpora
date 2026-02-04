@@ -1,6 +1,5 @@
-    @include("partials.navbar-after-login")
-    <!DOCTYPE html>
-    <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
     <head>
                 <style>
@@ -42,283 +41,152 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             /* Make the top navy section flush to the very top */
-           /* --- Reset & Layout Dasar --- */
-html, body { 
-    margin: 0; 
-    padding: 0; 
-}
-
-.container-ungu { 
-    margin-top: 0 !important; 
-}
-
-/* Nudge breadcrumb down agar tidak tertutup navbar */
-.container-ungu .link-box { 
-    padding-top: 80px; 
-}
-
-@media (max-width: 576px) {
-    .container-ungu .link-box { padding-top: 64px; }
-}
-
-/* --- Tab Content & Panes --- */
-.desc-box .tab-content .tab-pane { 
-    padding: 16px 20px 24px; 
-}
-
-@media (max-width: 576px) {
-    .desc-box .tab-content .tab-pane { padding: 12px 14px 18px; }
-}
-
-/* Spesifik untuk Tab Terms & Condition */
-.desc-box .tab-content #nav-contact,
-.desc-box .terms-box { 
-    padding: 4px 8px 0 !important; 
-    margin: 0 !important; 
-}
-
-.desc-box .tab-content #nav-contact .terms-content { 
-    margin-top: 4px !important; 
-    margin-bottom: 0 !important; 
-    padding-bottom: 0 !important; 
-}
-
-.desc-box .tab-content #nav-contact h6 { 
-    margin-top: 4px !important; 
-    margin-bottom: 6px !important; 
-}
-
-/* --- Social Media Icons --- */
-.share .share-list .bi-facebook { 
-    position: relative; 
-    top: -1px; 
-}
-
-/* --- Resource Cards (Locked State) --- */
-.resource-card.locked { 
-    opacity: 0.6; 
-}
-
-.resource-card.locked .img-resource svg,
-.resource-card.locked .link-share { 
-    opacity: 0.6; 
-}
-
-.resource-card.locked .resource-value { 
-    color: #6c757d; 
-}
-
-.resource-card.locked .link-share { 
-    pointer-events: none; 
-}
-
-/* Icon gembok pada resource yang dikunci */
-.resource-card .img-resource { 
-    position: relative; 
-}
-
-.resource-card.locked .img-resource::after {
-    content: '';
-    position: absolute;
-    right: -6px;
-    bottom: -6px;
-    width: 18px;
-    height: 18px;
-    opacity: .8;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
-    background-repeat: no-repeat;
-    background-size: 18px 18px;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' class='bi bi-lock' viewBox='0 0 16 16'><path d='M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m0 4a1 1 0 0 1 1 1v2H7V6a1 1 0 0 1 1-1'/></svg>");
-}
-
-/* --- Feedback & Rating Card --- */
-.add-rating { 
-    border: none !important; 
-    box-shadow: none !important; 
-}
-
-.add-rating .scroll-review-box { 
-    border: none !important; 
-}
-
-/* Overlay untuk Feedback Terkunci */
-.add-rating.locked { 
-    opacity: 1 !important; 
-    filter: none !important; 
-    position: relative; 
-}
-
-.add-rating.locked .locked-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    font-weight: 600;
-    color: #6c757d;
-    text-align: center;
-    padding: 12px;
-    pointer-events: none;
-    z-index: 2;
-}
-
-.add-rating.locked > h5 {
-    position: relative;
-    z-index: 3;
-    filter: blur(2px);
-    color: #6c757d;
-    user-select: none;
-    pointer-events: none;
-}
-
-.feedback-locked-msg { 
-    margin-top: -8px; 
-}
-
-/* --- Modal & Scrollbar Styling --- */
-#feedbackModal .modal-content {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-#participant-ratings-list::-webkit-scrollbar { width: 6px; }
-#participant-ratings-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
-#participant-ratings-list::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
-#participant-ratings-list::-webkit-scrollbar-thumb:hover { background: #555; }
-
-.rating-card { transition: box-shadow 0.2s; }
-.rating-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-/* --- Tombol Book & Save --- */
-.booksave-row { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    align-items: stretch; 
-}
-
-.bookseat, .save {
-    display: block; 
-    width: 100%; 
-    text-align: center; 
-    padding: 12px 16px; 
-    border-radius: 6px; 
-    font-weight: 600; 
-    text-decoration: none; 
-    box-sizing: border-box;
-    border: none;
-}
-
-.bookseat { 
-    background: #f5c400; 
-    color: #111; 
-    order: 1; 
-}
-
-.bookseat:disabled, .bookseat.disabled { 
-    background: #ddd; 
-    color: #666; 
-}
-
-.save { 
-    background: #1f2235; 
-    color: #ffd400; 
-    order: 2; 
-    cursor: pointer; 
-    position: relative; 
-    z-index: 2; 
-    pointer-events: auto !important; 
-}
-
-/* --- Info & Price Detail --- */
-.price-box > span { 
-    color: #6b7280; 
-    text-decoration: line-through; 
-    display: inline-block; 
-    min-height: 20px; 
-}
-
-.price-free { 
-    color: #16a34a; 
-    font-weight: 700; 
-    letter-spacing: .3px; 
-}
-
-.info-item .label-event { 
-    display: block; 
-    font-weight: 600; 
-    color: #6b7280; 
-    margin-bottom: 2px; 
-}
-
-.info-item .isi-event { 
-    display: block; 
-    color: #111827; 
-    font-weight: 600; 
-}
-
-/* Ticket Info Grid (Right Card) */
-.detail-box-right .info-boxluar .info-item {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 12px;
-    align-items: start;
-    width: 100%;
-}
-
-.detail-box-right .info-boxluar .info-left {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    min-width: 0;
-}
-
-.detail-box-right .info-boxluar .info-left svg {
-    margin: 3px 0 0 0 !important;
-    flex: 0 0 20px;
-}
-
-.detail-box-right .info-boxluar .label-event {
-    display: inline !important;
-    margin: 0;
-    white-space: nowrap;
-}
-
-.detail-box-right .info-boxluar .isi-event {
-    display: inline !important;
-    justify-self: end;
-    text-align: right;
-    white-space: nowrap;
-}
-
-@media (max-width: 576px) {
-    .detail-box-right .info-boxluar .info-item { grid-template-columns: 1fr; row-gap: 4px; }
-    .detail-box-right .info-boxluar .isi-event { justify-self: start; text-align: left; white-space: normal; }
-}
-
-/* --- Star Ratings --- */
-.stars { user-select: none; }
-.stars span { 
-    cursor: pointer; 
-    font-size: 20px; 
-    color: #c9c9c9; 
-    margin-right: 2px; 
-}
-.stars span.selected { color: #FFD600; }
-
-.stars-rating-input span {
-    display: inline-block;
-    font-size: 1.75rem;
-    line-height: 1;
-}
+            html, body { margin: 0; padding: 0; }
+            .container-ungu { margin-top: 0 !important; }
+            /* Nudge breadcrumb down so it's not hidden under fixed navbar */
+            .container-ungu .link-box { padding-top: 120px; }
+            @media (max-width: 576px){
+                .container-ungu .link-box { padding-top: 100px; }
+            }
+            /* Add breathing space inside tab panes (Overview, etc.) */
+            .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
+            @media (max-width: 576px){
+                .desc-box .tab-content .tab-pane { padding: 12px 14px 18px; }
+            }
+            /* Reduce padding specifically for Terms & Condition tab (stronger override) */
+            .desc-box .tab-content #nav-contact { padding: 4px 8px 0 !important; margin-bottom: 0 !important; }
+            /* If the pane uses .terms-box as card wrapper, tighten it too */
+            .desc-box .terms-box { padding: 4px 8px 0 !important; margin: 0 !important; }
+            /* Remove any extra bottom space inside terms content */
+            .desc-box .tab-content #nav-contact .terms-content { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+            .desc-box .tab-content #nav-contact h6 { margin-top: 4px !important; margin-bottom: 6px !important; }
+            .desc-box .tab-content #nav-contact .terms-content { margin-top: 4px !important; }
+            @media (max-width: 576px){
+                .desc-box .tab-content #nav-contact { padding: 4px 8px 0 !important; }
+            }
+            /* Align Facebook icon baseline with other share icons */
+            .share .share-list .bi-facebook { position: relative; top: -1px; }
+            /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
+            .resource-card.locked { opacity: 0.6; }
+            .resource-card.locked .img-resource svg { opacity: 0.6; }
+            .resource-card.locked .resource-value { color: #6c757d; }
+            .resource-card.locked .link-share { pointer-events: none; opacity: 0.6; }
+            /* Feedback card: do NOT blur when locked, instead show an overlay message */
+            .add-rating.locked { opacity: 1 !important; filter: none !important; position: relative; }
+            .add-rating.locked .locked-overlay {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.55); /* semi-transparent overlay */
+                -webkit-backdrop-filter: blur(6px);
+                backdrop-filter: blur(6px); /* blur the content behind */
+                font-weight: 600;
+                color: #6c757d;
+                text-align: center;
+                padding: 12px;
+                pointer-events: none;
+                z-index: 2;
+            }
+            /* Remove border/edge line for the feedback card */
+            .add-rating { border: none !important; box-shadow: none !important; }
+            .add-rating .scroll-review-box { border: none !important; }
+            
+            /* Feedback Modal Styling */
+            #feedbackModal .modal-content {
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 3px;
+            }
+            
+            #participant-ratings-list::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+            
+            .rating-card {
+                transition: box-shadow 0.2s;
+            }
+            
+            .rating-card:hover {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            
+            .stars-rating-input span {
+                display: inline-block;
+                font-size: 1.75rem;
+                line-height: 1;
+            }
+            /* When locked, heading should appear blurred and not selectable/copyable */
+            .add-rating.locked > h5 {
+                position: relative;
+                z-index: 3; /* keep above overlay for consistent placement */
+                filter: blur(2px);
+                color: #6c757d;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                pointer-events: none;
+            }
+            /* Small upward nudge for locked feedback messages (kept for non-overlay fallback) */
+            .feedback-locked-msg { margin-top: -8px; }
+            /* Show a lock icon when a resource is locked */
+            .resource-card .img-resource { position: relative; }
+            .resource-card.locked .img-resource::after {
+                content: '';
+                position: absolute;
+                right: -6px;
+                bottom: -6px;
+                width: 18px;
+                height: 18px;
+                opacity: .8;
+                filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
+                background-repeat: no-repeat;
+                background-size: 18px 18px;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' class='bi bi-lock' viewBox='0 0 16 16'><path d='M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m0 4a1 1 0 0 1 1 1v2H7V6a1 1 0 0 1 1-1'/></svg>");
+            }
+            /* Align Book Seat and Save buttons: same width and style */
+            /* Vertical button stack: Book Seat above, Save below */
+            .booksave-row { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
+            .booksave-row .bookseat, .booksave-row .save, .bookseat, .save {
+                display:block; width:100%; text-align:center; padding:12px 16px; border-radius:6px; font-weight:600; text-decoration:none; box-sizing:border-box;
+            }
+            .bookseat { background:#f5c400; color:#111; border:none; order:1; }
+            .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
+            .save { background:#1f2235; color:#ffd400; border:none; order:2; cursor:pointer; position:relative; z-index:2; pointer-events:auto !important; }
+            /* Remove responsive horizontal override; keep vertical layout on all sizes */
+            /* Price + info tidy */
+            .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
+            .price-free { color:#16a34a; font-weight:700; letter-spacing:.3px; }
+            .info-item .label-event { display:block; font-weight:600; color:#6b7280; margin-bottom:2px; }
+            .info-item .isi-event { display:block; color:#111827; font-weight:600; }
+            /* Interactive stars styling */
+            .stars { user-select: none; }
+            .stars span { cursor: pointer; font-size: 20px; color: #c9c9c9; margin-right: 2px; }
+            .stars span.selected { color: #FFD600; }
+            /* Push icons down slightly to align with text */
+            .info-item svg { margin-top: 12px; }
         </style>
 
     </head>
 
     <body>
+    @include("partials.navbar-after-login")
+    <div class="all">
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
@@ -920,29 +788,27 @@ html, body {
                     
                     <div class="resource-value">
                         <h6>Certificate</h6>
-                        @php
-                            // Show certificate availability only when user registered and has submitted feedback (post-event)
-                            // $isRegistered and $hasFeedback are computed earlier in the view
-                        @endphp
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                @if(!empty($event->certificate_path))
-                                    <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
+                                @php
+                                    $certReady = $event->event_date && now()->greaterThanOrEqualTo($event->event_date->copy()->addDays(3));
+                                @endphp
+                                @if($certReady)
+                                    <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
+                                        <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                                    </div>
                                 @else
-                                    <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
+                                    <p>Sertifikat akan tersedia 3 hari setelah acara selesai.</p>
                                 @endif
                             @else
-                                <p>Available after you submit feedback for this event.</p>
+                                <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
                             @endif
                         @else
-                            <p>Available after event completion.</p>
+                            <p>Tersedia setelah acara selesai.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
                 </div>
             
             <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">

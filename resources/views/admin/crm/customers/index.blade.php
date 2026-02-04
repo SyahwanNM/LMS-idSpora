@@ -2,52 +2,87 @@
 
 @section('title', 'Kelola Customer')
 
+@section('styles')
+<style>
+    .search-card {
+        background: #ffffff;
+        border: 1px solid var(--crm-border);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .customer-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+    .badge-role {
+        padding: 0.35rem 0.65rem;
+        font-weight: 600;
+        font-size: 0.7rem;
+        border-radius: 6px;
+    }
+    .table-custom thead th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--crm-text-muted);
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        background: #f8fafc;
+        border-bottom: 1px solid var(--crm-border);
+    }
+</style>
+@endsection
+
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-2 text-dark fw-bold">
-            <i class="bi bi-people me-2 text-primary"></i>Kelola Customer
-        </h2>
-        <p class="text-muted mb-0">Daftar semua customer yang terdaftar di sistem</p>
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h3 class="fw-bold text-navy mb-1">Database Pelanggan</h3>
+        <p class="text-muted small mb-0">Kelola informasi dan peran pengguna platform</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-sm d-flex align-items-center gap-2" style="background: var(--crm-primary); color: white;">
+            <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+            <span>Export CSV</span>
+        </button>
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
-
 <!-- Search and Filter -->
-<div class="card-3d mb-4">
-    <div class="card-body p-4">
+<div class="card-minimal mb-4 overflow-hidden">
+    <div class="card-body p-4 bg-light bg-opacity-10">
         <form method="GET" action="{{ route('admin.crm.customers.index') }}" class="row g-3">
             <div class="col-md-5">
-                <label class="form-label small text-muted fw-semibold">Cari Customer</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Nama, email, atau telepon..." value="{{ request('search') }}">
+                <div class="form-group">
+                    <label class="form-label smaller fw-bold text-muted">Cari Pelanggan</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Nama, email, atau nomor telepon..." value="{{ request('search') }}">
+                    </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label small text-muted fw-semibold">Filter Role</label>
-                <select name="role" class="form-select">
-                    <option value="">Semua Role</option>
-                    <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>User</option>
-                    <option value="reseller" {{ request('role') == 'reseller' ? 'selected' : '' }}>Reseller</option>
-                    <option value="trainer" {{ request('role') == 'trainer' ? 'selected' : '' }}>Trainer</option>
-                </select>
+                <div class="form-group">
+                    <label class="form-label smaller fw-bold text-muted">Filter Peran</label>
+                    <select name="role" class="form-select form-select-sm">
+                        <option value="">Semua Peran</option>
+                        <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>User Umum</option>
+                        <option value="reseller" {{ request('role') == 'reseller' ? 'selected' : '' }}>Reseller</option>
+                        <option value="trainer" {{ request('role') == 'trainer' ? 'selected' : '' }}>Trainer</option>
+                    </select>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label small text-muted fw-semibold">&nbsp;</label>
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn w-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #dc2626 100%); border: none; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25), 0 2px 8px rgba(220, 38, 38, 0.2); color: white;">
-                        <i class="bi bi-search me-1"></i> Cari
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="d-flex gap-2 w-100">
+                    <button type="submit" class="btn btn-sm flex-grow-1" style="background: var(--crm-navy); color: white;">
+                        Terapkan Filter
                     </button>
-                    <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i>
+                    @if(request('search') || request('role'))
+                    <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-outline-secondary btn-sm" title="Reset">
+                        <i class="bi bi-arrow-counterclockwise"></i>
                     </a>
+                    @endif
                 </div>
             </div>
         </form>
@@ -55,91 +90,93 @@
 </div>
 
 <!-- Customers List -->
-<div class="card-3d">
-    <div class="card-body p-4">
-        @if($customers->count() > 0)
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Customer</th>
-                            <th>Kontak</th>
-                            <th>Role</th>
-                            <th>Registrasi</th>
-                            <th>Enrollment</th>
-                            <th>Bergabung</th>
-                            <th class="text-end">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($customers as $customer)
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-circle me-3" style="width:45px;height:45px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                                            <img src="{{ $customer->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
-                                        </div>
-                                        <div>
-                                            <div class="fw-semibold">{{ $customer->name }}</div>
-                                            <small class="text-muted">{{ $customer->email }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    @if($customer->phone)
-                                        <div class="small"><i class="bi bi-telephone me-1"></i>{{ $customer->phone }}</div>
-                                    @else
-                                        <span class="text-muted small">-</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($customer->role === 'reseller')
-                                        <span class="badge bg-primary">Reseller</span>
-                                    @elseif($customer->role === 'trainer')
-                                        <span class="badge bg-info">Trainer</span>
-                                    @else
-                                        <span class="badge bg-secondary">User</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="badge bg-success">{{ $customer->event_registrations_count ?? 0 }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-warning">{{ $customer->enrollments_count ?? 0 }}</span>
-                                </td>
-                                <td>
-                                    <small class="text-muted">{{ $customer->created_at->format('d M Y') }}</small>
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ route('admin.crm.customers.show', $customer) }}" class="btn btn-outline-primary btn-sm" title="Detail">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="{{ route('admin.crm.customers.edit', $customer) }}" class="btn btn-outline-secondary btn-sm" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-3">
-                {{ $customers->links() }}
-            </div>
-        @else
-            <div class="text-center py-5">
-                <i class="bi bi-people" style="font-size: 3rem; color: #ccc;"></i>
-                <p class="text-muted mt-3">Tidak ada customer ditemukan</p>
-                @if(request('search') || request('role'))
-                    <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-outline-primary mt-2">
-                        <i class="bi bi-arrow-left me-1"></i> Reset Filter
-                    </a>
-                @endif
-            </div>
-        @endif
+<div class="card-minimal overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light bg-opacity-50">
+                <tr>
+                    <th class="ps-4">Profil Pelanggan</th>
+                    <th>Detail Kontak</th>
+                    <th>Peran</th>
+                    <th class="text-center">Aktivitas</th>
+                    <th>Bergabung</th>
+                    <th class="text-end pe-4">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($customers as $customer)
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center py-1">
+                            <img src="{{ $customer->avatar_url }}" class="customer-avatar me-3 border" style="border-color: var(--crm-secondary) !important;" alt="avatar">
+                            <div>
+                                <div class="fw-bold text-navy small">{{ $customer->name }}</div>
+                                <div class="text-muted smaller" style="font-size: 0.7rem;">ID: #{{ str_pad($customer->id, 5, '0', STR_PAD_LEFT) }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="small fw-medium">{{ $customer->email }}</div>
+                        <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $customer->phone ?? 'Belum ada nomor' }}</div>
+                    </td>
+                    <td>
+                        @if($customer->role === 'reseller')
+                            <span class="badge-role" style="background: #fffbeb; color: var(--crm-secondary); border: 1px solid var(--crm-secondary);">RESELLER</span>
+                        @elseif($customer->role === 'trainer')
+                            <span class="badge-role" style="background: var(--crm-accent-light); color: var(--crm-primary); border: 1px solid var(--crm-primary);">TRAINER</span>
+                        @else
+                            <span class="badge-role bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10">USER</span>
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-3">
+                            <div class="text-center" title="Registrasi Event">
+                                <div class="smaller text-muted" style="font-size: 0.65rem;">Event</div>
+                                <div class="small fw-bold">{{ $customer->event_registrations_count ?? 0 }}</div>
+                            </div>
+                            <div class="text-center" title="Enrollment Course">
+                                <div class="smaller text-muted" style="font-size: 0.65rem;">Course</div>
+                                <div class="small fw-bold">{{ $customer->enrollments_count ?? 0 }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="small fw-medium">{{ $customer->created_at->format('d M Y') }}</div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm text-muted" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 10px;">
+                                <li><a class="dropdown-item py-2 smaller" href="{{ route('admin.crm.customers.show', $customer) }}"><i class="bi bi-eye me-2"></i> Detail Profil</a></li>
+                                <li><a class="dropdown-item py-2 smaller" href="{{ route('admin.crm.customers.edit', $customer) }}"><i class="bi bi-pencil me-2"></i> Edit Data</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 smaller text-danger" href="#"><i class="bi bi-trash me-2"></i> Hapus Akun</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="py-4">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" style="width: 64px; opacity: 0.2;" class="mb-3">
+                            <h6 class="text-muted">Tidak ada pelanggan ditemukan</h6>
+                            @if(request('search') || request('role'))
+                                <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-link btn-sm text-decoration-none">Bersihkan Filter</a>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+    @if($customers->hasPages())
+    <div class="card-footer bg-white border-0 py-3 px-4">
+        {{ $customers->appends(request()->query())->links() }}
+    </div>
+    @endif
 </div>
 @endsection
-

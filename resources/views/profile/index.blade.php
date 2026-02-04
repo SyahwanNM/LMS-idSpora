@@ -638,6 +638,25 @@
                             {{ $subtitle ?: 'Lengkapi profil untuk menampilkan profesi & institusi.' }}
                         </p>
 
+                        {{-- Bio Section --}}
+                        <div class="mt-4 mb-2 max-w-2xl">
+                            @if(!empty($user->bio))
+                                <div class="p-3 rounded-2xl bg-slate-50/80 border border-slate-100 shadow-sm">
+                                    <p class="text-sm md:text-base leading-relaxed mb-0" style="color:#475569;">
+                                        <i class="bi bi-chat-quote-fill text-indigo-400 mr-2 opacity-50"></i>
+                                        {{ $user->bio }}
+                                    </p>
+                                </div>
+                            @else
+                                <div class="p-3 rounded-2xl bg-gray-50/50 border border-dashed border-gray-200">
+                                    <p class="text-xs md:text-sm italic mb-0" style="color:#94a3b8;">
+                                        <i class="bi bi-info-circle mr-1.5"></i>
+                                        Belum ada biografi singkat. <a href="{{ route('profile.edit') }}" class="text-indigo-500 font-bold hover:underline">Tambah Bio &rarr;</a>
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
                         <div class="mt-4 flex flex-wrap gap-2">
                             {{-- Belum ada field khusus linkedin/github di DB --}}
                             <a class="profile-pill disabled" href="#" aria-disabled="true" title="Tambahkan link LinkedIn di pengaturan profil (belum tersedia field khusus)">
