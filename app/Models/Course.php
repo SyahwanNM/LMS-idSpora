@@ -57,4 +57,12 @@ class Course extends Model
     {
         return $this->hasMany(\App\Models\Payment::class);
     }
+
+    /**
+     * Manual payments relation (QRIS proof uploads)
+     */
+    public function manualPayments()
+    {
+        return $this->hasMany(\App\Models\ManualPayment::class);
+    }
 }

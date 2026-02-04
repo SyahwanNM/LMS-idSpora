@@ -591,7 +591,7 @@
 
                                         <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
                                             style="background:#f8f9fa;">
-                                            <span class="small fw-bold text-muted">Mulai:</span>
+                                            <span class="small fw-bold text-muted">Mulai dalam:</span>
                                             <span class="font-monospace px-2 py-1 rounded"
                                                 style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">
                                                 {{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->diffForHumans(null, true, true) : '-' }}

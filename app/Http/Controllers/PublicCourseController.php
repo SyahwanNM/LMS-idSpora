@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Carousel;
+use App\Models\Enrollment;
+use App\Models\ManualPayment;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 
 class PublicCourseController extends Controller
@@ -54,6 +57,32 @@ class PublicCourseController extends Controller
             ->orderBy('order')
             ->get();
 
-        return view('course.index', compact('courses','featuredCourses', 'courseCarousels'));
+        $learnableCourseIds = [];
+        $user = $request->user();
+        if ($user) {
+            $fromEnrollments = Enrollment::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->pluck('course_id')
+                ->all();
+
+            $fromManualPayments = ManualPayment::query()
+                ->where('user_id', $user->id)
+                ->whereNotNull('course_id')
+                ->where('status', 'settled')
+                ->pluck('course_id')
+                ->all();
+
+            $fromMidtransPayments = Payment::query()
+                ->where('user_id', $user->id)
+                ->whereNotNull('course_id')
+                ->whereIn('status', ['capture', 'settlement'])
+                ->pluck('course_id')
+                ->all();
+
+            $learnableCourseIds = array_values(array_unique(array_merge($fromEnrollments, $fromManualPayments, $fromMidtransPayments)));
+        }
+
+        return view('course.index', compact('courses','featuredCourses', 'courseCarousels', 'learnableCourseIds'));
     }
 }
