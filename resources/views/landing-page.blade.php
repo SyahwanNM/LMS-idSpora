@@ -204,11 +204,7 @@
                     <div class="position-relative">
                         <!-- Main Hero Image -->
                         <div class="position-relative z-2">
-                             @if(isset($landingCarousels) && $landingCarousels->count() > 0)
-                                <img src="{{ $landingCarousels->first()->image_url }}" class="img-fluid rounded-4 shadow-soft" style="transform: rotate(2deg); border: 8px solid white;" alt="Hero Image">
-                             @else
-                                <img src="{{ asset('aset/ai3.jpg') }}" onerror="this.src='{{ asset('aset/poster.png') }}'" class="img-fluid rounded-4 shadow-soft" style="transform: rotate(2deg); border: 8px solid white;" alt="Hero Image">
-                             @endif
+                            <img src="{{ asset('aset/lp.png') }}" onerror="this.src='{{ asset('aset/poster.png') }}'" class="img-fluid rounded-4 shadow-soft" style="transform: rotate(2deg); border: 8px solid white;" alt="Hero Image">
                         </div>
                         
                         <!-- Floating Badges -->
