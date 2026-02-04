@@ -260,7 +260,6 @@
     <section class="kursus-pelatihan">
         <div class="section-title">
             <h3>Kursus Pilihan</h3>
-            <h6>Kursus terpopuler dengan rating tertinggi</h6>
         </div>
 
         @php
@@ -271,7 +270,11 @@
         <ul class="course-list">
             @forelse($publishedFeaturedCourses as $course)
             <li>
-                <a href="{{ route('course.detail', $course->id) }}" style="text-decoration:none;color:inherit;">
+                @php
+                    // Always go to detail first when clicking the card
+                    $courseHref = route('course.detail', $course->id);
+                @endphp
+                <a href="{{ $courseHref }}" style="text-decoration:none;color:inherit;">
                 <article class="course-card">
                     <div class="thumb-wrapper">
                         @php
@@ -331,7 +334,7 @@
                             <div class="price-col">
                                 <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                             </div>
-                            <a href="{{ route('course.detail', $course->id) }}" class="btn-enroll" style="text-decoration:none;">Enroll Now</a>
+                            <a href="{{ $courseHref }}" class="btn-enroll" style="text-decoration:none;">Lihat Detail</a>
                         </div>
                     </div>
                 </article>

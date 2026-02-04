@@ -42,145 +42,278 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <style>
             /* Make the top navy section flush to the very top */
-            html, body { margin: 0; padding: 0; }
-            .container-ungu { margin-top: 0 !important; }
-            /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-            .container-ungu .link-box { padding-top: 80px; }
-            @media (max-width: 576px){
-                .container-ungu .link-box { padding-top: 64px; }
-            }
-            /* Add breathing space inside tab panes (Overview, etc.) */
-            .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
-            @media (max-width: 576px){
-                .desc-box .tab-content .tab-pane { padding: 12px 14px 18px; }
-            }
-            /* Reduce padding specifically for Terms & Condition tab (stronger override) */
-            .desc-box .tab-content #nav-contact { padding: 4px 8px 0 !important; margin-bottom: 0 !important; }
-            /* If the pane uses .terms-box as card wrapper, tighten it too */
-            .desc-box .terms-box { padding: 4px 8px 0 !important; margin: 0 !important; }
-            /* Remove any extra bottom space inside terms content */
-            .desc-box .tab-content #nav-contact .terms-content { margin-bottom: 0 !important; padding-bottom: 0 !important; }
-            .desc-box .tab-content #nav-contact h6 { margin-top: 4px !important; margin-bottom: 6px !important; }
-            .desc-box .tab-content #nav-contact .terms-content { margin-top: 4px !important; }
-            @media (max-width: 576px){
-                .desc-box .tab-content #nav-contact { padding: 4px 8px 0 !important; }
-            }
-            /* Align Facebook icon baseline with other share icons */
-            .share .share-list .bi-facebook { position: relative; top: -1px; }
-            /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
-            .resource-card.locked { opacity: 0.6; }
-            .resource-card.locked .img-resource svg { opacity: 0.6; }
-            .resource-card.locked .resource-value { color: #6c757d; }
-            .resource-card.locked .link-share { pointer-events: none; opacity: 0.6; }
-            /* Feedback card: do NOT blur when locked, instead show an overlay message */
-            .add-rating.locked { opacity: 1 !important; filter: none !important; position: relative; }
-            .add-rating.locked .locked-overlay {
-                position: absolute;
-                inset: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: rgba(255,255,255,0.55); /* semi-transparent overlay */
-                -webkit-backdrop-filter: blur(6px);
-                backdrop-filter: blur(6px); /* blur the content behind */
-                font-weight: 600;
-                color: #6c757d;
-                text-align: center;
-                padding: 12px;
-                pointer-events: none;
-                z-index: 2;
-            }
-            /* Remove border/edge line for the feedback card */
-            .add-rating { border: none !important; box-shadow: none !important; }
-            .add-rating .scroll-review-box { border: none !important; }
-            
-            /* Feedback Modal Styling */
-            #feedbackModal .modal-content {
-                border-radius: 12px;
-                overflow: hidden;
-            }
-            
-            #participant-ratings-list::-webkit-scrollbar {
-                width: 6px;
-            }
-            
-            #participant-ratings-list::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 3px;
-            }
-            
-            #participant-ratings-list::-webkit-scrollbar-thumb {
-                background: #888;
-                border-radius: 3px;
-            }
-            
-            #participant-ratings-list::-webkit-scrollbar-thumb:hover {
-                background: #555;
-            }
-            
-            .rating-card {
-                transition: box-shadow 0.2s;
-            }
-            
-            .rating-card:hover {
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            
-            .stars-rating-input span {
-                display: inline-block;
-                font-size: 1.75rem;
-                line-height: 1;
-            }
-            /* When locked, heading should appear blurred and not selectable/copyable */
-            .add-rating.locked > h5 {
-                position: relative;
-                z-index: 3; /* keep above overlay for consistent placement */
-                filter: blur(2px);
-                color: #6c757d;
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
-                pointer-events: none;
-            }
-            /* Small upward nudge for locked feedback messages (kept for non-overlay fallback) */
-            .feedback-locked-msg { margin-top: -8px; }
-            /* Show a lock icon when a resource is locked */
-            .resource-card .img-resource { position: relative; }
-            .resource-card.locked .img-resource::after {
-                content: '';
-                position: absolute;
-                right: -6px;
-                bottom: -6px;
-                width: 18px;
-                height: 18px;
-                opacity: .8;
-                filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
-                background-repeat: no-repeat;
-                background-size: 18px 18px;
-                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' class='bi bi-lock' viewBox='0 0 16 16'><path d='M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m0 4a1 1 0 0 1 1 1v2H7V6a1 1 0 0 1 1-1'/></svg>");
-            }
-            /* Align Book Seat and Save buttons: same width and style */
-            /* Vertical button stack: Book Seat above, Save below */
-            .booksave-row { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
-            .booksave-row .bookseat, .booksave-row .save, .bookseat, .save {
-                display:block; width:100%; text-align:center; padding:12px 16px; border-radius:6px; font-weight:600; text-decoration:none; box-sizing:border-box;
-            }
-            .bookseat { background:#f5c400; color:#111; border:none; order:1; }
-            .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
-            .save { background:#1f2235; color:#ffd400; border:none; order:2; cursor:pointer; position:relative; z-index:2; pointer-events:auto !important; }
-            /* Remove responsive horizontal override; keep vertical layout on all sizes */
-            /* Price + info tidy */
-            .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
-            .price-free { color:#16a34a; font-weight:700; letter-spacing:.3px; }
-            .info-item .label-event { display:block; font-weight:600; color:#6b7280; margin-bottom:2px; }
-            .info-item .isi-event { display:block; color:#111827; font-weight:600; }
-            /* Interactive stars styling */
-            .stars { user-select: none; }
-            .stars span { cursor: pointer; font-size: 20px; color: #c9c9c9; margin-right: 2px; }
-            .stars span.selected { color: #FFD600; }
-            /* Push icons down slightly to align with text */
-            .info-item svg { margin-top: 12px; }
+           /* --- Reset & Layout Dasar --- */
+html, body { 
+    margin: 0; 
+    padding: 0; 
+}
+
+.container-ungu { 
+    margin-top: 0 !important; 
+}
+
+/* Nudge breadcrumb down agar tidak tertutup navbar */
+.container-ungu .link-box { 
+    padding-top: 80px; 
+}
+
+@media (max-width: 576px) {
+    .container-ungu .link-box { padding-top: 64px; }
+}
+
+/* --- Tab Content & Panes --- */
+.desc-box .tab-content .tab-pane { 
+    padding: 16px 20px 24px; 
+}
+
+@media (max-width: 576px) {
+    .desc-box .tab-content .tab-pane { padding: 12px 14px 18px; }
+}
+
+/* Spesifik untuk Tab Terms & Condition */
+.desc-box .tab-content #nav-contact,
+.desc-box .terms-box { 
+    padding: 4px 8px 0 !important; 
+    margin: 0 !important; 
+}
+
+.desc-box .tab-content #nav-contact .terms-content { 
+    margin-top: 4px !important; 
+    margin-bottom: 0 !important; 
+    padding-bottom: 0 !important; 
+}
+
+.desc-box .tab-content #nav-contact h6 { 
+    margin-top: 4px !important; 
+    margin-bottom: 6px !important; 
+}
+
+/* --- Social Media Icons --- */
+.share .share-list .bi-facebook { 
+    position: relative; 
+    top: -1px; 
+}
+
+/* --- Resource Cards (Locked State) --- */
+.resource-card.locked { 
+    opacity: 0.6; 
+}
+
+.resource-card.locked .img-resource svg,
+.resource-card.locked .link-share { 
+    opacity: 0.6; 
+}
+
+.resource-card.locked .resource-value { 
+    color: #6c757d; 
+}
+
+.resource-card.locked .link-share { 
+    pointer-events: none; 
+}
+
+/* Icon gembok pada resource yang dikunci */
+.resource-card .img-resource { 
+    position: relative; 
+}
+
+.resource-card.locked .img-resource::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    width: 18px;
+    height: 18px;
+    opacity: .8;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
+    background-repeat: no-repeat;
+    background-size: 18px 18px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' class='bi bi-lock' viewBox='0 0 16 16'><path d='M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m0 4a1 1 0 0 1 1 1v2H7V6a1 1 0 0 1 1-1'/></svg>");
+}
+
+/* --- Feedback & Rating Card --- */
+.add-rating { 
+    border: none !important; 
+    box-shadow: none !important; 
+}
+
+.add-rating .scroll-review-box { 
+    border: none !important; 
+}
+
+/* Overlay untuk Feedback Terkunci */
+.add-rating.locked { 
+    opacity: 1 !important; 
+    filter: none !important; 
+    position: relative; 
+}
+
+.add-rating.locked .locked-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-weight: 600;
+    color: #6c757d;
+    text-align: center;
+    padding: 12px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.add-rating.locked > h5 {
+    position: relative;
+    z-index: 3;
+    filter: blur(2px);
+    color: #6c757d;
+    user-select: none;
+    pointer-events: none;
+}
+
+.feedback-locked-msg { 
+    margin-top: -8px; 
+}
+
+/* --- Modal & Scrollbar Styling --- */
+#feedbackModal .modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#participant-ratings-list::-webkit-scrollbar { width: 6px; }
+#participant-ratings-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+#participant-ratings-list::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+#participant-ratings-list::-webkit-scrollbar-thumb:hover { background: #555; }
+
+.rating-card { transition: box-shadow 0.2s; }
+.rating-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+/* --- Tombol Book & Save --- */
+.booksave-row { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    align-items: stretch; 
+}
+
+.bookseat, .save {
+    display: block; 
+    width: 100%; 
+    text-align: center; 
+    padding: 12px 16px; 
+    border-radius: 6px; 
+    font-weight: 600; 
+    text-decoration: none; 
+    box-sizing: border-box;
+    border: none;
+}
+
+.bookseat { 
+    background: #f5c400; 
+    color: #111; 
+    order: 1; 
+}
+
+.bookseat:disabled, .bookseat.disabled { 
+    background: #ddd; 
+    color: #666; 
+}
+
+.save { 
+    background: #1f2235; 
+    color: #ffd400; 
+    order: 2; 
+    cursor: pointer; 
+    position: relative; 
+    z-index: 2; 
+    pointer-events: auto !important; 
+}
+
+/* --- Info & Price Detail --- */
+.price-box > span { 
+    color: #6b7280; 
+    text-decoration: line-through; 
+    display: inline-block; 
+    min-height: 20px; 
+}
+
+.price-free { 
+    color: #16a34a; 
+    font-weight: 700; 
+    letter-spacing: .3px; 
+}
+
+.info-item .label-event { 
+    display: block; 
+    font-weight: 600; 
+    color: #6b7280; 
+    margin-bottom: 2px; 
+}
+
+.info-item .isi-event { 
+    display: block; 
+    color: #111827; 
+    font-weight: 600; 
+}
+
+/* Ticket Info Grid (Right Card) */
+.detail-box-right .info-boxluar .info-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 12px;
+    align-items: start;
+    width: 100%;
+}
+
+.detail-box-right .info-boxluar .info-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+}
+
+.detail-box-right .info-boxluar .info-left svg {
+    margin: 3px 0 0 0 !important;
+    flex: 0 0 20px;
+}
+
+.detail-box-right .info-boxluar .label-event {
+    display: inline !important;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.detail-box-right .info-boxluar .isi-event {
+    display: inline !important;
+    justify-self: end;
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+    .detail-box-right .info-boxluar .info-item { grid-template-columns: 1fr; row-gap: 4px; }
+    .detail-box-right .info-boxluar .isi-event { justify-self: start; text-align: left; white-space: normal; }
+}
+
+/* --- Star Ratings --- */
+.stars { user-select: none; }
+.stars span { 
+    cursor: pointer; 
+    font-size: 20px; 
+    color: #c9c9c9; 
+    margin-right: 2px; 
+}
+.stars span.selected { color: #FFD600; }
+
+.stars-rating-input span {
+    display: inline-block;
+    font-size: 1.75rem;
+    line-height: 1;
+}
         </style>
 
     </head>
@@ -425,7 +558,7 @@
                         @if($isFreeNow)
                             <h5 class="price-free">GRATIS!</h5>
                         @else
-                            <h5 class="harga-detail-box">Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
+                            <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
                         @endif
                         @if($hasActiveDiscount && $discountMsg)
                         <div class="diskon-time">
@@ -446,22 +579,23 @@
                 <hr class="line-info">
                 <div class="info-boxluar">
                     <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
-                            <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                        </svg>
-                        <div class="info-text">
+                        <div class="info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
+                                <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
+                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
                             <span class="label-event">Date</span>
-                            <span class="isi-event">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
                         </div>
+                        <span class="isi-event">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
                     </div>
                     <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
-                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
-                        </svg>
-                        <div class="info-text">
+                        <div class="info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
+                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+                            </svg>
                             <span class="label-event">Time</span>
+                        </div>
                             @php
                                 $formatTimeOnly = function($raw){
                                     if(empty($raw)) return null;
@@ -482,26 +616,25 @@
                                     $timeRange = '-';
                                 }
                             @endphp
-                            <span class="isi-event">{{ $timeRange }}</span>
-                        </div>
+                        <span class="isi-event">{{ $timeRange }}</span>
                     </div>
                     <div class="info-item ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16">
-                            <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
-                        </svg>
-                        <div class="info-text">
+                        <div class="info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16">
+                                <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
+                            </svg>
                             <span class="label-event">Location</span>
-                            <span class="isi-event">{{ $event->location ?? '-' }}</span>
                         </div>
+                        <span class="isi-event">{{ $event->location ?? '-' }}</span>
                     </div>
                     <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
-                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                        </svg>
-                        <div class="info-text">
+                        <div class="info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
+                                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
                             <span class="label-event">Student Enrolled</span>
-                            <span class="isi-event">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
                         </div>
+                        <span class="isi-event">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
                     </div>
                 </div>
                 <hr>
@@ -573,43 +706,49 @@
                     </div>
                 </div>
                 <hr>
-                <div class="share-box">
-                    <h6 class="share-title" style="color:#000; margin: 0 0 8px 2px;">Share this link via</h6>
+                <div class="share">
+                    <h6 class="share-title">Share this event:</h6>
+                    <div class="share-list">
+                        @if($isRegistered && $eventFinished && !$hasFeedback)
+                            
+                        @elseif($hasFeedback)
+                        
+                        @else
+                            <span class="link-share" style="opacity:.4; cursor:not-allowed;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-lock" viewBox="0 0 16 16">
+                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2" />
+                                </svg>
+                            </span>
+                        @endif
 
-                    <div class="share-icons">
-                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ url()->current() }}" target="_blank" rel="noopener noreferrer" class="icon fb">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-facebook" viewBox="0 0 16 16">
-                                <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
-                            </svg></a>
-                        <a href="https://twitter.com/intent/tweet?url={{ url()->current() }}&text={{ $event->title }}" target="_blank" rel="noopener noreferrer" class="icon tw">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
-                            <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+                        <a id="fbShare" class="share-item" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-facebook" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M12 2.04V.5H9.75C8.26.5 7.5 1.5 7.5 2.83V4H6v2h1.5v6H10V6h1.5l.5-2H10V2.83C10 2.2 10.4 2 11 2H13v.04z"/>
                             </svg>
                         </a>
-                        <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="icon ig">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-instagram" viewBox="0 0 16 16">
-                            <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.9 3.9 0 0 0-1.417.923A3.9 3.9 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.9 3.9 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.9 3.9 0 0 0-.923-1.417A3.9 3.9 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599s.453.546.598.92c.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.5 2.5 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.5 2.5 0 0 1-.92-.598 2.5 2.5 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233s.008-2.388.046-3.231c.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92s.546-.453.92-.598c.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92m-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217m0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334"/>
-                            </svg>
-                        </a>
-                        <a href="https://wa.me/?text={{ urlencode($event->title . ' ' . url()->current()) }}" target="_blank" rel="noopener noreferrer" class="icon wa">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
-                            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-                            </svg>
-                        </a>
-                        <a href="https://t.me/share/url?url={{ url()->current() }}&text={{ $event->title }}" target="_blank" rel="noopener noreferrer" class="icon tg">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-telegram" viewBox="0 0 16 16">
-                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8.287 5.906q-1.168.486-4.666 2.01-.567.225-.595.442c-.03.243.275.339.69.47l.175.055c.408.133.958.288 1.243.294q.39.01.868-.32 3.269-2.206 3.374-2.23c.05-.012.12-.026.166.016s.042.12.037.141c-.03.129-1.227 1.241-1.846 1.817-.193.18-.33.307-.358.336a8 8 0 0 1-.188.186c-.38.366-.664.64.015 1.088.327.216.589.393.85.571.284.194.568.387.936.629q.14.092.27.187c.331.236.63.448.997.414.214-.02.435-.22.547-.82.265-1.417.786-4.486.906-5.751a1.4 1.4 0 0 0-.013-.315.34.34 0 0 0-.114-.217.53.53 0 0 0-.31-.093c-.3.005-.763.166-2.984 1.09"/>
-                            </svg>
-                        </a>
-                    </div>
 
-                    <h6 class="copy-title" style="color:#000; margin: 0 0 8px 2px;">Or Copy</h6>
-                    <div class="copy-box">
-                        <input id="shareLink" type="text" value="{{ url()->current() }}" readonly>
-                        <button id="copyBtn">Copy</button>
+                        <a id="xShare" class="share-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-twitter-x" viewBox="0 0 16 16">
+                                <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
+                            </svg>
+                        </a>
+
+                        <a id="emailShare" href="#" class="share-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-envelope" viewBox="0 0 16 16">
+                                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8z"/>
+                                <path d="M0 4.697v7.104l5.803-3.482z"/>
+                                <path d="M6.761 8.83 0 12.803V14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.197l-6.761-3.973-1.239.744z"/>
+                                <path d="M10.197 8.32 16 4.697v7.104z"/>
+                            </svg>
+                        </a>
+
+                        <a id="waShare" href="#" class="share-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-whatsapp" viewBox="0 0 16 16">
+                                <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
+                            </svg>
+                        </a>
                     </div>
                 </div>
-
             </div>
         </div>
         
@@ -790,7 +929,7 @@
                                 @if(!empty($event->certificate_path))
                                     <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
                                 @else
-                                    <p>Your certificate will be available soon.</p>
+                                    <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
                                 @endif
                             @else
                                 <p>Available after you submit feedback for this event.</p>
@@ -861,7 +1000,7 @@
                         @endif
                     @endif
                 </div>
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}" style="position:relative;">
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}">
                 <div class="img-resource">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
                         <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
@@ -869,29 +1008,16 @@
                 </div>
                 <div class="resource-value">
                     <h6>Feedback and Ratings</h6>
-                    @if(isset($hasFeedback) && $hasFeedback)
-                        <p class="text-success" style="font-weight:600;">Sudah Melakukan Feedback</p>
-                    @else
-                        <p>Please fill out your feedback for this event</p>
-                    @endif
+                    <p>Please fill out your feedback for this event</p>
                 </div>
 
                 @if($isRegistered && $attendanceSubmitted)
-                    @if(isset($hasFeedback) && $hasFeedback)
-                        <span class="d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px;" title="Feedback Terkirim">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <polyline points="8 12 11 15 16 10"></polyline>
-                            </svg>
-                        </span>
-                    @else
-                        <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </button>
-                    @endif
+                    <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                        </svg>
+                    </button>
                 @else
                     <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
                 @endif
@@ -1347,21 +1473,32 @@
                         @php
                                 $items = collect();
                                 if(isset($event)){
-                                    if($event->relationLoaded('scheduleItems')){
-                                        $items = $event->scheduleItems;
-                                    } else {
-                                        // prefer DB relation ordered by start if available
-                                        try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
+                                    // Schedule MUST come from schedule_json
+                                    $rawSchedule = $event->schedule_json ?? null;
+
+                                    // Normalize to array (supports casted array, JSON string, or stdClass)
+                                    $scheduleArr = null;
+                                    if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                                        $decoded = json_decode($rawSchedule, true);
+                                        $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                                    } elseif (is_array($rawSchedule)) {
+                                        $scheduleArr = $rawSchedule;
+                                    } elseif (is_object($rawSchedule)) {
+                                        $scheduleArr = json_decode(json_encode($rawSchedule), true);
                                     }
-                                    if($items->isEmpty() && is_array($event->schedule_json)){
-                                        $items = collect($event->schedule_json)->map(function($row){
+
+                                    if (is_array($scheduleArr)) {
+                                        $items = collect($scheduleArr)->map(function($row){
+                                            $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
                                             return (object) [
                                                 'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
                                                 'end' => $row['end'] ?? ($row['time_end'] ?? null),
                                                 'title' => $row['title'] ?? ($row['activity'] ?? ''),
                                                 'description' => $row['description'] ?? ($row['desc'] ?? ''),
                                             ];
-                                        });
+                                        })->filter(function($it){
+                                            return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                                        })->values();
                                     }
                                 }
                                 $formatTime = function($t){
@@ -1394,7 +1531,16 @@
                     <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
                         <h6 class="mb-3 mt-2">Terms & Condition</h6>
                         <div class="terms-content" style="margin-top: 10px;">
-                            {!! $event->terms_and_conditions ?? '' !!}
+                            @php
+                                $termsHtml = isset($event) ? ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')) : '';
+                                $termsText = trim(preg_replace('/\xC2\xA0|\s+/', ' ', strip_tags((string) $termsHtml)));
+                            @endphp
+
+                            @if($termsText === '')
+                                <p class="text-muted" style="margin:0;">Terms and Condition akan segera diumumkan</p>
+                            @else
+                                {!! $termsHtml !!}
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -1854,49 +2000,6 @@
                     });
                 });
             })();
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var copyBtn = document.getElementById('copyBtn');
-                if(copyBtn) {
-                   copyBtn.addEventListener('click', function() {
-                        var copyText = document.getElementById("shareLink");
-                        if(!copyText) return;
-                        
-                        copyText.select();
-                        copyText.setSelectionRange(0, 99999); // For mobile devices
-                        
-                        // Fallback function using execCommand
-                        function sensitiveCopy() {
-                            try {
-                                document.execCommand('copy');
-                                feedback();
-                            } catch (err) {
-                                console.error('Fallback copy failed', err);
-                            }
-                        }
-
-                        function feedback() {
-                            var originalText = copyBtn.innerText;
-                            copyBtn.innerText = 'Copied!';
-                            setTimeout(function() {
-                                copyBtn.innerText = originalText;
-                            }, 2000);
-                        }
-
-                        if (navigator.clipboard) {
-                             navigator.clipboard.writeText(copyText.value)
-                             .then(feedback)
-                             .catch(function(err) {
-                                 console.warn('Clipboard write failed (non-secure context?), trying fallback', err);
-                                 sensitiveCopy();
-                             });
-                        } else {
-                            sensitiveCopy();
-                        }
-                    });
-                }
-            });
         </script>
          @include('partials.footer-before-login')
     </body>

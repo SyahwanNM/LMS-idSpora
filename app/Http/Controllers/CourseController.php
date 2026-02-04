@@ -5,6 +5,11 @@ use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\QuizQuestion;
 use App\Models\QuizAnswer;
+use App\Models\Enrollment;
+use App\Models\ManualPayment;
+use App\Models\Payment;
+use App\Models\QuizAttempt;
+use App\Models\Progress;
 use Illuminate\Support\Str;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -19,6 +24,132 @@ class CourseController extends Controller
     {
         // Use the custom payment-course view for payment page
         return view('payment-course', compact('course'));
+    }
+
+    /**
+     * Show the learning page for an enrolled/purchased course.
+     */
+    public function learn(Request $request, Course $course)
+    {
+        $user = $request->user();
+
+        $enrollment = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        $enrolledActive = $enrollment && $enrollment->status === 'active';
+
+        $hasSettledPayment = ManualPayment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->where('status', 'settled')
+            ->exists();
+
+        $hasMidtransSettledPayment = Payment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['capture', 'settlement'])
+            ->exists();
+
+        // Only allow access if enrollment is active OR payment already approved.
+        // Pending payment/enrollment should not pass.
+        if (!$enrolledActive && !$hasSettledPayment && !$hasMidtransSettledPayment) {
+            return redirect()->route('course.detail', $course->id)
+                ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
+        }
+
+        // If payment is settled but enrollment isn't active yet, auto-activate it.
+        if (!$enrolledActive && ($hasSettledPayment || $hasMidtransSettledPayment)) {
+            $enrollment = Enrollment::firstOrCreate(
+                ['user_id' => $user->id, 'course_id' => $course->id],
+                ['status' => 'active']
+            );
+            if ($enrollment->status !== 'active') {
+                $enrollment->status = 'active';
+                $enrollment->save();
+            }
+        }
+
+        $course->load([
+            'modules' => function ($q) {
+                $q->orderBy('order_no');
+            },
+            'modules.quizQuestions',
+        ]);
+
+        $modules = $course->modules;
+        $selectedId = $request->query('module');
+        $currentModule = null;
+
+        if ($selectedId) {
+            $currentModule = $modules->firstWhere('id', (int) $selectedId);
+        }
+        if (!$currentModule) {
+            $currentModule = $modules->first();
+        }
+
+        // Gate: only lock the module immediately after an unpassed quiz
+        $passingPercent = 75;
+        if ($currentModule && $currentModule->order_no) {
+            $prevModule = $modules
+                ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) $currentModule->order_no)
+                ->sortByDesc('order_no')
+                ->first();
+
+            if ($prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
+                $lastAttempt = QuizAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_module_id', $prevModule->id)
+                    ->whereNotNull('completed_at')
+                    ->orderByDesc('completed_at')
+                    ->first();
+
+                $passedPrevQuiz = $lastAttempt ? $lastAttempt->isPassed($passingPercent) : false;
+
+                if (!$passedPrevQuiz) {
+                    $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
+                    return redirect()->to($target)
+                        ->with('error', 'Kamu harus lulus kuis terlebih dahulu untuk membuka materi selanjutnya.');
+                }
+            }
+        }
+
+        // Progress tracking:
+        // - video/pdf modules are marked completed once opened
+        // - quiz modules are marked completed only if user has passed
+        if ($enrollment && $currentModule) {
+            $moduleType = strtolower(trim((string) ($currentModule->type ?? '')));
+            $markCompleted = $moduleType !== 'quiz';
+
+            if (!$markCompleted && $moduleType === 'quiz') {
+                $markCompleted = QuizAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_module_id', $currentModule->id)
+                    ->whereNotNull('completed_at')
+                    ->where('total_questions', '>', 0)
+                    ->whereRaw('(correct_answers * 100) >= (total_questions * ?)', [$passingPercent])
+                    ->exists();
+            }
+
+            if ($markCompleted) {
+                Progress::query()->updateOrCreate(
+                    [
+                        'enrollment_id' => $enrollment->id,
+                        'course_module_id' => $currentModule->id,
+                    ],
+                    [
+                        'completed' => true,
+                    ]
+                );
+            }
+        }
+
+        return view('modul-course', [
+            'course' => $course,
+            'modules' => $modules,
+            'currentModule' => $currentModule,
+        ]);
     }
     /**
      * Publish course: set status to 'active' (complete)
@@ -94,14 +225,37 @@ class CourseController extends Controller
 
     public function index()
     {
-        $courses = Course::with('category', 'modules.quizQuestions')->paginate(10);
+        $courses = Course::with([
+            'category',
+            'modules.quizQuestions',
+            'manualPayments.user',
+            'manualPayments.proofs',
+        ])->paginate(10);
         return view('admin.courses.index', compact('courses'));
     }
 
     public function show(Course $course)
     {
         $course->load('category', 'modules');
-        return view('course.detail', compact('course'));
+        // Students enrolled (use active enrollments for the count)
+        $course->loadCount([
+            'enrollments as students_count' => function ($q) {
+                $q->where('status', 'active');
+            },
+        ]);
+
+        $levelLabel = match ((string) $course->level) {
+            'beginner' => 'Beginner',
+            'intermediate' => 'Intermediate',
+            'advanced' => 'Advanced',
+            default => ucfirst((string) $course->level),
+        };
+
+        // Temporary defaults (no columns detected yet)
+        $courseLanguage = 'Indonesia';
+        $certificateLabel = 'Include';
+
+        return view('course.detail', compact('course', 'levelLabel', 'courseLanguage', 'certificateLabel'));
     }
 
     public function create()

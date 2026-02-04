@@ -3,6 +3,9 @@
 // Payment page for course
 Route::get('/courses/{course}/payment', [App\Http\Controllers\CourseController::class, 'payment'])->name('course.payment');
 
+// Learn course modules (requires purchase/enrollment)
+Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\CourseController::class, 'learn'])->name('course.learn');
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
@@ -19,6 +22,7 @@ use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PublicPagesController;
+use App\Http\Controllers\Admin\CourseReportController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -27,19 +31,9 @@ Route::get('/admin/detail-event', function () {
 });
 
 Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('course.detail');
-Route::get('/admin/report', function () {
-    // Provide course completeness data to the report view
-    $courses = \App\Models\Course::query()
-        ->withCount([
-            'modules',
-            'modules as video_count' => function($q){ $q->where('type','video'); },
-            'modules as pdf_count' => function($q){ $q->where('type','pdf'); },
-            'modules as quiz_count' => function($q){ $q->where('type','quiz'); },
-        ])
-        ->select('id','name','status')
-        ->latest('updated_at')
-        ->get();
-    return view('admin/report', compact('courses'));
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
+    Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');
 });
 
 Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
@@ -121,19 +115,6 @@ Route::get('/admin/add-course2', function () {
 Route::get('/admin/preview-pendapatan', function () {
     return view('admin/preview-pendapatan');
 })->name('preview-pendapatan');
-Route::get('/admin/report', function () {
-    $courses = \App\Models\Course::query()
-        ->withCount([
-            'modules',
-            'modules as video_count' => function($q){ $q->where('type','video'); },
-            'modules as pdf_count' => function($q){ $q->where('type','pdf'); },
-            'modules as quiz_count' => function($q){ $q->where('type','quiz'); },
-        ])
-        ->select('id','name','status')
-        ->latest('updated_at')
-        ->get();
-    return view('admin/report', compact('courses'));
-})->name('report');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
@@ -369,7 +350,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', function () {
-            return view('admin.view_pendapatan');
+            return view('admin.view-pendapatan');
         })->name('admin.view-pendapatan');
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
@@ -452,6 +433,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
     Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
+    Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
     Route::get('/course-quiz-result', function () {
