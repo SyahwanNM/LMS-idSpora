@@ -18,4 +18,9 @@ class Category extends Model
     {
         return $this->hasMany(Course::class);
     }
+
+    public function enrollments()
+    {
+        return $this->hasManyThrough(Enrollment::class, Course::class);
+    }
 }

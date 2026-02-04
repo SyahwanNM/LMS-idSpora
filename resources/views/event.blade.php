@@ -2,11 +2,11 @@
 
 <html lang="en">
 
-<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Event</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; padding: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Event</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
 
     /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
     .hero-carousel {
-        margin-top: 100px; /* Jarak dari atas */
+        margin-top: 115px; /* Jarak dari atas ditingkatkan untuk navbar premium */
     }
 
     /* Event page image enlargement (slightly taller) */
@@ -79,76 +79,91 @@
     .header-card .dropdown-box, .header-card .dropdown { overflow: visible; }
 </style>
 </head>
-<body> @include('partials.navbar-after-login') <section class="hero-carousel"> <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel"> <div class="carousel-inner"> @if(isset($eventCarousels) && $eventCarousels->count() > 0) @foreach($eventCarousels as $i => $carousel) <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}"> @if($carousel->link_url) <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;"> <img src="{{ $carousel->image_url }}" class="d-block" alt="{{ $carousel->title ?? 'Carousel' }}" onerror="this.src='{{ asset('aset/poster.png') }}'"> </a> @else <img src="{{ $carousel->image_url }}" class="d-block" alt="{{ $carousel->title ?? 'Carousel' }}" onerror="this.src='{{ asset('aset/poster.png') }}'"> @endif </div> @endforeach @else <div class="carousel-item active" data-bs-interval="10000"> <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel"> </div> <div class="carousel-item" data-bs-interval="2000"> <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel"> </div> <div class="carousel-item"> <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel"> </div> @endif </div>
-
-        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
-            data-bs-slide="prev">
-            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
-            data-bs-slide="next">
-            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            <span class="visually-hidden">Next</span>
-        </button>
-    </div>
-</section>
-<div class="filter-container">
-    <form id="eventFilters" class="filter-box" action="{{ route('events.index') }}" method="get">
-        <input type="hidden" name="search" value="{{ request('search') }}">
-        <input type="hidden" id="filter-free" name="free" value="{{ request()->boolean('free') ? 1 : '' }}">
-        <input type="hidden" id="filter-day" name="day" value="{{ request('day') }}">
-        <input type="hidden" id="filter-type" name="event_type" value="{{ request('event_type') }}">
-        <input type="hidden" id="filter-category" name="category" value="{{ request('category') }}">
-        <input type="hidden" id="filter-status" name="status" value="{{ request('status') }}">
-        <div class="options">
-            <label>Place</label>
-            <select name="location" id="filter-location" class="form-select">
-                <option value="">All Places</option>
-                @foreach(($locations ?? []) as $loc)
-                    <option value="{{ $loc }}" {{ request('location') === $loc ? 'selected' : '' }}>{{ $loc }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="options">
-            <label>Price</label>
-            <select name="price" id="filter-price" class="form-select">
-                <option value="">Default (Newest)</option>
-                <option value="asc" {{ request('price')==='asc' ? 'selected' : '' }}>Low to High</option>
-                <option value="desc" {{ request('price')==='desc' ? 'selected' : '' }}>High to Low</option>
-                <option value="free" {{ request()->boolean('free') ? 'selected' : '' }}>Free</option>
-            </select>
-        </div>
-    </form>
-    <div class="search-container">
-        <form class="search-form" action="{{ route('events.index') }}" method="get" autocomplete="off">
-            <div class="search-wrap">
-                <input id="site-search" class="form-control search-input-2" type="search" name="search"
-                    placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest" value="{{ request('search') }}">
-                <input type="hidden" name="location" value="{{ request('location') }}">
-                <input type="hidden" name="price" value="{{ request('price') }}">
-                <input type="hidden" name="free" value="{{ request()->boolean('free') ? 1 : '' }}">
-                <input type="hidden" name="day" value="{{ request('day') }}">
-                <input type="hidden" name="event_type" value="{{ request('event_type') }}">
-                <input type="hidden" name="category" value="{{ request('category') }}">
-                <span class="search-icon" id="search-submit-trigger" ariza-hidden="false" tabindex="0" role="button" aria-label="Cari">
-                    <svg id="search-icon-svg" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="18" height="18"
-                        fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
-                        <path
-                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
-                    </svg>
-                </span>
-
-                    <ul id="search-suggest" class="search-suggest" role="listbox"></ul>
+@include('partials.navbar-after-login') 
+<body> 
+    <main class="container-xl pb-5">
+        <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    @forelse($eventCarousels as $index => $carousel)
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="{{ $index }}" 
+                            class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                            aria-label="Slide {{ $index + 1 }}"></button>
+                    @empty
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                            aria-current="true" aria-label="Slide 1"></button>
+                    @endforelse
                 </div>
-            </form>
+
+                <div class="carousel-inner">
+                    @forelse($eventCarousels as $index => $carousel)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            @php
+                                $btnUrl = $carousel->link_url ?? '#';
+                                $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
+                            @endphp
+                            
+                            @if($carousel->link_url)
+                                <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
+                            @endif
+                            
+                            <img src="{{ $carousel->image_url }}"
+                                alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
+
+                            @if($carousel->title)
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">{{ $carousel->title }}</h2>
+                                @if($carousel->link_url)
+                                    <button class="btn btn-warning fw-bold mt-2">Lihat Detail</button>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($carousel->link_url)
+                                </a>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                                alt="Slide 1"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                                <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                                <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+
+                </div>
+
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+
+        <div class="row justify-content-center mb-5" style="margin-top: -30px; position: relative; z-index: 10;">
+            <div class="col-lg-8">
+                <form action="#" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
+                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                    <button class="btn rounded-pill px-4 fw-bold" type="submit" style="background-color: #51376c; color: white;">
+                        Cari
+                    </button>
+                </form>
+            </div>
         </div>
-    </div>
-    @if(auth()->check() && auth()->user()->role === 'admin')
-    <div class="container my-3">
-        </div>
-    </div>
-    @endif
     <section class="event">
         <div class="header-card">
             <h3>Daftar Event</h3>
@@ -652,4 +667,3 @@
     setInterval(update, 1000);
 })();
 </script>
- @include('partials.footer-before-login')

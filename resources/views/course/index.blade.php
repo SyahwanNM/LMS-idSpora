@@ -1,87 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses</title>
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Courses</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
 
-    <style>
-        body {
-            overflow-x: hidden;
-            margin: 0;
-            padding: 0;
-        }
-        .hero-carousel {
-            margin-top: 100px; 
-        }
-
-        .footer-section {
-            width: 100vw;
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            margin-top: 40px; /* Jarak antara konten terakhir dengan footer */
-        }
-    </style>
+    /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
+    .hero-carousel {
+        margin-top: 115px; /* Jarak dari atas ditingkatkan untuk navbar premium */
+    }
+</style>
 </head>
 
-<body>
-    @include ('partials.navbar-after-login')
+@include('partials.navbar-after-login') 
+<body> 
+    <main class="container-xl pb-5">
+        <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    @forelse($courseCarousels as $index => $carousel)
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="{{ $index }}" 
+                            class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                            aria-label="Slide {{ $index + 1 }}"></button>
+                    @empty
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                            aria-current="true" aria-label="Slide 1"></button>
+                    @endforelse
+                </div>
 
-    <section class="hero-carousel">
-        <div id="carouselExampleInterval" class="carousel slide custom-carousel" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @if(isset($courseCarousels) && $courseCarousels->count() > 0)
-                    @foreach($courseCarousels as $i => $carousel)
-                        <div class="carousel-item {{ $i === 0 ? 'active' : '' }}" data-bs-interval="{{ $i === 0 ? 10000 : 2000 }}">
+                <div class="carousel-inner">
+                    @forelse($courseCarousels as $index => $carousel)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            @php
+                                $btnUrl = $carousel->link_url ?? '#';
+                                $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
+                            @endphp
+                            
                             @if($carousel->link_url)
-                                <a href="{{ $carousel->link_url }}" target="_blank" style="display: block;">
-                                    <img src="{{ $carousel->image_url }}" 
-                                         class="d-block" 
-                                         alt="{{ $carousel->title ?? 'Carousel' }}" 
-                                         onerror="this.src='{{ asset('aset/poster.png') }}'">
+                                <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
+                            @endif
+                            
+                            <img src="{{ $carousel->image_url }}"
+                                alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
+
+                            @if($carousel->title)
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">{{ $carousel->title }}</h2>
+                                @if($carousel->link_url)
+                                    <button class="btn btn-warning fw-bold mt-2">Lihat Detail</button>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($carousel->link_url)
                                 </a>
-                            @else
-                                <img src="{{ $carousel->image_url }}" 
-                                     class="d-block" 
-                                     alt="{{ $carousel->title ?? 'Carousel' }}" 
-                                     onerror="this.src='{{ asset('aset/poster.png') }}'">
                             @endif
                         </div>
-                    @endforeach
-                @else
-                    <div class="carousel-item active" data-bs-interval="10000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
-                    </div>
-                    <div class="carousel-item" data-bs-interval="2000">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
-                    </div>
-                    <div class="carousel-item">
-                        <img src="{{ asset('aset/poster.png') }}" class="d-block" alt="Carousel">
-                    </div>
-                @endif
+                    @empty
+                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                                alt="Slide 1"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                                <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                                <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            </div>
+                        </div>
+                    @endforelse
+                </div>
+
+                </div>
+
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselCaptions"
+                    data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
 
-            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleInterval"
-                data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
+        <div class="row justify-content-center mb-5" style="margin-top: -30px; position: relative; z-index: 10;">
+            <div class="col-lg-8">
+                <form action="#" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
+                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                    <button class="btn rounded-pill px-4 fw-bold" type="submit" style="background-color: #51376c; color: white;">
+                        Cari
+                    </button>
+                </form>
+            </div>
         </div>
-    </section>
     
     <div class="filter-container">
         <div class="filter-box">
@@ -353,6 +366,7 @@
             <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
         </div>
     </section>
+</main>
 
     <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center mt-4">
