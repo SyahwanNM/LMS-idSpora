@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use App\Models\ActivityLog;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Auth;
+use App\Models\UserNotification;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -60,5 +63,23 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable $_e) {
             // ignore if event dispatcher not ready
         }
+
+        // Share notifications with the navbar
+        View::composer('partials.navbar-after-login', function ($view) {
+            if (Auth::check()) {
+                $notifications = UserNotification::where('user_id', Auth::id())
+                    ->orderBy('created_at', 'desc')
+                    ->take(10) // Limit to latest 10
+                    ->get();
+                $unreadNotificationCount = UserNotification::where('user_id', Auth::id())
+                    ->whereNull('read_at')
+                    ->count();
+            } else {
+                $notifications = collect();
+                $unreadNotificationCount = 0;
+            }
+            $view->with('notifications', $notifications)
+                 ->with('unreadNotificationCount', $unreadNotificationCount);
+        });
     }
 }
