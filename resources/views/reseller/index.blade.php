@@ -91,14 +91,15 @@
                         <div class="col-md-4">
                             <div class="border rounded-3 p-3 h-100">
                                 <small class="text-muted">Saldo Bisa Ditarik</small>
-                                <h3 class="text-success mb-0">Rp 1.200.000</h3>
+                                <h3 class="text-success mb-0">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}
+                                </h3>
                             </div>
                         </div>
 
                         <div class="col-md-4">
                             <div class="border rounded-3 p-3 h-100 bg-light">
                                 <small class="text-muted">Saldo Pending</small>
-                                <h3 class="text-warning mb-0">Rp 640.000</h3>
+                                <h3 class="text-warning mb-0">Rp {{ number_format($pendingEarnings, 0, ',', '.') }}</h3>
                             </div>
                         </div>
 
@@ -123,8 +124,9 @@
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
-                                <h3 class="card-title">Rp 5.000.000</h3>
-                                <p class="card-text text-success mb-0">+Rp 520k bulan ini</p>
+                                <h3 class="card-title">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h3>
+                                <p class="card-text text-success mb-0">+Rp {{ number_format($earningsThisMonth/1000, 0)
+                                    }}k bulan ini</p>
                             </div>
                             <i class="bi bi-cash-stack fs-1 text-warning"></i>
                         </div>
@@ -177,7 +179,7 @@
                 <div class="card-body mt-3 mb-2">
                     <h5 class="fw-bold"><i class="bi bi-megaphone-fill text-warning text-secondary me-2"></i>Referral
                         Tools</h5>
-                    
+
                     <!-- Referral Input Fields (Code, Link, Caption) -->
                     <div class="row g-4 mt-1 align-items-end">
                         <div class="col-lg-4">
@@ -186,8 +188,7 @@
                                 Referral Code
                             </label>
                             <div class="input-group">
-                                <input type="text" class="form-control bg-light" id="referralCode" value="616ja03095"
-                                    readonly>
+                                <input type="text" class="form-control bg-light" id="referralCode" value="{{ $user->referral_code }}">
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
                                     <i class="bi bi-clipboard"></i>
@@ -202,7 +203,7 @@
                             </label>
                             <div class="input-group">
                                 <input type="text" class="form-control bg-light" id="referralLink"
-                                    value="https://idspora.com/course/?ref=616ja03095" readonly>
+                                    value="{{ url('/register?ref=' . $user->referral_code) }}">
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralLink')" title="Copy link">
                                     <i class="bi bi-clipboard"></i>
@@ -273,19 +274,20 @@
                                         Bronze
                                     </span>
                                 </div>
-                                <h5 class="fw-bold mb-0">Sutupani</h5>
-                                <p class="text-muted small">10 Referrals</p>
+                                <h5 class="fw-bold mb-0">{{ $user->name }}</h5>
+                                <p class="text-muted small">{{ $totalReferrals }} Referrals</p>
                             </div>
 
                             <div class="mb-4">
                                 <div class="d-flex justify-content-between small fw-bold mb-1">
-                                    <span>Progress ke Silver</span>
-                                    <span class="text-warning">36 lagi</span>
+                                    <span>Progress ke {{ ($level == 'Bronze') ? 'Silver' : (($level == 'Silver') ?
+                                        'Gold' : 'Max') }}</span>
+                                    <span class="text-warning">{{ $nextLevelTarget }} lagi</span>
                                 </div>
                                 <div class="progress" role="progressbar" aria-label="Warning Animated striped"
                                     aria-valuenow="24" aria-valuemin="0" aria-valuemax="100">
                                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
-                                        style="width: 24%">
+                                        style="width: {{ $progress }}%">
                                     </div>
                                 </div>
                             </div>
