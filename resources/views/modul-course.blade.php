@@ -6,6 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>quiz</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
@@ -351,6 +352,51 @@
                 if (url) window.location.href = url;
             });
         }
+    </script>
+
+    <script>
+        // Realtime learning-time heartbeat
+        (function () {
+            const heartbeatUrl = "{{ route('learning-time.heartbeat') }}";
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const courseId = {{ isset($course) ? (int) $course->id : 'null' }};
+
+            if (!heartbeatUrl || !csrfToken || !courseId) return;
+
+            let lastInteractionAt = Date.now();
+            const bump = () => { lastInteractionAt = Date.now(); };
+
+            ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach((evt) => {
+                window.addEventListener(evt, bump, { passive: true });
+            });
+
+            const sendHeartbeat = async (seconds) => {
+                try {
+                    await fetch(heartbeatUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ seconds, course_id: courseId }),
+                    });
+                } catch (e) {
+                    // ignore
+                }
+            };
+
+            const HEARTBEAT_SECONDS = 15;
+            const ACTIVE_WINDOW_MS = 60_000;
+
+            window.setInterval(() => {
+                const now = Date.now();
+                const isRecentlyActive = (now - lastInteractionAt) <= ACTIVE_WINDOW_MS;
+                if (document.hidden || !isRecentlyActive) return;
+                sendHeartbeat(HEARTBEAT_SECONDS);
+            }, HEARTBEAT_SECONDS * 1000);
+        })();
     </script>
 </body>
 

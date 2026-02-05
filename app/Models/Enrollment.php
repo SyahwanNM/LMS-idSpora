@@ -51,12 +51,20 @@ class Enrollment extends Model
      */
     public function getProgressPercentage(): int
     {
-        $totalModules = $this->course->modules()->count();
+        if (!$this->relationLoaded('course') || !$this->course) {
+            return 0;
+        }
+
+        $totalModules = $this->course->relationLoaded('modules')
+            ? $this->course->modules->count()
+            : $this->course->modules()->count();
         if ($totalModules === 0) {
             return 0;
         }
 
-        $completedModules = $this->progress()->where('completed', true)->count();
+        $completedModules = $this->relationLoaded('progress')
+            ? $this->progress->where('completed', true)->count()
+            : $this->progress()->where('completed', true)->count();
         
         return (int) round(($completedModules / $totalModules) * 100);
     }
