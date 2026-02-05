@@ -240,7 +240,7 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            <img src="{{ $course->card_thumbnail ? (str_starts_with($course->card_thumbnail, 'http') ? $course->card_thumbnail : asset('storage/' . $course->card_thumbnail)) : asset('aset/poster.png') }}"
+                                                            <img src="{{ $course->card_thumbnail ? (str_starts_with($course->card_thumbnail, 'http') ? $course->card_thumbnail : asset('uploads/' . $course->card_thumbnail)) : asset('aset/poster.png') }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -308,7 +308,7 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            <img src="{{ $course->card_thumbnail ? asset('storage/' . $course->card_thumbnail) : 'https://via.placeholder.com/280x160' }}"
+                                            <img src="{{ $course->card_thumbnail ? asset('uploads/' . $course->card_thumbnail) : 'https://via.placeholder.com/280x160' }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"

@@ -146,8 +146,8 @@ Route::get('/storage/{path}', function ($path) {
         abort(403, 'Invalid path');
     }
     
-    // Get file path in storage
-    $filePath = storage_path('app/public/' . $path);
+    // Get file path in uploads
+    $filePath = public_path('uploads/' . $path);
     
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
