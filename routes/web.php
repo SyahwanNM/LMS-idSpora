@@ -31,6 +31,9 @@ Route::get('/admin/detail-event', function () {
 });
 
 Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('course.detail');
+
+// Canonical course detail route (alias used in views)
+Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
     Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');
@@ -428,6 +431,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
     Route::get('/courses/{course}/modules/{module}/download', [UserModuleController::class, 'download'])->name('user.modules.download');
     Route::get('/courses/{course}/modules/{module}/stream', [UserModuleController::class, 'stream'])->name('user.modules.stream');
+
+    // Learning time (realtime) endpoints for authenticated users
+    Route::middleware(['auth', 'throttle:120,1'])->group(function () {
+        Route::post('/learning-time/heartbeat', [\App\Http\Controllers\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
+        Route::get('/learning-time/chart', [\App\Http\Controllers\LearningTimeController::class, 'chart'])->name('learning-time.chart');
+    });
     
     // User quiz routes
     Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');

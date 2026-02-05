@@ -31,4 +31,9 @@ class Progress extends Model
     {
         return $this->belongsTo(CourseModule::class, 'course_module_id');
     }
+
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(CourseModule::class, 'course_module_id');
+    }
 }

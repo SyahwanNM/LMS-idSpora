@@ -1038,6 +1038,9 @@ body {
 }
 
 .btn-lanjut {
+    display: block;
+    text-align: center;
+    text-decoration: none;
     width: 100%;
     padding: 10px;
     background: #1e2a57;

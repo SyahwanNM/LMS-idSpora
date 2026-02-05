@@ -66,6 +66,49 @@
             }
             /* Align Facebook icon baseline with other share icons */
             .share .share-list .bi-facebook { position: relative; top: -1px; }
+
+            /* Share this event: pill bar with copy link + icons (scoped) */
+            .share { display: flex; flex-direction: column; gap: 8px; }
+            .share .share-title { margin: 0; font-weight: 600; color: #111827; }
+            .share .share-list {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 999px;
+                width: fit-content;
+                max-width: 100%;
+                flex-wrap: wrap;
+            }
+            .share .share-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                height: 32px;
+                padding: 0 12px;
+                border-radius: 999px;
+                border: 1px solid transparent;
+                background: transparent;
+                color: #111827;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 14px;
+                line-height: 1;
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+            }
+            .share .share-action svg { flex: 0 0 auto; }
+            .share .share-action:hover { background: #f3f4f6; }
+            .share .share-action:active { background: #e5e7eb; }
+            .share .share-icon { width: 32px; padding: 0; }
+            .share .share-action--disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+            @media (max-width: 420px){
+                .share .share-list { width: 100%; justify-content: flex-start; }
+            }
             /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
             .resource-card.locked { opacity: 0.6; }
             .resource-card.locked .img-resource svg { opacity: 0.6; }
@@ -178,8 +221,16 @@
             .stars { user-select: none; }
             .stars span { cursor: pointer; font-size: 20px; color: #c9c9c9; margin-right: 2px; }
             .stars span.selected { color: #FFD600; }
-            /* Push icons down slightly to align with text */
+            /* Push icons down slightly to align with text (legacy) */
             .info-item svg { margin-top: 12px; }
+
+            /* Event right-side info list: use unique classes to avoid global .info-item conflicts */
+            .info-boxluar { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+            .info-boxluar .event-info-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+            .info-boxluar .event-info-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+            .info-boxluar .event-info-left svg { margin-top: 0; flex: 0 0 auto; }
+            .info-boxluar .event-info-label { margin: 0; line-height: 1.2; font-weight: 600; color: #6b7280; white-space: nowrap; }
+            .info-boxluar .event-info-value { margin: 0; line-height: 1.2; font-weight: 600; color: #111827; text-align: right; max-width: 62%; }
         </style>
 
     </head>
@@ -446,23 +497,23 @@
                 </div>
                 <hr class="line-info">
                 <div class="info-boxluar">
-                    <div class="info-item">
-                        <div class="info-left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
                                 <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
                             </svg>
-                            <span class="label-event">Date</span>
+                            <span class="event-info-label">Date</span>
                         </div>
-                        <span class="isi-event">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
+                        <span class="event-info-value">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
                     </div>
-                    <div class="info-item">
-                        <div class="info-left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
                                 <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
                             </svg>
-                            <span class="label-event">Time</span>
+                            <span class="event-info-label">Time</span>
                         </div>
                             @php
                                 $formatTimeOnly = function($raw){
@@ -484,25 +535,25 @@
                                     $timeRange = '-';
                                 }
                             @endphp
-                        <span class="isi-event">{{ $timeRange }}</span>
+                        <span class="event-info-value">{{ $timeRange }}</span>
                     </div>
-                    <div class="info-item ">
-                        <div class="info-left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16">
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
                             </svg>
-                            <span class="label-event">Location</span>
+                            <span class="event-info-label">Location</span>
                         </div>
-                        <span class="isi-event">{{ $event->location ?? '-' }}</span>
+                        <span class="event-info-value">{{ $event->location ?? '-' }}</span>
                     </div>
-                    <div class="info-item">
-                        <div class="info-left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
                             </svg>
-                            <span class="label-event">Student Enrolled</span>
+                            <span class="event-info-label">Students Enrolled</span>
                         </div>
-                        <span class="isi-event">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
+                        <span class="event-info-value">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
                     </div>
                 </div>
                 <hr>
@@ -577,31 +628,39 @@
                 <div class="share">
                     <h6 class="share-title">Share this event:</h6>
                     <div class="share-list">
-                        @if($isRegistered && $eventFinished && !$hasFeedback)
-                            
-                        @elseif($hasFeedback)
-                        
-                        @else
-                            <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-lock" viewBox="0 0 16 16">
-                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2" />
+                        @php
+                            $canShareLink = ($isRegistered && $eventFinished && !$hasFeedback) || $hasFeedback;
+                        @endphp
+                        @if($canShareLink)
+                            <button type="button" id="copyShareLink" class="share-action" aria-label="Copy link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="#4E5566" aria-hidden="true">
+                                    <path d="M6.354 5.5H4A2.5 2.5 0 0 0 4 10h2.354a.5.5 0 0 1 0 1H4a3.5 3.5 0 1 1 0-7h2.354a.5.5 0 0 1 0 1Zm3.292 0a.5.5 0 0 1 0-1H12a3.5 3.5 0 1 1 0 7H9.646a.5.5 0 0 1 0-1H12a2.5 2.5 0 1 0 0-5H9.646Z"/>
+                                    <path d="M5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z"/>
                                 </svg>
+                                <span id="copyShareLinkText">Copy link</span>
+                            </button>
+                        @else
+                            <span class="share-action share-action--disabled" aria-label="Copy link locked" title="Complete required steps to unlock sharing">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#4E5566" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zM7 3a1 1 0 0 1 2 0v2H7V3z" />
+                                </svg>
+                                <span>Copy link</span>
                             </span>
                         @endif
 
-                        <a id="fbShare" class="share-item" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
+                        <a id="fbShare" class="share-action share-icon" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-facebook" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M12 2.04V.5H9.75C8.26.5 7.5 1.5 7.5 2.83V4H6v2h1.5v6H10V6h1.5l.5-2H10V2.83C10 2.2 10.4 2 11 2H13v.04z"/>
                             </svg>
                         </a>
 
-                        <a id="xShare" class="share-item">
+                        <a id="xShare" class="share-action share-icon" aria-label="Share on X" href="#" target="_blank" rel="noopener" title="Share on X">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-twitter-x" viewBox="0 0 16 16">
                                 <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
                             </svg>
                         </a>
 
-                        <a id="emailShare" href="#" class="share-item">
+                        <a id="emailShare" href="#" class="share-action share-icon" aria-label="Share via Email" title="Share via Email">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-envelope" viewBox="0 0 16 16">
                                 <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8z"/>
                                 <path d="M0 4.697v7.104l5.803-3.482z"/>
@@ -610,7 +669,7 @@
                             </svg>
                         </a>
 
-                        <a id="waShare" href="#" class="share-item">
+                        <a id="waShare" href="#" class="share-action share-icon" aria-label="Share on WhatsApp" target="_blank" rel="noopener" title="Share on WhatsApp">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-whatsapp" viewBox="0 0 16 16">
                                 <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
                             </svg>
@@ -1865,6 +1924,57 @@
                         if (this.textContent === original) this.disabled = false;
                     });
                 });
+            })();
+        </script>
+
+        <script>
+            // Share actions: copy link + generate share URLs
+            (function(){
+                const copyBtn = document.getElementById('copyShareLink');
+                const copyText = document.getElementById('copyShareLinkText');
+                const xShare = document.getElementById('xShare');
+                const emailShare = document.getElementById('emailShare');
+                const waShare = document.getElementById('waShare');
+
+                const pageUrl = window.location.href;
+                const eventTitle = @json($event->title ?? 'Event');
+                const urlEnc = encodeURIComponent(pageUrl);
+                const textEnc = encodeURIComponent(eventTitle);
+
+                if (xShare) xShare.href = `https://twitter.com/intent/tweet?text=${textEnc}&url=${urlEnc}`;
+                if (emailShare) emailShare.href = `mailto:?subject=${textEnc}&body=${urlEnc}`;
+                if (waShare) waShare.href = `https://wa.me/?text=${textEnc}%20${urlEnc}`;
+
+                function fallbackCopy(text){
+                    const input = document.createElement('input');
+                    input.value = text;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'absolute';
+                    input.style.left = '-9999px';
+                    document.body.appendChild(input);
+                    input.select();
+                    try { document.execCommand('copy'); } catch (_e) {}
+                    document.body.removeChild(input);
+                }
+
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', async function(){
+                        try {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                await navigator.clipboard.writeText(pageUrl);
+                            } else {
+                                fallbackCopy(pageUrl);
+                            }
+                            if (copyText) {
+                                const prev = copyText.textContent;
+                                copyText.textContent = 'Copied';
+                                window.setTimeout(() => { copyText.textContent = prev; }, 1200);
+                            }
+                        } catch (_e) {
+                            fallbackCopy(pageUrl);
+                        }
+                    });
+                }
             })();
         </script>
          @include('partials.footer-before-login')
