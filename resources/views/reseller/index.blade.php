@@ -326,8 +326,8 @@
 
                                 {{-- BRONZE TIER --}}
                                 <div
-                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
-                    {{ $level == 'Bronze' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 50 ? 'border-success bg-success bg-opacity-10' : 'opacity-75') }}">
+                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center
+                                {{ $level == 'Bronze' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 50 ? 'border-success bg-success bg-opacity-10' : 'opacity-75') }}">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-star text-warning me-2"></i>
                                         <div class="lh-1">
@@ -346,7 +346,7 @@
                                 {{-- SILVER TIER --}}
                                 <div
                                     class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
-                    {{ $level == 'Silver' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 150 ? 'border-success bg-success bg-opacity-10' : 'opacity-50') }}">
+                                {{ $level == 'Silver' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 150 ? 'border-success bg-success bg-opacity-10' : 'opacity-50') }}">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-star-half text-secondary me-2"></i>
                                         <div class="lh-1">
@@ -365,7 +365,7 @@
 
                                 {{-- GOLD TIER --}}
                                 <div class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
-                    {{ $level == 'Gold' ? 'border-warning bg-warning bg-opacity-10' : 'opacity-50' }}">
+                                {{ $level == 'Gold' ? 'border-warning bg-warning bg-opacity-10' : 'opacity-50' }}">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-star-fill text-secondary me-2"></i>
                                         <div class="lh-1">
@@ -387,72 +387,101 @@
                 </div>
 
                 {{-- Top Resellers Section --}}
-                <div class="col-lg-4">
-                    <div class="card h-100  shadow-sm rounded-4">
-                        <div class="card-body p-4 d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">Top Resellers</h5>
-                                <i class="bi bi-trophy-fill text-warning fs-5"></i>
-                            </div>
+<div class="col-lg-4">
+    <div class="card h-100 shadow-sm rounded-4">
+        <div class="card-body p-4 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Top Resellers</h5>
+                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+            </div>
 
-                            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
-                                @forelse($topResellers as $index => $reseller)
-                                <li
-                                    class="list-group-item px-0 py-2 d-flex align-items-center {{ $loop->last ? 'opacity-75' : '' }}">
-                                    {{-- Ranking Number --}}
-                                    <div class="{{ $index < 3 ? 'text-warning' : 'text-secondary' }} fst-italic me-2"
-                                        style="min-width: 30px;">
-                                        #{{ $index + 1 }}
-                                    </div>
-
-                                    {{-- Avatar Inisial --}}
-                                    <div class="rounded-circle {{ $index < 3 ? 'bg-warning text-white' : 'bg-light text-secondary border' }} fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">
-                                        {{ strtoupper(substr($reseller->name, 0, 2)) }}
-                                    </div>
-
-                                    {{-- Nama & Jumlah Referral --}}
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">{{Str::limit($reseller->name, 15) }}</div>
-                                        <small class="text-muted" style="font-size: 11px;">{{ $reseller->referrals_count
-                                            }} referrals</small>
-                                    </div>
-
-                                    {{-- Total Cuan (Badge) --}}
-                                    <span
-                                        class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
-                                        {{-- Format angka pendek (misal 1.2M atau 500k) pakai helper custom atau simple
-                                        logic --}}
-                                        Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
-                                    </span>
-                                </li>
-                                @empty
-                                <li class="text-center py-3 text-muted small">Belum ada top reseller. Jadilah yang
-                                    pertama!</li>
-                                @endforelse
-                            </ul>
-                            <hr>
-                            <div
-                                class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
-                                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#50</div>
-                                <div class="rounded-circle bg-white text-warning border border-warning fw-bold d-flex align-items-center justify-content-center me-3"
-                                    style="width: 40px; height: 40px;">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div class="flex-grow-1 lh-sm">
-                                    <div class="fw-bold text-dark small mb-0">Sutupani</div>
-                                    <small class="text-dark opacity-75" style="font-size: 11px;">10 referrals</small>
-                                </div>
-                                <div class="d-flex flex-column align-items-end gap-1">
-                                    <span class="badge bg-white text-warning border border-warning rounded-pill"
-                                        style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
-                                    <span class="badge bg-light text-dark border border-warning rounded-pill">Rp
-                                        50k</span>
-                                </div>
-                            </div>
+            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
+                @forelse($topResellers as $index => $reseller)
+                    <li class="list-group-item px-0 py-2 d-flex align-items-center {{ $loop->last ? 'opacity-75' : '' }}">
+                        {{-- Ranking Number --}}
+                        <div class="{{ $index < 3 ? 'text-warning' : 'text-secondary' }} fst-italic me-2" style="min-width: 30px;">
+                            #{{ $index + 1 }}
                         </div>
-                    </div>
+
+                        {{-- FOTO PROFIL --}}
+                        @if(!empty($reseller->profile_photo_path))
+                            {{-- Jika punya foto di database --}}
+                            <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}" 
+                                 alt="{{ $reseller->name }}"
+                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                        @else
+                            {{-- Fallback: Pakai UI Avatars jika tidak punya foto --}}
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($reseller->name) }}&background={{ $index < 3 ? 'ffc107' : 'e9ecef' }}&color={{ $index < 3 ? 'ffffff' : '6c757d' }}&size=40"
+                                 alt="{{ $reseller->name }}"
+                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                        @endif
+
+                        {{-- Nama & Jumlah Referral --}}
+                        <div class="flex-grow-1 lh-sm">
+                            <div class="fw-bold text-dark small">{{ Str::limit($reseller->name, 15) }}</div>
+                            <small class="text-muted" style="font-size: 11px;">{{ $reseller->referrals_count }} referrals</small>
+                        </div>
+
+                        {{-- Total Cuan (Badge) --}}
+                        <span class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
+                            Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
+                        </span>
+                    </li>
+                @empty
+                    {{-- Empty State (Tetap sama seperti sebelumnya) --}}
+                    <li class="list-group-item border-0 text-center py-5">
+                        <div class="mb-3">
+                            <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-2">Papan Peringkat Masih Kosong!</h6>
+                        <p class="text-muted small mb-3 lh-sm">
+                            Belum ada yang masuk daftar ini. <br>
+                            Ayo bagikan linkmu dan jadilah <strong>Juara #1</strong>!
+                        </p>
+                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-4"
+                            onclick="copyToClipboard(this, 'referralLink')">
+                            <i class="bi bi-share-fill me-1"></i> Bagikan Sekarang
+                        </button>
+                    </li>
+                @endforelse
+            </ul>
+            
+            {{-- Sticky Rank User --}}
+            @if($topResellers->isNotEmpty())
+            <hr>
+            <div class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
+                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
+                
+                {{-- FOTO PROFIL USER SENDIRI --}}
+                @if(!empty($user->profile_photo_path))
+                    <img src="{{ asset('storage/' . $user->profile_photo_path) }}" 
+                         alt="{{ $user->name }}"
+                         class="rounded-circle border border-warning me-3"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                @else
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=ffc107&color=ffffff&size=40"
+                         alt="{{ $user->name }}"
+                         class="rounded-circle border border-warning me-3"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                @endif
+
+                <div class="flex-grow-1 lh-sm">
+                    <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
+                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }} referrals</small>
                 </div>
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge bg-white text-warning border border-warning rounded-pill" style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
+                    <span class="badge bg-light text-dark border border-warning rounded-pill">
+                        Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                    </span>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
