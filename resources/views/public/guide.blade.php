@@ -29,7 +29,6 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: var(--bg-surface);
-            padding-top: 20px; /* Slight offset for better spacing behind fixed navbar */
         }
 
         /* Hero Section */
