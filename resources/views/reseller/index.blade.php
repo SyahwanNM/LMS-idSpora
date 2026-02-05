@@ -18,7 +18,7 @@
 
 <body>
     <div class="hero-box" aria-hidden="true"></div>
-    <main class="container-xxl pt-5 mt-4">
+    <main class="container-xl pt-4 mt-4">
         <!-- Navbar -->
         {{-- <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4 p-2 mt-3 navbar-bg">
             <div class="container-fluid">
@@ -54,9 +54,9 @@
         <!-- End of Navbar -->
 
 
-        <div class="container-xl">
+        <div class="container-xxl">
             <!-- Card for Target Komisi Bulan Ini -->
-            {{-- <div class="card mb-4 border-0 shadow-sm">
+            {{-- <div class="card mb-4  shadow-sm">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-bullseye fs-1 text-warning"></i>
@@ -80,7 +80,7 @@
             <!-- End of Card for Target Komisi Bulan Ini -->
 
             <!-- Withdraw Komisi Content -->
-            <div class="card mb-4 border-0 shadow-sm">
+            <div class="card mb-4 shadow-sm">
                 <div class="card-body p-4 mt-2">
                     <h5 class="mb-3 d-flex align-items-start gap-2">
                         <i class="bi bi-cash-coin text-warning fs-2"></i>
@@ -119,7 +119,7 @@
             <!-- Cards Section -->
             <div class="row row-cols-1 row-cols-md-3">
                 <div class="col mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100  shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
@@ -134,7 +134,7 @@
                     </div>
                 </div>
                 <div class="col mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100  shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary mb-1">Total Referrals</h6>
@@ -154,7 +154,7 @@
                     </div>
                 </div>
                 <div class="col mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100  shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Conversion Rate</h6>
@@ -173,7 +173,7 @@
 
 
             <!-- Referral Tools Section -->
-            <div class="card mb-4 border-0 shadow-sm">
+            <div class="card mb-4  shadow-sm">
                 <div class="card-body mt-3 mb-2">
                     <h5 class="fw-bold"><i class="bi bi-megaphone-fill text-warning text-secondary me-2"></i>Referral
                         Tools</h5>
@@ -258,7 +258,7 @@
             <div class="row g-4 mb-4">
                 {{-- Level Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card h-100  shadow-sm rounded-4">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-4">Level Anda</h5>
 
@@ -337,7 +337,7 @@
 
                 {{-- Top Resellers Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card h-100  shadow-sm rounded-4">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0">Top Resellers</h5>
@@ -345,7 +345,7 @@
                             </div>
 
                             <ul class="list-group list-group-flush flex-grow-1 fw-medium">
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                <li class="list-group-item  px-0 py-2 d-flex align-items-center">
                                     <div class="text-warning fst-italic me-2" style="min-width: 30px;">#1</div>
                                     <div class="rounded-circle bg-warning text-white fw-bold d-flex align-items-center justify-content-center me-3"
                                         style="width: 40px; height: 40px;">JO</div>
@@ -357,7 +357,7 @@
                                         1.2M</span>
                                 </li>
 
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                <li class="list-group-item  px-0 py-2 d-flex align-items-center">
                                     <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#2
                                     </div>
                                     <div class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center me-3"
@@ -369,7 +369,7 @@
                                     <span class="badge bg-light text-secondary border rounded-pill">Rp 990k</span>
                                 </li>
 
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                <li class="list-group-item  px-0 py-2 d-flex align-items-center">
                                     <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#3
                                     </div>
                                     <div class="rounded-circle bg-warning bg-opacity-75 text-white fw-bold d-flex align-items-center justify-content-center me-3"
@@ -381,7 +381,7 @@
                                     <span class="badge bg-light text-secondary border rounded-pill">Rp 500k</span>
                                 </li>
 
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
+                                <li class="list-group-item  px-0 py-2 d-flex align-items-center">
                                     <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#4
                                     </div>
                                     <div class="rounded-circle bg-secondary bg-opacity-50 text-white fw-bold d-flex align-items-center justify-content-center me-3"
@@ -393,7 +393,7 @@
                                     <span class="badge bg-light text-secondary border rounded-pill">Rp 400k</span>
                                 </li>
 
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center opacity-75">
+                                <li class="list-group-item  px-0 py-2 d-flex align-items-center opacity-75">
                                     <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#5
                                     </div>
                                     <div class="rounded-circle bg-light text-secondary border fw-bold d-flex align-items-center justify-content-center me-3"
@@ -404,7 +404,7 @@
                                     </div>
                                     <span class="badge bg-light text-secondary border rounded-pill">Rp 320k</span>
                                 </li>
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center opacity-75">
+                                <li class="list-group-item  px-0 py-2 d-flex align-items-center opacity-75">
                                     <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#6
                                     </div>
                                     <div class="rounded-circle bg-light text-secondary border fw-bold d-flex align-items-center justify-content-center me-3"
@@ -441,7 +441,7 @@
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card h-100  shadow-sm rounded-4">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="fw-bold mb-0">Riwayat</h5>
@@ -571,7 +571,7 @@
 
 
             {{-- <div class="card mb-4"> --}}
-                <div class="card mb-4 border-0 shadow-sm">
+                <div class="card mb-4  shadow-sm">
                     <div class="card-body p-4">
                         <h6 class="fw-semibold mb-3 align-items-center d-flex">
                             <i class="bi bi-question-circle text-warning fs-20 me-4"></i>
