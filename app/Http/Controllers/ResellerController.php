@@ -12,6 +12,11 @@ use Illuminate\Support\Str;
 
 class ResellerController extends Controller
 {
+    public function admin()
+    {
+        return view('admin.reseller');
+    }
+
     public function index()
     {
         $user = Auth::user();
