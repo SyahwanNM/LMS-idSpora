@@ -155,7 +155,8 @@
 
     </style>
 </head>
-<body class="bg-surface">
+<body class="bg-surface" style="padding-top: 80px;">
+    @include('partials.navbar-before-login')
 
     <!-- HERO CAROUSEL (DYNAMIS) -->
     @if(isset($landingCarousels) && $landingCarousels->isNotEmpty())
