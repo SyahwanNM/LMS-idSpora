@@ -373,6 +373,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
+        Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', function () {
             return view('admin.view_pendapatan');
