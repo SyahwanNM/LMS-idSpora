@@ -122,6 +122,9 @@
             box-shadow: 0 0 10px rgba(255, 193, 7, 0.4), 0 2px 6px rgba(255, 193, 7, 0.3);
             transform: translateY(0);
         }
+        .hero-carousel {
+            margin-top: 115px;
+        }
     </style>
 </head>
 
@@ -132,55 +135,63 @@
         {{-- <div class="container pb-5"> --}}
 
             {{-- /* Banner Promo */ --}}
-            <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4" data-bs-ride="carousel">
+            <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
-                        aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="1"
-                        aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="2"
-                        aria-label="Slide 3"></button>
+                    @forelse($dashboardCarousels as $index => $carousel)
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="{{ $index }}" 
+                            class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                            aria-label="Slide {{ $index + 1 }}"></button>
+                    @empty
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                            aria-current="true" aria-label="Slide 1"></button>
+                    @endforelse
                 </div>
 
                 <div class="carousel-inner">
-                    <!-- Slide 1 -->
-                    <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 1"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                    @forelse($dashboardCarousels as $index => $carousel)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            @php
+                                $btnUrl = $carousel->link_url ?? '#';
+                                $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
+                            @endphp
+                            
+                            @if($carousel->link_url)
+                                <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
+                            @endif
+                            
+                            <img src="{{ $carousel->image_url }}"
+                                alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
-                            <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
-                            <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            @if($carousel->title)
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">{{ $carousel->title }}</h2>
+                                @if($carousel->link_url)
+                                    <button class="btn btn-warning fw-bold mt-2">Lihat Detail</button>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($carousel->link_url)
+                                </a>
+                            @endif
                         </div>
-                    </div>
+                    @empty
+                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                                alt="Slide 1"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
 
-                    <!-- Slide 2 -->
-                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 2"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Webinar AI Masa Depan</h2>
-                            <p>Diskusi panel eksklusif bersama expert global.</p>
-                            <button class="btn btn-light fw-bold">Daftar Sekarang</button>
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                                <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                                <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            </div>
                         </div>
-                    </div>
+                    @endforelse
+                </div>
 
-                    <!-- Slide 3 -->
-                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 3"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Sertifikasi & Career Path</h2>
-                            <p>Bangun portofolio dan karier profesionalmu.</p>
-                            <button class="btn btn-outline-light fw-bold">Lihat Program</button>
-                        </div>
-                    </div>
                 </div>
 
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
@@ -219,79 +230,60 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td class="ps-4 py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="rounded-3 overflow-hidden flex-shrink-0"
-                                                        style="width: 48px; height: 48px;">
-                                                        <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=100"
-                                                            class="w-100 h-100 object-fit-cover" alt="Thumb">
-                                                    </div>
-                                                    <h6 class="fw-semibold mb-0"
-                                                        style="font-size: 14px; color: var(--navy);">Web Programming
-                                                    </h6>
-                                                </div>
-                                            </td>
-                                            <td class="py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="progress flex-grow-1"
-                                                        style="height: 8px; background-color: #f1f5f9;">
-                                                        <div class="progress-bar"
-                                                            style="width: 50%; background-color: var(--secondary);">
+                                        @forelse($userEnrollments as $enrollment)
+                                            @php
+                                                $progress = $enrollment->getProgressPercentage();
+                                                $course = $enrollment->course;
+                                            @endphp
+                                            <tr>
+                                                <td class="ps-4 py-3">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="rounded-3 overflow-hidden flex-shrink-0"
+                                                            style="width: 48px; height: 48px;">
+                                                            <img src="{{ $course->card_thumbnail ? (str_starts_with($course->card_thumbnail, 'http') ? $course->card_thumbnail : asset('storage/' . $course->card_thumbnail)) : asset('aset/poster.png') }}"
+                                                                class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
+                                                        <h6 class="fw-semibold mb-0"
+                                                            style="font-size: 14px; color: var(--navy);">{{ $course->name }}
+                                                        </h6>
                                                     </div>
-                                                    <small class="fw-bold text-muted"
-                                                        style="font-size: 12px; min-width: 35px; text-align: right;">50%</small>
-                                                </div>
-                                            </td>
-                                            <td class="text-center pe-4 py-3">
-                                                <a href="/course/web-programming"
-                                                    class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                    style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                        fill="currentColor" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                    </svg>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-4 py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="rounded-3 overflow-hidden flex-shrink-0"
-                                                        style="width: 48px; height: 48px;">
-                                                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=100"
-                                                            class="w-100 h-100 object-fit-cover" alt="Thumb">
-                                                    </div>
-                                                    <h6 class="fw-semibold mb-0"
-                                                        style="font-size: 14px; color: var(--navy);">Data Structure</h6>
-                                                </div>
-                                            </td>
-                                            <td class="py-3">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="progress flex-grow-1"
-                                                        style="height: 8px; background-color: #f1f5f9;">
-                                                        <div class="progress-bar"
-                                                            style="width: 25%; background-color: var(--secondary);">
+                                                </td>
+                                                <td class="py-3">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="progress flex-grow-1"
+                                                            style="height: 8px; background-color: #f1f5f9;">
+                                                            <div class="progress-bar"
+                                                                style="width: {{ $progress }}%; background-color: var(--secondary);">
+                                                            </div>
                                                         </div>
+                                                        <small class="fw-bold text-muted"
+                                                            style="font-size: 12px; min-width: 35px; text-align: right;">{{ $progress }}%</small>
                                                     </div>
-                                                    <small class="fw-bold text-muted"
-                                                        style="font-size: 12px; min-width: 35px; text-align: right;">25%</small>
-                                                </div>
-                                            </td>
-                                            <td class="text-center pe-4 py-3">
-                                                <a href="/course/data-structure"
-                                                    class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                    style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                        fill="currentColor" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                    </svg>
-                                                </a>
-                                            </td>
-                                        </tr>
+                                                </td>
+                                                <td class="text-center pe-4 py-3">
+                                                    <a href="{{ route('user.modules.index', $course->id) }}"
+                                                        class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                        style="width: 36px; height: 36px; background-color: var(--navy);">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                            fill="currentColor" viewBox="0 0 16 16">
+                                                            <path
+                                                                d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="3" class="text-center py-5">
+                                                    <div class="mb-3 text-muted opacity-50">
+                                                        <i class="bi bi-journal-x" style="font-size: 40px;"></i>
+                                                    </div>
+                                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Kursus</h6>
+                                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai tingkatkan keahlianmu hari ini!</p>
+                                                    <a href="{{ route('courses.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Kursus</a>
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
@@ -307,204 +299,67 @@
                         </div>
 
                         <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
-
-                            <div class="flex-shrink-0" style="width: 280px;">
-                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                                    <div class="position-relative" style="height: 160px;">
-                                        <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=600"
-                                            class="w-100 h-100 object-fit-cover" alt="AI Course">
-                                        <span
-                                            class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
-                                            style="font-size: 11px;">Beginner</span>
-                                        <button
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                            style="width: 32px; height: 32px; padding: 0;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div class="card-body p-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-3 text-wrap"
-                                            style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                                            Mastering Artificial Intelligence with Python</h6>
-
-                                        <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
-                                            style="font-size: 11px;">
-                                            <div class="d-flex align-items-center gap-1">
-                                                <img src="https://ui-avatars.com/api/?name=Agnes&background=random"
-                                                    class="rounded-circle" width="18" height="18" alt="Instructor">
-                                                <span>Agnes M.</span>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="#fbbf24" class="bi bi-star-fill" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                                    </svg>
-                                                    <span>4.8</span>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="currentColor" class="bi bi-people-fill"
-                                                        viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                                    </svg>
-                                                    <span>1.2k</span>
-                                                </div>
-                                            </div>
+                            @forelse($featuredCourses as $course)
+                                @php
+                                    $rating = $course->reviews_avg_rating ?? 5.0;
+                                    $students = $course->enrollments_count ?? 0;
+                                @endphp
+                                <div class="flex-shrink-0" style="width: 280px;">
+                                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                                        style="background: white;">
+                                        <div class="position-relative" style="height: 160px;">
+                                            <img src="{{ $course->card_thumbnail ? asset('storage/' . $course->card_thumbnail) : 'https://via.placeholder.com/280x160' }}"
+                                                class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
+                                            <span
+                                                class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
+                                                style="font-size: 11px;">{{ ucfirst($course->level ?? 'General') }}</span>
+                                            <button
+                                                class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
+                                                style="width: 32px; height: 32px; padding: 0;">
+                                                <i class="bi bi-bookmark"></i>
+                                            </button>
                                         </div>
 
-                                        <div
-                                            class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                            <div class="fw-bold" style="color: var(--primary); font-size: 16px;">Rp
-                                                250.000</div>
-                                            <button
-                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Detail</button>
+                                        <div class="card-body p-3 d-flex flex-column">
+                                            <h6 class="fw-bold mb-3 text-wrap"
+                                                style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                                {{ $course->name }}</h6>
+
+                                            <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
+                                                style="font-size: 11px;">
+                                                <div class="d-flex align-items-center gap-1 text-truncate"
+                                                    style="max-width: 120px;">
+                                                    <i class="bi bi-grid"></i>
+                                                    <span class="text-truncate">{{ $course->category->name ?? 'Category' }}</span>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <div class="d-flex align-items-center gap-1">
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                        <span>{{ number_format($rating, 1) }}</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-1">
+                                                        <i class="bi bi-people-fill"></i>
+                                                        <span>{{ $students }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                    {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                </div>
+                                                <a href="{{ route('courses.show', $course->id) }}"
+                                                    class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="flex-shrink-0" style="width: 280px;">
-                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                                    <div class="position-relative" style="height: 160px;">
-                                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=600"
-                                            class="w-100 h-100 object-fit-cover" alt="UI/UX">
-                                        <span
-                                            class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
-                                            style="font-size: 11px;">Advanced</span>
-                                        <span
-                                            class="badge position-absolute bottom-0 start-0 m-2 bg-danger shadow-sm fw-bold"
-                                            style="font-size: 10px;">50% OFF</span>
-
-                                        <button
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                            style="width: 32px; height: 32px; padding: 0;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div class="card-body p-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-3 text-wrap"
-                                            style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                                            UI/UX Design Systems in Figma</h6>
-
-                                        <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
-                                            style="font-size: 11px;">
-                                            <div class="d-flex align-items-center gap-1">
-                                                <img src="https://ui-avatars.com/api/?name=Budi&background=random"
-                                                    class="rounded-circle" width="18" height="18" alt="Instructor">
-                                                <span>Budi S.</span>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="#fbbf24" class="bi bi-star-fill" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                                    </svg>
-                                                    <span>4.9</span>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="currentColor" class="bi bi-people-fill"
-                                                        viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                                    </svg>
-                                                    <span>850</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            class="mt-auto pt-2 border-top d-flex justify-content-between align-items-end">
-                                            <div class="d-flex flex-column">
-                                                <small class="text-muted text-decoration-line-through"
-                                                    style="font-size: 11px;">Rp 500.000</small>
-                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">Rp
-                                                    250.000</div>
-                                            </div>
-                                            <button
-                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Detail</button>
-                                        </div>
-                                    </div>
+                            @empty
+                                <div class="text-center py-4 w-100">
+                                    <p class="text-muted">Tidak ada rekomendasi course saat ini.</p>
                                 </div>
-                            </div>
-
-                            <div class="flex-shrink-0" style="width: 280px;">
-                                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                                    <div class="position-relative" style="height: 160px;">
-                                        <img src="https://images.unsplash.com/photo-1579389083078-4e7018379f7e?q=80&w=600"
-                                            class="w-100 h-100 object-fit-cover" alt="Marketing">
-                                        <span
-                                            class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
-                                            style="font-size: 11px;">Intermediate</span>
-
-                                        <button
-                                            class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                            style="width: 32px; height: 32px; padding: 0;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                                fill="currentColor" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <div class="card-body p-3 d-flex flex-column">
-                                        <h6 class="fw-bold mb-3 text-wrap"
-                                            style="line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                                            Digital Marketing 101: SEO & Ads</h6>
-
-                                        <div class="d-flex align-items-center justify-content-between mb-3 text-muted"
-                                            style="font-size: 11px;">
-                                            <div class="d-flex align-items-center gap-1">
-                                                <img src="https://ui-avatars.com/api/?name=Sarah&background=random"
-                                                    class="rounded-circle" width="18" height="18" alt="Instructor">
-                                                <span>Sarah L.</span>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="#fbbf24" class="bi bi-star-fill" viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                                                    </svg>
-                                                    <span>4.7</span>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                                                        fill="currentColor" class="bi bi-people-fill"
-                                                        viewBox="0 0 16 16">
-                                                        <path
-                                                            d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                                                    </svg>
-                                                    <span>2.1k</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                            <div class="fw-bold text-success" style="font-size: 16px;">Gratis</div>
-                                            <button
-                                                class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold">Detail</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                            @endforelse
                         </div>
                     </div>
 
@@ -674,110 +529,78 @@
                         </div>
 
                         <div class="d-flex justify-content-between text-center mb-4">
-                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Sun<br><span
-                                    class="fw-bold fs-6">21</span></div>
-                            <div class="p-2 rounded-4 text-white"
-                                style="font-size: 13px; background-color: #d8b4fe; color: #5b21b6 !important;">
-                                Mon<br><span class="fw-bold fs-6">22</span>
-                            </div>
-                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Tue<br><span
-                                    class="fw-bold fs-6">23</span></div>
-                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Wed<br><span
-                                    class="fw-bold fs-6">24</span></div>
-                            <div class="p-2 rounded-3 text-muted" style="font-size: 13px;">Thu<br><span
-                                    class="fw-bold fs-6">25</span></div>
+                            @php
+                                $today = \Carbon\Carbon::now();
+                                $daysToShow = 5;
+                                // Prepare unique dates that have events for the user
+                                $eventDates = $userEvents->pluck('event_date')->map(function($date) {
+                                    return $date ? (\Carbon\Carbon::parse($date)->format('Y-m-d')) : null;
+                                })->filter()->unique()->toArray();
+                            @endphp
+                            @for($i = 0; $i < $daysToShow; $i++)
+                                @php
+                                    $date = $today->copy()->addDays($i);
+                                    $isToday = $i === 0;
+                                    $hasEvent = in_array($date->format('Y-m-d'), $eventDates);
+                                @endphp
+                                <div class="p-2 rounded-3 d-flex flex-column align-items-center justify-content-center {{ $isToday ? 'text-white' : 'text-muted' }}" 
+                                     style="font-size: 13px; min-width: 45px; {{ $isToday ? 'background-color: var(--primary);' : '' }}">
+                                    <span>{{ $date->format('D') }}</span>
+                                    <span class="fw-bold fs-6">{{ $date->format('d') }}</span>
+                                    @if($hasEvent)
+                                        <div class="mt-1 rounded-circle" 
+                                             style="width: 4px; height: 4px; background-color: {{ $isToday ? '#fff' : 'var(--primary)' }};">
+                                        </div>
+                                    @endif
+                                </div>
+                            @endfor
                         </div>
 
                         <div class="d-flex flex-column gap-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 45px; height: 45px; background-color: #eef2ff; color: #6366f1;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-question-lg" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.475 5.458c-.284 0-.514-.237-.47-.517C4.28 3.24 5.576 2.5 7.5 2.5c1.689 0 2.974 1.25 3.816 2.485.68.997 1.419 2.627 1.615 4.58.113 1.127.154 2.144.05 2.875h-.002a.5.5 0 0 1-.995-.05c.097-.7.06-1.634-.047-2.676-.178-1.784-.866-3.18-1.423-3.992-.59-.855-1.549-1.662-2.828-1.662-1.311 0-2.383.91-2.91 2.444-.06.173-.289.338-.521.338Z" />
-                                        <path
-                                            d="M7.658 11.19c.72 0 1.299.566 1.299 1.296 0 .729-.58 1.299-1.3 1.299-.719 0-1.299-.57-1.299-1.299 0-.73.58-1.299 1.3-1.299Z" />
-                                    </svg>
+                            @php
+                                $eventStyles = [
+                                    'WEBINAR' => ['icon' => 'bi-laptop', 'bg' => '#eef2ff', 'color' => '#6366f1'],
+                                    'SEMINAR' => ['icon' => 'bi-mic', 'bg' => '#fff7ed', 'color' => '#f97316'],
+                                    'ONSITE' => ['icon' => 'bi-geo-alt', 'bg' => '#ecfccb', 'color' => '#65a30d'],
+                                ];
+                                $defaultStyle = ['icon' => 'bi-calendar-event', 'bg' => '#f3f4f6', 'color' => '#6b7280'];
+                            @endphp
+
+                            @forelse($userEvents as $userEv)
+                                @php
+                                    $style = $eventStyles[strtoupper($userEv->jenis)] ?? $defaultStyle;
+                                    $evDate = $userEv->event_date ? $userEv->event_date->format('d M Y') : 'TBA';
+                                    $evTime = $userEv->event_time ? (\Carbon\Carbon::parse($userEv->event_time)->format('H:i')) : 'TBA';
+                                @endphp
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                        style="width: 45px; height: 45px; background-color: {{ $style['bg'] }}; color: {{ $style['color'] }};">
+                                        <i class="bi {{ $style['icon'] }}" style="font-size: 20px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1 min-w-0">
+                                        <h6 class="fw-bold mb-0 text-truncate" style="font-size: 14px;">{{ $userEv->title }}</h6>
+                                        <small class="text-muted d-block text-truncate" style="font-size: 11px;">
+                                            {{ $evDate }} • {{ $evTime }} WIB
+                                        </small>
+                                    </div>
+                                    <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0;">
+                                        <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+                                    </a>
                                 </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0" style="font-size: 14px;">UI Basics Quiz</h6>
-                                    <small class="text-muted" style="font-size: 12px;">5 quick MCQs on design.</small>
+                            @empty
+                                <div class="text-center py-4">
+                                    <div class="mb-3 text-muted opacity-50">
+                                        <i class="bi bi-calendar-x" style="font-size: 40px;"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Event</h6>
+                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai eksplorasi event menarik!</p>
+                                    <a href="{{ route('events.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Event</a>
                                 </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 45px; height: 45px; background-color: #fff7ed; color: #f97316;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                        class="bi bi-file-earmark-text" viewBox="0 0 16 16">
-                                        <path
-                                            d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5" />
-                                        <path
-                                            d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0" style="font-size: 14px;">Framer Homework</h6>
-                                    <small class="text-muted" style="font-size: 12px;">Make 3 Wireframes</small>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 45px; height: 45px; background-color: #ecfccb; color: #65a30d;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                        class="bi bi-code-square" viewBox="0 0 16 16">
-                                        <path
-                                            d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
-                                        <path
-                                            d="M6.854 4.646a.5.5 0 0 1 0 .708L4.207 8l2.647 2.646a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 0 1 .708 0m2.292 0a.5.5 0 0 0 0 .708L11.793 8l-2.647 2.646a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0" style="font-size: 14px;">CSS Live Code</h6>
-                                    <small class="text-muted" style="font-size: 12px;">Create interactive card</small>
-                                </div>
-                            </div>
+                            @endforelse
                         </div>
                     </div>
 
-                    {{-- /* Sidebar - Statistik Belajar */ --}}
-                    <div class="mb-4">
-                        <h5 class="fw-bold mb-3" style="color: var(--navy);">Statistik Belajar</h5>
-
-                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 50px; height: 50px; background-color: #e0e7ff;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="var(--primary)"
-                                        viewBox="0 0 16 16">
-                                        <path
-                                            d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-0" style="font-size: 12px;">Kehadiran</h6>
-                                    <h4 class="fw-bold mb-0">90%</h4>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
-                            <div class="card-body d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 50px; height: 50px; background-color: #fef9c3;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#ca8a04"
-                                        class="bi bi-file-earmark-text-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1M4.5 9a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 11a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 13a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h6 class="text-muted mb-0" style="font-size: 12px;">Tugas & Ujian</h6>
-                                    <h4 class="fw-bold mb-0">85%</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     {{-- /* Sidebar - Chart Waktu Belajar */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
@@ -800,111 +623,46 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="fw-bold mb-0" style="color: var(--navy);">Topik Populer</h5>
                             <button class="btn btn-sm p-0 text-muted">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                    class="bi bi-three-dots" viewBox="0 0 16 16">
-                                    <path
-                                        d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3" />
-                                </svg>
+                                <i class="bi bi-three-dots" style="font-size: 20px;"></i>
                             </button>
                         </div>
 
                         <div class="d-flex flex-column gap-3">
+                            @php
+                                $topicStyles = [
+                                    ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'],
+                                    ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'],
+                                    ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-graph-up-arrow'],
+                                    ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'],
+                                ];
+                            @endphp
 
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #fce7f3; color: #db2777;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-palette-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M12.433 10.07C14.133 10.585 16 11.15 16 8a8 8 0 1 0-8 8c1.996 0 1.826-1.504 1.649-3.08-.124-1.101-.252-2.237.351-2.92.465-.527 1.42-.237 2.433.07zM8 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM5 6.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 0 3zm.5 6.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
-                                    </svg>
+                            @forelse($popularTopics as $index => $topic)
+                                @php
+                                    $style = $topicStyles[$index % count($topicStyles)];
+                                @endphp
+                                <a href="{{ route('courses.index', ['category' => $topic->name]) }}"
+                                    class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
+                                    style="transition: 0.2s;">
+                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
+                                        style="width: 48px; height: 48px; background-color: {{ $style['bg'] }}; color: {{ $style['color'] }};">
+                                        <i class="bi {{ $style['icon'] }}" style="font-size: 20px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">{{ $topic->name }}</h6>
+                                        <small class="text-muted" style="font-size: 12px;">{{ $topic->courses_count }} Kursus • {{ $topic->enrollments_count }} Siswa</small>
+                                    </div>
+                                    <div class="text-muted">
+                                        <i class="bi bi-chevron-right" style="font-size: 14px;"></i>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="text-center py-3">
+                                    <small class="text-muted">Belum ada data topik.</small>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">UI/UX Design</h6>
-                                    <small class="text-muted" style="font-size: 12px;">120 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
-
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #e0f2fe; color: #0284c7;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-code-slash" viewBox="0 0 16 16">
-                                        <path
-                                            d="M10.478 1.647a.5.5 0 1 0-.956-.294l-4 13a.5.5 0 0 0 .956.294l4-13zM4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Web Development</h6>
-                                    <small class="text-muted" style="font-size: 12px;">95 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
-
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #dcfce7; color: #16a34a;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-graph-up-arrow" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M0 0h1v15h15v1H0V0Zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5Z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Data Science</h6>
-                                    <small class="text-muted" style="font-size: 12px;">80 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
-
-                            <a href="#"
-                                class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
-                                style="transition: 0.2s;">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width: 48px; height: 48px; background-color: #fef3c7; color: #d97706;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                        class="bi bi-megaphone-fill" viewBox="0 0 16 16">
-                                        <path
-                                            d="M13 2.5a1.5 1.5 0 0 1 3 0v11a1.5 1.5 0 0 1-3 0v-11zm-1 .724c-2.067.95-4.539 1.481-7 1.656v6.237a25.222 25.222 0 0 1 1.088.085c2.053.204 4.038.668 5.912 1.56V3.224zm-8 7.841V4.934c-.68.027-1.399.043-2.008.053A2.02 2.02 0 0 0 0 7v2c0 1.106.896 1.996 1.994 2.009a68.14 68.14 0 0 1 .496.008 64 64 0 0 1 1.51.048zm1.39 1.081c.285.021.569.047.85.078l.253 1.69a1 1 0 0 1-.983 1.187h-.548a1 1 0 0 1-.916-.599l-1.314-2.48a65.81 65.81 0 0 1 1.692.064c.327.017.65.037.966.06z" />
-                                    </svg>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">Digital Marketing</h6>
-                                    <small class="text-muted" style="font-size: 12px;">65 Courses</small>
-                                </div>
-                                <div class="text-muted">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd"
-                                            d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
-                                    </svg>
-                                </div>
-                            </a>
+                            @endforelse
+                        </div>
+                    </div>
 
                         </div>
                     </div>
@@ -926,15 +684,14 @@
         document.addEventListener("DOMContentLoaded", function () {
             const ctx = document.getElementById('learningChart').getContext('2d');
 
-            // Data Dummy (Jam Belajar)
-            const dataValues = [4, 6, 8.5, 5, 7, 3, 2];
+            // Data Riil (Jam Belajar)
+            const dataValues = @json($learningChartData);
 
-            // Logika Warna (Sesuai desain Anda: Rab & Sel berwarna, sisanya abu)
-            // Rab = Index 2 (Highest), Sel = Index 1
-            const backgroundColors = dataValues.map((value, index) => {
-                if (index === 2) return '#f4c430'; // Secondary/Yellow (Highest)
-                if (index === 1) return '#51376c'; // Primary/Purple
-                return '#e2e8f0'; // Grey (Default)
+            // Logika Warna (High value berwarna cerah, low berwarna gelap/abu)
+            const backgroundColors = dataValues.map((value) => {
+                if (value > 2) return '#f4c430'; // Secondary/Yellow (High intensity)
+                if (value > 0) return '#51376c'; // Primary/Purple (Active)
+                return '#e2e8f0'; // Grey (Inactive)
             });
 
             new Chart(ctx, {

@@ -2,11 +2,11 @@
 
 <html lang="en">
 
-<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Event</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; padding: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Event</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
 
     /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
     .hero-carousel {
-        margin-top: 100px; /* Jarak dari atas */
+        margin-top: 115px; /* Jarak dari atas ditingkatkan untuk navbar premium */
     }
 
     /* Event page image enlargement (slightly taller) */
@@ -81,56 +81,64 @@
 </head>
 @include('partials.navbar-after-login') 
 <body> 
-    <div class="container-fluid page-content pb-5">
-        <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4" data-bs-ride="carousel">
+    <main class="container-xl pb-5">
+        <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
                 <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
-                        aria-current="true" aria-label="Slide 1"></button>
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="1"
-                        aria-label="Slide 2"></button>
-                    <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="2"
-                        aria-label="Slide 3"></button>
+                    @forelse($eventCarousels as $index => $carousel)
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="{{ $index }}" 
+                            class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                            aria-label="Slide {{ $index + 1 }}"></button>
+                    @empty
+                        <button type="button" data-bs-target="#carouselCaptions" data-bs-slide-to="0" class="active"
+                            aria-current="true" aria-label="Slide 1"></button>
+                    @endforelse
                 </div>
 
                 <div class="carousel-inner">
-                    <!-- Slide 1 -->
-                    <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 1"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                    @forelse($eventCarousels as $index => $carousel)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            @php
+                                $btnUrl = $carousel->link_url ?? '#';
+                                $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
+                            @endphp
+                            
+                            @if($carousel->link_url)
+                                <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
+                            @endif
+                            
+                            <img src="{{ $carousel->image_url }}"
+                                alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
-                            <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
-                            <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            @if($carousel->title)
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">{{ $carousel->title }}</h2>
+                                @if($carousel->link_url)
+                                    <button class="btn btn-warning fw-bold mt-2">Lihat Detail</button>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($carousel->link_url)
+                                </a>
+                            @endif
                         </div>
-                    </div>
+                    @empty
+                        <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
+                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
+                                alt="Slide 1"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
 
-                    <!-- Slide 2 -->
-                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 2"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Webinar AI Masa Depan</h2>
-                            <p>Diskusi panel eksklusif bersama expert global.</p>
-                            <button class="btn btn-light fw-bold">Daftar Sekarang</button>
+                            <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
+                                <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
+                                <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
+                                <button class="btn btn-warning fw-bold">Mulai Sekarang</button>
+                            </div>
                         </div>
-                    </div>
+                    @endforelse
+                </div>
 
-                    <!-- Slide 3 -->
-                    <div class="carousel-item" style="height: clamp(250px, 40vh, 420px); position: relative;">
-                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1600&auto=format&fit=crop"
-                            alt="Slide 3"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
-
-                        <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
-                            <h2 class="fw-bold">Sertifikasi & Career Path</h2>
-                            <p>Bangun portofolio dan karier profesionalmu.</p>
-                            <button class="btn btn-outline-light fw-bold">Lihat Program</button>
-                        </div>
-                    </div>
                 </div>
 
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"

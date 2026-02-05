@@ -423,11 +423,13 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:6|confirmed'
+            'password' => 'nullable|min:6|confirmed',
+            'bio' => 'nullable|string|max:1000'
         ]);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
+        $user->bio = $validated['bio'];
         if(!empty($validated['password'])){
             $user->password = Hash::make($validated['password']);
         }
