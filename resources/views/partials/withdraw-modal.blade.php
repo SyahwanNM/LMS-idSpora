@@ -106,7 +106,7 @@
                         <label class="form-label fw-light small text-muted">Jumlah Penarikan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
-                            <input type="number" class="form-control" id="withdrawAmount" placeholder="0">
+                            <input type="number" class="form-control" id="withdrawAmount" name="amount" placeholder="0">
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <small class="text-muted fw-lighter">Minimal Rp 50.000</small>
@@ -279,12 +279,37 @@
     }
 
     function submitWithdrawal() {
-        // here you would normally send the request to server (AJAX/fetch).
-        // For now, show success screen and keep modal open.
+    // Ambil data
+    let formData = new FormData(document.getElementById('withdrawForm'));
+    
+    // Kirim AJAX ke Laravel
+    fetch("{{ route('reseller.withdraw') }}", {
+        method: "POST",
+        headers: {
+            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+            "Accept": "application/json"
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw err; });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Sukses
         document.getElementById('stepConfirm').style.display = 'none';
         document.getElementById('stepInput').style.display = 'none';
         document.getElementById('stepSuccess').style.display = 'block';
-    }
+        
+        // Optional: Reload halaman setelah tutup modal agar saldo terupdate
+    })
+    .catch(error => {
+        alert(error.message || "Terjadi kesalahan sistem");
+        backToInput();
+    });
+}
 
     function closeAndReset() {
         // hide modal via Bootstrap API, then reset

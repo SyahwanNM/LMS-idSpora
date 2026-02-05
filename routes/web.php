@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PublicPagesController;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Http\Controllers\ResellerController;
 
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
@@ -54,8 +55,10 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
     return view('/admin/add-users', compact('users'));
 })->name('admin.add-users');
 
-Route::get('/reseller', function () {
-    return view('reseller.index');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
+    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
 });
 
 Route::get('/bandingin', function () {
