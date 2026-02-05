@@ -111,9 +111,9 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <small class="text-muted fw-lighter">Minimal Rp 50.000</small>
                             <button type="button" class="btn btn-link btn-sm text-primary p-0"
-                                onclick="setWithdrawAll({{ $availableBalance ?? 1200000 }})">
-                                Tarik Semua
-                            </button>
+        onclick="setWithdrawAll({{ auth()->user()->wallet_balance ?? 0 }})">
+        Tarik Semua
+    </button>
                         </div>
                     </div>
                 </div>
@@ -216,12 +216,13 @@
 </div>
 
 <script>
-    function setMaxAmount() {
-        const el = document.getElementById('withdrawAmount');
-        if (!el) return;
-        const maxAmount = el.getAttribute('max');
-        if (maxAmount) el.value = maxAmount;
+    function setWithdrawAll(amount) {
+    const input = document.getElementById('withdrawAmount');
+    if (input) {
+        // Masukkan nilai saldo ke dalam input
+        input.value = amount;
     }
+}
 
     function showConfirmation() {
         // Ambil value dari input form

@@ -59,6 +59,9 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
     Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
+    
+    // Route Baru untuk Generate Kode
+    Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
 });
 
 Route::get('/bandingin', function () {
