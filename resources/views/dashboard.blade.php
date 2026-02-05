@@ -128,7 +128,8 @@
     </style>
 </head>
 
-<body style="background-color: var(--bg-main);">
+<body style="background-color: var(--bg-main); padding-top: 100px;">
+    @include("partials.navbar-after-login")
 
     <main class="container-xl">
         {{-- <div class="container pb-5"> --}}
