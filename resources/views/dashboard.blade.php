@@ -1,4 +1,3 @@
-@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -126,7 +125,8 @@
     </style>
 </head>
 
-<body style="background-color: var(--bg-main);">
+<body style="background-color: var(--bg-main); padding-top: 100px;">
+    @include("partials.navbar-after-login")
 
     <main class="container-xl">
         {{-- <div class="container pb-5"> --}}
