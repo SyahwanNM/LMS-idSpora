@@ -312,7 +312,7 @@
                     <h3>Order Detail Course</h3>
                     
                     <div class="box_event_payment">
-                        <img src="{{ $course->card_thumbnail ? asset('storage/' . $course->card_thumbnail) : 'https://img.freepik.com/vektor-premium/live-concert-horizontal-banner-template_23-2150997973.jpg' }}" alt="Course Card Image">
+                        <img src="{{ $course->card_thumbnail ? asset('uploads/' . $course->card_thumbnail) : 'https://img.freepik.com/vektor-premium/live-concert-horizontal-banner-template_23-2150997973.jpg' }}" alt="Course Card Image">
                         <div class="judul_event">
                             <h4>{{ $course->name ?? '-' }}</h4>
                             <p class="penyelenggara">{{ $course->category->name ?? '-' }}</p>
