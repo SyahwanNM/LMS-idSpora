@@ -6,7 +6,7 @@
 
     /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
     .hero-carousel {
-        margin-top: 115px; /* Jarak dari atas ditingkatkan untuk navbar premium */
+        margin-top: 85px; /* Jarak dikurangi agar lebih rapat dengan navbar */
     }
 
     /* Event page image enlargement (slightly taller) */
@@ -77,10 +77,43 @@
     .header-card .dropdown-menu { z-index: 1100; }
     /* Prevent clipping within header filters */
     .header-card .dropdown-box, .header-card .dropdown { overflow: visible; }
+
+    /* Save button styling */
+    .save-btn {
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: none !important;
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        color: #64748b !important;
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        z-index: 20 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+    }
+    .save-btn:hover {
+        background: #fff !important;
+        color: #ef4444 !important;
+        transform: scale(1.1) !important;
+    }
+    .save-btn.active {
+        color: #ef4444 !important;
+        background: #fff !important;
+    }
+    .save-btn.loading {
+        opacity: 0.7 !important;
+        cursor: not-allowed !important;
+    }
 </style>
 </head>
 @include('partials.navbar-after-login') 
-<body> 
+<body style="padding-top: 0;"> 
     <main class="container-xl pb-5">
         <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
                 <div class="carousel-indicators">
@@ -139,8 +172,6 @@
                     @endforelse
                 </div>
 
-                </div>
-
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
                     data-bs-slide="prev">
                     <span class="carousel-control-prev-icon"></span>
@@ -156,8 +187,8 @@
 
         <div class="row justify-content-center mb-5" style="margin-top: -30px; position: relative; z-index: 10;">
             <div class="col-lg-8">
-                <form action="#" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
-                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                <form action="{{ route('events.index') }}" method="GET" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
+                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" name="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;" value="{{ request('search') }}">
                     <button class="btn rounded-pill px-4 fw-bold" type="submit" style="background-color: #51376c; color: white;">
                         Cari
                     </button>
@@ -275,12 +306,15 @@
                             <span class="discount-badge">{{ $percentOff }}% off</span>
                         @endif
                         <div class="badge-save-group" style="gap:12px;">
-                            <button class="save-btn" aria-label="Save event" type="button">
+                            <button class="save-btn {{ !empty($event->is_saved) ? 'active' : '' }}" 
+                                    aria-label="Save event" type="button" 
+                                    data-event-id="{{ $event->id }}"
+                                    data-save-url="{{ route('events.save', $event) }}"
+                                    onclick="event.stopPropagation(); toggleSaveEvent(this)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M2 2v13.5l6-3 6 3V2z" />
                                 </svg>
                             </button>
-                            
                         </div>
                     </div>
                     <div class="card-body">
@@ -608,6 +642,47 @@
         });
     })();
 });
+
+function toggleSaveEvent(btn) {
+    const url = btn.getAttribute('data-save-url');
+    const eventId = btn.getAttribute('data-event-id');
+    
+    // Add loading state
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.status === 401) {
+            window.location.href = "{{ route('login') }}";
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.success) {
+            if (data.saved) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    });
+}
 </script>
 <script>
 // Countdown script (hari jam menit detik) for event listing
