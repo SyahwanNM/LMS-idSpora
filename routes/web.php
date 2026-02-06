@@ -499,6 +499,10 @@ Route::get('/course-quiz-start', function () {
             
             // Feedback Analysis
             Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
+
+            // Support Messages
+            Route::get('/support', [\App\Http\Controllers\CRMController::class, 'supportMessages'])->name('support.index');
+            Route::post('/support/{message}/status', [\App\Http\Controllers\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
         });
         
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)

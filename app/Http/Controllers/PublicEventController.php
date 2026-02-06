@@ -111,8 +111,15 @@ class PublicEventController extends Controller
 			$userRegEventIds = $request->user()->eventRegistrations()
                 ->where('status', '!=', 'rejected')
                 ->pluck('event_id')->toArray();
-			$events->getCollection()->transform(function($ev) use ($userRegEventIds){
+            
+            // Tandai event yang disimpan
+            $userSavedEventIds = DB::table('user_saved_events')
+                ->where('user_id', $request->user()->id)
+                ->pluck('event_id')->toArray();
+
+			$events->getCollection()->transform(function($ev) use ($userRegEventIds, $userSavedEventIds){
 				$ev->is_registered = in_array($ev->id, $userRegEventIds);
+				$ev->is_saved = in_array($ev->id, $userSavedEventIds);
 				return $ev;
 			});
 		}
