@@ -178,7 +178,7 @@
                                 <h6 class="card-title text-body-secondary">Conversion Rate</h6>
                                 {{-- Angka Dinamis --}}
                                 <h3 class="card-title">{{ number_format($conversionRate, 1) }}%</h3>
-                                <p class="card-text text-success mb-0">Based on paid transactions</p>
+                                <p class="card-text text-success mb-0">Berdasarkan data transaksi</p>
                             </div>
                             <i class="bi bi-graph-up fs-1 text-warning"></i>
                         </div>
@@ -252,22 +252,16 @@
                     <div class="row row-cols-1 g-4 mt-1">
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-share-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>Share your referral code with friends and family or on social media to earn rewards!</p>
+                            <p>Bagikan kode referralmu ke teman, keluarga, atau media sosial dan mulai kumpulkan keuntungan!</p>
                         </div>
 
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-gift-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>When your friends book a course or an event using your referral code, they'll
-                                automatically
-                                get
-                                15% off their purchase.</p>
+                            <p>Temanmu otomatis dapat diskon 5% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
                         </div>
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
-                            <p>For every successful booking made with your code, you'll receive 10% of the ticket price
-                                as
-                                your
-                                reward!</p>
+                            <p>Dapatkan komisi 10% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
                         </div>
                     </div>
                 </div>
