@@ -30,21 +30,29 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
-        // Mark events that the current (non-admin) user has registered for
+        // Mark events that the current (non-admin) user has registered for or saved
         if (Auth::check() && Auth::user()->role !== 'admin' && $upcomingEvents->isNotEmpty()) {
+            $userId = Auth::id();
+            $eventIds = $upcomingEvents->pluck('id');
+
             $registeredIds = EventRegistration::query()
-                ->where('user_id', Auth::id())
-                ->whereIn('event_id', $upcomingEvents->pluck('id'))
-                ->where('status', '!=', 'rejected') // Treat rejected as not registered so they can try again
+                ->where('user_id', $userId)
+                ->whereIn('event_id', $eventIds)
+                ->where('status', '!=', 'rejected')
                 ->pluck('event_id')
                 ->all();
 
-            if (!empty($registeredIds)) {
-                $upcomingEvents->transform(function($ev) use ($registeredIds) {
-                    $ev->is_registered = in_array($ev->id, $registeredIds, true);
-                    return $ev;
-                });
-            }
+            $savedIds = \Illuminate\Support\Facades\DB::table('user_saved_events')
+                ->where('user_id', $userId)
+                ->whereIn('event_id', $eventIds)
+                ->pluck('event_id')
+                ->all();
+
+            $upcomingEvents->transform(function($ev) use ($registeredIds, $savedIds) {
+                $ev->is_registered = in_array($ev->id, $registeredIds, true);
+                $ev->is_saved = in_array($ev->id, $savedIds, true);
+                return $ev;
+            });
         }
 
         // Featured courses sample (adjust logic as needed)

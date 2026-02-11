@@ -16,6 +16,7 @@ class SupportMessage extends Model
         'type',
         'subject',
         'message',
+        'attachment',
         'status',
     ];
 }

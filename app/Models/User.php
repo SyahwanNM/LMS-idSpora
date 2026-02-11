@@ -94,18 +94,18 @@ class User extends Authenticatable
             // Normalize common stored formats
             // Case 1: filename only -> storage/avatars/{filename}
             if (!str_contains($avatar, '/')) {
-                return asset('storage/avatars/'.$avatar);
+                return asset('uploads/avatars/'.$avatar);
             }
             // Case 2: path like "avatars/filename"
             if (str_starts_with($avatar, 'avatars/')) {
-                return asset('storage/'.$avatar);
+                return asset('uploads/'.$avatar);
             }
             // Case 3: already includes "storage/" prefix
             if (str_starts_with($avatar, 'storage/')) {
                 return asset($avatar);
             }
             // Fallback: treat as relative to storage
-            return asset('storage/'.$avatar);
+            return asset('uploads/'.$avatar);
         }
         // Fallback to UI Avatars using user's name if available
         $name = trim((string)($this->name ?? 'User'));
