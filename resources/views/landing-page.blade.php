@@ -581,27 +581,27 @@
                         </div>
                         
                         <!-- Floating Badges -->
-                        <div class="position-absolute bg-white p-3 rounded-4 shadow-lg animate-float" style="top: 10%; left: -20px; z-index: 3; width: 180px;">
+                        <div class="position-absolute p-3 rounded-4 shadow-lg animate-float" style="top: 10%; left: -20px; z-index: 3; width: 180px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
                             <div class="d-flex align-items-center gap-2">
                                 <div class="bg-success-subtle p-2 rounded-3 text-success">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>
                                 </div>
                                 <div class="text-start">
-                                    <small class="d-block text-muted" style="font-size: 10px;">Status</small>
-                                    <span class="fw-bold text-navy" style="font-size: 12px;">Terverifikasi</span>
+                                    <small class="d-block" style="font-size: 10px; color: #94a3b8;">Status</small>
+                                    <span class="fw-bold" style="font-size: 12px; color: #f8fafc;">Terverifikasi</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="position-absolute bg-white p-3 rounded-4 shadow-lg animate-float-delayed" style="bottom: 10%; right: -20px; z-index: 3;">
+                        <div class="position-absolute p-3 rounded-4 shadow-lg animate-float-delayed" style="bottom: 10%; right: -20px; z-index: 3; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="d-flex">
-                                    <img src="https://ui-avatars.com/api/?name=A&background=random" class="rounded-circle border border-2 border-white" width="35">
-                                    <img src="https://ui-avatars.com/api/?name=B&background=random" class="rounded-circle border border-2 border-white" width="35" style="margin-left: -12px">
-                                    <img src="https://ui-avatars.com/api/?name=C&background=random" class="rounded-circle border border-2 border-white" width="35" style="margin-left: -12px">
+                                    <img src="https://ui-avatars.com/api/?name=A&background=random" class="rounded-circle border border-2 border-primary" width="35">
+                                    <img src="https://ui-avatars.com/api/?name=B&background=random" class="rounded-circle border border-2 border-primary" width="35" style="margin-left: -12px">
+                                    <img src="https://ui-avatars.com/api/?name=C&background=random" class="rounded-circle border border-2 border-primary" width="35" style="margin-left: -12px">
                                 </div>
                                 <div>
-                                    <span class="fw-bold d-block text-navy is-bold" style="font-size: 14px;">1k+ Join</span>
+                                    <span class="fw-bold d-block" style="font-size: 14px; color: #f8fafc;">1k+ Join</span>
                                 </div>
                             </div>
                         </div>
