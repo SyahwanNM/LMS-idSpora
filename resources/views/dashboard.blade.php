@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="UTF-8">
@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -123,12 +123,19 @@
             transform: translateY(0);
         }
         .hero-carousel {
-            margin-top: 115px;
+            margin-top: 85px;
+        }
+        .save-btn.active {
+            color: #ef4444 !important;
+        }
+        .save-btn:hover {
+            transform: scale(1.1);
+            color: #ef4444 !important;
         }
     </style>
 </head>
 
-<body style="background-color: var(--bg-main); padding-top: 100px;">
+<body style="background-color: var(--bg-main); padding-top: 0;">
     @include("partials.navbar-after-login")
 
     <main class="container-xl">
@@ -192,8 +199,6 @@
                     @endforelse
                 </div>
 
-                </div>
-
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
                     data-bs-slide="prev">
                     <span class="carousel-control-prev-icon"></span>
@@ -224,9 +229,9 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="bg-light">
                                         <tr style="font-size: 13px; color: #666;">
-                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Course Name</th>
-                                            <th class="border-0 py-3" style="width: 35%;">Progress</th>
-                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Action</th>
+                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Nama Kursus</th>
+                                            <th class="border-0 py-3" style="width: 35%;">Progres</th>
+                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -240,7 +245,7 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            <img src="{{ $course->card_thumbnail ? (str_starts_with($course->card_thumbnail, 'http') ? $course->card_thumbnail : asset('storage/' . $course->card_thumbnail)) : asset('aset/poster.png') }}"
+                                                            <img src="{{ $course->card_thumbnail ? (str_starts_with($course->card_thumbnail, 'http') ? $course->card_thumbnail : asset('uploads/' . $course->card_thumbnail)) : asset('aset/poster.png') }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -308,7 +313,7 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            <img src="{{ $course->card_thumbnail ? asset('storage/' . $course->card_thumbnail) : 'https://via.placeholder.com/280x160' }}"
+                                            <img src="{{ $course->card_thumbnail ? asset('uploads/' . $course->card_thumbnail) : 'https://via.placeholder.com/280x160' }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
@@ -396,6 +401,17 @@
                                                 style="position:absolute; top:12px; left:12px; background:{{ ($event->manage_action == 'create') ? '#6F42C1' : '#0D6EFD' }}; color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:6px; text-transform:uppercase;">
                                                 {{ $event->manage_action ?? 'EVENT' }}
                                             </span>
+
+                                            <button class="save-btn {{ !empty($event->is_saved) ? 'active' : '' }}" 
+                                                    aria-label="Save event" type="button" 
+                                                    data-event-id="{{ $event->id }}"
+                                                    data-save-url="{{ route('events.save', $event) }}"
+                                                    onclick="event.stopPropagation(); toggleSaveEvent(this)"
+                                                    style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                </svg>
+                                            </button>
                                     </div>
 
                                     <div class="card-body pt-3 d-flex flex-column">
@@ -518,7 +534,7 @@
                     {{-- /* Sidebar - Kalender Events */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Events</h5>
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Jadwal Event</h5>
                             <button class="btn btn-sm p-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#999"
                                     class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
@@ -755,6 +771,48 @@
                 }
             });
         });
+
+        function toggleSaveEvent(btn) {
+            const url = btn.getAttribute('data-save-url');
+            
+            // Add loading state
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '#64748b';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            });
+        }
     </script>
 </body>
 

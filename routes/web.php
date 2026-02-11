@@ -146,8 +146,8 @@ Route::get('/storage/{path}', function ($path) {
         abort(403, 'Invalid path');
     }
     
-    // Get file path in storage
-    $filePath = storage_path('app/public/' . $path);
+    // Get file path in uploads
+    $filePath = public_path('uploads/' . $path);
     
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
@@ -499,6 +499,10 @@ Route::get('/course-quiz-start', function () {
             
             // Feedback Analysis
             Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
+
+            // Support Messages
+            Route::get('/support', [\App\Http\Controllers\CRMController::class, 'supportMessages'])->name('support.index');
+            Route::post('/support/{message}/status', [\App\Http\Controllers\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
         });
         
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)

@@ -44,9 +44,31 @@
             html, body { margin: 0; padding: 0; }
             .container-ungu { margin-top: 0 !important; }
             /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-            .container-ungu .link-box { padding-top: 120px; }
+            .container-ungu .link-box { 
+                padding-top: 110px; 
+                padding-bottom: 15px; 
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.7);
+                margin-left: 70px; /* Align with title on desktop */
+            }
+            .container-ungu .link-box a { 
+                text-decoration: none; 
+                color: #fbbf24; 
+                font-weight: 500;
+            }
+            .container-ungu .link-box a:hover { color: #ffd33b; text-decoration: underline; }
+            .container-ungu .link-box span.sep { color: rgba(255, 255, 255, 0.3); }
+            .container-ungu .link-box .active { color: white; font-weight: 600; }
+
+            @media (max-width: 992px) {
+                .container-ungu .link-box { margin-left: 20px !important; padding-top: 100px; }
+            }
+
             @media (max-width: 576px){
-                .container-ungu .link-box { padding-top: 100px; }
+                .container-ungu .link-box { margin-left: 15px !important; padding-top: 100px; gap: 6px; font-size: 13px; }
             }
             /* Add breathing space inside tab panes (Overview, etc.) */
             .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
@@ -168,7 +190,6 @@
             .bookseat { background:#f5c400; color:#111; border:none; order:1; }
             .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
             .save { background:#1f2235; color:#ffd400; border:none; order:2; cursor:pointer; position:relative; z-index:2; pointer-events:auto !important; }
-            /* Remove responsive horizontal override; keep vertical layout on all sizes */
             /* Price + info tidy */
             .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
             .price-free { color:#16a34a; font-weight:700; letter-spacing:.3px; }
@@ -180,6 +201,46 @@
             .stars span.selected { color: #FFD600; }
             /* Push icons down slightly to align with text */
             .info-item svg { margin-top: 12px; }
+
+            /* RESPONSIVENESS FIXES */
+            @media (max-width: 992px) {
+                .container-ungu { padding: 40px 15px 20px !important; }
+                .link-box { padding-top: 80px !important; margin-left: 0 !important; padding-left: 0 !important; } 
+                .box-event-creator { margin-left: 0 !important; flex-direction: column !important; gap: 15px; align-items: flex-start !important; }
+                .event-title { margin-left: 0 !important; }
+                .add-calender { margin-right: 0 !important; margin-top: 0 !important; }
+                .detail-box { flex-direction: column !important; gap: 30px; display: flex !important; padding: 0 15px !important; }
+                .detail-box-left { width: 100% !important; flex: none !important; }
+                .detail-box-left img { max-width: 100% !important; height: auto !important; width: 100% !important; border-radius: 12px !important; }
+                .detail-box-right { width: 100% !important; margin-right: 0 !important; max-width: 100% !important; flex: none !important; }
+                .progress-box { width: 100% !important; margin-left: 0 !important; }
+            }
+
+            @media (max-width: 768px) {
+                .progress-steps { gap: 10px; }
+                .step p { font-size: 11px !important; margin-left: 0 !important; }
+                .circle { width: 30px !important; height: 30px !important; }
+                .circle p { font-size: 20px !important; margin-top: 0 !important; }
+                .progress-steps::before { top: 15px !important; height: 4px !important; }
+                .progress-steps .step::after { top: 15px !important; height: 4px !important; }
+
+                .desc-box { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+                .nav-event { width: auto !important; flex: 1 !important; padding: 10px 5px !important; text-align: center; font-size: 11px !important; }
+                
+                .resource-box { margin-left: 0 !important; width: 100% !important; padding: 20px !important; }
+                .participant-resources { margin-left: 0 !important; grid-template-columns: 1fr !important; }
+                #feedbackSection { margin-left: 0 !important; width: 100% !important; }
+                .tab-pane p { margin-left: 10px !important; }
+            }
+
+            @media (max-width: 576px) {
+                .event-title h4 { font-size: 1.5rem !important; }
+                .tab-pane { padding: 15px !important; }
+                .nav-tabs .nav-link { font-size: 12px !important; }
+                .price-box h5 { font-size: 1.25rem !important; }
+                .box-copy { flex-direction: column !important; align-items: stretch !important; }
+                .box-copy button { width: 100% !important; }
+            }
         </style>
 
     </head>
@@ -190,10 +251,10 @@
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
-                <p>></p>
-                <a href="{{ route('events.index') }}">Events</a>
-                <p>></p>
-                <a href="#">{{ isset($event) ? $event->title : 'Event' }}</a>
+                <span class="sep">/</span>
+                <a href="{{ route('events.index') }}">Event</a>
+                <span class="sep">/</span>
+                <span class="active">{{ isset($event) ? $event->title : 'Event' }}</span>
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">

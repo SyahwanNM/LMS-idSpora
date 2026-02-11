@@ -243,7 +243,7 @@
         
         <div class="crm-nav-group-title">Bantuan & Support</div>
         <nav class="nav flex-column">
-            <a class="crm-nav-item" href="#">
+            <a class="crm-nav-item {{ request()->routeIs('admin.crm.support.*') ? 'active' : '' }}" href="{{ route('admin.crm.support.index') }}">
                 <i class="bi bi-headset"></i>
                 <span>Tiket Support</span>
             </a>

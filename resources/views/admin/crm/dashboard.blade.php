@@ -140,8 +140,10 @@
             </div>
             <div class="kpi-title">SUPPORT TICKET</div>
             <div class="kpi-value">{{ number_format($newSupportMessages) }}</div>
-            <div class="mt-2 small text-muted">
-                Pesan bantuan yang perlu dibalas
+            <div class="mt-2 small">
+                <a href="{{ route('admin.crm.support.index') }}" class="text-decoration-none fw-medium" style="color: var(--crm-primary);">
+                    Kelola Tiket <i class="bi bi-chevron-right small"></i>
+                </a>
             </div>
         </div>
     </div>

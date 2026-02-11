@@ -44,6 +44,6 @@ class Carousel extends Model
         if (filter_var($this->image_path, FILTER_VALIDATE_URL)) {
             return $this->image_path;
         }
-        return asset('storage/' . $this->image_path);
+        return asset('uploads/' . $this->image_path);
     }
 }

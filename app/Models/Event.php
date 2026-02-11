@@ -174,19 +174,19 @@ class Event extends Model
         
         // Find first existing file
         foreach ($possiblePaths as $path) {
-            $fullPath = storage_path('app/public/' . $path);
+            $fullPath = public_path('uploads/' . $path);
             if (file_exists($fullPath) && is_file($fullPath)) {
                 // File exists, return URL
-                return asset('storage/' . $path);
+                return asset('uploads/' . $path);
             }
         }
         
         // File not found, but return URL anyway (browser will show broken image or fallback)
         // This allows onerror handler in views to work
         if (str_starts_with($imagePath, 'events/')) {
-            return asset('storage/' . $imagePath);
+            return asset('uploads/' . $imagePath);
         }
-        return asset('storage/events/' . $filename);
+        return asset('uploads/events/' . $filename);
     }
 
     public function getEndAtAttribute(): ?Carbon
