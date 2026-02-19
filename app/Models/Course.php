@@ -13,6 +13,7 @@ class Course extends Model
         'level',
         'status',
         'price',
+        'free_access_mode',
         'duration',
         'media',
         'media_type',

@@ -346,7 +346,7 @@
                     <h3>Order Detail Course</h3>
                     
                     <div class="box_event_payment">
-                        <img src="{{ $course->card_thumbnail ? asset('storage/' . $course->card_thumbnail) : 'https://img.freepik.com/vektor-premium/live-concert-horizontal-banner-template_23-2150997973.jpg' }}" alt="Course Card Image">
+                        <img src="{{ $course->card_thumbnail ? asset('uploads/' . $course->card_thumbnail) : 'https://img.freepik.com/vektor-premium/live-concert-horizontal-banner-template_23-2150997973.jpg' }}" alt="Course Card Image">
                         <div class="judul_event">
                             <h4>{{ $course->name ?? '-' }}</h4>
                             <p class="penyelenggara">{{ $course->category->name ?? '-' }}</p>
@@ -369,7 +369,10 @@
                 </div>
 
                 <!-- Manual payment via QRIS: show QR image modal when clicking Bayar -->
-                <form id="manualPaymentForm" method="POST" action="#">
+                @php
+                    $isFreeCourse = (int) ($course->price ?? 0) <= 0;
+                @endphp
+                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('midtrans.pay', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
@@ -467,10 +470,16 @@
             var formReferralCodeInput = document.getElementById('formReferralCodeInput');
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
             var showQrisBtn = document.getElementById('showQrisBtn');
+            var manualPaymentForm = document.getElementById('manualPaymentForm');
             var uploadProofForm = document.getElementById('uploadProofForm');
             var confirmProofModalEl = document.getElementById('confirmProofModal');
             var confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
             var pendingProofSubmit = false;
+
+            var isFreeCourse = false;
+            if (manualPaymentForm) {
+                isFreeCourse = (manualPaymentForm.getAttribute('data-is-free') || '0') === '1';
+            }
 
             function normalizePhone(value) {
                 return (value || '').replace(/[^0-9]/g, '');
@@ -479,8 +488,8 @@
             function updatePayButtonState() {
                 if (!showQrisBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                // WhatsApp is required; referral is optional
-                showQrisBtn.disabled = wa.length === 0;
+                // For free course, allow without WhatsApp. For paid, WhatsApp is required.
+                showQrisBtn.disabled = (!isFreeCourse) && (wa.length === 0);
             }
 
             // Show dropdown on button click
@@ -535,6 +544,18 @@
                         var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
                         var waRaw = whatsappInput ? whatsappInput.value : '';
                         formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
+                    }
+
+                    // Free course: submit directly to enroll (no QRIS / no admin validation)
+                    if (isFreeCourse) {
+                        try {
+                            if (manualPaymentForm && manualPaymentForm.getAttribute('action') && manualPaymentForm.getAttribute('action') !== '#') {
+                                manualPaymentForm.submit();
+                                return;
+                            }
+                        } catch (_e) {
+                            // fallthrough to default behavior
+                        }
                     }
 
                     var qrisEl = document.getElementById('qrisModal');

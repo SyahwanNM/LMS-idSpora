@@ -18,7 +18,7 @@
   :root {
     --navy: #252346;
     --white: #FFFFFF;
-    --primary-dark: #333333;
+    --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
   }
@@ -30,12 +30,23 @@
   .course-hero {
     background: var(--navy);
     height: fit-content;
+    padding-top: 90px;
     padding-bottom: 20px;
+  }
+
+  .hero-inner {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
   }
 
   .title-course-hero {
     color: var(--white);
-    margin: 20px 345px 0 60px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 60px auto 0;
+    padding: 0 20px;
   }
 
   .sub-title {
@@ -66,8 +77,9 @@
 
   .course-body {
     max-width: 1200px;
-    margin: 20px 10px 10px 60px;
-    padding: 0;
+    width: 100%;
+    margin: 20px auto 10px;
+    padding: 0 20px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
     gap: 24px;
@@ -465,8 +477,17 @@
   }
 
   @media (max-width: 992px) {
+    .hero-inner {
+      padding: 0 15px;
+    }
+
+    .title-course-hero {
+      padding: 0 15px;
+    }
+
     .course-body {
       grid-template-columns: 1fr;
+      padding: 0 15px;
     }
 
     .sidebar .kanan {
@@ -585,7 +606,7 @@
   
   <section class="course-hero">
     <nav aria-label="breadcrumb">
-      <div class="container" style="margin-left: 50px; margin-top: 2px;">
+      <div class="hero-inner" style="margin-top: 0;">
         <div style="color:#fff; font-size:15px; font-weight:500;">
           <span><a href="{{ route('dashboard') }}" style="color:#fff; text-decoration:none;">Home</a></span>
           <span style="margin: 0 7px;">/</span>
@@ -648,8 +669,29 @@
   <section class="course-body">
     <div class="main-col">
 
+      @php
+        $previewMedia = $course->media ?? null;
+        $previewMediaType = $previewMedia ? strtolower(pathinfo((string) $previewMedia, PATHINFO_EXTENSION)) : '';
+
+        if (is_string($previewMedia) && $previewMedia !== '') {
+          if (str_starts_with($previewMedia, 'http://') || str_starts_with($previewMedia, 'https://')) {
+            $previewMediaUrl = $previewMedia;
+          } else {
+            $normalized = ltrim($previewMedia, '/');
+            if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
+              $normalized = substr($normalized, strlen('uploads/'));
+            }
+            $previewMediaUrl = asset('uploads/' . $normalized);
+          }
+        } else {
+          $previewMediaUrl = null;
+        }
+      @endphp
+
       <div class="video-container">
-        <div id="video-wrapper"></div>
+        <div id="video-wrapper"
+             data-media-url="{{ $previewMediaUrl ?? '' }}"
+             data-media-type="{{ $previewMediaType }}"></div>
       </div>
 
       @php
@@ -1058,13 +1100,8 @@
       let playerElement;
 
       // Ambil data video dari Blade
-      const mediaRaw = @json($course->media);
-      const mediaType = @json(pathinfo($course->media, PATHINFO_EXTENSION));
-      let media = mediaRaw;
-      // Jika file lokal, gunakan Storage::url
-      @if($course->media && !Str::contains($course->media, ['youtube.com', 'youtu.be']))
-        media = @json(Storage::url($course->media));
-      @endif
+      const media = videoWrapper?.dataset?.mediaUrl || '';
+      const mediaType = videoWrapper?.dataset?.mediaType || '';
 
       function getYoutubeId(url) {
         // Regex untuk ambil ID YouTube

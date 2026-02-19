@@ -13,7 +13,7 @@
             background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
             position: relative;
             overflow: hidden;
-            padding: clamp(80px, 12vh, 140px) 0 clamp(40px, 8vh, 100px);
+            padding: clamp(70px, 10vh, 110px) 0 clamp(40px, 8vh, 100px);
         }
         .hero-blob {
             position: absolute;
@@ -153,64 +153,18 @@
             margin-bottom: 5px;
         }
 
+        .save-btn.active {
+            color: #ef4444 !important;
+        }
+        .save-btn:hover {
+            transform: scale(1.1) !important;
+            color: #ef4444 !important;
+        }
+
     </style>
 </head>
 <body class="bg-surface" style="padding-top: 80px;">
     @include('partials.navbar-before-login')
-
-    <!-- HERO CAROUSEL (DYNAMIS) -->
-    @if(isset($landingCarousels) && $landingCarousels->isNotEmpty())
-    <section class="hero-carousel-section mt-0">
-        <div id="landingHeroCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-indicators">
-                @foreach($landingCarousels as $index => $carousel)
-                    <button type="button" data-bs-target="#landingHeroCarousel" data-bs-slide-to="{{ $index }}" 
-                        class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
-                        aria-label="Slide {{ $index + 1 }}"></button>
-                @endforeach
-            </div>
-            <div class="carousel-inner">
-                @foreach($landingCarousels as $index => $carousel)
-                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: clamp(350px, 60vh, 600px); position: relative;">
-                    @php
-                        $btnUrl = $carousel->link_url ?? '#';
-                        $isExternal = Str::startsWith($btnUrl, ['http://', 'https://']);
-                    @endphp
-                    
-                    @if($carousel->link_url)
-                        <a href="{{ $btnUrl }}" {{ $isExternal ? 'target="_blank"' : '' }}>
-                    @endif
-                    
-                    <img src="{{ $carousel->image_url }}" class="d-block w-100 h-100 object-fit-cover" 
-                        alt="{{ $carousel->title ?? 'Promo banner' }}"
-                        style="filter: brightness(0.7);">
-                    
-                    @if($carousel->title)
-                    <div class="carousel-caption d-none d-md-block text-start" style="bottom: 80px; left: 10%; max-width: 500px;">
-                        <h1 class="display-4 fw-bold mb-3">{{ $carousel->title }}</h1>
-                        @if($carousel->link_url)
-                        <button class="btn btn-warning btn-lg fw-bold rounded-pill px-4">Info Selengkapnya</button>
-                        @endif
-                    </div>
-                    @endif
-
-                    @if($carousel->link_url)
-                        </a>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#landingHeroCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#landingHeroCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
-        </div>
-    </section>
-    @endif
 
     <!-- HERO SECTION -->
     <section class="hero-section">
@@ -220,7 +174,7 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-5 mb-lg-0">
                     <span class="d-inline-block py-1 px-3 rounded-pill bg-white text-primary fw-bold border border-primary-subtle shadow-sm mb-4">
-                        🚀 Platform Belajar Web Event #1 di Indonesia
+                        Platform Belajar Web Praktis Dan Modern
                     </span>
                     <h1 class="display-3 fw-bold mb-4 text-navy" style="line-height: 1.2;">
                         Kembangkan <span class="text-gradient">Potensi Skill</span> <br>Masa Depanmu
@@ -534,6 +488,17 @@
                                 <span class="badge bg-warning text-dark rounded-pill">Rp {{ number_format($event->price,0,',','.') }}</span>
                                 @endif
                             </div>
+                            
+                            <button class="save-btn" 
+                                    aria-label="Save event" type="button" 
+                                    data-event-id="{{ $event->id }}"
+                                    data-save-url="{{ route('events.save', $event) }}"
+                                    onclick="event.stopPropagation(); toggleSaveEvent(this)"
+                                    style="position: absolute; top: 15px; left: 15px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                </svg>
+                            </button>
                         </div>
                         <div class="p-4 d-flex flex-column flex-grow-1">
                             <h5 class="fw-bold text-navy mb-2 line-clamp-2" style="min-height: 3rem;">{{ $event->title }}</h5>
@@ -700,6 +665,48 @@
            const floatBadges = document.querySelectorAll('.animate-float');
            // Add simple float animation via JS if needed or just rely on CSS
         });
+
+        function toggleSaveEvent(btn) {
+            const url = btn.getAttribute('data-save-url');
+            
+            // Add loading state
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '#64748b';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            });
+        }
     </script>
     <style>
         .animate-float { animation: floating 3s ease-in-out infinite; }

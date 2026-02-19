@@ -5160,6 +5160,7 @@ input[type="time"] {
     margin-top: 30px;
     display: flex;
     gap: 30px;
+    flex-wrap: wrap;
 }
 
 .detail_laporan {
@@ -5268,7 +5269,11 @@ input[type="time"] {
 
 .box_kelengkapan {
     margin-top: 30px;
-    margin-left: 50px;
+    margin-left: 0;
+}
+
+.total_pertumbuhan {
+    margin-top: 16px;
 }
 
 /*REPORT PERTUMBUHAN*/
@@ -5305,9 +5310,10 @@ input[type="time"] {
 .detail_laporan_pertumbuhan {
     background-color: white;
     border: 1px solid gray;
-    border-radius: 5px;
+    border-radius: 10px;
     padding: 20px;
     width: 400px;
+    min-height: 200px;
 }
 
 .angka_penilaian_pertumbuhan {
@@ -5323,7 +5329,7 @@ input[type="time"] {
 }
 
 .analisis_pertumbuhan {
-    margin-top: 50px;
+    margin-top: 16px;
 }
 
 .durasi_menonton {
@@ -5363,13 +5369,13 @@ input[type="time"] {
 }
 
 .tabel_performa {
-    margin-left: 50px;
-    margin-top: 50px;
+    margin-left: 0;
+    margin-top: 30px;
 }
 
 .tabel_pertumbuhan {
-    margin-left: 60px;
-    width: 96%;
+    margin-left: 0;
+    width: 100%;
 }
 
 .persentase {
@@ -6518,6 +6524,9 @@ input[type="time"] {
     display: block;
     border: 1px solid rgba(245, 197, 47, 0.35);
     background: #000;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 /* Description card */

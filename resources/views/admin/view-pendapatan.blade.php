@@ -17,24 +17,24 @@
 <body>
     @include("partials.navbar-admin-course")
     <div class="box_luar_view_pendapatan">
-        <h1 class="judul_view">Pengantar UI/UX Dasar</h1>
+        <h1 class="judul_view">{{ $course->name ?? '-' }}</h1>
         <p class="deskripsi_view">Laporan Detail Financial & Konten Course </p>
         <div class="tabel_paling_atas">
             <div class="tanggal_view">
                 <p>Tanggal</p>
-                <h5>14/10/2025</h5>
+                <h5>{{ ($stats['last_paid_at'] ?? null) ? ($stats['last_paid_at'])->format('d/m/Y') : '-' }}</h5>
             </div>
             <div class="total_peserta_view">
                 <p>Total peserta</p>
-                <h5>100</h5>
+                <h5>{{ (int)($stats['participants'] ?? 0) }}</h5>
             </div>
             <div class="status_view">
                 <p>Status</p>
-                <h5>Complete</h5>
+                <h5>{{ $stats['status'] ?? '-' }}</h5>
             </div>
             <div class="harga_modul_pada_view">
                 <p>Harga Per Unit</p>
-                <h5>Rp. 10.000</h5>
+                <h5>Rp. {{ number_format((float)($stats['unit_price'] ?? 0), 0, ',', '.') }}</h5>
             </div>
         </div>
         <div class="box_luar_breakdown_pendapatan">
@@ -46,18 +46,18 @@
             </div>
             <div class="box_dalam_breakdown_pendapatan">
                 <h5>Penjualan Normal</h5>
-                <h3>Rp. 1.000.000</h3>
+                <h3>Rp. {{ number_format((float)($stats['revenue_total'] ?? 0), 0, ',', '.') }}</h3>
                 <div class="isi_box_pendapatan">
                     <p class="peserta">Peserta:</p>
-                    <p>100</p>
+                    <p>{{ (int)($stats['participants'] ?? 0) }}</p>
                 </div>
                 <div class="isi_harga_perunit">
                     <p class="peserta">Harga Per Unit:</p>
-                    <p>Rp. 10.000</p>
+                    <p>Rp. {{ number_format((float)($stats['unit_price'] ?? 0), 0, ',', '.') }}</p>
                 </div>
                 <div class="isi_kalkulasi">
                     <p class="peserta">Kalkulasi:</p>
-                    <p>100 x Rp. 10.000</p>
+                    <p>{{ (int)($stats['participants'] ?? 0) }} x Rp. {{ number_format((float)($stats['unit_price'] ?? 0), 0, ',', '.') }}</p>
                 </div>
                 <div class="garis_abu">
                     <div class="garis_hijau"></div>
@@ -65,7 +65,7 @@
             </div>
             <div class="box_dalam_pendapatan">
                 <h4>Total Pendapatan</h4>
-                <h4 class="satu_juta">Rp. 1.000.000</h4>
+                <h4 class="satu_juta">Rp. {{ number_format((float)($stats['revenue_total'] ?? 0), 0, ',', '.') }}</h4>
             </div>
         </div>
         <div class="box_luar_breakdown_pengeluaran">
@@ -80,7 +80,7 @@
                     <p class="subjudul_pertama">Honor Instruktur</p>
                     <p class="persentase_box">40.0%</p>
                 </div>
-                <h5>Rp. 40.000</h5>
+                <h5>Rp. {{ number_format((float)($expenses['honor'] ?? 0), 0, ',', '.') }}</h5>
                 <div class="garis_abu">
                     <div class="garis_orange"></div>
                 </div>
@@ -90,7 +90,7 @@
                     <p class="subjudul_pertama">Platform Fee</p>
                     <p class="persentase_box">20.0%</p>
                 </div>
-                <h5>Rp. 20.000</h5>
+                <h5>Rp. {{ number_format((float)($expenses['platform'] ?? 0), 0, ',', '.') }}</h5>
                 <div class="garis_abu">
                     <div class="garis_kuning"></div>
                 </div>
@@ -100,7 +100,7 @@
                     <p class="subjudul_pertama">Marketing $ Promosi</p>
                     <p class="persentase_box">15.0%</p>
                 </div>
-                <h5>Rp. 15.000</h5>
+                <h5>Rp. {{ number_format((float)($expenses['marketing'] ?? 0), 0, ',', '.') }}</h5>
                 <div class="garis_abu">
                     <div class="garis_ungu"></div>
                 </div>
@@ -110,7 +110,7 @@
                     <p class="subjudul_pertama">Infrastruktur & Server</p>
                     <p class="persentase_box">15.0%</p>
                 </div>
-                <h5>Rp. 15.000</h5>
+                <h5>Rp. {{ number_format((float)($expenses['infra'] ?? 0), 0, ',', '.') }}</h5>
                 <div class="garis_abu">
                     <div class="garis_biru"></div>
                 </div>
@@ -120,14 +120,14 @@
                     <p class="subjudul_pertama">Customer Support</p>
                     <p class="persentase_box">10.0%</p>
                 </div>
-                <h5>Rp. 10.000</h5>
+                <h5>Rp. {{ number_format((float)($expenses['support'] ?? 0), 0, ',', '.') }}</h5>
                 <div class="garis_abu">
                     <div class="garis_pink"></div>
                 </div>
             </div>
             <div class="box_dalam_pengeluaran">
                 <h4>Total Pengeluaran</h4>
-                <h4 class="satu_juta">Rp. 100.000</h4>
+                <h4 class="satu_juta">Rp. {{ number_format((float)($stats['expense_total'] ?? 0), 0, ',', '.') }}</h4>
             </div>
         </div>
         <div class="box_luar_analisis_keuntungan">
@@ -136,24 +136,24 @@
                 <div class="box_status">
                     <h5>Status keuntungan</h5>
                     <div class="box_validasi_status">
-                        <h5>Menguntungkan</h5>
+                        <h5>{{ $stats['profit_status'] ?? '-' }}</h5>
                     </div>
                 </div>
-                <h3>Rp. 900.000</h3>
+                <h3>Rp. {{ number_format((float)($stats['profit'] ?? 0), 0, ',', '.') }}</h3>
             </div>
             <div class="box_dalam_perhitungan">
                 <h5>Cara Perhitungan</h5>
                 <div class="pendapatan_kotor">
                     <p>Pendapatan Kotor</p>
-                    <h5 class="satu_juta_hitung">Rp. 1.000.000</h5>
+                    <h5 class="satu_juta_hitung">Rp. {{ number_format((float)($stats['revenue_total'] ?? 0), 0, ',', '.') }}</h5>
                 </div>
                 <div class="total_pengeluaran">
                     <p>Total Pengeluaran</p>
-                    <h5 class="seratus_ribu">Rp. 100.000</h5>
+                    <h5 class="seratus_ribu">Rp. {{ number_format((float)($stats['expense_total'] ?? 0), 0, ',', '.') }}</h5>
                 </div>
                 <div class="keuntungan_bersih">
                     <p>Keuntungan Bersih</p>
-                    <h5 class="sembilan_ratus_ribu">Rp. 900.000</h5>
+                    <h5 class="sembilan_ratus_ribu">Rp. {{ number_format((float)($stats['profit'] ?? 0), 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>
@@ -170,6 +170,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx = document.getElementById('financeChart').getContext('2d');
+        const financeData = @json($chart ?? ['revenue' => 0, 'expense' => 0, 'profit' => 0]);
 
         new Chart(ctx, {
             type: 'bar',
@@ -177,17 +178,17 @@
                 labels: ['Total'],
                 datasets: [{
                         label: 'Pendapatan',
-                        data: [1000000],
+                        data: [Number(financeData.revenue || 0)],
                         backgroundColor: '#3b82f6'
                     },
                     {
                         label: 'Pengeluaran',
-                        data: [100000],
+                        data: [Number(financeData.expense || 0)],
                         backgroundColor: '#ef4444'
                     },
                     {
                         label: 'Keuntungan',
-                        data: [900000],
+                        data: [Number(financeData.profit || 0)],
                         backgroundColor: '#22c55e'
                     }
                 ]

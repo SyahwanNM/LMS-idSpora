@@ -13,23 +13,14 @@
         body {
             margin: 0;
             padding: 0;
-            height: 100%;
-            overflow: hidden;
+            min-height: 100vh;
             font-family: "Poppins";
             background: radial-gradient(circle, #51376C 0%, #2E2050 100%);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .back {
-            position: fixed;
-            top: 50px;
-            left: 70px;
-            width: 20px;
-            height: auto;
-            cursor: pointer;
+            overflow-x: hidden;
         }
 
         .main-container {
@@ -40,29 +31,42 @@
             min-height: 100vh;
             align-items: center;
             justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .back {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 25px;
+            height: auto;
+            cursor: pointer;
+            z-index: 10;
         }
 
         .kiri {
-            flex: 0.8;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 56px;
-            font-weight: bold;
+            min-width: 300px;
         }
 
         .logo {
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
             height: auto;
-            margin-right: 100px;
+            margin-right: 50px;
         }
 
         .kanan {
             flex: 1;
-            max-width: 350px;
+            width: 100%;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            padding: 20px 0;
         }
 
         .kanan h3 {
@@ -83,6 +87,7 @@
             border-color: #f4a442;
             box-shadow: 0 0 0 2px rgba(244, 164, 66, 0.3);
             background-color: #AFB6E54D;
+            color: white;
         }
 
         .btn-register {
@@ -98,6 +103,39 @@
 
         .btn-register:hover {
             background-color: #e68a00;
+        }
+
+        @media (max-width: 991px) {
+            .main-container {
+                flex-direction: column;
+                padding: 60px 20px 40px;
+                min-height: auto;
+            }
+            .logo {
+                margin-right: 0;
+                margin-bottom: 30px;
+                max-width: 300px;
+            }
+            .kiri {
+                min-width: auto;
+            }
+            .kanan {
+                max-width: 100%;
+            }
+            .back {
+                top: 20px;
+                left: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .logo {
+                max-width: 250px;
+            }
+            .kanan h3 {
+                font-size: 1.5rem;
+                text-align: center;
+            }
         }
     </style>
 </head>

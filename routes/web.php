@@ -23,6 +23,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PublicPagesController;
 use App\Http\Controllers\Admin\CourseReportController;
+use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 
@@ -37,6 +38,7 @@ Route::get('/courses/{course}', [CourseController::class, 'show'])->name('course
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
     Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');
+    Route::get('/admin/report/growth', [CourseReportController::class, 'growth'])->name('admin.report.growth');
 });
 
 Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
@@ -116,8 +118,8 @@ Route::get('/admin/add-course2', function () {
     return view('admin/add-course2');
 })->name('add-course2');
 Route::get('/admin/preview-pendapatan', function () {
-    return view('admin/preview-pendapatan');
-})->name('preview-pendapatan');
+    return redirect()->route('admin.view-pendapatan', request()->query());
+})->middleware(['auth','admin'])->name('preview-pendapatan');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
@@ -126,12 +128,24 @@ Route::get('/storage/{path}', function ($path) {
     $path = urldecode($path);
     
     // Security: prevent directory traversal
-    if (str_contains($path, '..') || str_contains($path, "\0")) {
+    if (str_contains($path, "\0")) {
         abort(403, 'Invalid path');
     }
+
+    // Normalize separators then ensure no path traversal segments exist
+    $pathNormalized = str_replace('\\', '/', $path);
+    $segments = array_values(array_filter(explode('/', $pathNormalized), fn ($s) => $s !== ''));
+    foreach ($segments as $seg) {
+        if ($seg === '.' || $seg === '..') {
+            abort(403, 'Invalid path');
+        }
+    }
+
+    // Use normalized path for filesystem lookup
+    $path = implode('/', $segments);
     
-    // Get file path in storage
-    $filePath = storage_path('app/public/' . $path);
+    // Get file path in uploads
+    $filePath = public_path('uploads/' . $path);
     
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
@@ -352,9 +366,8 @@ Route::middleware(['auth'])->group(function () {
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
         // Admin view: Pendapatan (financial breakdown)
-        Route::get('/admin/view-pendapatan', function () {
-            return view('admin.view-pendapatan');
-        })->name('admin.view-pendapatan');
+        Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
+            ->name('admin.view-pendapatan');
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         // Recent activities AJAX (returns latest login activities)
@@ -490,6 +503,10 @@ Route::get('/course-quiz-start', function () {
             
             // Feedback Analysis
             Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
+
+            // Support Messages
+            Route::get('/support', [\App\Http\Controllers\CRMController::class, 'supportMessages'])->name('support.index');
+            Route::post('/support/{message}/status', [\App\Http\Controllers\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
         });
         
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)

@@ -79,7 +79,7 @@
                 </div>
 
                 <div class="col-lg-7">
-                    <form method="POST" action="{{ route('public.support.store') }}" class="space-y-3">
+                    <form method="POST" action="{{ route('public.support.store') }}" enctype="multipart/form-data" class="space-y-3">
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -106,6 +106,11 @@
                             <div class="col-12">
                                 <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Pesan</label>
                                 <textarea class="neu w-100" rows="6" name="message" placeholder="Ceritakan kendala/pertanyaan kamu...">{{ old('message') }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Lampiran Foto (Opsional)</label>
+                                <input type="file" name="attachment" class="neu w-100" accept="image/*">
+                                <small class="muted mt-1 d-block">Format: JPG, PNG, WEBP. Maks 2MB.</small>
                             </div>
                         </div>
 

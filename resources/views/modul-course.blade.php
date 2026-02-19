@@ -24,6 +24,13 @@
                 $activeModule = $currentModule ?? $modulesList->first();
                 $passingPercent = 75;
 
+                $freeAccessMode = $freeAccessMode ?? ((isset($course) && (int)($course->price ?? 0) <= 0) ? (string)($course->free_access_mode ?? 'limit_2') : 'all');
+                $freeAccessibleModuleIds = $freeAccessibleModuleIds ?? [];
+                if (!is_array($freeAccessibleModuleIds)) {
+                    $freeAccessibleModuleIds = [];
+                }
+                $isFreeLimited = ((int)($course->price ?? 0) <= 0) && ((string)$freeAccessMode === 'limit_2');
+
                 $passedQuizModuleIds = [];
                 if (auth()->check() && $modulesList->isNotEmpty()) {
                     $quizModuleIds = $modulesList
@@ -69,8 +76,19 @@
                         $typeLabel = $m->type ? strtoupper($m->type) : 'MATERI';
                         $prevModule = $modulesList->get($loop->index - 1);
                         $isLocked = false;
+                        $lockReason = '';
+
+                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
+                            $isLocked = true;
+                            $lockReason = 'free';
+                        }
                         if (auth()->check() && $prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
-                            $isLocked = !in_array((int) $prevModule->id, $passedQuizModuleIds, true);
+                            if (!$isLocked) {
+                                $isLocked = !in_array((int) $prevModule->id, $passedQuizModuleIds, true);
+                                if ($isLocked) {
+                                    $lockReason = 'quiz';
+                                }
+                            }
                         }
                         $descLines = [];
                         if (!empty($m->description)) {
@@ -83,7 +101,7 @@
                         $descLines = array_slice($descLines, 0, 3);
                     @endphp
 
-                    <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}">
+                    <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
                         <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
                                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
@@ -101,7 +119,11 @@
                             <p>Tipe: {{ $typeLabel }}</p>
                             @if($isLocked)
                                 <hr>
-                                <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
+                                @if($lockReason === 'free')
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Course gratis ini hanya membuka 2 modul pertama.</p>
+                                @else
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
+                                @endif
                             @endif
                             @if(!empty($descLines))
                                 <hr>
@@ -124,10 +146,20 @@
                 $cm = $activeModule;
                 $content = $cm->content_url ?? null;
                 $isHttp = is_string($content) && (str_starts_with($content, 'http://') || str_starts_with($content, 'https://'));
-                $storageUrl = is_string($content) ? asset('storage/' . ltrim($content, '/')) : null;
-                $isVideo = $cm && (($cm->type ?? '') === 'video');
-                $isPdf = $cm && (($cm->type ?? '') === 'pdf');
-                $isQuiz = $cm && (($cm->type ?? '') === 'quiz');
+                $storageUrl = null;
+                if (is_string($content)) {
+                    $normalized = ltrim($content, '/');
+                    if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
+                        $normalized = substr($normalized, strlen('uploads/'));
+                    }
+                    $storageUrl = asset('uploads/' . $normalized);
+                }
+                $streamUrl = (!$isHttp && isset($course) && $cm) ? route('user.modules.stream', [$course, $cm]) : null;
+                $videoUrl = $isHttp ? $content : ($storageUrl ?: $streamUrl);
+                $moduleType = $cm ? strtolower(trim((string) ($cm->type ?? ''))) : '';
+                $isVideo = $cm && ($moduleType === 'video');
+                $isPdf = $cm && ($moduleType === 'pdf');
+                $isQuiz = $cm && ($moduleType === 'quiz');
             @endphp
 
             {{-- Hapus area media kosong untuk modul kuis --}}
@@ -140,12 +172,12 @@
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                 referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                         @else
-                            <video class="video_course" width="560" height="315" controls>
-                                <source src="{{ $storageUrl }}">
+                            <video class="video_course" width="560" height="315" controls preload="auto" playsinline>
+                                <source src="{{ $videoUrl }}" type="{{ $cm->mime_type ?: 'video/mp4' }}">
                             </video>
                         @endif
                     @elseif($isPdf)
-                        <iframe class="video_course" width="560" height="315" src="{{ $isHttp ? $content : $storageUrl }}" title="PDF" frameborder="0"></iframe>
+                        <iframe class="video_course" width="560" height="315" src="{{ $isHttp ? $content : ($streamUrl ?: $storageUrl) }}" title="PDF" frameborder="0"></iframe>
                     @else
                         <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
                     @endif
@@ -167,6 +199,16 @@
                     $durationMinutes = $durationSeconds > 0 ? (int) ceil($durationSeconds / 60) : 0;
                     $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '5 menit';
 
+                    $beforeQuizTitle = null;
+                    if ($cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
+                        $idx = $modulesList->search(fn($x) => (int) ($x->id ?? 0) === (int) $cm->id);
+                        if ($idx !== false && $idx > 0) {
+                            $prev = $modulesList->get($idx - 1);
+                            $beforeQuizTitle = $prev?->title ?? null;
+                        }
+                    }
+                    $beforeQuizTitle = $beforeQuizTitle ?: ($cm->title ?? 'materi sebelumnya');
+
                     $attempts = collect();
                     if (auth()->check() && $cm) {
                         $attempts = \App\Models\QuizAttempt::query()
@@ -184,7 +226,7 @@
                 <div class="box_luar_deskripsi_modul">
                     <div class="box_deskripsi_modul">
                         <h4 style="font-weight:700; margin:0 0 12px 0;">Aturan Kuis</h4>
-                        <p style="margin:0 0 10px 0;">Kuis ini bertujuan untuk mengukur pemahaman Anda terhadap materi {{ $cm->title }}.</p>
+                        <p style="margin:0 0 10px 0;">Kuis ini bertujuan untuk mengukur pemahaman Anda terhadap materi {{ $beforeQuizTitle }}.</p>
                         <p style="margin:0 0 10px 0;">Silakan perhatikan ketentuan berikut sebelum memulai:</p>
                         <ol style="padding-left:18px; margin:0 0 14px 0; line-height:1.7;">
                             <li><strong>Jumlah Soal:</strong> {{ $questionCount }} pertanyaan pilihan ganda.</li>
@@ -269,7 +311,13 @@
                     }
                 }
 
-                $lockNext = ($cm && (($cm->type ?? '') === 'quiz') && auth()->check() && !$currentQuizPassed);
+                $lockNext = ($cm && ($moduleType === 'quiz') && auth()->check() && !$currentQuizPassed);
+
+                $lockNextByFree = false;
+                if (isset($course) && (int)($course->price ?? 0) <= 0 && ((string)($freeAccessMode ?? 'all') === 'limit_2') && $nextModule) {
+                    $lockNextByFree = !in_array((int) $nextModule->id, (array) $freeAccessibleModuleIds, true);
+                }
+                $lockNext = $lockNext || $lockNextByFree;
             @endphp
 
             {{-- Tombol Next tetap seperti sebelumnya (button), tapi arahnya dinamis --}}
@@ -335,7 +383,12 @@
                 // 3) Second click on a non-selected open item: navigate to load it
                 const locked = item.getAttribute('data-locked') === '1';
                 if (locked) {
-                    alert('Materi ini terkunci. Kamu harus lulus kuis terlebih dahulu.');
+                    const reason = item.getAttribute('data-locked-reason') || '';
+                    if (reason === 'free') {
+                        alert('Materi ini terkunci. Course gratis ini hanya membuka 2 modul pertama.');
+                    } else {
+                        alert('Materi ini terkunci. Kamu harus lulus kuis terlebih dahulu.');
+                    }
                     return;
                 }
 
@@ -351,6 +404,11 @@
                 const url = nextBtn.getAttribute('data-next-url');
                 if (url) window.location.href = url;
             });
+        }
+
+        const videoEl = document.querySelector('.video_course');
+        if (videoEl && videoEl.tagName === 'VIDEO') {
+            videoEl.load();
         }
     </script>
 

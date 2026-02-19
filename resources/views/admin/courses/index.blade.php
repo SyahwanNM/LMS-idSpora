@@ -176,7 +176,14 @@
                                                                     <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
                                                                     <td>
                                                                         @if($proof)
-                                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ asset('storage/'.$proof->file_path) }}">Lihat</a>
+                                                                            @php
+                                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
+                                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
+                                                                                    $proofPath = substr($proofPath, strlen('uploads/'));
+                                                                                }
+                                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
+                                                                            @endphp
+                                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
                                                                         @else
                                                                             <span class="text-muted">-</span>
                                                                         @endif

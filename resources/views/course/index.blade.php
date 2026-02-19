@@ -5,13 +5,13 @@
 
     /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
     .hero-carousel {
-        margin-top: 115px; /* Jarak dari atas ditingkatkan untuk navbar premium */
+        margin-top: 85px; /* Jarak dikurangi agar lebih rapat dengan navbar */
     }
 </style>
 </head>
 
 @include('partials.navbar-after-login') 
-<body> 
+<body style="padding-top: 0;"> 
     <main class="container-xl pb-5">
         <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
                 <div class="carousel-indicators">
@@ -70,8 +70,6 @@
                     @endforelse
                 </div>
 
-                </div>
-
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselCaptions"
                     data-bs-slide="prev">
                     <span class="carousel-control-prev-icon"></span>
@@ -87,8 +85,8 @@
 
         <div class="row justify-content-center mb-5" style="margin-top: -30px; position: relative; z-index: 10;">
             <div class="col-lg-8">
-                <form action="#" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
-                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                <form action="{{ route('courses.index') }}" method="GET" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
+                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" name="search" placeholder="Cari kursus berdasarkan judul, kategori..." aria-label="Search" style="box-shadow: none;" value="{{ request('search') }}">
                     <button class="btn rounded-pill px-4 fw-bold" type="submit" style="background-color: #51376c; color: white;">
                         Cari
                     </button>
@@ -123,7 +121,7 @@
             </div>
         </div>
         <div class="search-container">
-            <form class="search-form" action="#" method="get" autocomplete="off">
+            <form class="search-form" action="{{ route('courses.index') }}" method="get" autocomplete="off">
                 <div class="search-wrap">
                     <input id="site-search" class="form-control search-input-2" type="search" name="search"
                         placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest">
