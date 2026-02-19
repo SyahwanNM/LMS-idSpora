@@ -36,6 +36,14 @@
                     <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
                         <ul class="list-disc pl-5 space-y-1">
                             @foreach ($errors->all() as $error)
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Order</span>
+                                        <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Order</span>
+                                        <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
@@ -92,6 +100,17 @@
                         <input type="text" name="price" id="price" required 
                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                value="{{ old('price', $course->price) }}" placeholder="Masukkan Harga Course">
+                    </div>
+
+                    <!-- Akses Course Gratis -->
+                    <div>
+                        <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course Gratis</label>
+                        <select name="free_access_mode" id="free_access_mode"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                            <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka semua materi</option>
+                            <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
                     </div>
 
                     <!-- Deskripsi -->
@@ -168,6 +187,10 @@
                                             <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
                                         </div>
                                         <p class="text-xs text-gray-500 m-0">PDF Document • {{ $m->file_name }}</p>
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Order</span>
+                                        <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
                                     </div>
                                     <button type="button" data-id="{{ $m->id }}" class="btn-remove-existing text-gray-400 hover:text-red-500 transition">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
@@ -261,6 +284,7 @@
 
                 <input type="hidden" id="modules-delete-ids" name="modules_delete_ids" value="">
                 <input type="hidden" name="modules_payload_new" id="modules-payload-new">
+                <input type="hidden" name="modules_order_updates" id="modules-order-updates" value="{}">
                 <div id="module-file-bucket" style="display:none"></div>
 
                 <!-- Action Buttons -->
@@ -304,10 +328,13 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                     <textarea id="new-mod-desc" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2" placeholder="Deskripsi Singkat"></textarea>
                 </div>
-                <!-- Hidden inputs for logic -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Module Order</label>
+                    <input type="number" min="1" id="new-mod-order" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="{{ max(1, ($course->modules->count() ?? 0) + 1) }}">
+                    <div class="text-xs text-gray-400 mt-1">Urutan tampil modul di course.</div>
+                </div>
+                <!-- Hidden input for logic -->
                 <input type="hidden" id="new-mod-type" value="video">
-                <!-- Fallback to 1 if empty -->
-                <input type="hidden" id="new-mod-order" value="{{ max(1, ($course->modules->count() ?? 0) + 1) }}">
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">File Upload</label>
@@ -334,6 +361,10 @@
             <div class="modal-body p-0">
                 <!-- Step 1: Overview -->
                 <div id="quiz-step-overview" class="p-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Module Order</label>
+                        <input type="number" min="1" id="quiz-order" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="{{ max(1, ($course->modules->count() ?? 0) + 1) }}">
+                    </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
                         <input type="text" id="quiz-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g. Final Assessment">
@@ -446,6 +477,7 @@
         const typeInput = document.getElementById('new-mod-type');
         const fileInp = document.getElementById('new-mod-file');
         const helpText = document.getElementById('fileHelpText');
+        const orderInp = document.getElementById('new-mod-order');
 
         if(window.bootstrap && modalEl){
             typeInput.value = type;
@@ -457,6 +489,7 @@
             document.getElementById('new-mod-title').value = '';
             document.getElementById('new-mod-desc').value = '';
             fileInp.value = '';
+            if(orderInp) orderInp.value = (typeof window.getNextModuleOrder === 'function') ? window.getNextModuleOrder() : (orderInp.value || 1);
 
             const m = new window.bootstrap.Modal(modalEl);
             m.show();
@@ -477,6 +510,7 @@
         const existingList = document.getElementById('existing-modules-list');
         const queued = [];
         const payloadInput = document.getElementById('modules-payload-new');
+        const orderUpdatesInput = document.getElementById('modules-order-updates');
         const fileBucket = document.getElementById('module-file-bucket');
         const listNewPdf = document.getElementById('new-pdf-list');
         const listNewVideo = document.getElementById('new-video-list');
@@ -490,12 +524,16 @@
         const typeSel = document.getElementById('new-mod-type'); 
         const titleInp = document.getElementById('new-mod-title');
         const descInp = document.getElementById('new-mod-desc');
+        const orderInp = document.getElementById('new-mod-order');
         let fileInp = document.getElementById('new-mod-file');
         
         // Common Order logic
         function getNextOrder() {
              return existingCount + queued.length + 1; 
         }
+
+           // Expose for modal helpers
+           window.getNextModuleOrder = getNextOrder;
 
         function setDeleteIds(ids){ deleteInput.value = ids.join(','); }
         function getDeleteIds(){ return (deleteInput.value||'').split(/[,\s]+/).filter(Boolean).map(v=>parseInt(v,10)||0); }
@@ -532,6 +570,7 @@
                         <div class="flex items-center gap-2 mb-1">
                             <h5 class="text-sm font-bold text-gray-900 m-0">${m.title}</h5>
                             <span class="bg-purple-200 text-purple-800 text-xs px-2 py-0.5 rounded font-medium">New</span>
+                            <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#${m.order}</span>
                         </div>
                         <p class="text-xs text-gray-500 m-0">${m.type.toUpperCase()}</p>
                     </div>
@@ -558,6 +597,31 @@
                     btn.disabled = true;
                 });
             });
+
+            function updateOrderUpdatesPayload(){
+                if(!orderUpdatesInput) return;
+                const map = {};
+                existingList.querySelectorAll('.input-module-order').forEach(inp => {
+                    const id = parseInt(inp.dataset.id, 10) || 0;
+                    const original = parseInt(inp.dataset.original, 10) || 0;
+                    const current = parseInt(inp.value, 10) || 0;
+                    if(id > 0 && original > 0 && current > 0 && current !== original){
+                        map[id] = current;
+                    }
+                });
+                try { orderUpdatesInput.value = JSON.stringify(map); } catch(_) { orderUpdatesInput.value = '{}'; }
+            }
+
+            existingList.querySelectorAll('.input-module-order').forEach(inp => {
+                inp.addEventListener('change', () => {
+                    const v = parseInt(inp.value, 10) || 0;
+                    if(v < 1){
+                        inp.value = inp.dataset.original || 1;
+                        showInlineToast('Order minimal 1', 'warning');
+                    }
+                    updateOrderUpdatesPayload();
+                });
+            });
         }
 
         // Handle Add Generic Module
@@ -567,10 +631,11 @@
                 const title = (titleInp.value||'').trim();
                 const desc = (descInp.value||'').trim();
                 const file = fileInp.files && fileInp.files[0];
-                const order = getNextOrder();
+                const order = parseInt((orderInp && orderInp.value) ? orderInp.value : '', 10) || getNextOrder();
 
                 if (!title) { showInlineToast('Judul wajib diisi', 'warning'); return; }
                 if (!file) { showInlineToast('File wajib diupload', 'warning'); return; }
+                if (order < 1) { showInlineToast('Order minimal 1', 'warning'); return; }
 
                 const uid = 'm'+Date.now().toString(36);
                 
@@ -610,6 +675,8 @@
              updateQuizUI();
              document.getElementById('quiz-title').value = '';
              document.getElementById('quiz-desc').value = '';
+               const qo = document.getElementById('quiz-order');
+               if(qo) qo.value = getNextOrder();
         }
 
         function updateQuizUI(){
@@ -704,7 +771,8 @@
         document.getElementById('btn-quiz-save').addEventListener('click', () => {
              const title = document.getElementById('quiz-title').value.trim() || 'Untitled Quiz';
              const desc = document.getElementById('quiz-desc').value.trim();
-             const order = getNextOrder();
+               const order = parseInt((document.getElementById('quiz-order')||{}).value, 10) || getNextOrder();
+               if (order < 1) { showInlineToast('Order minimal 1', 'warning'); return; }
 
              quizDraft.title = title;
              quizDraft.desc = desc;

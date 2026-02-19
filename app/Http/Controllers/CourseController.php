@@ -82,11 +82,38 @@ class CourseController extends Controller
         $selectedId = $request->query('module');
         $currentModule = null;
 
+        $isFreeCourse = (int) ($course->price ?? 0) <= 0;
+        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+        $freeAccessibleModuleIds = [];
+        if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+            $freeAccessibleModuleIds = $modules
+                ->sortBy('order_no')
+                ->values()
+                ->take(2)
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
         if ($selectedId) {
             $currentModule = $modules->firstWhere('id', (int) $selectedId);
         }
         if (!$currentModule) {
             $currentModule = $modules->first();
+        }
+
+        // Free course access policy: optionally limit to first 2 modules
+        if ($isFreeCourse && $freeAccessMode === 'limit_2' && $currentModule) {
+            $allowed = in_array((int) $currentModule->id, $freeAccessibleModuleIds, true);
+            if (!$allowed) {
+                $fallbackId = $freeAccessibleModuleIds[0] ?? (int) ($modules->first()?->id ?? 0);
+                if ($fallbackId > 0) {
+                    $target = route('course.learn', $course->id) . '?module=' . $fallbackId;
+                    return redirect()->to($target)
+                        ->with('error', 'Course gratis ini hanya membuka 2 modul pertama.');
+                }
+            }
         }
 
         // Gate: only lock the module immediately after an unpassed quiz
@@ -149,6 +176,8 @@ class CourseController extends Controller
             'course' => $course,
             'modules' => $modules,
             'currentModule' => $currentModule,
+            'freeAccessMode' => $freeAccessMode,
+            'freeAccessibleModuleIds' => $freeAccessibleModuleIds,
         ]);
     }
     /**
@@ -280,6 +309,7 @@ class CourseController extends Controller
             'discount_percent' => 'nullable|integer|min:1|max:100',
             'discount_start' => 'nullable|date',
             'discount_end' => 'nullable|date|after_or_equal:discount_start',
+            'free_access_mode' => 'nullable|in:all,limit_2',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
@@ -303,6 +333,7 @@ class CourseController extends Controller
             'level' => $request->level,
             'status' => $request->status,
             'price' => $request->price,
+            'free_access_mode' => $request->input('free_access_mode', 'limit_2'),
             'duration' => $request->duration,
             'media' => $mediaPath,
             'media_type' => $mediaType,
@@ -414,6 +445,11 @@ class CourseController extends Controller
             $request->merge(['modules_payload_new' => json_encode($payloadNewRaw)]);
         }
 
+        $orderUpdatesRaw = $request->input('modules_order_updates');
+        if (is_array($orderUpdatesRaw)) {
+            $request->merge(['modules_order_updates' => json_encode($orderUpdatesRaw)]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -425,6 +461,8 @@ class CourseController extends Controller
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
             'modules_delete_ids' => 'nullable|string',
             'modules_payload_new' => 'nullable|string',
+            'modules_order_updates' => 'nullable|string',
+            'free_access_mode' => 'nullable|in:all,limit_2',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
@@ -436,6 +474,7 @@ class CourseController extends Controller
             'level' => $request->level,
             'status' => $request->status,
             'price' => $request->price,
+            'free_access_mode' => $request->input('free_access_mode', $course->free_access_mode ?? 'limit_2'),
             'duration' => $request->duration,
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
@@ -472,6 +511,21 @@ class CourseController extends Controller
                     Storage::disk('public')->delete($mod->content_url);
                 }
                 $mod->delete();
+            }
+        }
+
+        $orderUpdatesInput = $request->input('modules_order_updates', '{}');
+        $orderUpdates = is_array($orderUpdatesInput) ? $orderUpdatesInput : json_decode((string) $orderUpdatesInput, true);
+        if (is_array($orderUpdates) && !empty($orderUpdates)) {
+            foreach ($orderUpdates as $moduleId => $orderNo) {
+                $moduleId = (int) $moduleId;
+                $orderNo = (int) $orderNo;
+                if ($moduleId <= 0 || $orderNo <= 0) {
+                    continue;
+                }
+                CourseModule::where('course_id', $course->id)
+                    ->where('id', $moduleId)
+                    ->update(['order_no' => $orderNo]);
             }
         }
 

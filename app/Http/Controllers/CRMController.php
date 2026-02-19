@@ -446,4 +446,50 @@ class CRMController extends Controller
             'courseId'
         ));
     }
+
+    /**
+     * Display Support Messages
+     */
+    public function supportMessages(Request $request)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $query = \App\Models\SupportMessage::query();
+
+        // Filter by type
+        if($request->has('type') && $request->type) {
+            $query->where('type', $request->type);
+        }
+
+        // Filter by status
+        if($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $messages = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('admin.crm.support.index', compact('messages'));
+    }
+
+    /**
+     * Update Support Message Status
+     */
+    public function updateSupportStatus(Request $request, \App\Models\SupportMessage $message)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'status' => 'required|in:new,processed,resolved,ignored',
+        ]);
+
+        $message->update(['status' => $request->status]);
+
+        return back()->with('success', 'Status pesan berhasil diperbarui');
+    }
 }
