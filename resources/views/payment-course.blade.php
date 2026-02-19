@@ -248,6 +248,35 @@
             background-color: #e0b120;
         }
 
+        /* Disabled state: keep neutral + prevent hover effect */
+        .btn_bayar_payment:disabled,
+        .btn_bayar_payment[disabled] {
+            background-color: #cbd5e1;
+            color: #ffffff;
+            cursor: not-allowed;
+            opacity: 0.85;
+        }
+        .btn_bayar_payment:disabled:hover,
+        .btn_bayar_payment[disabled]:hover {
+            background-color: #cbd5e1;
+        }
+
+        /* QRIS modal: keep it compact and responsive */
+        .qris-modal .modal-dialog { max-width: 520px; margin: .75rem auto; }
+        .qris-modal .modal-content { border-radius: 16px; overflow: hidden; }
+        .qris-modal .modal-header { padding: .9rem 1rem; }
+        .qris-modal .modal-body { padding: 1rem; }
+        .qris-modal .qris-image {
+            max-width: 100%;
+            height: auto;
+            max-height: 42dvh;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+        }
+        .qris-modal .modal-body p { margin-bottom: .65rem; }
+
     </style>
 </head>
 
@@ -298,8 +327,13 @@
                             <li><a class="dropdown-item" href="#" data-code="+1">+1</a></li>
                         </ul>
                         <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
-                        <input class="input_nomor" type="text" placeholder="No Whatsapp">
+                        <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
                     </div>
+                </div>
+
+                <div class="input_biodata">
+                    <p>Kode Referral <span style="color:#888; font-weight:400;">(opsional)</span></p>
+                    <input class="kolom_input_biodata" type="text" id="referralCodeInput" name="referral_code" placeholder="Masukkan kode referral (jika ada)">
                 </div>
 
                 
@@ -335,13 +369,16 @@
                 </div>
 
                 <!-- Manual payment via QRIS: show QR image modal when clicking Bayar -->
-                <form id="manualPaymentForm" method="POST" action="#">
+                @php
+                    $isFreeCourse = (int) ($course->price ?? 0) <= 0;
+                @endphp
+                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('midtrans.pay', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
-                    <button type="button" id="showQrisBtn" class="btn_bayar_payment">Bayar</button>
+                    <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
                 </form>
             </div>
 
@@ -351,40 +388,74 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- QRIS Modal -->
-    <div class="modal fade" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-                    <div class="modal-body text-center">
-                        <p>Scan QRIS berikut untuk melakukan pembayaran.</p>
-                        <img id="qrisImage" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment" style="max-width:100%; height:auto; border-radius:8px;">
-                        <p class="mt-3">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
-
-                        <!-- Upload bukti pembayaran -->
-                        <form id="uploadProofForm" method="POST" action="/manual-payment/upload/{{ $course->id }}" enctype="multipart/form-data" class="mt-3 text-start">
-                                @csrf
-                                <div class="mb-2">
-                                        <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
-                                        <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required>
-                                </div>
-                                <div id="proofPreview" class="mb-3" style="display:none;">
-                                        <p class="mb-1">Preview bukti:</p>
-                                        <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                        <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>Download QR</a>
-                                        <div>
-                                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Tutup</button>
-                                                <button type="submit" id="payNowBtn" class="btn_bayar_payment">Bayar Sekarang</button>
-                                        </div>
-                                </div>
-                        </form>
+        <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+                    <div class="modal-body text-center">
+                            <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
+
+                            <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
+
+                            <div class="d-grid gap-2 mt-3">
+                                    <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
+                                            Download QR
+                                    </a>
+                                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadProofCollapse" aria-expanded="false" aria-controls="uploadProofCollapse">
+                                            Saya sudah bayar, upload bukti
+                                    </button>
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                            </div>
+
+                            <div class="collapse mt-3 text-start" id="uploadProofCollapse">
+                                    <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                                            <p class="mb-2 text-secondary">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
+
+                                            <!-- Upload bukti pembayaran -->
+                                                <form id="uploadProofForm" method="POST" action="{{ route('courses.manual-payment.upload', $course) }}" enctype="multipart/form-data">
+                                                    @csrf
+                                                    <input type="hidden" name="whatsapp" id="formWhatsappFullInput">
+                                                    <input type="hidden" name="referral_code" id="formReferralCodeInput">
+
+                                                    <div class="mb-2">
+                                                            <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
+                                                            <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required>
+                                                    </div>
+                                                    <div id="proofPreview" class="mb-3" style="display:none;">
+                                                            <p class="mb-1">Preview bukti:</p>
+                                                            <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
+                                                    </div>
+
+                                                    <button type="submit" id="payNowBtn" class="btn_bayar_payment">Bayar Sekarang</button>
+                                            </form>
+                                    </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+
+    <!-- Confirm proof submission Modal -->
+    <div class="modal fade" id="confirmProofModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi Bukti Pembayaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1 fw-semibold">Yakin untuk bukti pembayaran sudah benar?</p>
+                    <p class="mb-0 text-danger">Tindakan ini tidak dapat dibatalkan!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" id="confirmProofSubmitBtn" class="btn btn-primary">Ya, kirim</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -393,9 +464,33 @@
             var kodeDialMenu = document.getElementById('kodeDialMenu');
             var kodeDialInput = document.getElementById('kodeDialInput');
             var formKodeDialInput = document.getElementById('formKodeDialInput');
-            var whatsappInput = document.querySelector('.input_nomor');
+            var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
             var formWhatsappInput = document.getElementById('formWhatsappInput');
+            var referralCodeInput = document.getElementById('referralCodeInput');
+            var formReferralCodeInput = document.getElementById('formReferralCodeInput');
+            var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
             var showQrisBtn = document.getElementById('showQrisBtn');
+            var manualPaymentForm = document.getElementById('manualPaymentForm');
+            var uploadProofForm = document.getElementById('uploadProofForm');
+            var confirmProofModalEl = document.getElementById('confirmProofModal');
+            var confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
+            var pendingProofSubmit = false;
+
+            var isFreeCourse = false;
+            if (manualPaymentForm) {
+                isFreeCourse = (manualPaymentForm.getAttribute('data-is-free') || '0') === '1';
+            }
+
+            function normalizePhone(value) {
+                return (value || '').replace(/[^0-9]/g, '');
+            }
+
+            function updatePayButtonState() {
+                if (!showQrisBtn) return;
+                var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
+                // For free course, allow without WhatsApp. For paid, WhatsApp is required.
+                showQrisBtn.disabled = (!isFreeCourse) && (wa.length === 0);
+            }
 
             // Show dropdown on button click
             if (kodeDialBtn) {
@@ -424,21 +519,100 @@
                 });
             }
 
+            // Enable/disable Bayar button based on required fields
+            updatePayButtonState();
+            if (whatsappInput) {
+                whatsappInput.addEventListener('input', updatePayButtonState);
+                whatsappInput.addEventListener('blur', updatePayButtonState);
+            }
+
             // Show QRIS modal when clicking bayar
             if (showQrisBtn) {
                 showQrisBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+                    // guard (in case button enabled state is bypassed)
+                    updatePayButtonState();
+                    if (showQrisBtn.disabled) {
+                        alert('Silakan isi No Whatsapp terlebih dahulu.');
+                        try { whatsappInput && whatsappInput.focus(); } catch(err) {}
+                        return;
+                    }
                     if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
+                    if (formReferralCodeInput) formReferralCodeInput.value = referralCodeInput ? referralCodeInput.value.trim() : '';
+                    if (formWhatsappFullInput) {
+                        var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
+                        var waRaw = whatsappInput ? whatsappInput.value : '';
+                        formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
+                    }
+
+                    // Free course: submit directly to enroll (no QRIS / no admin validation)
+                    if (isFreeCourse) {
+                        try {
+                            if (manualPaymentForm && manualPaymentForm.getAttribute('action') && manualPaymentForm.getAttribute('action') !== '#') {
+                                manualPaymentForm.submit();
+                                return;
+                            }
+                        } catch (_e) {
+                            // fallthrough to default behavior
+                        }
+                    }
 
                     var qrisEl = document.getElementById('qrisModal');
                     if (qrisEl && window.bootstrap) {
                         var qrisModal = new window.bootstrap.Modal(qrisEl);
+                        // keep modal compact on open
+                        try {
+                            var collapseEl = document.getElementById('uploadProofCollapse');
+                            if (collapseEl && window.bootstrap.Collapse) {
+                                var collapse = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+                                collapse.hide();
+                            }
+                            var paymentProofInputEl = document.getElementById('paymentProofInput');
+                            var proofPreviewEl = document.getElementById('proofPreview');
+                            if (paymentProofInputEl) paymentProofInputEl.value = '';
+                            if (proofPreviewEl) proofPreviewEl.style.display = 'none';
+                        } catch(e) {}
                         qrisModal.show();
                     } else if (qrisEl) {
                         qrisEl.classList.add('show');
                         qrisEl.style.display = 'block';
                         document.body.classList.add('modal-open');
+                    }
+                });
+            }
+
+            // Confirm modal before submitting payment proof
+            if (uploadProofForm && confirmProofModalEl && window.bootstrap) {
+                uploadProofForm.addEventListener('submit', function(e) {
+                    if (pendingProofSubmit) return;
+                    e.preventDefault();
+
+                    // sync latest inputs to hidden fields
+                    if (formReferralCodeInput) formReferralCodeInput.value = referralCodeInput ? referralCodeInput.value.trim() : '';
+                    if (formWhatsappFullInput) {
+                        var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
+                        var waRaw = whatsappInput ? whatsappInput.value : '';
+                        formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
+                    }
+
+                    var m = window.bootstrap.Modal.getOrCreateInstance(confirmProofModalEl);
+                    m.show();
+                });
+
+                if (confirmProofSubmitBtn) {
+                    confirmProofSubmitBtn.addEventListener('click', function() {
+                        if (pendingProofSubmit) return;
+                        pendingProofSubmit = true;
+                        try { confirmProofSubmitBtn.disabled = true; } catch (e) {}
+                        uploadProofForm.submit();
+                    });
+                }
+
+                confirmProofModalEl.addEventListener('hidden.bs.modal', function() {
+                    pendingProofSubmit = false;
+                    if (confirmProofSubmitBtn) {
+                        try { confirmProofSubmitBtn.disabled = false; } catch (e) {}
                     }
                 });
             }
@@ -482,6 +656,8 @@
                         alert('Silakan pilih file bukti pembayaran terlebih dahulu.');
                         return;
                     }
+                    // ensure latest referral code value is posted
+                    if (formReferralCodeInput) formReferralCodeInput.value = referralCodeInput ? referralCodeInput.value.trim() : '';
                     payNowBtn.disabled = true;
                     payNowBtn.textContent = 'Mengirim...';
                 });

@@ -15,6 +15,14 @@
 <body>
     @include('partials.navbar-admin-course')
     @if(session('success'))
+        <div class="container mt-3">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    @endif
+    @if(session('success'))
     <div aria-live="polite" aria-atomic="true" class="position-relative">
         <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
             <div id="courseUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
@@ -88,6 +96,7 @@
                         <th>Level</th>
                         <th>Harga</th>
                         <th>Status Kelengkapan</th>
+                        <th>Pembayaran</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -108,6 +117,111 @@
                             <button class="status_kelengkapan_miss">Missing Material</button>
                             @else
                             <button class="status_kelengkapan_inprogress">In Progress</button>
+                            @endif
+                        </td>
+                        <td>
+                            @php
+                                $coursePayments = $course->manualPayments ?? collect();
+                                $countPending = $coursePayments->where('status', 'pending')->count();
+                                $countApproved = $coursePayments->where('status', 'settled')->count();
+                                $countRejected = $coursePayments->where('status', 'rejected')->count();
+                            @endphp
+
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <span class="badge text-bg-warning">Pending: {{ $countPending }}</span>
+                                <span class="badge text-bg-success">Approved: {{ $countApproved }}</span>
+                                <span class="badge text-bg-danger">Rejected: {{ $countRejected }}</span>
+                            </div>
+
+                            @if($coursePayments->count() > 0)
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
+                                    Lihat user
+                                </button>
+
+                                <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>User</th>
+                                                                <th>WhatsApp</th>
+                                                                <th>Referral</th>
+                                                                <th>Status</th>
+                                                                <th>Bukti</th>
+                                                                <th>Aksi</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($coursePayments->sortByDesc('created_at') as $payment)
+                                                                @php
+                                                                    $proof = $payment->proofs->sortByDesc('created_at')->first();
+                                                                    $status = $payment->status;
+                                                                    $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
+                                                                    $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
+                                                                @endphp
+                                                                <tr>
+                                                                    <td>
+                                                                        <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
+                                                                        <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
+                                                                    </td>
+                                                                    <td>{{ $payment->whatsapp_number ?? '-' }}</td>
+                                                                    <td>{{ $payment->referral_code ?: '-' }}</td>
+                                                                    <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
+                                                                    <td>
+                                                                        @if($proof)
+                                                                            @php
+                                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
+                                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
+                                                                                    $proofPath = substr($proofPath, strlen('uploads/'));
+                                                                                }
+                                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
+                                                                            @endphp
+                                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
+                                                                        @else
+                                                                            <span class="text-muted">-</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td>
+                                                                        <form method="POST" class="d-flex flex-wrap gap-1 m-0">
+                                                                            @csrf
+                                                                            <button type="submit" class="btn btn-sm btn-success"
+                                                                                formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
+                                                                                onclick="return confirm('Approve pembayaran ini?')">
+                                                                                Approve
+                                                                            </button>
+                                                                            <button type="submit" class="btn btn-sm btn-danger"
+                                                                                formaction="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
+                                                                                onclick="return confirm('Reject pembayaran ini?')">
+                                                                                Reject
+                                                                            </button>
+                                                                            <button type="submit" class="btn btn-sm btn-warning"
+                                                                                formaction="{{ route('admin.courses.manual-payments.pending', [$course, $payment]) }}"
+                                                                                onclick="return confirm('Set ke pending lagi?')">
+                                                                                Pending
+                                                                            </button>
+                                                                        </form>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
                             @endif
                         </td>
                         <td>
@@ -160,7 +274,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center text-muted">Belum ada course.</td>
+                        <td colspan="6" class="text-center text-muted">Belum ada course.</td>
                     </tr>
                     @endforelse
                 </tbody>

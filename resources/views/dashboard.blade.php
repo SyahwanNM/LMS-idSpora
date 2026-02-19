@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard Learner</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
@@ -358,7 +359,7 @@
                                                     class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
                                             </div>
                                         </div>
-                                    </div>
+                                </div>
                                 </div>
                             @empty
                                 <div class="text-center py-4 w-100">
@@ -487,7 +488,7 @@
 
                                         <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
                                             style="background:#f8f9fa;">
-                                            <span class="small fw-bold text-muted">Mulai:</span>
+                                            <span class="small fw-bold text-muted">Mulai dalam:</span>
                                             <span class="font-monospace px-2 py-1 rounded"
                                                 style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">
                                                 {{ $event->event_date ?
@@ -622,10 +623,10 @@
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="fw-bold mb-0" style="color: var(--navy);">Waktu Belajar</h5>
-                            <select class="form-select form-select-sm border-0 bg-light rounded-pill"
+                            <select id="learningRange" class="form-select form-select-sm border-0 bg-light rounded-pill"
                                 style="width: auto; font-size: 12px; font-weight: 500;">
-                                <option>Minggu Ini</option>
-                                <option>Bulan Ini</option>
+                                <option value="week" selected>Minggu Ini</option>
+                                <option value="month">Bulan Ini</option>
                             </select>
                         </div>
 
@@ -700,24 +701,29 @@
         document.addEventListener("DOMContentLoaded", function () {
             const ctx = document.getElementById('learningChart').getContext('2d');
 
-            // Data Riil (Jam Belajar)
-            const dataValues = @json($learningChartData);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const rangeSelect = document.getElementById('learningRange');
+            const chartUrl = "{{ route('learning-time.chart') }}";
+
+            // Initial fallback data (server rendered)
+            const initialDataValues = @json($learningChartData);
+            const initialLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
             // Logika Warna (High value berwarna cerah, low berwarna gelap/abu)
-            const backgroundColors = dataValues.map((value) => {
+            const toBackgroundColors = (values) => values.map((value) => {
                 if (value > 2) return '#f4c430'; // Secondary/Yellow (High intensity)
                 if (value > 0) return '#51376c'; // Primary/Purple (Active)
                 return '#e2e8f0'; // Grey (Inactive)
             });
 
-            new Chart(ctx, {
+            const chart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                    labels: initialLabels,
                     datasets: [{
                         label: 'Jam Belajar',
-                        data: dataValues,
-                        backgroundColor: backgroundColors,
+                        data: initialDataValues,
+                        backgroundColor: toBackgroundColors(initialDataValues),
                         borderRadius: 8, // Membuat sudut bar membulat
                         borderSkipped: false,
                         barThickness: 25, // Lebar batang
@@ -770,6 +776,50 @@
                     }
                 }
             });
+
+            const fetchChartData = async (range) => {
+                try {
+                    const url = new URL(chartUrl, window.location.origin);
+                    url.searchParams.set('range', range || 'week');
+
+                    const res = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                        },
+                        credentials: 'same-origin',
+                    });
+
+                    if (!res.ok) return;
+                    const payload = await res.json();
+                    if (!payload?.ok) return;
+
+                    const labels = Array.isArray(payload.labels) ? payload.labels : initialLabels;
+                    const values = Array.isArray(payload.data) ? payload.data : initialDataValues;
+
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = values;
+                    chart.data.datasets[0].backgroundColor = toBackgroundColors(values);
+                    chart.update('none');
+                } catch (e) {
+                    // Silent fail: keep last known chart
+                }
+            };
+
+            if (rangeSelect) {
+                rangeSelect.addEventListener('change', function () {
+                    fetchChartData(rangeSelect.value);
+                });
+            }
+
+            // First refresh (so it becomes "realtime" data)
+            fetchChartData(rangeSelect?.value || 'week');
+
+            // Polling refresh to keep it up-to-date
+            window.setInterval(() => {
+                fetchChartData(rangeSelect?.value || 'week');
+            }, 30000);
         });
 
         function toggleSaveEvent(btn) {

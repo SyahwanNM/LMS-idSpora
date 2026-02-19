@@ -9,7 +9,9 @@ use App\Models\EventRegistration;
 use App\Models\Carousel;
 use App\Models\Enrollment;
 use App\Models\Progress;
+use App\Models\LearningTimeDaily;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -95,41 +97,75 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Get learning statistics (hours spent per day in current week)
+        // Get learning statistics (hours spent per day in current week).
+        // Primary source: realtime learning-time aggregation table.
+        // Fallback: approximate from completed modules' duration (legacy behavior).
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
-        
-        $learningProgress = Progress::query()
-            ->whereHas('enrollment', function($q) {
-                $q->where('user_id', Auth::id());
-            })
-            ->where('completed', true)
-            ->whereBetween('updated_at', [$startOfWeek, $endOfWeek])
-            ->with('module:id,duration')
+
+        $labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+        $dailyLearning = array_fill_keys($labels, 0.0);
+
+        $rows = LearningTimeDaily::query()
+            ->select('learned_on', DB::raw('SUM(seconds) as total_seconds'))
+            ->where('user_id', Auth::id())
+            ->whereBetween('learned_on', [$startOfWeek->toDateString(), $endOfWeek->toDateString()])
+            ->groupBy('learned_on')
             ->get();
-            
-        $dailyLearning = [
-            'Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0, 'Sab' => 0, 'Min' => 0
+
+        $labelByIsoDow = [
+            1 => 'Sen',
+            2 => 'Sel',
+            3 => 'Rab',
+            4 => 'Kam',
+            5 => 'Jum',
+            6 => 'Sab',
+            7 => 'Min',
         ];
-        
-        $dayMap = [
-            1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 0 => 'Min'
-        ];
-        
-        foreach ($learningProgress as $record) {
-            $day = $record->updated_at->dayOfWeek;
-            $dayName = $dayMap[$day];
-            // Duration is in seconds, convert to hours (round to 1 decimal)
-            $durationHours = ($record->module->duration ?? 0) / 3600;
-            $dailyLearning[$dayName] += $durationHours;
-        }
-        
-        // Format to 1 decimal place
-        foreach ($dailyLearning as $day => $value) {
-            $dailyLearning[$day] = (float) number_format($value, 1);
+
+        foreach ($rows as $row) {
+            $date = Carbon::parse($row->learned_on);
+            $label = $labelByIsoDow[$date->isoWeekday()] ?? null;
+            if (!$label) {
+                continue;
+            }
+            $hours = ((int) $row->total_seconds) / 3600;
+            $dailyLearning[$label] = (float) number_format($hours, 1);
         }
 
         $learningChartData = array_values($dailyLearning);
+
+        // Fallback to legacy approximation if we don't have realtime logs yet.
+        if (array_sum($learningChartData) == 0.0) {
+            $learningProgress = Progress::query()
+                ->whereHas('enrollment', function ($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->where('completed', true)
+                ->whereBetween('updated_at', [$startOfWeek, $endOfWeek])
+                ->with('module:id,duration')
+                ->get();
+
+            $dayMap = [
+                1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 0 => 'Min'
+            ];
+
+            foreach ($learningProgress as $record) {
+                $day = $record->updated_at->dayOfWeek;
+                $dayName = $dayMap[$day] ?? null;
+                if (!$dayName) {
+                    continue;
+                }
+                $durationHours = ($record->module->duration ?? 0) / 3600;
+                $dailyLearning[$dayName] += $durationHours;
+            }
+
+            foreach ($dailyLearning as $day => $value) {
+                $dailyLearning[$day] = (float) number_format($value, 1);
+            }
+
+            $learningChartData = array_values($dailyLearning);
+        }
 
         // Get popular topics (categories with most enrollments)
         $popularTopics = \App\Models\Category::query()
