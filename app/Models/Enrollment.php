@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Enrollment extends Model
 {
@@ -35,6 +36,37 @@ class Enrollment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * Get the progress records for this enrollment.
+     */
+    public function progress()
+    {
+        return $this->hasMany(Progress::class);
+    }
+
+    /**
+     * Calculate the progress percentage of the course.
+     */
+    public function getProgressPercentage(): int
+    {
+        if (!$this->relationLoaded('course') || !$this->course) {
+            return 0;
+        }
+
+        $totalModules = $this->course->relationLoaded('modules')
+            ? $this->course->modules->count()
+            : $this->course->modules()->count();
+        if ($totalModules === 0) {
+            return 0;
+        }
+
+        $completedModules = $this->relationLoaded('progress')
+            ? $this->progress->where('completed', true)->count()
+            : $this->progress()->where('completed', true)->count();
+        
+        return (int) round(($completedModules / $totalModules) * 100);
     }
 }
 

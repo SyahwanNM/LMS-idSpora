@@ -18,7 +18,7 @@
   :root {
     --navy: #252346;
     --white: #FFFFFF;
-    --primary-dark: #333333;
+    --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
   }
@@ -30,12 +30,23 @@
   .course-hero {
     background: var(--navy);
     height: fit-content;
+    padding-top: 90px;
     padding-bottom: 20px;
+  }
+
+  .hero-inner {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
   }
 
   .title-course-hero {
     color: var(--white);
-    margin: 20px 345px 0 60px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 60px auto 0;
+    padding: 0 20px;
   }
 
   .sub-title {
@@ -66,8 +77,9 @@
 
   .course-body {
     max-width: 1200px;
-    margin: 20px 10px 10px 60px;
-    padding: 0;
+    width: 100%;
+    margin: 20px auto 10px;
+    padding: 0 20px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
     gap: 24px;
@@ -465,8 +477,17 @@
   }
 
   @media (max-width: 992px) {
+    .hero-inner {
+      padding: 0 15px;
+    }
+
+    .title-course-hero {
+      padding: 0 15px;
+    }
+
     .course-body {
       grid-template-columns: 1fr;
+      padding: 0 15px;
     }
 
     .sidebar .kanan {
@@ -585,7 +606,7 @@
   
   <section class="course-hero">
     <nav aria-label="breadcrumb">
-      <div class="container" style="margin-left: 50px; margin-top: 2px;">
+      <div class="hero-inner" style="margin-top: 0;">
         <div style="color:#fff; font-size:15px; font-weight:500;">
           <span><a href="{{ route('dashboard') }}" style="color:#fff; text-decoration:none;">Home</a></span>
           <span style="margin: 0 7px;">/</span>
@@ -648,87 +669,138 @@
   <section class="course-body">
     <div class="main-col">
 
-      <div class="video-container">
-        <div id="video-wrapper"></div>
-      </div>
-      <div class="content-description">
-        @php
-          $progressTotal = $course->modules->count();
-          $progressCompleted = 0;
-          if(auth()->check()) {
-              try {
-                  $quizCompleted = \App\Models\QuizAttempt::where('user_id', auth()->id())
-                      ->whereIn('course_module_id', $course->modules->pluck('id'))
-                      ->whereNotNull('completed_at')
-                      ->distinct('course_module_id')
-                      ->count();
-              } catch (\Throwable $e) {
-                  $quizCompleted = 0;
-              }
-              $progressCompleted = $quizCompleted;
-          }
-          $progressPercent = $progressTotal > 0 ? round(($progressCompleted / $progressTotal) * 100) : 0;
-        @endphp
+      @php
+        $previewMedia = $course->media ?? null;
+        $previewMediaType = $previewMedia ? strtolower(pathinfo((string) $previewMedia, PATHINFO_EXTENSION)) : '';
 
-        <div class="course-progress-card" style="margin-bottom:16px;">
-          <div style="background:#fff;border:1px solid #E4E4E6;padding:14px;border-radius:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="font-weight:600;color:#111827;">Course Progress</div>
-              <div style="color:#6c6c6c;font-size:14px;">{{ $progressCompleted }} / {{ $progressTotal }}</div>
-            </div>
-            <div style="background:#f3f3f3;border-radius:8px;height:10px;overflow:hidden;">
-              <div style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;"></div>
-            </div>
+        if (is_string($previewMedia) && $previewMedia !== '') {
+          if (str_starts_with($previewMedia, 'http://') || str_starts_with($previewMedia, 'https://')) {
+            $previewMediaUrl = $previewMedia;
+          } else {
+            $normalized = ltrim($previewMedia, '/');
+            if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
+              $normalized = substr($normalized, strlen('uploads/'));
+            }
+            $previewMediaUrl = asset('uploads/' . $normalized);
+          }
+        } else {
+          $previewMediaUrl = null;
+        }
+      @endphp
+
+      <div class="video-container">
+        <div id="video-wrapper"
+             data-media-url="{{ $previewMediaUrl ?? '' }}"
+             data-media-type="{{ $previewMediaType }}"></div>
+      </div>
+
+      @php
+        $progressTotal = $course->modules->count();
+        $progressCompleted = 0;
+        if(auth()->check()) {
+          $moduleIds = $course->modules
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->values()
+            ->all();
+
+          $completedModuleIds = [];
+          $passedQuizModuleIds = [];
+
+          try {
+            $enrollment = \App\Models\Enrollment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->first();
+
+            if ($enrollment && !empty($moduleIds)) {
+              $completedModuleIds = \App\Models\Progress::query()
+                ->where('enrollment_id', $enrollment->id)
+                ->where('completed', true)
+                ->whereIn('course_module_id', $moduleIds)
+                ->pluck('course_module_id')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->all();
+            }
+
+            $passingPercent = 75;
+            $quizModuleIds = $course->modules
+              ->filter(fn($m) => strtolower(trim((string) ($m->type ?? ''))) === 'quiz')
+              ->pluck('id')
+              ->map(fn($id) => (int) $id)
+              ->values()
+              ->all();
+
+            if (!empty($quizModuleIds)) {
+              $passedQuizModuleIds = \App\Models\QuizAttempt::query()
+                ->where('user_id', auth()->id())
+                ->whereIn('course_module_id', $quizModuleIds)
+                ->whereNotNull('completed_at')
+                ->where('total_questions', '>', 0)
+                ->whereRaw('(correct_answers * 100) >= (total_questions * ?)', [$passingPercent])
+                ->select('course_module_id')
+                ->distinct()
+                ->pluck('course_module_id')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->all();
+            }
+          } catch (\Throwable $e) {
+            // Keep defaults
+          }
+
+          $progressCompleted = count(array_values(array_unique(array_merge($completedModuleIds, $passedQuizModuleIds))));
+        }
+        $progressPercent = $progressTotal > 0 ? round(($progressCompleted / $progressTotal) * 100) : 0;
+      @endphp
+
+      <div class="course-progress-card" style="margin:16px 0;">
+        <div style="background:#fff;border:1px solid #E4E4E6;padding:14px;border-radius:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-weight:600;color:#111827;">Course Progress</div>
+            <div style="color:#6c6c6c;font-size:14px;">{{ $progressCompleted }} / {{ $progressTotal }}</div>
+          </div>
+          <div style="background:#f3f3f3;border-radius:8px;height:10px;overflow:hidden;">
+            <div style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;"></div>
           </div>
         </div>
+      </div>
 
+      <div class="content-description">
         <div class="content-description-title">
-          <button class="tab-btn" data-tab="overview">Overview</button>
-          <button class="tab-btn active" data-tab="syllabus">Syllabus</button>
+          <button class="tab-btn active" data-tab="overview">Overview</button>
+          <button class="tab-btn" data-tab="syllabus">Syllabus</button>
           <button class="tab-btn" data-tab="review">Review</button>
         </div>
-        <div class="tab-content" id="overview">
+        <div class="tab-content active" id="overview">
           <h5>Overview</h5>
             <p>
               {!! $course->description !!}
             </p>
         </div>
-        <div class="tab-content active" id="syllabus">
-          <h5>Syllabus</h5>
+        <div class="tab-content" id="syllabus">
           <div class="syllabus-list">
-            <div class="syllabus-dropdown-item">
-              <details>
-                <summary>Pengenalan Dasar Pemrograman</summary>
-                <ul style="counter-reset: lesson-counter;">
-                  <li>Apa itu Pemrograman</li>
-                  <li>Mengenal Python</li>
-                  <li>Instalasi Python & IDE (VSCode, PyCharm)</li>
-                  <li>Hello World</li>
-                </ul>
-              </details>
-            </div>
-            <div class="syllabus-dropdown-item">
-              <details>
-                <summary>Pengenalan Dasar Pemrograman</summary>
-                <ul style="counter-reset: lesson-counter;">
-                  <li>Apa itu Pemrograman</li>
-                  <li>Mengenal Python</li>
-                  <li>Instalasi Python & IDE (VSCode, PyCharm)</li>
-                  <li>Hello World</li>
-                </ul>
-              </details>
-            </div>
-            <div class="syllabus-dropdown-item">
-              <details>
-                <summary>Pengenalan Dasar Pemrograman</summary>
-                <ul style="counter-reset: lesson-counter;">
-                  <li>Apa itu Pemrograman</li>
-                  <li>Mengenal Python</li>
-                  <li>Instalasi Python & IDE (VSCode, PyCharm)</li>
-                  <li>Hello World</li>
-                </ul>
-              </details>
-            </div>
+            @forelse($course->modules as $module)
+              @php
+                $moduleTitle = $module->title ?? 'Materi';
+                $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
+              @endphp
+              <div class="syllabus-dropdown-item">
+                <details>
+                  <summary>{{ $moduleTitle }}</summary>
+                  <ul style="counter-reset: lesson-counter;">
+                    @if($moduleDesc !== '')
+                      <li>{{ Str::limit($moduleDesc, 160) }}</li>
+                    @else
+                      <li class="text-muted">Deskripsi belum tersedia.</li>
+                    @endif
+                  </ul>
+                </details>
+              </div>
+            @empty
+              <div class="text-muted">Belum ada modul pada course ini.</div>
+            @endforelse
           </div>
         </div>
         <div class="tab-content" id="review">
@@ -824,7 +896,7 @@
                 <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
               </svg>
               <p class="date-judul">Course Duration</p>
-              <p class="date-text">12 Jam</p>
+              <p class="date-text">{{ ($course->duration ?? 0) > 0 ? ($course->duration . ' Jam') : '-' }}</p>
             </div>
             <div class="level">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bar-chart"
@@ -833,7 +905,7 @@
                   d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
               </svg>
               <p class="level-judul">Course Level</p>
-              <p class="level-text">Beginner</p>
+              <p class="level-text">{{ $levelLabel ?? ucfirst((string) ($course->level ?? '-')) }}</p>
             </div>
             <div class="location">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people"
@@ -842,11 +914,10 @@
                   d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
               </svg>
               <p class="location-judul">Students Enrolled</p>
-              <p class="location-text">190</p>
+              <p class="location-text">{{ $course->students_count ?? 0 }}</p>
             </div>
             <div class="bahasa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#
-                                                A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 20 20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 20 20">
                 <path
                   d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
                 <path
@@ -855,7 +926,7 @@
                   d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
               </svg>
               <p class="bahasa-judul">Language</p>
-              <p class="bahasa-text">Indonesia</p>
+              <p class="bahasa-text">{{ $courseLanguage ?? 'Indonesia' }}</p>
             </div>
             <div class="sertifikat">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="var(--secondary)"
@@ -864,18 +935,33 @@
                   d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783" />
               </svg>
               <p class="sertifikat-judul">Certificate</p>
-              <p class="sertifikat-text">Include</p>
+              <p class="sertifikat-text">{{ $certificateLabel ?? 'Include' }}</p>
             </div>
           </div>
           <hr>
           @php
-            $enrolled = false;
+            $canLearn = false;
             if (auth()->check()) {
-                $enrolled = \App\Models\Enrollment::where('user_id', auth()->id())->where('course_id', $course->id)->exists();
+                $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'active')
+                    ->exists();
+
+                $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'settled')
+                    ->exists();
+
+              $hasMidtransSettledPayment = \App\Models\Payment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->whereIn('status', ['capture','settlement'])
+                ->exists();
+
+              $canLearn = $enrolledActive || $hasSettledPayment || $hasMidtransSettledPayment;
             }
           @endphp
-          @if($enrolled)
-            <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Start Learn</a>
+          @if($canLearn)
+            <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @endif
@@ -933,26 +1019,36 @@
         </div>
         <hr>
         <div class="share-box mt-4">
+          @php
+            $shareUrl = route('course.detail', $course->id);
+            $shareTitle = $course->name ?? 'Course';
+            $shareText = 'Cek course: ' . $shareTitle;
+            $shareMessage = $shareText . ' - ' . $shareUrl;
+            $shareUrlEnc = rawurlencode($shareUrl);
+            $shareTextEnc = rawurlencode($shareText);
+            $shareMessageEnc = rawurlencode($shareMessage);
+            $mailSubjectEnc = rawurlencode('Cek course: ' . $shareTitle);
+          @endphp
           <p class="fw-semibold">Share this course:</p>
           <div class="box-copy">
-            <button class="copy-btn" type="button" onclick="copyLink()">
+            <button class="copy-btn" type="button" onclick="copyLink('{{ $shareUrl }}')" aria-label="Copy course link">
               <i class="bi bi-clipboard"></i>
               <span>Copy Link</span>
             </button>
 
-            <a href="#" class="share-ico" aria-label="Share to Facebook">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to Facebook">
               <i class="bi bi-facebook"></i>
             </a>
 
-            <a href="#" class="share-ico" aria-label="Share to X/Twitter">
+            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
               <i class="bi bi-twitter"></i>
             </a>
 
-            <a href="mailto:?subject=Check this course" class="share-ico" aria-label="Share via Email">
+            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico" aria-label="Share via Email">
               <i class="bi bi-envelope"></i>
             </a>
 
-            <a href="https://wa.me/?text=Check this course" target="_blank" class="share-ico"
+            <a href="https://wa.me/?text={{ $shareMessageEnc }}" target="_blank" rel="noopener" class="share-ico"
               aria-label="Share to WhatsApp">
               <i class="bi bi-whatsapp"></i>
             </a>
@@ -964,6 +1060,39 @@
 
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script>
+    function copyLink(url) {
+      const text = url || window.location.href;
+      const done = () => {
+        // Simple feedback without changing layout
+        try { alert('Link berhasil disalin'); } catch (e) {}
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.top = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          document.body.removeChild(ta);
+        });
+        return;
+      }
+
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
 
       // --- DATA VIDEO DARI DB ---
@@ -971,13 +1100,8 @@
       let playerElement;
 
       // Ambil data video dari Blade
-      const mediaRaw = @json($course->media);
-      const mediaType = @json(pathinfo($course->media, PATHINFO_EXTENSION));
-      let media = mediaRaw;
-      // Jika file lokal, gunakan Storage::url
-      @if($course->media && !Str::contains($course->media, ['youtube.com', 'youtu.be']))
-        media = @json(Storage::url($course->media));
-      @endif
+      const media = videoWrapper?.dataset?.mediaUrl || '';
+      const mediaType = videoWrapper?.dataset?.mediaType || '';
 
       function getYoutubeId(url) {
         // Regex untuk ambil ID YouTube
@@ -1028,8 +1152,10 @@
       const contents = document.querySelectorAll(".tab-content");
 
       // Atur tab 'Overview' sebagai default saat halaman dimuat
-      document.getElementById('overview').classList.add('active');
-      document.querySelector('.tab-btn[data-tab="overview"]').classList.add('active');
+      tabs.forEach(btn => btn.classList.remove('active'));
+      contents.forEach(content => content.classList.remove('active'));
+      document.getElementById('overview')?.classList.add('active');
+      document.querySelector('.tab-btn[data-tab="overview"]')?.classList.add('active');
 
       tabs.forEach(tab => {
         tab.addEventListener("click", () => {

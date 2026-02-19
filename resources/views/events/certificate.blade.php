@@ -1,96 +1,101 @@
-@include('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate - {{ $event->title }}</title>
+    <title>Sertifikat - {{ $event->title }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css','resources/js/app.js'])
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body{background:#f1f5f9;font-family:'Poppins',sans-serif;}
-        .cert-container{max-width:1000px;margin:90px auto 50px;padding:40px 46px;background:#fff;box-shadow:0 8px 30px -10px rgba(0,0,0,.15);border-radius:26px;}
-        .cert-header{text-align:center;margin-bottom:34px;}
-        .cert-header h1{font-size:42px;font-weight:700;letter-spacing:1px;margin-bottom:6px;}
-        .cert-divider{height:4px;background:linear-gradient(90deg,#535088,#f4c430);width:240px;margin:14px auto 0;border-radius:4px;}
-        .cert-body{margin-top:20px;text-align:center;}
-        .cert-body h2{font-size:28px;font-weight:600;margin:18px 0 6px;}
-        .cert-body p.lead{font-size:16px;color:#475569;margin-bottom:12px;}
-        .cert-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:22px;margin-top:30px;}
-        .meta-box{background:#f8fafc;border:1px solid #e2e8f0;padding:14px 20px;border-radius:14px;min-width:200px;text-align:left;}
-        .meta-box h6{font-size:11px;font-weight:600;color:#64748b;margin:0 0 4px;letter-spacing:.7px;text-transform:uppercase;}
-        .meta-box p{margin:0;font-weight:500;color:#0f172a;}
-        .actions{margin-top:38px;display:flex;flex-wrap:wrap;gap:14px;justify-content:center;}
-        .actions a{padding:12px 22px;font-weight:600;text-decoration:none;border-radius:14px;}
-        .btn-back{background:#334155;color:#fff;}
-        .btn-back:hover{background:#1e293b;color:#f4d24b;}
-        .btn-download{background:#f4c430;color:#000;}
-        .btn-download:hover{filter:brightness(.9);}
-        .badge-number{display:inline-block;margin-top:20px;background:#535088;color:#f4d24b;padding:8px 18px;font-weight:600;border-radius:40px;letter-spacing:1px;}
-        @media(max-width:768px){
-            .cert-container{padding:28px 22px;}
-            .cert-header h1{font-size:34px;}
-            .cert-body h2{font-size:24px;}
+        body { 
+            background: #f1f5f9; 
+            font-family: 'Inter', sans-serif; 
+            padding-top: 120px; /* Increased spacer for fixed premium navbar */
+            margin: 0;
         }
+        .preview-wrapper { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        .paper-container {
+            width: 100%;
+            aspect-ratio: 1.414 / 1;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            /* Scale logic */
+            --base-width: 1122; /* 29.7cm at 96dpi approx */
+        }
+
+        .cert-scaler {
+            transform-origin: top left;
+            width: 29.7cm;
+            height: 21cm;
+        }
+
+        /* Responsive scaling */
+        @media (min-width: 1200px) { .cert-scaler { transform: scale(1.01); } }
+        @media (max-width: 1199px) { .cert-scaler { transform: scale(0.85); } }
+        @media (max-width: 991px) { .cert-scaler { transform: scale(0.6); } }
+        @media (max-width: 767px) { .cert-scaler { transform: scale(0.4); } }
+        @media (max-width: 480px) { .cert-scaler { transform: scale(0.28); } }
+        
+        .text-navy { color: #1e1b4b; }
     </style>
 </head>
 <body>
-    <div class="link-box mb-3" style="margin-top:80px;">
-        <a href="{{ route('dashboard') }}">Home</a><p>/</p>
-        <a href="{{ route('events.index') }}">Event</a><p>/</p>
-        <a href="{{ route('events.show',$event) }}">Detail</a><p>/</p>
-        <a class="active" href="#">Certificate</a>
-    </div>
-    <div class="cert-container">
-        <div class="cert-header position-relative">
-            <h1>Sertifikat Kehadiran</h1>
-            <div class="cert-divider"></div>
-            <div class="badge-number">{{ $certificateNumber }}</div>
-            @if(!$certificateReady)
-                <div style="position:absolute;top:12px;left:24px;background:#f59e0b;color:#1e293b;font-size:12px;font-weight:600;padding:6px 14px;border-radius:30px;">PREVIEW MODE</div>
-            @endif
-            @if(!$certificateReady)
-                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);font-size:68px;font-weight:700;color:rgba(83,80,136,0.09);pointer-events:none;white-space:nowrap;">PREVIEW</div>
-            @endif
-        </div>
-        <div class="cert-body">
-            <p class="lead mb-1">Diberikan kepada</p>
-            <h2>{{ strtoupper($user->name) }}</h2>
-            <p class="lead">Sebagai peserta yang telah mengikuti event:</p>
-            <h3 style="font-size:22px;font-weight:600;color:#111;">“{{ $event->title }}”</h3>
-            <p class="lead mt-3">Dikeluarkan pada: <strong>{{ $issuedAt->format('d F Y') }}</strong></p>
-        </div>
-        <div class="cert-meta">
-            <div class="meta-box">
-                <h6>Tanggal Event</h6>
-                <p>{{ $event->event_date?->format('d F Y') ?? '-' }}</p>
+    @include('partials.navbar-after-login')
+
+    <div class="preview-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb" class="d-none d-md-block">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('profile.events') }}" class="text-decoration-none">Riwayat</a></li>
+                        <li class="breadcrumb-item active">Sertifikat</li>
+                    </ol>
+                </nav>
+                <h4 class="fw-bold mb-0 text-navy">E-Certificate Preview</h4>
             </div>
-            <div class="meta-box">
-                <h6>Waktu</h6>
-                <p>{{ $event->event_time?->format('H:i') ?? '-' }} WIB</p>
-            </div>
-            <div class="meta-box">
-                <h6>Lokasi</h6>
-                <p>{{ $event->location ?? 'Online' }}</p>
-            </div>
-            <div class="meta-box">
-                <h6>Peserta</h6>
-                <p>{{ $user->name }}</p>
+            <div class="d-flex gap-3">
+                @if($certificateReady)
+                    <a href="{{ route('certificates.download', [$event, $registration]) }}" class="btn btn-primary px-4 shadow-sm" target="_blank">
+                        <i class="bi bi-download me-2"></i> Download PDF
+                    </a>
+                @else
+                    <button class="btn btn-secondary px-4 shadow-sm" disabled>
+                        <i class="bi bi-clock me-2"></i> Tersedia H+3 ({{ $event->event_date?->copy()->addDays(3)->format('d M') }})
+                    </button>
+                    @if(app()->environment('local') || Auth::user()->role === 'admin')
+                    <a href="{{ route('certificates.download', [$event, $registration]) }}?force=1" class="btn btn-outline-primary shadow-sm" target="_blank">
+                        <i class="bi bi-bug me-2"></i> Force Download
+                    </a>
+                    @endif
+                @endif
             </div>
         </div>
-        <div class="actions">
-            <a href="{{ route('events.show',$event) }}" class="btn-back">Kembali</a>
-            @if($certificateReady)
-                <a href="{{ route('certificates.download',[$event,$registration]) }}" class="btn-download">Download PDF</a>
-            @else
-                <a href="#" class="btn-download" style="pointer-events:none;opacity:.55;">Belum Bisa Download (H+4)</a>
-            @endif
-            @if(app()->environment('local'))
-                <a href="{{ route('certificates.download',[$event,$registration]) }}?inline=1&force=1" class="btn-download" style="background:#535088;color:#f4d24b;">Lihat PDF (Inline)</a>
-            @endif
+
+        @if(!$certificateReady)
+            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Sertifikat sedang dalam proses validasi.</strong><br>
+                    Anda dapat melihat preview di bawah ini. Tombol download akan aktif otomatis setelah 3 hari dari tanggal event.
+                </div>
+            </div>
+        @endif
+
+        <!-- The actual certificate render -->
+        <div class="paper-container mb-5">
+            <div class="cert-scaler">
+                @include('events.certificate-pdf', ['is_preview' => true])
+            </div>
         </div>
     </div>
+
+    @include('partials.footer-before-login')
 </body>
 </html>
-@include('partials.footer-before-login')

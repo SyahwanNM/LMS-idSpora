@@ -25,13 +25,15 @@ class PublicEventController extends Controller
 		$startExpr = "TIMESTAMP(event_date, COALESCE(event_time,'00:00:00'))";
 		$endExpr = "TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59')))";
 		if ($status === 'finished') {
-			$query->whereRaw("$endExpr < ?", [$now]);
+			$query->finished();
 		} elseif ($status === 'ongoing') {
 			$query->whereRaw("$startExpr <= ? AND $endExpr >= ?", [$now, $now]);
 		} elseif ($status === 'upcoming') {
 			$query->whereRaw("$startExpr > ?", [$now]);
+		} else {
+			// Default: only show active events (upcoming + ongoing)
+			$query->active();
 		}
-        // else: show all (upcoming + finished)
 
 		// Search
 		if ($search = $request->get('search')) {
@@ -92,22 +94,12 @@ class PublicEventController extends Controller
 				$query->orderBy('price', $priceOrder);
 			}
 		} else {
-			// For finished, show most recently finished first by end time; else newest created
 			if ($status === 'finished') {
+				// Show recently finished first
 				$query->orderByRaw("$endExpr DESC");
-			} elseif ($status === 'ongoing' || $status === 'upcoming') {
-                $query->orderByRaw("$startExpr ASC");
-            } else {
-                // "Semua Status" or default:
-                // Group 1: Active (Upcoming/Ongoing) -> Order 0
-                // Group 2: Finished -> Order 1
-                // Inside Active: Sort by Start Date ASC (Soonest first)
-                // Inside Finished: Sort by End Date DESC (Recently finished first)
-                $query->orderByRaw("
-                    CASE WHEN $endExpr < '$now' THEN 1 ELSE 0 END ASC,
-                    CASE WHEN $endExpr < '$now' THEN $endExpr END DESC,
-                    CASE WHEN $endExpr >= '$now' OR event_date IS NULL THEN $startExpr END ASC
-                ");
+			} else {
+				// Show soonest events first
+				$query->orderByRaw("$startExpr ASC");
 			}
 		}
 
@@ -119,8 +111,15 @@ class PublicEventController extends Controller
 			$userRegEventIds = $request->user()->eventRegistrations()
                 ->where('status', '!=', 'rejected')
                 ->pluck('event_id')->toArray();
-			$events->getCollection()->transform(function($ev) use ($userRegEventIds){
+            
+            // Tandai event yang disimpan
+            $userSavedEventIds = DB::table('user_saved_events')
+                ->where('user_id', $request->user()->id)
+                ->pluck('event_id')->toArray();
+
+			$events->getCollection()->transform(function($ev) use ($userRegEventIds, $userSavedEventIds){
 				$ev->is_registered = in_array($ev->id, $userRegEventIds);
+				$ev->is_saved = in_array($ev->id, $userSavedEventIds);
 				return $ev;
 			});
 		}

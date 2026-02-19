@@ -661,7 +661,7 @@
                                                 // attendance QR data
                                                 'qr_token' => $e->attendance_qr_token,
                                                 'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                                                'qr_image_url' => $e->attendance_qr_image ? asset('storage/'.$e->attendance_qr_image) : null,
+                                                'qr_image_url' => $e->attendance_qr_image ? asset('uploads/'.$e->attendance_qr_image) : null,
                                             ];
                                         });
                                 }
@@ -687,7 +687,7 @@
                                             $ev = isset($row['id']) ? \App\Models\Event::find($row['id']) : null;
                                             $qrToken = $ev?->attendance_qr_token ?: '';
                                             $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
-                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('storage/'.$ev->attendance_qr_image) : '';
+                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('uploads/'.$ev->attendance_qr_image) : '';
                                         @endphp
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] }}" data-cert="{{ $row['cert_url'] }}" data-abs="{{ $row['abs_url'] }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
                                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
