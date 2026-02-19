@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Http\Controllers\ResellerController;
 
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
@@ -53,8 +54,13 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
     return view('/admin/add-users', compact('users'));
 })->name('admin.add-users');
 
-Route::get('/reseller', function () {
-    return view('reseller.index');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
+    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
+    
+    // Route Baru untuk Generate Kode
+    Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
 });
 
 Route::get('/bandingin', function () {
@@ -365,6 +371,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
+        Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');

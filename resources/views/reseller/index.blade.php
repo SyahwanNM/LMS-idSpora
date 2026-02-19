@@ -18,7 +18,7 @@
 
 <body>
     <div class="hero-box" aria-hidden="true"></div>
-    <main class="container-xxl pt-5 mt-4">
+    <main class="container-xl pt-4 mt-4">
         <!-- Navbar -->
         {{-- <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4 p-2 mt-3 navbar-bg">
             <div class="container-fluid">
@@ -54,9 +54,9 @@
         <!-- End of Navbar -->
 
 
-        <div class="container-xl">
+        <div class="container-xxl">
             <!-- Card for Target Komisi Bulan Ini -->
-            {{-- <div class="card mb-4 border-0 shadow-sm">
+            {{-- <div class="card mb-4  shadow-sm">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-bullseye fs-1 text-warning"></i>
@@ -80,7 +80,7 @@
             <!-- End of Card for Target Komisi Bulan Ini -->
 
             <!-- Withdraw Komisi Content -->
-            <div class="card mb-4 border-0 shadow-sm">
+            <div class="card mb-4 shadow-sm">
                 <div class="card-body p-4 mt-2">
                     <h5 class="mb-3 d-flex align-items-start gap-2">
                         <i class="bi bi-cash-coin text-warning fs-2"></i>
@@ -91,14 +91,15 @@
                         <div class="col-md-4">
                             <div class="border rounded-3 p-3 h-100">
                                 <small class="text-muted">Saldo Bisa Ditarik</small>
-                                <h3 class="text-success mb-0">Rp 1.200.000</h3>
+                                <h3 class="text-success mb-0">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}
+                                </h3>
                             </div>
                         </div>
 
                         <div class="col-md-4">
                             <div class="border rounded-3 p-3 h-100 bg-light">
                                 <small class="text-muted">Saldo Pending</small>
-                                <h3 class="text-warning mb-0">Rp 640.000</h3>
+                                <h3 class="text-warning mb-0">Rp {{ number_format($pendingEarnings, 0, ',', '.') }}</h3>
                             </div>
                         </div>
 
@@ -119,29 +120,44 @@
             <!-- Cards Section -->
             <div class="row row-cols-1 row-cols-md-3">
                 <div class="col mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100  shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
-                                <h3 class="card-title">Rp 5.000.000</h3>
-                                <p class="card-text text-success mb-0">+Rp 520k bulan ini</p>
+                                <h3 class="card-title">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h3>
+                                <p class="card-text text-success mb-0">+Rp {{ number_format($earningsThisMonth/1000, 0)
+                                    }}k bulan ini</p>
                             </div>
                             <i class="bi bi-cash-stack fs-1 text-warning"></i>
                         </div>
                         <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: 09:40:05 WIB</small>
+                            {{-- Jam Pembaruan Realtime --}}
+                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i:s') }}
+                                WIB</small>
                         </div>
                     </div>
                 </div>
                 <div class="col mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100 shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary mb-1">Total Referrals</h6>
-                                <h3 class="card-title mb-1">150</h3>
-                                <div class="d-flex">
-                                    <p class="card-text text-success mb-0">+15 bulan ini</p>
+
+                                {{-- Angka Total Referrals Dinamis --}}
+                                <h3 class="card-title mb-1">{{ number_format($totalReferrals, 0, ',', '.') }}</h3>
+
+                                <div class="d-flex align-items-center">
+                                    {{-- Angka Referral Bulan Ini --}}
+                                    <p class="card-text text-success mb-0">
+                                        +{{ $referralsThisMonth }} bulan ini
+                                    </p>
+
+                                    {{-- Icon Panah (Muncul kalau ada referral bulan ini) --}}
+                                    @if($referralsThisMonth > 0)
                                     <i class="bi bi-arrow-up-right text-success ms-3"></i>
+                                    @else
+                                    <i class="bi bi-dash text-secondary ms-3"></i>
+                                    @endif
                                 </div>
 
                             </div>
@@ -149,22 +165,26 @@
 
                         </div>
                         <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: 09:40:05 WIB</small>
+                            {{-- Jam Pembaruan Realtime --}}
+                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i:s') }}
+                                WIB</small>
                         </div>
                     </div>
                 </div>
                 <div class="col mb-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <div class="card h-100 shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="card-title text-body-secondary">Conversion Rate</h6>
-                                <h3 class="card-title">24.5%</h3>
-                                <p class="card-text text-success mb-0">+2.3% dari bulan lalu</p>
+                                {{-- Angka Dinamis --}}
+                                <h3 class="card-title">{{ number_format($conversionRate, 1) }}%</h3>
+                                <p class="card-text text-success mb-0">Berdasarkan data transaksi</p>
                             </div>
                             <i class="bi bi-graph-up fs-1 text-warning"></i>
                         </div>
                         <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: 09:40:05 WIB</small>
+                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i') }}
+                                WIB</small>
                         </div>
                     </div>
                 </div>
@@ -173,11 +193,11 @@
 
 
             <!-- Referral Tools Section -->
-            <div class="card mb-4 border-0 shadow-sm">
+            <div class="card mb-4  shadow-sm">
                 <div class="card-body mt-3 mb-2">
                     <h5 class="fw-bold"><i class="bi bi-megaphone-fill text-warning text-secondary me-2"></i>Referral
                         Tools</h5>
-                    
+
                     <!-- Referral Input Fields (Code, Link, Caption) -->
                     <div class="row g-4 mt-1 align-items-end">
                         <div class="col-lg-4">
@@ -186,8 +206,8 @@
                                 Referral Code
                             </label>
                             <div class="input-group">
-                                <input type="text" class="form-control bg-light" id="referralCode" value="616ja03095"
-                                    readonly>
+                                <input type="text" class="form-control bg-light" id="referralCode"
+                                    value="{{ $user->referral_code }}">
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
                                     <i class="bi bi-clipboard"></i>
@@ -202,7 +222,7 @@
                             </label>
                             <div class="input-group">
                                 <input type="text" class="form-control bg-light" id="referralLink"
-                                    value="https://idspora.com/course/?ref=616ja03095" readonly>
+                                    value="{{ url('/register?ref=' . $user->referral_code) }}">
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralLink')" title="Copy link">
                                     <i class="bi bi-clipboard"></i>
@@ -232,22 +252,16 @@
                     <div class="row row-cols-1 g-4 mt-1">
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-share-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>Share your referral code with friends and family or on social media to earn rewards!</p>
+                            <p>Bagikan kode referralmu ke teman, keluarga, atau media sosial dan mulai kumpulkan keuntungan!</p>
                         </div>
 
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-gift-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>When your friends book a course or an event using your referral code, they'll
-                                automatically
-                                get
-                                15% off their purchase.</p>
+                            <p>Temanmu otomatis dapat diskon 5% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
                         </div>
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
-                            <p>For every successful booking made with your code, you'll receive 10% of the ticket price
-                                as
-                                your
-                                reward!</p>
+                            <p>Dapatkan komisi 10% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
                         </div>
                     </div>
                 </div>
@@ -257,11 +271,13 @@
             <!-- Recent Referrals Table-->
             <div class="row g-4 mb-4">
                 {{-- Level Section --}}
+                {{-- Level Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
+                    <div class="card h-100 shadow-sm rounded-4">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-4">Level Anda</h5>
 
+                            {{-- Bagian Avatar & Badge Utama --}}
                             <div class="text-center mb-4">
                                 <div class="position-relative d-inline-block mb-3">
                                     <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm"
@@ -270,32 +286,42 @@
                                     </div>
                                     <span
                                         class="position-absolute bottom-0 start-50 translate-middle-x badge bg-white text-dark border shadow-sm rounded-pill px-3 py-1 mt-2">
-                                        Bronze
+                                        {{ $level }}
                                     </span>
                                 </div>
-                                <h5 class="fw-bold mb-0">Sutupani</h5>
-                                <p class="text-muted small">10 Referrals</p>
+                                <h5 class="fw-bold mb-0">{{ $user->name }}</h5>
+                                <p class="text-muted small">{{ $totalReferrals }} Referrals</p>
                             </div>
 
+                            {{-- Progress Bar --}}
                             <div class="mb-4">
                                 <div class="d-flex justify-content-between small fw-bold mb-1">
-                                    <span>Progress ke Silver</span>
-                                    <span class="text-warning">36 lagi</span>
+                                    <span>Progress ke {{ ($level == 'Bronze') ? 'Silver' : (($level == 'Silver') ?
+                                        'Gold' : 'Max') }}</span>
+                                    @if($level != 'Gold')
+                                    <span class="text-warning">{{ $nextLevelTarget }} lagi</span>
+                                    @else
+                                    <span class="text-success">Maksimal</span>
+                                    @endif
                                 </div>
-                                <div class="progress" role="progressbar" aria-label="Warning Animated striped"
-                                    aria-valuenow="24" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress" role="progressbar" aria-label="Level Progress"
+                                    aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100">
                                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
-                                        style="width: 24%">
+                                        style="width: {{ $progress }}%">
                                     </div>
                                 </div>
                             </div>
 
                             <hr class="border-secondary-subtle border-dashed">
 
+                            {{-- Sistem Tiers List --}}
                             <h6 class="fw-semibold small text-muted mb-3">Sistem Tiers</h6>
                             <div class="d-flex flex-column gap-2">
+
+                                {{-- BRONZE TIER --}}
                                 <div
-                                    class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center
+                                {{ $level == 'Bronze' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 50 ? 'border-success bg-success bg-opacity-10' : 'opacity-75') }}">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-star text-warning me-2"></i>
                                         <div class="lh-1">
@@ -303,10 +329,18 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 10%</span>
                                         </div>
                                     </div>
-                                    <i class="bi bi-check-circle-fill text-warning"></i>
+                                    {{-- Logic Icon: Kalau level Bronze (active) atau lebih tinggi (sudah lewat),
+                                    tampilkan checklist --}}
+                                    @if($totalReferrals >= 0)
+                                    <i
+                                        class="bi bi-check-circle-fill {{ $level == 'Bronze' ? 'text-warning' : 'text-success' }}"></i>
+                                    @endif
                                 </div>
+
+                                {{-- SILVER TIER --}}
                                 <div
-                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center opacity-75">
+                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
+                                {{ $level == 'Silver' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 150 ? 'border-success bg-success bg-opacity-10' : 'opacity-50') }}">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-star-half text-secondary me-2"></i>
                                         <div class="lh-1">
@@ -314,11 +348,18 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 12%</span>
                                         </div>
                                     </div>
-                                    <small class="text-muted" style="font-size: 10px;"><i
-                                            class="bi bi-lock-fill"></i></small>
+                                    {{-- Logic Icon: Checklist jika Silver/Gold, Gembok jika Bronze --}}
+                                    @if($totalReferrals >= 51)
+                                    <i
+                                        class="bi bi-check-circle-fill {{ $level == 'Silver' ? 'text-warning' : 'text-success' }}"></i>
+                                    @else
+                                    <small class="text-muted"><i class="bi bi-lock-fill"></i></small>
+                                    @endif
                                 </div>
-                                <div
-                                    class="p-2 rounded-3 border d-flex justify-content-between align-items-center opacity-50">
+
+                                {{-- GOLD TIER --}}
+                                <div class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
+                                {{ $level == 'Gold' ? 'border-warning bg-warning bg-opacity-10' : 'opacity-50' }}">
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-star-fill text-secondary me-2"></i>
                                         <div class="lh-1">
@@ -326,242 +367,163 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 15%</span>
                                         </div>
                                     </div>
-                                    <small class="text-muted" style="font-size: 10px;"><i
-                                            class="bi bi-lock-fill"></i></small>
+                                    {{-- Logic Icon: Checklist jika Gold, Gembok jika belum --}}
+                                    @if($totalReferrals >= 151)
+                                    <i class="bi bi-check-circle-fill text-warning"></i>
+                                    @else
+                                    <small class="text-muted"><i class="bi bi-lock-fill"></i></small>
+                                    @endif
                                 </div>
-                            </div>
 
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {{-- Top Resellers Section --}}
-                <div class="col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
-                        <div class="card-body p-4 d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">Top Resellers</h5>
-                                <i class="bi bi-trophy-fill text-warning fs-5"></i>
-                            </div>
+<div class="col-lg-4">
+    <div class="card h-100 shadow-sm rounded-4">
+        <div class="card-body p-4 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Top Resellers</h5>
+                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+            </div>
 
-                            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
-                                    <div class="text-warning fst-italic me-2" style="min-width: 30px;">#1</div>
-                                    <div class="rounded-circle bg-warning text-white fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">JO</div>
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">Jocua Cuherman</div>
-                                        <small class="text-muted" style="font-size: 11px;">245 referrals</small>
-                                    </div>
-                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill">Rp
-                                        1.2M</span>
-                                </li>
-
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
-                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#2
-                                    </div>
-                                    <div class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">VS</div>
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">Ver Sianu</div>
-                                        <small class="text-muted" style="font-size: 11px;">198 referrals</small>
-                                    </div>
-                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 990k</span>
-                                </li>
-
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
-                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#3
-                                    </div>
-                                    <div class="rounded-circle bg-warning bg-opacity-75 text-white fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">TR</div>
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">Tayo Rapes</div>
-                                        <small class="text-muted" style="font-size: 11px;">100 referrals</small>
-                                    </div>
-                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 500k</span>
-                                </li>
-
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
-                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#4
-                                    </div>
-                                    <div class="rounded-circle bg-secondary bg-opacity-50 text-white fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">BU</div>
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">Budi Udin</div>
-                                        <small class="text-muted" style="font-size: 11px;">80 referrals</small>
-                                    </div>
-                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 400k</span>
-                                </li>
-
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center opacity-75">
-                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#5
-                                    </div>
-                                    <div class="rounded-circle bg-light text-secondary border fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">AY</div>
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">Ailop Yu</div>
-                                        <small class="text-muted" style="font-size: 11px;">65 referrals</small>
-                                    </div>
-                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 320k</span>
-                                </li>
-                                <li class="list-group-item border-0 px-0 py-2 d-flex align-items-center opacity-75">
-                                    <div class="text-secondary fst-italic me-2" style="min-width: 30px;">#6
-                                    </div>
-                                    <div class="rounded-circle bg-light text-secondary border fw-bold d-flex align-items-center justify-content-center me-3"
-                                        style="width: 40px; height: 40px;">CS</div>
-                                    <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-bold text-dark small">Citra Schoolastika</div>
-                                        <small class="text-muted" style="font-size: 11px;">50 referrals</small>
-                                    </div>
-                                    <span class="badge bg-light text-secondary border rounded-pill">Rp 250k</span>
-                                </li>
-                            </ul>
-                            <hr>
-                            <div
-                                class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
-                                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#50</div>
-                                <div class="rounded-circle bg-white text-warning border border-warning fw-bold d-flex align-items-center justify-content-center me-3"
-                                    style="width: 40px; height: 40px;">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <div class="flex-grow-1 lh-sm">
-                                    <div class="fw-bold text-dark small mb-0">Sutupani</div>
-                                    <small class="text-dark opacity-75" style="font-size: 11px;">10 referrals</small>
-                                </div>
-                                <div class="d-flex flex-column align-items-end gap-1">
-                                    <span class="badge bg-white text-warning border border-warning rounded-pill"
-                                        style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
-                                    <span class="badge bg-light text-dark border border-warning rounded-pill">Rp
-                                        50k</span>
-                                </div>
-                            </div>
+            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
+                @forelse($topResellers as $index => $reseller)
+                    <li class="list-group-item px-0 py-2 d-flex align-items-center {{ $loop->last ? 'opacity-75' : '' }}">
+                        {{-- Ranking Number --}}
+                        <div class="{{ $index < 3 ? 'text-warning' : 'text-secondary' }} fst-italic me-2" style="min-width: 30px;">
+                            #{{ $index + 1 }}
                         </div>
-                    </div>
+
+                        {{-- FOTO PROFIL --}}
+                        @if(!empty($reseller->profile_photo_path))
+                            {{-- Jika punya foto di database --}}
+                            <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}" 
+                                 alt="{{ $reseller->name }}"
+                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                        @else
+                            {{-- Fallback: Pakai UI Avatars jika tidak punya foto --}}
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($reseller->name) }}&background={{ $index < 3 ? 'ffc107' : 'e9ecef' }}&color={{ $index < 3 ? 'ffffff' : '6c757d' }}&size=40"
+                                 alt="{{ $reseller->name }}"
+                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                        @endif
+
+                        {{-- Nama & Jumlah Referral --}}
+                        <div class="flex-grow-1 lh-sm">
+                            <div class="fw-bold text-dark small">{{ Str::limit($reseller->name, 15) }}</div>
+                            <small class="text-muted" style="font-size: 11px;">{{ $reseller->referrals_count }} referrals</small>
+                        </div>
+
+                        {{-- Total Cuan (Badge) --}}
+                        <span class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
+                            Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
+                        </span>
+                    </li>
+                @empty
+                    {{-- Empty State (Tetap sama seperti sebelumnya) --}}
+                    <li class="list-group-item border-0 text-center py-5">
+                        <div class="mb-3">
+                            <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-2">Papan Peringkat Masih Kosong!</h6>
+                        <p class="text-muted small mb-3 lh-sm">
+                            Belum ada yang masuk daftar ini. <br>
+                            Ayo bagikan linkmu dan jadilah <strong>Juara #1</strong>!
+                        </p>
+                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-4"
+                            onclick="copyToClipboard(this, 'referralLink')">
+                            <i class="bi bi-share-fill me-1"></i> Bagikan Sekarang
+                        </button>
+                    </li>
+                @endforelse
+            </ul>
+            
+            {{-- Sticky Rank User --}}
+            @if($topResellers->isNotEmpty())
+            <hr>
+            <div class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
+                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
+                
+                {{-- FOTO PROFIL USER SENDIRI --}}
+                @if(!empty($user->profile_photo_path))
+                    <img src="{{ asset('storage/' . $user->profile_photo_path) }}" 
+                         alt="{{ $user->name }}"
+                         class="rounded-circle border border-warning me-3"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                @else
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=ffc107&color=ffffff&size=40"
+                         alt="{{ $user->name }}"
+                         class="rounded-circle border border-warning me-3"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                @endif
+
+                <div class="flex-grow-1 lh-sm">
+                    <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
+                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }} referrals</small>
                 </div>
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge bg-white text-warning border border-warning rounded-pill" style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
+                    <span class="badge bg-light text-dark border border-warning rounded-pill">
+                        Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                    </span>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+</div>
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4">
-                        <div class="card-body p-4 d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="fw-bold mb-0">Riwayat</h5>
-                                <a href="#" class="text-decoration-none text-warning fw-bold small">Lihat Semua</a>
-                            </div>
+                    <div class="card h-100 shadow-sm rounded-4">
+                        <div class="card-body p-4 d-flex flex-column gap-3">
+                            <h5 class="fw-bold mb-0">Riwayat Referral</h5>
 
-                            <div class="d-flex flex-column gap-3 flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi bi-check-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small">Vero Mupon</div>
-                                            <small class="text-muted" style="font-size: 11px;">28 Nov • Figma
-                                                101</small>
-                                        </div>
+                            @forelse($history as $item)
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    {{-- Icon Check/Pending --}}
+                                    <div class="rounded-circle {{ $item->status == 'paid' ? 'bg-success text-success' : 'bg-warning text-warning' }} bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                                        style="width: 40px; height: 40px;">
+                                        <i
+                                            class="bi {{ $item->status == 'paid' ? 'bi-check-lg' : 'bi-clock-fill' }}"></i>
                                     </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small">+Rp 25.000</div>
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
-                                            style="font-size: 9px;">Paid</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi bi-check-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small">Maria Sibowo</div>
-                                            <small class="text-muted" style="font-size: 11px;">27 Nov • SLR WS</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small">+Rp 25.000</div>
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
-                                            style="font-size: 9px;">Paid</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center me-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi bi-clock-fill"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small">Agvin Amal</div>
-                                            <small class="text-muted" style="font-size: 11px;">26 Nov • Web Vol
-                                                2</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-secondary small">+Rp 40.000</div>
-                                        <span class="badge bg-warning bg-opacity-10 text-warning rounded-1"
-                                            style="font-size: 9px;">Pending</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi bi-check-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small">Misyu Somat</div>
-                                            <small class="text-muted" style="font-size: 11px;">25 Nov • Python
-                                                101</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small">+Rp 35.000</div>
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
-                                            style="font-size: 9px;">Paid</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi bi-check-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small">Siti Aminah</div>
-                                            <small class="text-muted" style="font-size: 11px;">24 Nov • Data Sc</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small">+Rp 50.000</div>
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
-                                            style="font-size: 9px;">Paid</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi bi-check-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark small">Rina Nose</div>
-                                            <small class="text-muted" style="font-size: 11px;">22 Nov • UI/UX</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small">+Rp 25.000</div>
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-1"
-                                            style="font-size: 9px;">Paid</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr>
-                            <div class="mt-3">
-                                <button class="btn btn-warning w-100 fw-bold text-dark shadow-sm py-2">
-                                    <i class="bi bi-cloud-arrow-down-fill me-3"></i>Download Laporan
-                                </button>
-                            </div>
 
+                                    {{-- Nama User & Keterangan --}}
+                                    <div>
+                                        <div class="fw-bold text-dark small">
+                                            {{ $item->referredUser->name ?? 'Pengguna Baru' }}
+                                        </div>
+                                        <small class="text-muted" style="font-size: 11px;">
+                                            {{ $item->created_at->format('d M') }} • {{ Str::limit($item->description ??
+                                            'Referral', 10) }}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                {{-- Jumlah Komisi & Badge Status --}}
+                                <div class="text-end">
+                                    <div
+                                        class="fw-bold {{ $item->status == 'paid' ? 'text-success' : 'text-secondary' }} small">
+                                        +Rp {{ number_format($item->amount, 0, ',', '.') }}
+                                    </div>
+                                    <span
+                                        class="badge {{ $item->status == 'paid' ? 'bg-success text-success' : 'bg-warning text-warning' }} bg-opacity-10 rounded-1"
+                                        style="font-size: 9px;">
+                                        {{ ucfirst($item->status) }}
+                                    </span>
+                                </div>
+                            </div>
+                            @empty
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox text-muted fs-1"></i>
+                                <p class="text-muted small mt-2">Belum ada riwayat referral.</p>
+                            </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -571,7 +533,7 @@
 
 
             {{-- <div class="card mb-4"> --}}
-                <div class="card mb-4 border-0 shadow-sm">
+                <div class="card mb-4  shadow-sm">
                     <div class="card-body p-4">
                         <h6 class="fw-semibold mb-3 align-items-center d-flex">
                             <i class="bi bi-question-circle text-warning fs-20 me-4"></i>
