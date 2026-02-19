@@ -13,6 +13,7 @@ class Course extends Model
         'level',
         'status',
         'price',
+        'free_access_mode',
         'duration',
         'media',
         'media_type',
@@ -56,5 +57,13 @@ class Course extends Model
     public function payments()
     {
         return $this->hasMany(\App\Models\Payment::class);
+    }
+
+    /**
+     * Manual payments relation (QRIS proof uploads)
+     */
+    public function manualPayments()
+    {
+        return $this->hasMany(\App\Models\ManualPayment::class);
     }
 }

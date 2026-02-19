@@ -58,7 +58,7 @@ class QuizAttempt extends Model
         return 'F';
     }
 
-    public function isPassed($passingScore = 70)
+    public function isPassed($passingScore = 75)
     {
         return $this->percentage >= $passingScore;
     }

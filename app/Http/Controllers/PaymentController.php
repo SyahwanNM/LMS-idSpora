@@ -62,7 +62,6 @@ class PaymentController extends Controller
      */
     public function payCourse(Request $request, Course $course)
     {
-        $this->configureMidtrans();
         $user = Auth::user();
         // Prevent duplicate payment for the same course
         $alreadyEnrolled = \App\Models\Enrollment::where('user_id', $user->id)->where('course_id', $course->id)->exists();
@@ -75,6 +74,29 @@ class PaymentController extends Controller
         $whatsapp = $request->input('whatsapp', '');
         $phone = $kode_dial . $whatsapp;
         $price = $course->price ?? 0;
+
+        // If course is free, skip Midtrans & admin validation and directly enroll
+        if ((int) $price <= 0) {
+            $enrollment = \App\Models\Enrollment::firstOrCreate(
+                ['user_id' => $user->id, 'course_id' => $course->id],
+                ['status' => 'active', 'enrolled_at' => now(), 'enrollment_code' => 'CRS-'.strtoupper(uniqid())]
+            );
+            if (($enrollment->status ?? null) !== 'active') {
+                $enrollment->status = 'active';
+            }
+            if (!$enrollment->enrolled_at) {
+                $enrollment->enrolled_at = now();
+            }
+            if (!$enrollment->enrollment_code) {
+                $enrollment->enrollment_code = 'CRS-'.strtoupper(uniqid());
+            }
+            $enrollment->save();
+
+            return redirect()->route('course.learn', $course->id)
+                ->with('success', 'Course gratis berhasil didaftarkan. Selamat belajar!');
+        }
+
+        $this->configureMidtrans();
 
         // Generate unique order ID
         $orderId = 'COURSE-' . $course->id . '-' . now()->format('YmdHis') . '-' . Str::random(5);

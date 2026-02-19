@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Progress extends Model
 {
+    use HasFactory;
+
     protected $table = 'progress';
 
     protected $fillable = [
@@ -19,17 +22,16 @@ class Progress extends Model
         'completed' => 'boolean',
     ];
 
-    /**
-     * Get the enrollment that this progress belongs to.
-     */
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class);
     }
 
-    /**
-     * Get the module that this progress refers to.
-     */
+    public function courseModule(): BelongsTo
+    {
+        return $this->belongsTo(CourseModule::class, 'course_module_id');
+    }
+
     public function module(): BelongsTo
     {
         return $this->belongsTo(CourseModule::class, 'course_module_id');
