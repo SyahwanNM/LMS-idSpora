@@ -3,6 +3,9 @@
 // Payment page for course
 Route::get('/courses/{course}/payment', [App\Http\Controllers\CourseController::class, 'payment'])->name('course.payment');
 
+// Learn course modules (requires purchase/enrollment)
+Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\CourseController::class, 'learn'])->name('course.learn');
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
@@ -19,6 +22,8 @@ use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PublicPagesController;
+use App\Http\Controllers\Admin\CourseReportController;
+use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\ResellerController;
@@ -28,19 +33,13 @@ Route::get('/admin/detail-event', function () {
 });
 
 Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('course.detail');
-Route::get('/admin/report', function () {
-    // Provide course completeness data to the report view
-    $courses = \App\Models\Course::query()
-        ->withCount([
-            'modules',
-            'modules as video_count' => function($q){ $q->where('type','video'); },
-            'modules as pdf_count' => function($q){ $q->where('type','pdf'); },
-            'modules as quiz_count' => function($q){ $q->where('type','quiz'); },
-        ])
-        ->select('id','name','status')
-        ->latest('updated_at')
-        ->get();
-    return view('admin/report', compact('courses'));
+
+// Canonical course detail route (alias used in views)
+Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
+    Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');
+    Route::get('/admin/report/growth', [CourseReportController::class, 'growth'])->name('admin.report.growth');
 });
 
 Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
@@ -48,7 +47,7 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
     $users = \App\Models\User::with(['eventRegistrations' => function($q){
             $q->with('event')->orderBy('created_at','desc');
         }])
-        ->select('id','name','email','phone','profession','institution','avatar','created_at')
+        ->select('id','name','email','phone','profession','institution','avatar','created_at','bio')
         ->where('role', '!=', 'admin')
         ->orderBy('name')
         ->get();
@@ -125,21 +124,8 @@ Route::get('/admin/add-course2', function () {
     return view('admin/add-course2');
 })->name('add-course2');
 Route::get('/admin/preview-pendapatan', function () {
-    return view('admin/preview-pendapatan');
-})->name('preview-pendapatan');
-Route::get('/admin/report', function () {
-    $courses = \App\Models\Course::query()
-        ->withCount([
-            'modules',
-            'modules as video_count' => function($q){ $q->where('type','video'); },
-            'modules as pdf_count' => function($q){ $q->where('type','pdf'); },
-            'modules as quiz_count' => function($q){ $q->where('type','quiz'); },
-        ])
-        ->select('id','name','status')
-        ->latest('updated_at')
-        ->get();
-    return view('admin/report', compact('courses'));
-})->name('report');
+    return redirect()->route('admin.view-pendapatan', request()->query());
+})->middleware(['auth','admin'])->name('preview-pendapatan');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
@@ -148,12 +134,24 @@ Route::get('/storage/{path}', function ($path) {
     $path = urldecode($path);
     
     // Security: prevent directory traversal
-    if (str_contains($path, '..') || str_contains($path, "\0")) {
+    if (str_contains($path, "\0")) {
         abort(403, 'Invalid path');
     }
+
+    // Normalize separators then ensure no path traversal segments exist
+    $pathNormalized = str_replace('\\', '/', $path);
+    $segments = array_values(array_filter(explode('/', $pathNormalized), fn ($s) => $s !== ''));
+    foreach ($segments as $seg) {
+        if ($seg === '.' || $seg === '..') {
+            abort(403, 'Invalid path');
+        }
+    }
+
+    // Use normalized path for filesystem lookup
+    $path = implode('/', $segments);
     
-    // Get file path in storage
-    $filePath = storage_path('app/public/' . $path);
+    // Get file path in uploads
+    $filePath = public_path('uploads/' . $path);
     
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
@@ -375,9 +373,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
         // Admin view: Pendapatan (financial breakdown)
-        Route::get('/admin/view-pendapatan', function () {
-            return view('admin.view_pendapatan');
-        })->name('admin.view-pendapatan');
+        Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
+            ->name('admin.view-pendapatan');
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         // Recent activities AJAX (returns latest login activities)
@@ -454,11 +451,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
     Route::get('/courses/{course}/modules/{module}/download', [UserModuleController::class, 'download'])->name('user.modules.download');
     Route::get('/courses/{course}/modules/{module}/stream', [UserModuleController::class, 'stream'])->name('user.modules.stream');
+
+    // Learning time (realtime) endpoints for authenticated users
+    Route::middleware(['auth', 'throttle:120,1'])->group(function () {
+        Route::post('/learning-time/heartbeat', [\App\Http\Controllers\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
+        Route::get('/learning-time/chart', [\App\Http\Controllers\LearningTimeController::class, 'chart'])->name('learning-time.chart');
+    });
     
     // User quiz routes
     Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
     Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
+    Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
     Route::get('/course-quiz-result', function () {
@@ -506,6 +510,10 @@ Route::get('/course-quiz-start', function () {
             
             // Feedback Analysis
             Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
+
+            // Support Messages
+            Route::get('/support', [\App\Http\Controllers\CRMController::class, 'supportMessages'])->name('support.index');
+            Route::post('/support/{message}/status', [\App\Http\Controllers\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
         });
         
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)

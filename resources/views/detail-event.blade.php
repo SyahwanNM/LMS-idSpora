@@ -1,124 +1,165 @@
-@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Event</title>
+    <title>{{ $event->title }} - idSpora</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .container-detail {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 85px auto 50px;
+            padding: 0 20px;
+        }
+        .link-box {
+            max-width: 1200px;
+            margin: 80px auto 20px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        .link-box a { 
+            text-decoration: none; 
+            color: #6d28d9; 
+            font-weight: 500;
+        }
+        .link-box a:hover { color: #4c1d95; text-decoration: underline; }
+        .link-box span.sep { color: #cbd5e1; }
+        .link-box .active { color: #1e1b4b; font-weight: 600; }
+        
+        .kiri img.event-img {
+            width: 100%;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .hover-up { transition: transform 0.2s; }
+        .hover-up:hover { transform: translateY(-3px); }
+        
+        @media (max-width: 992px) {
+            .container-detail { grid-template-columns: 1fr; margin-top: 40px; padding: 0 15px !important; }
+            .link-box { margin-top: 80px; margin-bottom: 10px; padding: 0 15px !important; }
+            .kanan { max-width: 100% !important; }
+        }
+    </style>
 </head>
 
-<body>
-    <div class="link-box mb-3">
-        <a href="">Home</a>
-        <p>/</p>
-        <a href="">Event</a>
-        <p>/</p>
-        <a class="active" href="">Digital Marketing Masterclass 2025</a>
+<body style="padding-top: 0;">
+    @include("partials.navbar-after-login")
+    <div class="link-box">
+        <a href="{{ route('dashboard') }}">Home</a>
+        <span class="sep">/</span>
+        <a href="{{ route('events.index') }}">Event</a>
+        <span class="sep">/</span>
+        <span class="active">{{ $event->title }}</span>
     </div>
 
     <div class="container-detail">
         <div class="kiri">
-            <img src="{{ asset('aset/event.png') }}"
-                class="event-img" alt="...">
+            <img src="{{ $event->image_url ?? asset('aset/event.png') }}"
+                class="event-img" alt="{{ $event->title }}" onerror="this.src='{{ asset('aset/event.png') }}'">
             <div class="profile-box">
                 <img src="{{ asset('aset/profile.png') }}" alt="profile" class="rounded-circle" width="60" height="60">
                 <div>
-                    <h5 class="mb-1">Digital Marketing Masterclass 2025</h5>
+                    <h5 class="mb-1">{{ $event->title }}</h5>
                     <h6 class="text-muted">Created by <span class="black">idSpora</span></h6>
                 </div>
 
             </div>
             <div class="overview">
                 <h3 class="mb-3">Overview</h3>
-                <p>Webinar Digital Marketing Mastery 2025: Strategies to Boost Your Brand in the Digital Era hadir sebagai ruang pembelajaran bagi siapa saja yang ingin memahami lebih dalam perkembangan dunia pemasaran digital. Dalam sesi berdurasi 2,5 jam ini, peserta akan dibekali wawasan terkini seputar tren digital marketing, mulai dari strategi social media, content marketing, hingga pemanfaatan Artificial Intelligence (AI) untuk meningkatkan efektivitas iklan digital.
-                    <br><br> Tidak hanya membahas teori, webinar ini juga menghadirkan studi kasus nyata dari brand lokal maupun internasional yang sukses membangun engagement serta meningkatkan konversi melalui strategi digital yang tepat. Webinar ini ditujukan bagi pemilik bisnis, praktisi marketing, mahasiswa, maupun freelancer yang ingin mengembangkan kompetensinya di bidang digital marketing. Setiap peserta akan mendapatkan e-certificate, materi presentasi, serta akses rekaman webinar untuk dipelajari kembali.
-                    <br> <br>Acara akan berlangsung secara online melalui Zoom Meeting dan disiarkan langsung di YouTube, dengan menghadirkan narasumber dari kalangan praktisi bersertifikasi, CEO startup, dan content creator berpengalaman. Selain itu, tersedia sesi diskusi interaktif dan tanya jawab yang memungkinkan peserta membangun networking serta mendapatkan insight langsung dari para pakar.
-                </p>
+                <div>{!! $event->description !!}</div>
             </div>
             <div class="terms-condition">
                 <h3 class="mb-3">Terms and Condition</h3>
-                <p>1. Event ini berlaku untuk umum <br>
-                    2. Peserta diharapkan join grup WA dengan klik join setelah mendaftar atau bisa melalui dashboard <br>
-                    3. Segala informasi terkait event (termasuk link room) akan dishare melalui grup WA <br>
-                    4. Bagi yang mengajukan sertifikat, sertifikat bisa didownload melalui dashboard H+4 acara <br>
-                    5. Event ini bisa diikuti mulai dari Rp. 5000 saja. Jika ingin mendapatkan e-sertifikat sebagai tanda mengikuti event, slide materi, sourcecode, dan video recording yang bisa tonton ulang selamanya, cukup kontribusi sesuai harga tertera saja sudah bisa diakses selamanya. <br>
-                    6. Peserta wajib mengikuti aturan yang berlaku.</p>
+                <div>{!! $event->terms_and_condition ?? 'Aturan standar berlaku.' !!}</div>
             </div>
         </div>
         <div class="kanan">
-            <div class="price">
-                <span class="text-muted text-decoration-line-through">Rp.300.000</span>
-                <h4 class="price-text">RP.150.000</h4>
-                <div class="box-diskon">
-                    <div class="time-alert">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="ikon bi bi-alarm" viewBox="0 0 16 16">
-                            <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
-                            <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
-                        </svg>
-                        <p class="text-danger">2 days left at this price!</p>
+                <div class="price shadow-sm p-4 bg-white rounded-4 border">
+                    <div class="mb-3">
+                        @if($event->price > 0)
+                            @if($event->discounted_price && $event->discounted_price < $event->price)
+                                <span class="text-muted text-decoration-line-through d-block mb-1">Rp.{{ number_format($event->price, 0, ',', '.') }}</span>
+                                <h3 class="price-text fw-bold text-primary mb-0">Rp.{{ number_format($event->discounted_price, 0, ',', '.') }}</h3>
+                                <div class="mt-2">
+                                    <span class="badge bg-danger rounded-pill">{{ round((($event->price - $event->discounted_price) / $event->price) * 100) }}% OFF</span>
+                                </div>
+                            @else
+                                <h3 class="price-text fw-bold text-primary mb-0">Rp.{{ number_format($event->price, 0, ',', '.') }}</h3>
+                            @endif
+                        @else
+                            <h3 class="price-text fw-bold text-success mb-0">GRATIS</h3>
+                        @endif
                     </div>
-                    <small class="diskon">50% OFF</small>
-                </div>
-                <hr>
-                <div class="info-box">
-                    <div class="date">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#
-                        A1A5B3" class="ikon bi bi-calendar2-date" viewBox="0 0 16 16">
-                            <path d="M6.445 12.688V7.354h-.633A13 13 0 0 0 4.5 8.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z" />
-                            <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5z" />
-                        </svg>
-                        <div>
-                            <p class="date-judul">Tanggal</p>
-                            <p class="date-text">12 September 2025</p>
+                
+                    <hr class="my-3 opacity-10">
+                    
+                    <div class="info-box space-y-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-calendar-event me-3 text-secondary"></i>
+                            <div>
+                                <small class="text-muted d-block">Tanggal</small>
+                                <span class="fw-medium">{{ \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') }}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock me-3 text-secondary"></i>
+                            <div>
+                                <small class="text-muted d-block">Waktu</small>
+                                <span class="fw-medium">{{ $event->event_time ?? '19:30 WIB - Selesai' }}</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-geo-alt me-3 text-secondary"></i>
+                            <div>
+                                <small class="text-muted d-block">Lokasi</small>
+                                <span class="fw-medium">{{ $event->location }}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="time">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#
-                        A1A5B3" class="ikon bi bi-clock" viewBox="0 0 16 16">
-                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
-                        </svg>
-                        <p class="time-judul">Waktu</p>
-                        <p class="time-text">19:30 WIB - Selesai</p>
+
+                    <div class="mt-4">
+                        @if($event->price > 0)
+                            <a href="{{ route('payment', $event) }}" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 transition-transform hover-up">
+                                Enroll Now
+                            </a>
+                        @else
+                            <form action="{{ route('events.register', $event) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 transition-transform hover-up">
+                                    Join for Free
+                                </button>
+                            </form>
+                        @endif
+                        
+                        @php
+                            $isSaved = auth()->check() && \DB::table('user_saved_events')
+                                ->where('user_id', auth()->id())
+                                ->where('event_id', $event->id)
+                                ->exists();
+                        @endphp
+                        <button type="button" id="saveEventBtn" data-save-url="{{ route('events.save', $event) }}" 
+                                class="btn {{ $isSaved ? 'btn-danger' : 'btn-outline-secondary' }} w-100 py-2 rounded-3">
+                            <i class="bi {{ $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' }} me-2"></i>
+                            {{ $isSaved ? 'Saved' : 'Save Event' }}
+                        </button>
                     </div>
-                    <div class="location">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#
-                        A1A5B3" class="ikon bi bi-geo-alt" viewBox="0 0 16 16">
-                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
-                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-                        </svg>
-                        <p class="location-judul">Lokasi</p>
-                        <p class="location-text">Google Meet</p>
-                    </div>
-                    <div class="bahasa">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#
-                        A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 16 16">
-                            <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
-                            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2" />
-                            <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
-                        </svg>
-                        <p class="bahasa-judul">Bahasa</p>
-                        <p class="bahasa-text">Indonesia</p>
-                    </div>
-                    <div class="sertifikat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#
-                        A1A5B3" class="ikon bi bi-book" viewBox="0 0 16 16">
-                            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783" />
-                        </svg>
-                        <p class="sertifikat-judul">Sertifikat</p>
-                        <p class="sertifikat-text">Gratis</p>
-                    </div>
+
+                    <p class="text-center text-muted small mt-3">Secure payment & guarantee</p>
                 </div>
-                <hr>
-                <button class="btn btn-warning w-100 mb-2">Enroll Now</button>
-                <button class="save btn btn-outline-secondary w-100">Save</button>
 
                 <p class="note">Note: all course have 30-days money-back guarantee</p>
             </div>
@@ -193,10 +234,7 @@
     </div>
     <script>
         function copyLink() {
-            let linkInput = document.getElementById("courseLink");
-            linkInput.select();
-            linkInput.setSelectionRange(0, 99999); // Untuk mobile
-            navigator.clipboard.writeText(linkInput.value)
+            navigator.clipboard.writeText(window.location.href)
                 .then(() => {
                     alert("Link berhasil disalin!");
                 })
@@ -204,6 +242,50 @@
                     alert("Gagal menyalin link");
                 });
         }
+
+        document.getElementById('saveEventBtn').addEventListener('click', function() {
+            const btn = this;
+            const url = btn.getAttribute('data-save-url');
+            
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.textContent = 'Saved';
+                        btn.classList.remove('btn-outline-secondary');
+                        btn.classList.add('btn-danger');
+                    } else {
+                        btn.textContent = 'Save';
+                        btn.classList.remove('btn-danger');
+                        btn.classList.add('btn-outline-secondary');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        });
     </script>
 </body>
 
