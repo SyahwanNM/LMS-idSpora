@@ -62,7 +62,7 @@ class ResellerController extends Controller
         }
 
         // --- 4. Data Tabel Riwayat ---
-        // Ambil 5 data terakhir beserta nama user yang diajak (referredUser)
+        // Ngambil 5 data terakhir beserta nama user yang diajak (referredUser)
         $history = $user->referrals()
             ->with('referredUser') // Eager load biar kenceng
             ->latest()
@@ -70,7 +70,7 @@ class ResellerController extends Controller
             ->get();
 
         // --- 5. Top Resellers ---
-        // Ambil 6 User dengan referral terbanyak (Global Leaderboard)
+        // Ngambil 6 User dengan referral terbanyak (Global Leaderboard)
         $topResellers = User::withCount('referrals') // Hitung jumlah referral
             ->withSum(['referrals' => function($q) { // Hitung total cuan mereka (status paid)
                 $q->where('status', 'paid');
@@ -127,6 +127,25 @@ class ResellerController extends Controller
         return redirect()->route('reseller.index')->with('success', 'Selamat! Akun Reseller Anda telah aktif.');
     }
 
+    public function checkReferral(Request $request)
+    {
+        $code = $request->input('code');
+        $reseller = User::where('referral_code', $code)->first();
+
+        // Pastikan kode valid dan user tidak pakai kodenya sendiri
+        if ($reseller && $reseller->id !== auth()->id()) {
+            return response()->json([
+                'valid' => true,
+                'discount_percentage' => 10, // Ini diskon 10% buat pembeli
+                'message' => 'Kode referral valid! Diskon 10% diterapkan.'
+            ]);
+        }
+
+        return response()->json([
+            'valid' => false,
+            'message' => 'Kode referral tidak ditemukan atau tidak valid.'
+        ]);
+    }
 
     public function storeWithdraw(Request $request)
     {

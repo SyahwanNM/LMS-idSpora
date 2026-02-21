@@ -28,6 +28,23 @@ class CourseManualPaymentController extends Controller
         $whatsapp = isset($validated['whatsapp']) ? trim((string) $validated['whatsapp']) : null;
         $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;
 
+        // --- TAMBAHAN LOGIKA DISKON REFERRAL ---
+        $reseller = null;
+        $finalPrice = (float) ($course->price ?? 0);
+
+        if ($referralCode) {
+            $reseller = \App\Models\User::where('referral_code', $referralCode)->first();
+            
+            // Mastiin reseller ada dan bukan mendaftarkan dirinya sendiri
+            if ($reseller && $reseller->id !== $user->id) {
+                $discount = $finalPrice * 0.10;
+                $finalPrice = max(0, $finalPrice - $discount);
+            } else {
+                // Reset jika kode tidak valid atau dipakai sendiri
+                $referralCode = null; 
+            }
+        }
+
         $enrollment = Enrollment::firstOrCreate(
             ['user_id' => $user->id, 'course_id' => $course->id],
             ['status' => 'pending']
@@ -47,7 +64,7 @@ class CourseManualPaymentController extends Controller
         $manualPayment->course_id = $course->id;
         $manualPayment->enrollment_id = $enrollment->id;
         $manualPayment->user_id = $user->id;
-        $manualPayment->amount = (float) ($course->price ?? 0);
+        $manualPayment->amount = $finalPrice;
         $manualPayment->currency = 'IDR';
         $manualPayment->method = 'qris';
         $manualPayment->status = 'pending';
@@ -76,6 +93,43 @@ class CourseManualPaymentController extends Controller
     public function approve(Request $request, Course $course, ManualPayment $manualPayment): RedirectResponse
     {
         $this->assertPaymentBelongsToCourse($course, $manualPayment);
+
+        // --- LOGIKA KOMISI RESELLER ---
+        // cek dulu sebelum statusnya diubah jadi settled untuk mencegah double insert
+        if ($manualPayment->status !== 'settled' && $manualPayment->referral_code) {
+            $reseller = \App\Models\User::where('referral_code', $manualPayment->referral_code)->first();
+            
+            if ($reseller) {
+                // Hitung total referral si reseller saat ini untuk menentukan Level
+                $totalReferrals = $reseller->referrals()->count();
+                
+                // Nentuin persentase komisi berdasarkan Level
+                if ($totalReferrals >= 151) {
+                    $percentage = 0.15; // Gold: 15%
+                } elseif ($totalReferrals >= 51) {
+                    $percentage = 0.12; // Silver: 12%
+                } else {
+                    $percentage = 0.10; // Bronze: 10%
+                }
+
+                // Hitung nominal komisi dari harga yang dibayar user
+                $commissionAmount = $manualPayment->amount * $percentage;
+
+                // Catat komisi ke tabel Referrals
+                \App\Models\Referral::create([
+                    'user_id' => $reseller->id, // ID pemilik kode (reseller)
+                    'referred_user_id' => $manualPayment->user_id, // ID user yg beli course
+                    'amount' => $commissionAmount, // Nominal komisi dinamis
+                    'status' => 'paid', // Langsung dianggap cair/paid
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // Tambah saldo dompet (wallet) reseller
+                $reseller->wallet_balance = $reseller->wallet_balance + $commissionAmount;
+                $reseller->save();
+            }
+        }
 
         $manualPayment->status = 'settled'; // approved
         $manualPayment->save();

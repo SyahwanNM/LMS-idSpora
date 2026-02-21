@@ -1,3 +1,4 @@
+@include('partials.navbar-admin')
 <!DOCTYPE html>
 <html lang="id">
 
@@ -10,6 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         /* CSS HANYA UNTUK CONFIG & ANIMASI */
@@ -50,16 +52,17 @@
         }
 
         /* Active Menu Styling */
-        .nav-link.active {
+        .sidebar.active {
             background-color: #FEF3C7; /* Amber-100 */
             color: #B45309; /* Amber-700 */
             font-weight: 600;
         }
-        .nav-link {
+        .sidebar {
             color: #64748B;
             transition: all 0.2s ease;
+            text-decoration: none;
         }
-        .nav-link:hover {
+        .sidebar:hover {
             background-color: #FFFBEB;
             color: #B45309;
         }
@@ -79,18 +82,18 @@
         <small class="text-uppercase text-secondary fw-bold px-3 mb-2 d-block" style="font-size: 0.75rem;">Menu Utama</small>
         <ul class="nav flex-column gap-1 mb-4">
             <li class="nav-item">
-                <a class="nav-link rounded-3 px-3 py-2 active d-flex align-items-center gap-3" href="#" onclick="switchView('dashboard', this)">
+                <a class="sidebar rounded-3 px-3 py-2 active d-flex align-items-center gap-3" href="#" onclick="switchView('dashboard', this)">
                     <i class="bi bi-grid-fill"></i> Ringkasan
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('finance', this)">
+                <a class="sidebar rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('finance', this)">
                     <i class="bi bi-wallet2"></i> Keuangan & Payout
                     <span class="badge bg-danger rounded-pill ms-auto">3</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('resellers', this)">
+                <a class="sidebar rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('resellers', this)">
                     <i class="bi bi-people-fill"></i> Data Reseller
                 </a>
             </li>
@@ -99,7 +102,7 @@
         <small class="text-uppercase text-secondary fw-bold px-3 mb-2 d-block" style="font-size: 0.75rem;">Akun</small>
         <ul class="nav flex-column gap-1">
             <li class="nav-item">
-                <a class="nav-link rounded-3 px-3 py-2 d-flex align-items-center gap-3 text-danger" href="#">
+                <a class="sidebar rounded-3 px-3 py-2 d-flex align-items-center gap-3 text-danger" href="#">
                     <i class="bi bi-box-arrow-right"></i> Keluar
                 </a>
             </li>
@@ -113,10 +116,10 @@
         </div>
         <div class="offcanvas-body p-3">
             <ul class="nav flex-column gap-2">
-                <li><a class="nav-link active p-3 bg-light rounded-3 text-dark fw-bold" href="#" onclick="switchView('dashboard', null); closeOffcanvas()">Ringkasan</a></li>
-                <li><a class="nav-link p-3 text-secondary" href="#" onclick="switchView('finance', null); closeOffcanvas()">Keuangan (3 Pending)</a></li>
-                <li><a class="nav-link p-3 text-secondary" href="#" onclick="switchView('resellers', null); closeOffcanvas()">Data Reseller</a></li>
-                <li class="mt-4"><a class="nav-link p-3 text-danger border rounded-3" href="#">Keluar</a></li>
+                <li><a class="sidebar active p-3 bg-light rounded-3 text-dark fw-bold" href="#" onclick="switchView('dashboard', null); closeOffcanvas()">Ringkasan</a></li>
+                <li><a class="sidebar p-3 text-secondary" href="#" onclick="switchView('finance', null); closeOffcanvas()">Keuangan (3 Pending)</a></li>
+                <li><a class="sidebar p-3 text-secondary" href="#" onclick="switchView('resellers', null); closeOffcanvas()">Data Reseller</a></li>
+                <li class="mt-4"><a class="sidebar p-3 text-danger border rounded-3" href="#">Keluar</a></li>
             </ul>
         </div>
     </div>
@@ -155,11 +158,11 @@
                                     <div class="bg-white text-warning rounded-3 p-2 shadow-sm" style="width: 48px; height: 48px; display: grid; place-items: center;">
                                         <i class="bi bi-hourglass-split fs-4"></i>
                                     </div>
-                                    <span class="badge bg-warning text-dark align-self-start">Urgent</span>
+                                    <div class="stat-label text-warning-emphasis">Perlu Persetujuan</div>
                                 </div>
-                                <h3 class="fw-bold mb-1">3 Request</h3>
-                                <p class="text-muted small mb-0">Permintaan penarikan pending.</p>
-                                <button class="btn btn-warning btn-sm w-100 mt-3 fw-bold shadow-sm" onclick="switchView('finance', document.querySelectorAll('.nav-link')[1])">Proses Sekarang</button>
+                        <div class="stat-value text-warning-emphasis">Rp 450.000</div>
+                        <div class="text-muted small">Dari <strong>3 reseller</strong> menunggu</div>
+                                <button class="btn btn-warning btn-sm w-100 mt-3 fw-bold shadow-sm" onclick="switchView('finance', document.querySelectorAll('.sidebar')[1])">Proses Sekarang</button>
                             </div>
                         </div>
                     </div>
@@ -170,23 +173,38 @@
                                     <div class="bg-success bg-opacity-10 text-success rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
                                         <i class="bi bi-cash-stack fs-4"></i>
                                     </div>
+                                    <div class="stat-label">Total Dibayarkan</div>
                                 </div>
-                                <h3 class="fw-bold mb-1">Rp 12.5jt</h3>
-                                <p class="text-muted small mb-0">Total komisi dibayarkan bulan ini.</p>
+                                
+                        <div class="stat-value">Rp 12.500.000</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    {{-- <div class="col-md-4">
                         <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between mb-3">
                                     <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
                                         <i class="bi bi-people-fill fs-4"></i>
                                     </div>
-                                    <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +12%</span>
                                 </div>
                                 <h3 class="fw-bold mb-1">142 User</h3>
                                 <p class="text-muted small mb-0">Reseller aktif terdaftar.</p>
+                            </div>
+                        </div>
+                    </div> --}}
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
+                                        <i class="bi bi-shield-x"></i>
+                                    </div>
+                                    <div class="stat-label">Total Ditolak (Fraud/Salah)</div>
+                                </div>
+                                
+                        <div class="stat-value text-danger">Rp 1.250.000</div>
+                        <div class="text-muted small">Dana dikembalikan ke saldo user</div>
                             </div>
                         </div>
                     </div>
@@ -227,6 +245,7 @@
                 </div>
             </div>
 
+            [ini tambahin di tabelnya nanti ID WITHDRAW TRUS TAMBAH WAKTU REQUESTNYA JUGA BIAR ENAK CEKNYA]
             <div id="finance-view" class="view-section" style="display: none;">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 gap-3">
                     <div>
@@ -322,6 +341,8 @@
                 </div>
             </div>
 
+            [DI SINI TAMBAHIN Nama	Kode Referral	Level	Total Earnings	Total Referral	Status]
+            [TRUS KALO DIKLIK SI USERNYA BAKAL MUNCUL DETAIL-DETAILNYA SALAH SATUNYAKEK SIAPA AJA YANG DAH MAKE KODE DIA GITU BUAT MEMUDAHKAN CEKNYA]
             <div id="resellers-view" class="view-section" style="display: none;">
                 <h2 class="fw-bold text-dark mb-4">Data Reseller</h2>
                 <div class="card border-0 shadow-sm rounded-4">
@@ -418,7 +439,7 @@
 
             // Update Desktop Nav Active State
             if (navElement) {
-                document.querySelectorAll('.sidebar-desktop .nav-link').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.sidebar-desktop .sidebar').forEach(el => el.classList.remove('active'));
                 navElement.classList.add('active');
             }
         }

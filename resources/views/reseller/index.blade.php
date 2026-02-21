@@ -18,7 +18,7 @@
 
 <body>
     <div class="hero-box" aria-hidden="true"></div>
-    <main class="container-xl pt-4 mt-4">
+    <main class="pt-4 mt-4">
         <!-- Navbar -->
         {{-- <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4 p-2 mt-3 navbar-bg">
             <div class="container-fluid">
@@ -207,7 +207,7 @@
                             </label>
                             <div class="input-group">
                                 <input type="text" class="form-control bg-light" id="referralCode"
-                                    value="{{ $user->referral_code }}">
+                                    value="{{ $user->referral_code }}" readonly>
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
                                     <i class="bi bi-clipboard"></i>
@@ -222,7 +222,7 @@
                             </label>
                             <div class="input-group">
                                 <input type="text" class="form-control bg-light" id="referralLink"
-                                    value="{{ url('/register?ref=' . $user->referral_code) }}">
+                                    value="{{ route('register', ['ref' => $user->referral_code]) }}" readonly>
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralLink')" title="Copy link">
                                     <i class="bi bi-clipboard"></i>
@@ -237,7 +237,7 @@
                             </label>
                             <div class="input-group">
                                 <input type="text" class="form-control bg-light text-truncate" id="referralCaption"
-                                    value="Join IdSpora and unlock exclusive events! Use my referral link to get started: https://idspora..."
+                                    value="Join IdSpora and unlock exclusive courses and events! Use my referral link to get started: {{ route('register', ['ref' => $user->referral_code]) }}"
                                     readonly>
                                 <button class="btn btn-warning text-white" type="button"
                                     onclick="copyToClipboard(this, 'referralCaption')" title="Copy caption">
@@ -257,7 +257,7 @@
 
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-gift-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>Temanmu otomatis dapat diskon 5% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
+                            <p>Temanmu otomatis dapat diskon 10% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
                         </div>
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>

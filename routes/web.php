@@ -61,6 +61,9 @@ Route::middleware(['auth'])->group(function () {
     
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
+
+    // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
+    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
 });
 
 Route::get('/bandingin', function () {
