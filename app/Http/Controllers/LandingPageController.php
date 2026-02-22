@@ -16,11 +16,14 @@ class LandingPageController extends Controller
             ->limit(4)
             ->get();
 
-        // Get 4 latest events
-        $featuredEvents = Event::orderBy('created_at', 'desc')
+        // Ambil 4 event aktif (belum selesai). Tetap urutkan berdasarkan terbaru dibuat.
+        // Menggunakan scope active agar event yang sudah selesai otomatis tidak tampil.
+        $upcomingEvents = Event::active()
+            ->orderByDesc('created_at')
             ->limit(4)
             ->get();
 
-        return view('landing-page', compact('featuredCourses', 'featuredEvents'));
+        // View membutuhkan variabel $upcomingEvents untuk menampilkan daftar event.
+        return view('landing-page', compact('featuredCourses', 'upcomingEvents'));
     }
 }

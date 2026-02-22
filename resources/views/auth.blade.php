@@ -1,11 +1,10 @@
-</html>
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
+    <title>Verifikasi OTP</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -155,9 +154,9 @@
 
         .kirim-ulang a:hover {
             text-decoration: underline;
-    
         }
-        .kirim-ulang-teks:hover{
+
+        .kirim-ulang-teks:hover {
             color: #f4a442;
             text-decoration: none;
         }
@@ -204,33 +203,141 @@
             color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
         }
+
+        .hint {
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        .cooldown {
+            color: #cbd5e1;
+            font-size: 13px;
+            display: none;
+        }
     </style>
 </head>
 
 <body>
+    <a href="{{ route('login') }}"><img class="back" src="{{ asset('aset/back.png') }}" alt="Kembali"></a>
+    <div class="main-container">
+        <div class="kiri">
+            <img class="logo" src="{{ asset('aset/logo.png') }}" alt="Logo">
+        </div>
 
-    <body>
-        <img class="back" src="aset/back.png" alt="Kembali">
-        <div class="main-container">
-            <div class="kiri">
-                <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
+        <div class="kanan">
+            <h3>Verifikasi</h3>
+
+            @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $e)
+                    <li>{{ $e }}</li>
+                    @endforeach
+                </ul>
             </div>
+            @endif
 
-            <div class="kanan">
-                <h3>Verifikasi</h3>
+            <p class="hint">Kami telah mengirimkan kode ke email Anda: <b>{{ $maskedEmail ?? '' }}</b>. Kode berlaku 10 menit.</p>
 
-                <form action="#" method="get">
-                    <div class="mb-3">
-                        <h6>Kode Otp</h6>
-                        <input type="email" class="form-control" required>
-                    </div>
-                    <div class="kirim-ulang">
-                        <a class="kirim-ulang-teks">Kirim ulang kode?</a>
-                    </div>
-                    <button type="submit" class="btn-register">Verifikasi</button>
+            <form action="{{ route('login.otp.verify') }}" method="POST">
+                @csrf
+                <div class="mb-3">
+                    <h6>Masukkan Kode Verifikasi</h6>
+                    <input type="text" name="code" class="form-control" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+                    <small class="text-white">Kode verifikasi telah dikirim ke email Anda</small>
+                </div>
+                <button type="submit" class="btn-register">Verifikasi</button>
+            </form>
+
+            <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
+                <form id="resendForm" action="{{ route('login.otp.resend') }}" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" id="resendBtn" class="btn btn-link p-0" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kirim Ulang Kode</button>
                 </form>
+                <div class="cooldown" id="cooldownText">Tunggu <span id="sec">60</span> detik untuk kirim ulang</div>
+                <div class="hint mt-1" id="resendStatus" style="display:none;"></div>
             </div>
         </div>
-    </body>
+    </div>
+
+    <script>
+        // Resend cooldown (60s) with localStorage persistence and fetch-based submit
+        (function(){
+            const form = document.getElementById('resendForm');
+            const resendBtn = document.getElementById('resendBtn');
+            const cd = document.getElementById('cooldownText');
+            const sec = document.getElementById('sec');
+            const statusBox = document.getElementById('resendStatus');
+            const KEY = 'otpResendUntil';
+
+            function startCountdown(msLeft){
+                let s = Math.max(0, Math.ceil(msLeft/1000));
+                resendBtn.disabled = true;
+                cd.style.display = 'block';
+                sec.textContent = s;
+                const timer = setInterval(() => {
+                    s -= 1;
+                    sec.textContent = s;
+                    if (s <= 0) {
+                        clearInterval(timer);
+                        resendBtn.disabled = false;
+                        cd.style.display = 'none';
+                        statusBox.style.display = 'none';
+                        localStorage.removeItem(KEY);
+                    }
+                }, 1000);
+            }
+
+            // Initialize from localStorage
+            try {
+                const until = parseInt(localStorage.getItem(KEY) || '0', 10);
+                const now = Date.now();
+                if (until && until > now) {
+                    startCountdown(until - now);
+                }
+            } catch {}
+
+            if (form && resendBtn) {
+                form.addEventListener('submit', function(e){
+                    e.preventDefault();
+                    // If still in cooldown, ignore
+                    const now = Date.now();
+                    const until = parseInt(localStorage.getItem(KEY) || '0', 10);
+                    if (until && until > now) return;
+
+                    // Set cooldown for 60s
+                    const newUntil = now + 60000;
+                    try { localStorage.setItem(KEY, String(newUntil)); } catch {}
+                    startCountdown(60000);
+
+                    // Send POST via fetch without page reload
+                    const url = form.action;
+                    const tokenInput = form.querySelector('input[name="_token"]');
+                    const token = tokenInput ? tokenInput.value : '';
+                    statusBox.style.display = 'block';
+                    statusBox.textContent = 'Mengirim ulang kode...';
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                        },
+                        credentials: 'same-origin',
+                        body: new URLSearchParams({ _token: token })
+                    }).then(() => {
+                        statusBox.textContent = 'Kode OTP baru telah dikirim.';
+                    }).catch(() => {
+                        statusBox.textContent = 'Gagal mengirim ulang kode OTP. Coba lagi nanti.';
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
 
 </html>

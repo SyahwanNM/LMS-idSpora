@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\LoginOtp;
+use App\Mail\LoginOtpMail;
 
 class SocialAuthController extends Controller
 {
@@ -56,25 +59,45 @@ class SocialAuthController extends Controller
             $user->save();
         }
 
-        Auth::login($user, true);
-
-        // Log activity
-        if(class_exists(ActivityLog::class)){
-            ActivityLog::create([
-                'user_id' => $user->id,
-                'action' => 'Login Google',
-                'description' => 'Login via Google OAuth'
-            ]);
+        // Jika akun admin@idspora.com atau akhadidaffa13@gmail.com, bypass OTP dan langsung login
+        if (in_array(strtolower($user->email), ['admin@idspora.com', 'akhadidaffa13@gmail.com'])) {
+            Auth::login($user, true);
+            $redirect = session()->pull('social_redirect');
+            if (strcasecmp($user->role ?? '', 'admin') === 0) {
+                return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+            }
+            if ($redirect) {
+                return redirect($redirect)->with('success', 'Login berhasil!');
+            }
+            return redirect()->intended('/dashboard')->with('success','Login berhasil!');
         }
 
-        if($user->role === 'admin'){
-            return redirect('/admin/dashboard')->with('login_success','Login Google berhasil (Admin)');
+        // Require OTP confirmation before actually logging in
+        // Generate and store OTP (expires in 10 minutes)
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        LoginOtp::where('email', $user->email)->where('is_used', false)->delete();
+        LoginOtp::create([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(10),
+            'is_used' => false,
+        ]);
+
+        // Save pending session for OTP verification
+        session([
+            'login_otp_user_id' => $user->id,
+            'login_otp_email' => $user->email,
+            'login_otp_redirect' => session()->pull('social_redirect')
+        ]);
+
+        try {
+            Mail::to($user->email)->send(new LoginOtpMail($code, $user->name, 10));
+        } catch (\Throwable $e) {
+            \Log::error('Google login OTP mail failed: '.$e->getMessage());
+            return redirect()->route('login')->withErrors(['email' => 'Gagal mengirim kode OTP untuk login Google. Coba lagi.']);
         }
 
-        $intended = session()->pull('social_redirect');
-        if($intended && str_starts_with($intended,'/')){
-            return redirect($intended)->with('success','Login Google berhasil!');
-        }
-        return redirect()->intended('/dashboard')->with('success','Login Google berhasil!');
+        return redirect()->route('login.otp')->with('success', 'Kode OTP telah dikirim ke email Anda.');
     }
 }
