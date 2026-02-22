@@ -978,4 +978,4 @@
 
 
 </html>
-@include('partials.footer-after-login')
+@include('partials.footer-before-login')

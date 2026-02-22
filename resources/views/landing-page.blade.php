@@ -455,8 +455,9 @@
             <h3>Event & Webinar</h3>
             <h6>Jadwal event dan webinar terbaru dari idSpora</h6>
         </div>
+        {{-- Gunakan langsung $upcomingEvents dari controller (sudah scope active: termasuk yang sedang berlangsung, mengecualikan yang selesai) --}}
         <div class="event-list">
-            @forelse($featuredEvents as $event)
+            @forelse($upcomingEvents as $event)
             <div class="card-event @guest login-required-card @endguest" @guest data-requires-login="true" data-redirect="{{ route('events.show', $event->id) }}" role="button" tabindex="0" aria-label="Event {{ e($event->title) }} - login diperlukan untuk mendaftar" @endguest>
                 <div class="event-poster">
                     @if($event->image)
@@ -538,12 +539,18 @@
                         <button class="btn-register need-login" type="button" data-event-id="{{ $event->id }}" data-redirect="{{ route('events.show', $event->id) }}">Daftar Sekarang</button>
                         @endguest
                     </div>
+                    @if($event->hasDiscount() && $event->discount_percentage > 0 && $event->discount_until && $event->discount_until->isFuture())
+                        <div class="discount-info" aria-label="Diskon aktif {{ $event->discount_percentage }}% sampai {{ $event->discount_until->format('d M Y') }}">
+                            <span class="badge-discount">Diskon {{ $event->discount_percentage }}%</span>
+                            <small class="discount-until">Sampai {{ $event->discount_until->format('d M Y') }}</small>
+                        </div>
+                    @endif
                 </div>
             </div>
             @empty
-            <div class="text-center py-5">
-                <h5 class="mb-3">Belum ada event tersedia</h5>
-                <p class="text-muted">Event akan segera hadir!</p>
+            <div class="text-center py-5" style="text-align:center;">
+                <h5 class="mb-3">Belum ada event yang berlangsung</h5>
+                <p class="text-muted">Semua event telah selesai atau belum dijadwalkan.</p>
             </div>
             @endforelse
         </div>
@@ -690,248 +697,55 @@
             animation-fill-mode: both;
         }
 
-        .modal-animate-in {
-            animation: modalPop .65s cubic-bezier(.16, .8, .24, 1);
-        }
-
-        @keyframes modalPop {
-            0% {
-                transform: translateY(28px) scale(.9);
-                opacity: 0;
-            }
-
-            50% {
-                transform: translateY(-4px) scale(1.01);
-            }
-
-            70% {
-                transform: translateY(0) scale(.998);
-            }
-
-            100% {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-        }
-
-        /* Fallback overlay (when Bootstrap JS absent) */
-        .login-fallback-overlay {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(17, 24, 39, .38);
-            backdrop-filter: blur(4px);
-            opacity: 0;
-            transition: opacity .3s ease;
-            z-index: 1200;
-        }
-
-        .login-fallback-overlay.show {
-            opacity: 1;
-        }
-
-        .login-fallback-overlay.closing {
-            opacity: 0;
-        }
-
-        .login-fallback-card {
-            width: 100%;
-            max-width: 340px;
-            background: #fff;
-            border-radius: 20px;
-            padding: 1.4rem 1.3rem 1.6rem;
-            box-shadow: 0 20px 40px -16px rgba(0, 0, 0, .25), 0 4px 10px -2px rgba(0, 0, 0, .12);
-            position: relative;
-            animation: fallbackCardIn .6s cubic-bezier(.16, .8, .24, 1);
-            text-align: center;
-        }
-
-        @keyframes fallbackCardIn {
-            0% {
-                transform: translateY(28px) scale(.9);
-                opacity: 0;
-            }
-
-            55% {
-                transform: translateY(-6px) scale(1.02);
-            }
-
-            75% {
-                transform: translateY(0) scale(.995);
-            }
-
-            100% {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
-        }
-
-        .login-fallback-card h5 {
-            font-weight: 600;
-            letter-spacing: .3px;
-        }
-
-        .login-fallback-card .icon-wrap {
-            width: 72px;
-            height: 72px;
-            border-radius: 24px;
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .login-fallback-card .icon-wrap .pulse {
-            animation: pulseRing 2s ease-out infinite;
-        }
-
-        @keyframes pulseRing {
-            0% {
-                transform: scale(.6);
-                opacity: .55;
-            }
-
-            70% {
-                transform: scale(1);
-                opacity: 0;
-            }
-
-            100% {
-                opacity: 0;
-            }
-        }
-
-        .login-fallback-card .draw-check {
-            stroke-dasharray: 40;
-            stroke-dashoffset: 40;
-            animation: drawCheck 1s ease forwards .35s;
-        }
-
-        @keyframes drawCheck {
-            to {
-                stroke-dashoffset: 0;
-            }
-        }
-
-        .login-fallback-card .close-fallback {
-            position: absolute;
-            top: 6px;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 1.35rem;
-            line-height: 1;
-            color: #888;
-            cursor: pointer;
-            transition: color .2s, transform .2s;
-        }
-
-        .login-fallback-card .close-fallback:hover {
-            color: #111;
-            transform: scale(1.1);
-        }
-
-        @media (max-width:520px) {
-            .login-fallback-card {
-                margin: 0 1rem;
-                border-radius: 18px;
-            }
-        }
-
-        /* Adjust event card image size & spacing */
-        .event-list .card-event .event-poster {
-            position: relative;
-            height: 340px;
-            /* increased from previous ~200-260 */
-        }
-
-        .event-list .card-event .event-poster-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Slightly larger grid items vertically */
-        .event-list {
-            row-gap: 34px;
-        }
-
-        /* If card body needs more top separation from image */
-        .event-list .card-event .card-body {
-            padding-top: 18px;
-        }
-
-        @media (max-width: 768px) {
-            .event-list .card-event .event-poster {
-                height: 280px;
-            }
-        }
-
-        .login-required-card {
-            cursor: pointer;
-        }
-
-        .login-required-card:focus {
-            outline: 2px solid #4f46e5;
-            outline-offset: 2px;
-        }
-
-        /* FREE price styling */
-        .price-free {
-            color: #15803d;
-            font-weight: 600;
-            letter-spacing: .5px;
-            background: #dcfce7;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: .82rem;
-            display: inline-block;
-            line-height: 1.05;
-            box-shadow: 0 0 0 1px #bbf7d0 inset;
-        }
-
-        /* In-card countdown */
-        .countdown-row {
-            margin: 12px 0 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-            font-size: .65rem;
-            letter-spacing: .5px;
-        }
-
-        .countdown-row .cd-part {
-            background: #1e293b;
-            color: #f1f5f9;
-            padding: 4px 6px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: .75rem;
-            min-width: 34px;
-            text-align: center;
-            display: inline-block;
-            box-shadow: 0 2px 4px -2px rgba(0, 0, 0, .25);
-        }
-
-        .countdown-row small {
-            font-size: .6rem;
-            margin-left: -2px;
-            margin-right: 4px;
-            color: #475569;
-            font-weight: 500;
-        }
-
-        .countdown-row.is-live .cd-part {
-            background: #16a34a;
-        }
-
-        .countdown-row.is-live small {
-            color: #15803d;
-        }
+    /* Fallback overlay (when Bootstrap JS absent) */
+    .login-fallback-overlay {position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(17,24,39,.38);backdrop-filter:blur(4px);opacity:0;transition:opacity .3s ease;z-index:1200;}
+    .login-fallback-overlay.show {opacity:1;}
+    .login-fallback-overlay.closing {opacity:0;}
+    .login-fallback-card {width:100%;max-width:340px;background:#fff;border-radius:20px;padding:1.4rem 1.3rem 1.6rem;box-shadow:0 20px 40px -16px rgba(0,0,0,.25),0 4px 10px -2px rgba(0,0,0,.12);position:relative;animation:fallbackCardIn .6s cubic-bezier(.16,.8,.24,1);text-align:center;}
+    @keyframes fallbackCardIn {0%{transform:translateY(28px) scale(.9);opacity:0;}55%{transform:translateY(-6px) scale(1.02);}75%{transform:translateY(0) scale(.995);}100%{transform:translateY(0) scale(1);opacity:1;}}
+    .login-fallback-card h5 {font-weight:600;letter-spacing:.3px;}
+    .login-fallback-card .icon-wrap {width:72px;height:72px;border-radius:24px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;position:relative;}
+    .login-fallback-card .icon-wrap .pulse {animation:pulseRing 2s ease-out infinite;}
+    @keyframes pulseRing {0%{transform:scale(.6);opacity:.55;}70%{transform:scale(1);opacity:0;}100%{opacity:0;}}
+    .login-fallback-card .draw-check {stroke-dasharray:40;stroke-dashoffset:40;animation:drawCheck 1s ease forwards .35s;}
+    @keyframes drawCheck {to{stroke-dashoffset:0;}}
+    .login-fallback-card .close-fallback {position:absolute;top:6px;right:10px;background:none;border:none;font-size:1.35rem;line-height:1;color:#888;cursor:pointer;transition:color .2s, transform .2s;}
+    .login-fallback-card .close-fallback:hover {color:#111;transform:scale(1.1);} 
+    @media (max-width:520px){.login-fallback-card{margin:0 1rem;border-radius:18px;}}
+    /* Adjust event card image size & spacing */
+    .event-list .card-event .event-poster {position:relative; height: 340px; /* increased from previous ~200-260 */}
+    .event-list .card-event .event-poster-img {width:100%; height:100%; object-fit:cover;}
+    /* Slightly larger grid items vertically */
+    .event-list {row-gap:34px;}
+    /* If card body needs more top separation from image */
+    .event-list .card-event .card-body {padding-top:18px;}
+    .event-list .card-event .discount-info {margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+    .event-list .card-event .badge-discount {background:#dc2626; color:#fff; padding:4px 10px; border-radius:4px; font-size:13px; font-weight:600; letter-spacing:.5px;}
+    .event-list .card-event .discount-until {color:#6b7280; font-size:12px;}
+    @media (max-width: 768px){
+        .event-list .card-event .event-poster {height:280px;}
+    }
+    .login-required-card {cursor:pointer;}
+    .login-required-card:focus {outline:2px solid #4f46e5; outline-offset:2px;}
+    /* FREE price styling */
+    .price-free { 
+        color:#15803d; 
+        font-weight:600; 
+        letter-spacing:.5px; 
+        background:#dcfce7; 
+        padding:4px 10px; 
+        border-radius:30px; 
+        font-size:.82rem; 
+        display:inline-block; 
+        line-height:1.05; 
+        box-shadow:0 0 0 1px #bbf7d0 inset; 
+    }
+    /* In-card countdown */
+    .countdown-row {margin:12px 0 10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:.65rem; letter-spacing:.5px;}
+    .countdown-row .cd-part {background:#1e293b; color:#f1f5f9; padding:4px 6px; border-radius:6px; font-weight:600; font-size:.75rem; min-width:34px; text-align:center; display:inline-block; box-shadow:0 2px 4px -2px rgba(0,0,0,.25);} 
+    .countdown-row small {font-size:.6rem; margin-left:-2px; margin-right:4px; color:#475569; font-weight:500;}
+    .countdown-row.is-live .cd-part {background:#16a34a;} 
+    .countdown-row.is-live small {color:#15803d;} 
     </style>
 
     <section class="partner">

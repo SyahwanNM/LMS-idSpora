@@ -134,7 +134,7 @@
                     <h6>Masukkan Kode Verifikasi</h6>
                     <input type="text" name="verification_code" class="form-control" value="{{ old('verification_code') }}" 
                            placeholder="000000" maxlength="6" required>
-                    <small class="text-muted">Kode verifikasi telah dikirim ke email Anda</small>
+                    <small class="text-white">Kode verifikasi telah dikirim ke email Anda</small>
                 </div>
 
                 <button type="submit" class="btn-register">Verifikasi</button>
