@@ -1,17 +1,53 @@
 @extends('layouts.admin')
-
 @section('title', 'Kelola Event')
-
 @section('content')
 <div class="container-fluid py-4">
-        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+        {{-- Success Toast Popup --}}
+        @if(session('success'))
+            <div aria-live="polite" aria-atomic="true" class="position-relative">
+                <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+                    <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    try{
+                        var el = document.getElementById('eventUpdatedToast');
+                        if(window.bootstrap && el){
+                            var t = new bootstrap.Toast(el);
+                            t.show();
+                        }
+                    }catch(e){}
+                });
+            </script>
+        @endif
         @if($errors->any())
             <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
         @endif
+        @if(session('statusFilter'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function(){
+                    try{
+                        var sel = document.getElementById('statusFilter');
+                        if(sel){
+                            sel.value = '{{ session('statusFilter') }}';
+                            sel.dispatchEvent(new Event('change'));
+                        }
+                    }catch(e){}
+                });
+            </script>
+        @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Kelola Event</h4>
+            <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
-                <a href="{{ route('admin.events.history') }}" class="btn btn-outline-secondary"><i class="bi bi-clock-history"></i> History</a>
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
@@ -126,12 +162,18 @@
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
-                                        $completed = $event->documents_completed_count; 
                                         $hasVbg = !empty($event->vbg_path);
                                         $hasCert = !empty($event->certificate_path);
-                                        $hasAbs = !empty($event->attendance_path);
-                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Absensi: '.($hasAbs ? '✔' : '✖');
+                                        // Absensi dianggap selesai jika ada file atau QR sudah aktif
+                                        $hasAbsFile = !empty($event->attendance_path);
+                                        $hasAbsQrImg = !empty($event->attendance_qr_image);
+                                        $hasAbsQrToken = !empty($event->attendance_qr_token);
+                                        $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                        // Tooltip ringkas
+                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
+                                        // Tampilkan count UI sebagai 3 komponen (termasuk Absensi via QR)
+                                        $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Kelengkapan Dokumen">{{ $pct }}%</span>
@@ -141,7 +183,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1">{{ $completed }}/3 selesai</small>
+                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/3 selesai</small>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
@@ -259,8 +301,19 @@
                                 @php 
                                     $hasVbg = !empty($event->vbg_path);
                                     $hasCert = !empty($event->certificate_path);
-                                    $hasAbs = !empty($event->attendance_path);
+                                    // Absensi: selesai jika file atau QR aktif
+                                    $hasAbsFile = !empty($event->attendance_path);
+                                    $hasAbsQrImg = !empty($event->attendance_qr_image);
+                                    $hasAbsQrToken = !empty($event->attendance_qr_token);
+                                    $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                    $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $pct = $event->documents_completion_percent;
+                                    $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="{{ $pctClass }}" title="Kelengkapan Dokumen">{{ $pct }}%</span>
+                                    <small class="text-muted">{{ $completedDisplay }}/3 selesai</small>
+                                </div>
                                 <ul class="list-group list-group-flush mb-3 small">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span>
@@ -313,15 +366,23 @@
                                         </span>
                                         <span>
                                             @if($hasAbs)
-                                                @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                @if($hasAbsFile)
+                                                    @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
+                                                    @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="d-inline-block">
+                                                            <img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                        </a>
+                                                    @elseif($aExt === 'pdf')
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    @else
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    @endif
+                                                @elseif($hasAbsQrImg)
+                                                    <a href="{{ Storage::url($event->attendance_qr_image) }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ Storage::url($event->attendance_qr_image) }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                     </a>
-                                                @elseif($aExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                 @else
-                                                    <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    <span class="badge bg-success">QR Absensi Aktif</span>
                                                 @endif
                                             @else
                                                 <span class="text-muted">Belum ada</span>
@@ -349,11 +410,7 @@
                                                 <input type="file" class="form-control" id="sertif-{{ $event->id }}" name="certificate" accept="image/*,application/pdf" data-preview="#sertif-preview-{{ $event->id }}">
                                                 <div id="sertif-preview-{{ $event->id }}" class="mt-2"></div>
                                             </div>
-                                            <div class="box-up mb-3">
-                                                <label for="absensi-{{ $event->id }}" class="form-label">Absensi</label>
-                                                <input type="file" class="form-control" id="absensi-{{ $event->id }}" name="attendance" accept="image/*,application/pdf" data-preview="#absensi-preview-{{ $event->id }}">
-                                                <div id="absensi-preview-{{ $event->id }}" class="mt-2"></div>
-                                            </div>
+                                            <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                         </div>
                                     @else
                                         <div class="box-up mb-3">
@@ -366,11 +423,7 @@
                                             <input type="file" class="form-control" id="sertif-{{ $event->id }}" name="certificate" accept="image/*,application/pdf" data-preview="#sertif-preview-{{ $event->id }}">
                                             <div id="sertif-preview-{{ $event->id }}" class="mt-2"></div>
                                         </div>
-                                        <div class="box-up mb-3">
-                                            <label for="absensi-{{ $event->id }}" class="form-label">Absensi</label>
-                                            <input type="file" class="form-control" id="absensi-{{ $event->id }}" name="attendance" accept="image/*,application/pdf" data-preview="#absensi-preview-{{ $event->id }}">
-                                            <div id="absensi-preview-{{ $event->id }}" class="mt-2"></div>
-                                        </div>
+                                        <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                     @endif
                                 </form>
                             </div>
@@ -464,6 +517,12 @@
                                     </select>
                                 </div>
                                 <!-- Level field removed per request -->
+                                <!-- Penjelasan Singkat (maks 40 kata) -->
+                                <div class="mb-3">
+                                    <label for="short_desc" class="form-label fw-semibold">Penjelasan Singkat <span class="text-danger">*</span></label>
+                                    <textarea name="short_description" id="short_desc" class="form-control" rows="3" required placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description') }}</textarea>
+                                    <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40 kata</small>
+                                </div>
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
                                     <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
@@ -711,6 +770,8 @@
         .manage-action-create:before { border-left-color:#0f5d2c; }
         .manage-action-manage { background:linear-gradient(135deg,#0d6efd,#3b82f6); }
         .manage-action-manage:before { border-left-color:#093d94; }
+        /* Ensure delete confirmation text is black */
+        #deleteEventModal .form-check-label { color: #000 !important; }
     </style>
     @endsection
     @section('scripts')
@@ -780,6 +841,7 @@
     let leafletMap = null, leafletMarker = null;
         const mapsInput = document.getElementById('maps');
         const mapsPreview = document.getElementById('mapsPreview');
+        const zoomInput = document.getElementById('zoom');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
     const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
@@ -849,12 +911,37 @@
             if(p){ showMap(p.lat, p.lng); }
             else if(mapsPreview){ mapsPreview.style.display = 'none'; }
         }
+        // Mutually disable Maps vs Zoom link: choosing one disables the other
+        function syncOnlineOfflineInputs(){
+            const hasMaps = !!(mapsInput && mapsInput.value.trim());
+            const hasZoom = !!(zoomInput && zoomInput.value.trim());
+            if (hasMaps) {
+                if (zoomInput) zoomInput.disabled = true;
+                if (mapsInput) mapsInput.disabled = false;
+                if (btnResolveMaps) btnResolveMaps.disabled = false;
+            } else if (hasZoom) {
+                if (mapsInput) mapsInput.disabled = true;
+                if (btnResolveMaps) btnResolveMaps.disabled = true;
+                if (mapsPreview) mapsPreview.style.display = 'none';
+                if (zoomInput) zoomInput.disabled = false;
+            } else {
+                if (mapsInput) mapsInput.disabled = false;
+                if (zoomInput) zoomInput.disabled = false;
+                if (btnResolveMaps) btnResolveMaps.disabled = false;
+            }
+        }
         if(mapsInput){
-            mapsInput.addEventListener('change', tryRenderMap);
-            mapsInput.addEventListener('blur', tryRenderMap);
+            mapsInput.addEventListener('input', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('change', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('blur', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
             // initial (old() values)
             tryRenderMap();
         }
+        if(zoomInput){
+            ['input','change','blur'].forEach(ev => zoomInput.addEventListener(ev, syncOnlineOfflineInputs));
+        }
+        // Initial mutual-disable state
+        syncOnlineOfflineInputs();
         if(btnResolveMaps){
             btnResolveMaps.addEventListener('click', async () => {
                 const url = mapsInput?.value || '';
@@ -1253,7 +1340,7 @@
             tr.innerHTML = `
                 <td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1" value="" /></td>
-                <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1000" value="" /></td>
+                <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1" value="" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0" /></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
@@ -1269,7 +1356,8 @@
                 qtyInput.addEventListener('input', () => recalcExpenseRow(tr));
             }
             if (unitInput) {
-                clampNonNegativeNumberInput(unitInput, 100);
+                // Allow any integer price (e.g., 23333, 23500, etc.)
+                clampNonNegativeNumberInput(unitInput, 1);
                 unitInput.addEventListener('input', () => recalcExpenseRow(tr));
             }
 
@@ -1324,6 +1412,18 @@
                     if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; }
                     else { f.classList.remove('border-danger'); }
                 });
+                // Validate short description max 40 words
+                const shortDescEl = document.getElementById('short_desc');
+                if(shortDescEl){
+                    const words = (shortDescEl.value || '').trim().split(/\s+/).filter(Boolean);
+                    if(words.length > 40){
+                        ok = false;
+                        shortDescEl.classList.add('border-danger');
+                        alert('Penjelasan singkat maksimal 40 kata. Saat ini: ' + words.length + ' kata.');
+                    } else {
+                        shortDescEl.classList.remove('border-danger');
+                    }
+                }
                 if (!ok) {
                     // Build list of missing required fields for clearer feedback
                     const requiredSet = Array.from(form.querySelectorAll('[required]'));
@@ -1335,6 +1435,7 @@
                         if(id === 'nama' || name === 'title') return 'Nama Event';
                         if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
                         if(id === 'level' || name === 'level') return 'Level';
+                        if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
                         if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
                         if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
                         if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
@@ -1364,6 +1465,7 @@
                 if(id === 'nama' || name === 'title') return 'Nama Event';
                 if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
                 if(id === 'level' || name === 'level') return 'Level';
+                if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
                 if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
                 if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
                 if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
@@ -1380,14 +1482,21 @@
             // expose globally so CKEditor init can call it even if defined later
             window.updateSubmitState = function updateSubmitState(){
                 const filled = allRequiredFilled();
-                if(submitBtn){ submitBtn.disabled = !filled; }
+                // Extra rule: short description must be <= 40 words
+                const sdEl = document.getElementById('short_desc');
+                const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
+                const overLimit = sdEl ? sdWords > 40 : false;
+                if(submitBtn){ submitBtn.disabled = (!filled || overLimit); }
                 if(submitHint){
-                    if(filled){
-                        submitHint.style.display = 'none';
-                    } else {
+                    if(!filled){
                         const missingList = missingRequired().map(fieldFriendlyName);
                         submitHint.textContent = 'Lengkapi: ' + missingList.join(', ');
                         submitHint.style.display = 'block';
+                    } else if(overLimit){
+                        submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';
+                        submitHint.style.display = 'block';
+                    } else {
+                        submitHint.style.display = 'none';
                     }
                 }
             }
@@ -1406,6 +1515,22 @@
             }
             // Initial state
             updateSubmitState();
+
+            // Live word count for short description (max 40 words)
+            const shortDescEl = document.getElementById('short_desc');
+            const shortDescCountEl = document.getElementById('shortDescCount');
+            function updateShortDescCount(){
+                if(!shortDescEl || !shortDescCountEl) return;
+                const words = (shortDescEl.value || '').trim().split(/\s+/).filter(Boolean);
+                shortDescCountEl.textContent = words.length;
+                if(words.length > 40){
+                    shortDescCountEl.classList.add('text-danger');
+                } else {
+                    shortDescCountEl.classList.remove('text-danger');
+                }
+            }
+            ['input','change','blur'].forEach(evName => shortDescEl?.addEventListener(evName, () => { updateShortDescCount(); updateSubmitState(); }));
+            updateShortDescCount();
         } else {
             console.warn('[EventForm] Form element not found.');
         }

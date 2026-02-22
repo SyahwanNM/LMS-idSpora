@@ -13,14 +13,14 @@
         body {
             margin: 0;
             padding: 0;
-            height: 100%;
-            overflow: hidden;
+            min-height: 100vh;
             font-family: "Poppins";
             background: radial-gradient(circle, #51376C 0%, #2E2050 100%);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow-x: hidden;
         }
 
         .main-container {
@@ -31,38 +31,42 @@
             min-height: 100vh;
             align-items: center;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .back {
-            position: fixed;
-            top: 50px;
-            left: 70px;
-            width: 20px;
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 25px;
             height: auto;
             cursor: pointer;
+            z-index: 10;
         }
 
         .kiri {
-            flex: 0.8;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 56px;
-            font-weight: bold;
+            min-width: 300px;
         }
 
         .logo {
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
             height: auto;
-            margin-right: 100px;
+            margin-right: 50px;
         }
 
         .kanan {
             flex: 1;
-            max-width: 350px;
+            width: 100%;
+            max-width: 400px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            padding: 20px 0;
         }
 
         .kanan h3 {
@@ -83,6 +87,7 @@
             border-color: #f4a442;
             box-shadow: 0 0 0 2px rgba(244, 164, 66, 0.3);
             background-color: #AFB6E54D;
+            color: white;
         }
 
         .btn-register {
@@ -99,11 +104,46 @@
         .btn-register:hover {
             background-color: #e68a00;
         }
+
+        @media (max-width: 991px) {
+            .main-container {
+                flex-direction: column;
+                padding: 60px 20px 40px;
+                min-height: auto;
+            }
+            .logo {
+                margin-right: 0;
+                margin-bottom: 30px;
+                max-width: 300px;
+            }
+            .kiri {
+                min-width: auto;
+            }
+            .kanan {
+                max-width: 100%;
+            }
+            .back {
+                top: 20px;
+                left: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .logo {
+                max-width: 250px;
+            }
+            .kanan h3 {
+                font-size: 1.5rem;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <img class="back" src="aset/back.png" alt="">
+    <a href="{{ route('register') }}" title="Kembali ke Daftar Akun">
+        <img class="back" src="{{ asset('aset/back.png') }}" alt="Kembali">
+    </a>
     <div class="main-container">
         <div class="kiri">
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
@@ -134,15 +174,30 @@
                     <h6>Masukkan Kode Verifikasi</h6>
                     <input type="text" name="verification_code" class="form-control" value="{{ old('verification_code') }}" 
                            placeholder="000000" maxlength="6" required>
-                    <small class="text-white">Kode verifikasi telah dikirim ke email Anda</small>
+                    <small class="text-white">
+                        Kode verifikasi telah dikirim ke email Anda
+                        @php($regEmail = session('register_verify_email'))
+                        @if($regEmail)
+                            ({{ preg_replace('/(^.).*(@.*$)/', '$1***$2', $regEmail) }})
+                            <input type="hidden" name="register_email" value="{{ $regEmail }}">
+                        @endif
+                    </small>
                 </div>
 
                 <button type="submit" class="btn-register">Verifikasi</button>
             </form>
             
             <div class="text-login" style="margin-top: 15px; text-align: center; font-size: 14px;">
-                <a href="{{ route('forgot-password') }}" style="color: #f4a442; font-weight: bold; text-decoration: none;">Kirim Ulang Kode</a>
+                <form id="resendForm" action="{{ route('register.otp.resend') }}" method="post" style="display:inline;">
+                    @csrf
+                    <button id="resendBtn" type="submit" class="btn btn-link p-0" style="color: #f4a442; font-weight: bold; text-decoration: none;">
+                        Kirim Ulang Kode
+                    </button>
+                    <!-- Hitung mundur dihapus sesuai permintaan -->
+                </form>
             </div>
+
+            
         </div>
     </div>
 </body>

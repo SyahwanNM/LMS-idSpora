@@ -28,8 +28,8 @@ class EventController extends Controller
 
     public function create()
     {
-        // Show Add Event modal UI with existing ACTIVE (not finished) events list + dynamic jenis/materi options
-        $events = Event::active()->latest()->paginate(10);
+        // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
+        $events = Event::query()->latest()->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.add-event', compact('events','materiOptions','jenisOptions'));
@@ -53,6 +53,7 @@ class EventController extends Controller
             // Relax validation so new dynamic materi/jenis values allowed
             'materi' => 'nullable|string|max:255',
             'jenis' => 'nullable|string|max:100',
+            'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -82,6 +83,16 @@ class EventController extends Controller
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
+
+        // Normalize path (remove 'storage/' prefix if exists)
+        // Method store() returns path like 'events/filename.png' (relative to public disk)
+        // We ensure it's stored as 'events/filename.png' in database
+        $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+        
+        // Ensure path starts with 'events/' for consistency
+        if (!str_starts_with($imagePath, 'events/')) {
+            $imagePath = 'events/' . basename($imagePath);
+        }
 
         // Normalisasi schedule
         $rawSchedule = $request->input('schedule', []);
@@ -128,6 +139,7 @@ class EventController extends Controller
             'manage_action' => $request->manage_action,
             'materi' => $request->materi,
             'jenis' => $request->jenis,
+            'short_description' => $request->short_description,
             'description' => $request->description,
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
@@ -169,7 +181,52 @@ class EventController extends Controller
             }
         }
 
-    return redirect()->route('admin.add-event')->with('success', 'Event berhasil ditambahkan!');
+        // Generate one-time attendance QR (only once per event)
+        try {
+            if (empty($event->attendance_qr_token) && empty($event->attendance_qr_image)) {
+                $token = bin2hex(random_bytes(16));
+                $content = url('/events/'.$event->id.'?t='.$token);
+                // Try PNG first; if GD not available, fallback to SVG
+                $png = null; $svg = null; $filename = null;
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) { $png = null; }
+                if ($png) {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                } else {
+                    // Attempt SVG generation as a reliable fallback
+                    try {
+                        if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                        }
+                    } catch (\Throwable $e) { $svg = null; }
+                    if ($svg) {
+                        $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                    } else {
+                        // Final minimal PNG to avoid errors
+                        $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                    }
+                }
+                $event->attendance_qr_token = $token;
+                $event->attendance_qr_image = $filename;
+                $event->attendance_qr_generated_at = now();
+                $event->save();
+            }
+        } catch (\Throwable $e) { /* ignore QR errors */ }
+
+        // If the newly created event is already finished based on end time, pre-select the Finished filter
+        $statusFilter = $event->isFinished() ? 'finished' : null;
+
+        return redirect()
+            ->route('admin.add-event')
+            ->with('success', 'Event berhasil ditambahkan!')
+            ->with('statusFilter', $statusFilter);
     }
 
     public function show(Event $event)
@@ -190,6 +247,7 @@ class EventController extends Controller
             'manage_action' => 'required|in:manage,create',
             'materi' => 'nullable|string|max:255',
             'jenis' => 'nullable|string|max:100',
+            'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
             'location' => 'required|string|max:255',
@@ -218,7 +276,7 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'description', 'benefit', 'terms_and_conditions',
+            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'short_description', 'description', 'benefit', 'terms_and_conditions',
             'location', 'maps_url', 'latitude', 'longitude', 'zoom_link', 'price', 'discount_percentage', 'discount_until',
             'event_date', 'event_time', 'event_time_end'
         ]);
@@ -264,7 +322,26 @@ class EventController extends Controller
 
         // Jika ada gambar baru, simpan ke storage
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('events', 'public');
+            $imagePath = $request->file('image')->store('events', 'public');
+            // Normalize path (remove 'storage/' prefix if exists)
+            // Method store() returns path like 'events/filename.png' (relative to public disk)
+            // We ensure it's stored as 'events/filename.png' in database
+            $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
+            
+            // Ensure path starts with 'events/' for consistency
+            if (!str_starts_with($imagePath, 'events/')) {
+                $imagePath = 'events/' . basename($imagePath);
+            }
+            
+            $data['image'] = $imagePath;
+            
+            // Delete old image if exists
+            if($event->image && !str_starts_with($event->image, 'http')) {
+                $oldPath = str_replace('storage/', '', $event->image);
+                if(\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+            }
         }
 
         $event->update($data);
@@ -289,14 +366,17 @@ class EventController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.events.index')->with('success', 'Event berhasil diupdate!');
+        return redirect()->route('admin.add-event')->with('success', 'Event berhasil diupdate!');
     }
 
     public function destroy(Event $event)
     {
         $event->delete();
-        // After deletion, redirect to our custom add-event page (resource create is removed)
-        return redirect()->route('admin.add-event')->with('success', 'Event berhasil dihapus!');
+        // Redirect back to history page if the user came from there; otherwise to add-event
+        $prev = url()->previous();
+        $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
+        $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
+        return redirect($route)->with('success', 'Event berhasil dihapus!');
     }
 
     // Public registration (AJAX)
@@ -309,12 +389,17 @@ class EventController extends Controller
         }
         $existing = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->first();
         if($existing){
-            return response()->json([
-                'status' => 'already',
-                'message' => 'Sudah terdaftar',
-                'event_title' => $event->title,
-                'redirect' => route('events.ticket', $event)
-            ]);
+            if($existing->status === 'rejected'){
+                // Allow re-registration: delete old rejected record
+                $existing->delete();
+            } else {
+                return response()->json([
+                    'status' => 'already',
+                    'message' => 'Sudah terdaftar',
+                    'event_title' => $event->title,
+                    'redirect' => route('events.show', $event)
+                ]);
+            }
         }
         // Hitung final price (sesudah diskon bila ada)
         $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
@@ -330,19 +415,47 @@ class EventController extends Controller
         }
 
         // Event gratis: langsung daftarkan
-        $reg = EventRegistration::create([
-            'user_id' => $user->id,
-            'event_id' => $event->id,
-            'status' => 'active',
-            'registration_code' => 'EVT-'.strtoupper(uniqid())
-        ]);
+        if($isFree){
+            $reg = EventRegistration::create([
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'active',
+                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'total_price' => 0.00,
+            ]);
+        } else {
+            // Paid event: create pending registration and accept uploaded proof if provided
+            $regData = [
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'pending',
+                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'total_price' => $event->discounted_price ?? $event->price,
+            ];
+            // handle proof upload if present (this API used by web/mobile)
+            if($request->hasFile('payment_proof')){
+                $file = $request->file('payment_proof');
+                if($file->isValid()){
+                    $path = $file->store('payments', 'public');
+                    $regData['payment_proof'] = $path;
+                }
+            }
+            $reg = EventRegistration::create($regData);
+        }
+        
+        // Add points for event registration
+        try {
+            $pointsService = app(\App\Services\UserPointsService::class);
+            $pointsService->addEventPoints($user, $event, $reg);
+        } catch (\Throwable $e) { /* ignore */ }
+
         // Create notification (expires in 14 days)
         try{
             UserNotification::create([
                 'user_id' => $user->id,
                 'type' => 'event_registration',
-                'title' => 'Pendaftaran Event Berhasil',
-                'message' => 'Kamu terdaftar di "'.$event->title.'".',
+                'title' => 'Pendaftaran Dikonfirmasi',
+                'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
                 'data' => ['url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
@@ -352,7 +465,7 @@ class EventController extends Controller
             'message' => 'Berhasil daftar event (GRATIS)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.ticket', $event)
+            'redirect' => route('events.show', $event)
         ]);
     }
 
@@ -381,6 +494,67 @@ class EventController extends Controller
         }
 
         return back()->with('success', 'Dokumen berhasil diperbarui.');
+    }
+
+    // Admin: download event QR image
+    public function downloadQr(Event $event)
+    {
+        $path = (string) $event->attendance_qr_image;
+        if (!$path) abort(404, 'QR image not available');
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        if (!$disk->exists($path)) {
+            // Fallback: try public/storage
+            $alt = public_path('storage/'.ltrim($path,'/'));
+            if (!is_file($alt)) abort(404, 'QR image file missing');
+            $ext = strtolower(pathinfo($alt, PATHINFO_EXTENSION));
+            $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+            return response()->download($alt, $downloadName);
+        }
+        $full = $disk->path($path);
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+        return response()->download($full, $downloadName);
+    }
+
+    // Admin: generate or regenerate event attendance QR
+    public function generateQr(Event $event)
+    {
+        try {
+            // Generate new token and QR image (PNG preferred, SVG fallback)
+            $token = bin2hex(random_bytes(16));
+            $content = url('/events/'.$event->id.'?t='.$token);
+            $png = null; $svg = null; $filename = null;
+            try {
+                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                }
+            } catch (\Throwable $e) { $png = null; }
+            if ($png) {
+                $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+            } else {
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) { $svg = null; }
+                if ($svg) {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                } else {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                }
+            }
+            $event->attendance_qr_token = $token;
+            $event->attendance_qr_image = $filename;
+            $event->attendance_qr_generated_at = now();
+            $event->save();
+            return back()->with('success', 'QR Absensi berhasil digenerate.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal generate QR Absensi.');
+        }
     }
 
     // Resolve Google Maps short links to coordinates (admin only)
@@ -439,5 +613,86 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Gagal memproses link.'], 422);
         }
+    }
+
+    /**
+     * Admin: Approve a pending event registration (manual proof verification).
+     */
+    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if($registration->event_id !== $event->id){
+            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+        }
+        $registration->status = 'active';
+        $registration->payment_verified_at = now();
+        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
+        $registration->save();
+
+        // mark any related manual payments as settled
+        try {
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $m->status = 'settled';
+                $m->save();
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try{
+            UserNotification::create([
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_verified',
+                'title' => 'Pembayaran Diterima',
+                'message' => 'Pembayaran Anda untuk event "'.$event->title.'" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        return back()->with('success', 'Pendaftaran berhasil diverifikasi dan diaktifkan.');
+    }
+
+    /**
+     * Admin: Reject a pending event registration (manual proof verification).
+     */
+    public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if($registration->event_id !== $event->id){
+            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $reason = $request->input('reason');
+
+        $registration->status = 'rejected';
+        $registration->rejection_reason = $reason;
+        $registration->payment_verified_at = now();
+        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
+        $registration->save();
+
+        // mark any related manual payments as rejected
+        try {
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $m->status = 'rejected';
+                $m->note = $reason; // Save reason to manual payment note as well if applicable
+                $m->save();
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try{
+            UserNotification::create([
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_rejected',
+                'title' => 'Pendaftaran Ditolak',
+                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. Alasan: ' . $reason,
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
     }
 }

@@ -1,661 +1,848 @@
-<nav class="navbar navbar-expand-lg navbar-gradient fixed-top">
-    <div class="container-fluid d-flex align-items-center" style="padding: 0;">
-        <a class="navbar-brand" href="#" style="margin-left: 30px;">
-            <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="Logo idSpora" class="img-fluid"
-                style="max-width:80px; height:auto;">
+<nav class="navbar navbar-expand-lg premium-nav fixed-top">
+    <div class="container-fluid px-2 px-lg-5">
+        <!-- PART 1: LOGO & BRAND -->
+        <a class="navbar-brand d-flex align-items-center ms-lg-0 ms-3" href="{{ Auth::check() ? route('dashboard') : route('landing-page') }}">
+            <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="Logo idSpora" 
+                 class="img-fluid nav-logo" style="max-width:80px; height:auto;">
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse align-items-center" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-lg-0 d-flex align-items-center ms-3">
-                <li class="nav-item mx-3">
-                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" aria-current="page" href="{{ route('dashboard') }}">Dashboard</a>
-                </li>
-                <li class="nav-item mx-3">
-                    <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Courses</a>
-                </li>
-                <li class="nav-item mx-3">
-                    <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Events</a>
-                </li>
-                <li class="nav-item mx-3">
-                    <a class="nav-link" href="#">About</a>
-                </li>
-            </ul>
-            <form class="d-flex align-items-center h-100 me-2" style="margin: 0;" role="search">
-                <div class="position-relative w-100">
-                    <input class="form-control h-100 ps-4 pe-5" type="search" placeholder="Search" aria-label="Search"
-                        style="border-radius: 2rem; background: none; border: 1px solid #fff; color: #fff; ::placeholder { color: #fff; opacity: 1; }">
-                    <span class="position-absolute top-50 end-0 translate-middle-y pe-3"
-                        style="pointer-events: none; opacity: 50%;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#fff" class="bi bi-search"
-                            viewBox="0 0 16 16">
-                            <path
-                                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
-                        </svg>
-                    </span>
-                </div>
-            </form>
-            <div class="d-flex align-items-center ms-3 position-relative" style="margin-right: 30px;">
-                <button id="notifBtn" type="button" class="btn p-0 text-white position-relative" aria-haspopup="true" aria-expanded="false" style="background:none;border:none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bell me-3"
-                        viewBox="0 0 16 16">
-                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6" />
-                    </svg>
-                    <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size:10px;">0</span>
-                </button>
 
-                <div id="notifDropdown" class="notif-dropdown shadow-lg">
-                    <div class="notif-head d-flex align-items-center justify-content-between">
-                        <strong>Notifikasi</strong>
-                        <div class="d-flex align-items-center">
-                            <span id="notifHeaderText" class="small text-muted me-2">Tidak ada notifikasi baru</span>
-                            <button class="btn btn-sm d-inline-flex align-items-center" id="markAllReadBtn">
-                                <i class="bi bi-check2-all me-1"></i>
-                                <span> Tandai terbaca</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="notifList" class="notif-list">
-                        <div class="text-muted small py-3 px-2">Memuat...</div>
-                    </div>
+        <!-- PART 2: MOBILE CONTROLS (Always visible on mobile) -->
+        <div class="d-flex align-items-center d-lg-none ms-auto me-2 position-relative">
+            <!-- Expandable Mobile Search Bar (Slides in from the right) -->
+            <div class="mobile-search-expandable" id="mobileSearchExpandable">
+                <form action="{{ request()->routeIs('events.*') ? route('events.index') : route('courses.index') }}" method="GET" class="d-flex align-items-center w-100 h-100 px-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="rgba(255,255,255,0.5)" viewBox="0 0 16 16" class="me-2">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    <input type="text" name="search" class="form-control bg-transparent border-0 text-white p-0 shadow-none" placeholder="Cari..." id="mobileSearchInput" value="{{ request('search') }}">
+                    <button type="button" class="btn-close btn-close-white ms-2" id="closeMobileSearch" style="font-size: 0.7rem;"></button>
+                </form>
+            </div>
+
+            <!-- Mobile Search Icon -->
+            <button class="btn btn-nav-icon me-2" type="button" id="mobileSearchBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
+                </svg>
+            </button>
+            
+            <!-- Mobile Notif Icon -->
+            <button class="btn btn-nav-icon position-relative me-3" type="button" id="mobileNotifBtn" onclick="toggleNotificationDropdown()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-1.203-3.92L10 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
+                </svg>
+                <span class="position-absolute translate-middle badge rounded-pill bg-danger badge-custom" id="notificationBadgeMobile" style="{{ $unreadNotificationCount > 0 ? '' : 'display: none;' }}">{{ $unreadNotificationCount }}</span>
+            </button>
+
+            <!-- Burger Menu Toggler -->
+            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler">
+                <div class="burger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
+            </button>
+        </div>
+
+        <!-- PART 3: THE COLLAPSIBLE CONTENT (Left Menu + Desktop Actions) -->
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <div class="navbar-content-wrapper d-flex flex-column flex-lg-row w-100">
                 
-                <div class="dropdown">
-                    <button class="btn dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" 
-                            data-bs-toggle="dropdown" aria-expanded="false" style="background: none; border: none; color: white;"
-                            onclick="toggleUserDropdown()">
-                        <img src="{{ Auth::user()->avatar_url }}"
-                            alt="Avatar" class="rounded-circle me-2"
-                            style="width:40px; height:40px; object-fit:cover; border:2px solid #fff; background:#eee;">
-                        <span class="text-white">{{ Auth::user()->name }}</span>
-                        <svg class="ms-2" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" id="dropdownArrow">
-                            <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-                        </svg>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" id="userDropdownMenu" aria-labelledby="userDropdown" style="display: none;">
-                        <li><a class="dropdown-item" href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                        <button type="button" class="dropdown-item" onclick="openLogoutModal()">Logout</button>
-                                                </li>
-                    </ul>
+                <!-- LEFT SIDE: NAV LINKS -->
+                <ul class="navbar-nav me-lg-auto mb-2 mb-lg-0 mt-3 mt-lg-0 ps-lg-4 align-items-start align-items-lg-center">
+                    @auth
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Kursus</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Event</a>
+                    </li>
+                    @endauth
+                </ul>
+
+                <!-- RIGHT SIDE: DESKTOP ACTIONS (HIDDEN ON MOBILE TILL COLLAPSE) -->
+                <div class="desktop-actions-nav d-flex flex-column flex-lg-row align-items-start align-items-lg-center mt-lg-0 mt-3">
+                    
+                    <!-- Search Bar (Desktop) -->
+                    <div class="nav-search-wrapper d-none d-lg-block me-lg-4">
+                        <form class="search-form-premium" action="{{ request()->routeIs('events.*') ? route('events.index') : route('courses.index') }}" method="GET" role="search">
+                            <span class="search-icon-inside">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                </svg>
+                            </span>
+                            <input class="form-control nav-input-premium" type="search" name="search" placeholder="Cari apa saja..." aria-label="Search" value="{{ request('search') }}">
+                        </form>
+                    </div>
+
+                    <!-- Notif Icon (Desktop) -->
+                    <div class="d-none d-lg-block me-lg-3">
+                        <button class="btn btn-nav-icon position-relative" type="button" id="notifBtn" onclick="toggleNotificationDropdown()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-1.203-3.92L10 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
+                            </svg>
+                            <span class="position-absolute translate-middle badge rounded-pill bg-danger badge-custom" id="notificationBadge" style="{{ $unreadNotificationCount > 0 ? '' : 'display: none;' }}">{{ $unreadNotificationCount }}</span>
+                        </button>
+                    </div>
+
+                    @if(Auth::check())
+                    <div class="user-dropdown-premium w-100 w-lg-auto">
+                        <button class="btn user-profile-btn d-flex align-items-center w-100" type="button" id="userDropdown" onclick="toggleUserDropdown()">
+                            <img src="{{ Auth::user()->avatar_url }}" 
+                                 alt="Avatar" class="avatar-nav me-2"
+                                 onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff';">
+                            <div class="user-info-nav text-start d-lg-block">
+                                <span class="user-name-text text-white d-block">{{ Auth::user()->name }}</span>
+                                <span class="user-points-sub text-warning small"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-star-fill me-1" viewBox="0 0 16 16"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg>{{ Auth::user()->points ?? 0 }} pts</span>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="ms-auto ms-lg-2 arrow-icon" viewBox="0 0 16 16">
+                                <path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                        </button>
+
+                        <!-- Account Dropdown Menu (Internal to collapse on mobile) -->
+                        <ul class="dropdown-menu account-menu-premium" id="userDropdownMenu" style="display: none;">
+                            <li><a class="dropdown-item" href="{{ route('dashboard') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 2a.5.5 0 0 1 .5.5V4a.5.5 0 0 1-1 0V2.5A.5.5 0 0 1 8 2zM3.732 3.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM2 8a.5.5 0 0 1 .5-.5h1.586a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 8zm1.732 4.268a.5.5 0 0 1 0-.707l.914-.915a.5.5 0 1 1 .708.708l-.915.914a.5.5 0 0 1-.707 0zm4.268 1.732a.5.5 0 0 1-.5-.5V11a.5.5 0 0 1 1 0v2.5a.5.5 0 0 1-.5.5zm4.268-1.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM14 8a.5.5 0 0 1-.5.5h-1.586a.5.5 0 0 1 0-1H13.5A.5.5 0 0 1 14 8zM12.268 3.732a.5.5 0 0 1 0 .707l-.914.915a.5.5 0 1 1-.708-.708l.915-.914a.5.5 0 0 1 .707 0zM8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>Profil Saya</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.events') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>Event & Riwayat</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.settings') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.233 1.841-.53 2.508l-.242.21c-1.082.942-1.082 2.59 0 3.532l.242.21c.763.667.976 1.688.53 2.508l-.169.311c-.699 1.282.704 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.311.17c1.282.699 2.686-.704 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .53-2.508l.242-.21c1.082-.942 1.082-2.59 0-3.532l-.242-.21a1.464 1.464 0 0 1-.53-2.508l.169-.311c.699-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg>Pengaturan</a></li>
+                            <li><a class="dropdown-item" href="{{ route('public.guide') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>Panduan Platform</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <button type="button" class="dropdown-item text-danger" onclick="openLogoutModal()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>Keluar
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    @else
+                    <div class="d-flex align-items-center">
+                        <a href="{{ route('login') }}" class="btn btn-outline-new btn-sm me-2 px-3 shadow-none border-2">Masuk</a>
+                        <a href="{{ route('register') }}" class="btn btn-primary-new btn-sm px-4 shadow-none">Daftar</a>
+                    </div>
+                    @endif
+
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- GLOBAL DROPDOWNS (Not hidden by collapse) -->
+    <!-- Notif Dropdown -->
+    <div class="dropdown-menu dropdown-menu-end shadow notification-dropdown-premium" id="notificationDropdown" style="display: none;">
+        <div class="dropdown-header-premium d-flex justify-content-between align-items-center">
+            <span>Notifikasi</span>
+            <button class="btn btn-link btn-sm p-0 text-warning" onclick="markAllAsRead()">Tandai semua dibaca</button>
+        </div>
+        <div id="notificationList" class="notif-list-container" style="max-height: 350px; overflow-y: auto;">
+            @forelse($notifications as $notification)
+                <div class="dropdown-item p-3 border-bottom {{ is_null($notification->read_at) ? 'bg-opacity-10 bg-primary' : '' }}" style="white-space: normal;">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="d-flex align-items-center">
+                            @if($notification->read_at)
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill text-success me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                            @else
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill text-warning me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                            @endif
+                            <h6 class="mb-1 fw-bold text-white small">{{ $notification->title }}</h6>
+                        </div>
+                        <small class="text-white-50 ms-2" style="font-size: 0.7rem; white-space: nowrap;">{{ $notification->created_at->diffForHumans() }}</small>
+                    </div>
+                    <p class="mb-1 small text-white-50 ms-4">{{ Str::limit($notification->message, 80) }}</p>
+                </div>
+            @empty
+                <div class="px-3 py-4 text-center text-muted">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" class="mb-2 opacity-50">
+                        <path d="M4 8.5V7a4 4 0 1 1 8 0v1.5H4zm1 0h6V7a3 3 0 1 0-6 0v1.5zM3.5 10a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9z"/>
+                        <path d="M8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                    </svg>
+                    <p class="small mb-0">Tidak ada notifikasi baru</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
+
+
 </nav>
 
-@include('partials.flash')
-
 <!-- Logout Confirmation Modal -->
-<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmLabel" aria-hidden="true">
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true" style="z-index: 9999;">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning-subtle">
-                <h5 class="modal-title" id="logoutConfirmLabel">Konfirmasi Logout</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-1">Anda yakin ingin keluar?</p>
-                <small class="text-muted">Sesi Anda akan diakhiri dan perlu login kembali.</small>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        <form id="logoutRealForm" action="{{ route('logout') }}" method="POST" class="d-inline">
-            @csrf
-            <button type="submit" id="confirmLogoutBtn" class="btn btn-danger">Ya, Logout</button>
-        </form>
+        <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 24px; background: #1F1D36;">
+            <div class="modal-body p-5 text-center">
+                <!-- Icon background circle -->
+                <div class="d-inline-flex align-items-center justify-content-center mb-4" 
+                     style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#EF4444" viewBox="0 0 16 16">
+                        <path d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                        <path d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                    </svg>
+                </div>
+                
+                <h4 class="text-white font-bold mb-2">Keluar</h4>
+                <p class="text-gray-400 mb-4 px-3" style="color: rgba(255,255,255,0.6);">Apakah Anda yakin ingin keluar dari akun Anda?</p>
+                
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                    <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal"
+                            style="border-radius: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 500;">
+                        Batal
+                    </button>
+                    <form action="{{ route('logout') }}" method="POST" id="logoutForm">
+                        @csrf
+                        <button type="submit" class="btn px-4 py-2 w-100" 
+                                style="border-radius: 12px; background: #EF4444; color: #fff; border: none; font-weight: 600;">
+                            Ya, Keluar
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-// User Dropdown Functionality
-function toggleUserDropdown() {
-    const dropdown = document.getElementById('userDropdownMenu');
-    const arrow = document.getElementById('dropdownArrow');
-    
-    if (dropdown && arrow) {
-        if (dropdown.style.display === 'none' || dropdown.style.display === '') {
-            dropdown.style.display = 'block';
-            arrow.style.transform = 'rotate(180deg)';
-        } else {
-            dropdown.style.display = 'none';
-            arrow.style.transform = 'rotate(0deg)';
-        }
-    }
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-    const dropdown = document.getElementById('userDropdownMenu');
-    const button = document.getElementById('userDropdown');
-    const arrow = document.getElementById('dropdownArrow');
-    
-    if (dropdown && button && !button.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
-    }
-});
-
-// Initialize dropdown when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    const button = document.getElementById('userDropdown');
-    if (button) {
-        // Remove Bootstrap data attributes to prevent conflicts
-        button.removeAttribute('data-bs-toggle');
-        button.removeAttribute('aria-expanded');
-    }
-});
-
-// Logout modal logic
-let logoutModalInstance;
-function openLogoutModal(){
-    const modalEl = document.getElementById('logoutConfirmModal');
-    // If Bootstrap JS is available, show modal; otherwise, fallback to direct submit
-    if (window.bootstrap && typeof bootstrap.Modal === 'function' && modalEl) {
-        if (!logoutModalInstance) {
-            try { logoutModalInstance = new bootstrap.Modal(modalEl); } catch (_e) { logoutModalInstance = null; }
-        }
-        if (logoutModalInstance) { logoutModalInstance.show(); return; }
-    }
-    // Fallback: submit immediately if modal cannot be shown
-    const form = document.getElementById('logoutRealForm');
-    if(form){ form.submit(); }
-}
-
-// Pre-logout toast + success animation, then submit with slight delay
-document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('confirmLogoutBtn');
-    const form = document.getElementById('logoutRealForm');
-    if(!btn || !form) return;
-
-    function performAnimatedLogout(e){
-        // Prevent immediate navigation to let animation play
-        if(e) e.preventDefault();
-        if(form.dataset.submitting === '1') return; // guard double-submit
-        form.dataset.submitting = '1';
-        btn.disabled = true;
-        try { showLogoutSuccessState(); } catch(_e){}
-        try { showInstantLogoutToast(); } catch(_e){}
-        setTimeout(() => {
-            try { form.submit(); } catch(_e) { form.removeAttribute('data-submitting'); btn.disabled = false; }
-        }, 900);
-    }
-
-    // Intercept both click and submit to be safe
-    btn.addEventListener('click', performAnimatedLogout);
-    form.addEventListener('submit', performAnimatedLogout);
-});
-
-function showInstantLogoutToast(){
-    let container = document.querySelector('.flash-toast-container');
-    if(!container){
-        container = document.createElement('div');
-        container.className = 'flash-toast-container';
-        container.setAttribute('aria-live','polite');
-        container.setAttribute('aria-atomic','true');
-        document.body.appendChild(container);
-    }
-    const toast = document.createElement('div');
-    toast.className = 'flash-toast flash-success';
-    toast.setAttribute('role','status');
-    toast.innerHTML = `
-        <div class="flash-icon">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
-            </svg>
-        </div>
-        <div class="flash-body">
-            <div class="flash-title">Berhasil</div>
-            <div class="flash-message">Anda berhasil logout</div>
-        </div>
-        <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
-        <div class="flash-progress" style="animation-duration: 0.6s"></div>`;
-    container.appendChild(toast);
-    requestAnimationFrame(()=> toast.classList.add('show'));
-    const closeBtn = toast.querySelector('.flash-close');
-    if(closeBtn){
-        closeBtn.addEventListener('click', ()=> {toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400);});
-    }
-    setTimeout(()=> {toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400);}, 550);
-}
-
-function showLogoutSuccessState(){
-    const modalEl = document.getElementById('logoutConfirmModal');
-    if(!modalEl) return;
-    const body = modalEl.querySelector('.modal-body');
-    const footer = modalEl.querySelector('.modal-footer');
-    if(footer) footer.style.display='none';
-    if(body){
-        body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
-        body.innerHTML = `
-            <div class="logout-success-feedback text-center">
-                <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
-                    <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
-                    <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
-                </svg>
-                <p class="fw-semibold mb-1 mt-3">Berhasil logout</p>
-                <small class="text-muted">Mengalihkan...</small>
-            </div>`;
-    }
-}
-</script>
-
-<script>
-// Notifications dropdown logic with animations
-(function(){
-    const btn = document.getElementById('notifBtn');
-    const panel = document.getElementById('notifDropdown');
-    const badge = document.getElementById('notifBadge');
-    const list = document.getElementById('notifList');
-    const markAllBtn = document.getElementById('markAllReadBtn');
-    const headerText = document.getElementById('notifHeaderText');
-    let prevUnread = 0;
-    // track seen notification IDs across polls to avoid duplicate popups
-    const seenKey = 'notifSeenIds';
-    let seenIds = new Set();
-    try{ seenIds = new Set(JSON.parse(sessionStorage.getItem(seenKey) || '[]')); }catch(_e){ seenIds = new Set(); }
-
-    function persistSeen(){
-        try {
-            const arr = Array.from(seenIds).slice(-200); // cap
-            sessionStorage.setItem(seenKey, JSON.stringify(arr));
-        } catch(_e){}
-    }
-
-    function showInstantToast(opts, anchorEl){
-        const { title = 'Notifikasi', message = '', type = 'success', url = null } = opts || {};
-        const toast = document.createElement('div');
-        toast.className = `flash-toast ${type === 'error' ? 'flash-error' : 'flash-success'}`;
-        toast.setAttribute('role','status');
-        toast.innerHTML = `
-            <div class="flash-icon">
-                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
-                </svg>
-            </div>
-            <div class="flash-body">
-                <div class="flash-title">${title}</div>
-                <div class="flash-message">${message}</div>
-            </div>
-            <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
-            <div class="flash-progress" style="animation-duration: 3.6s"></div>`;
-        if(url){
-            toast.style.cursor = 'pointer';
-            toast.addEventListener('click', (e)=>{
-                // allow closing via X without navigation
-                if(e.target && (e.target.closest('.flash-close'))) return;
-                window.location.href = url;
-            });
-        }
-        if(anchorEl){
-            toast.style.position = 'fixed';
-            toast.style.zIndex = '2141';
-            toast.style.maxWidth = '360px';
-            toast.style.visibility = 'hidden';
-            document.body.appendChild(toast);
-            // position near bell icon (below and slightly to the left)
-            const r = anchorEl.getBoundingClientRect();
-            const tw = toast.offsetWidth;
-            const th = toast.offsetHeight;
-            const pad = 10;
-            const gap = 8; // distance between bell and toast
-            let top = r.bottom + pad;
-            // Place toast so its right edge is gap px to the left of bell's left edge
-            let left = Math.min(Math.max(r.left + gap - tw, pad), window.innerWidth - tw - pad);
-            // Prevent off-screen bottom
-            if(top + th > window.innerHeight - pad){ top = Math.max(pad, r.top - th - pad); }
-            toast.style.top = `${top}px`;
-            toast.style.right = 'auto';
-            toast.style.left = `${left}px`;
-            toast.style.visibility = '';
-            requestAnimationFrame(()=> toast.classList.add('show'));
-        } else {
-            // fallback to global container
-            let container = document.querySelector('.flash-toast-container');
-            if(!container){
-                container = document.createElement('div');
-                container.className = 'flash-toast-container';
-                container.setAttribute('aria-live','polite');
-                container.setAttribute('aria-atomic','true');
-                document.body.appendChild(container);
-            }
-            container.appendChild(toast);
-            requestAnimationFrame(()=> toast.classList.add('show'));
-        }
-        const closeBtn = toast.querySelector('.flash-close');
-        if(closeBtn){
-            closeBtn.addEventListener('click', (ev)=> { ev.stopPropagation(); toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400); });
-        }
-        setTimeout(()=> { toast.classList.add('closing'); setTimeout(()=> toast.remove(), 400); }, 3400);
-    }
-
-    function applyStaggerAnimations(){
-        const items = list.querySelectorAll('.notif-item');
-        items.forEach((el, idx)=>{
-            el.style.setProperty('--delay', `${idx*40}ms`);
-            el.classList.add('anim-in');
-        });
-    }
-
-    function load(){
-        fetch('{{ route('notifications.index') }}', {headers:{'X-Requested-With':'XMLHttpRequest'}})
-            .then(r=>r.json()).then(({items,unread})=>{
-                // badge
-                if(unread > (prevUnread||0)){
-                    badge.classList.add('badge-bump');
-                    setTimeout(()=> badge.classList.remove('badge-bump'), 320);
-                }
-                prevUnread = unread;
-                badge.classList.toggle('d-none', !unread);
-                badge.textContent = unread;
-
-                // header info text beside the button
-                if(headerText){
-                    if(unread > 0){
-                        headerText.textContent = `${unread} belum dibaca`;
-                        headerText.classList.remove('text-success');
-                    } else if(items.length > 0){
-                        headerText.textContent = 'Semua telah dibaca';
-                        headerText.classList.add('text-success');
-                    } else {
-                        headerText.textContent = 'Tidak ada notifikasi';
-                        headerText.classList.remove('text-success');
-                    }
-                }
-
-                if(!items.length){ list.innerHTML = '<div class="text-muted small py-3 px-2">Tidak ada notifikasi</div>'; return; }
-                list.innerHTML = items.map(n => `
-                    <a href="${n.url ?? '#'}" class="notif-item ${n.read_at ? '' : 'unread'}">
-                        <div class="notif-icon">
-                            <svg width="18" height="18" viewBox="0 0 16 16" fill="${n.read_at ? '#0ea5e9' : '#f59e0b'}" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="fw-semibold d-flex align-items-center gap-2">${n.title} ${n.read_at ? '' : '<span class="notif-dot"></span>'}</div>
-                            ${n.message ? `<div class="small text-muted">${n.message}</div>` : ''}
-                            <div class="notif-time">${n.time_ago ?? ''}</div>
-                        </div>
-                    </a>`).join('');
-                // stagger in
-                requestAnimationFrame(applyStaggerAnimations);
-            }).catch(()=>{ list.innerHTML = '<div class="text-danger small py-3 px-2">Gagal memuat notifikasi</div>'; });
-    }
-
-    function openPanel(){
-        if(!panel.classList.contains('open')){
-            panel.classList.add('open');
-            load();
-        }
-    }
-    function closePanel(){ panel.classList.remove('open'); }
-    function togglePanel(){ panel.classList.contains('open') ? closePanel() : openPanel(); }
-
-    btn?.addEventListener('click', (e)=>{ e.stopPropagation(); togglePanel(); });
-    document.addEventListener('click', (e)=>{ if(panel && !panel.contains(e.target) && !btn.contains(e.target)) closePanel(); });
-        markAllBtn?.addEventListener('click', ()=>{
-            if(markAllBtn.disabled) return;
-            const original = markAllBtn.innerHTML;
-            markAllBtn.disabled = true;
-            markAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Memproses...';
-            fetch('{{ route('notifications.markAllRead') }}', {method:'POST', headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}','X-Requested-With':'XMLHttpRequest'}})
-                .then(()=>{
-                    badge.classList.add('d-none');
-                    // animate unread -> read
-                    list.querySelectorAll('.notif-item.unread').forEach(el=>{
-                        el.classList.remove('unread');
-                        const dot = el.querySelector('.notif-dot');
-                        if(dot) dot.remove();
-                    });
-                    if(headerText){ headerText.textContent = 'Semua telah dibaca'; headerText.classList.add('text-success'); }
-                })
-                .finally(()=>{
-                    markAllBtn.disabled = false;
-                    markAllBtn.innerHTML = original;
-                });
-        });
-
-    // Background polling to auto-popup new notifications (e.g., payment/registration success)
-    let pollingTimer = null;
-    function pollAndPopup(){
-        fetch('{{ route('notifications.index') }}', {headers:{'X-Requested-With':'XMLHttpRequest'}})
-            .then(r=>r.json())
-            .then(({items, unread}) => {
-                // Update badge and header text even when panel closed
-                badge.classList.toggle('d-none', !unread);
-                badge.textContent = unread || 0;
-                if(headerText){
-                    if(unread > 0){ headerText.textContent = `${unread} belum dibaca`; headerText.classList.remove('text-success'); }
-                    else if(items.length > 0){ headerText.textContent = 'Semua telah dibaca'; headerText.classList.add('text-success'); }
-                    else { headerText.textContent = 'Tidak ada notifikasi'; headerText.classList.remove('text-success'); }
-                }
-                // Find new unread notifications not seen before
-                const newbies = (items || []).filter(n => !n.read_at && n.id && !seenIds.has(n.id));
-                // Only popup at most 2 per poll to avoid spam
-                const badgeEl = document.getElementById('notifBadge');
-                const badgeVisible = badgeEl && !badgeEl.classList.contains('d-none') && badgeEl.offsetWidth > 0 && badgeEl.offsetHeight > 0;
-                const anchor = (badgeVisible ? badgeEl : (btn || document.getElementById('notifBtn') || document.querySelector('#notifBtn')));
-                newbies.slice(0,2).forEach(n => {
-                    seenIds.add(n.id);
-                    showInstantToast({
-                        type: 'success',
-                        title: n.title || 'Notifikasi Baru',
-                        message: n.message || 'Klik untuk melihat detail notifikasi ini.',
-                        url: n.url || null,
-                    }, anchor);
-                });
-                if(newbies.length){ persistSeen(); }
-            })
-            .catch(()=>{});
-    }
-
-    // Start polling after slight delay to allow page to render
-    setTimeout(pollAndPopup, 1200);
-    pollingTimer = setInterval(pollAndPopup, 20000); // every 20s
-})();
-</script>
-
-<script>
-// Auto-logout on long inactivity or when tab was closed for a long period
-(function(){
-    const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 menit (atur sesuai kebutuhan)
-    const KEY_LAST_ACTIVE = 'lms:lastActiveAt';
-    const KEY_LAST_HIDDEN = 'lms:lastHiddenAt';
-    const LOGOUT_URL = '{{ route('logout') }}';
-    const SIGNIN_URL = '{{ route('login') }}';
-    const CSRF = '{{ csrf_token() }}';
-    let logoutTriggered = false;
-
-    function now(){ return Date.now(); }
-
-    function markActive(){
-        try{ localStorage.setItem(KEY_LAST_ACTIVE, String(now())); }catch(_e){}
-    }
-
-    function recordHidden(){
-        try{ localStorage.setItem(KEY_LAST_HIDDEN, String(now())); }catch(_e){}
-    }
-
-    function getMsSince(ts){
-        const t = parseInt(ts || '0', 10); return t ? (now() - t) : 0;
-    }
-
-    function createSessionModal(){
-        let el = document.getElementById('sessionExpiredModal');
-        if(el) return el;
-        el = document.createElement('div');
-        el.id = 'sessionExpiredModal';
-        el.className = 'modal fade';
-        el.tabIndex = -1;
-        el.setAttribute('aria-hidden','true');
-        el.innerHTML = `
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header bg-warning-subtle">
-                        <h5 class="modal-title">Sesi Anda Berakhir</h5>
-                    </div>
-                    <div class="modal-body">
-                        <p class="mb-1">Anda telah keluar karena tidak ada aktivitas untuk waktu yang lama.</p>
-                        <small class="text-muted">Anda akan diarahkan ke halaman login.</small>
-                    </div>
-                    <div class="modal-footer">
-                        <a href="${SIGNIN_URL}" class="btn btn-primary">Ke Halaman Login</a>
-                    </div>
-                </div>
-            </div>`;
-        document.body.appendChild(el);
-        return el;
-    }
-
-    function showSessionEndedPopup(){
-        const el = createSessionModal();
-        try {
-            const modal = new bootstrap.Modal(el, {backdrop:'static', keyboard:false});
-            modal.show();
-        } catch(_e) {
-            // Fallback
-            alert('Sesi Anda berakhir. Anda akan diarahkan ke halaman login.');
-        }
-    }
-
-    function doLogoutAndNotify(){
-        if(logoutTriggered) return; logoutTriggered = true;
-        // Try to logout on server (ignore errors), then show popup and redirect
-        fetch(LOGOUT_URL, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': CSRF, 'X-Requested-With':'XMLHttpRequest', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
-            credentials: 'same-origin'
-        }).finally(()=>{
-            showSessionEndedPopup();
-            setTimeout(()=> { window.location.href = SIGNIN_URL; }, 1800);
-        });
-    }
-
-    // Initial marks
-    markActive();
-
-    // Activity listeners
-    ['mousemove','keydown','scroll','click','touchstart'].forEach(evt => {
-        window.addEventListener(evt, markActive, { passive: true });
-    });
-
-    // Visibility tracking (tab close or background)
-    document.addEventListener('visibilitychange', () => {
-        if(document.hidden){
-            recordHidden();
-        } else {
-            // When returning, if hidden duration exceeded, logout
-            const hiddenAt = localStorage.getItem(KEY_LAST_HIDDEN);
-            if(hiddenAt){
-                const hiddenMs = getMsSince(hiddenAt);
-                if(hiddenMs > IDLE_LIMIT_MS){
-                    doLogoutAndNotify();
-                }
-            }
-        }
-    });
-
-    // Also record on unload
-    window.addEventListener('beforeunload', recordHidden);
-
-    // Periodic idle check (in case tab stays open)
-    setInterval(() => {
-        if(logoutTriggered) return;
-        const lastActive = localStorage.getItem(KEY_LAST_ACTIVE);
-        const idleMs = getMsSince(lastActive);
-        if(idleMs > IDLE_LIMIT_MS){
-            doLogoutAndNotify();
-        }
-    }, 15000); // check every 15s
-})();
-</script>
+@include('partials.flash')
+@include('partials.profile-reminder-banner')
 
 <style>
-/* Dropdown arrow rotation */
-#dropdownArrow {
-    transition: transform 0.2s ease-in-out;
+/* 
+PREMIUM DESIGN SYSTEM - AUTH NAVBAR
+==================================== */
+
+/* Use same font as Landing Page */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+.premium-nav {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: radial-gradient(circle at 10% 10%, #51376c 0%, #2e2050 100%) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    padding: 0.6rem 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1050;
+    color: #fff !important; /* Force global text color to white */
 }
 
-/* Dropdown menu positioning */
-#userDropdownMenu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 1000;
-    min-width: 200px;
-    background-color: white;
-    border: 1px solid rgba(0,0,0,.15);
-    border-radius: 0.375rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+/* Fix Tailwind Conflict for Bootstrap Collapse */
+.premium-nav .collapse.navbar-collapse {
+    display: none; /* Default Bootstrap behavior */
+    visibility: visible !important;
 }
 
-/* Dropdown item hover effects */
-#userDropdownMenu .dropdown-item:hover {
-    background-color: #f8f9fa;
+.premium-nav .collapse.navbar-collapse.show {
+    display: block !important;
 }
 
-/* Logout success animation */
-.logout-success-feedback .check-anim { display:block; }
-.logout-success-feedback .circle { stroke-dasharray: 201; stroke-dashoffset:201; animation: draw-circle .55s ease-out forwards; }
-.logout-success-feedback .check { stroke-dasharray: 40; stroke-dashoffset:40; animation: draw-check .35s ease-out .45s forwards; }
-@keyframes draw-circle { to { stroke-dashoffset:0; } }
-@keyframes draw-check { to { stroke-dashoffset:0; } }
-</style>
-<style>
-/* Notifications dropdown styling + animations */
-.notif-dropdown{ position:absolute; right:-6px; top:120%; width:320px; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:10px; z-index:2140; box-shadow:0 14px 34px -18px rgba(2,6,23,.35), 0 6px 16px -8px rgba(2,6,23,.18); opacity:0; transform: translateY(8px); visibility:hidden; pointer-events:none; transition: opacity .18s ease, transform .18s ease, visibility .18s; }
-.notif-dropdown.open{ opacity:1; transform: translateY(0); visibility:visible; pointer-events:auto; }
-.notif-head{ padding:10px 12px; border-bottom:1px solid #f0f0f0; }
-.notif-list{ max-height:360px; overflow:auto; }
-.notif-item{ display:flex; gap:10px; padding:10px 12px; border-bottom:1px solid #f6f6f6; text-decoration:none; color:#111; border-left:3px solid transparent; opacity:0; transform: translateY(6px); transition: background-color .25s ease, border-color .25s ease; }
-.notif-item.anim-in{ animation: notifSlideIn .22s ease var(--delay, 0ms) forwards; }
-.notif-item:hover{ background:#f9fafb; }
-.notif-item.unread{ background:#fffdf5; border-left-color:#f59e0b; }
-.notif-icon{ width:34px; height:34px; border-radius:50%; background:#e9f5ff; display:flex; align-items:center; justify-content:center; }
-.notif-item.unread .notif-icon{ background:#fff7e6; }
-.notif-time{ color:#6b7280; font-size:12px; }
-.notif-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:#f59e0b; box-shadow:0 0 0 0 rgba(245,158,11,.6); animation: pulse 1.6s ease infinite; }
-.badge-bump{ animation:bump .28s ease; }
-@keyframes notifSlideIn{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform: translateY(0);} }
-@keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(245,158,11,.6);} 70%{ box-shadow:0 0 0 10px rgba(245,158,11,0);} 100%{ box-shadow:0 0 0 0 rgba(245,158,11,0);} }
-@keyframes bump{ 0%{ transform: scale(1);} 40%{ transform: scale(1.15);} 100%{ transform: scale(1);} }
+@media (min-width: 992px) {
+    .premium-nav .collapse.navbar-collapse {
+        display: flex !important;
+    }
+}
 
-/* Mark all read button theme: navy bg, yellow text */
-#markAllReadBtn{ background:#252346; color:#F4C430; border-color:#252346; }
-#markAllReadBtn:hover{ filter:brightness(1.08); color:#F4C430; }
-#markAllReadBtn:disabled{ opacity:.75; cursor:not-allowed; }
-</style>
-<style>
-/* Enhanced navbar hover + active indicator (logged-in) */
-.navbar-gradient .nav-link {
+/* Nav Link Styling */
+.premium-nav .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.6rem 1.2rem !important;
     position: relative;
-    color: #fff !important;
-    transition: color .25s ease;
-    padding-bottom: 6px;
+    transition: all 0.3s ease;
 }
-.navbar-gradient .nav-link::after {
+
+.premium-nav .nav-link:hover {
+    color: #fff !important;
+    transform: translateY(-2px);
+}
+
+.premium-nav .nav-link.active {
+    color: #FBBD23 !important; /* Premium Yellow */
+}
+
+.premium-nav .nav-link::after {
     content: '';
     position: absolute;
+    bottom: 5px;
     left: 50%;
-    bottom: 2px;
     width: 0;
     height: 2px;
-    background: linear-gradient(90deg,#ffe259,#ffa751);
-    transition: width .35s cubic-bezier(.65,.05,.36,1), left .35s cubic-bezier(.65,.05,.36,1);
-    border-radius: 2px;
-    opacity: .9;
+    background: #FBBD23;
+    transform: translateX(-50%);
+    transition: all 0.3s ease;
+    border-radius: 10px;
 }
-.navbar-gradient .nav-link:hover,
-.navbar-gradient .nav-link:focus { color: #ffe8b3 !important; }
-/* Only active link shows underline */
-.navbar-gradient .nav-link.active { font-weight:600; }
-.navbar-gradient .nav-link.active::after { width:70%; left:15%; }
-@media (hover: none) { .navbar-gradient .nav-link::after { display:none; } }
+
+.premium-nav .nav-link:hover::after,
+.premium-nav .nav-link.active::after {
+    width: 70%;
+}
+
+/* Premium Search Input - Fluid for Laptops */
+.search-form-premium {
+    position: relative;
+    width: clamp(180px, 20vw, 280px);
+}
+
+.nav-input-premium {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 50px !important;
+    color: #fff !important;
+    padding: 0.6rem 1.2rem 0.6rem 2.8rem !important;
+    font-size: 0.88rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.nav-input-premium:focus {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: #FBBD23 !important;
+    box-shadow: 0 0 15px rgba(251, 189, 35, 0.2) !important;
+}
+
+.search-icon-inside {
+    position: absolute;
+    left: 1.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+}
+
+/* Icon Buttons */
+.btn-nav-icon {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-nav-icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #FBBD23;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.badge-custom {
+    top: 8px !important;
+    right: 8px !important;
+    padding: 3px 5px !important;
+    font-size: 0.6rem !important;
+    border: 2px solid #1A182E;
+    font-weight: 700;
+}
+
+/* User Profile Section */
+.user-profile-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 14px 6px 8px !important;
+    border-radius: 40px;
+    transition: all 0.3s ease;
+}
+
+.user-profile-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.avatar-nav {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(251, 189, 35, 0.5);
+    background: #2D2B4A;
+}
+
+.user-name-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.user-points-sub {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #FBBD23 !important;
+}
+
+.arrow-icon {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
+}
+
+.user-dropdown-premium .show .arrow-icon {
+    transform: rotate(180deg);
+}
+
+/* Dropdowns Premium */
+.dropdown-menu {
+    background: #1a182e !important; /* Darker, more solid background */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    margin-top: 15px !important;
+    padding: 10px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+    animation: dropdownFadeIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    z-index: 1100 !important;
+}
+
+@keyframes dropdownFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+    color: rgba(255, 255, 255, 0.8) !important;
+    padding: 0.8rem 1.2rem !important;
+    border-radius: 10px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FBBD23 !important;
+    padding-left: 1.5rem !important;
+}
+
+.notification-dropdown-premium {
+    width: 380px;
+    padding: 0 !important;
+    overflow: hidden;
+    right: 0 !important;
+    left: auto !important;
+}
+
+.dropdown-header-premium {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Burger Icon Animation */
+.burger-icon {
+    width: 24px;
+    height: 18px;
+    position: relative;
+    cursor: pointer;
+}
+
+.burger-icon span {
+    display: block;
+    position: absolute;
+    height: 2px;
+    width: 100%;
+    background: #fff;
+    border-radius: 9px;
+    transition: .3s ease-in-out;
+}
+
+.burger-icon span:nth-child(1) { top: 0; }
+.burger-icon span:nth-child(2) { top: 8px; width: 70%; right: 0; }
+.burger-icon span:nth-child(3) { top: 16px; }
+
+.navbar-toggler:not(.collapsed) .burger-icon span:nth-child(1) { transform: rotate(45deg); top: 8px; }
+.navbar-toggler:not(.collapsed) .burger-icon span:nth-child(2) { opacity: 0; width: 0; }
+.navbar-toggler:not(.collapsed) .burger-icon span:nth-child(3) { transform: rotate(-45deg); top: 8px; }
+
+/* Mobile Search Expandable */
+.mobile-search-expandable {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 0;
+    height: 42px;
+    background: #2D2B4A;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    z-index: 100;
+}
+
+.mobile-search-expandable.active {
+    width: calc(100vw - 120px); /* Fill most of the navbar */
+    opacity: 1;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-search-expandable input {
+    font-size: 0.9rem !important;
+}
+
+.mobile-search-expandable input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Mobile Responsive Tweaks */
+@media (max-width: 991.98px) {
+    .premium-nav .container-fluid {
+        padding: 0 15px !important;
+    }
+
+    .navbar-collapse {
+        background: rgba(26, 24, 46, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        margin: 15px 0 !important;
+        padding: 25px !important;
+        border-radius: 20px !important;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        position: absolute;
+        top: 100%;
+        left: 15px;
+        right: 15px;
+        z-index: 1060;
+    }
+    
+    .navbar-nav .nav-link {
+        width: 100%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 0.8rem 0 !important;
+        font-size: 1rem !important;
+    }
+    
+    .navbar-nav .nav-link::after { display: none; }
+    
+    .desktop-actions-nav {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 20px;
+        padding-top: 20px;
+        width: 100%;
+    }
+    
+    .user-profile-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(251, 189, 35, 0.3);
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .user-name-text {
+        max-width: 100% !important;
+    }
+
+    /* Mobile Dropdown Fix */
+    .dropdown-menu {
+        position: static !important;
+        float: none !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        margin-top: 5px !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .notification-dropdown-premium {
+        width: calc(100vw - 30px) !important;
+        position: fixed !important;
+        top: 80px !important;
+        left: 15px !important;
+        right: 15px !important;
+        margin: 0 auto !important;
+        max-height: 75vh !important;
+        transform: none !important;
+        z-index: 2000 !important;
+        background-color: #1a182e !important;
+        border: 2px solid rgba(251, 189, 35, 0.2) !important;
+    }
+
+    .account-menu-premium .dropdown-item {
+        padding-left: 1.5rem !important;
+        font-size: 0.85rem !important;
+        opacity: 0.8;
+    }
+}
+
+.user-dropdown-premium.menu-open .arrow-icon {
+    transform: rotate(180deg);
+}
+
+/* Backdrop for focus */
+.nav-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1040;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.nav-backdrop.show {
+    display: block;
+    opacity: 1;
+}
 </style>
+
+<script>
+/**
+ * PREMIUM NAVBAR LOGIC
+ * Interacting with Bootstrap API manually for smoothness
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const navCollapseEl = document.getElementById('navbarSupportedContent');
+    const mobileSearchExpandable = document.getElementById('mobileSearchExpandable');
+    const closeMobileSearch = document.getElementById('closeMobileSearch');
+    const burgerToggler = document.getElementById('burgerToggler');
+    const mobileSearchBtn = document.getElementById('mobileSearchBtn');
+
+    // Create Backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'nav-backdrop';
+    document.body.appendChild(backdrop);
+
+    function toggleBackdrop(show) {
+        if (show) {
+            backdrop.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        } else {
+            backdrop.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (navCollapseEl && burgerToggler) {
+        // Safe Check for Bootstrap
+        const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
+        
+        const initNavbar = () => {
+            const bs = getBootstrap();
+            if (!bs) return;
+
+            const bsNav = new bs.Collapse(navCollapseEl, { toggle: false });
+
+            burgerToggler.addEventListener('click', function (e) {
+                e.preventDefault();
+                const isOpen = navCollapseEl.classList.contains('show');
+                if (isOpen) {
+                    bsNav.hide();
+                    burgerToggler.classList.add('collapsed');
+                    toggleBackdrop(false);
+                } else {
+                    if (mobileSearchExpandable && mobileSearchExpandable.classList.contains('active')) {
+                        mobileSearchExpandable.classList.remove('active');
+                    }
+                    bsNav.show();
+                    burgerToggler.classList.remove('collapsed');
+                    toggleBackdrop(true);
+                }
+            });
+
+            if (mobileSearchBtn && mobileSearchExpandable) {
+                mobileSearchBtn.addEventListener('click', function() {
+                    bsNav.hide();
+                    burgerToggler.classList.add('collapsed');
+                    mobileSearchExpandable.classList.add('active');
+                    document.getElementById('mobileSearchInput').focus();
+                    toggleBackdrop(true);
+                });
+
+                if (closeMobileSearch) {
+                    closeMobileSearch.addEventListener('click', function() {
+                        mobileSearchExpandable.classList.remove('active');
+                        toggleBackdrop(false);
+                    });
+                }
+            }
+
+            backdrop.addEventListener('click', () => {
+                const navCollapseEl = document.getElementById('navbarSupportedContent');
+                const burgerToggler = document.getElementById('burgerToggler');
+                const mobileSearchExpandable = document.getElementById('mobileSearchExpandable');
+                const bsNav = getBootstrap() ? getBootstrap().Collapse.getInstance(navCollapseEl) : null;
+                
+                if (bsNav) bsNav.hide();
+                if (mobileSearchExpandable) mobileSearchExpandable.classList.remove('active');
+                if (burgerToggler) burgerToggler.classList.add('collapsed');
+                
+                // Also close our custom dropdowns
+                document.getElementById('notificationDropdown').style.display = 'none';
+                if (document.getElementById('userDropdownMenu')) document.getElementById('userDropdownMenu').style.display = 'none';
+                
+                toggleBackdrop(false);
+            });
+        };
+
+        // Try to init, or wait if bootstrap isn't ready
+        if (getBootstrap()) {
+            initNavbar();
+        } else {
+            window.addEventListener('load', initNavbar);
+        }
+    }
+});
+
+function toggleNotificationDropdown() {
+    const dropdown = document.getElementById('notificationDropdown');
+    const userMenu = document.getElementById('userDropdownMenu');
+    const backdrop = document.querySelector('.nav-backdrop');
+    
+    if (userMenu) userMenu.style.display = 'none';
+    if (!dropdown) return;
+    
+    const isVisible = dropdown.style.display === 'block';
+
+    if (!isVisible) {
+        // Hide burger if open
+        const navCollapseEl = document.getElementById('navbarSupportedContent');
+        if (navCollapseEl && navCollapseEl.classList.contains('show')) {
+            const burgerToggler = document.getElementById('burgerToggler');
+            if (burgerToggler) burgerToggler.click();
+        }
+
+        // Position fix for desktop
+        if (window.innerWidth >= 992) {
+            const desktopBtn = document.getElementById('notifBtn');
+            if (desktopBtn) {
+                const rect = desktopBtn.getBoundingClientRect();
+                dropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
+                dropdown.style.left = (rect.right - 380) + 'px';
+                dropdown.style.right = 'auto';
+                dropdown.style.position = 'absolute';
+            }
+        } else if (backdrop) {
+            // Show backdrop on mobile
+            backdrop.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            dropdown.style.position = '';
+            dropdown.style.top = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+        }
+        dropdown.style.display = 'block';
+    } else {
+        dropdown.style.display = 'none';
+        if (backdrop && !document.getElementById('mobileSearchExpandable').classList.contains('active')) {
+            backdrop.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+}
+
+function markAllAsRead() {
+    fetch('{{ route("notifications.markAllRead") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            // Update UI: hide badges
+            const badges = document.querySelectorAll('.badge-custom');
+            badges.forEach(b => b.style.display = 'none');
+            
+            // Update icons to green
+            const icons = document.querySelectorAll('#notificationList .text-warning');
+            icons.forEach(icon => {
+                icon.classList.remove('text-warning');
+                icon.classList.add('text-success');
+            });
+            
+            // Remove unread background styling
+            const items = document.querySelectorAll('#notificationList .bg-opacity-10.bg-primary');
+            items.forEach(item => {
+                item.classList.remove('bg-opacity-10', 'bg-primary');
+            });
+        }
+    })
+    .catch(error => console.error('Error marking notifications as read:', error));
+}
+
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdownMenu');
+    const container = document.querySelector('.user-dropdown-premium');
+    const notifMenu = document.getElementById('notificationDropdown');
+    
+    if (notifMenu) notifMenu.style.display = 'none';
+    if (!dropdown) return;
+    
+    const isVisible = dropdown.style.display === 'block';
+    
+    if (!isVisible) {
+        // Desktop positioning
+        if (window.innerWidth >= 992) {
+            const desktopBtn = document.getElementById('userDropdown');
+            if (desktopBtn) {
+                const rect = desktopBtn.getBoundingClientRect();
+                dropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
+                dropdown.style.left = (rect.right - 220) + 'px';
+                dropdown.style.right = 'auto';
+                dropdown.style.position = 'absolute';
+            }
+        } else {
+            // Mobile: inline accordion style
+            dropdown.style.position = 'static';
+            dropdown.style.top = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+        }
+        dropdown.style.display = 'block';
+        if (container) container.classList.add('menu-open');
+    } else {
+        dropdown.style.display = 'none';
+        if (container) container.classList.remove('menu-open');
+    }
+}
+
+function openLogoutModal() {
+    const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
+    const bs = getBootstrap();
+    if (bs) {
+        const modalEl = document.getElementById('logoutModal');
+        const modal = new bs.Modal(modalEl);
+        modal.show();
+    } else {
+        // Fallback if bootstrap is not ready
+        if (confirm('Are you sure you want to sign out?')) {
+            document.getElementById('logoutForm').submit();
+        }
+    }
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#notifBtn') && !e.target.closest('#notificationDropdown') && !e.target.closest('#mobileNotifBtn')) {
+        const d = document.getElementById('notificationDropdown');
+        if (d) d.style.display = 'none';
+    }
+    if (!e.target.closest('#userDropdown') && !e.target.closest('#userDropdownMenu')) {
+        const d = document.getElementById('userDropdownMenu');
+        if (d) d.style.display = 'none';
+    }
+});
+</script>   

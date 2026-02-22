@@ -11,9 +11,16 @@ class Course extends Model
         'category_id',
         'description',
         'level',
+        'status',
         'price',
+        'free_access_mode',
         'duration',
-        'image',
+        'media',
+        'media_type',
+        'card_thumbnail',
+        'discount_percent',
+        'discount_start',
+        'discount_end',
     ];
 
     public function category()
@@ -29,5 +36,34 @@ class Course extends Model
     public function certificates()
     {
         return $this->hasMany(Certificate::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Enrollments relation (students enrolled to this course)
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class);
+    }
+
+    /**
+     * Payments relation (payments made for this course)
+     */
+    public function payments()
+    {
+        return $this->hasMany(\App\Models\Payment::class);
+    }
+
+    /**
+     * Manual payments relation (QRIS proof uploads)
+     */
+    public function manualPayments()
+    {
+        return $this->hasMany(\App\Models\ManualPayment::class);
     }
 }

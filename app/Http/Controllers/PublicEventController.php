@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Carousel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -18,12 +19,21 @@ class PublicEventController extends Controller
 				}
 			]);
 
-		// Sembunyikan event yang sudah berlangsung > 6 jam (antisipasi sebelum cleanup jalan)
-		$threshold = now()->subHours(6)->format('Y-m-d H:i:s');
-		$query->where(function($q) use ($threshold){
-			$q->whereNull('event_date')
-			  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
-		});
+		// Server-side status filter: upcoming | ongoing | finished | default(not finished)
+		$now = now()->format('Y-m-d H:i:s');
+		$status = $request->get('status');
+		$startExpr = "TIMESTAMP(event_date, COALESCE(event_time,'00:00:00'))";
+		$endExpr = "TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59')))";
+		if ($status === 'finished') {
+			$query->finished();
+		} elseif ($status === 'ongoing') {
+			$query->whereRaw("$startExpr <= ? AND $endExpr >= ?", [$now, $now]);
+		} elseif ($status === 'upcoming') {
+			$query->whereRaw("$startExpr > ?", [$now]);
+		} else {
+			// Default: only show active events (upcoming + ongoing)
+			$query->active();
+		}
 
 		// Search
 		if ($search = $request->get('search')) {
@@ -39,6 +49,40 @@ class PublicEventController extends Controller
 			$query->where('location', $location);
 		}
 
+		// Filter: day (weekdays|weekend|today)
+		if ($day = $request->get('day')) {
+			if ($day === 'today') {
+				$query->whereDate('event_date', now()->toDateString());
+			} elseif ($day === 'weekdays') {
+				// MySQL/MariaDB: DAYOFWEEK() returns 1=Sunday ... 7=Saturday
+				$query->whereRaw('DAYOFWEEK(event_date) BETWEEN 2 AND 6');
+			} elseif ($day === 'weekend') {
+				$query->whereRaw('DAYOFWEEK(event_date) IN (1,7)');
+			}
+		}
+
+		// Filter: event_type (online|onsite|hybrid)
+		if ($type = $request->get('event_type')) {
+			if ($type === 'online') {
+				$query->whereNotNull('zoom_link')
+					->where(function($q){
+						$q->whereNull('location')
+						  ->orWhere('location', 'like', '%online%');
+					});
+			} elseif ($type === 'onsite') {
+				$query->whereNull('zoom_link')
+					->whereNotNull('location');
+			} elseif ($type === 'hybrid') {
+				$query->whereNotNull('zoom_link')
+					->whereNotNull('location');
+			}
+		}
+
+		// Filter: category (map to jenis)
+		if ($category = $request->get('category')) {
+			$query->whereRaw('LOWER(jenis) = ?', [mb_strtolower($category)]);
+		}
+
 		// Filter: free only
 		if ($request->boolean('free')) {
 			$query->where('price', 0);
@@ -50,7 +94,13 @@ class PublicEventController extends Controller
 				$query->orderBy('price', $priceOrder);
 			}
 		} else {
-			$query->latest(); // default newest
+			if ($status === 'finished') {
+				// Show recently finished first
+				$query->orderByRaw("$endExpr DESC");
+			} else {
+				// Show soonest events first
+				$query->orderByRaw("$startExpr ASC");
+			}
 		}
 
 		$events = $query->paginate(12)->withQueryString();
@@ -58,14 +108,29 @@ class PublicEventController extends Controller
 
 		// Tandai event yang sudah diregistrasi user login
 		if($request->user()){
-			$userRegEventIds = $request->user()->eventRegistrations()->pluck('event_id')->toArray();
-			$events->getCollection()->transform(function($ev) use ($userRegEventIds){
+			$userRegEventIds = $request->user()->eventRegistrations()
+                ->where('status', '!=', 'rejected')
+                ->pluck('event_id')->toArray();
+            
+            // Tandai event yang disimpan
+            $userSavedEventIds = DB::table('user_saved_events')
+                ->where('user_id', $request->user()->id)
+                ->pluck('event_id')->toArray();
+
+			$events->getCollection()->transform(function($ev) use ($userRegEventIds, $userSavedEventIds){
 				$ev->is_registered = in_array($ev->id, $userRegEventIds);
+				$ev->is_saved = in_array($ev->id, $userSavedEventIds);
 				return $ev;
 			});
 		}
 
-		return view('event', compact('events', 'locations'));
+		// Get carousel images for event page
+		$eventCarousels = Carousel::active()
+			->forLocation('event')
+			->orderBy('order')
+			->get();
+
+		return view('event', compact('events', 'locations', 'eventCarousels'));
 	}
 
 	public function searchRedirect(Request $request)
@@ -106,11 +171,16 @@ class PublicEventController extends Controller
 		// Tandai sudah terdaftar (reuse logic ringkas)
 		$isRegistered = false;
 		if($request->user()){
-			$isRegistered = $request->user()->eventRegistrations()->where('event_id',$event->id)->exists();
+			$isRegistered = $request->user()->eventRegistrations()
+                ->where('event_id',$event->id)
+                ->where('status', '!=', 'rejected')
+                ->exists();
 		}
 		$event->is_registered = $isRegistered;
+		// Load feedbacks for display on the event detail page
+		$feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
 		// Tampilkan halaman detail menggunakan tampilan "detail-event-registered"
-		return view('detail-event-registered', compact('event'));
+		return view('detail-event-registered', compact('event', 'feedbacks'));
 	}
 
 	public function ticket(Event $event, Request $request)

@@ -2,6 +2,31 @@
 @section('title','Edit Event')
 @section('content')
 <div class="container-fluid py-4">
+    @if(session('success'))
+        <div aria-live="polite" aria-atomic="true" class="position-relative">
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+                <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            {{ session('success') }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function(){
+                try{
+                    var el = document.getElementById('eventUpdatedToast');
+                    if(window.bootstrap && el){
+                        var t = new bootstrap.Toast(el);
+                        t.show();
+                    }
+                }catch(e){}
+            });
+        </script>
+    @endif
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
         <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
@@ -19,7 +44,7 @@
                         <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span id="imageSizeInfo" class="fw-semibold"></span></div>
                         @if($event->image)
                         <div class="mt-2 border rounded p-2 bg-light text-center">
-                            <img src="{{ Storage::url($event->image) }}" alt="Current Image" class="img-thumbnail rounded" style="max-width:260px;height:160px;object-fit:cover;">
+                            <img src="{{ $event->image_url }}" alt="Current Image" class="img-thumbnail rounded" style="max-width:260px;height:160px;object-fit:cover;" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         </div>
                         @endif
                         <div id="imagePreview" class="mt-2" style="display:none;">
@@ -55,9 +80,26 @@
                     <div class="mb-3">
                         <!-- Level field removed per request -->
                     </div>
+                    <!-- Penjelasan Singkat (maks 40 kata) -->
+                    <div class="mb-3">
+                        <label for="short_desc" class="form-label fw-semibold">Penjelasan Singkat <span class="text-danger">*</span></label>
+                        <textarea name="short_description" id="short_desc" class="form-control" rows="3" required placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description', $event->short_description ?? '') }}</textarea>
+                        <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40 kata</small>
+                    </div>
                     <div class="mb-3">
                         <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
                         <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description',$event->description) }}</textarea>
+                    </div>
+                    <!-- Kelola Event: Manage / Create -->
+                    <div class="mb-3">
+                        <label for="manage_action" class="form-label fw-semibold">Kelola Event <span class="text-danger">*</span></label>
+                        <select name="manage_action" id="manage_action" class="form-select" required>
+                            @php $currentManage = old('manage_action', $event->manage_action ?? null); @endphp
+                            <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
+                            <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
+                            <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
+                        </select>
+                        <small class="text-muted">Pilih apakah event ini dikelola (Manage) atau dibuat baru (Create).</small>
                     </div>
                     <div class="mb-3">
                         <label for="tanggal" class="form-label fw-semibold">Tanggal <span class="text-danger">*</span></label>
@@ -66,9 +108,9 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Waktu Mulai & Selesai <span class="text-danger">*</span></label>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time',$event->event_time) }}">
+                            <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time', $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '') }}">
                             <span>s/d</span>
-                            <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end',$event->event_time_end) }}">
+                            <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -93,8 +135,11 @@
                         <small class="form-text">Tanggal terakhir diskon (maksimal sehari sebelum hari acara).</small>
                     </div>
                     <div class="mb-3">
-                        <label for="benefit" class="form-label fw-semibold">Benefit <span class="text-muted">(Opsional)</span></label>
-                        <textarea name="benefit" id="benefit" class="form-control" rows="4">{{ old('benefit',$event->benefit) }}</textarea>
+                        <label class="form-label fw-semibold">Benefit <span class="text-muted">(Opsional)</span></label>
+                        <div id="benefitsContainer"></div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addBenefitRow"><i class="bi bi-plus-circle me-1"></i>Tambah Benefit</button>
+                        <input type="hidden" name="benefit" id="benefitHidden" value="{{ old('benefit',$event->benefit) }}">
+                        <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                     </div>
                     <div class="mb-3">
                         <label for="maps" class="form-label fw-semibold">Maps Lokasi (Jika Offline)</label>
@@ -146,7 +191,7 @@
                                         <tr>
                                             <td><input type="text" class="form-control form-control-sm" name="expenses[{{ $i }}][item]" placeholder="Nama barang" value="{{ $row['item'] ?? '' }}"></td>
                                             <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][quantity]" data-expense-qty min="0" step="1" value="{{ $row['quantity'] ?? 0 }}"></td>
-                                            <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][unit_price]" data-expense-unit min="0" step="1000" value="{{ $row['unit_price'] ?? 0 }}"></td>
+                                            <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][unit_price]" data-expense-unit min="0" step="1" value="{{ $row['unit_price'] ?? 0 }}"></td>
                                             <td><input type="number" class="form-control form-control-sm" name="expenses[{{ $i }}][total]" data-expense-total readonly value="{{ $row['total'] ?? 0 }}"></td>
                                             <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>
                                         </tr>
@@ -207,13 +252,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Image preview + size (max 5MB)
     imgInp?.addEventListener('change',ev=>{const f=ev.target.files[0];const wrap=document.getElementById('imagePreview');const sizeInfo=document.getElementById('imageSizeInfo');if(!f){wrap.style.display='none'; if(sizeInfo) sizeInfo.textContent=''; return;} const sizeMB=f.size/(1024*1024); if(sizeInfo) sizeInfo.textContent='Ukuran: '+sizeMB.toFixed(2)+'MB'; if(sizeMB>5){ alert('Ukuran gambar melebihi 5MB. Pilih file lain.'); imgInp.value=''; wrap.style.display='none'; if(sizeInfo) sizeInfo.textContent=''; return;} const r=new FileReader(); r.onload=e=>{document.getElementById('previewImg').src=e.target.result; wrap.style.display='block';}; r.readAsDataURL(f);});
 
+
     // Maps logic
     let leafletMap=null, leafletMarker=null; const mapsInput=document.getElementById('maps'); const mapsPreview=document.getElementById('mapsPreview'); const btnResolveMaps=document.getElementById('btnResolveMaps'); const csrfToken='{{ csrf_token() }}'; const resolveMapsUrl='{{ route('admin.maps.resolve') }}';
     function parseLatLngFromUrl(url){
         if(!url) return null;
         try {
             const d = decodeURIComponent(url);
-            let m = d.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
+            let m = d.match(/@(-?\d+\.\d+),\s*(-?\d+\.\rd+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
             m = d.match(/[?&]q=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
             m = d.match(/[?&]ll=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
             m = d.match(/[?&]center=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/); if(m) return {lat:parseFloat(m[1]),lng:parseFloat(m[2])};
@@ -288,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Flatpickr init for tanggal & discount_until
     let eventDateFp=null, discountUntilFp=null;
     if(window.flatpickr){
-        eventDateFp = flatpickr('#tanggal', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', minDate:'today', disableMobile:true });
+        eventDateFp = flatpickr('#tanggal', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', disableMobile:true });
         discountUntilFp = flatpickr('#discount_until', { locale:'id', dateFormat:'Y-m-d', altInput:true, altFormat:'l, j F Y', disableMobile:true, clickOpens:true });
     }
     function updateDiscountUntilBounds(){
@@ -329,22 +375,97 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatRupiah(n){ const v=Math.max(0,Math.floor(n||0)); return 'Rp'+v.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
     function recalcExpensesGrandTotal(){ let total=0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp=>{ const val=parseFloat(inp.value||'0'); if(!isNaN(val)) total+=val; }); expensesGrandTotalEl.textContent=formatRupiah(total); }
     function recalcExpenseRow(tr){ const qty=parseFloat(tr.querySelector('input[data-expense-qty]')?.value||'0'); const unit=parseFloat(tr.querySelector('input[data-expense-unit]')?.value||'0'); const tot=tr.querySelector('input[data-expense-total]'); const total=(isNaN(qty)?0:qty)*(isNaN(unit)?0:unit); if(tot) tot.value=Math.max(0,Math.round(total)); recalcExpensesGrandTotal(); }
-    function createExpenseRow(idx){ const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1000"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`; const q=tr.querySelector('input[data-expense-qty]'); const u=tr.querySelector('input[data-expense-unit]'); clampNonNeg(q,1); clampNonNeg(u,100); q.addEventListener('input',()=>recalcExpenseRow(tr)); u.addEventListener('input',()=>recalcExpenseRow(tr)); return tr; }
+    function createExpenseRow(idx){ const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`; const q=tr.querySelector('input[data-expense-qty]'); const u=tr.querySelector('input[data-expense-unit]'); clampNonNeg(q,1); clampNonNeg(u,1); q.addEventListener('input',()=>recalcExpenseRow(tr)); u.addEventListener('input',()=>recalcExpenseRow(tr)); return tr; }
     function addExpenseRow(){ const row=createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
     addExpenseBtn?.addEventListener('click',addExpenseRow); expensesTableBody?.addEventListener('click',e=>{ const b=e.target.closest('button[data-action="remove-expense"]'); if(b){ b.closest('tr').remove(); recalcExpensesGrandTotal(); }}); addExpenseRow();
+
+    // Benefits dynamic (serialize to hidden field)
+    const benefitsContainer=document.getElementById('benefitsContainer');
+    const addBenefitBtn=document.getElementById('addBenefitRow');
+    const benefitHidden=document.getElementById('benefitHidden');
+    function renderBenefitRow(prefill=''){
+        if(!benefitsContainer) return;
+        const row=document.createElement('div');
+        row.className='input-group mb-2 benefit-row';
+        const safe=(prefill||'').replace(/"/g,'&quot;');
+        row.innerHTML=`<input type="text" class="form-control" name="benefits[]" placeholder="Tuliskan benefit" value="${safe}"><button type="button" class="btn btn-outline-danger" data-action="remove-benefit" title="Hapus"><i class="bi bi-x"></i></button>`;
+        benefitsContainer.appendChild(row);
+    }
+    benefitsContainer?.addEventListener('click',e=>{
+        const btn=e.target.closest('button[data-action="remove-benefit"]');
+        if(btn){ btn.closest('.benefit-row')?.remove(); }
+    });
+    // Prefill from hidden value (pipe or newline separated)
+    (function prefillBenefits(){
+        if(!benefitsContainer) return;
+        const raw=benefitHidden?.value||'';
+        const parts=(raw.includes('|')?raw.split('|'):raw.split(/\r?\n/)).map(s=>s.trim()).filter(Boolean);
+        if(parts.length){ parts.forEach(p=>renderBenefitRow(p)); }
+        else { renderBenefitRow(''); }
+    })();
 
     // Validation & submit state
     const form=document.getElementById('eventForm'); if(form){
         const submitBtn=document.getElementById('submitBtn'); const submitHint=document.getElementById('submitHint'); const requiredFields=Array.from(form.querySelectorAll('[required]'));
-        function fieldFriendlyName(el){ if(!el) return 'Field'; const id=el.id||''; const name=el.name||''; if(id==='image'||name==='image') return 'Gambar Event'; if(id==='nama'||name==='title') return 'Nama Event'; if(name==='speakers[]') return 'Nama Pembicara'; if(id==='deskripsi'||name==='description') return 'Deskripsi'; if(id==='tanggal'||name==='event_date') return 'Tanggal'; if(id==='masuk1'||name==='event_time') return 'Waktu Mulai'; if(id==='lokasi'||name==='location') return 'Lokasi'; if(id==='harga'||name==='price') return 'Harga'; return id||name||'Field'; }
+        function fieldFriendlyName(el){ if(!el) return 'Field'; const id=el.id||''; const name=el.name||''; if(id==='image'||name==='image') return 'Gambar Event'; if(id==='nama'||name==='title') return 'Nama Event'; if(name==='speakers[]') return 'Nama Pembicara'; if(id==='short_desc'||name==='short_description') return 'Penjelasan Singkat'; if(id==='deskripsi'||name==='description') return 'Deskripsi'; if(id==='tanggal'||name==='event_date') return 'Tanggal'; if(id==='masuk1'||name==='event_time') return 'Waktu Mulai'; if(id==='lokasi'||name==='location') return 'Lokasi'; if(id==='harga'||name==='price') return 'Harga'; return id||name||'Field'; }
         function missingRequired(){ return requiredFields.filter(f=>!(f.value||'').trim()); }
-        window.updateSubmitState=function(){ const filled=missingRequired().length===0; if(submitBtn) submitBtn.disabled=!filled; if(submitHint){ if(filled){ submitHint.style.display='none'; } else { submitHint.textContent='Lengkapi: '+missingRequired().map(fieldFriendlyName).join(', '); submitHint.style.display='block'; } }};
+        window.updateSubmitState=function(){
+            const filled=missingRequired().length===0;
+            const sdEl=document.getElementById('short_desc');
+            const sdWords=sdEl ? (sdEl.value||'').trim().split(/\s+/).filter(Boolean).length : 0;
+            const overLimit=sdEl ? sdWords>40 : false;
+            if(submitBtn) submitBtn.disabled = (!filled || overLimit);
+            if(submitHint){
+                if(!filled){
+                    submitHint.textContent='Lengkapi: '+missingRequired().map(fieldFriendlyName).join(', ');
+                    submitHint.style.display='block';
+                } else if(overLimit){
+                    submitHint.textContent='Penjelasan singkat maksimal 40 kata (saat ini '+sdWords+').';
+                    submitHint.style.display='block';
+                } else {
+                    submitHint.style.display='none';
+                }
+            }
+        };
         requiredFields.forEach(f=>['input','change','blur'].forEach(ev=>f.addEventListener(ev,window.updateSubmitState)));
         window.updateSubmitState();
         form.addEventListener('submit',ev=>{ if(window.editorDeskripsi) document.getElementById('deskripsi').value=window.editorDeskripsi.getData(); if(window.editorTerms) document.getElementById('terms').value=window.editorTerms.getData(); const speakerCombined=document.getElementById('speakerCombined'); if(speakerCombined && speakersContainer){ const names=Array.from(speakersContainer.querySelectorAll('input[name="speakers[]"]')).map(i=>(i.value||'').trim()).filter(Boolean); speakerCombined.value=names.join(', ');} // sync hidden harga
             if(hargaHidden && hargaDisplay){ hargaHidden.value = unformatNumber(hargaDisplay.value); }
+            // serialize benefits to hidden field (pipe-separated)
+            if(benefitHidden && benefitsContainer){
+                const items=Array.from(benefitsContainer.querySelectorAll('input[name="benefits[]"]')).map(i=>(i.value||'').trim()).filter(Boolean);
+                benefitHidden.value = items.join('|');
+            }
+            // Validate short description <= 40 words
+            const shortDescEl = document.getElementById('short_desc');
+            if(shortDescEl){
+                const words = (shortDescEl.value||'').trim().split(/\s+/).filter(Boolean);
+                if(words.length>40){
+                    ev.preventDefault();
+                    shortDescEl.classList.add('border-danger');
+                    alert('Penjelasan singkat maksimal 40 kata. Saat ini: '+words.length+' kata.');
+                    return;
+                } else {
+                    shortDescEl.classList.remove('border-danger');
+                }
+            }
             let ok=true; requiredFields.forEach(f=>{ if(!f.value.trim()){ f.classList.add('border-danger'); ok=false; } else f.classList.remove('border-danger'); }); if(!ok){ ev.preventDefault(); alert('Lengkapi semua field wajib.\nYang belum: '+missingRequired().map(fieldFriendlyName).join(', ')); return; } expensesTableBody?.querySelectorAll('tr').forEach(tr=>recalcExpenseRow(tr)); });
+
+        // Live word count update for short description
+        const shortDescCountEl = document.getElementById('shortDescCount');
+        const shortDescEl2 = document.getElementById('short_desc');
+        function updateShortDescCount(){
+            if(!shortDescEl2 || !shortDescCountEl) return;
+            const words=(shortDescEl2.value||'').trim().split(/\s+/).filter(Boolean);
+            shortDescCountEl.textContent = words.length;
+            if(words.length>40){ shortDescCountEl.classList.add('text-danger'); } else { shortDescCountEl.classList.remove('text-danger'); }
+        }
+        ['input','change','blur'].forEach(ev=> shortDescEl2?.addEventListener(ev,()=>{ updateShortDescCount(); window.updateSubmitState(); }));
+        updateShortDescCount();
     }
+    // Event listener for add benefit button
+    addBenefitBtn?.addEventListener('click', () => renderBenefitRow());
+
 });
 </script>
 @endsection
