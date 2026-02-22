@@ -5,17 +5,18 @@
     <title>{{ $event->title }} - Detail Event</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 @include('partials.navbar-after-login')
 <div class="container py-5" style="margin-top:70px;">
     <div class="row">
         <div class="col-md-6 mb-4">
-            @if($event->image)
-                <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" class="img-fluid rounded shadow">
+            @if($event->image_url)
+                <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="img-fluid rounded shadow" onerror="this.src='{{ asset('aset/poster.png') }}'">
             @else
-                <img src="https://via.placeholder.com/800x500/4f46e5/ffffff?text=No+Image" alt="{{ $event->title }}" class="img-fluid rounded shadow">
+                <img src="{{ asset('aset/poster.png') }}" alt="{{ $event->title }}" class="img-fluid rounded shadow">
             @endif
         </div>
         <div class="col-md-6">
@@ -101,7 +102,6 @@
 </div>
 @endguest
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 @auth
 const btn = document.getElementById('registerBtn');
@@ -126,6 +126,8 @@ if(btn){
         btn.textContent = 'Anda Terdaftar';
         const m = new bootstrap.Modal(document.getElementById('regSuccessModal'));
         m.show();
+        // Refresh notifications so the new "Pendaftaran Dikonfirmasi" appears immediately
+        try { if (typeof loadNotifications === 'function') setTimeout(() => loadNotifications(), 50); } catch(_e){}
       } else {
         alert(data.message || 'Gagal mendaftar');
         btn.disabled = false;

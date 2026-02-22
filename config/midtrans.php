@@ -1,7 +1,8 @@
 <?php
 
 return [
-    'is_production' => (bool) env('MIDTRANS_PRODUCTION', false),
+    // Support both MIDTRANS_IS_PRODUCTION and legacy MIDTRANS_PRODUCTION
+    'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', env('MIDTRANS_PRODUCTION', false)),
     'server_key' => env('MIDTRANS_SERVER_KEY', ''),
     'client_key' => env('MIDTRANS_CLIENT_KEY', ''),
     'timeout' => env('MIDTRANS_TIMEOUT', 10),

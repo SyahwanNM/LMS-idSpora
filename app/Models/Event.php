@@ -15,9 +15,13 @@ class Event extends Model
         'vbg_path',
         'certificate_path',
         'attendance_path',
+        'certificate_logo',
+        'certificate_signature',
+        'certificate_template',
         'speaker',
         'materi',
         'jenis',
+        'short_description',
         'description',
         'terms_and_conditions',
         'location',
@@ -32,6 +36,10 @@ class Event extends Model
         'latitude',
         'longitude',
         'zoom_link',
+        // attendance QR one-time fields
+        'attendance_qr_token',
+        'attendance_qr_image',
+        'attendance_qr_generated_at',
         // legacy JSON storage (backward compatible)
         'schedule_json',
         'expenses_json',
@@ -49,6 +57,8 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'certificate_logo' => 'array',
+        'certificate_signature' => 'array',
     ];
 
     /**
@@ -59,7 +69,11 @@ class Event extends Model
         $count = 0;
         if(!empty($this->vbg_path)) $count++;
         if(!empty($this->certificate_path)) $count++;
-        if(!empty($this->attendance_path)) $count++;
+        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
+        $hasAttendance = !empty($this->attendance_path)
+            || !empty($this->attendance_qr_image)
+            || !empty($this->attendance_qr_token);
+        if($hasAttendance) $count++;
         return $count;
     }
 
@@ -68,8 +82,8 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 3; // virtual background, certificate, attendance
-        $done = $this->documents_completed_count; // uses accessor above
+        $total = 3; // Virtual Background, Sertifikat, Absensi (QR/File)
+        $done = max(0, min(3, (int) $this->documents_completed_count));
         return (int) floor(($done / $total) * 100);
     }
 
@@ -89,6 +103,11 @@ class Event extends Model
     }
 
     // Relationship: event has many registrations
+    public function registrationsActive()
+    {
+        return $this->hasMany(EventRegistration::class)->where('status', 'active');
+    }
+
     public function registrations()
     {
         return $this->hasMany(EventRegistration::class);
@@ -104,6 +123,11 @@ class Event extends Model
         return $this->hasMany(EventExpense::class);
     }
 
+    public function feedbacks()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
     public function getStartAtAttribute(): ?Carbon
     {
         if(empty($this->event_date)) return null;
@@ -113,6 +137,56 @@ class Event extends Model
             $timeStr = $this->event_time instanceof Carbon ? $this->event_time->format('H:i:s') : (is_string($this->event_time) ? $this->event_time : '00:00:00');
         }
         try { return Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (\Throwable $ex) { return null; }
+    }
+
+    /**
+     * Get the image URL attribute.
+     * Ensures consistent URL generation for event images.
+     * Uses same approach as User avatar_url for consistency.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        $image = (string) ($this->image ?? '');
+        if ($image === '') {
+            return null;
+        }
+        
+        // External URL (e.g., from external source)
+        if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://')) {
+            return $image;
+        }
+        
+        // Normalize path - remove 'storage/' prefix if exists
+        $imagePath = ltrim(str_replace('storage/', '', $image), '/');
+        
+        // Extract filename from path
+        $filename = basename($imagePath);
+        
+        // Check if file exists in events folder (try multiple possible paths)
+        $possiblePaths = [
+            'events/' . $filename,  // events/filename.png
+            $imagePath,              // events/filename.png (if already has events/)
+            'events/' . $imagePath, // events/events/filename.png (if path already has events/)
+        ];
+        
+        // Remove duplicates
+        $possiblePaths = array_unique($possiblePaths);
+        
+        // Find first existing file
+        foreach ($possiblePaths as $path) {
+            $fullPath = public_path('uploads/' . $path);
+            if (file_exists($fullPath) && is_file($fullPath)) {
+                // File exists, return URL
+                return asset('uploads/' . $path);
+            }
+        }
+        
+        // File not found, but return URL anyway (browser will show broken image or fallback)
+        // This allows onerror handler in views to work
+        if (str_starts_with($imagePath, 'events/')) {
+            return asset('uploads/' . $imagePath);
+        }
+        return asset('uploads/events/' . $filename);
     }
 
     public function getEndAtAttribute(): ?Carbon

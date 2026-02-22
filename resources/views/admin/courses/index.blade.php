@@ -1,236 +1,726 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="en">
 
-@section('title', 'Manage Courses')
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beranda Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
 
-@section('content')
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-                <div class="flex items-center">
-                    <a href="{{ route('admin.dashboard') }}" class="mr-4">
-                        <svg class="w-6 h-6 text-gray-600 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </a>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Manage Courses</h1>
-                        <p class="text-sm text-gray-600">{{ $courses->total() }} courses available</p>
+<body>
+    @include('partials.navbar-admin-course')
+    @if(session('success'))
+        <div class="container mt-3">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    @endif
+    @if(session('success'))
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+            <div id="courseUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
                     </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('admin.courses.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        <span>Add Course</span>
-                    </a>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             </div>
         </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        @if(session('success'))
-            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if($courses->count() > 0)
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($courses as $course)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
-                    <div class="aspect-w-16 aspect-h-9">
-                        @if($course->image)
-                            <img src="{{ Storage::url($course->image) }}" alt="{{ $course->name }}" class="w-full h-48 object-cover">
-                        @else
-                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                </svg>
-                            </div>
-                        @endif
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                var el = document.getElementById('courseUpdatedToast');
+                if (window.bootstrap && el) {
+                    var t = new bootstrap.Toast(el);
+                    t.show();
+                }
+            } catch (e) {}
+        });
+    </script>
+    @endif
+    <!-- Publish warning toast (shown when course has missing material) -->
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+            <div id="publishWarningToast" class="toast align-items-center text-bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4500">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <span class="me-2" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.89 0 1.438-.99.982-1.767L8.982 1.566zM8 5.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 5.5Zm0 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
+                            </svg>
+                        </span>
+                        Lengkapkan Material Course Modules terlebih dahulu sebelum menerbitkan Course
                     </div>
-                    
-                    <div class="p-6">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                @if($course->level === 'beginner') bg-green-100 text-green-800
-                                @elseif($course->level === 'intermediate') bg-yellow-100 text-yellow-800
-                                @else bg-red-100 text-red-800 @endif">
-                                {{ ucfirst($course->level) }}
-                            </span>
-                            <span class="text-sm text-gray-500">{{ $course->modules->count() }} modules</span>
-                        </div>
-                        
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $course->name }}</h3>
-                        <div class="text-sm text-gray-600 mb-4 course-description-preview">
-                            {!! Str::limit(strip_tags($course->description), 100) !!}
-                        </div>
-                        
-                        <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                            <span>{{ $course->category->name ?? 'No Category' }}</span>
-                            <span>{{ $course->duration }}h</span>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-lg font-semibold text-gray-900">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
-                            <div class="flex space-x-2">
-                                <a href="{{ route('admin.courses.modules.index', $course) }}" 
-                                   class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                                    Modules
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Already published toast (shown when course is already active) -->
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+            <div id="alreadyPublishedToast" class="toast align-items-center text-bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        Course ini sudah diterbitkan
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="box_luar_course_builder">
+        <h1 class="judul_course_builder">Daftar Course</h1>
+        <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
+        <a href="{{ route('admin.add-course') }}" class="tambah_course" style="text-decoration: none;">
+            <svg style="margin-top: 7px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
+            </svg>
+            <p style="margin-top: 2px;">Tambah Course</p>
+        </a>
+        <div class="box_daftar_course">
+            <h4 class="judul_daftar_course">Daftar Course yang Ada</h4>
+            <table class="tabel_daftar_course">
+                <thead>
+                    <tr>
+                        <th>Nama Course</th>
+                        <th>Level</th>
+                        <th>Harga</th>
+                        <th>Status Kelengkapan</th>
+                        <th>Pembayaran</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($courses as $course)
+                    @php
+                    $hasModules = ($course->modules && $course->modules->count() > 0);
+                    $isPublished = ($course->status === 'active');
+                    @endphp
+                    <tr>
+                        <td>{{ $course->name }}</td>
+                        <td>{{ ucfirst($course->level) }}</td>
+                        <td>Rp. {{ number_format($course->price, 0, ',', '.') }}</td>
+                        <td>
+                            @if($isPublished)
+                            <button class="status_kelengkapan_complete">Complete</button>
+                            @elseif(!$hasModules)
+                            <button class="status_kelengkapan_miss">Missing Material</button>
+                            @else
+                            <button class="status_kelengkapan_inprogress">In Progress</button>
+                            @endif
+                        </td>
+                        <td>
+                            @php
+                                $coursePayments = $course->manualPayments ?? collect();
+                                $countPending = $coursePayments->where('status', 'pending')->count();
+                                $countApproved = $coursePayments->where('status', 'settled')->count();
+                                $countRejected = $coursePayments->where('status', 'rejected')->count();
+                            @endphp
+
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <span class="badge text-bg-warning">Pending: {{ $countPending }}</span>
+                                <span class="badge text-bg-success">Approved: {{ $countApproved }}</span>
+                                <span class="badge text-bg-danger">Rejected: {{ $countRejected }}</span>
+                            </div>
+
+                            @if($coursePayments->count() > 0)
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
+                                    Lihat user
+                                </button>
+
+                                <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>User</th>
+                                                                <th>WhatsApp</th>
+                                                                <th>Referral</th>
+                                                                <th>Status</th>
+                                                                <th>Bukti</th>
+                                                                <th>Aksi</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($coursePayments->sortByDesc('created_at') as $payment)
+                                                                @php
+                                                                    $proof = $payment->proofs->sortByDesc('created_at')->first();
+                                                                    $status = $payment->status;
+                                                                    $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
+                                                                    $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
+                                                                @endphp
+                                                                <tr>
+                                                                    <td>
+                                                                        <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
+                                                                        <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
+                                                                    </td>
+                                                                    <td>{{ $payment->whatsapp_number ?? '-' }}</td>
+                                                                    <td>{{ $payment->referral_code ?: '-' }}</td>
+                                                                    <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
+                                                                    <td>
+                                                                        @if($proof)
+                                                                            @php
+                                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
+                                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
+                                                                                    $proofPath = substr($proofPath, strlen('uploads/'));
+                                                                                }
+                                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
+                                                                            @endphp
+                                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
+                                                                        @else
+                                                                            <span class="text-muted">-</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td>
+                                                                        <form method="POST" class="d-flex flex-wrap gap-1 m-0">
+                                                                            @csrf
+                                                                            <button type="submit" class="btn btn-sm btn-success"
+                                                                                formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
+                                                                                onclick="return confirm('Approve pembayaran ini?')">
+                                                                                Approve
+                                                                            </button>
+                                                                            <button type="submit" class="btn btn-sm btn-danger"
+                                                                                formaction="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
+                                                                                onclick="return confirm('Reject pembayaran ini?')">
+                                                                                Reject
+                                                                            </button>
+                                                                            <button type="submit" class="btn btn-sm btn-warning"
+                                                                                formaction="{{ route('admin.courses.manual-payments.pending', [$course, $payment]) }}"
+                                                                                onclick="return confirm('Set ke pending lagi?')">
+                                                                                Pending
+                                                                            </button>
+                                                                        </form>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="aksi_daftar_course d-flex gap-2">
+                                <a href="{{ route('admin.courses.edit', $course) }}" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                                        <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
+                                    </svg>
                                 </a>
-                                <a href="{{ route('admin.courses.show', $course) }}" 
-                                   class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
-                                    View
-                                </a>
-                                <a href="{{ route('admin.courses.edit', $course) }}" 
-                                   class="text-yellow-600 hover:text-yellow-900 text-sm font-medium">
-                                    Edit
-                                </a>
-                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this course?')">
+                                @php
+                                $previewData = [
+                                    'title' => $course->name,
+                                    'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                    'description' => trim($course->description),
+                                    'modules' => $course->modules->map(function($m) {
+                                        return [
+                                            'type' => $m->type, // pdf, video, quiz
+                                            'title' => $m->title,
+                                            'subtitle' => $m->description ?? '',
+                                            'duration' => $m->formatted_duration ?? '',
+                                            // Extra fields for Quiz if needed
+                                            'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
+                                        ];
+                                    })->values()->toArray(),
+                                    'published' => $isPublished ? '1' : '0',
+                                    'level' => ucfirst($course->level),
+                                    'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
+                                    'duration' => $course->duration . ' jam',
+                                    'status_text' => $isPublished ? 'Published' : ($hasModules ? 'Draft' : 'Incomplete'),
+                                ];
+                                @endphp
+                                <button type="button" class="btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                    </svg>
+                                </button>
+                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" onsubmit="return confirm('Hapus course ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">
-                                        Delete
+                                    <button type="submit" class="btn p-0" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+                                            <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
+                                        </svg>
                                     </button>
                                 </form>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-            
-            <!-- Pagination -->
-            <div class="mt-8">
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Belum ada course.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+            <div class="mt-3">
                 {{ $courses->links() }}
             </div>
-        @else
-            <div class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No courses</h3>
-                <p class="mt-1 text-sm text-gray-500">Get started by creating a new course.</p>
-                <div class="mt-6">
-                    <a href="{{ route('admin.courses.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Add Course
-                    </a>
-                </div>
-            </div>
-        @endif
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gradient-to-r from-amber-600 to-yellow-500 mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Brand Section -->
-                <div class="space-y-4">
-                    <div class="flex items-center space-x-3">
-                        <img src="{{ asset('images/logo idspora_nobg_dark 1.png') }}" alt="idSpora Logo" class="h-8 w-auto">
-                        <span class="text-xl font-bold text-white">idSpora</span>
+        </div>
+    </div>
+    <div class="preview">
+        <div class="modal" id="coursePreviewModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 id="coursePreviewLabel" class="modal-title">Modal title</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <p class="text-amber-100 text-sm leading-relaxed">
-                        Learning Management System yang memudahkan proses pembelajaran dan pengembangan skill di era digital.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-amber-100 hover:text-white transition-colors duration-200">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-                            </svg>
-                        </a>
-                        <a href="#" class="text-amber-100 hover:text-white transition-colors duration-200">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
-                            </svg>
-                        </a>
-                        <a href="#" class="text-amber-100 hover:text-white transition-colors duration-200">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Quick Links -->
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-white">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li><a href="{{ route('admin.dashboard') }}" class="text-amber-100 hover:text-white transition-colors duration-200 text-sm">Dashboard</a></li>
-                        <li><a href="{{ route('admin.courses.index') }}" class="text-amber-100 hover:text-white transition-colors duration-200 text-sm">Manage Courses</a></li>
-                        <li><a href="{{ route('admin.events.index') }}" class="text-amber-100 hover:text-white transition-colors duration-200 text-sm">Manage Events</a></li>
-                        <li><a href="{{ route('admin.reports') }}" class="text-amber-100 hover:text-white transition-colors duration-200 text-sm">Analytics</a></li>
-                        <li><a href="{{ route('landing-page') }}" class="text-amber-100 hover:text-white transition-colors duration-200 text-sm">Public Site</a></li>
-                    </ul>
-                </div>
-
-                <!-- Contact Info -->
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-white">Contact Info</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center space-x-3">
-                            <svg class="w-4 h-4 text-amber-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="text-amber-100 text-sm">admin@idspora.com</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <svg class="w-4 h-4 text-amber-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                            </svg>
-                            <span class="text-amber-100 text-sm">+62 21 1234 5678</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <svg class="w-4 h-4 text-amber-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <span class="text-amber-100 text-sm">Jakarta, Indonesia</span>
+                    <div class="option">
+                        <div class="list-option">
+                            <button class="tab-btn active" data-target="tab-ringkasan">Ringkasan</button>
+                            <button class="tab-btn" data-target="tab-pdf">Modul PDF</button>
+                            <button class="tab-btn" data-target="tab-video">Video</button>
+                            <button class="tab-btn" data-target="tab-kuis">Kuis</button>
                         </div>
                     </div>
-                </div>
-            </div>
+                    <div class="modal-body">
+                        <div id="tab-ringkasan" class="tab-content active">
+                            <h3 id="modal-course-name">Nama Course</h3>
+                            <p id="modal-course-desc">Deskripsi singkat course akan muncul di sini.</p>
+                            <div class="info-detail">
+                                <div class="list-info info-purple">
+                                    <h5>ID Course</h5>
+                                    <h4>#1</h4>
+                                </div>
+                                <div class="list-info info-blue">
+                                    <h5>LEVEL</h5>
+                                    <h4 id="cp-level">Beginner</h4>
+                                </div>
+                                <div class="list-info info-green">
+                                    <h5>HARGA</h5>
+                                    <h4 id="cp-price">Rp250.000</h4>
+                                </div>
+                                <div class="list-info info-yellow">
+                                    <h5>Status</h5>
+                                    <h4 id="cp-status">Selesai</h4>
+                                </div>
+                            </div>
+                            <div class="ringkasan-konten">
+                                <h3>Ringkasan Konten</h3>
+                                <div class="info-ringkasan">
+                                    <div class="list-ringkasan">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark" viewBox="0 0 16 16">
+                                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
+                                        </svg>
+                                        <div class="detail-ringkasan">
+                                            <h5 id="count-pdf">0</h5>
+                                            <p>Modul PDF</p>
+                                        </div>
+                                    </div>
+                                    <div class="list-ringkasan">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
+                                        </svg>
+                                        <div class="detail-ringkasan">
+                                            <h5>2</h5>
+                                            <p>Video Pembelajaran</p>
+                                        </div>
+                                    </div>
+                                    <div class="list-ringkasan">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
 
-            <!-- Bottom Bar -->
-            <div class="border-t border-amber-400/30 mt-8 pt-6">
-                <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                    <div class="text-amber-100 text-sm">
-                        © {{ date('Y') }} idSpora. All rights reserved.
+                                            <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
+                                        </svg>
+                                        <div class="detail-ringkasan">
+                                            <h5>2</h5>
+                                            <p>Kuis</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-pdf" class="tab-content">
+                            <div class="pdf-content" id="list-pdf-container">
+                                <div class="list-pdf">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
+                                    </svg>
+                                    <div class="detail-pdf">
+                                        <h4>Pengenalan UI/UX Dasar</h4>
+                                        <p>Materi dasar tentang UI dan UX design</p>
+                                    </div>
+                                </div>
+
+                                <div class="list-pdf">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
+                                    </svg>
+                                    <div class="detail-pdf">
+                                        <h4>Prinsip Desain</h4>
+                                        <p>Pelajari prinsip-prinsip desain yang fundamental</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-video" class="tab-content">
+                            <div class="video-content" id="list-video-container">
+                                <div class="list-video">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
+                                    </svg>
+                                    <div class="detail-video">
+                                        <h4>Pengenalan UI/UX Dasar</h4>
+                                        <p>Materi dasar tentang UI dan UX design</p>
+                                    </div>
+                                </div>
+
+                                <div class="list-video">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
+                                    </svg>
+                                    <div class="detail-video">
+                                        <h4>Prinsip Desain</h4>
+                                        <p>Pelajari prinsip-prinsip desain yang fundamental</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-kuis" class="tab-content">
+                            <div class="kuis-content" id="list-kuis-container">
+                                <div class="list-kuis">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                        <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
+                                    </svg>
+                                    <div class="detail-kuis">
+                                        <h4>Kuis Evaluasi: Fundamental Design</h4>
+                                        <div class="soal-passing">
+                                            <div class="info-item">
+                                                <p>Jumlah Soal</p>
+                                                <h5>15 Soal</h5>
+                                            </div>
+                                            <div class="info-item passing-score">
+                                                <p>Passing Score</p>
+                                                <h5>80%</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="list-kuis">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                        <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
+                                    </svg>
+                                    <div class="detail-kuis">
+                                        <h4>Final Test UI/UX</h4>
+                                        <div class="soal-passing">
+                                            <div class="info-item">
+                                                <p>Jumlah Soal</p>
+                                                <h5>20 Soal</h5>
+                                            </div>
+                                            <div class="info-item passing-score">
+                                                <p>Passing Score</p>
+                                                <h5>75%</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-6 text-sm">
-                        <a href="#" class="text-amber-100 hover:text-white transition-colors duration-200">Privacy Policy</a>
-                        <a href="#" class="text-amber-100 hover:text-white transition-colors duration-200">Terms of Service</a>
-                        <a href="#" class="text-amber-100 hover:text-white transition-colors duration-200">Help Center</a>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                     </div>
                 </div>
             </div>
         </div>
-    </footer>
-</div>
+    </div>
 
-<style>
-/* Course Description Preview Styling */
-.course-description-preview {
-    line-height: 1.5;
-    color: #6b7280;
-}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modalEl = document.getElementById('coursePreviewModal');
+            var modal = null;
 
-.course-description-preview strong {
-    font-weight: 600;
-    color: #374151;
-}
+            // --- 1. Logic Tab Switching ---
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
 
-.course-description-preview em {
-    font-style: italic;
-    color: #6b7280;
-}
-</style>
-@endsection
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.getAttribute('data-target');
+
+                    // Update Button Active State
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Update Content Visibility
+                    tabContents.forEach(content => {
+                        content.style.display = 'none';
+                        content.classList.remove('active');
+                    });
+
+                    const targetEl = document.getElementById(target);
+                    if (targetEl) {
+                        targetEl.style.display = 'block';
+                        targetEl.classList.add('active');
+                    }
+                });
+            });
+
+            // --- 2. Modal Helper Functions (Bootstrap & Fallback) ---
+            if (window.bootstrap && modalEl) {
+                try {
+                    modal = new window.bootstrap.Modal(modalEl);
+                } catch (e) {}
+            }
+            var _fallbackBackdrop = null;
+
+            function showCourseModal() {
+                // Reset ke tab Ringkasan setiap kali modal dibuka
+                if (tabButtons.length > 0) {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabButtons[0].classList.add('active');
+                    tabContents.forEach(c => {
+                        c.style.display = 'none';
+                        c.classList.remove('active');
+                    });
+                    tabContents[0].style.display = 'block';
+                    tabContents[0].classList.add('active');
+                }
+
+                if (window.bootstrap && modal) {
+                    try {
+                        modal.show();
+                        return;
+                    } catch (e) {}
+                }
+                if (!modalEl) return;
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                document.body.classList.add('modal-open');
+                if (!_fallbackBackdrop) {
+                    _fallbackBackdrop = document.createElement('div');
+                    _fallbackBackdrop.className = 'modal-backdrop fade show';
+                    document.body.appendChild(_fallbackBackdrop);
+                }
+            }
+
+            function hideCourseModal() {
+                if (window.bootstrap && modal) {
+                    try {
+                        modal.hide();
+                        return;
+                    } catch (e) {}
+                }
+                if (!modalEl) return;
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                if (_fallbackBackdrop) {
+                    _fallbackBackdrop.remove();
+                    _fallbackBackdrop = null;
+                }
+            }
+
+            if (modalEl) {
+                modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+                    btn.addEventListener('click', hideCourseModal);
+                });
+                modalEl.addEventListener('click', ev => {
+                    if (ev.target === modalEl) hideCourseModal();
+                });
+            }
+
+            // --- 3. Content Setter Functions ---
+            function setText(id, val) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = val || '';
+            }
+
+            function setImage(id, url) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.src = url || '';
+                    el.style.display = url ? 'block' : 'none';
+                }
+            }
+
+            // --- 4. Event Delegation for Preview Click ---
+            document.addEventListener('click', function(ev) {
+                var btn = ev.target.closest('.preview-course');
+                if (!btn) return;
+
+                var raw = btn.getAttribute('data-course') || '';
+                var data = {};
+                try {
+                    data = JSON.parse(atob(raw));
+                } catch (e) {
+                    try {
+                        data = JSON.parse(raw);
+                    } catch (e2) {
+                        data = {};
+                    }
+                }
+
+                // Update UI Dasar
+                setText('coursePreviewLabel', 'Preview Course: ' + (data.title || ''));
+                setText('modal-course-name', data.title || '-');
+                setText('modal-course-desc', data.description || 'Tidak ada deskripsi.');
+
+                setText('cp-level', data.level || '-');
+                setText('cp-price', data.price || 'Rp0');
+                
+                // Status Color
+                var statusEl = document.getElementById('cp-status');
+                if(statusEl) {
+                    statusEl.textContent = data.status_text || '-';
+                    // Reset colors
+                    statusEl.parentElement.className = 'list-info'; // base
+                    if (data.published === '1') statusEl.parentElement.classList.add('info-green'); // Active
+                    else if (data.status_text === 'Incomplete') statusEl.parentElement.classList.add('info-yellow'); // Warning
+                    else statusEl.parentElement.classList.add('info-blue'); // Draft
+                }
+
+                // --- MODULES PARSING ---
+                var modules = data.modules || [];
+                
+                // 1. Hitung Ringkasan
+                var countPdf = modules.filter(m => m.type === 'pdf').length;
+                var countVideo = modules.filter(m => m.type === 'video').length;
+                var countQuiz = modules.filter(m => m.type === 'quiz').length;
+
+                setText('count-pdf', countPdf);
+                setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
+                setText('count-quiz', countQuiz);   // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
+
+                // Fix: Update HTML Ringkasan agar ID-nya sesuai
+                // Kita akan update HTML ringkasan via JS jika ID tidak ditemukan, atau pengguna harus memastikan HTML punya ID
+                // Di HTML asli: 
+                // <h5 id="count-pdf">0</h5> -> OK
+                // <div class="detail-ringkasan"><h5>2</h5><p>Video Pembelajaran</p></div> -> Belum ada ID
+                // Mari kita cari elemennya secara manual jika ID tidak ada, atau inject konten ringkasan ulang.
+                
+                // Strategy: Re-render ringkasan numbers specific locations
+                // PDF
+                var pdfCountEl = document.getElementById('count-pdf');
+                if(pdfCountEl) pdfCountEl.textContent = countPdf;
+
+                // Video
+                // Cari elemen SVG video, lalu next sibling div > h5
+                // Cara lebih aman: Assign ID ke HTML (saya akan lakukan di chunk lain), 
+                // tapi di sini kita pakai selector pintar.
+                var summaryContainer = modalEl.querySelector('.info-ringkasan');
+                if(summaryContainer) {
+                    // Item 2: Video
+                    var vidSummary = summaryContainer.children[1]; 
+                    if(vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
+
+                    // Item 3: Quiz
+                    var quizSummary = summaryContainer.children[2];
+                    if(quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
+                }
+
+                // --- RENDER TAB CONTENTS ---
+                
+                // 1. PDF Tab
+                var pdfContainer = document.getElementById('list-pdf-container');
+                if(pdfContainer) {
+                    var pdfs = modules.filter(m => m.type === 'pdf');
+                    if(pdfs.length === 0) {
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada modul PDF.</p>';
+                    } else {
+                        pdfContainer.innerHTML = pdfs.map(m => `
+                             <div class="list-pdf">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
+                                </svg>
+                                <div class="detail-pdf">
+                                    <h4>${m.title}</h4>
+                                    <p>${m.subtitle || 'Dokumen Materi'}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // 2. Video Tab
+                var vidContainer = document.getElementById('list-video-container');
+                if(vidContainer) {
+                    var vids = modules.filter(m => m.type === 'video');
+                    if(vids.length === 0) {
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada video pembelajaran.</p>';
+                    } else {
+                        vidContainer.innerHTML = vids.map(m => `
+                            <div class="list-video">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
+                                </svg>
+                                <div class="detail-video">
+                                    <h4>${m.title}</h4>
+                                    <p>${m.subtitle || 'Video Lesson'}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // 3. Quiz Tab
+                var quizContainer = document.getElementById('list-kuis-container');
+                if(quizContainer) {
+                    var quizzes = modules.filter(m => m.type === 'quiz');
+                    if(quizzes.length === 0) {
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada kuis.</p>';
+                    } else {
+                        quizContainer.innerHTML = quizzes.map(m => `
+                             <div class="list-kuis">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
+                                </svg>
+                                <div class="detail-kuis">
+                                    <h4>${m.title}</h4>
+                                    <div class="soal-passing">
+                                        <div class="info-item">
+                                            <p>Jumlah Soal</p>
+                                            <h5>${m.question_count || 0} Soal</h5>
+                                        </div>
+                                        <div class="info-item passing-score">
+                                            <p>Passing Score</p>
+                                            <h5>75% (${Math.ceil((m.question_count || 0) * 0.75)} Soal)</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                showCourseModal();
+            });
+        });
+    </script>
+</body>
+
+</html>
