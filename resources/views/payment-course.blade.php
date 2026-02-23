@@ -301,6 +301,10 @@
                         <input class="input_nomor" type="text" placeholder="No Whatsapp">
                     </div>
                 </div>
+                <div class="input_biodata">
+                    <p>Kode Referall</p>
+                    <input class="kolom_input_biodata" type="text" placeholder="Isi jika kamu mendapatkan kode dari reseller atau partner kami.">
+                </div>
 
                 
             </div>
@@ -341,6 +345,7 @@
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
+
                     <button type="button" id="showQrisBtn" class="btn_bayar_payment">Bayar</button>
                 </form>
             </div>
