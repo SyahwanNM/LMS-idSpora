@@ -1,12 +1,6 @@
 @php
     $user = Auth::user();
 @endphp
-<!-- Header -->
-<div class="mb-6">
-    <h1 class="text-3xl font-bold mb-2" style="color: #111827;">Edit Profil</h1>
-    <p class="text-sm" style="color: #6b7280;">Perbarui informasi profil Anda</p>
-</div>
-
 <!-- Profile Information Card -->
 <div class="glass-card rounded-2xl p-8 shadow-2xl">
     <!-- Success/Error Messages -->

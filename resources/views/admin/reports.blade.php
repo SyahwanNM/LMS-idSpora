@@ -62,6 +62,7 @@
                 $periodFmt = fn(Carbon $d) => $d->format('Y-m');
             @endphp
             <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                <input type="hidden" name="tab" value="pendapatan">
                 <div>
                     <label for="period" class="form-label mb-1">Periode Bulan</label>
                     <input type="month" name="period" id="period" value="{{ sprintf('%04d-%02d',$selectedYear,$selectedMonth) }}" class="form-control" style="max-width:180px;">
@@ -75,19 +76,21 @@
             </form>
             @php
                 $paidStatuses = ['settlement','capture','success'];
-                // Total sepanjang waktu (aggregat keseluruhan, bukan hanya bulan dipilih)
-                // Use manual_payments (settled) as source of revenue
-                $totalRevenueAll = \App\Models\ManualPayment::where('status','settled')->sum('amount');
-                $totalExpenseAll = \App\Models\EventExpense::sum('total');
+                // Total bulan terpilih (bukan agregat keseluruhan)
+                $totalRevenueAll = \App\Models\ManualPayment::where('status','settled')
+                    ->whereYear('created_at',$selectedDate->year)
+                    ->whereMonth('created_at',$selectedDate->month)
+                    ->sum('amount');
+                $totalExpenseAll = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)
+                    ->whereMonth('created_at',$selectedDate->month)
+                    ->sum('total');
                 $totalMarginAll = $totalRevenueAll - $totalExpenseAll;
                 // Revenue & Expense bulan terpilih (berdasarkan created_at transaksi / expense)
-                $currentMonthRevenue = \App\Models\ManualPayment::where('status','settled')
-                    ->whereYear('created_at',$selectedDate->year)->whereMonth('created_at',$selectedDate->month)
-                    ->sum('amount');
+                $currentMonthRevenue = $totalRevenueAll;
                 $previousMonthRevenue = \App\Models\ManualPayment::where('status','settled')
                     ->whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)
                     ->sum('amount');
-                $currentMonthExpense = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)->whereMonth('created_at',$selectedDate->month)->sum('total');
+                $currentMonthExpense = $totalExpenseAll;
                 $previousMonthExpense = \App\Models\EventExpense::whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)->sum('total');
                 $currentMonthMargin = $currentMonthRevenue - $currentMonthExpense;
                 $previousMonthMargin = $previousMonthRevenue - $previousMonthExpense;
@@ -146,9 +149,13 @@
                     $seriesProfit[] = $r - $e;
                 }
             @endphp
+            <div class="card mb-3">
+                <div class="card-body">
+                    <canvas id="laporanChart" height="90"></canvas>
+                </div>
+            </div>
 
             <div style="margin-bottom:12px;">
-                <canvas id="trendChart" height="100"></canvas>
             </div>
 
             <div class="recap-card-box" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;">
@@ -267,54 +274,52 @@
                         </tr>
                     <tbody>
                         @php
-                            if(!isset($eventRows)) {
-                                $paidStatuses = ['settlement','capture','success'];
-                                // Use manual payments as source of revenue per event
-                                $revenueMap = \App\Models\ManualPayment::query()
-                                    ->selectRaw('event_id, SUM(amount) as total')
-                                    ->where('status','settled')
-                                    ->groupBy('event_id')
-                                    ->pluck('total','event_id');
-                                $eventsTmp = \App\Models\Event::withCount('registrations')->orderBy('event_date','asc')->get();
-                                $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
-                                    $price = $e->discounted_price ?? $e->price;
-                                    // Paid revenue from successful payments
-                                    $paidStatuses = ['settlement','capture','success'];
-                                    $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
-                                    $revenue = (float) $payments->sum('amount');
-                                    // Use number of active registrations as "jumlah yang daftara"
-                                    $registeredCount = (int) $e->registrations()->where('status','active')->count();
-                                    $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
-                                    // Income rows: Tiket Pendaftar based on jumlah yang daftar
-                                    $incomeRows = [
-                                        [ 'label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue ],
-                                    ];
-                                    // Expenses from EventExpense
-                                    $expenseModels = $e->expenses()->get(['item','quantity','unit_price','total']);
-                                    $expenseRows = $expenseModels->map(function($row){
-                                        return [
-                                            'label' => $row->item,
-                                            'qty' => (int)($row->quantity ?? 0),
-                                            'unit' => (float)($row->unit_price ?? 0),
-                                            'total' => (float)($row->total ?? 0),
-                                        ];
-                                    })->values()->all();
-                                    $expense = (float) array_sum(array_map(fn($r)=> (float)($r['total'] ?? 0), $expenseRows));
+                            // Selalu generate $eventRows di sini agar tidak ada cache lama dari controller
+                            $paidStatuses = ['settlement','capture','success'];
+                            $revenueMap = \App\Models\ManualPayment::query()
+                                ->selectRaw('event_id, SUM(amount) as total')
+                                ->where('status','settled')
+                                ->groupBy('event_id')
+                                ->pluck('total','event_id');
+                            // Ambil event yang event_date-nya tidak null dan sesuai bulan/tahun yang dipilih
+                            $eventsTmp = \App\Models\Event::withCount('registrations')
+                                ->whereNotNull('event_date')
+                                ->whereYear('event_date', $selectedDate->year)
+                                ->whereMonth('event_date', $selectedDate->month)
+                                ->orderBy('event_date','asc')->get();
+                            $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
+                                $price = $e->discounted_price ?? $e->price;
+                                $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
+                                $revenue = (float) $payments->sum('amount');
+                                $registeredCount = (int) $e->registrations()->where('status','active')->count();
+                                $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+                                $incomeRows = [
+                                    [ 'label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue ],
+                                ];
+                                $expenseModels = $e->expenses()->get(['item','quantity','unit_price','total']);
+                                $expenseRows = $expenseModels->map(function($row){
                                     return [
-                                        'id' => $e->id,
-                                        'name' => $e->title,
-                                        'date' => optional($e->event_date)->format('d/m/Y'),
-                                        'participants' => (int)$e->registrations_count,
-                                        'registered_count' => $registeredCount,
-                                        'price' => (float)$price,
-                                        'revenue' => $revenue,
-                                        'expense' => $expense,
-                                        'profit' => $revenue - $expense,
-                                        'income_rows' => $incomeRows,
-                                        'expense_rows' => $expenseRows,
+                                        'label' => $row->item,
+                                        'qty' => (int)($row->quantity ?? 0),
+                                        'unit' => (float)($row->unit_price ?? 0),
+                                        'total' => (float)($row->total ?? 0),
                                     ];
-                                });
-                            }
+                                })->values()->all();
+                                $expense = (float) array_sum(array_map(fn($r)=> (float)($r['total'] ?? 0), $expenseRows));
+                                return [
+                                    'id' => $e->id,
+                                    'name' => $e->title,
+                                    'date' => optional($e->event_date)->format('d/m/Y'),
+                                    'participants' => (int)$e->registrations_count,
+                                    'registered_count' => $registeredCount,
+                                    'price' => (float)$price,
+                                    'revenue' => $revenue,
+                                    'expense' => $expense,
+                                    'profit' => $revenue - $expense,
+                                    'income_rows' => $incomeRows,
+                                    'expense_rows' => $expenseRows,
+                                ];
+                            });
                         @endphp
                         @forelse($eventRows as $row)
                             <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
@@ -365,22 +370,14 @@
         </div>
 
         <div id="pertumbuhan" class="rekap-box">
-            @php
-                // Prepare last 6 months labels ending with current month
-                $months = [];
-                $paidEvents = [];
-                $freeEvents = [];
-                $end = Carbon::createFromDate((int) now()->year, (int) now()->month, 1)->startOfMonth();
-                $start = (clone $end)->subMonths(5);
-                for($m = 0; $m < 6; $m++){
-                    $d = (clone $start)->addMonths($m);
-                    $months[] = $d->format('M');
-                    $paidEvents[] = \App\Models\Event::whereYear('created_at',$d->year)->whereMonth('created_at',$d->month)->where('price','>',0)->count();
-                    $freeEvents[] = \App\Models\Event::whereYear('created_at',$d->year)->whereMonth('created_at',$d->month)->where(function($q){ $q->whereNull('price')->orWhere('price',0); })->count();
-                }
-            @endphp
-            <div style="margin-bottom:14px;">
-                <canvas id="growthChart" height="110"></canvas>
+            <div class="box-diagram-pertumbuhan col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chartEvent"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="data-box">
@@ -474,29 +471,23 @@
             <h5 class="title-laporan-metrik">Metrik Operasional Rinci</h5>
             <div class="filter-section" id="filters-pertumbuhan">
                 <div class="filter-kiri">
-                    <div class="filter-group">
-                        <label for="filter-event-pertumbuhan" class="filter-label">Cari Event</label>
-                        <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event...">
-                    </div>
-                    <div>
-                        <button class="btn-cari" id="btn-cari-pertumbuhan">cari</button>
-                    </div>
+                    <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                        <input type="hidden" name="tab" value="pertumbuhan">
+                        <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event..." style="width:200px">
+                        
+                        <label for="period_pertumbuhan" class="filter-label ms-2 mb-0">Periode</label>
+                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $selectedDate->format('Y-m') }}" class="form-control form-control-sm" style="width:150px">
+                        
+                        <button type="submit" class="btn btn-primary btn-sm ms-2">Tampilkan</button>
+                    </form>
                 </div>
                 <div class="filter-kanan">
-                    <div class="filter-group">
-                        <label for="date-from-pertumbuhan" class="filter-label">Dari Tanggal</label>
-                        <div class="filter-date-group">
-                            <input type="date" id="date-from-pertumbuhan" class="filter-input">
-                        </div>
-                    </div>
-                    <div class="filter-group">
-                        <label for="date-to-pertumbuhan" class="filter-label">Sampai Tanggal</label>
-                        <div class="filter-date-group">
-                            <input type="date" id="date-to-pertumbuhan" class="filter-input">
-                        </div>
-                    </div>
-                    <div class="filter-actions">
-                        <button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d;">Reset</button>
+                    <!-- Additional JS-based Date Range (Optional, currently reused for table filtering) -->
+                    <!-- We keep them but hidden or secondary if Month Filter is primary -->
+                    <div class="filter-group d-none">
+                         <!-- Hide these if we rely on Controller Month Filter -->
+                        <label for="date-from-pertumbuhan" class="filter-label">Dari</label>
+                         <input type="date" id="date-from-pertumbuhan" class="filter-input">
                     </div>
                 </div>
             </div>
@@ -556,6 +547,39 @@
         <div id="operasional" class="rekap-box">
             <div>
                 <h5>Aktivitas Acara</h5>
+                <div class="box-diagram-operasional col-md-8 mt-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h6 class="mb-3">Total Event Create vs Manage</h6>
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="chartEventCreateManage"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-4">
+                    <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
+                        <input type="hidden" name="tab" value="operasional">
+                        <div>
+                            <label for="period_op" class="form-label mb-1">Periode Bulan</label>
+                            <input type="month" name="period" id="period_op" value="{{ $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                        </div>
+                        <div class="d-flex gap-2 align-items-end">
+                            <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
+                            @php
+                                $prevOp = (clone $selectedDate)->subMonth();
+                                $nextOp = (clone $selectedDate)->addMonth();
+                                $curr = \Carbon\Carbon::now()->startOfMonth();
+                                $isFut = $nextOp->gt($curr);
+                            @endphp
+                            <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
+                            <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
+                        </div>
+                        <div class="ms-auto small text-muted">Menampilkan data bulan: <strong>{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                    </form>
+                </div>
+                
                 <div class="info-operasional-box" style="display:flex; gap:12px;">
                     <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
                         <h4>{{ $activeCount ?? 0 }}</h4>
@@ -631,13 +655,13 @@
                                                 'date' => optional($e->event_date)->format('d/m/Y'),
                                                 'type' => $e->jenis ?? 'N/A',
                                                 'documents_percent' => $e->documents_completion_percent,
-                                                'has_vbg' => !empty($e->vbg_path),
-                                                'has_cert' => !empty($e->certificate_path),
-                                                'has_abs' => !empty($e->attendance_path),
+                                                'vbg_url' => !empty($e->vbg_path) ? Storage::url($e->vbg_path) : '',
+                                                'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
+                                                'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                                                 // attendance QR data
                                                 'qr_token' => $e->attendance_qr_token,
                                                 'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                                                'qr_image_url' => $e->attendance_qr_image ? asset('storage/'.$e->attendance_qr_image) : null,
+                                                'qr_image_url' => $e->attendance_qr_image ? asset('uploads/'.$e->attendance_qr_image) : null,
                                             ];
                                         });
                                 }
@@ -648,7 +672,13 @@
                                     <td>{{ $row['date'] ?? '-' }}</td>
                                     <td>{{ $row['type'] }}</td>
                                     <td>
-                                        <button class="add-dokumen" data-bs-toggle="modal" data-bs-target="#uploadOperasionalModal">
+                                        <button class="add-dokumen" data-bs-toggle="modal" data-bs-target="#uploadOperasionalModal" 
+                                            data-bs-id="{{ $row['id'] }}"
+                                            data-vbg="{{ $row['vbg_url'] }}"
+                                            data-cert="{{ $row['cert_url'] }}"
+                                            data-abs="{{ $row['abs_url'] }}"
+                                            data-qr-img="{{ $row['qr_image_url'] }}"
+                                        >
                                             {{ $row['documents_percent'] }}%
                                         </button>
                                     </td>
@@ -657,9 +687,9 @@
                                             $ev = isset($row['id']) ? \App\Models\Event::find($row['id']) : null;
                                             $qrToken = $ev?->attendance_qr_token ?: '';
                                             $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
-                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('storage/'.$ev->attendance_qr_image) : '';
+                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('uploads/'.$ev->attendance_qr_image) : '';
                                         @endphp
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ !empty($row['has_vbg']) ? 1 : 0 }}" data-cert="{{ !empty($row['has_cert']) ? 1 : 0 }}" data-abs="{{ !empty($row['has_abs']) ? 1 : 0 }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] }}" data-cert="{{ $row['cert_url'] }}" data-abs="{{ $row['abs_url'] }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
                                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
                                             <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
                                         </svg>
@@ -791,15 +821,27 @@
                 </div>
                 <div class="modal-body">
                     <p>Tinjau status semua dokumen terkait acara dan administrasi.</p>
-                    <form action="">
-                        <div class="box-up mb-3"><label for="vbg" class="form-label">Virtual Background</label><input type="file" class="form-control" id="vbg"></div>
-                        <div class="box-up mb-3"><label for="sertif" class="form-label">Sertifikat</label><input type="file" class="form-control" id="sertif"></div>
-                        <div class="box-up mb-3"><label for="absensi" class="form-label">Absensi</label><input type="file" class="form-control" id="absensi"></div>
+                    <form id="formUploadOperasional" action="" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="box-up mb-3">
+                            <label for="vbg" class="form-label">Virtual Background</label>
+                            <div id="preview-vbg" class="mb-2"></div>
+                            <input type="file" class="form-control" id="vbg" name="virtual_background">
+                        </div>
+                        <div class="box-up mb-3">
+                            <label for="sertif" class="form-label">Sertifikat</label>
+                            <div id="preview-sertif" class="mb-2"></div>
+                            <input type="file" class="form-control" id="sertif" name="certificate">
+                        </div>
+                        <div class="box-up mb-3">
+                            <label for="absensi" class="form-label">Absensi</label>
+                            <div id="preview-absensi" class="mb-2"></div>
+                        </div>
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
                 </div>
             </div>
         </div>
@@ -807,6 +849,119 @@
 </div>
 @endsection
 @section('scripts')
+
+
+
+<script>
+
+    //diagram report pertumbuhan event (Free vs Paid Trend)
+document.addEventListener("DOMContentLoaded", function () {
+
+    const ctx = document.getElementById('chartEvent');
+    if(ctx){
+        // Data from controller
+        const labels = @json($chartLabels ?? []);
+        const freeData = @json($chartFreeData ?? []);
+        const paidData = @json($chartPaidData ?? []);
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Total Event Free',
+                        data: freeData,
+                        borderColor: '#6f42c1', // Purple
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 3
+                    },
+                    {
+                        label: 'Total Event Berbayar',
+                        data: paidData,
+                        borderColor: '#fd7e14', // Orange
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById('laporanChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: @json($labels), 
+            datasets: [
+                {
+                    label: 'Pendapatan',
+                    data: @json($seriesRevenue),
+                    borderWidth: 2,
+                    tension: 0.4
+                },
+                {
+                    label: 'Pengeluaran',
+                    data: @json($seriesExpense),
+                    borderWidth: 2,
+                    tension: 0.4
+                },
+                {
+                    label: 'Keuntungan',
+                    data: @json($seriesProfit),
+                    borderWidth: 2,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
 <script>
 // QRCode library (client-side render)
 </script>
@@ -817,18 +972,93 @@
 document.addEventListener('DOMContentLoaded', function(){
     const buttons = document.querySelectorAll('.btn-report');
     const sections = document.querySelectorAll('.rekap-box');
+    
+    // Function to activate tab (useful for initial load)
+    function activateTab(targetId) {
+        sections.forEach(section => section.classList.remove('active'));
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) targetSection.classList.add('active');
+        
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.getAttribute('data-target') === targetId) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Ensure hidden inputs for "tab" in other forms (if any) are updated? 
+        // Not strictly needed if each form routes to its tab via hidden input or standard behaviour
+    }
+
     buttons.forEach(button => {
         button.addEventListener('click', () => {
-            sections.forEach(section => section.classList.remove('active'));
             const targetId = button.getAttribute('data-target');
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) targetSection.classList.add('active');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            // Re-apply filters when switching tabs
+            activateTab(targetId);
+            // Optional: update URL query param without reload
+            const url = new URL(window.location);
+            url.searchParams.set('tab', targetId);
+            window.history.pushState({}, '', url);
+            
+            // Re-apply JS filters for tables (if any active)
             applyAllFilters();
         });
     });
+
+    // Check backend passed active tab
+    const activeTabBackend = "{{ $activeTab ?? 'pendapatan' }}";
+    activateTab(activeTabBackend);
+
+    // Initial Chart: Event Create vs Manage (Trend Line Chart)
+    const ctxCM = document.getElementById('chartEventCreateManage');
+    if(ctxCM){
+        // Data from controller
+        const labels = @json($chartLabels ?? []);
+        const createData = @json($chartCreateData ?? []);
+        const manageData = @json($chartManageData ?? []);
+
+        new Chart(ctxCM, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Total Event Create',
+                        data: createData,
+                        borderColor: '#0d6efd', // Bootstrap primary blue
+                        backgroundColor: '#0d6efd',
+                        tension: 0.4, // curved line
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false
+                    },
+                    {
+                        label: 'Total Event Manage',
+                        data: manageData,
+                        borderColor: '#198754', // Bootstrap success green
+                        backgroundColor: '#198754',
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
 
     function setupFilter(config){
         const {
@@ -915,48 +1145,109 @@ document.addEventListener('DOMContentLoaded', function(){
     // Initial apply to normalize state
     applyAllFilters();
 
+    // Handle Upload Operasional Modal
+    const uploadModal = document.getElementById('uploadOperasionalModal');
+    if (uploadModal) {
+        uploadModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const eventId = button.getAttribute('data-bs-id');
+            const vbgUrl = button.getAttribute('data-vbg');
+            const certUrl = button.getAttribute('data-cert');
+            const absUrl = button.getAttribute('data-abs');
+            const qrImgUrl = button.getAttribute('data-qr-img');
+
+            const form = document.getElementById('formUploadOperasional');
+            // Update form action with correct event ID
+            form.action = '/admin/events/' + eventId + '/documents';
+            
+            // Helper to set preview
+            const setPreview = (id, url, label, fallbackQr = null) => {
+                const container = document.getElementById(id);
+                if(!container) return;
+                if(url) {
+                    // Check if likely an image by extension
+                    const isImg = url.match(/\.(jpeg|jpg|png|webp)$/i);
+                    if(isImg) {
+                        container.innerHTML = `<a href="${url}" target="_blank"><img src="${url}" style="height:60px; border-radius:4px; border:1px solid #dee2e6;"></a> <small class="text-muted d-block mt-1">Klik gambar untuk melihat</small>`;
+                    } else {
+                        container.innerHTML = `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark"></i> Lihat File Sekarang</a>`;
+                    }
+                } else if(fallbackQr) {
+                    container.innerHTML = `<div class="d-flex align-items-center gap-2">
+                        <img src="${fallbackQr}" style="height:60px; border-radius:4px; border:1px solid #dee2e6;">
+                        <div>
+                            <span class="badge bg-success mb-1">QR Code Aktif</span>
+                            <small class="text-muted d-block">Absensi menggunakan QR Code</small>
+                        </div>
+                    </div>`;
+                } else {
+                    container.innerHTML = `<span class="badge bg-light text-dark border">Belum ada file</span>`;
+                }
+            };
+
+            setPreview('preview-vbg', vbgUrl, 'Virtual Background');
+            setPreview('preview-sertif', certUrl, 'Sertifikat');
+            setPreview('preview-absensi', absUrl, 'Absensi', qrImgUrl);
+        });
+    }
+
     // Populate Status Dokumen modal dynamically
     const viewOperasionalModal = document.getElementById('viewOperasionalModal');
     if (viewOperasionalModal) {
         viewOperasionalModal.addEventListener('show.bs.modal', function (ev) {
             const trigger = ev.relatedTarget;
             const name = trigger?.getAttribute('data-name') || 'Event';
-            const hasVbg = (trigger?.getAttribute('data-vbg') === '1');
-            const hasCert = (trigger?.getAttribute('data-cert') === '1');
-            const hasAbs = (trigger?.getAttribute('data-abs') === '1');
+            // Urls
+            const vbgUrl = trigger?.getAttribute('data-vbg') || '';
+            const certUrl = trigger?.getAttribute('data-cert') || '';
+            const absUrl = trigger?.getAttribute('data-abs') || '';
+            
             const qrText = trigger?.getAttribute('data-qr') || '';
             const qrImage = trigger?.getAttribute('data-qr-img') || '';
+
             const titleEl = document.getElementById('viewOperasionalTitle');
             if (titleEl) titleEl.textContent = 'Status Dokumen: ' + name;
+
             const container = document.getElementById('operasionalStatusContainer');
             if (!container) return;
-            const row = (label, done) => {
-                const cls = done ? 'btn-selesai' : 'btn-pending';
-                const text = done ? 'Selesai' : 'Pending';
-                // Special handling: always show QR code row for Absensi
-                if (label === 'QR Absensi') {
-                    if (qrImage) {
-                        return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                            <h6 class="mb-0">${label}</h6>
-                            <div class="qr-box"><img id="attendanceQrImg" src="${qrImage}" alt="QR Absensi"> 
-                                <div class="small text-muted">Scan untuk absensi</div></div>
-                        </div>`;
-                    }
+
+            const row = (label, url) => {
+                const cls = url ? 'btn-selesai text-decoration-none' : 'btn-pending';
+                const content = url ? 'Lihat' : 'Pending';
+                
+                if(url) {
                     return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
                         <h6 class="mb-0">${label}</h6>
-                        <div class="qr-box"><canvas id="attendanceQrCanvas" aria-label="QR Absensi"></canvas>
+                        <a href="${url}" target="_blank" class="${cls}" style="display:inline-block; text-align:center;">${content}</a>
+                    </div>`;
+                }
+
+                return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0">${label}</h6>
+                        <button class="${cls}">${content}</button>
+                    </div>`;
+            };
+
+            // QR Row Generator
+            const qrRow = () => {
+                if (qrImage) {
+                    return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0">QR Absensi</h6>
+                        <div class="qr-box"><img id="attendanceQrImg" src="${qrImage}" alt="QR Absensi"> 
                             <div class="small text-muted">Scan untuk absensi</div></div>
                     </div>`;
                 }
                 return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0">${label}</h6>
-                        <button class="${cls}">${text}</button>
-                    </div>`;
+                    <h6 class="mb-0">QR Absensi</h6>
+                    <div class="qr-box"><canvas id="attendanceQrCanvas" aria-label="QR Absensi"></canvas>
+                </div>`;
             };
+
             container.innerHTML = [
-                row('Vbg', hasVbg),
-                row('Sertifikat', hasCert),
-                row('QR Absensi', hasAbs),
+                row('Virtual Background', vbgUrl),
+                row('Sertifikat', certUrl),
+                row('Dokumen Absensi', absUrl),
+                qrRow()
             ].join('');
 
             // Render QR on canvas if no stored image provided
@@ -1035,7 +1326,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         <td>${rp(r.unit||0)}</td>
                         <td>${rp(r.total||0)}</td>
                     </tr>`).join('');
-                const totalHtml = `<tr class=\"row-harga\"><td>Total</td><td></td><td></td><td>${rp(expenseTotal)}</td></tr>`;
+                const totalHtml = `<tr class="row-harga"><td>Total</td><td></td><td></td><td>${rp(expenseTotal)}</td></tr>`;
                 expenseTbody.innerHTML = rowsHtml + totalHtml;
             }
 
@@ -1049,92 +1340,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 });
 </script>
-<script>
-    // Render trend chart using server-side computed arrays
-    (function(){
-        const labels = {!! json_encode($labels ?? []) !!};
-        const revenue = {!! json_encode($seriesRevenue ?? []) !!};
-        const expense = {!! json_encode($seriesExpense ?? []) !!};
-        const profit = {!! json_encode($seriesProfit ?? []) !!};
 
-        const ctx = document.getElementById('trendChart');
-        if(!ctx) return;
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Pendapatan',
-                        data: revenue,
-                        borderColor: '#6B7CFF',
-                        backgroundColor: 'rgba(107,124,255,0.08)',
-                        tension: 0.25,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointHoverRadius: 4,
-                    },
-                    {
-                        label: 'Pengeluaran',
-                        data: expense,
-                        borderColor: '#FF7A7A',
-                        backgroundColor: 'rgba(255,122,122,0.08)',
-                        tension: 0.25,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointHoverRadius: 4,
-                    },
-                    {
-                        label: 'Keuntungan',
-                        data: profit,
-                        borderColor: '#3BD1C6',
-                        backgroundColor: 'rgba(59,209,198,0.08)',
-                        tension: 0.25,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointHoverRadius: 4,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { ticks: { callback: function(v){ return new Intl.NumberFormat('id-ID').format(v); } } }
-                },
-                plugins: { legend: { position: 'right' } }
-            }
-        });
-    })();
-</script>
-<script>
-    // Growth chart (free vs paid events per month)
-    (function(){
-        const labelsGrowth = {!! json_encode($months ?? []) !!};
-        const paid = {!! json_encode($paidEvents ?? []) !!};
-        const free = {!! json_encode($freeEvents ?? []) !!};
-        const ctxG = document.getElementById('growthChart');
-        if(!ctxG) return;
-        new Chart(ctxG, {
-            type: 'line',
-            data: {
-                labels: labelsGrowth,
-                datasets: [
-                    { label: 'Total Event Berbayar', data: paid, borderColor: '#FF8A80', backgroundColor: 'rgba(255,138,128,0.08)', tension:0.25, fill:true, borderWidth:2, pointRadius:2, pointHoverRadius:4 },
-                    { label: 'Total Event Free', data: free, borderColor: '#8A8CFF', backgroundColor: 'rgba(138,140,255,0.08)', tension:0.25, fill:true, borderWidth:2, pointRadius:2, pointHoverRadius:4 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top' } },
-                scales: { x: { grid: { display:false } }, y: { beginAtZero:true } }
-            }
-        });
-    })();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 @endsection

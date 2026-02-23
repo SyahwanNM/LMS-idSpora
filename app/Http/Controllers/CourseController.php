@@ -3,6 +3,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\CourseModule;
+use App\Models\QuizQuestion;
+use App\Models\QuizAnswer;
+use App\Models\Enrollment;
+use App\Models\ManualPayment;
+use App\Models\Payment;
+use App\Models\QuizAttempt;
+use App\Models\Progress;
 use Illuminate\Support\Str;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -17,6 +24,161 @@ class CourseController extends Controller
     {
         // Use the custom payment-course view for payment page
         return view('payment-course', compact('course'));
+    }
+
+    /**
+     * Show the learning page for an enrolled/purchased course.
+     */
+    public function learn(Request $request, Course $course)
+    {
+        $user = $request->user();
+
+        $enrollment = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        $enrolledActive = $enrollment && $enrollment->status === 'active';
+
+        $hasSettledPayment = ManualPayment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->where('status', 'settled')
+            ->exists();
+
+        $hasMidtransSettledPayment = Payment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['capture', 'settlement'])
+            ->exists();
+
+        // Only allow access if enrollment is active OR payment already approved.
+        // Pending payment/enrollment should not pass.
+        if (!$enrolledActive && !$hasSettledPayment && !$hasMidtransSettledPayment) {
+            return redirect()->route('course.detail', $course->id)
+                ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
+        }
+
+        // If payment is settled but enrollment isn't active yet, auto-activate it.
+        if (!$enrolledActive && ($hasSettledPayment || $hasMidtransSettledPayment)) {
+            $enrollment = Enrollment::firstOrCreate(
+                ['user_id' => $user->id, 'course_id' => $course->id],
+                ['status' => 'active']
+            );
+            if ($enrollment->status !== 'active') {
+                $enrollment->status = 'active';
+                $enrollment->save();
+            }
+        }
+
+        $course->load([
+            'modules' => function ($q) {
+                $q->orderBy('order_no');
+            },
+            'modules.quizQuestions',
+        ]);
+
+        $modules = $course->modules;
+        $selectedId = $request->query('module');
+        $currentModule = null;
+
+        $isFreeCourse = (int) ($course->price ?? 0) <= 0;
+        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+        $freeAccessibleModuleIds = [];
+        if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+            $freeAccessibleModuleIds = $modules
+                ->sortBy('order_no')
+                ->values()
+                ->take(2)
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        if ($selectedId) {
+            $currentModule = $modules->firstWhere('id', (int) $selectedId);
+        }
+        if (!$currentModule) {
+            $currentModule = $modules->first();
+        }
+
+        // Free course access policy: optionally limit to first 2 modules
+        if ($isFreeCourse && $freeAccessMode === 'limit_2' && $currentModule) {
+            $allowed = in_array((int) $currentModule->id, $freeAccessibleModuleIds, true);
+            if (!$allowed) {
+                $fallbackId = $freeAccessibleModuleIds[0] ?? (int) ($modules->first()?->id ?? 0);
+                if ($fallbackId > 0) {
+                    $target = route('course.learn', $course->id) . '?module=' . $fallbackId;
+                    return redirect()->to($target)
+                        ->with('error', 'Course gratis ini hanya membuka 2 modul pertama.');
+                }
+            }
+        }
+
+        // Gate: only lock the module immediately after an unpassed quiz
+        $passingPercent = 75;
+        if ($currentModule && $currentModule->order_no) {
+            $prevModule = $modules
+                ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) $currentModule->order_no)
+                ->sortByDesc('order_no')
+                ->first();
+
+            if ($prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
+                $lastAttempt = QuizAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_module_id', $prevModule->id)
+                    ->whereNotNull('completed_at')
+                    ->orderByDesc('completed_at')
+                    ->first();
+
+                $passedPrevQuiz = $lastAttempt ? $lastAttempt->isPassed($passingPercent) : false;
+
+                if (!$passedPrevQuiz) {
+                    $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
+                    return redirect()->to($target)
+                        ->with('error', 'Kamu harus lulus kuis terlebih dahulu untuk membuka materi selanjutnya.');
+                }
+            }
+        }
+
+        // Progress tracking:
+        // - video/pdf modules are marked completed once opened
+        // - quiz modules are marked completed only if user has passed
+        if ($enrollment && $currentModule) {
+            $moduleType = strtolower(trim((string) ($currentModule->type ?? '')));
+            $markCompleted = $moduleType !== 'quiz';
+
+            if (!$markCompleted && $moduleType === 'quiz') {
+                $markCompleted = QuizAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_module_id', $currentModule->id)
+                    ->whereNotNull('completed_at')
+                    ->where('total_questions', '>', 0)
+                    ->whereRaw('(correct_answers * 100) >= (total_questions * ?)', [$passingPercent])
+                    ->exists();
+            }
+
+            if ($markCompleted) {
+                Progress::query()->updateOrCreate(
+                    [
+                        'enrollment_id' => $enrollment->id,
+                        'course_module_id' => $currentModule->id,
+                    ],
+                    [
+                        'completed' => true,
+                    ]
+                );
+            }
+        }
+
+        return view('modul-course', [
+            'course' => $course,
+            'modules' => $modules,
+            'currentModule' => $currentModule,
+            'freeAccessMode' => $freeAccessMode,
+            'freeAccessibleModuleIds' => $freeAccessibleModuleIds,
+        ]);
     }
     /**
      * Publish course: set status to 'active' (complete)
@@ -92,14 +254,37 @@ class CourseController extends Controller
 
     public function index()
     {
-        $courses = Course::with('category', 'modules')->paginate(10);
+        $courses = Course::with([
+            'category',
+            'modules.quizQuestions',
+            'manualPayments.user',
+            'manualPayments.proofs',
+        ])->paginate(10);
         return view('admin.courses.index', compact('courses'));
     }
 
     public function show(Course $course)
     {
         $course->load('category', 'modules');
-        return view('course.detail', compact('course'));
+        // Students enrolled (use active enrollments for the count)
+        $course->loadCount([
+            'enrollments as students_count' => function ($q) {
+                $q->where('status', 'active');
+            },
+        ]);
+
+        $levelLabel = match ((string) $course->level) {
+            'beginner' => 'Beginner',
+            'intermediate' => 'Intermediate',
+            'advanced' => 'Advanced',
+            default => ucfirst((string) $course->level),
+        };
+
+        // Temporary defaults (no columns detected yet)
+        $courseLanguage = 'Indonesia';
+        $certificateLabel = 'Include';
+
+        return view('course.detail', compact('course', 'levelLabel', 'courseLanguage', 'certificateLabel'));
     }
 
     public function create()
@@ -124,6 +309,7 @@ class CourseController extends Controller
             'discount_percent' => 'nullable|integer|min:1|max:100',
             'discount_start' => 'nullable|date',
             'discount_end' => 'nullable|date|after_or_equal:discount_start',
+            'free_access_mode' => 'nullable|in:all,limit_2',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
@@ -147,6 +333,7 @@ class CourseController extends Controller
             'level' => $request->level,
             'status' => $request->status,
             'price' => $request->price,
+            'free_access_mode' => $request->input('free_access_mode', 'limit_2'),
             'duration' => $request->duration,
             'media' => $mediaPath,
             'media_type' => $mediaType,
@@ -189,7 +376,7 @@ class CourseController extends Controller
                         if (is_int($dur) && $dur > 0) { $durationSeconds = $dur; }
                     }
                 }
-                CourseModule::create([
+                $currMod = CourseModule::create([
                     'course_id' => $course->id,
                     'order_no' => $order,
                     'title' => $title,
@@ -203,6 +390,37 @@ class CourseController extends Controller
                     'preview_pages' => 0,
                     'duration' => $durationSeconds,
                 ]);
+
+                // Save Quiz Data
+                if ($type === 'quiz' && isset($m['data']) && is_array($m['data'])) {
+                    $quizData = $m['data'];
+                    if (isset($quizData['questions']) && is_array($quizData['questions'])) {
+                        foreach ($quizData['questions'] as $qIdx => $q) {
+                            $questionText = $q['text'] ?? '';
+                            if (!empty($questionText)) {
+                                $quizQ = QuizQuestion::create([
+                                    'course_module_id' => $currMod->id,
+                                    'question' => $questionText,
+                                    'explanation' => '',
+                                    'order_no' => $qIdx + 1,
+                                    'points' => 10,
+                                ]);
+                                
+                                $options = $q['options'] ?? [];
+                                $correctIdx = $q['correctIndex'] ?? -1;
+                                foreach ($options as $oIdx => $oText) {
+                                    if(trim($oText) === '') continue;
+                                    QuizAnswer::create([
+                                        'quiz_question_id' => $quizQ->id,
+                                        'answer_text' => $oText,
+                                        'is_correct' => ($oIdx == $correctIdx),
+                                        'order_no' => $oIdx + 1,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -212,7 +430,7 @@ class CourseController extends Controller
     public function edit(Course $course)
     {
         $categories = Category::all();
-        $course->load('modules');
+        $course->load('modules.quizQuestions.answers');
         return view('admin.courses.edit', compact('course', 'categories'));
     }
 
@@ -227,6 +445,11 @@ class CourseController extends Controller
             $request->merge(['modules_payload_new' => json_encode($payloadNewRaw)]);
         }
 
+        $orderUpdatesRaw = $request->input('modules_order_updates');
+        if (is_array($orderUpdatesRaw)) {
+            $request->merge(['modules_order_updates' => json_encode($orderUpdatesRaw)]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -238,6 +461,8 @@ class CourseController extends Controller
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
             'modules_delete_ids' => 'nullable|string',
             'modules_payload_new' => 'nullable|string',
+            'modules_order_updates' => 'nullable|string',
+            'free_access_mode' => 'nullable|in:all,limit_2',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
@@ -249,6 +474,7 @@ class CourseController extends Controller
             'level' => $request->level,
             'status' => $request->status,
             'price' => $request->price,
+            'free_access_mode' => $request->input('free_access_mode', $course->free_access_mode ?? 'limit_2'),
             'duration' => $request->duration,
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
@@ -288,6 +514,21 @@ class CourseController extends Controller
             }
         }
 
+        $orderUpdatesInput = $request->input('modules_order_updates', '{}');
+        $orderUpdates = is_array($orderUpdatesInput) ? $orderUpdatesInput : json_decode((string) $orderUpdatesInput, true);
+        if (is_array($orderUpdates) && !empty($orderUpdates)) {
+            foreach ($orderUpdates as $moduleId => $orderNo) {
+                $moduleId = (int) $moduleId;
+                $orderNo = (int) $orderNo;
+                if ($moduleId <= 0 || $orderNo <= 0) {
+                    continue;
+                }
+                CourseModule::where('course_id', $course->id)
+                    ->where('id', $moduleId)
+                    ->update(['order_no' => $orderNo]);
+            }
+        }
+
         $modulesPayloadInput = $request->input('modules_payload_new', '[]');
         $modulesPayload = is_array($modulesPayloadInput) ? $modulesPayloadInput : json_decode($modulesPayloadInput, true);
         
@@ -319,7 +560,7 @@ class CourseController extends Controller
                         if (is_int($dur) && $dur > 0) { $durationSeconds = $dur; }
                     }
                 }
-                CourseModule::create([
+                $currMod = CourseModule::create([
                     'course_id' => $course->id,
                     'order_no' => $order,
                     'title' => $title,
@@ -333,6 +574,37 @@ class CourseController extends Controller
                     'preview_pages' => 0,
                     'duration' => $durationSeconds,
                 ]);
+
+                // Save Quiz Data (Update)
+                if ($type === 'quiz' && isset($m['data']) && is_array($m['data'])) {
+                    $quizData = $m['data'];
+                    if (isset($quizData['questions']) && is_array($quizData['questions'])) {
+                        foreach ($quizData['questions'] as $qIdx => $q) {
+                            $questionText = $q['text'] ?? '';
+                            if (!empty($questionText)) {
+                                $quizQ = QuizQuestion::create([
+                                    'course_module_id' => $currMod->id,
+                                    'question' => $questionText,
+                                    'explanation' => '',
+                                    'order_no' => $qIdx + 1,
+                                    'points' => 10,
+                                ]);
+                                
+                                $options = $q['options'] ?? [];
+                                $correctIdx = $q['correctIndex'] ?? -1;
+                                foreach ($options as $oIdx => $oText) {
+                                    if(trim($oText) === '') continue;
+                                    QuizAnswer::create([
+                                        'quiz_question_id' => $quizQ->id,
+                                        'answer_text' => $oText,
+                                        'is_correct' => ($oIdx == $correctIdx),
+                                        'order_no' => $oIdx + 1,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

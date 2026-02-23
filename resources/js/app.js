@@ -8,7 +8,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import 'bootstrap';
+import * as bootstrap from 'bootstrap';
+window.bootstrap = bootstrap;
+
+// Manual Carousel Initialization for reliability
+document.addEventListener("DOMContentLoaded", () => {
+    const carousels = document.querySelectorAll('.carousel');
+    carousels.forEach(c => {
+        new bootstrap.Carousel(c, {
+            ride: 'carousel',
+            interval: 5000
+        });
+    });
+});
 document.addEventListener("DOMContentLoaded", () => {
     const wrap = document.querySelector(".search-wrap");
     const input = document.getElementById("site-search");
