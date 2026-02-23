@@ -8,8 +8,6 @@ use App\Http\Resources\EventResource;
 use App\Http\Resources\EventRegistrationResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Midtrans\Snap;
-use Midtrans\Config;
 
 class EventController extends Controller
 {
@@ -100,51 +98,18 @@ class EventController extends Controller
                 'payment_url' => null, // Nanti diisi
             ]);
 
-            $paymentUrl = null;
 
-            // 5. JIKA BERBAYAR -> Panggil Midtrans
-            if (!$isFree) {
-                // Setup Konfigurasi Midtrans (pakai config agar konsisten dgn web)
-                Config::$serverKey = config('midtrans.server_key');
-                Config::$isProduction = (bool) config('midtrans.is_production');
-                Config::$isSanitized = (bool) config('midtrans.sanitize');
-                Config::$is3ds = (bool) config('midtrans.enable_3ds');
-
-                // Siapkan Data Transaksi
-                $params = [
-                    'transaction_details' => [
-                        'order_id' => $orderId,
-                        'gross_amount' => (int) $amount,
-                    ],
-                    'customer_details' => [
-                        'first_name' => $user->name,
-                        'email' => $user->email,
-                    ],
-                    'item_details' => [
-                        [
-                            'id' => $event->id,
-                            'price' => (int) $amount,
-                            'quantity' => 1,
-                            'name' => substr($event->title, 0, 49), // Midtrans max 50 huruf
-                        ]
-                    ]
-                ];
-
-                // Minta Link Pembayaran ke Midtrans
-                $paymentUrl = Snap::createTransaction($params)->redirect_url;
-                
-                // Update Database dengan Link baru
-                $registration->update(['payment_url' => $paymentUrl]);
-            }
-
+            // 5. JIKA BERBAYAR -> Arahkan ke Manual Payment
+            // Tidak perlu panggil Midtrans. User akan upload bukti bayar nanti.
+           
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Silakan lakukan pembayaran melalui link di bawah.',
+                'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Pendaftaran berhasil. Silakan lakukan pembayaran manual dan upload bukti bayar.',
                 'data' => [
                     'registration' => $registration,
-                    'payment_url' => $paymentUrl 
+                    'payment_url' => null // Tidak ada link otomatis
                 ]
             ], 201);
 
@@ -257,53 +222,17 @@ class EventController extends Controller
         }
 
         // Buat order id baru agar unik
+        // Buat order id baru agar unik (Update registration_code di DB)
         $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
+        $registration->update([
+            'registration_code' => $orderId
+        ]);
 
-        try {
-            // Setup Midtrans
-            Config::$serverKey = config('midtrans.server_key');
-            Config::$isProduction = (bool) config('midtrans.is_production');
-            Config::$isSanitized = (bool) config('midtrans.sanitize');
-            Config::$is3ds = (bool) config('midtrans.enable_3ds');
-
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $orderId,
-                    'gross_amount' => $amount,
-                ],
-                'customer_details' => [
-                    'first_name' => $user->name,
-                    'email' => $user->email,
-                ],
-                'item_details' => [
-                    [
-                        'id' => $event->id,
-                        'price' => $amount,
-                        'quantity' => 1,
-                        'name' => substr($event->title, 0, 49),
-                    ]
-                ]
-            ];
-
-            $paymentUrl = Snap::createTransaction($params)->redirect_url;
-
-            $registration->update([
-                'registration_code' => $orderId,
-                'payment_url' => $paymentUrl,
-                'status' => 'pending',
-            ]);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Link pembayaran berhasil dibuat',
-                'data' => new EventRegistrationResource($registration->load('event')),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal membuat link pembayaran: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Silakan lakukan pembayaran manual dan upload bukti bayar.',
+            'data' => new EventRegistrationResource($registration->load('event')),
+        ]);
     }
 
     /**

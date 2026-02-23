@@ -4,38 +4,46 @@
 
 @section('content')
 @include('partials.navbar-admin-course')
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+
+<div class="min-h-screen bg-white p-6 md:p-10">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-                <div class="flex items-center">
-                    <a href="{{ route('admin.courses.index') }}" class="mr-4">
-                        <svg class="w-6 h-6 text-gray-600 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </a>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Edit Course</h1>
-                        <p class="text-sm text-gray-600">{{ $course->name }}</p>
-                    </div>
-                </div>
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="flex items-center gap-4 mb-2">
+            <a href="{{ route('admin.courses.index') }}" class="p-2 border rounded-lg hover:bg-gray-50 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Course</h1>
+                <p class="text-gray-500 text-sm">Atur detail course sebelum dipublikasi</p>
             </div>
         </div>
-    </header>
+        <div class="text-xs text-gray-400">Course Builder / Edit Course</div>
+    </div>
 
     <!-- Main Content -->
-    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-            <form action="{{ route('admin.courses.update', $course) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
+    <main class="max-w-4xl mx-auto">
+        <form action="{{ route('admin.courses.update', $course) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <!-- Formulir Pengaturan Course -->
+            <div class="mb-8">
+                <h2 class="text-lg font-semibold text-gray-900 mb-6">Formulir Pengaturan Course</h2>
                 
                 @if ($errors->any())
                     <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-                        <div class="font-semibold mb-2">Perubahan gagal disimpan. Mohon periksa error berikut:</div>
                         <ul class="list-disc pl-5 space-y-1">
                             @foreach ($errors->all() as $error)
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Order</span>
+                                        <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Order</span>
+                                        <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
@@ -43,750 +51,748 @@
                 @endif
 
                 <div class="space-y-6">
-                    <!-- Course Name -->
+                    <!-- Judul Course -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Nama Course</label>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Judul Course</label>
                         <input type="text" name="name" id="name" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-500 @enderror"
-                               value="{{ old('name', $course->name) }}" placeholder="Enter course name">
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                               value="{{ old('name', $course->name) }}" placeholder="Masukkan Judul Course">
                     </div>
 
-                    <!-- Category -->
-                    <div>
-                        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                        <select name="category_id" id="category_id" required 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('category_id') border-red-500 @enderror">
-                            <option value="">Pilihan Kategori</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}" {{ old('category_id', $course->category_id) == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('category_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Status -->
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <select name="status" id="status" required 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('status') border-red-500 @enderror">
-                            <option value="">Select status</option>
-                            <option value="active" {{ old('status', $course->status) == 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="archive" {{ old('status', $course->status) == 'archive' ? 'selected' : '' }}>Archive</option>
-                        </select>
-                        @error('status')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Description -->
-                    <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="bi bi-file-text me-1"></i>Deskripsi Course
-                        </label>
-                        <textarea name="description" id="description" class="form-control" rows="8">{!! old('description', $course->description) !!}</textarea>
-                        <div class="form-text">Gunakan editor di bawah untuk membuat deskripsi yang menarik dengan format yang kaya.</div>
-                        @error('description')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Level and Duration -->
+                    <!-- Level & Status (And Category for Data Integrity) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level</label>
+                            <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level Course</label>
                             <select name="level" id="level" required 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('level') border-red-500 @enderror">
-                                <option value="">Select level</option>
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                <option value="">Select Level</option>
                                 <option value="beginner" {{ old('level', $course->level) == 'beginner' ? 'selected' : '' }}>Beginner</option>
                                 <option value="intermediate" {{ old('level', $course->level) == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
                                 <option value="advanced" {{ old('level', $course->level) == 'advanced' ? 'selected' : '' }}>Advanced</option>
                             </select>
-                            @error('level')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
-
                         <div>
-                            <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">Durasi Jam Belajar (jam)</label>
-                            <input type="number" name="duration" id="duration" required min="0" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('duration') border-red-500 @enderror"
-                                   value="{{ old('duration', $course->duration) }}" placeholder="0">
-                            @error('duration')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select name="status" id="status" required 
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                <option value="">Select Status</option>
+                                <option value="active" {{ old('status', $course->status) == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="archive" {{ old('status', $course->status) == 'archive' ? 'selected' : '' }}>Archive</option>
+                            </select>
                         </div>
                     </div>
-
-                    <!-- Card Thumbnail (Current & Replace) -->
-                    <div class="mt-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Card Thumbnail</label>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            @if($course->card_thumbnail)
-                                <img src="{{ Storage::url($course->card_thumbnail) }}" alt="Card Thumbnail" class="w-32 h-24 object-cover rounded-lg">
-                            @else
-                                <div class="w-32 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                    </svg>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
+                    
+                    <!-- Hidden/Visible Category to satisfy required -->
                     <div>
-                        <label for="card_thumbnail" class="block text-sm font-medium text-gray-700 mb-2">Replace Card Thumbnail (Optional)</label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
-                            <div class="space-y-1 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <div class="flex text-sm text-gray-600">
-                                    <label for="card_thumbnail" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                        <span>Upload a new card thumbnail</span>
-                                        <input id="card_thumbnail" name="card_thumbnail" type="file" accept="image/*" class="sr-only @error('card_thumbnail') border-red-500 @enderror">
-                                    </label>
-                                    <p class="pl-1">or drag and drop</p>
-                                </div>
-                                <p class="text-xs text-gray-500">Leave empty to keep current card thumbnail</p>
-                            </div>
-                        </div>
-                        @error('card_thumbnail')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                        <select name="category_id" id="category_id" required 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                             <option value="">Pilih Kategori</option>
+                             @foreach($categories as $category)
+                                 <option value="{{ $category->id }}" {{ old('category_id', $course->category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                             @endforeach
+                        </select>
                     </div>
 
-                    <!-- Price -->
+                    <!-- Harga -->
                     <div>
-                        <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp)</label>
-                        <input type="number" name="price" id="price" required min="0" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('price') border-red-500 @enderror"
-                               value="{{ old('price', $course->price) }}" placeholder="0">
-                        @error('price')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Harga</label>
+                        <input type="text" name="price" id="price" required 
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                               value="{{ old('price', $course->price) }}" placeholder="Masukkan Harga Course">
                     </div>
 
-                    <!-- Current Media Display -->
+                    <!-- Akses Course Gratis -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Media</label>
-                        <div class="bg-gray-50 rounded-lg p-4">
+                        <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course Gratis</label>
+                        <select name="free_access_mode" id="free_access_mode"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                            <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka semua materi</option>
+                            <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                    </div>
+
+                    <!-- Deskripsi -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Deskripsi Course</label>
+                        <textarea name="description" id="description" rows="6" 
+                                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                  placeholder="Deskripsi Course">{!! old('description', strip_tags($course->description)) !!}</textarea>
+                    </div>
+
+                    <!-- Intro Media -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Intro Media (Video/Image)</label>
+                        <div class="flex flex-col md:flex-row gap-4 items-start">
                             @if($course->media)
-                                @if($course->media_type === 'video')
-                                    <video src="{{ Storage::url($course->media) }}" controls class="w-32 h-24 object-cover rounded-lg"></video>
-                                @else
-                                    <img src="{{ Storage::url($course->media) }}" alt="{{ $course->name }}" class="w-32 h-24 object-cover rounded-lg">
-                                @endif
-                            @else
-                                <div class="w-32 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                    </svg>
+                                <div class="shrink-0">
+                                    @if($course->media_type === 'video')
+                                        <video src="{{ Storage::url($course->media) }}" controls class="h-32 w-48 object-cover rounded-lg border bg-black"></video>
+                                    @else
+                                        <img src="{{ Storage::url($course->media) }}" class="h-32 w-48 object-cover rounded-lg border" alt="Intro Media">
+                                    @endif
                                 </div>
                             @endif
-                        </div>
-                    </div>
-
-                    <!-- New Course Image -->
-                    <div>
-                        <label for="image" class="block text-sm font-medium text-gray-700 mb-2">Replace Media (Optional)</label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
-                            <div class="space-y-1 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <div class="flex text-sm text-gray-600">
-                                    <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                        <span>Upload a new media (image/video)</span>
-                                        <input id="image" name="image" type="file" accept="image/*,video/mp4,video/webm,video/ogg" 
-                                               class="sr-only @error('image') border-red-500 @enderror">
-                                    </label>
-                                    <p class="pl-1">or drag and drop</p>
-                                </div>
-                                <p class="text-xs text-gray-500">Leave empty to keep current media</p>
+                            <div class="w-full">
+                                <input type="file" name="image" accept="image/*,video/mp4,video/webm,video/ogg" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
+                                <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, MP4. Digunakan untuk intro course.</p>
                             </div>
                         </div>
-                        <!-- Live preview of selected image (optional, only for image) -->
-                        <div id="imagePreviewContainer" class="mt-3" style="display:none;">
-                            <img id="imagePreview" alt="Preview" class="w-full max-h-56 object-cover rounded-lg border border-gray-200" />
-                            <div id="imagePreviewInfo" class="text-xs text-gray-500 mt-1"></div>
-                            <button type="button" id="imagePreviewClear" class="mt-2 text-sm text-gray-600 hover:text-gray-800">Hapus pilihan</button>
-                        </div>
-                        @error('image')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
-                    <!-- Course Modules Management -->
-                    <div class="mt-6">
-                        <h2 class="text-lg font-semibold mb-2">Course Modules</h2>
-                        <p class="text-sm text-gray-600 mb-4">Kelola modul yang sudah ada dan tambahkan modul baru.</p>
 
-                        <!-- Existing modules list -->
-                        <div class="space-y-2" id="existing-modules-list">
-                            @forelse($course->modules as $m)
-                                <div class="border rounded-lg p-3 flex items-start justify-between">
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="inline-block px-2 py-0.5 text-xs rounded bg-gray-100">#{{ $m->order_no }}</span>
-                                            <span class="font-medium">{{ $m->title }}</span>
-                                            <span class="text-xs text-gray-500">({{ strtoupper($m->type) }})</span>
-                                        </div>
-                                        <div class="text-xs text-gray-500">{{ $m->file_name }} @if($m->duration) • {{ $m->formatted_duration }} @endif</div>
+                    <!-- Thumbnail -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Course</label>
+                        <div class="flex items-center gap-4">
+                            @if($course->card_thumbnail)
+                                <div class="shrink-0">
+                                    <img src="{{ Storage::url($course->card_thumbnail) }}" class="h-16 w-16 object-cover rounded-lg border" alt="Thumbnail">
+                                </div>
+                            @endif
+                            <input type="file" name="card_thumbnail" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden inputs for other required fields not in design (Duration, etc) -->
+                    <input type="hidden" name="duration" value="{{ $course->duration ?? 1 }}">
+                    <input type="hidden" name="discount_percent" value="{{ $course->discount_percent ?? 0 }}">
+                </div>
+            </div>
+
+            <!-- Course Modules -->
+            <div class="mb-10">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Course Modules</h2>
+
+                <div id="existing-modules-list" class="space-y-8">
+                    <!-- PDF Document -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                             <span class="p-2 rounded-lg bg-red-100 text-red-600">
+                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                             </span>
+                             PDF Document
+                        </h3>
+                        <div class="space-y-3">
+                            @forelse($course->modules->where('type', 'pdf') as $m)
+                                <div class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
+                                    <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-purple-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark-text-fill" viewBox="0 0 16 16">
+                                            <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM4.5 9a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 11a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 13a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z"/>
+                                        </svg>
                                     </div>
-                                    <button type="button" data-id="{{ $m->id }}" class="btn-remove-existing px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50">Remove</button>
+                                    <div class="grow">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h5 class="text-sm font-bold text-gray-900 m-0">{{ $m->title }}</h5>
+                                            <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 m-0">PDF Document • {{ $m->file_name }}</p>
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-2">
+                                        <span class="text-xs text-gray-500">Order</span>
+                                        <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
+                                    </div>
+                                    <button type="button" data-id="{{ $m->id }}" class="btn-remove-existing text-gray-400 hover:text-red-500 transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+                                          <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             @empty
-                                <div class="text-sm text-gray-500">Belum ada modul.</div>
+                                <div class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">No PDF modules.</div>
                             @endforelse
-                        </div>
-
-                        <input type="hidden" id="modules-delete-ids" name="modules_delete_ids" value="">
-
-                        <hr class="my-4">
-
-                        <!-- Add new modules -->
-                        <div>
-                            <h3 class="text-md font-semibold mb-2">Tambah Modul Baru</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Modul</label>
-                                    <select id="new-mod-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value="video">Video</option>
-                                        <option value="pdf">PDF</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Urutan</label>
-                                    <input type="number" id="new-mod-order" min="1" value="{{ max(1, ($course->modules->max('order_no') ?? 0) + 1) }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Judul</label>
-                                <input type="text" id="new-mod-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Judul modul">
-                            </div>
-                            <div class="mt-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-                                <textarea id="new-mod-desc" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Deskripsi modul"></textarea>
-                            </div>
-                            <div class="mt-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">File</label>
-                                <input type="file" id="new-mod-file" class="w-full px-3 py-2 border border-gray-300 rounded-lg" accept="video/mp4,video/webm,video/ogg,application/pdf">
-                            </div>
-                            <div class="mt-3 flex justify-end">
-                                <button type="button" id="btn-queue-module" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Tambahkan ke Daftar</button>
-                            </div>
-
-                            <div class="mt-4">
-                                <h4 class="text-sm font-semibold mb-2">Modul Baru (antrian)</h4>
-                                <div id="new-modules-list" class="space-y-2"></div>
-                            </div>
-
-                            <input type="hidden" name="modules_payload_new" id="modules-payload-new">
-                            <div id="module-file-bucket" style="display:none"></div>
+                            <!-- New PDFs -->
+                            <div id="new-pdf-list" class="space-y-3"></div>
                         </div>
                     </div>
 
+                    <!-- Video Lesson -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                             <span class="p-2 rounded-lg bg-blue-100 text-blue-600">
+                                <i class="bi bi-play-circle-fill"></i>
+                             </span>
+                             Video Lesson
+                        </h3>
+                        <div class="space-y-3">
+                            @forelse($course->modules->where('type', 'video') as $m)
+                                <div class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
+                                    <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-purple-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-play-circle-fill" viewBox="0 0 16 16">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM6.79 5.093A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814l-3.5-2.5z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="grow">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h5 class="text-sm font-bold text-gray-900 m-0">{{ $m->title }}</h5>
+                                            <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 m-0">Video Lesson • {{ $m->file_name }}</p>
+                                    </div>
+                                    <button type="button" data-id="{{ $m->id }}" class="btn-remove-existing text-gray-400 hover:text-red-500 transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+                                          <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            @empty
+                                <div class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">No Video lessons.</div>
+                            @endforelse
+                            <!-- New Videos -->
+                            <div id="new-video-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Quizzes -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                             <span class="p-2 rounded-lg bg-purple-100 text-purple-600">
+                                <i class="bi bi-pencil-square"></i>
+                             </span>
+                             Quizzes
+                        </h3>
+                        <div class="space-y-3">
+                            @forelse($course->modules->where('type', 'quiz') as $m)
+                                <div class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
+                                    <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-purple-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                                            <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                                            <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="grow">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h5 class="text-sm font-bold text-gray-900 m-0">{{ $m->title }}</h5>
+                                            <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 m-0">Quiz • {{ $m->subtitle }}</p>
+                                    </div>
+                                    <button type="button" data-id="{{ $m->id }}" class="btn-remove-existing text-gray-400 hover:text-red-500 transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+                                          <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            @empty
+                                <div class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">No Quizzes.</div>
+                            @endforelse
+                            <!-- New Quizzes -->
+                            <div id="new-quiz-list" class="space-y-3"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Discount Percent & Date Range -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="discount_percent" class="block text-sm font-medium text-gray-700 mb-2">Discount Percent (%)</label>
-                        <input type="number" name="discount_percent" id="discount_percent" min="1" max="100" step="1"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('discount_percent') border-red-500 @enderror"
-                               value="{{ old('discount_percent', $course->discount_percent) }}" placeholder="0">
-                        <div class="text-xs text-gray-500">Isi 1-100. Tidak boleh 0.</div>
-                        @error('discount_percent')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="discount_start" class="block text-sm font-medium text-gray-700 mb-2">Discount Start</label>
-                        <input type="date" name="discount_start" id="discount_start"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('discount_start') border-red-500 @enderror"
-                               value="{{ old('discount_start', $course->discount_start ? \Carbon\Carbon::parse($course->discount_start)->format('Y-m-d') : '') }}">
-                        @error('discount_start')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="discount_end" class="block text-sm font-medium text-gray-700 mb-2">Discount End</label>
-                        <input type="date" name="discount_end" id="discount_end"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('discount_end') border-red-500 @enderror"
-                               value="{{ old('discount_end', $course->discount_end ? \Carbon\Carbon::parse($course->discount_end)->format('Y-m-d') : '') }}">
-                        @error('discount_end')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
+                <input type="hidden" id="modules-delete-ids" name="modules_delete_ids" value="">
+                <input type="hidden" name="modules_payload_new" id="modules-payload-new">
+                <input type="hidden" name="modules_order_updates" id="modules-order-updates" value="{}">
+                <div id="module-file-bucket" style="display:none"></div>
 
-                <!-- Form Actions -->
-                <div class="mt-8 flex justify-end space-x-4">
-                    <a href="{{ route('admin.courses.show', $course) }}" 
-                       class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                        Cancel
-                    </a>
-                    <button type="submit" 
-                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Update Course
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-4 mt-8">
+                    <button type="button" onclick="openAddModal('pdf')" class="px-5 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition flex items-center gap-2">
+                        <i class="bi bi-plus-lg"></i> Add PDF Module
+                    </button>
+                    <button type="button" onclick="openAddModal('video')" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
+                        <i class="bi bi-plus-lg"></i> Add Video
+                    </button>
+                    <button type="button" onclick="openQuizModal()" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
+                        <i class="bi bi-plus-lg"></i> Add Kuis
                     </button>
                 </div>
-            </form>
-        </div>
-    </main>
+            </div>
 
-<!-- Inline Toast Container (for validations) -->
-<div aria-live="polite" aria-atomic="true" class="position-relative">
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-        <div id="inlineValidationToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3500">
-            <div class="d-flex">
-                <div id="inlineValidationToastBody" class="toast-body"></div>
-                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <!-- Footer Buttons -->
+            <div class="flex justify-end gap-4 mt-12 pb-10">
+                <a href="{{ route('admin.courses.index') }}" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">Cancel</a>
+                <button type="submit" class="px-6 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition">Save</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<!-- Modal for Adding Generic Module (PDF/Video) -->
+<div class="modal fade" id="addGenericModuleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-xl border-0 shadow-lg">
+            <div class="modal-header border-b-0 pb-0">
+                <h5 class="modal-title font-bold text-lg" id="genericModalTitle">Add Module</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-6">
+                <!-- Inputs handled by JS -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <input type="text" id="new-mod-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Judul Modul">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="new-mod-desc" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2" placeholder="Deskripsi Singkat"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Module Order</label>
+                    <input type="number" min="1" id="new-mod-order" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="{{ max(1, ($course->modules->count() ?? 0) + 1) }}">
+                    <div class="text-xs text-gray-400 mt-1">Urutan tampil modul di course.</div>
+                </div>
+                <!-- Hidden input for logic -->
+                <input type="hidden" id="new-mod-type" value="video">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">File Upload</label>
+                    <input type="file" id="new-mod-file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 border border-gray-300 rounded-lg">
+                    <div class="text-xs text-gray-400 mt-1" id="fileHelpText">Supported formats: PDF, MP4</div>
+                </div>
+            </div>
+            <div class="modal-footer border-t-0 pt-0">
+                <button type="button" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btn-queue-module" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium">Add Module</button>
             </div>
         </div>
     </div>
-    <!-- Fallback container for when Bootstrap Toast is unavailable -->
-    <div id="simpleToastContainer" class="simple-toast-container" style="display:none;"></div>
-    <style>
-        .simple-toast-container{position:fixed;top:12px;right:12px;z-index:1080;display:flex;flex-direction:column;gap:8px}
-        .simple-toast{padding:10px 14px;border-radius:8px;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:14px}
-        .simple-toast.success{background:#16a34a}
-        .simple-toast.danger{background:#dc2626}
-        .simple-toast.warning{background:#f59e0b}
-    </style>
+</div>
+
+<!-- Modal for Quiz (Reuse existing structure but clean up) -->
+<div class="modal fade" id="addQuizModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-xl border-0 shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title font-bold text-lg">Add Quiz Module</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Step 1: Overview -->
+                <div id="quiz-step-overview" class="p-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Module Order</label>
+                        <input type="number" min="1" id="quiz-order" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="{{ max(1, ($course->modules->count() ?? 0) + 1) }}">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
+                        <input type="text" id="quiz-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g. Final Assessment">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                        <textarea id="quiz-desc" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2" placeholder="Brief description..."></textarea>
+                    </div>
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="font-medium text-sm text-gray-700">Questions List</label>
+                        <button type="button" class="text-sm text-purple-600 hover:text-purple-800 font-medium" id="btn-add-question-step">
+                            + Add Question
+                        </button>
+                    </div>
+                    <div class="border rounded-lg p-4 bg-gray-50 min-h-[150px] max-h-[300px] overflow-y-auto">
+                        <ul id="quiz-questions-list" class="space-y-2">
+                             <li class="text-center text-gray-400 text-sm py-8">No questions added yet.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Step 2: Add/Edit Question -->
+                <div id="quiz-step-question" class="p-6 d-none">
+                    <h6 class="font-bold text-gray-900 mb-4" id="question-form-title">Add Question</h6>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                        <textarea id="q-text" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Options (Select correct answer)</label>
+                        <div class="space-y-3" id="q-options-container">
+                            @for($i=0; $i<4; $i++)
+                            <div class="flex items-center gap-2">
+                                <input class="w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300" type="radio" name="q-correct" value="{{$i}}" {{$i==0?'checked':''}}>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Option {{$i+1}}">
+                            </div>
+                            @endfor
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm" id="btn-cancel-question">Cancel</button>
+                        <button type="button" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm" id="btn-save-question">Save Question</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Review -->
+                <div id="quiz-step-review" class="p-6 d-none">
+                     <div class="text-center mb-6">
+                        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="bi bi-check-lg text-xl"></i>
+                        </div>
+                        <h5 class="font-bold text-gray-900">Review Quiz</h5>
+                        <p class="text-sm text-gray-500">Please review before saving.</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                         <div class="grid grid-cols-3 gap-2 text-sm">
+                             <span class="font-medium text-gray-500">Title:</span>
+                             <span class="col-span-2 text-gray-900 font-semibold" id="review-title">-</span>
+                             
+                             <span class="font-medium text-gray-500">Count:</span>
+                             <span class="col-span-2 text-gray-900" id="review-count">0 items</span>
+                         </div>
+                    </div>
+                    <div id="review-questions-detail" class="text-sm space-y-3 max-h-60 overflow-y-auto"></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-gray-50 rounded-b-xl">
+                <button type="button" class="btn btn-sm btn-link text-gray-500 no-underline" id="btn-quiz-back" style="display:none;">Back</button>
+                <button type="button" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700" id="btn-quiz-next">Next: Review</button>
+                <button type="button" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700" id="btn-quiz-save" style="display:none;">Save Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Inline Toast and Scripts --}}
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        <div id="inlineValidationToast" class="toast align-items-center border-0 text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div id="inlineValidationToastBody" class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-(function(){
-    const deleteInput = document.getElementById('modules-delete-ids');
-    const existingList = document.getElementById('existing-modules-list');
-    const queued = [];
-    const payloadInput = document.getElementById('modules-payload-new');
-    const fileBucket = document.getElementById('module-file-bucket');
-    const btnQueue = document.getElementById('btn-queue-module');
-    const listNew = document.getElementById('new-modules-list');
-    const typeSel = document.getElementById('new-mod-type');
-    const orderInp = document.getElementById('new-mod-order');
-    const titleInp = document.getElementById('new-mod-title');
-    const descInp = document.getElementById('new-mod-desc');
-    let fileInp = document.getElementById('new-mod-file');
-
-    function setDeleteIds(ids){ deleteInput.value = ids.join(','); }
-    function getDeleteIds(){ return (deleteInput.value||'').split(/[,\s]+/).filter(Boolean).map(v=>parseInt(v,10)||0); }
-    function updatePayload(){ try{ payloadInput.value = JSON.stringify(queued); }catch(_){ payloadInput.value='[]'; } }
-    function renderQueued(){
-        listNew.innerHTML = '';
-        queued.forEach((m, i) => {
-            const el = document.createElement('div');
-            el.className = 'border rounded p-2 flex items-center justify-between';
-            el.innerHTML = `<div><span class="text-xs bg-gray-100 rounded px-2 py-0.5">#${m.order}</span> <span class="font-medium">${m.title}</span> <span class="text-xs text-gray-500">(${m.type.toUpperCase()})</span><div class="text-xs text-gray-500">${m.filename}</div></div><button type="button" class="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50">Remove</button>`;
-            el.querySelector('button').addEventListener('click', ()=>{ queued.splice(i,1); renderQueued(); updatePayload(); });
-            listNew.appendChild(el);
-        });
-    }
-
-    if (existingList) {
-        existingList.querySelectorAll('.btn-remove-existing').forEach(btn => {
-            btn.addEventListener('click', ()=>{
-                const id = parseInt(btn.dataset.id,10)||0;
-                if (!id) return;
-                const ids = getDeleteIds();
-                if (!ids.includes(id)) ids.push(id);
-                setDeleteIds(ids);
-                btn.disabled = true;
-                btn.textContent = 'Marked';
-            });
-        });
-    }
-
-    function bindFileInput(el){ /* placeholder for future features */ }
-    bindFileInput(fileInp);
-
-    if (btnQueue) {
-        btnQueue.addEventListener('click', ()=>{
-            const type = (typeSel.value||'video');
-            const order = parseInt(orderInp.value||'1',10)||1;
-            const title = (titleInp.value||'').trim();
-            const desc = (descInp.value||'').trim();
-            const file = fileInp.files && fileInp.files[0];
-            if (!title || title.length<3) { showInlineToast('Judul minimal 3 karakter', 'danger'); return; }
-            if (!file) { showInlineToast('Pilih file modul', 'danger'); return; }
-            const uid = 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-            // move file input into bucket so it submits
-            const originalContainer = fileInp.parentNode;
-            fileInp.name = `module_files[${uid}]`;
-            fileBucket.appendChild(fileInp);
-            // recreate a clean file input
-            const newInput = document.createElement('input');
-            newInput.type = 'file';
-            newInput.id = 'new-mod-file';
-            newInput.accept = 'video/mp4,video/webm,video/ogg,application/pdf';
-            newInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg';
-            fileInp = newInput;
-            if (originalContainer) { originalContainer.appendChild(newInput); }
-            bindFileInput(fileInp);
-
-            queued.push({ type, order, title, subtitle: desc, filename: file.name, uid });
-            renderQueued();
-            updatePayload();
-            // reset fields except order
-            titleInp.value='';
-            descInp.value='';
-        });
-    }
-})();
-</script>
-
-<!-- CKEditor 5 CDN -->
-<script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Image preview for Replace Image (Optional)
-    try {
-        var imgInput = document.getElementById('image');
-        var prevCont = document.getElementById('imagePreviewContainer');
-        var prevImg = document.getElementById('imagePreview');
-        var prevInfo = document.getElementById('imagePreviewInfo');
-        var prevClear = document.getElementById('imagePreviewClear');
-        var currentUrl = null;
-        function clearPreview(){
-            if(currentUrl){ try{ URL.revokeObjectURL(currentUrl); }catch(_){} currentUrl = null; }
-            if(prevImg){ prevImg.removeAttribute('src'); }
-            if(prevCont){ prevCont.style.display = 'none'; }
-            if(imgInput){ imgInput.value = ''; }
-            if(prevInfo){ prevInfo.textContent = ''; }
-        }
-        if(prevClear){ prevClear.addEventListener('click', clearPreview); }
-        if(imgInput){
-            imgInput.addEventListener('change', function(){
-                var f = imgInput.files && imgInput.files[0];
-                if(!f){ clearPreview(); return; }
-                if(!/^image\//.test(f.type||'')){
-                    clearPreview();
-                    window.showInlineToast && window.showInlineToast('File harus bertipe gambar', 'warning');
-                    return;
-                }
-                try{
-                    if(currentUrl){ URL.revokeObjectURL(currentUrl); }
-                    currentUrl = URL.createObjectURL(f);
-                    if(prevImg){
-                        prevImg.onload = function(){
-                            try{ URL.revokeObjectURL(currentUrl); }catch(_){}
-                            currentUrl = null;
-                        };
-                        prevImg.src = currentUrl;
-                    }
-                    if(prevCont){ prevCont.style.display = 'block'; }
-                    if(prevInfo){
-                        var kb = Math.round((f.size||0)/1024);
-                        prevInfo.textContent = (f.name||'') + ' • ' + kb + ' KB';
-                    }
-                }catch(e){ clearPreview(); }
-            });
-        }
-    } catch(e) {}
-
-    // Toast helper
+    // --- Helper for Toast ---
     window.showInlineToast = function(message, type){
-        try{
-            var el = document.getElementById('inlineValidationToast');
-            var body = document.getElementById('inlineValidationToastBody');
-            if(el && body){
-                // reset bg classes
-                el.classList.remove('text-bg-success','text-bg-danger','text-bg-warning');
-                var cls = type==='danger' ? 'text-bg-danger' : (type==='warning' ? 'text-bg-warning' : 'text-bg-success');
-                el.classList.add(cls);
-                body.textContent = message;
-                if(window.bootstrap && window.bootstrap.Toast){
-                    var t = window.bootstrap.Toast.getOrCreateInstance(el);
-                    t.show();
-                    return;
-                }
+        const el = document.getElementById('inlineValidationToast');
+        const body = document.getElementById('inlineValidationToastBody');
+        if(el && body){
+            el.className = `toast align-items-center border-0 text-white ${type==='danger'?'bg-red-500':(type==='warning'?'bg-yellow-500':'bg-green-500')}`;
+            body.textContent = message;
+            if(window.bootstrap && window.bootstrap.Toast){
+                const t = window.bootstrap.Toast.getOrCreateInstance(el);
+                t.show();
             }
-        }catch(e){}
-        // Fallback simple toast
-        try{
-            var cont = document.getElementById('simpleToastContainer');
-            if(cont){
-                cont.style.display='flex';
-                var n = document.createElement('div');
-                n.className = 'simple-toast '+(type||'success');
-                n.textContent = message;
-                cont.appendChild(n);
-                setTimeout(function(){ n.remove(); if(!cont.children.length){ cont.style.display='none'; } }, 3500);
-            }
-        }catch(e){}
-    }
-    // Normalize numeric fields on submit to avoid validation issues
-    const form = document.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function(ev){
-            const priceEl = document.getElementById('price');
-            if (priceEl) {
-                const digits = (priceEl.value||'').toString().replace(/[^0-9]/g,'');
-                if (digits) priceEl.value = digits;
-            }
-            const durationEl = document.getElementById('duration');
-            if (durationEl) {
-                const val = parseInt((durationEl.value||'').toString(),10)||0;
-                durationEl.value = Math.max(0, val);
-            }
-        });
-    }
+        } else {
+            alert(message);
+        }
+    };
 
-    ClassicEditor
-        .create(document.querySelector('#description'), {
-            toolbar: {
-                items: [
-                    'heading', '|',
-                    'bold', 'italic', 'underline', 'strikethrough', '|',
-                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                    'bulletedList', 'numberedList', 'todoList', '|',
-                    'outdent', 'indent', '|',
-                    'alignment', '|',
-                    'link', 'blockQuote', 'insertTable', '|',
-                    'imageUpload', 'mediaEmbed', '|',
-                    'code', 'codeBlock', '|',
-                    'horizontalLine', '|',
-                    'undo', 'redo', '|',
-                    'removeFormat'
-                ],
-                shouldNotGroupWhenFull: true
-            },
-            heading: {
-                options: [
-                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
-                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
-                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
-                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
-                    { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' }
-                ]
-            },
-            fontSize: {
-                options: [
-                    9, 11, 13, 'default', 17, 19, 21
-                ],
-                supportAllValues: true
-            },
-            fontFamily: {
-                options: [
-                    'default',
-                    'Arial, Helvetica, sans-serif',
-                    'Courier New, Courier, monospace',
-                    'Georgia, serif',
-                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
-                    'Tahoma, Geneva, sans-serif',
-                    'Times New Roman, Times, serif',
-                    'Trebuchet MS, Helvetica, sans-serif',
-                    'Verdana, Geneva, sans-serif'
-                ],
-                supportAllValues: true
-            },
-            fontColor: {
-                colors: [
-                    { color: 'hsl(0, 0%, 0%)', label: 'Black' },
-                    { color: 'hsl(0, 0%, 30%)', label: 'Dim grey' },
-                    { color: 'hsl(0, 0%, 60%)', label: 'Grey' },
-                    { color: 'hsl(0, 0%, 90%)', label: 'Light grey' },
-                    { color: 'hsl(0, 0%, 100%)', label: 'White', hasBorder: true },
-                    { color: 'hsl(0, 75%, 60%)', label: 'Red' },
-                    { color: 'hsl(30, 75%, 60%)', label: 'Orange' },
-                    { color: 'hsl(60, 75%, 60%)', label: 'Yellow' },
-                    { color: 'hsl(90, 75%, 60%)', label: 'Light green' },
-                    { color: 'hsl(120, 75%, 60%)', label: 'Green' },
-                    { color: 'hsl(150, 75%, 60%)', label: 'Aquamarine' },
-                    { color: 'hsl(180, 75%, 60%)', label: 'Turquoise' },
-                    { color: 'hsl(210, 75%, 60%)', label: 'Light blue' },
-                    { color: 'hsl(240, 75%, 60%)', label: 'Blue' },
-                    { color: 'hsl(270, 75%, 60%)', label: 'Purple' }
-                ]
-            },
-            fontBackgroundColor: {
-                colors: [
-                    { color: 'hsl(0, 75%, 60%)', label: 'Red' },
-                    { color: 'hsl(30, 75%, 60%)', label: 'Orange' },
-                    { color: 'hsl(60, 75%, 60%)', label: 'Yellow' },
-                    { color: 'hsl(90, 75%, 60%)', label: 'Light green' },
-                    { color: 'hsl(120, 75%, 60%)', label: 'Green' },
-                    { color: 'hsl(150, 75%, 60%)', label: 'Aquamarine' },
-                    { color: 'hsl(180, 75%, 60%)', label: 'Turquoise' },
-                    { color: 'hsl(210, 75%, 60%)', label: 'Light blue' },
-                    { color: 'hsl(240, 75%, 60%)', label: 'Blue' },
-                    { color: 'hsl(270, 75%, 60%)', label: 'Purple' },
-                    { color: 'hsl(0, 0%, 0%)', label: 'Black' },
-                    { color: 'hsl(0, 0%, 30%)', label: 'Dim grey' },
-                    { color: 'hsl(0, 0%, 60%)', label: 'Grey' },
-                    { color: 'hsl(0, 0%, 90%)', label: 'Light grey' },
-                    { color: 'hsl(0, 0%, 100%)', label: 'White', hasBorder: true }
-                ]
-            },
-            alignment: {
-                options: ['left', 'center', 'right', 'justify']
-            },
-            table: {
-                contentToolbar: [
-                    'tableColumn', 'tableRow', 'mergeTableCells',
-                    'tableProperties', 'tableCellProperties'
-                ]
-            },
-            image: {
-                toolbar: [
-                    'imageTextAlternative', 'toggleImageCaption', 'imageStyle:inline',
-                    'imageStyle:block', 'imageStyle:side'
-                ]
-            },
-            link: {
-                decorators: {
-                    addTargetToExternalLinks: true,
-                    defaultProtocol: 'https://',
-                    toggleDownloadable: {
-                        mode: 'manual',
-                        label: 'Downloadable',
-                        attributes: {
-                            download: 'file'
-                        }
-                    }
-                }
-            },
-            placeholder: 'Tulis deskripsi course yang menarik dengan format yang kaya...'
-        })
-        .then(editor => {
-            window.editor = editor;
+    // --- Modal Helpers ---
+    window.openAddModal = function(type) {
+        const modalEl = document.getElementById('addGenericModuleModal');
+        const titleEl = document.getElementById('genericModalTitle');
+        const typeInput = document.getElementById('new-mod-type');
+        const fileInp = document.getElementById('new-mod-file');
+        const helpText = document.getElementById('fileHelpText');
+        const orderInp = document.getElementById('new-mod-order');
+
+        if(window.bootstrap && modalEl){
+            typeInput.value = type;
+            titleEl.textContent = type === 'pdf' ? 'Add PDF Module' : 'Add Video Lesson';
+            fileInp.accept = type === 'pdf' ? 'application/pdf' : 'video/mp4,video/webm,video/ogg';
+            helpText.textContent = type === 'pdf' ? 'Supported: PDF' : 'Supported: MP4, WebM';
             
-            // Sync with textarea on form submit
-            const form2 = document.querySelector('form');
-            if (form2) {
-                form2.addEventListener('submit', function() {
-                    const textarea = document.querySelector('#description');
-                    textarea.value = editor.getData();
+            // Clear inputs
+            document.getElementById('new-mod-title').value = '';
+            document.getElementById('new-mod-desc').value = '';
+            fileInp.value = '';
+            if(orderInp) orderInp.value = (typeof window.getNextModuleOrder === 'function') ? window.getNextModuleOrder() : (orderInp.value || 1);
+
+            const m = new window.bootstrap.Modal(modalEl);
+            m.show();
+        }
+    };
+
+    window.openQuizModal = function() {
+        if (window.bootstrap) {
+            const m = new window.bootstrap.Modal(document.getElementById('addQuizModal'));
+            m.show();
+            if(typeof resetQuizDraft === 'function') resetQuizDraft();
+        }
+    };
+
+    // --- Module Logic (Preserved) ---
+    (function(){
+        const deleteInput = document.getElementById('modules-delete-ids');
+        const existingList = document.getElementById('existing-modules-list');
+        const queued = [];
+        const payloadInput = document.getElementById('modules-payload-new');
+        const orderUpdatesInput = document.getElementById('modules-order-updates');
+        const fileBucket = document.getElementById('module-file-bucket');
+        const listNewPdf = document.getElementById('new-pdf-list');
+        const listNewVideo = document.getElementById('new-video-list');
+        const listNewQuiz = document.getElementById('new-quiz-list');
+        
+        // Count existing modules to determine next order
+        const existingCount = {{ $course->modules->count() }};
+
+        // Inputs in Generic Modal
+        const btnQueue = document.getElementById('btn-queue-module');
+        const typeSel = document.getElementById('new-mod-type'); 
+        const titleInp = document.getElementById('new-mod-title');
+        const descInp = document.getElementById('new-mod-desc');
+        const orderInp = document.getElementById('new-mod-order');
+        let fileInp = document.getElementById('new-mod-file');
+        
+        // Common Order logic
+        function getNextOrder() {
+             return existingCount + queued.length + 1; 
+        }
+
+           // Expose for modal helpers
+           window.getNextModuleOrder = getNextOrder;
+
+        function setDeleteIds(ids){ deleteInput.value = ids.join(','); }
+        function getDeleteIds(){ return (deleteInput.value||'').split(/[,\s]+/).filter(Boolean).map(v=>parseInt(v,10)||0); }
+        function updatePayload(){ try{ payloadInput.value = JSON.stringify(queued); }catch(_){ payloadInput.value='[]'; } }
+        
+        function renderQueued(){
+            if(listNewPdf) listNewPdf.innerHTML = '';
+            if(listNewVideo) listNewVideo.innerHTML = '';
+            if(listNewQuiz) listNewQuiz.innerHTML = '';
+
+            queued.forEach((m, i) => {
+                const el = document.createElement('div');
+                el.className = 'flex items-center p-4 border border-purple-200 rounded-lg bg-purple-50 gap-4';
+                
+                let icon = '';
+                let targetList = null;
+
+                if(m.type === 'pdf') {
+                    icon = '<i class="bi bi-file-earmark-text-fill"></i>';
+                    targetList = listNewPdf;
+                }
+                else if(m.type === 'video') {
+                    icon = '<i class="bi bi-play-circle-fill"></i>';
+                    targetList = listNewVideo;
+                }
+                else {
+                    icon = '<i class="bi bi-pencil-square"></i>';
+                    targetList = listNewQuiz;
+                }
+
+                el.innerHTML = `
+                    <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-white text-purple-600 shadow-sm text-xl">${icon}</div>
+                    <div class="grow">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h5 class="text-sm font-bold text-gray-900 m-0">${m.title}</h5>
+                            <span class="bg-purple-200 text-purple-800 text-xs px-2 py-0.5 rounded font-medium">New</span>
+                            <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#${m.order}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 m-0">${m.type.toUpperCase()}</p>
+                    </div>
+                    <button type="button" class="btn-remove-queue text-red-500 hover:text-red-700 transition"><i class="bi bi-x-lg"></i></button>
+                `;
+                el.querySelector('.btn-remove-queue').addEventListener('click', ()=>{ queued.splice(i,1); renderQueued(); updatePayload(); });
+                
+                if(targetList) targetList.appendChild(el);
+            });
+        }
+
+        // Handle delete existing
+        if (existingList) {
+            existingList.querySelectorAll('.btn-remove-existing').forEach(btn => {
+                btn.addEventListener('click', ()=>{
+                    if(!confirm('Delete this module?')) return;
+                    const id = parseInt(btn.dataset.id,10)||0;
+                    if (!id) return;
+                    const ids = getDeleteIds();
+                    if (!ids.includes(id)) ids.push(id);
+                    setDeleteIds(ids);
+                    // Visualize removal
+                    btn.closest('div.flex').classList.add('opacity-50', 'bg-red-50');
+                    btn.disabled = true;
                 });
+            });
+
+            function updateOrderUpdatesPayload(){
+                if(!orderUpdatesInput) return;
+                const map = {};
+                existingList.querySelectorAll('.input-module-order').forEach(inp => {
+                    const id = parseInt(inp.dataset.id, 10) || 0;
+                    const original = parseInt(inp.dataset.original, 10) || 0;
+                    const current = parseInt(inp.value, 10) || 0;
+                    if(id > 0 && original > 0 && current > 0 && current !== original){
+                        map[id] = current;
+                    }
+                });
+                try { orderUpdatesInput.value = JSON.stringify(map); } catch(_) { orderUpdatesInput.value = '{}'; }
             }
-        })
-        .catch(error => {
-            console.error('Error initializing CKEditor:', error);
+
+            existingList.querySelectorAll('.input-module-order').forEach(inp => {
+                inp.addEventListener('change', () => {
+                    const v = parseInt(inp.value, 10) || 0;
+                    if(v < 1){
+                        inp.value = inp.dataset.original || 1;
+                        showInlineToast('Order minimal 1', 'warning');
+                    }
+                    updateOrderUpdatesPayload();
+                });
+            });
+        }
+
+        // Handle Add Generic Module
+        if(btnQueue){
+            btnQueue.addEventListener('click', () => {
+                const type = typeSel.value; 
+                const title = (titleInp.value||'').trim();
+                const desc = (descInp.value||'').trim();
+                const file = fileInp.files && fileInp.files[0];
+                const order = parseInt((orderInp && orderInp.value) ? orderInp.value : '', 10) || getNextOrder();
+
+                if (!title) { showInlineToast('Judul wajib diisi', 'warning'); return; }
+                if (!file) { showInlineToast('File wajib diupload', 'warning'); return; }
+                if (order < 1) { showInlineToast('Order minimal 1', 'warning'); return; }
+
+                const uid = 'm'+Date.now().toString(36);
+                
+                // Move file to bucket
+                const originalContainer = fileInp.parentNode;
+                fileInp.name = `module_files[${uid}]`;
+                fileBucket.appendChild(fileInp);
+                
+                // Create replacement input
+                const newInput = document.createElement('input');
+                newInput.type = 'file';
+                newInput.id = 'new-mod-file';
+                newInput.className = fileInp.className; 
+                newInput.accept = (type === 'pdf' ? 'application/pdf' : 'video/mp4,video/webm,video/ogg');
+                fileInp = newInput;
+                if(originalContainer) originalContainer.appendChild(newInput);
+
+                queued.push({ type, order, title, subtitle: desc, filename: file.name, uid });
+                renderQueued();
+                updatePayload();
+
+                // Hide Modal
+                const modalEl = document.getElementById('addGenericModuleModal');
+                const m = bootstrap.Modal.getInstance(modalEl);
+                if(m) m.hide();
+            });
+        }
+        
+        // --- QUIZ LOGIC (Simplified & Adapted) ---
+        let quizDraft = { title: '', desc: '', questions: [] };
+        let quizStep = 1;
+        let editingQuestionIdx = -1;
+
+        window.resetQuizDraft = function(){
+             quizDraft = { title: '', desc: '', questions: [] };
+             quizStep = 1;
+             updateQuizUI();
+             document.getElementById('quiz-title').value = '';
+             document.getElementById('quiz-desc').value = '';
+               const qo = document.getElementById('quiz-order');
+               if(qo) qo.value = getNextOrder();
+        }
+
+        function updateQuizUI(){
+             ['quiz-step-overview', 'quiz-step-question', 'quiz-step-review'].forEach((id, idx) => {
+                 document.getElementById(id).classList.toggle('d-none', (idx + 1) !== quizStep);
+             });
+             document.getElementById('btn-quiz-back').style.display = (quizStep > 1) ? 'block' : 'none';
+             document.getElementById('btn-quiz-next').style.display = (quizStep < 3) ? 'block' : 'none';
+             document.getElementById('btn-quiz-save').style.display = (quizStep === 3) ? 'block' : 'none';
+             renderQuizQuestionsList();
+        }
+
+        function renderQuizQuestionsList(){
+            const list = document.getElementById('quiz-questions-list');
+            list.innerHTML = '';
+            if(quizDraft.questions.length === 0){
+                list.innerHTML = '<li class="text-center text-gray-400 text-sm py-4">No questions added yet.</li>';
+                return;
+            }
+            quizDraft.questions.forEach((q, i) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center bg-white border p-3 rounded-lg text-sm';
+                li.innerHTML = `
+                    <span class="truncate pr-4"><span class="font-bold mr-2">Q${i+1}.</span> ${q.text}</span>
+                    <div class="shrink-0 flex gap-2">
+                        <button type="button" class="text-blue-600 hover:text-blue-800 btn-edit-q" data-idx="${i}"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="text-red-600 hover:text-red-800 btn-del-q" data-idx="${i}"><i class="bi bi-trash"></i></button>
+                    </div>`;
+                list.appendChild(li);
+            });
+            // Bind
+            list.querySelectorAll('.btn-edit-q').forEach(b => b.addEventListener('click', () => editQuestion(parseInt(b.dataset.idx))));
+            list.querySelectorAll('.btn-del-q').forEach(b => b.addEventListener('click', () => {
+                quizDraft.questions.splice(parseInt(b.dataset.idx), 1);
+                renderQuizQuestionsList();
+            }));
+
+            // Update Review logic similar to before...
+            if(quizStep === 3){
+                document.getElementById('review-title').textContent = document.getElementById('quiz-title').value || '-';
+                document.getElementById('review-count').textContent = quizDraft.questions.length + ' Questions';
+                const det = document.getElementById('review-questions-detail');
+                det.innerHTML = quizDraft.questions.map((q,i)=>`
+                    <div class="mb-3 border-b pb-2 last:border-0">
+                        <div class="font-bold text-gray-800 mb-1">Q${i+1}: ${q.text}</div>
+                        <ul class="pl-4 list-disc text-gray-500">
+                           ${q.options.map((o, idx)=>`<li class="${idx==q.correctIndex?'text-green-600 font-bold':''}">${o}</li>`).join('')}
+                        </ul>
+                    </div>
+                 `).join('');
+            }
+        }
+
+        function editQuestion(idx){
+            editingQuestionIdx = idx;
+            const q = (idx === -1) ? { text:'', options:['','','',''], correctIndex:0 } : quizDraft.questions[idx];
+            document.getElementById('q-text').value = q.text;
+            const inputs = document.querySelectorAll('#q-options-container input[type=text]');
+            inputs.forEach((inp, i) => inp.value = q.options[i] || '');
+            const radios = document.querySelectorAll('input[name="q-correct"]');
+            radios.forEach((r, i) => r.checked = (i === parseInt(q.correctIndex)));
+            
+            document.getElementById('question-form-title').textContent = (idx===-1 ? 'Add Question' : 'Edit Question');
+            quizStep = 2; updateQuizUI();
+        }
+
+        document.getElementById('btn-add-question-step').addEventListener('click', () => editQuestion(-1));
+        document.getElementById('btn-cancel-question').addEventListener('click', () => { quizStep = 1; updateQuizUI(); });
+        document.getElementById('btn-save-question').addEventListener('click', () => {
+             // Save question logic
+             const text = document.getElementById('q-text').value.trim();
+             if(!text) { alert('Question required'); return; }
+             const opts = [];
+             document.querySelectorAll('#q-options-container input[type=text]').forEach(i => opts.push(i.value.trim()));
+             if(opts.some(o=>!o)) { alert('Options required'); return; }
+             const correct = parseInt(document.querySelector('input[name="q-correct"]:checked').value);
+             
+             const q = { text, options: opts, correctIndex: correct, points: 10 };
+             if(editingQuestionIdx === -1) quizDraft.questions.push(q);
+             else quizDraft.questions[editingQuestionIdx] = q;
+             quizStep = 1; updateQuizUI();
         });
-});
+
+        document.getElementById('btn-quiz-next').addEventListener('click', () => {
+            if(quizDraft.questions.length === 0) { alert('Add at least one question'); return; }
+            quizStep = 3; updateQuizUI();
+        });
+        document.getElementById('btn-quiz-back').addEventListener('click', ()=>{
+             if(quizStep > 1) quizStep--; updateQuizUI();
+        });
+        
+        document.getElementById('btn-quiz-save').addEventListener('click', () => {
+             const title = document.getElementById('quiz-title').value.trim() || 'Untitled Quiz';
+             const desc = document.getElementById('quiz-desc').value.trim();
+               const order = parseInt((document.getElementById('quiz-order')||{}).value, 10) || getNextOrder();
+               if (order < 1) { showInlineToast('Order minimal 1', 'warning'); return; }
+
+             quizDraft.title = title;
+             quizDraft.desc = desc;
+             
+             queued.push({ 
+                 type: 'quiz', 
+                 order: order, 
+                 title: title, 
+                 subtitle: desc,
+                 filename: quizDraft.questions.length + ' Questions', 
+                 uid: 'q'+Date.now(),
+                 data: JSON.parse(JSON.stringify(quizDraft)) 
+             });
+             renderQueued();
+             updatePayload();
+             
+             const m = bootstrap.Modal.getInstance(document.getElementById('addQuizModal'));
+             if(m) m.hide();
+        });
+
+    })();
 </script>
-
-<style>
-/* CKEditor 5 Custom Styling */
-.ck-editor__editable {
-    min-height: 300px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.ck-editor__main {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.ck-editor__editable {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 16px;
-}
-
-.ck-editor__editable:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.ck-toolbar {
-    border: 1px solid #d1d5db;
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    background: #f9fafb;
-}
-
-.ck-toolbar__separator {
-    background: #d1d5db;
-}
-
-.ck-button {
-    color: #374151;
-    border-radius: 4px;
-    margin: 2px;
-}
-
-.ck-button:hover {
-    background: #e5e7eb;
-}
-
-.ck-button.ck-on {
-    background: #3b82f6;
-    color: white;
-}
-
-.ck-button.ck-on:hover {
-    background: #2563eb;
-}
-
-.ck-dropdown__button {
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    background: white;
-}
-
-.ck-dropdown__button:hover {
-    background: #f3f4f6;
-}
-
-.ck-editor__editable img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-.ck-editor__editable iframe {
-    max-width: 100%;
-    border-radius: 4px;
-    margin: 10px 0;
-}
-
-/* CKEditor 5 Dropdown Styling */
-.ck-dropdown__panel {
-    border-radius: 8px !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-}
-
-.ck-list__item {
-    padding: 8px 12px !important;
-    border-radius: 4px !important;
-}
-
-.ck-list__item:hover {
-    background-color: #f8f9fa !important;
-}
-
-.ck-list__item.ck-on {
-    background-color: #007bff !important;
-    color: white !important;
-}
-
-/* Custom form styling */
-.form-control:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
-}
-
-.btn-primary {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-}
-
-.btn-primary:hover {
-    background-color: #2563eb;
-    border-color: #2563eb;
-}
-</style>
 @endsection

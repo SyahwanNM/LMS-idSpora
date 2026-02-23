@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
@@ -17,113 +16,92 @@
             font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
-        /* Background same as dashboard */
+
+        /* Profile page: centered, not full-width */
+        .profile-container {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 1.25rem 1rem 2.75rem;
+        }
+
+        .profile-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        .profile-soft-card {
+            background: #ffffff;
+            border: 1px solid #eef2f7;
+            border-radius: 18px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+        }
+
+        .profile-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .profile-pill:disabled,
+        .profile-pill.disabled {
+            opacity: 0.55;
+            pointer-events: none;
+        }
+
+        .points-chip {
+            background: #eef2ff;
+            border: 1px solid #e0e7ff;
+            color: #4f46e5;
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            min-width: 140px;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: #eef2ff;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 999px;
+        }
+
+        .badge-tile {
+            border-radius: 18px;
+            border: 1px solid #eef2f7;
+            background: #fbfdff;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .badge-tile.active {
+            border-color: #c7d2fe;
+            background: #eef2ff;
+        }
+
+        .badge-tile:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+        
+        /* Consistent spacing for fixed-top navbar */
         body {
             background-color: #f8fafc;
             min-height: 100vh;
-            padding-top: 70px;
-        }
-        
-        /* Ensure navbar is visible and on top */
-        .navbar {
-            z-index: 1050 !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-        }
-        
-        .navbar-gradient {
-            background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        /* Ensure navbar elements are visible */
-        .navbar-gradient .navbar-brand,
-        .navbar-gradient .nav-link,
-        .navbar-gradient .navbar-text {
-            color: #fff !important;
-        }
-        
-        .navbar-gradient .nav-link:hover,
-        .navbar-gradient .nav-link:focus {
-            color: #ffe8b3 !important;
-        }
-        
-        .navbar-gradient .nav-link.active {
-            font-weight: 600;
-            color: #ffe8b3 !important;
-        }
-        
-        /* Notification and user dropdown */
-        #notifBtn,
-        #userDropdown {
-            color: white !important;
-        }
-        
-        #notifBtn:hover,
-        #userDropdown:hover {
-            color: #ffe8b3 !important;
-        }
-        
-        /* Search bar */
-        .navbar .form-control {
-            color: white !important;
-        }
-        
-        .navbar .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-        
-        /* Ensure navbar container is visible */
-        .navbar .container-fluid {
-            display: flex !important;
-            visibility: visible !important;
-        }
-        
-        /* Ensure all navbar elements are visible */
-        .navbar-brand,
-        .navbar-nav,
-        .navbar-collapse {
-            display: flex !important;
-            visibility: visible !important;
-        }
-        
-        /* Navbar Responsive */
-        @media (max-width: 991px) {
-            .navbar-brand {
-                margin-left: 15px !important;
-            }
-            .navbar-brand img {
-                max-width: 60px !important;
-            }
-            .navbar .form-control {
-                width: 100% !important;
-                margin: 0.5rem 0 !important;
-            }
-            .navbar-nav {
-                flex-direction: column !important;
-                width: 100%;
-                margin: 0.5rem 0 !important;
-            }
-            .navbar-nav .nav-item {
-                margin: 0.25rem 0 !important;
-                width: 100%;
-            }
-            .navbar-collapse {
-                padding: 1rem 0;
-            }
-            #notifBtn,
-            #userDropdown {
-                margin: 0.5rem 0 !important;
-            }
-            .d-flex.align-items-center.ms-3 {
-                flex-direction: column !important;
-                width: 100%;
-                margin-right: 0 !important;
-                margin-left: 0 !important;
-            }
+            padding-top: 85px; 
         }
         
         /* Card styling with light background */
@@ -611,290 +589,299 @@
         ];
     @endphp
     
-    <div class="flex min-h-screen" style="align-items: flex-start;">
-        <!-- Minimalist Sidebar -->
-        <aside class="glass-sidebar flex flex-col" style="width: 280px; background: #ffffff; flex-shrink: 0;">
-            <!-- Sidebar Header -->
-            <div class="sidebar-header" style="padding: 1.25rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
-                <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Navigasi Profil</h3>
-            </div>
-            
-            <!-- Badge Display in Sidebar -->
-            @php
-                $user = Auth::user();
-                $badgeInfo = $user->badge_info;
-                $nextBadgeInfo = $user->next_badge_info;
-                $currentPoints = $user->points ?? 0;
-                $currentBadge = $user->badge ?? 'beginner';
-            @endphp
-            <div class="sidebar-badge" style="margin: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                    <div style="width: 40px; height: 40px; background: {{ $badgeInfo['gradient'] }}; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
-                        <i class="bi {{ $badgeInfo['icon'] }}" style="font-size: 1.25rem; color: white;"></i>
+    @php
+        $user = Auth::user();
+        $badgeInfo = $user->badge_info;
+        $nextBadgeInfo = $user->next_badge_info;
+        $currentPoints = $user->points ?? 0;
+        $currentBadge = $user->badge ?? 'beginner';
+        $completion = $user->getProfileCompletionPercentage();
+
+        // Visual progress helpers (safe defaults)
+        $eventsCountSafe = (int) ($eventsCount ?? 0);
+        $coursesCountSafe = (int) ($coursesCount ?? 0);
+        $eventsProgress = min(100, (int) round(($eventsCountSafe / 20) * 100));
+        $coursesProgress = min(100, (int) round(($coursesCountSafe / 20) * 100));
+
+        $subtitleParts = [];
+        if (!empty($user->profession)) $subtitleParts[] = $user->profession;
+        if (!empty($user->institution)) $subtitleParts[] = $user->institution;
+        $subtitle = implode(' | ', $subtitleParts);
+    @endphp
+
+    <div class="profile-container fade-in">
+        <!-- Header -->
+        <div class="profile-card p-6 md:p-8 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="profile-img-wrapper">
+                        <img
+                            src="{{ $user->avatar_url }}"
+                            alt="Profile"
+                            class="w-24 h-24 rounded-full object-cover border-4 shadow-lg"
+                            style="border-color: #c7d2fe;"
+                            referrerpolicy="no-referrer"
+                            onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=EEF2FF&color=1E1B4B&size=128';"
+                        >
                     </div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                            <div style="color: #111827; font-size: 0.875rem; font-weight: 600;">
-                                {{ $badgeInfo['name'] }}
-                            </div>
-                            <button 
-                                type="button" 
-                                onclick="openBadgeInfoModal()"
-                                style="background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: #6b7280; padding: 0; flex-shrink: 0;"
-                                onmouseover="this.style.background='#d1d5db'; this.style.transform='scale(1.1)'"
-                                onmouseout="this.style.background='#e5e7eb'; this.style.transform='scale(1)'"
-                                title="Info Badge & Poin"
-                            >
-                                <i class="bi bi-info-circle" style="font-size: 0.7rem;"></i>
-                            </button>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.25rem;">
-                            <i class="bi bi-star-fill" style="color: #fbbf24; font-size: 0.75rem;"></i>
-                            <span style="color: #374151; font-size: 0.75rem; font-weight: 500;">
-                                {{ number_format($currentPoints, 0, ',', '.') }} Poin
+
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h1 class="text-3xl md:text-4xl font-bold mb-0" style="color:#0f172a;">
+                                {{ $user->name }}
+                            </h1>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold" style="background:#fef3c7; color:#92400e;">
+                                {{ ucfirst($user->role ?? 'user') }}
                             </span>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Progress to Next Badge -->
-                @if($nextBadgeInfo)
-                @php
-                    $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / ($nextBadgeInfo['min_points'] - $badgeInfo['min_points'])) * 100);
-                @endphp
-                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
-                            Menuju {{ $nextBadgeInfo['name'] }}
-                        </span>
-                        <span style="color: #111827; font-size: 0.75rem; font-weight: 700;">
-                            {{ $nextBadgeInfo['points_needed'] }} poin
-                        </span>
-                    </div>
-                    <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
-                        <div style="height: 100%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); width: {{ $progressPercent }}%; border-radius: 3px; transition: width 0.6s ease;"></div>
-                    </div>
-                </div>
-                @else
-                <div style="background: #ffffff; border-radius: 8px; padding: 0.75rem; border: 1px solid #e5e7eb; margin-top: 0.75rem;">
-                    <span style="color: #6b7280; font-size: 0.75rem; font-weight: 500;">
-                        🏆 Level tertinggi!
-                    </span>
-                </div>
-                @endif
-            </div>
-            
-            <!-- Menu Items -->
-            <nav style="padding: 0.5rem 0;">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
-                    <i class="bi bi-person" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
-                    <span style="font-size: 0.9375rem; font-weight: 500;">Profil Saya</span>
-                </a>
-                
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}" style="display: flex; align-items: center; padding: 0.875rem 1.25rem; color: #374151; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent;">
-                    <i class="bi bi-clock-history" style="font-size: 1.125rem; margin-right: 0.75rem; width: 20px; text-align: center;"></i>
-                    <span style="font-size: 0.9375rem; font-weight: 500;">Aktivitas Saya</span>
-                </a>
-            </nav>
-        </aside>
-        
-        <!-- Main Content -->
-        <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
-            <div class="max-w-6xl mx-auto fade-in">
-                <!-- Profile Completion Widget - Compact -->
-                <div class="profile-completion-widget-compact mb-4">
-                    <div class="completion-card-compact">
-                        <div class="completion-content-compact">
-                            <div class="completion-icon-compact">
-                                <i class="bi bi-person-check"></i>
-                            </div>
-                            <div class="completion-info-compact">
-                                <span class="completion-label-compact">Kelengkapan Profil</span>
-                                <div class="completion-progress-compact">
-                                    <div class="completion-progress-track-compact">
-                                        <div class="completion-progress-fill-compact" style="width: {{ Auth::user()->getProfileCompletionPercentage() }}%;"></div>
-                                    </div>
-                                    <span class="completion-percentage-compact">{{ Auth::user()->getProfileCompletionPercentage() }}%</span>
+                        <p class="mt-1 mb-0 text-sm md:text-base" style="color:#64748b;">
+                            {{ $subtitle ?: 'Lengkapi profil untuk menampilkan profesi & institusi.' }}
+                        </p>
+
+                        {{-- Bio Section --}}
+                        <div class="mt-4 mb-2 max-w-2xl">
+                            @if(!empty($user->bio))
+                                <div class="p-3 rounded-2xl bg-slate-50/80 border border-slate-100 shadow-sm">
+                                    <p class="text-sm md:text-base leading-relaxed mb-0" style="color:#475569;">
+                                        <i class="bi bi-chat-quote-fill text-indigo-400 mr-2 opacity-50"></i>
+                                        {{ $user->bio }}
+                                    </p>
                                 </div>
-                            </div>
-                            @if(!Auth::user()->isProfileComplete())
-                            <a href="{{ route('profile.settings') }}" class="completion-link-compact" title="Lengkapi Profil">
-                                <i class="bi bi-arrow-right"></i>
-                            </a>
                             @else
-                            <span class="completion-check-compact" title="Profil Lengkap">
-                                <i class="bi bi-check-circle-fill"></i>
-                            </span>
+                                <div class="p-3 rounded-2xl bg-gray-50/50 border border-dashed border-gray-200">
+                                    <p class="text-xs md:text-sm italic mb-0" style="color:#94a3b8;">
+                                        <i class="bi bi-info-circle mr-1.5"></i>
+                                        Belum ada biografi singkat. <a href="{{ route('profile.edit') }}" class="text-indigo-500 font-bold hover:underline">Tambah Bio &rarr;</a>
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            {{-- Belum ada field khusus linkedin/github di DB --}}
+                            <a class="profile-pill disabled" href="#" aria-disabled="true" title="Tambahkan link LinkedIn di pengaturan profil (belum tersedia field khusus)">
+                                <i class="bi bi-linkedin"></i>
+                                LinkedIn
+                            </a>
+                            <a class="profile-pill disabled" href="#" aria-disabled="true" title="Tambahkan link GitHub di pengaturan profil (belum tersedia field khusus)">
+                                <i class="bi bi-github"></i>
+                                GitHub
+                            </a>
+                            @if(!empty($user->website))
+                                <a class="profile-pill" href="{{ $user->website }}" target="_blank" rel="noopener noreferrer">
+                                    <i class="bi bi-globe2"></i>
+                                    Portfolio Site
+                                </a>
+                            @else
+                                <a class="profile-pill disabled" href="#" aria-disabled="true" title="Tambahkan website di pengaturan profil">
+                                    <i class="bi bi-globe2"></i>
+                                    Portfolio Site
+                                </a>
                             @endif
                         </div>
                     </div>
                 </div>
 
-                <!-- Profile Information Card -->
-                <div class="glass-card rounded-2xl p-8 shadow-2xl mb-8">
-                    <h1 class="text-3xl font-bold mb-8" style="color: #111827;">Informasi Profil</h1>
-                    
-                    <!-- Profile Header -->
-                    <div class="flex items-start space-x-6 mb-8 pb-8 border-b" style="border-color: #e5e7eb;">
-                        <div class="profile-img-wrapper">
-                            <img 
-                                src="{{ Auth::user()->avatar_url }}" 
-                                alt="Profile" 
-                                class="w-24 h-24 rounded-full object-cover border-4 border-yellow-400 shadow-lg"
-                                referrerpolicy="no-referrer"
-                                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=fbbf24&color=1e1b4b&size=128';"
-                            >
-                        </div>
-                        <div class="flex-1">
-                            <h2 class="text-2xl font-bold mb-2" style="color: #111827;">{{ Auth::user()->name }}</h2>
-                            <p class="mb-3" style="color: #6b7280;">{{ Auth::user()->email }}</p>
-                            <span class="premium-badge inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-gray-900">
-                                {{ ucfirst(Auth::user()->role ?? 'user') }}
-                            </span>
-                        </div>
+                <div class="points-chip self-start lg:self-auto">
+                    <div class="text-xs font-bold uppercase tracking-widest" style="color:#6366f1;">
+                        Total Points
                     </div>
-                    
-                    <!-- Success Message -->
-                    @if(session('success'))
-                        <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
-                            <p class="text-green-800 text-sm font-medium">{{ session('success') }}</p>
+                    <div class="mt-2 flex items-center gap-2">
+                        <i class="bi bi-lightning-charge-fill" style="color:#fbbf24; font-size:1.25rem;"></i>
+                        <div class="text-3xl font-extrabold" style="color:#4f46e5;">
+                            {{ number_format($currentPoints, 0, ',', '.') }}
                         </div>
-                    @endif
-                    
-                    <!-- Biodata Section -->
-                    <div class="mb-8">
-                        <div class="mb-4">
-                            <h2 class="text-xl font-bold" style="color: #111827;">Biodata</h2>
-                        </div>
-                        <div class="grid md:grid-cols-2 gap-4" style="color: #374151;">
-                            <div>
-                                <span style="color: #9ca3af;">Nama:</span>
-                                <span class="ml-2 font-medium">{{ Auth::user()->name }}</span>
-                            </div>
-                            <div>
-                                <span style="color: #9ca3af;">Email:</span>
-                                <span class="ml-2 font-medium">{{ Auth::user()->email }}</span>
-                            </div>
-                            @if(Auth::user()->phone)
-                            <div>
-                                <span style="color: #9ca3af;">Telepon:</span>
-                                <span class="ml-2 font-medium">{{ Auth::user()->formatted_phone ?? Auth::user()->phone }}</span>
-                            </div>
-                            @endif
-                            <div>
-                                <span style="color: #9ca3af;">Event yang Diikuti:</span>
-                                <span class="ml-2 font-medium">{{ $eventsCount ?? 0 }} event</span>
-                            </div>
-                            <div>
-                                <span style="color: #9ca3af;">Course yang Diikuti:</span>
-                                <span class="ml-2 font-medium">{{ $coursesCount ?? 0 }} course</span>
-                            </div>
-                            @if(Auth::user()->bio)
-                            <div class="md:col-span-2">
-                                <span style="color: #9ca3af;">Bio:</span>
-                                <p class="ml-2 font-medium mt-1">{{ Auth::user()->bio }}</p>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Events Section -->
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- Registered Events -->
-                    <div class="glass-card rounded-2xl p-6 shadow-2xl">
-                        <h2 class="text-xl font-bold mb-4 flex items-center" style="color: #111827;">
-                            <i class="bi bi-calendar-check mr-2" style="color: #fbbf24;"></i>
-                            Event Yang Didaftarkan
-                        </h2>
-                        @php
-                            $regs = Auth::user()->eventRegistrations()->with(['event' => function($query) { $query->whereNull('deleted_at'); }])->latest()->get()->filter(function($reg) { return $reg->event !== null && $reg->event->deleted_at === null; });
-                        @endphp
-                        @if($regs->isEmpty())
-                            <p class="text-sm" style="color: #6b7280;">Belum ada event yang didaftarkan.</p>
-                        @else
-                            <div class="space-y-3 max-h-96 overflow-y-auto">
-                                @foreach($regs as $reg)
-                                    @if($reg->event)
-                                    <div class="event-card rounded-xl p-4">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex-1">
-                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $reg->event->title ?? 'Event' }}</h3>
-                                                <div class="text-xs text-gray-400 space-y-1">
-                                                    @if($reg->event->date_start)
-                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $reg->event->date_start?->format('d M Y') ?? '' }}</div>
-                                                    @endif
-                                                    @if($reg->event->location)
-                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $reg->event->location ?? '' }}</div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <a href="{{ route('events.show', $reg->event) }}" class="gold-accent px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-900 ml-3 whitespace-nowrap" style="text-decoration: none;">
-                                                Detail
-                                            </a>
-                                        </div>
-                                    </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-                    
-                    <!-- Saved Events -->
-                    <div class="glass-card rounded-2xl p-6 shadow-2xl">
-                        <h2 class="text-xl font-bold mb-4 flex items-center" style="color: #111827;">
-                            <i class="bi bi-bookmark-star mr-2" style="color: #fbbf24;"></i>
-                            Event Tersimpan
-                        </h2>
-                        @php
-                            $saved = Auth::user()->savedEvents()->latest('user_saved_events.created_at')->get()->filter(function($ev) { return $ev !== null && $ev->deleted_at === null; });
-                        @endphp
-                        @if($saved->isEmpty())
-                            <p class="text-sm" style="color: #6b7280;">Belum ada event yang disimpan.</p>
-                        @else
-                            <div class="space-y-3 max-h-96 overflow-y-auto">
-                                @foreach($saved as $ev)
-                                    @if($ev)
-                                    <div class="event-card rounded-xl p-4">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex-1">
-                                                <h3 class="font-semibold mb-1" style="color: #111827;">{{ $ev->title ?? 'Event' }}</h3>
-                                                <div class="text-xs text-gray-400 space-y-1">
-                                                    @php
-                                                        $dateFormatted = '';
-                                                        if ($ev->event_date) {
-                                                            if ($ev->event_date instanceof \Carbon\Carbon) {
-                                                                $dateFormatted = $ev->event_date->format('d M Y');
-                                                            } else {
-                                                                try {
-                                                                    $dateFormatted = \Carbon\Carbon::parse($ev->event_date)->format('d M Y');
-                                                                } catch (\Exception $e) {
-                                                                    $dateFormatted = '';
-                                                                }
-                                                            }
-                                                        }
-                                                    @endphp
-                                                    @if($dateFormatted)
-                                                        <div><i class="bi bi-calendar mr-1"></i>{{ $dateFormatted }}</div>
-                                                    @endif
-                                                    @if($ev->location)
-                                                        <div><i class="bi bi-geo-alt mr-1"></i>{{ $ev->location ?? '' }}</div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <a href="{{ route('events.show', $ev) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition ml-3 whitespace-nowrap" style="border-color: #d1d5db; color: #374151; text-decoration: none;" onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='transparent'">
-                                                Detail
-                                            </a>
-                                        </div>
-                                    </div>
-                                    @endif
-                                @endforeach
-                            </div>
-                        @endif
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+
+        {{-- Success Message --}}
+        @if(session('success'))
+            <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
+                <p class="text-green-800 text-sm font-medium mb-0">{{ session('success') }}</p>
+            </div>
+        @endif
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Skill / Progress -->
+            <div class="profile-soft-card p-6 lg:col-span-2">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="flex items-center justify-center rounded-xl" style="width:42px; height:42px; background:#fff7ed; color:#f59e0b;">
+                        <i class="bi bi-briefcase" style="font-size:1.1rem;"></i>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold" style="color:#0f172a;">Skill Matrix & Experience</div>
+                        <div class="text-sm" style="color:#64748b;">Ringkasan progress akun & aktivitas.</div>
+                    </div>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-semibold" style="color:#0f172a;">Kelengkapan Profil</div>
+                            <div class="text-sm font-bold" style="color:#4f46e5;">{{ $completion }}%</div>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: {{ $completion }}%;"></div>
+                        </div>
+                        <div class="mt-2 text-xs" style="color:#64748b;">
+                            @if(!$user->isProfileComplete())
+                                Belum lengkap. <a href="{{ route('profile.settings') }}" style="color:#4f46e5; font-weight:700; text-decoration:none;">Lengkapi sekarang</a>
+                            @else
+                                Profil kamu sudah lengkap.
+                            @endif
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-semibold" style="color:#0f172a;">Event Participation</div>
+                            <div class="text-sm font-bold" style="color:#4f46e5;">{{ $eventsCountSafe }} event</div>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: {{ $eventsProgress }}%;"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-semibold" style="color:#0f172a;">Course Progress</div>
+                            <div class="text-sm font-bold" style="color:#4f46e5;">{{ $coursesCountSafe }} course</div>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: {{ $coursesProgress }}%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 p-4 rounded-2xl" style="background:#f8fafc; border:1px solid #eef2f7;">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center rounded-xl" style="width:44px; height:44px; background:#ffffff; border:1px solid #eef2f7; color:#4f46e5;">
+                                <i class="bi bi-stack" style="font-size:1.1rem;"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-semibold" style="color:#0f172a;">Learning Path</div>
+                                <div class="text-sm truncate" style="color:#64748b;">
+                                    {{ $user->profession ?: 'Pilih profesi di pengaturan profil' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Info -->
+            <div class="profile-soft-card p-6">
+                <div class="text-xl font-bold mb-5" style="color:#0f172a;">Informasi Akun</div>
+
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="flex items-center justify-center rounded-xl" style="width:40px; height:40px; background:#f1f5f9; color:#64748b;">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold uppercase tracking-wider" style="color:#94a3b8;">Email</div>
+                            <div class="font-semibold truncate" style="color:#0f172a;">{{ $user->email }}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="flex items-center justify-center rounded-xl" style="width:40px; height:40px; background:#f1f5f9; color:#64748b;">
+                            <i class="bi bi-telephone"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold uppercase tracking-wider" style="color:#94a3b8;">Telepon</div>
+                            <div class="font-semibold truncate" style="color:#0f172a;">
+                                {{ $user->formatted_phone ?? $user->phone ?? 'Belum diisi' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="flex items-center justify-center rounded-xl" style="width:40px; height:40px; background:#f1f5f9; color:#64748b;">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold uppercase tracking-wider" style="color:#94a3b8;">Bergabung</div>
+                            <div class="font-semibold" style="color:#0f172a;">
+                                {{ optional($user->created_at)->format('Y-m-d') ?? '-' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="flex items-center justify-center rounded-xl" style="width:40px; height:40px; background:#f1f5f9; color:#64748b;">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-bold uppercase tracking-wider" style="color:#94a3b8;">Status</div>
+                            <div class="font-semibold" style="color:#0f172a;">
+                                {{ $user->profession ?: 'Mahasiswa / Umum' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Achievement Badges -->
+            <div class="profile-soft-card p-6 lg:col-span-2">
+                <div class="text-xl font-bold mb-4" style="color:#0f172a;">Achievement Badges</div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    @foreach($allBadges as $badgeKey => $badge)
+                        <div class="badge-tile p-4 text-center {{ $badgeKey === $currentBadge ? 'active' : '' }}">
+                            <div class="mx-auto mb-3 flex items-center justify-center" style="width:54px; height:54px; border-radius:18px; background: {{ $badge['gradient'] }};">
+                                <i class="bi {{ $badge['icon'] }}" style="color:white; font-size:1.35rem;"></i>
+                            </div>
+                            <div class="text-xs font-extrabold tracking-widest" style="color:#0f172a;">
+                                {{ strtoupper($badge['name']) }}
+                            </div>
+                            <div class="mt-1 text-[11px]" style="color:#94a3b8;">
+                                {{ number_format($badge['min'], 0, ',', '.') }}{{ $badge['max'] < 9999 ? ' - ' . number_format($badge['max'], 0, ',', '.') : '+' }}
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Roadmap -->
+            <div class="profile-card p-6" style="background: #0b0f2b; border-color: rgba(255,255,255,0.06);">
+                <div class="text-xl font-extrabold mb-4" style="color:#ffffff;">Roadmap Karir</div>
+
+                @if($nextBadgeInfo)
+                    @php
+                        $progressPercent = min(100, (($currentPoints - $badgeInfo['min_points']) / max(1, ($nextBadgeInfo['min_points'] - $badgeInfo['min_points']))) * 100);
+                    @endphp
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-xs font-bold uppercase tracking-widest" style="color: rgba(255,255,255,0.7);">
+                            {{ strtoupper($badgeInfo['name'] ?? 'LEVEL') }}
+                        </div>
+                        <div class="text-xs font-bold" style="color: rgba(255,255,255,0.9);">
+                            {{ number_format($currentPoints, 0, ',', '.') }}/{{ number_format($nextBadgeInfo['min_points'], 0, ',', '.') }} PTS
+                        </div>
+                    </div>
+                    <div style="height:8px; background: rgba(255,255,255,0.12); border-radius:999px; overflow:hidden;">
+                        <div style="height:100%; width: {{ $progressPercent }}%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); border-radius:999px;"></div>
+                    </div>
+                    <p class="mt-4 text-sm" style="color: rgba(255,255,255,0.8); line-height:1.6;">
+                        Kumpulkan <b style="color:#ffffff;">{{ number_format($nextBadgeInfo['points_needed'], 0, ',', '.') }}</b> poin lagi untuk membuka badge <b style="color:#ffffff;">{{ $nextBadgeInfo['name'] }}</b>.
+                    </p>
+                @else
+                    <p class="text-sm" style="color: rgba(255,255,255,0.8); line-height:1.6;">
+                        Kamu sudah mencapai level tertinggi. Pertahankan streak dan terus ikuti event/course untuk reward lainnya.
+                    </p>
+                @endif
+
+                <button type="button" onclick="openBadgeInfoModal()" class="w-full mt-4 py-3 rounded-2xl font-extrabold tracking-widest"
+                        style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#111827; border:none;">
+                    REDEEM REWARDS
+                </button>
+            </div>
+        </div>
     </div>
     
     <!-- Badge Info Modal - Minimalis -->
@@ -1082,20 +1069,8 @@
     </div>
     
     <script>
-        // Smooth scroll and animations
         document.addEventListener('DOMContentLoaded', function() {
-            // Menu item active state
-            const menuItems = document.querySelectorAll('.menu-item');
-            menuItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    if(this.href && !this.href.includes('#')) {
-                        return true;
-                    }
-                    e.preventDefault();
-                    menuItems.forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
+            // reserved for future profile interactions
         });
         
         // Avatar preview function

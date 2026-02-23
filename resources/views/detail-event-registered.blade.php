@@ -1,6 +1,5 @@
-    @include("partials.navbar-after-login")
-    <!DOCTYPE html>
-    <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
     <head>
                 <style>
@@ -45,9 +44,31 @@
             html, body { margin: 0; padding: 0; }
             .container-ungu { margin-top: 0 !important; }
             /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-            .container-ungu .link-box { padding-top: 80px; }
+            .container-ungu .link-box { 
+                padding-top: 110px; 
+                padding-bottom: 15px; 
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.7);
+                margin-left: 70px; /* Align with title on desktop */
+            }
+            .container-ungu .link-box a { 
+                text-decoration: none; 
+                color: #fbbf24; 
+                font-weight: 500;
+            }
+            .container-ungu .link-box a:hover { color: #ffd33b; text-decoration: underline; }
+            .container-ungu .link-box span.sep { color: rgba(255, 255, 255, 0.3); }
+            .container-ungu .link-box .active { color: white; font-weight: 600; }
+
+            @media (max-width: 992px) {
+                .container-ungu .link-box { margin-left: 20px !important; padding-top: 100px; }
+            }
+
             @media (max-width: 576px){
-                .container-ungu .link-box { padding-top: 64px; }
+                .container-ungu .link-box { margin-left: 15px !important; padding-top: 100px; gap: 6px; font-size: 13px; }
             }
             /* Add breathing space inside tab panes (Overview, etc.) */
             .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
@@ -67,6 +88,49 @@
             }
             /* Align Facebook icon baseline with other share icons */
             .share .share-list .bi-facebook { position: relative; top: -1px; }
+
+            /* Share this event: pill bar with copy link + icons (scoped) */
+            .share { display: flex; flex-direction: column; gap: 8px; }
+            .share .share-title { margin: 0; font-weight: 600; color: #111827; }
+            .share .share-list {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 999px;
+                width: fit-content;
+                max-width: 100%;
+                flex-wrap: wrap;
+            }
+            .share .share-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                height: 32px;
+                padding: 0 12px;
+                border-radius: 999px;
+                border: 1px solid transparent;
+                background: transparent;
+                color: #111827;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 14px;
+                line-height: 1;
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+            }
+            .share .share-action svg { flex: 0 0 auto; }
+            .share .share-action:hover { background: #f3f4f6; }
+            .share .share-action:active { background: #e5e7eb; }
+            .share .share-icon { width: 32px; padding: 0; }
+            .share .share-action--disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+            @media (max-width: 420px){
+                .share .share-list { width: 100%; justify-content: flex-start; }
+            }
             /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
             .resource-card.locked { opacity: 0.6; }
             .resource-card.locked .img-resource svg { opacity: 0.6; }
@@ -169,7 +233,6 @@
             .bookseat { background:#f5c400; color:#111; border:none; order:1; }
             .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
             .save { background:#1f2235; color:#ffd400; border:none; order:2; cursor:pointer; position:relative; z-index:2; pointer-events:auto !important; }
-            /* Remove responsive horizontal override; keep vertical layout on all sizes */
             /* Price + info tidy */
             .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
             .price-free { color:#16a34a; font-weight:700; letter-spacing:.3px; }
@@ -179,18 +242,62 @@
             .stars { user-select: none; }
             .stars span { cursor: pointer; font-size: 20px; color: #c9c9c9; margin-right: 2px; }
             .stars span.selected { color: #FFD600; }
+            /* Push icons down slightly to align with text (legacy) */
+            .info-item svg { margin-top: 12px; }
+
+            /* RESPONSIVENESS FIXES */
+            @media (max-width: 992px) {
+                .container-ungu { padding: 40px 15px 20px !important; }
+                .link-box { padding-top: 80px !important; margin-left: 0 !important; padding-left: 0 !important; } 
+                .box-event-creator { margin-left: 0 !important; flex-direction: column !important; gap: 15px; align-items: flex-start !important; }
+                .event-title { margin-left: 0 !important; }
+                .add-calender { margin-right: 0 !important; margin-top: 0 !important; }
+                .detail-box { flex-direction: column !important; gap: 30px; display: flex !important; padding: 0 15px !important; }
+                .detail-box-left { width: 100% !important; flex: none !important; }
+                .detail-box-left img { max-width: 100% !important; height: auto !important; width: 100% !important; border-radius: 12px !important; }
+                .detail-box-right { width: 100% !important; margin-right: 0 !important; max-width: 100% !important; flex: none !important; }
+                .progress-box { width: 100% !important; margin-left: 0 !important; }
+            }
+
+            @media (max-width: 768px) {
+                .progress-steps { gap: 10px; }
+                .step p { font-size: 11px !important; margin-left: 0 !important; }
+                .circle { width: 30px !important; height: 30px !important; }
+                .circle p { font-size: 20px !important; margin-top: 0 !important; }
+                .progress-steps::before { top: 15px !important; height: 4px !important; }
+                .progress-steps .step::after { top: 15px !important; height: 4px !important; }
+
+                .desc-box { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+                .nav-event { width: auto !important; flex: 1 !important; padding: 10px 5px !important; text-align: center; font-size: 11px !important; }
+                
+                .resource-box { margin-left: 0 !important; width: 100% !important; padding: 20px !important; }
+                .participant-resources { margin-left: 0 !important; grid-template-columns: 1fr !important; }
+                #feedbackSection { margin-left: 0 !important; width: 100% !important; }
+                .tab-pane p { margin-left: 10px !important; }
+            }
+
+            @media (max-width: 576px) {
+                .event-title h4 { font-size: 1.5rem !important; }
+                .tab-pane { padding: 15px !important; }
+                .nav-tabs .nav-link { font-size: 12px !important; }
+                .price-box h5 { font-size: 1.25rem !important; }
+                .box-copy { flex-direction: column !important; align-items: stretch !important; }
+                .box-copy button { width: 100% !important; }
+            }
         </style>
 
     </head>
 
     <body>
+    @include("partials.navbar-after-login")
+    <div class="all">
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
-                <p>></p>
-                <a href="{{ route('events.index') }}">Events</a>
-                <p>></p>
-                <a href="#">{{ isset($event) ? $event->title : 'Event' }}</a>
+                <span class="sep">/</span>
+                <a href="{{ route('events.index') }}">Event</a>
+                <span class="sep">/</span>
+                <span class="active">{{ isset($event) ? $event->title : 'Event' }}</span>
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">
@@ -443,23 +550,24 @@
                 </div>
                 <hr class="line-info">
                 <div class="info-boxluar">
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
-                            <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Date</span>
-                            <span class="isi-event">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
+                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
+                            <span class="event-info-label">Date</span>
                         </div>
+                        <span class="event-info-value">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
                     </div>
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
-                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Time</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+                            </svg>
+                            <span class="event-info-label">Time</span>
+                        </div>
                             @php
                                 $formatTimeOnly = function($raw){
                                     if(empty($raw)) return null;
@@ -480,26 +588,25 @@
                                     $timeRange = '-';
                                 }
                             @endphp
-                            <span class="isi-event">{{ $timeRange }}</span>
-                        </div>
+                        <span class="event-info-value">{{ $timeRange }}</span>
                     </div>
-                    <div class="info-item ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16">
-                            <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Location</span>
-                            <span class="isi-event">{{ $event->location ?? '-' }}</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
+                            </svg>
+                            <span class="event-info-label">Location</span>
                         </div>
+                        <span class="event-info-value">{{ $event->location ?? '-' }}</span>
                     </div>
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
-                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Student Enrolled</span>
-                            <span class="isi-event">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span class="event-info-label">Students Enrolled</span>
                         </div>
+                        <span class="event-info-value">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
                     </div>
                 </div>
                 <hr>
@@ -574,31 +681,39 @@
                 <div class="share">
                     <h6 class="share-title">Share this event:</h6>
                     <div class="share-list">
-                        @if($isRegistered && $eventFinished && !$hasFeedback)
-                            
-                        @elseif($hasFeedback)
-                        
-                        @else
-                            <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-lock" viewBox="0 0 16 16">
-                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2" />
+                        @php
+                            $canShareLink = ($isRegistered && $eventFinished && !$hasFeedback) || $hasFeedback;
+                        @endphp
+                        @if($canShareLink)
+                            <button type="button" id="copyShareLink" class="share-action" aria-label="Copy link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="#4E5566" aria-hidden="true">
+                                    <path d="M6.354 5.5H4A2.5 2.5 0 0 0 4 10h2.354a.5.5 0 0 1 0 1H4a3.5 3.5 0 1 1 0-7h2.354a.5.5 0 0 1 0 1Zm3.292 0a.5.5 0 0 1 0-1H12a3.5 3.5 0 1 1 0 7H9.646a.5.5 0 0 1 0-1H12a2.5 2.5 0 1 0 0-5H9.646Z"/>
+                                    <path d="M5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z"/>
                                 </svg>
+                                <span id="copyShareLinkText">Copy link</span>
+                            </button>
+                        @else
+                            <span class="share-action share-action--disabled" aria-label="Copy link locked" title="Complete required steps to unlock sharing">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#4E5566" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zM7 3a1 1 0 0 1 2 0v2H7V3z" />
+                                </svg>
+                                <span>Copy link</span>
                             </span>
                         @endif
 
-                        <a id="fbShare" class="share-item" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
+                        <a id="fbShare" class="share-action share-icon" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-facebook" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M12 2.04V.5H9.75C8.26.5 7.5 1.5 7.5 2.83V4H6v2h1.5v6H10V6h1.5l.5-2H10V2.83C10 2.2 10.4 2 11 2H13v.04z"/>
                             </svg>
                         </a>
 
-                        <a id="xShare" class="share-item">
+                        <a id="xShare" class="share-action share-icon" aria-label="Share on X" href="#" target="_blank" rel="noopener" title="Share on X">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-twitter-x" viewBox="0 0 16 16">
                                 <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
                             </svg>
                         </a>
 
-                        <a id="emailShare" href="#" class="share-item">
+                        <a id="emailShare" href="#" class="share-action share-icon" aria-label="Share via Email" title="Share via Email">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-envelope" viewBox="0 0 16 16">
                                 <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8z"/>
                                 <path d="M0 4.697v7.104l5.803-3.482z"/>
@@ -607,7 +722,7 @@
                             </svg>
                         </a>
 
-                        <a id="waShare" href="#" class="share-item">
+                        <a id="waShare" href="#" class="share-action share-icon" aria-label="Share on WhatsApp" target="_blank" rel="noopener" title="Share on WhatsApp">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-whatsapp" viewBox="0 0 16 16">
                                 <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
                             </svg>
@@ -785,29 +900,27 @@
                     
                     <div class="resource-value">
                         <h6>Certificate</h6>
-                        @php
-                            // Show certificate availability only when user registered and has submitted feedback (post-event)
-                            // $isRegistered and $hasFeedback are computed earlier in the view
-                        @endphp
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                @if(!empty($event->certificate_path))
-                                    <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
+                                @php
+                                    $certReady = $event->event_date && now()->greaterThanOrEqualTo($event->event_date->copy()->addDays(3));
+                                @endphp
+                                @if($certReady)
+                                    <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
+                                        <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                                    </div>
                                 @else
-                                    <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
+                                    <p>Sertifikat akan tersedia 3 hari setelah acara selesai.</p>
                                 @endif
                             @else
-                                <p>Available after you submit feedback for this event.</p>
+                                <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
                             @endif
                         @else
-                            <p>Available after event completion.</p>
+                            <p>Tersedia setelah acara selesai.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
                 </div>
             
             <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
@@ -985,12 +1098,6 @@
                                     <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
                                 </svg>
                             </a>
-                        @else
-                            <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="lock-bi bi-lock" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3" />
-                                </svg>
-                            </span>
                         @endif
                     </span>
                 </div>
@@ -1344,21 +1451,32 @@
                         @php
                                 $items = collect();
                                 if(isset($event)){
-                                    if($event->relationLoaded('scheduleItems')){
-                                        $items = $event->scheduleItems;
-                                    } else {
-                                        // prefer DB relation ordered by start if available
-                                        try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
+                                    // Schedule MUST come from schedule_json
+                                    $rawSchedule = $event->schedule_json ?? null;
+
+                                    // Normalize to array (supports casted array, JSON string, or stdClass)
+                                    $scheduleArr = null;
+                                    if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                                        $decoded = json_decode($rawSchedule, true);
+                                        $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                                    } elseif (is_array($rawSchedule)) {
+                                        $scheduleArr = $rawSchedule;
+                                    } elseif (is_object($rawSchedule)) {
+                                        $scheduleArr = json_decode(json_encode($rawSchedule), true);
                                     }
-                                    if($items->isEmpty() && is_array($event->schedule_json)){
-                                        $items = collect($event->schedule_json)->map(function($row){
+
+                                    if (is_array($scheduleArr)) {
+                                        $items = collect($scheduleArr)->map(function($row){
+                                            $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
                                             return (object) [
                                                 'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
                                                 'end' => $row['end'] ?? ($row['time_end'] ?? null),
                                                 'title' => $row['title'] ?? ($row['activity'] ?? ''),
                                                 'description' => $row['description'] ?? ($row['desc'] ?? ''),
                                             ];
-                                        });
+                                        })->filter(function($it){
+                                            return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                                        })->values();
                                     }
                                 }
                                 $formatTime = function($t){
@@ -1391,7 +1509,16 @@
                     <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
                         <h6 class="mb-3 mt-2">Terms & Condition</h6>
                         <div class="terms-content" style="margin-top: 10px;">
-                            {!! $event->terms_and_conditions ?? '' !!}
+                            @php
+                                $termsHtml = isset($event) ? ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')) : '';
+                                $termsText = trim(preg_replace('/\xC2\xA0|\s+/', ' ', strip_tags((string) $termsHtml)));
+                            @endphp
+
+                            @if($termsText === '')
+                                <p class="text-muted" style="margin:0;">Terms and Condition akan segera diumumkan</p>
+                            @else
+                                {!! $termsHtml !!}
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -1852,8 +1979,58 @@
                 });
             })();
         </script>
+
+        <script>
+            // Share actions: copy link + generate share URLs
+            (function(){
+                const copyBtn = document.getElementById('copyShareLink');
+                const copyText = document.getElementById('copyShareLinkText');
+                const xShare = document.getElementById('xShare');
+                const emailShare = document.getElementById('emailShare');
+                const waShare = document.getElementById('waShare');
+
+                const pageUrl = window.location.href;
+                const eventTitle = @json($event->title ?? 'Event');
+                const urlEnc = encodeURIComponent(pageUrl);
+                const textEnc = encodeURIComponent(eventTitle);
+
+                if (xShare) xShare.href = `https://twitter.com/intent/tweet?text=${textEnc}&url=${urlEnc}`;
+                if (emailShare) emailShare.href = `mailto:?subject=${textEnc}&body=${urlEnc}`;
+                if (waShare) waShare.href = `https://wa.me/?text=${textEnc}%20${urlEnc}`;
+
+                function fallbackCopy(text){
+                    const input = document.createElement('input');
+                    input.value = text;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'absolute';
+                    input.style.left = '-9999px';
+                    document.body.appendChild(input);
+                    input.select();
+                    try { document.execCommand('copy'); } catch (_e) {}
+                    document.body.removeChild(input);
+                }
+
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', async function(){
+                        try {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                await navigator.clipboard.writeText(pageUrl);
+                            } else {
+                                fallbackCopy(pageUrl);
+                            }
+                            if (copyText) {
+                                const prev = copyText.textContent;
+                                copyText.textContent = 'Copied';
+                                window.setTimeout(() => { copyText.textContent = prev; }, 1200);
+                            }
+                        } catch (_e) {
+                            fallbackCopy(pageUrl);
+                        }
+                    });
+                }
+            })();
+        </script>
+         @include('partials.footer-before-login')
     </body>
 
     </html>
-
-    @include('partials.footer-before-login')

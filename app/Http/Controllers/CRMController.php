@@ -26,8 +26,11 @@ class CRMController extends Controller
         }
 
         // Get statistics
-        $totalCustomers = User::where('role', '!=', 'admin')->count();
-        $activeCustomers = User::where('role', '!=', 'admin')
+        $totalCustomers = User::where('role', 'customer')->count();
+        $totalResellers = User::where('role', 'reseller')->count();
+        $totalTrainers = User::where('role', 'trainer')->count();
+        
+        $activeCustomersCount = User::where('role', '!=', 'admin')
             ->where(function($query) {
                 $query->whereHas('eventRegistrations', function($q) {
                     $q->where('status', 'active');
@@ -40,14 +43,24 @@ class CRMController extends Controller
         
         $totalRegistrations = EventRegistration::where('status', 'active')->count();
         $totalEnrollments = Enrollment::where('status', 'active')->count();
+        $newSupportMessages = \App\Models\SupportMessage::where('status', 'new')->count();
         
         // Recent registrations (only show registrations with valid events)
         $recentRegistrations = EventRegistration::with(['user', 'event'])
-            ->whereHas('event') // Only get registrations with valid events
+            ->whereHas('event')
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(8)
             ->get();
+
+        // Top customers by activity
+        $topCustomers = User::where('role', '!=', 'admin')
+            ->withCount(['eventRegistrations', 'enrollments'])
+            ->get()
+            ->sortByDesc(function($user) {
+                return $user->event_registrations_count + $user->enrollments_count;
+            })
+            ->take(5);
 
         // Top events by registration
         $topEvents = Event::withCount(['registrations' => function($query) {
@@ -59,10 +72,14 @@ class CRMController extends Controller
 
         return view('admin.crm.dashboard', compact(
             'totalCustomers',
-            'activeCustomers',
+            'totalResellers',
+            'totalTrainers',
+            'activeCustomersCount',
             'totalRegistrations',
             'totalEnrollments',
+            'newSupportMessages',
             'recentRegistrations',
+            'topCustomers',
             'topEvents'
         ));
     }
@@ -428,5 +445,51 @@ class CRMController extends Controller
             'allCourses',
             'courseId'
         ));
+    }
+
+    /**
+     * Display Support Messages
+     */
+    public function supportMessages(Request $request)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $query = \App\Models\SupportMessage::query();
+
+        // Filter by type
+        if($request->has('type') && $request->type) {
+            $query->where('type', $request->type);
+        }
+
+        // Filter by status
+        if($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $messages = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('admin.crm.support.index', compact('messages'));
+    }
+
+    /**
+     * Update Support Message Status
+     */
+    public function updateSupportStatus(Request $request, \App\Models\SupportMessage $message)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'status' => 'required|in:new,processed,resolved,ignored',
+        ]);
+
+        $message->update(['status' => $request->status]);
+
+        return back()->with('success', 'Status pesan berhasil diperbarui');
     }
 }

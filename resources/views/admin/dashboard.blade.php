@@ -337,7 +337,7 @@
                 <div class="card-body p-4">
                     <div class="row g-3">
                         <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button" class="btn w-100 quick-action-btn btn-outline-primary d-flex flex-column align-items-center py-4 rounded-4" onclick="location.href='#'">
+                            <button type="button" class="btn w-100 quick-action-btn btn-outline-primary d-flex flex-column align-items-center py-4 rounded-4" onclick="location.href='{{ route('admin.reseller') }}'">
                                 <i class="bi bi-people-fill fs-3 mb-2"></i>
                                 <small class="fw-semibold">Manage Reseller</small>
                             </button>
