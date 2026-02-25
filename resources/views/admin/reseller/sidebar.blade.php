@@ -1,11 +1,4 @@
-<div class="sidebar-desktop d-none d-lg-block p-3 z-3">
-    <div class="d-flex align-items-center gap-2 px-3 mb-5 mt-2">
-        <div class="bg-warning rounded-3 p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-            <i class="bi bi-flower1 text-white fs-5"></i>
-        </div>
-        <h5 class="fw-bold mb-0 text-dark">IdSpora Admin</h5>
-    </div>
-
+<div class="sidebar-desktop d-none d-lg-block p-3 z-3 mt-2">
     <small class="text-uppercase text-secondary fw-bold px-3 mb-2 d-block" style="font-size: 0.75rem;">Menu Utama</small>
     <ul class="nav flex-column gap-1 mb-4">
         <li class="nav-item">

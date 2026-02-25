@@ -12,51 +12,61 @@
     </div>
 
     <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 hover-card bg-warning bg-opacity-10 border border-warning">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between mb-3">
-                        <div class="bg-white text-warning rounded-3 p-2 shadow-sm" style="width: 48px; height: 48px; display: grid; place-items: center;">
-                            <i class="bi bi-hourglass-split fs-4"></i>
-                        </div>
-                        <div class="stat-label text-warning-emphasis">Perlu Persetujuan</div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 hover-card bg-warning bg-opacity-10 border border-warning">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="bg-white text-warning rounded-3 p-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-hourglass-split fs-4"></i>
                     </div>
-                    <div class="stat-value text-warning-emphasis fw-bold fs-3">Rp 450.000</div>
-                    <div class="text-muted small">Dari <strong>3 reseller</strong> menunggu</div>
-                    <button class="btn btn-warning btn-sm w-100 mt-3 fw-bold shadow-sm" onclick="switchView('finance', document.querySelectorAll('.sidebar')[1])">Proses Sekarang</button>
+                    <div class="stat-label text-warning-emphasis fw-semibold">Perlu Persetujuan</div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between mb-3">
-                        <div class="bg-success bg-opacity-10 text-success rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
-                            <i class="bi bi-cash-stack fs-4"></i>
-                        </div>
-                        <div class="stat-label">Total Dibayarkan</div>
-                    </div>
-                    <div class="stat-value fw-bold fs-3">Rp 12.500.000</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between mb-3">
-                        <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
-                            <i class="bi bi-shield-x fs-4"></i>
-                        </div>
-                        <div class="stat-label">Total Ditolak</div>
-                    </div>
-                    <div class="stat-value text-danger fw-bold fs-3">Rp 1.250.000</div>
-                    <div class="text-muted small">Dana dikembalikan ke saldo user</div>
+                <div class="stat-value text-warning-emphasis fw-bold fs-3 mb-1">Rp 450.000</div>
+                <div class="text-muted small mb-3">Dari <strong>3 reseller</strong> menunggu</div>
+                
+                <div class="mt-auto">
+                    <button class="btn btn-warning btn-sm w-100 fw-bold shadow-sm" onclick="switchView('finance', document.querySelectorAll('.sidebar')[1])">Proses Sekarang</button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 hover-card bg-success bg-opacity-10 border border-success">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="bg-white text-success rounded-3 p-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-cash-stack fs-4"></i>
+                    </div>
+                    <div class="stat-label text-success-emphasis fw-semibold">Total Dibayarkan</div>
+                </div>
+                <div class="stat-value text-success-emphasis fw-bold fs-3 mb-1">Rp 12.500.000</div>
+                <div class="text-muted small mb-3">Dana telah berhasil ditransfer</div>
+                
+                <div class="mt-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 hover-card bg-danger bg-opacity-10 border border-danger">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="bg-white text-danger rounded-3 p-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="bi bi-shield-x fs-4"></i>
+                    </div>
+                    <div class="stat-label text-danger-emphasis fw-semibold">Total Ditolak</div>
+                </div>
+                <div class="stat-value text-danger-emphasis fw-bold fs-3 mb-1">Rp 1.250.000</div>
+                <div class="text-muted small mb-3">Dana dikembalikan ke saldo user</div>
+                
+                <div class="mt-auto"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
     <div class="row g-4">
         <div class="col-lg-8">

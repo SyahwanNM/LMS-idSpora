@@ -14,7 +14,7 @@ class ResellerController extends Controller
 {
     public function admin()
     {
-        return view('admin.reseller');
+        return view('admin.reseller.index');
     }
 
     public function index()
