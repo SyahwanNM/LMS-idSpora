@@ -81,7 +81,7 @@ class EventController extends Controller
         $isFree = $event->discounted_price <= 0;
         $amount = $isFree ? 0 : $event->discounted_price;
         
-        // Buat Nomor Order Unik (PENTING: Midtrans menolak order_id yang sama persis)
+        // Buat Nomor Order Unik (Must be unique for each registration attempt)
         // Format: REG-{UserID}-{EventID}-{Timestamp}
         $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
 
@@ -102,6 +102,19 @@ class EventController extends Controller
             // 5. JIKA BERBAYAR -> Arahkan ke Manual Payment
             // Tidak perlu panggil Midtrans. User akan upload bukti bayar nanti.
            
+            // 6. Track in Finance (ManualPayment Trace)
+            \App\Models\ManualPayment::create([
+                'event_id' => $event->id,
+                'event_registration_id' => $registration->id,
+                'user_id' => $user->id,
+                'order_id' => $orderId,
+                'amount' => $amount,
+                'currency' => 'IDR',
+                'method' => $isFree ? 'free' : 'manual_transfer',
+                'status' => $isFree ? 'settled' : 'pending',
+                'metadata' => ['source' => 'event', 'type' => $isFree ? 'free' : 'paid']
+            ]);
+
             DB::commit();
 
             return response()->json([
@@ -181,7 +194,7 @@ class EventController extends Controller
     }
 
     /**
-     * Buat/refresh link pembayaran Midtrans untuk pendaftaran pending.
+     * Buat/refresh pendaftaran pending untuk pembayaran manual.
      */
     public function createPayment(Request $request, $id)
     {
@@ -221,8 +234,7 @@ class EventController extends Controller
             ], 400);
         }
 
-        // Buat order id baru agar unik
-        // Buat order id baru agar unik (Update registration_code di DB)
+        // Buat order id baru agar unik (Update registration_code in DB)
         $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
         $registration->update([
             'registration_code' => $orderId

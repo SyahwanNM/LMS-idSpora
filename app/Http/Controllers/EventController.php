@@ -423,6 +423,19 @@ class EventController extends Controller
                 'registration_code' => 'EVT-'.strtoupper(uniqid()),
                 'total_price' => 0.00,
             ]);
+
+            // Track in Finance (Amount 0)
+            \App\Models\ManualPayment::create([
+                'event_id' => $event->id,
+                'event_registration_id' => $reg->id,
+                'user_id' => $user->id,
+                'order_id' => $reg->registration_code,
+                'amount' => 0,
+                'currency' => 'IDR',
+                'method' => 'free',
+                'status' => 'settled',
+                'metadata' => ['source' => 'event', 'type' => 'free']
+            ]);
         } else {
             // Paid event: create pending registration and accept uploaded proof if provided
             $regData = [
@@ -632,8 +645,35 @@ class EventController extends Controller
         try {
             $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
             foreach ($manuals as $m) {
-                $m->status = 'settled';
-                $m->save();
+                if ($m->status !== 'settled') {
+                    $m->status = 'settled';
+                    $m->save();
+
+                    // Process Referral Commission (10%)
+                    if (!empty($m->referral_code)) {
+                        $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
+                        if ($referrer && $referrer->id !== $m->user_id) {
+                            $commissionAmount = $m->amount * 0.10; // 10% commission
+                            
+                            $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
+                                ->where('referred_user_id', $m->user_id)
+                                ->where('description', 'Komisi Event: ' . $event->title)
+                                ->first();
+
+                            if (!$existingReferral && $commissionAmount > 0) {
+                                \App\Models\Referral::create([
+                                    'user_id' => $referrer->id,
+                                    'referred_user_id' => $m->user_id,
+                                    'amount' => $commissionAmount,
+                                    'status' => 'paid',
+                                    'description' => 'Komisi Event: ' . $event->title
+                                ]);
+
+                                $referrer->increment('wallet_balance', $commissionAmount);
+                            }
+                        }
+                    }
+                }
             }
         } catch (\Throwable $e) { /* ignore */ }
 

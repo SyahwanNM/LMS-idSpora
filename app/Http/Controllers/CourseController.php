@@ -7,7 +7,7 @@ use App\Models\QuizQuestion;
 use App\Models\QuizAnswer;
 use App\Models\Enrollment;
 use App\Models\ManualPayment;
-use App\Models\Payment;
+
 use App\Models\QuizAttempt;
 use App\Models\Progress;
 use Illuminate\Support\Str;
@@ -46,21 +46,15 @@ class CourseController extends Controller
             ->where('status', 'settled')
             ->exists();
 
-        $hasMidtransSettledPayment = Payment::query()
-            ->where('user_id', $user->id)
-            ->where('course_id', $course->id)
-            ->whereIn('status', ['capture', 'settlement'])
-            ->exists();
-
         // Only allow access if enrollment is active OR payment already approved.
         // Pending payment/enrollment should not pass.
-        if (!$enrolledActive && !$hasSettledPayment && !$hasMidtransSettledPayment) {
+        if (!$enrolledActive && !$hasSettledPayment) {
             return redirect()->route('course.detail', $course->id)
                 ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
         }
 
         // If payment is settled but enrollment isn't active yet, auto-activate it.
-        if (!$enrolledActive && ($hasSettledPayment || $hasMidtransSettledPayment)) {
+        if (!$enrolledActive && $hasSettledPayment) {
             $enrollment = Enrollment::firstOrCreate(
                 ['user_id' => $user->id, 'course_id' => $course->id],
                 ['status' => 'active']

@@ -372,7 +372,7 @@
                 @php
                     $isFreeCourse = (int) ($course->price ?? 0) <= 0;
                 @endphp
-                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('midtrans.pay', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
+                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">

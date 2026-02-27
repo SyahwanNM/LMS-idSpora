@@ -6,7 +6,7 @@ use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\Enrollment;
 use App\Models\ManualPayment;
-use App\Models\Payment;
+
 use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -48,13 +48,7 @@ class UserModuleController extends Controller
             ->where('status', 'settled')
             ->exists();
 
-        $hasMidtransSettledPayment = Payment::query()
-            ->where('user_id', $user->id)
-            ->where('course_id', $course->id)
-            ->whereIn('status', ['capture', 'settlement'])
-            ->exists();
-
-        if (!$enrolledActive && !$hasSettledPayment && !$hasMidtransSettledPayment) {
+        if (!$enrolledActive && !$hasSettledPayment) {
             abort(403, 'Silakan lakukan pembelian course terlebih dahulu.');
         }
 
