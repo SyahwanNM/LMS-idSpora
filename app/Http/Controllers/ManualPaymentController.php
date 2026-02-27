@@ -47,8 +47,18 @@ class ManualPaymentController extends Controller
             $msg = 'Bukti pembayaran diperbarui; menunggu verifikasi admin.';
         }
 
-        // Create manual payment record
-        $manual = ManualPayment::create([
+        // Find existing pending or rejected manual payment
+        $manual = ManualPayment::where('event_registration_id', $existing->id)
+            ->whereIn('status', ['pending', 'rejected'])
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$manual) {
+            $manual = new ManualPayment();
+            $manual->order_id = 'MP-' . strtoupper(uniqid());
+        }
+
+        $manual->fill([
             'event_id' => $event->id,
             'event_registration_id' => $existing->id,
             'user_id' => $user->id,
@@ -56,7 +66,8 @@ class ManualPaymentController extends Controller
             'currency' => 'IDR',
             'method' => 'qris',
             'status' => 'pending',
-        ]);
+            'referral_code' => $request->input('referral_code')
+        ])->save();
 
         if ($request->hasFile('payment_proof')) {
             $file = $request->file('payment_proof');

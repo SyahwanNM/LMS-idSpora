@@ -53,6 +53,9 @@ class CourseManualPaymentController extends Controller
         $manualPayment->status = 'pending';
         $manualPayment->whatsapp_number = $whatsapp;
         $manualPayment->referral_code = $referralCode;
+        if (!$manualPayment->order_id) {
+            $manualPayment->order_id = 'MP-' . strtoupper(uniqid());
+        }
         $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
             'source' => 'course',
         ]);
@@ -77,8 +80,36 @@ class CourseManualPaymentController extends Controller
     {
         $this->assertPaymentBelongsToCourse($course, $manualPayment);
 
-        $manualPayment->status = 'settled'; // approved
-        $manualPayment->save();
+        if ($manualPayment->status !== 'settled') {
+            $manualPayment->status = 'settled'; // approved
+            $manualPayment->save();
+
+            // Process Referral Commission (10%)
+            if (!empty($manualPayment->referral_code)) {
+                $referrer = \App\Models\User::where('referral_code', $manualPayment->referral_code)->first();
+                if ($referrer && $referrer->id !== $manualPayment->user_id) {
+                    $commissionAmount = $manualPayment->amount * 0.10; // 10% commission
+                    
+                    // Prevent duplicate commission for the same payment
+                    $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
+                        ->where('referred_user_id', $manualPayment->user_id)
+                        ->where('description', 'Komisi Course: ' . $course->name)
+                        ->first();
+
+                    if (!$existingReferral && $commissionAmount > 0) {
+                        \App\Models\Referral::create([
+                            'user_id' => $referrer->id,
+                            'referred_user_id' => $manualPayment->user_id,
+                            'amount' => $commissionAmount,
+                            'status' => 'paid',
+                            'description' => 'Komisi Course: ' . $course->name
+                        ]);
+
+                        $referrer->increment('wallet_balance', $commissionAmount);
+                    }
+                }
+            }
+        }
 
         if ($manualPayment->enrollment) {
             $manualPayment->enrollment->status = 'active';
@@ -116,6 +147,39 @@ class CourseManualPaymentController extends Controller
         }
 
         return back()->with('success', 'Status pembayaran diubah ke pending.');
+    }
+
+    public function freeEnroll(Request $request, Course $course): RedirectResponse
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $isFree = (int) ($course->price ?? 0) <= 0;
+        if (!$isFree) {
+            return redirect()->route('course.payment', $course->id)->with('error', 'Course ini berbayar.');
+        }
+
+        $enrollment = Enrollment::updateOrCreate(
+            ['user_id' => $user->id, 'course_id' => $course->id],
+            ['status' => 'active']
+        );
+
+        // Track in Finance (Amount 0)
+        ManualPayment::create([
+            'course_id' => $course->id,
+            'enrollment_id' => $enrollment->id,
+            'user_id' => $user->id,
+            'order_id' => 'FREE-CRS-' . strtoupper(uniqid()),
+            'amount' => 0,
+            'currency' => 'IDR',
+            'method' => 'free',
+            'status' => 'settled',
+            'metadata' => ['source' => 'course', 'type' => 'free']
+        ]);
+
+        return redirect()->route('course.learn', $course->id)->with('success', 'Pendaftaran berhasil!');
     }
 
     private function assertPaymentBelongsToCourse(Course $course, ManualPayment $manualPayment): void

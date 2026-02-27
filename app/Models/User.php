@@ -34,6 +34,9 @@ class User extends Authenticatable
         'last_event_date',
         'profession',
         'institution',
+        'referral_code',
+        'wallet_balance',
+        'referrer_id',
     ];
 
     /**
