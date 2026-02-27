@@ -1,18 +1,119 @@
-@extends('layouts.crm')
+@extends('layouts.admin')
 
 @section('title', 'Feedback Analysis')
 
+@section('navbar')
+    @include('partials.navbar-crm')
+@endsection
+
 @section('styles')
 <style>
+    /* Hero Header */
+    .crm-hero {
+        background: linear-gradient(135deg, #1A1D1F 0%, #2A2F34 100%);
+        border-radius: 24px;
+        padding: 32px;
+        color: #fff;
+        margin-bottom: 32px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+
+    .hero-label {
+        background: rgba(109, 40, 217, 0.2);
+        color: #a78bfa;
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        display: inline-block;
+        margin-bottom: 16px;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+    }
+
+    /* Sidebar-like Nav */
+    .crm-wrapper {
+        display: flex;
+        min-height: calc(100vh - 72px);
+    }
+
+    .crm-sidebar-new {
+        width: 260px;
+        background: #fff;
+        padding: 24px;
+        border-right: 1px solid #eee;
+        flex-shrink: 0;
+    }
+
+    .crm-main {
+        flex-grow: 1;
+        padding: 32px;
+        background-color: #F8F9FA;
+    }
+
+    .nav-menu-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #94a3b8;
+        letter-spacing: 1px;
+        margin-bottom: 16px;
+        display: block;
+        margin-top: 24px;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        color: #1e293b;
+        text-decoration: none;
+        border-radius: 12px;
+        margin-bottom: 4px;
+        font-weight: 600;
+        transition: all 0.2s;
+        gap: 12px;
+    }
+
+    .sidebar-link i {
+        font-size: 1.1rem;
+        color: #64748b;
+    }
+
+    .sidebar-link:hover {
+        background-color: #f1f5f9;
+        color: #6d28d9;
+    }
+
+    .sidebar-link.active {
+        background-color: #6d28d9;
+        color: #fff;
+    }
+
+    .sidebar-link.active i {
+        color: #fff;
+    }
+
     .nav-pills-custom .nav-link {
-        color: var(--crm-text-muted);
+        color: #64748b;
         font-weight: 500;
         padding: 0.6rem 1.2rem;
         border-radius: 8px;
         transition: all 0.2s ease;
     }
     .nav-pills-custom .nav-link.active {
-        background: var(--crm-primary);
+        background: #6d28d9;
         color: white;
     }
     .rating-bar-container {
@@ -38,11 +139,11 @@
     .rating-count {
         width: 45px;
         font-size: 0.75rem;
-        color: var(--crm-text-muted);
+        color: #64748b;
         text-align: right;
     }
     .feedback-card {
-        border-bottom: 1px solid var(--crm-border);
+        border-bottom: 1px solid #eee;
         padding: 1.5rem;
     }
     .feedback-card:last-child {
@@ -52,24 +153,50 @@
 @endsection
 
 @section('content')
-<div class="row align-items-center mb-4">
-    <div class="col">
-        <h3 class="fw-bold text-navy mb-1">Analisis Insight Pelanggan</h3>
-        <p class="text-muted small mb-0">Evaluasi performa event dan kepuasan materi pembelajaran</p>
-    </div>
-    <div class="col-auto">
-        <div class="nav nav-pills nav-pills-custom bg-white p-1 rounded-3 border shadow-sm">
-            <a class="nav-link {{ ($type ?? 'event') == 'event' ? 'active' : '' }}" 
-               href="{{ route('admin.crm.feedback.index', ['type' => 'event'] + request()->except('type', 'course_id')) }}">
-               <i class="bi bi-calendar-event me-1"></i> Event
-            </a>
-            <a class="nav-link {{ ($type ?? 'event') == 'course' ? 'active' : '' }}" 
-               href="{{ route('admin.crm.feedback.index', ['type' => 'course'] + request()->except('type', 'event_id')) }}">
-               <i class="bi bi-journal-text me-1"></i> Course
-            </a>
+<div class="crm-wrapper">
+    <aside class="crm-sidebar-new d-none d-lg-block" style="position: sticky; top: 72px; height: calc(100vh - 72px);">
+        <span class="nav-menu-label mt-0">DASHBOARD</span>
+        <a href="{{ route('admin.crm.dashboard') }}" class="sidebar-link">
+            <i class="bi bi-speedometer2"></i> Analitik Ringkas
+        </a>
+        <a href="{{ route('admin.crm.customers.index') }}" class="sidebar-link">
+            <i class="bi bi-people"></i> Data Pelanggan
+        </a>
+
+        <span class="nav-menu-label">OPERASIONAL</span>
+        <a href="{{ route('admin.crm.feedback.index') }}" class="sidebar-link active">
+            <i class="bi bi-chat-heart"></i> Analisis Feedback
+        </a>
+        <a href="{{ route('admin.crm.broadcast.index') }}" class="sidebar-link">
+            <i class="bi bi-megaphone"></i> Blast Broadcast
+        </a>
+
+        <span class="nav-menu-label">BANTUAN</span>
+        <a href="{{ route('admin.crm.support.index') }}" class="sidebar-link">
+            <i class="bi bi-headset"></i> Tiket Support
+        </a>
+    </aside>
+
+    <main class="crm-main">
+        <div class="crm-hero d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+            <div>
+                <span class="hero-label">Insight Center</span>
+                <h1 class="hero-title">Analisis Feedback</h1>
+                <p class="hero-subtitle mb-0">Evaluasi tingkat kepuasan peserta pada event dan course untuk peningkatan kualitas program.</p>
+            </div>
+            <div class="mt-4 mt-md-0">
+                <div class="nav nav-pills nav-pills-custom bg-white p-1 rounded-3 border shadow-sm">
+                    <a class="nav-link {{ ($type ?? 'event') == 'event' ? 'active' : '' }}" 
+                    href="{{ route('admin.crm.feedback.index', ['type' => 'event'] + request()->except('type', 'course_id')) }}">
+                    <i class="bi bi-calendar-event me-1"></i> Event
+                    </a>
+                    <a class="nav-link {{ ($type ?? 'event') == 'course' ? 'active' : '' }}" 
+                    href="{{ route('admin.crm.feedback.index', ['type' => 'course'] + request()->except('type', 'event_id')) }}">
+                    <i class="bi bi-journal-text me-1"></i> Course
+                    </a>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
 <!-- Filter Box -->
 <div class="card-minimal mb-4">
@@ -218,5 +345,7 @@
             </div>
         </div>
     </div>
+</div>
+    </main>
 </div>
 @endsection

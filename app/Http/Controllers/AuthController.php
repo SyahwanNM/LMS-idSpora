@@ -105,6 +105,15 @@ class AuthController extends Controller
             $avatarFileName = basename($storedPath);
         }
 
+        // Check for referrer
+        $referrerId = null;
+        if ($request->filled('referrer_code')) {
+            $referrer = User::where('referral_code', $request->referrer_code)->first();
+            if ($referrer) {
+                $referrerId = $referrer->id;
+            }
+        }
+
         // Simpan payload pendaftaran di sesi
         session([
             'register_payload' => [
@@ -112,6 +121,7 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password),
                 'avatar' => $avatarFileName,
+                'referrer_id' => $referrerId,
             ],
         ]);
 
@@ -292,6 +302,7 @@ class AuthController extends Controller
                     'password' => $payload['password_hash'],
                     'role' => 'user',
                     'avatar' => $payload['avatar'] ?? null,
+                    'referrer_id' => $payload['referrer_id'] ?? null,
                     'email_verified_at' => now(),
                 ]);
             } else {

@@ -83,12 +83,7 @@
                     <i class="bi bi-grid-fill"></i> Ringkasan
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('finance', this)">
-                    <i class="bi bi-wallet2"></i> Keuangan & Payout
-                    <span class="badge bg-danger rounded-pill ms-auto">3</span>
-                </a>
-            </li>
+
             <li class="nav-item">
                 <a class="nav-link rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('resellers', this)">
                     <i class="bi bi-people-fill"></i> Data Reseller
@@ -114,7 +109,7 @@
         <div class="offcanvas-body p-3">
             <ul class="nav flex-column gap-2">
                 <li><a class="nav-link active p-3 bg-light rounded-3 text-dark fw-bold" href="#" onclick="switchView('dashboard', null); closeOffcanvas()">Ringkasan</a></li>
-                <li><a class="nav-link p-3 text-secondary" href="#" onclick="switchView('finance', null); closeOffcanvas()">Keuangan (3 Pending)</a></li>
+
                 <li><a class="nav-link p-3 text-secondary" href="#" onclick="switchView('resellers', null); closeOffcanvas()">Data Reseller</a></li>
                 <li class="mt-4"><a class="nav-link p-3 text-danger border rounded-3" href="#">Keluar</a></li>
             </ul>
@@ -149,17 +144,15 @@
 
                 <div class="row g-4 mb-5">
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm rounded-4 h-100 hover-card bg-warning bg-opacity-10 border border-warning">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 hover-card bg-primary bg-opacity-10 border border-primary">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between mb-3">
-                                    <div class="bg-white text-warning rounded-3 p-2 shadow-sm" style="width: 48px; height: 48px; display: grid; place-items: center;">
-                                        <i class="bi bi-hourglass-split fs-4"></i>
+                                    <div class="bg-white text-primary rounded-3 p-2 shadow-sm" style="width: 48px; height: 48px; display: grid; place-items: center;">
+                                        <i class="bi bi-people-fill fs-4"></i>
                                     </div>
-                                    <span class="badge bg-warning text-dark align-self-start">Urgent</span>
                                 </div>
-                                <h3 class="fw-bold mb-1">3 Request</h3>
-                                <p class="text-muted small mb-0">Permintaan penarikan pending.</p>
-                                <button class="btn btn-warning btn-sm w-100 mt-3 fw-bold shadow-sm" onclick="switchView('finance', document.querySelectorAll('.nav-link')[1])">Proses Sekarang</button>
+                                <h3 class="fw-bold mb-1">{{ $activeResellersCount }} User</h3>
+                                <p class="text-muted small mb-0">Reseller aktif terdaftar.</p>
                             </div>
                         </div>
                     </div>
@@ -168,11 +161,11 @@
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between mb-3">
                                     <div class="bg-success bg-opacity-10 text-success rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
-                                        <i class="bi bi-cash-stack fs-4"></i>
+                                        <i class="bi bi-cart-check-fill fs-4"></i>
                                     </div>
                                 </div>
-                                <h3 class="fw-bold mb-1">Rp 12.5jt</h3>
-                                <p class="text-muted small mb-0">Total komisi dibayarkan bulan ini.</p>
+                                <h3 class="fw-bold mb-1">{{ $totalSalesCount }} Sales</h3>
+                                <p class="text-muted small mb-0">Total konversi/penjualan berhasil.</p>
                             </div>
                         </div>
                     </div>
@@ -180,13 +173,12 @@
                         <div class="card border-0 shadow-sm rounded-4 h-100 hover-card">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between mb-3">
-                                    <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
-                                        <i class="bi bi-people-fill fs-4"></i>
+                                    <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-2" style="width: 48px; height: 48px; display: grid; place-items: center;">
+                                        <i class="bi bi-clock-history fs-4"></i>
                                     </div>
-                                    <span class="text-success small fw-bold"><i class="bi bi-arrow-up"></i> +12%</span>
                                 </div>
-                                <h3 class="fw-bold mb-1">142 User</h3>
-                                <p class="text-muted small mb-0">Reseller aktif terdaftar.</p>
+                                <h3 class="fw-bold mb-1">{{ $totalPendingReferrals }} Pending</h3>
+                                <p class="text-muted small mb-0">Referral menunggu verifikasi.</p>
                             </div>
                         </div>
                     </div>
@@ -205,122 +197,27 @@
                                 <h6 class="fw-bold mb-0">Top Performer</h6>
                             </div>
                             <div class="list-group list-group-flush">
+                                @forelse($topResellers as $index => $reseller)
                                 <div class="list-group-item p-3 border-0 d-flex align-items-center gap-3">
-                                    <div class="bg-light rounded-circle fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">JO</div>
-                                    <div>
-                                        <h6 class="mb-0 fw-bold small">Jocua Cuherman</h6>
-                                        <small class="text-success">Rp 1.2jt komisi</small>
+                                    <div class="bg-light rounded-circle fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        {{ strtoupper(substr($reseller->name, 0, 2)) }}
                                     </div>
-                                    <span class="ms-auto badge bg-warning text-dark">#1</span>
-                                </div>
-                                <div class="list-group-item p-3 border-0 d-flex align-items-center gap-3">
-                                    <div class="bg-light rounded-circle fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">VS</div>
                                     <div>
-                                        <h6 class="mb-0 fw-bold small">Ver Sianu</h6>
-                                        <small class="text-success">Rp 990k komisi</small>
+                                        <h6 class="mb-0 fw-bold small">{{ $reseller->name }}</h6>
+                                        <small class="text-success">Rp {{ number_format($reseller->total_earned / 1000, 0, ',', '.') }}k komisi</small>
                                     </div>
-                                    <span class="ms-auto badge bg-secondary">#2</span>
+                                    <span class="ms-auto badge {{ $index == 0 ? 'bg-warning text-dark' : ($index == 1 ? 'bg-secondary' : 'bg-light text-muted') }}">#{{ $index + 1 }}</span>
                                 </div>
+                                @empty
+                                    <p class="p-4 text-center text-muted small">Belum ada data.</p>
+                                @endforelse
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="finance-view" class="view-section" style="display: none;">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 gap-3">
-                    <div>
-                        <h2 class="fw-bold text-dark mb-1">Keuangan & Payout</h2>
-                        <p class="text-secondary mb-0">Kelola permintaan penarikan dana dari reseller.</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary rounded-3">History</button>
-                        <button class="btn btn-dark rounded-3"><i class="bi bi-download me-2"></i>Export</button>
-                    </div>
-                </div>
 
-                <div class="alert alert-warning border-0 rounded-3 d-flex align-items-center gap-3 mb-4 shadow-sm" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill fs-4 text-warning-emphasis"></i>
-                    <div>
-                        <strong>Perhatian!</strong> Ada 3 permintaan penarikan baru yang menunggu persetujuan Anda.
-                    </div>
-                </div>
-
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0" style="min-width: 600px;">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="py-3 ps-4 text-secondary text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Reseller</th>
-                                    <th class="py-3 text-secondary text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Bank Tujuan</th>
-                                    <th class="py-3 text-secondary text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Nominal</th>
-                                    <th class="py-3 text-secondary text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Status</th>
-                                    <th class="py-3 pe-4 text-end text-secondary text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="ps-4 py-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-3 bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">VS</div>
-                                            <div>
-                                                <div class="fw-bold text-dark">Ver Sianu</div>
-                                                <small class="text-muted">Silver Tier</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-dark">BCA</div>
-                                        <small class="text-muted font-monospace">1234567890</small>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-dark fs-6">Rp 150.000</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3 py-2 rounded-pill">Pending</span>
-                                    </td>
-                                    <td class="pe-4 text-end">
-                                        <button class="btn btn-primary btn-sm px-3 py-2 rounded-pill fw-bold" 
-                                            onclick="openReviewModal('Ver Sianu', '150000', 'BCA', '1234567890', 'a.n Ver Sianu')">
-                                            Tinjau
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="ps-4 py-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-3 bg-warning bg-opacity-10 text-warning-emphasis fw-bold d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">JO</div>
-                                            <div>
-                                                <div class="fw-bold text-dark">Jocua C.</div>
-                                                <small class="text-muted">Gold Tier</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-dark">GoPay</div>
-                                        <small class="text-muted font-monospace">0812345678</small>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-dark fs-6">Rp 50.000</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3 py-2 rounded-pill">Pending</span>
-                                    </td>
-                                    <td class="pe-4 text-end">
-                                        <button class="btn btn-primary btn-sm px-3 py-2 rounded-pill fw-bold" 
-                                            onclick="openReviewModal('Jocua C.', '50000', 'GoPay', '0812345678', 'a.n Jocua')">
-                                            Tinjau
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="card-footer bg-white py-3 text-center">
-                        <small class="text-muted">Menampilkan 2 dari 2 permintaan pending</small>
-                    </div>
-                </div>
-            </div>
 
             <div id="resellers-view" class="view-section" style="display: none;">
                 <h2 class="fw-bold text-dark mb-4">Data Reseller</h2>
@@ -328,22 +225,44 @@
                     <div class="card-body">
                         <p class="text-muted">Halaman ini akan berisi daftar lengkap seluruh user reseller, status keaktifan, dan total pendapatan mereka.</p>
                         <div class="table-responsive">
-                            <table class="table">
-                                <thead>
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light">
                                     <tr>
-                                        <th>Nama</th>
+                                        <th>Reseller</th>
                                         <th>Email</th>
+                                        <th>Kode</th>
+                                        <th>Total Earnings</th>
                                         <th>Join Date</th>
-                                        <th>Status</th>
+                                        <th>Tier</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @foreach($resellers as $reseller)
                                     <tr>
-                                        <td>Budi Santoso</td>
-                                        <td>budi@example.com</td>
-                                        <td>10 Jan 2026</td>
-                                        <td><span class="badge bg-success">Active</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                    {{ strtoupper(substr($reseller->name, 0, 2)) }}
+                                                </div>
+                                                <div class="fw-semibold">{{ $reseller->name }}</div>
+                                            </div>
+                                        </td>
+                                        <td>{{ $reseller->email }}</td>
+                                        <td><span class="badge bg-light text-dark border"><code>{{ $reseller->referral_code }}</code></span></td>
+                                        <td class="fw-bold text-success">Rp {{ number_format($reseller->total_earned ?? 0, 0, ',', '.') }}</td>
+                                        <td class="small">{{ $reseller->created_at->format('d M Y') }}</td>
+                                        <td>
+                                            @php
+                                                $count = $reseller->referrals_count;
+                                                $tier = 'Bronze';
+                                                $class = 'bg-secondary';
+                                                if($count >= 151) { $tier = 'Gold'; $class = 'bg-warning text-dark'; }
+                                                elseif($count >= 51) { $tier = 'Silver'; $class = 'bg-info text-dark'; }
+                                            @endphp
+                                            <span class="badge {{ $class }}">{{ $tier }}</span>
+                                        </td>
                                     </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>
@@ -353,58 +272,6 @@
 
         </div>
     </main>
-
-    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 rounded-4 shadow-lg">
-                <div class="modal-header border-0 pb-0 pt-4 px-4">
-                    <h5 class="modal-title fw-bold">Konfirmasi Transfer</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    
-                    <div class="bg-light p-4 rounded-4 mb-4 text-center border border-dashed">
-                        <small class="text-uppercase text-secondary fw-bold" style="font-size: 0.7rem; letter-spacing: 1px;">TOTAL TRANSFER</small>
-                        <h1 class="fw-bold text-success my-2" id="modalAmount">Rp 0</h1>
-                        <span class="badge bg-white border text-dark rounded-pill px-3" id="modalReseller">Nama User</span>
-                    </div>
-
-                    <ul class="list-group list-group-flush mb-4 rounded-3 border">
-                        <li class="list-group-item d-flex justify-content-between py-3">
-                            <span class="text-secondary">Bank Tujuan</span>
-                            <span class="fw-bold text-dark" id="modalBank">BCA</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between py-3">
-                            <span class="text-secondary">No. Rekening</span>
-                            <span class="fw-bold text-dark font-monospace" id="modalRekening">1234567890</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between py-3">
-                            <span class="text-secondary">Atas Nama</span>
-                            <span class="fw-bold text-dark" id="modalName">Nama Pemilik</span>
-                        </li>
-                    </ul>
-
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success py-3 rounded-3 fw-bold shadow-sm" data-bs-dismiss="modal">
-                            <i class="bi bi-check-circle-fill me-2"></i> Sudah Ditransfer (Approve)
-                        </button>
-                        <button class="btn btn-outline-danger py-3 rounded-3 fw-bold" data-bs-toggle="collapse" data-bs-target="#rejectSection">
-                            Tolak Permintaan
-                        </button>
-                    </div>
-
-                    <div class="collapse mt-3" id="rejectSection">
-                        <div class="card card-body bg-danger bg-opacity-10 border-danger border-opacity-25 rounded-3 border-0">
-                            <label class="small fw-bold text-danger mb-2">Alasan Penolakan:</label>
-                            <textarea class="form-control mb-2" rows="2" placeholder="Contoh: Nomor rekening salah..."></textarea>
-                            <button class="btn btn-danger btn-sm w-100">Konfirmasi Tolak</button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -430,21 +297,6 @@
             if (bsOffcanvas) bsOffcanvas.hide();
         }
 
-        // 3. Logic Isi Data Modal secara Dinamis
-        function openReviewModal(name, amount, bank, rek, holder) {
-            document.getElementById('modalReseller').innerText = name;
-            document.getElementById('modalBank').innerText = bank;
-            document.getElementById('modalRekening').innerText = rek;
-            document.getElementById('modalName').innerText = holder;
-            
-            // Format Rupiah
-            const formatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-            document.getElementById('modalAmount').innerText = formatted;
-
-            // Show Modal
-            const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
-            modal.show();
-        }
 
         // 4. Initialize Chart (Dummy Data)
         const ctx = document.getElementById('dashboardChart');
@@ -452,12 +304,12 @@
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+                    labels: @json($chartLabels),
                     datasets: [{
                         label: 'Reseller Baru',
-                        data: [2, 5, 3, 8, 4, 10, 6],
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        data: @json($chartValues),
+                        borderColor: '#B45309',
+                        backgroundColor: 'rgba(217, 119, 6, 0.1)',
                         fill: true,
                         tension: 0.4
                     }]

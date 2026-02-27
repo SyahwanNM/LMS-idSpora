@@ -16,7 +16,9 @@ class Withdrawal extends Model
         'bank_name',
         'account_number',
         'account_holder',
-        'status'
+        'status',
+        'proof_of_transfer',
+        'rejected_reason'
     ];
 
     // Relasi ke User (Setiap penarikan milik satu user)
