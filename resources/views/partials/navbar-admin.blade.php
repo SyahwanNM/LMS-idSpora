@@ -6,16 +6,36 @@
                 <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:32px; width:auto;">
                 <span class="fw-semibold">Admin</span>
             </a>
+            <!-- Left Menu -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <li class="nav-item">
+          <a class="nav-link {{ request()->routeIs('admin.reseller.dashboard') ? 'active' : '' }}"
+             href="{{ route('admin.reseller.dashboard') }}">
+             Ringkasan
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {{ request()->routeIs('admin.reseller.finance*') ? 'active' : '' }}"
+             href="{{ route('admin.reseller.finance') }}">
+             Keuangan
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {{ request()->routeIs('admin.reseller.data*') ? 'active' : '' }}"
+             href="{{ route('admin.reseller.data') }}">
+             Data Reseller
+          </a>
+        </li>
+
+      </ul>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item ">
-                        <a class="nav-link" href="{{ route('admin.dashboard') }}">
-                            <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
-                        </a>
-                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
@@ -47,23 +67,43 @@
         </div>
     </nav>
         <!-- Logout Confirmation Modal -->
-        <div class="modal fade" id="confirmLogoutModal" tabindex="-1" aria-labelledby="confirmLogoutLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="confirmLogoutLabel">Konfirmasi Logout</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal fade logout-modal" id="confirmLogoutModal" tabindex="-1" aria-labelledby="confirmLogoutLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-md">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="logout-icon" aria-hidden="true">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </div>
+                            <div>
+                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Konfirmasi Logout</h5>
+                                <small class="text-muted">Pastikan ini memang Anda</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
-                    <div class="modal-body">
-                        <p class="mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
-                        <div class="logout-check form-check d-flex align-items-center gap-2">
-                            <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck">
-                            <label class="form-check-label" for="logoutConfirmCheck">Saya yakin ingin logout</label>
+                    <div class="modal-body pt-0">
+                        <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
+
+                        <div class="logout-check d-flex align-items-start gap-3 p-3 rounded-3">
+                            
+                            <div class="flex-grow-1">
+                                <div class="form-check m-0">
+                                    <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck" aria-describedby="logoutConfirmHelp">
+                                    <label class="form-check-label fw-semibold" for="logoutConfirmCheck">Saya yakin ingin logout</label>
+                                </div>
+                                <small id="logoutConfirmHelp" class="text-muted d-block mt-1">Anda akan keluar dari sesi admin dan perlu login kembali.</small>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="button" class="btn btn-danger" id="logoutConfirmBtn" disabled>Logout</button>
+                    <div class="modal-footer border-0 pt-0">
+                        <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn" disabled>
+                                <span class="me-1">Logout</span>
+                                <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

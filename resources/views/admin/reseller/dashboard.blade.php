@@ -26,7 +26,7 @@
                 <div class="text-muted small mb-3">Dari <strong>3 reseller</strong> menunggu</div>
                 
                 <div class="mt-auto">
-                    <button class="btn btn-warning btn-sm w-100 fw-bold shadow-sm" onclick="switchView('finance', document.querySelectorAll('.sidebar')[1])">Proses Sekarang</button>
+                    <button class="btn btn-warning btn-sm w-100 fw-bold shadow-sm" onclick="window.location.href='{{ route('admin.reseller.finance') }}'">Proses Sekarang</button>
                 </div>
             </div>
         </div>

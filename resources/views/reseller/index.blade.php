@@ -261,7 +261,7 @@
                         </div>
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
-                            <p>Dapatkan komisi 10% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
+                            <p>Dapatkan komisi 10-15% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
                         </div>
                     </div>
                 </div>

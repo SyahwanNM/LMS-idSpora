@@ -14,7 +14,30 @@ class ResellerController extends Controller
 {
     public function admin()
     {
-        return view('admin.reseller.index');
+        return view('admin.reseller.index', [
+            'activeView' => 'dashboard',
+        ]);
+    }
+
+    public function dashboard()
+    {
+        return view('admin.reseller.index', [
+            'activeView' => 'dashboard',
+        ]);
+    }
+
+    public function finance()
+    {
+        return view('admin.reseller.index', [
+            'activeView' => 'finance',
+        ]);
+    }
+
+    public function data()
+    {
+        return view('admin.reseller.index', [
+            'activeView' => 'resellers',
+        ]);
     }
 
     public function index()
