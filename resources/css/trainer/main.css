@@ -6,9 +6,6 @@
 
 /* Import Components */
 @import url("components/sidebar.css");
-@import url("components/card.css");
-@import url("dashboard.css");
-@import url("pages.css");
 
 /* CSS Variables */
 :root {
