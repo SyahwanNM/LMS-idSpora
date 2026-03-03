@@ -194,11 +194,11 @@
 
             <!-- Referral Tools Section -->
             <div class="card mb-4  shadow-sm">
-                <div class="card-body mt-3 mb-2">
-                    <h5 class="fw-bold"><i class="bi bi-megaphone-fill text-warning text-secondary me-2"></i>Referral
-                        Tools</h5>
-
-                    <!-- Referral Input Fields (Code, Link, Caption) -->
+                    <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">
+            <i class="bi bi-megaphone-fill text-warning me-3"></i>
+            Referral Tools
+        </h5>
                     <div class="row g-4 mt-1 align-items-end">
                         <div class="col-lg-4">
                             <label for="referralCode"
@@ -252,16 +252,16 @@
                     <div class="row row-cols-1 g-4 mt-1">
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-share-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>Bagikan kode referralmu ke teman, keluarga, atau media sosial dan mulai kumpulkan keuntungan!</p>
+                            <p class="mt-3 text-body-secondary">Bagikan kode referralmu ke teman, keluarga, atau media sosial dan mulai kumpulkan keuntungan!</p>
                         </div>
 
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-gift-fill fs-1 mb-2 text-warning"></i><br>
-                            <p>Temanmu otomatis dapat diskon 10% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
+                            <p class="mt-3 text-body-secondary">Temanmu otomatis dapat diskon 10% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
                         </div>
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
-                            <p>Dapatkan komisi 10-15% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
+                            <p class="mt-3 text-body-secondary">Dapatkan komisi 10-15% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
                         </div>
                     </div>
                 </div>
@@ -270,7 +270,6 @@
 
             <!-- Recent Referrals Table-->
             <div class="row g-4 mb-4">
-                {{-- Level Section --}}
                 {{-- Level Section --}}
                 <div class="col-lg-4">
                     <div class="card h-100 shadow-sm rounded-4">
@@ -481,7 +480,14 @@
                 <div class="col-lg-4">
                     <div class="card h-100 shadow-sm rounded-4">
                         <div class="card-body p-4 d-flex flex-column gap-3">
-                            <h5 class="fw-bold mb-0">Riwayat Referral</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+    <h5 class="fw-bold mb-0">Riwayat Referral</h5>
+    
+    {{-- UBAH BAGIAN HREF INI --}}
+    <a href="{{ route('reseller.history.download') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-3 shadow-sm" title="Download Riwayat">
+        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
+    </a>
+</div>
 
                             @forelse($history as $item)
                             <div class="d-flex align-items-center justify-content-between">
@@ -499,8 +505,7 @@
                                             {{ $item->referredUser->name ?? 'Pengguna Baru' }}
                                         </div>
                                         <small class="text-muted" style="font-size: 11px;">
-                                            {{ $item->created_at->format('d M') }} • {{ Str::limit($item->description ??
-                                            'Referral', 10) }}
+                                            {{ $item->created_at->format('d M Y') }}
                                         </small>
                                     </div>
                                 </div>
@@ -530,15 +535,87 @@
 
             </div>
 
+            <!-- Withdraw History -->
+            <div class="card mb-4 shadow-sm rounded-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-4">
+            <i class="bi bi-arrow-up-right-circle-fill text-warning me-3"></i>
+            Riwayat Penarikan Dana
+        </h5>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border-top mb-0">
+                <thead>
+                    <tr class="text-muted small">
+                        <th class="py-3 border-0">ID Penarikan</th>
+                        <th class="py-3 border-0">Tanggal Pengajuan</th>
+                        <th class="py-3 border-0">Total</th>
+                        <th class="py-3 border-0 text-center">Status</th>
+                        <th class="py-3 border-0">Tanggal Diproses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    @forelse($user->withdrawals()->latest()->get() as $wd)
+                    <tr>
+                        <td class="py-3">
+                            <div class="fw-bold text-dark">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
+                            <small class="text-muted">{{ $wd->bank_name }}</small>
+                        </td>
+                        <td>
+                            <div class="text-dark">{{ $wd->created_at->format('d M Y') }}</div>
+                            <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
+                        </td>
+                        <td class="fw-bold text-dark">
+                            Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                        </td>
+                        <td class="text-center">
+                            @if($wd->status == 'approved')
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Approved
+                                </span>
+                            @elseif($wd->status == 'rejected')
+                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                                </span>
+                            @else
+                                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3">
+                                    <i class="bi bi-clock-fill me-1"></i> Pending
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($wd->status != 'pending')
+                                <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
+                                <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
+                            @else
+                                <span class="text-muted small fst-italic">Belum diproses</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted small">
+                            <i class="bi bi-wallet2 fs-1 opacity-25 d-block mb-3"></i>
+                            Belum ada riwayat penarikan dana.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 
 
             {{-- <div class="card mb-4"> --}}
                 <div class="card mb-4  shadow-sm">
                     <div class="card-body p-4">
-                        <h6 class="fw-semibold mb-3 align-items-center d-flex">
-                            <i class="bi bi-question-circle text-warning fs-20 me-4"></i>
-                            Frequently Asked Questions
-                        </h6>
+                        <h5 class="fw-bold mb-4">
+            <i class="bi bi-question-circle-fill text-warning me-3"></i>
+            Frequently Asked Questions
+        </h5>
 
                         <div class="accordion" id="faqAccordion">
 

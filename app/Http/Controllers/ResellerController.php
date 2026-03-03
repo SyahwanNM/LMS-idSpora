@@ -14,30 +14,51 @@ class ResellerController extends Controller
 {
     public function admin()
     {
-        return view('admin.reseller.index', [
-            'activeView' => 'dashboard',
-        ]);
-    }
+        // 1. Stats
+        $activeResellersCount = User::whereNotNull('referral_code')->count();
+        $totalSalesCount = Referral::where('status', 'paid')->count();
+        $totalPendingReferrals = Referral::where('status', 'pending')->count();
+        $pendingRequestsCount = Withdrawal::where('status', 'pending')->count(); // Tetap diambil untuk record tapi mungkin tidak ditampilkan utuh sebagai menu penarikan di sini
 
-    public function dashboard()
-    {
-        return view('admin.reseller.index', [
-            'activeView' => 'dashboard',
-        ]);
-    }
+        // 2. Resellers List
+        $resellers = User::whereNotNull('referral_code')
+            ->withCount('referrals')
+            ->withSum(['referrals as total_earned' => function($q) {
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->latest()
+            ->get();
 
-    public function finance()
-    {
-        return view('admin.reseller.index', [
-            'activeView' => 'finance',
-        ]);
-    }
+        // 3. Top Performer
+        $topResellers = User::whereNotNull('referral_code')
+            ->withSum(['referrals as total_earned' => function($q) {
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->orderByDesc('total_earned')
+            ->take(5)
+            ->get();
 
-    public function data()
-    {
-        return view('admin.reseller.index', [
-            'activeView' => 'resellers',
-        ]);
+        // 4. Chart Data (7 days)
+        $chartLabels = [];
+        $chartValues = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = \Carbon\Carbon::now()->subDays($i);
+            $count = User::whereNotNull('referral_code')
+                ->whereDate('created_at', $date->toDateString())
+                ->count();
+            $chartLabels[] = $date->format('D');
+            $chartValues[] = $count;
+        }
+
+        return view('admin.reseller', compact(
+            'activeResellersCount',
+            'totalSalesCount',
+            'totalPendingReferrals',
+            'resellers',
+            'topResellers',
+            'chartLabels',
+            'chartValues'
+        ));
     }
 
     public function index()
@@ -111,6 +132,11 @@ class ResellerController extends Controller
         // Ranking kita = jumlah orang di atas kita + 1
         $userRank = $usersAhead + 1;
 
+        $registrations = \App\Models\EventRegistration::where('user_id', $user->id)
+            ->with('event')
+            ->latest()
+            ->get();
+
         return view('reseller.index', compact(
             'user', 
             'totalEarnings', 
@@ -124,7 +150,8 @@ class ResellerController extends Controller
             'nextLevelTarget',
             'history',
             'topResellers',
-            'userRank' // <-- Variable baru untuk ranking di bawah HR
+            'userRank',
+            'registrations'
         ));
     }
 
@@ -211,5 +238,19 @@ class ResellerController extends Controller
         return response()->json([
             'message' => 'Permintaan penarikan berhasil diajukan!'
         ], 200);
+    }
+    public function downloadHistory()
+    {
+        $user = Auth::user();
+        
+        // Ambil data history
+        $history = $user->referrals()->with('referredUser')->latest()->get();
+        
+        // Hitung total uang untuk Summary
+        $totalKomisi = $history->where('status', 'paid')->sum('amount');
+        $pendingKomisi = $history->where('status', 'pending')->sum('amount');
+
+        // Tampilkan view report yang baru kita buat
+        return view('reseller.report', compact('user', 'history', 'totalKomisi', 'pendingKomisi'));
     }
 }

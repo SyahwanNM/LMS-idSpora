@@ -399,7 +399,7 @@
                     <p>Kode Referral <span style="color:#888; font-weight:400;">(opsional)</span></p>
                     <div style="display: flex; gap: 10px;">
                         <input class="kolom_input_biodata" style="margin-bottom:0;" type="text" id="referralCodeInput"
-                            name="referral_code" placeholder="Masukkan kode referral (jika ada)">
+                            name="referral_code" placeholder="Masukkan kode referral (jika ada)" value="{{ request()->cookie('referral_code') ?? old('referral_code') }}">
                         <button type="button" id="btnCheckReferral" class="btn_nomor"
                             style="background-color:#FFC107; border:none; font-weight:600;">Cek</button>
                     </div>
@@ -443,9 +443,9 @@
 
                 <!-- Manual payment via QRIS: show QR image modal when clicking Bayar -->
                 @php
-                $isFreeCourse = (int) ($course->price ?? 0) <= 0; @endphp <form id="manualPaymentForm" method="POST"
-                    action="{{ $isFreeCourse ? route('midtrans.pay', $course) : '#' }}"
-                    data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
+                    $isFreeCourse = (int) ($course->price ?? 0) <= 0;
+                @endphp
+                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">

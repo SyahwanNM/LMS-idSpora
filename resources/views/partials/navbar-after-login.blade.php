@@ -727,8 +727,8 @@ function toggleNotificationDropdown() {
             if (desktopBtn) {
                 const rect = desktopBtn.getBoundingClientRect();
                 dropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-                dropdown.style.left = (rect.right - 380) + 'px';
-                dropdown.style.right = 'auto';
+                dropdown.style.right = '40px';
+                dropdown.style.left = 'auto';
                 dropdown.style.position = 'absolute';
             }
         } else if (backdrop) {
@@ -800,8 +800,8 @@ function toggleUserDropdown() {
             if (desktopBtn) {
                 const rect = desktopBtn.getBoundingClientRect();
                 dropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-                dropdown.style.left = (rect.right - 220) + 'px';
-                dropdown.style.right = 'auto';
+                dropdown.style.right = '40px';
+                dropdown.style.left = 'auto';
                 dropdown.style.position = 'absolute';
             }
         } else {
