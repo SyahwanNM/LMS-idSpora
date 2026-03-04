@@ -45,7 +45,7 @@
                                     <td><span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-tag-fill text-warning me-1"></i>{{ $reseller->referral_code }}</span></td>
                                     <td class="fw-bold text-success">Rp {{ number_format($reseller->total_earned ?? 0, 0, ',', '.') }}</td>
                                     <td>
-                                        <div class="fw-bold">{{ $reseller->referrals_count ?? 0 }} Org</div>
+                                        <div class="fw-bold">{{ $reseller->referrals_count ?? 0 }} Klien</div>
                                         <div class="small text-muted">Join: {{ $reseller->created_at?->format('d M Y') ?? '-' }}</div>
                                     </td>
                                     <td>

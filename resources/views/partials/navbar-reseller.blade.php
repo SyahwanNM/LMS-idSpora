@@ -148,7 +148,7 @@
 <div class="sidebar-desktop d-none d-lg-flex">
     <div class="p-4 d-flex align-items-center gap-3 mb-2">
         <a class="navbar-brand d-flex align-items-center text-dark" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('images/logo-idspora-light.png') }}" alt="IdSpora" style="height:35px; margin-right:5px;">
+                <img src="{{ asset('images/logo-idspora-light.png') }}" alt="IdSpora" style="height:35px; margin-right:10px;">
                 <h5 class="fw-bold">Admin Reseller</h5>
         </a>
     </div>

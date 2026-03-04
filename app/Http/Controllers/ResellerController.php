@@ -36,7 +36,7 @@ class ResellerController extends Controller
         for ($i = 11; $i >= 0; $i--) { 
             $date = \Carbon\Carbon::now()->startOfMonth()->subMonths($i);
             
-            // Ganti jadi menghitung jumlah Transaksi Referral yang PAID
+            // menghitung jumlah Transaksi Referral yang PAID
             $count = Referral::where('status', 'paid')
                 ->whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
