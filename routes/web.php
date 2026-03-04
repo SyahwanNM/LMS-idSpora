@@ -363,10 +363,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
-        Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
-        Route::get('/admin/reseller/dashboard', [ResellerController::class, 'dashboard'])->name('admin.reseller.dashboard');
-        Route::get('/admin/reseller/finance', [ResellerController::class, 'finance'])->name('admin.reseller.finance');
-        Route::get('/admin/reseller/data-reseller', [ResellerController::class, 'data'])->name('admin.reseller.data');
+        Route::get('/admin/reseller/dashboard', [App\Http\Controllers\ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
+Route::get('/admin/reseller/data', [App\Http\Controllers\ResellerController::class, 'adminData'])->name('admin.reseller.data');
 
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])

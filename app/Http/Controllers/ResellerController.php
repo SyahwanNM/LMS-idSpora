@@ -12,24 +12,14 @@ use Illuminate\Support\Str;
 
 class ResellerController extends Controller
 {
-    public function admin()
+    // Fungsi 1: Khusus nampilin Dashboard & Grafik Admin
+    public function adminDashboard()
     {
-        // 1. Stats
         $activeResellersCount = User::whereNotNull('referral_code')->count();
         $totalSalesCount = Referral::where('status', 'paid')->count();
         $totalPendingReferrals = Referral::where('status', 'pending')->count();
-        $pendingRequestsCount = Withdrawal::where('status', 'pending')->count(); // Tetap diambil untuk record tapi mungkin tidak ditampilkan utuh sebagai menu penarikan di sini
 
-        // 2. Resellers List
-        $resellers = User::whereNotNull('referral_code')
-            ->withCount('referrals')
-            ->withSum(['referrals as total_earned' => function ($q) {
-                $q->where('status', 'paid');
-            }], 'amount')
-            ->latest()
-            ->get();
-
-        // 3. Top Performer
+        // Ambil top 5 reseller
         $topResellers = User::whereNotNull('referral_code')
             ->withSum(['referrals as total_earned' => function ($q) {
                 $q->where('status', 'paid');
@@ -38,27 +28,46 @@ class ResellerController extends Controller
             ->take(5)
             ->get();
 
-        // 4. Chart Data (7 days)
+
+        // Chart Data (12 Bulan Terakhir) - MENGHITUNG TRANSAKSI REFERRAL SUKSES
         $chartLabels = [];
         $chartValues = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = \Carbon\Carbon::now()->subDays($i);
-            $count = User::whereNotNull('referral_code')
-                ->whereDate('created_at', $date->toDateString())
+        
+        for ($i = 11; $i >= 0; $i--) { 
+            $date = \Carbon\Carbon::now()->startOfMonth()->subMonths($i);
+            
+            // Ganti jadi menghitung jumlah Transaksi Referral yang PAID
+            $count = Referral::where('status', 'paid')
+                ->whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
                 ->count();
-            $chartLabels[] = $date->format('D');
+            
+            $chartLabels[] = $date->format('M Y'); 
             $chartValues[] = $count;
         }
 
-        return view('admin.reseller', compact(
+        return view('admin.reseller.dashboard', compact(
             'activeResellersCount',
             'totalSalesCount',
             'totalPendingReferrals',
-            'resellers',
             'topResellers',
             'chartLabels',
             'chartValues'
         ));
+    }
+
+    // Fungsi 2: Khusus nampilin Tabel Data Reseller untuk Admin
+    public function adminData()
+    {
+        $resellers = User::whereNotNull('referral_code')
+            ->withCount('referrals')
+            ->withSum(['referrals as total_earned' => function ($q) {
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->latest()
+            ->get();
+
+        return view('admin.reseller.data', compact('resellers'));
     }
 
     public function index()
@@ -85,7 +94,7 @@ class ResellerController extends Controller
 
         // --- 2. Hitung Conversion Rate ---
         // Rumus: Conversion Rate = (Lunas / (Lunas + Ditolak)) x 100%
-        
+
         // Yang SUDAH DICEK ADMIN (Paid & Rejected)
         $processedReferrals = $allReferrals->filter(function ($item) {
             return in_array(strtolower($item->status), ['paid', 'rejected']);
@@ -259,7 +268,7 @@ class ResellerController extends Controller
         // 1. Ambil data history KECUALI yang statusnya 'rejected'
         $history = $user->referrals()
             ->where('status', '!=', 'rejected')
-            ->with(['referredUser']) 
+            ->with(['referredUser'])
             ->latest()
             ->get();
 

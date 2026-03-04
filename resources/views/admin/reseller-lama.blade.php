@@ -1,4 +1,4 @@
-@include('partials.navbar-admin')
+@include('partials.navbar-reseller')
 <!DOCTYPE html>
 <html lang="id">
 
@@ -20,27 +20,12 @@
             background-color: #F8FAFC; /* Slate-50 */
         }
 
-        /* Sidebar Fixed Width untuk Desktop */
-        .sidebar-desktop {
-            width: 280px;
-            height: 100vh;
-            position: fixed;
-            overflow-y: auto;
-            border-right: 1px solid #e9ecef;
-            background: white;
-        }
-
         /* Main Content Offset */
         .main-content {
             margin-left: 280px;
             transition: margin-left 0.3s ease;
         }
 
-        /* Responsive Fix */
-        @media (max-width: 992px) {
-            .sidebar-desktop { display: none; }
-            .main-content { margin-left: 0; }
-        }
 
         /* Animasi Hover Card */
         .hover-card {
@@ -51,84 +36,11 @@
             box-shadow: 0 .5rem 1rem rgba(0,0,0,.05)!important;
         }
 
-        /* Active Menu Styling */
-        .sidebar.active {
-            background-color: #FEF3C7; /* Amber-100 */
-            color: #B45309; /* Amber-700 */
-            font-weight: 600;
-        }
-        .sidebar {
-            color: #64748B;
-            transition: all 0.2s ease;
-            text-decoration: none;
-        }
-        .sidebar:hover {
-            background-color: #FFFBEB;
-            color: #B45309;
-        }
     </style>
 </head>
 
 <body>
-
-    <div class="sidebar-desktop d-none d-lg-block p-3 z-3">
-        <div class="d-flex align-items-center gap-2 px-3 mb-5 mt-2">
-            <div class="bg-warning rounded-3 p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                <i class="bi bi-flower1 text-white fs-5"></i>
-            </div>
-            <h5 class="fw-bold mb-0 text-dark">IdSpora Admin</h5>
-        </div>
-
-        <small class="text-uppercase text-secondary fw-bold px-3 mb-2 d-block" style="font-size: 0.75rem;">Menu Utama</small>
-        <ul class="nav flex-column gap-1 mb-4">
-            <li class="nav-item">
-                <a class="sidebar rounded-3 px-3 py-2 active d-flex align-items-center gap-3" href="#" onclick="switchView('dashboard', this)">
-                    <i class="bi bi-grid-fill"></i> Ringkasan
-                </a>
-            </li>
-
-            <li class="nav-item">
-                <a class="sidebar rounded-3 px-3 py-2 d-flex align-items-center gap-3" href="#" onclick="switchView('resellers', this)">
-                    <i class="bi bi-people-fill"></i> Data Reseller
-                </a>
-            </li>
-        </ul>
-
-        <small class="text-uppercase text-secondary fw-bold px-3 mb-2 d-block" style="font-size: 0.75rem;">Akun</small>
-        <ul class="nav flex-column gap-1">
-            <li class="nav-item">
-                <a class="sidebar rounded-3 px-3 py-2 d-flex align-items-center gap-3 text-danger" href="#">
-                    <i class="bi bi-box-arrow-right"></i> Keluar
-                </a>
-            </li>
-        </ul>
-    </div>
-
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar">
-        <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title fw-bold">IdSpora Admin</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body p-3">
-            <ul class="nav flex-column gap-2">
-                <li><a class="nav-link active p-3 bg-light rounded-3 text-dark fw-bold" href="#" onclick="switchView('dashboard', null); closeOffcanvas()">Ringkasan</a></li>
-
-                <li><a class="nav-link p-3 text-secondary" href="#" onclick="switchView('resellers', null); closeOffcanvas()">Data Reseller</a></li>
-                <li class="mt-4"><a class="nav-link p-3 text-danger border rounded-3" href="#">Keluar</a></li>
-            </ul>
-        </div>
-    </div>
-
     <main class="main-content min-vh-100">
-        
-        <nav class="navbar bg-white border-bottom sticky-top px-4 py-3 d-lg-none">
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-light border" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
-                    <i class="bi bi-list fs-5"></i>
-                </button>
-                <span class="fw-bold">Admin Panel</span>
-            </div>
-        </nav>
 
         <div class="p-4 p-md-5">
             
@@ -221,25 +133,22 @@
                 </div>
             </div>
 
-
-
-            [DI SINI TAMBAHIN Nama	Kode Referral	Level	Total Earnings	Total Referral	Status]
-            [TRUS KALO DIKLIK SI USERNYA BAKAL MUNCUL DETAIL-DETAILNYA SALAH SATUNYAKEK SIAPA AJA YANG DAH MAKE KODE DIA GITU BUAT MEMUDAHKAN CEKNYA]
             <div id="resellers-view" class="view-section" style="display: none;">
                 <h2 class="fw-bold text-dark mb-4">Data Reseller</h2>
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-body">
-                        <p class="text-muted">Halaman ini akan berisi daftar lengkap seluruh user reseller, status keaktifan, dan total pendapatan mereka.</p>
+                        <p class="text-muted">Halaman ini berisi daftar lengkap seluruh user reseller, status keaktifan, total referral, dan pendapatannya.</p>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th>Reseller</th>
-                                        <th>Email</th>
-                                        <th>Kode</th>
+                                        <th>Profil Reseller</th>
+                                        <th>Kode Referral</th>
                                         <th>Total Earnings</th>
+                                        <th>Total Referral</th>
                                         <th>Join Date</th>
-                                        <th>Tier</th>
+                                        <th>Level</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -247,27 +156,89 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                                <div class="avatar-sm bg-light text-dark rounded-circle d-flex align-items-center justify-content-center fw-bold border border-warning" style="width: 36px; height: 36px; font-size: 0.8rem;">
                                                     {{ strtoupper(substr($reseller->name, 0, 2)) }}
                                                 </div>
-                                                <div class="fw-semibold">{{ $reseller->name }}</div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ $reseller->name }}</div>
+                                                    <div class="small text-muted" style="font-size:11px;">{{ $reseller->email }}</div>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td>{{ $reseller->email }}</td>
-                                        <td><span class="badge bg-light text-dark border"><code>{{ $reseller->referral_code }}</code></span></td>
+                                        <td><span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-tag-fill text-warning me-1"></i> {{ $reseller->referral_code }}</span></td>
                                         <td class="fw-bold text-success">Rp {{ number_format($reseller->total_earned ?? 0, 0, ',', '.') }}</td>
-                                        <td class="small">{{ $reseller->created_at->format('d M Y') }}</td>
+                                        <td class="fw-bold">{{ $reseller->referrals_count ?? 0 }} Org</td>
+                                        <td class="small text-muted">{{ $reseller->created_at?->format('d M Y') ?? '-' }}</td>
                                         <td>
                                             @php
-                                                $count = $reseller->referrals_count;
+                                                $count = $reseller->referrals_count ?? 0;
                                                 $tier = 'Bronze';
                                                 $class = 'bg-secondary';
                                                 if($count >= 151) { $tier = 'Gold'; $class = 'bg-warning text-dark'; }
                                                 elseif($count >= 51) { $tier = 'Silver'; $class = 'bg-info text-dark'; }
                                             @endphp
-                                            <span class="badge {{ $class }}">{{ $tier }}</span>
+                                            <span class="badge {{ $class }} rounded-pill px-3">{{ $tier }}</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#detailModal{{ $reseller->id }}">
+                                                <i class="bi bi-person-lines-fill me-1"></i> Detail
+                                            </button>
                                         </td>
                                     </tr>
+
+                                    <div class="modal fade" id="detailModal{{ $reseller->id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                            <div class="modal-content border-0 rounded-4 shadow">
+                                                <div class="modal-header border-0 pb-0">
+                                                    <h5 class="modal-title fw-bold">
+                                                        <i class="bi bi-people-fill text-warning me-2"></i> Daftar Referral: {{ $reseller->name }}
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body p-4">
+                                                    <div class="table-responsive border rounded-3">
+                                                        <table class="table table-sm table-hover align-middle mb-0">
+                                                            <thead class="bg-light text-muted small">
+                                                                <tr>
+                                                                    <th class="ps-3 py-3 border-bottom-0">Nama Pengguna</th>
+                                                                    <th class="py-3 border-bottom-0">Tanggal Daftar</th>
+                                                                    <th class="py-3 border-bottom-0">Status Komisi</th>
+                                                                    <th class="text-end pe-3 py-3 border-bottom-0">Jumlah</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @forelse($reseller->referrals()->with('referredUser')->latest()->get() as $ref)
+                                                                <tr>
+                                                                    <td class="ps-3 fw-medium text-dark">{{ $ref->referredUser->name ?? 'User Anonim' }}</td>
+                                                                    <td class="text-muted small">{{ $ref->created_at?->format('d M Y') ?? '-' }}</td>
+                                                                    <td>
+                                                                        @if(strtolower($ref->status) == 'paid')
+                                                                            <span class="badge bg-success bg-opacity-10 text-success rounded-1">Paid</span>
+                                                                        @elseif(strtolower($ref->status) == 'rejected')
+                                                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-1">Rejected</span>
+                                                                        @else
+                                                                            <span class="badge bg-warning bg-opacity-10 text-warning rounded-1">Pending</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="text-end pe-3 fw-bold {{ strtolower($ref->status) == 'rejected' ? 'text-decoration-line-through text-danger opacity-75' : 'text-success' }}">
+                                                                        Rp {{ number_format($ref->amount, 0, ',', '.') }}
+                                                                    </td>
+                                                                </tr>
+                                                                @empty
+                                                                <tr>
+                                                                    <td colspan="4" class="text-center text-muted py-4">Belum ada pengguna yang memakai kode ini.</td>
+                                                                </tr>
+                                                                @endforelse
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0 pt-0">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     @endforeach
                                 </tbody>
                             </table>
@@ -303,8 +274,7 @@
             if (bsOffcanvas) bsOffcanvas.hide();
         }
 
-
-        // 4. Initialize Chart (Dummy Data)
+        // 3. Initialize Chart (Dummy Data)
         const ctx = document.getElementById('dashboardChart');
         if(ctx) {
             new Chart(ctx, {
