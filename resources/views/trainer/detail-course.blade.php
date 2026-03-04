@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
-  @vite(['resources/css/app.css'])
+  @vite(['resources/css/app.css', 'resources/css/trainer/main.css'])
   <link rel="stylesheet" href="/assets/css/detail-course.css" />
   <title>Document</title>
 </head>
@@ -2276,383 +2276,385 @@
   </style>
 
   <body>
-    @include('trainer.partials.sidebar', ['activeMenu' => 'course'])
-    <main class="detail-course">
-      <section class="course-hero">
-        <div class="hero-head">
-          <button class="hero-back" type="button">
-            <i class="bi bi-chevron-left back-icon"></i>
-            REPOSITORY LEDGER
-          </button>
-
-          <div class="hero-badges">
-            <span class="hero-pill-accent">INTERMEDIATE TIER</span>
-            <span class="hero-pill-outline">CUR-ID: C1</span>
-          </div>
-        </div>
-
-        <div class="hero-body">
-          <div class="hero-copy">
-            <p class="hero-kicker">
-              <i class="bi bi-star-fill kicker-icon"></i>ACADEMIC CURRICULUM •
-              DETAIL
-            </p>
-            <h1>Visual Branding <span>Architecture</span></h1>
-            <div class="hero-stats">
-              <div class="stat-chip">
-                <i class="bi bi-people"></i>
-                <div>
-                  <p class="stat-label">ENROLLMENT</p>
-                  <p class="stat-value">850 Learners</p>
-                </div>
-              </div>
-              <div class="stat-chip">
-                <i class="bi bi-folder"></i>
-                <div>
-                  <p class="stat-label">STRUCTURE</p>
-                  <p class="stat-value">4 Academic Units</p>
-                </div>
-              </div>
-              <div class="stat-chip">
-                <i class="bi bi-star"></i>
-                <div>
-                  <p class="stat-label">RATING</p>
-                  <p class="stat-value">4.9 / 5.0</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="hero-media">
-            <div class="hero-image-wrap">
-              <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=360&fit=crop"
-                alt="Visual Branding Architecture" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div class="course-tabs">
-        <button class="tab-pill active" type="button">
-          <i class="bi bi-clipboard-check"></i>
-          <span>Curriculum Map</span>
-        </button>
-        <button class="tab-pill" type="button">
-          <i class="bi bi-file-earmark-text"></i>
-          <span>Quiz Recap</span>
-        </button>
-        <button class="tab-pill" type="button">
-          <i class="bi bi-people"></i>
-          <span>Enrollment</span>
-        </button>
-      </div>
-
-      <div class="course-layout">
-        <!-- Tab 1: Curriculum Map -->
-        <section id="curriculum-map" class="tab-content active">
-          <div class="unit-header">
-            <p>ACADEMIC UNITS</p>
-            <button class="btn-propose" type="button">
-              <i class="bi bi-plus"></i> PROPOSE UNIT
+    <div class="trainer-page">
+      @include('trainer.partials.sidebar', ['activeMenu' => 'course'])
+      <main class="detail-course">
+        <section class="course-hero">
+          <div class="hero-head">
+            <button class="hero-back" type="button">
+              <i class="bi bi-chevron-left back-icon"></i>
+              REPOSITORY LEDGER
             </button>
-          </div>
 
-          <div class="unit-card">
-            <div class="unit-top">
-              <div class="unit-index">01</div>
-              <div class="unit-title">
-                <h3>Academic Unit: Module 1</h3>
-                <div class="unit-meta">
-                  <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
-                  <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
-                </div>
-              </div>
-              <button class="unit-toggle" type="button">
-                <i class="bi bi-chevron-down"></i>
-              </button>
-            </div>
-            <div class="unit-assets">
-              <div class="asset-mini" data-redirect="content-studio.html?tab=module">
-                <i class="bi bi-file-earmark-pdf"></i>
-                <div>
-                  <h4>Lecture Slides</h4>
-                  <p>PDF Material</p>
-                </div>
-              </div>
-              <div class="asset-mini" data-redirect="content-studio.html?tab=module">
-                <i class="bi bi-film"></i>
-                <div>
-                  <h4>Session Recording</h4>
-                  <p>Video Asset</p>
-                </div>
-              </div>
-              <div class="asset-mini" data-redirect="content-studio.html?tab=quiz">
-                <i class="bi bi-check-circle"></i>
-                <div>
-                  <h4>Unit Assessment</h4>
-                  <p>Quiz Engine</p>
-                </div>
-              </div>
+            <div class="hero-badges">
+              <span class="hero-pill-accent">INTERMEDIATE TIER</span>
+              <span class="hero-pill-outline">CUR-ID: C1</span>
             </div>
           </div>
 
-          <div class="unit-card compact">
-            <div class="unit-top">
-              <div class="unit-index index-02">02</div>
-              <div class="unit-title">
-                <h3>Academic Unit: Module 2</h3>
-                <div class="unit-meta">
-                  <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
-                  <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
-                </div>
-              </div>
-              <button class="unit-toggle" type="button">
-                <i class="bi bi-chevron-down"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="unit-card compact">
-            <div class="unit-top">
-              <div class="unit-index index-03">03</div>
-              <div class="unit-title">
-                <h3>Academic Unit: Module 3</h3>
-                <div class="unit-meta">
-                  <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
-                  <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
-                </div>
-              </div>
-              <button class="unit-toggle" type="button">
-                <i class="bi bi-chevron-down"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="unit-card compact">
-            <div class="unit-top">
-              <div class="unit-index index-04">04</div>
-              <div class="unit-title">
-                <h3>Academic Unit: Module 4</h3>
-                <div class="unit-meta">
-                  <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
-                  <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
-                </div>
-              </div>
-              <button class="unit-toggle" type="button">
-                <i class="bi bi-chevron-down"></i>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- Tab 2: Quiz Recap -->
-        <section id="quiz-recap" class="tab-content">
-          <div class="recap-stats">
-            <div class="stat-box">
-              <p class="stat-box-label">CLASS AVERAGE</p>
-              <div class="stat-box-content">
-                <h2>84%</h2>
-                <div class="stat-box-icon green">
-                  <i class="bi bi-graph-up-arrow"></i>
-                </div>
-              </div>
-              <p class="stat-box-sub">
-                <i class="bi bi-check-circle-fill"></i> AUTOMATED CALCULATION
+          <div class="hero-body">
+            <div class="hero-copy">
+              <p class="hero-kicker">
+                <i class="bi bi-star-fill kicker-icon"></i>ACADEMIC CURRICULUM •
+                DETAIL
               </p>
-            </div>
-            <div class="stat-box">
-              <p class="stat-box-label">TOTAL SUBMISSIONS</p>
-              <div class="stat-box-content">
-                <h2>4</h2>
-                <div class="stat-box-icon purple">
-                  <i class="bi bi-bar-chart-line"></i>
+              <h1>Visual Branding <span>Architecture</span></h1>
+              <div class="hero-stats">
+                <div class="stat-chip">
+                  <i class="bi bi-people"></i>
+                  <div>
+                    <p class="stat-label">ENROLLMENT</p>
+                    <p class="stat-value">850 Learners</p>
+                  </div>
+                </div>
+                <div class="stat-chip">
+                  <i class="bi bi-folder"></i>
+                  <div>
+                    <p class="stat-label">STRUCTURE</p>
+                    <p class="stat-value">4 Academic Units</p>
+                  </div>
+                </div>
+                <div class="stat-chip">
+                  <i class="bi bi-star"></i>
+                  <div>
+                    <p class="stat-label">RATING</p>
+                    <p class="stat-value">4.9 / 5.0</p>
+                  </div>
                 </div>
               </div>
-              <p class="stat-box-sub">
-                <i class="bi bi-dot"></i> LIVE FEED REGISTRY
-              </p>
+            </div>
+            <div class="hero-media">
+              <div class="hero-image-wrap">
+                <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=360&fit=crop"
+                  alt="Visual Branding Architecture" />
+              </div>
             </div>
           </div>
+        </section>
 
-          <div class="grading-registry">
-            <div class="registry-header">
-              <h3>AUTOMATIC GRADING REGISTRY</h3>
-              <button class="export-btn" type="button">
-                <i class="bi bi-download"></i> EXPORT LEDGER
+        <div class="course-tabs">
+          <button class="tab-pill active" type="button">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Curriculum Map</span>
+          </button>
+          <button class="tab-pill" type="button">
+            <i class="bi bi-file-earmark-text"></i>
+            <span>Quiz Recap</span>
+          </button>
+          <button class="tab-pill" type="button">
+            <i class="bi bi-people"></i>
+            <span>Enrollment</span>
+          </button>
+        </div>
+
+        <div class="course-layout">
+          <!-- Tab 1: Curriculum Map -->
+          <section id="curriculum-map" class="tab-content active">
+            <div class="unit-header">
+              <p>ACADEMIC UNITS</p>
+              <button class="btn-propose" type="button">
+                <i class="bi bi-plus"></i> PROPOSE UNIT
               </button>
             </div>
-            <div class="registry-table">
-              <div class="table-header">
-                <div class="col-learner">LEARNER</div>
-                <div class="col-submission">SUBMISSION TIME</div>
-                <div class="col-score">SYSTEM SCORE</div>
-                <div class="col-certificate">CERTIFICATE</div>
-              </div>
-              <div class="table-row">
-                <div class="col-learner">
-                  <img src="https://i.pravatar.cc/40?img=1" alt="Alex Rivera" />
-                  <div>
-                    <h4>Alex Rivera</h4>
-                    <p>ID: S1</p>
-                  </div>
-                </div>
-                <div class="col-submission">
-                  <p>2024-03-15</p>
-                  <span>09:45</span>
-                </div>
-                <div class="col-score">
-                  <span class="score-bullet green"></span>
-                  <strong>80/100</strong>
-                </div>
-                <div class="col-certificate">
-                  <span class="badge-issued"><i class="bi bi-check-circle"></i> ISSUED</span>
-                </div>
-              </div>
-              <div class="table-row">
-                <div class="col-learner">
-                  <img src="https://i.pravatar.cc/40?img=5" alt="Jessica Wong" />
-                  <div>
-                    <h4>Jessica Wong</h4>
-                    <p>ID: S2</p>
-                  </div>
-                </div>
-                <div class="col-submission">
-                  <p>2024-03-15</p>
-                  <span>10:20</span>
-                </div>
-                <div class="col-score">
-                  <span class="score-bullet green"></span>
-                  <strong>100/100</strong>
-                </div>
-                <div class="col-certificate">
-                  <span class="badge-issued"><i class="bi bi-check-circle"></i> ISSUED</span>
-                </div>
-              </div>
-              <div class="table-row">
-                <div class="col-learner">
-                  <img src="https://i.pravatar.cc/40?img=3" alt="Marcus Thorne" />
-                  <div>
-                    <h4>Marcus Thorne</h4>
-                    <p>ID: S3</p>
-                  </div>
-                </div>
-                <div class="col-submission">
-                  <p>2024-03-15</p>
-                  <span>11:05</span>
-                </div>
-                <div class="col-score">
-                  <span class="score-bullet orange"></span>
-                  <strong>60/100</strong>
-                </div>
-                <div class="col-certificate">
-                  <span class="badge-pending">PENDING</span>
-                </div>
-              </div>
-              <div class="table-row">
-                <div class="col-learner">
-                  <img src="https://i.pravatar.cc/40?img=9" alt="Elena Rodriguez" />
-                  <div>
-                    <h4>Elena Rodriguez</h4>
-                    <p>ID: S4</p>
-                  </div>
-                </div>
-                <div class="col-submission">
-                  <p>2024-03-16</p>
-                  <span>14:30</span>
-                </div>
-                <div class="col-score">
-                  <span class="score-bullet green"></span>
-                  <strong>95/100</strong>
-                </div>
-                <div class="col-certificate">
-                  <span class="badge-issued"><i class="bi bi-check-circle"></i> ISSUED</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- Tab 3: Enrollment -->
-        <section id="enrollment" class="tab-content">
-          <div class="enrollment-header">
-            <h3>ENROLLED LEARNERS</h3>
-            <span class="total-badge">5 TOTAL</span>
-          </div>
-          <div class="learner-grid">
-            <div class="learner-card">
-              <img src="https://i.pravatar.cc/80?img=1" alt="Alex Rivera" />
-              <div class="learner-info">
-                <h4>Alex Rivera</h4>
-                <p>ALEX.R@EXAMPLE.COM</p>
-                <span class="learner-date">2024-01-10</span>
+            <div class="unit-card">
+              <div class="unit-top">
+                <div class="unit-index">01</div>
+                <div class="unit-title">
+                  <h3>Academic Unit: Module 1</h3>
+                  <div class="unit-meta">
+                    <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
+                    <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
+                  </div>
+                </div>
+                <button class="unit-toggle" type="button">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+              <div class="unit-assets">
+                <div class="asset-mini" data-redirect="content-studio.html?tab=module">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  <div>
+                    <h4>Lecture Slides</h4>
+                    <p>PDF Material</p>
+                  </div>
+                </div>
+                <div class="asset-mini" data-redirect="content-studio.html?tab=module">
+                  <i class="bi bi-film"></i>
+                  <div>
+                    <h4>Session Recording</h4>
+                    <p>Video Asset</p>
+                  </div>
+                </div>
+                <div class="asset-mini" data-redirect="content-studio.html?tab=quiz">
+                  <i class="bi bi-check-circle"></i>
+                  <div>
+                    <h4>Unit Assessment</h4>
+                    <p>Quiz Engine</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="learner-card">
-              <img src="https://i.pravatar.cc/80?img=5" alt="Jessica Wong" />
-              <div class="learner-info">
-                <h4>Jessica Wong</h4>
-                <p>JESS.W@EXAMPLE.COM</p>
-                <span class="learner-date">2024-01-12</span>
-              </div>
-            </div>
-            <div class="learner-card inactive">
-              <img src="https://i.pravatar.cc/80?img=3" alt="Marcus Thorne" />
-              <div class="learner-info">
-                <h4>Marcus Thorne</h4>
-                <p>MARCUS.T@EXAMPLE.COM</p>
-                <span class="learner-date">2024-01-15</span>
-              </div>
-              <span class="inactive-badge">CHURN</span>
-            </div>
-            <div class="learner-card inactive">
-              <img src="https://i.pravatar.cc/80?img=9" alt="Elena Rodriguez" />
-              <div class="learner-info">
-                <h4>Elena Rodriguez</h4>
-                <p>ELENA.R@EXAMPLE.COM</p>
-                <span class="learner-date">2024-01-20</span>
-              </div>
-              <span class="inactive-badge">CHURN</span>
-            </div>
-            <div class="learner-card">
-              <img src="https://i.pravatar.cc/80?img=7" alt="David Kim" />
-              <div class="learner-info">
-                <h4>David Kim</h4>
-                <p>DAVID.K@EXAMPLE.COM</p>
-                <span class="learner-date">2024-02-01</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <aside class="course-right">
-          <div class="grading-card">
-            <div class="grading-head">
-              <i class="bi bi-lightning-fill grading-icon"></i>
-              <p>GRADING PROTOCOL</p>
-            </div>
-            <div class="grading-status">
-              <p>Oversight Status</p>
-              <h4>Active Automated</h4>
-            </div>
-            <ul class="grading-notes">
-              <li>System automatically calculates percentage scores.</li>
-              <li>Manual overrides are disabled for audit compliance.</li>
-            </ul>
-            <button class="grading-btn" type="button">View Audit Ledger</button>
-          </div>
-
-          <div class="instructor-card">
-            <p class="instructor-title">INSTRUCTOR HUB</p>
-            <div class="instructor-item">
-              <span class="dot"></span>
-              <div>
-                <h4>Submit Assets</h4>
-                <p>Pedagogical Materials</p>
+            <div class="unit-card compact">
+              <div class="unit-top">
+                <div class="unit-index index-02">02</div>
+                <div class="unit-title">
+                  <h3>Academic Unit: Module 2</h3>
+                  <div class="unit-meta">
+                    <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
+                    <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
+                  </div>
+                </div>
+                <button class="unit-toggle" type="button">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
               </div>
             </div>
-          </div>
-        </aside>
-      </div>
-    </main>
+
+            <div class="unit-card compact">
+              <div class="unit-top">
+                <div class="unit-index index-03">03</div>
+                <div class="unit-title">
+                  <h3>Academic Unit: Module 3</h3>
+                  <div class="unit-meta">
+                    <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
+                    <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
+                  </div>
+                </div>
+                <button class="unit-toggle" type="button">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="unit-card compact">
+              <div class="unit-top">
+                <div class="unit-index index-04">04</div>
+                <div class="unit-title">
+                  <h3>Academic Unit: Module 4</h3>
+                  <div class="unit-meta">
+                    <span><i class="bi bi-folder"></i> 3 OPERATIONAL ASSETS</span>
+                    <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
+                  </div>
+                </div>
+                <button class="unit-toggle" type="button">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Tab 2: Quiz Recap -->
+          <section id="quiz-recap" class="tab-content">
+            <div class="recap-stats">
+              <div class="stat-box">
+                <p class="stat-box-label">CLASS AVERAGE</p>
+                <div class="stat-box-content">
+                  <h2>84%</h2>
+                  <div class="stat-box-icon green">
+                    <i class="bi bi-graph-up-arrow"></i>
+                  </div>
+                </div>
+                <p class="stat-box-sub">
+                  <i class="bi bi-check-circle-fill"></i> AUTOMATED CALCULATION
+                </p>
+              </div>
+              <div class="stat-box">
+                <p class="stat-box-label">TOTAL SUBMISSIONS</p>
+                <div class="stat-box-content">
+                  <h2>4</h2>
+                  <div class="stat-box-icon purple">
+                    <i class="bi bi-bar-chart-line"></i>
+                  </div>
+                </div>
+                <p class="stat-box-sub">
+                  <i class="bi bi-dot"></i> LIVE FEED REGISTRY
+                </p>
+              </div>
+            </div>
+
+            <div class="grading-registry">
+              <div class="registry-header">
+                <h3>AUTOMATIC GRADING REGISTRY</h3>
+                <button class="export-btn" type="button">
+                  <i class="bi bi-download"></i> EXPORT LEDGER
+                </button>
+              </div>
+              <div class="registry-table">
+                <div class="table-header">
+                  <div class="col-learner">LEARNER</div>
+                  <div class="col-submission">SUBMISSION TIME</div>
+                  <div class="col-score">SYSTEM SCORE</div>
+                  <div class="col-certificate">CERTIFICATE</div>
+                </div>
+                <div class="table-row">
+                  <div class="col-learner">
+                    <img src="https://i.pravatar.cc/40?img=1" alt="Alex Rivera" />
+                    <div>
+                      <h4>Alex Rivera</h4>
+                      <p>ID: S1</p>
+                    </div>
+                  </div>
+                  <div class="col-submission">
+                    <p>2024-03-15</p>
+                    <span>09:45</span>
+                  </div>
+                  <div class="col-score">
+                    <span class="score-bullet green"></span>
+                    <strong>80/100</strong>
+                  </div>
+                  <div class="col-certificate">
+                    <span class="badge-issued"><i class="bi bi-check-circle"></i> ISSUED</span>
+                  </div>
+                </div>
+                <div class="table-row">
+                  <div class="col-learner">
+                    <img src="https://i.pravatar.cc/40?img=5" alt="Jessica Wong" />
+                    <div>
+                      <h4>Jessica Wong</h4>
+                      <p>ID: S2</p>
+                    </div>
+                  </div>
+                  <div class="col-submission">
+                    <p>2024-03-15</p>
+                    <span>10:20</span>
+                  </div>
+                  <div class="col-score">
+                    <span class="score-bullet green"></span>
+                    <strong>100/100</strong>
+                  </div>
+                  <div class="col-certificate">
+                    <span class="badge-issued"><i class="bi bi-check-circle"></i> ISSUED</span>
+                  </div>
+                </div>
+                <div class="table-row">
+                  <div class="col-learner">
+                    <img src="https://i.pravatar.cc/40?img=3" alt="Marcus Thorne" />
+                    <div>
+                      <h4>Marcus Thorne</h4>
+                      <p>ID: S3</p>
+                    </div>
+                  </div>
+                  <div class="col-submission">
+                    <p>2024-03-15</p>
+                    <span>11:05</span>
+                  </div>
+                  <div class="col-score">
+                    <span class="score-bullet orange"></span>
+                    <strong>60/100</strong>
+                  </div>
+                  <div class="col-certificate">
+                    <span class="badge-pending">PENDING</span>
+                  </div>
+                </div>
+                <div class="table-row">
+                  <div class="col-learner">
+                    <img src="https://i.pravatar.cc/40?img=9" alt="Elena Rodriguez" />
+                    <div>
+                      <h4>Elena Rodriguez</h4>
+                      <p>ID: S4</p>
+                    </div>
+                  </div>
+                  <div class="col-submission">
+                    <p>2024-03-16</p>
+                    <span>14:30</span>
+                  </div>
+                  <div class="col-score">
+                    <span class="score-bullet green"></span>
+                    <strong>95/100</strong>
+                  </div>
+                  <div class="col-certificate">
+                    <span class="badge-issued"><i class="bi bi-check-circle"></i> ISSUED</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Tab 3: Enrollment -->
+          <section id="enrollment" class="tab-content">
+            <div class="enrollment-header">
+              <h3>ENROLLED LEARNERS</h3>
+              <span class="total-badge">5 TOTAL</span>
+            </div>
+            <div class="learner-grid">
+              <div class="learner-card">
+                <img src="https://i.pravatar.cc/80?img=1" alt="Alex Rivera" />
+                <div class="learner-info">
+                  <h4>Alex Rivera</h4>
+                  <p>ALEX.R@EXAMPLE.COM</p>
+                  <span class="learner-date">2024-01-10</span>
+                </div>
+              </div>
+              <div class="learner-card">
+                <img src="https://i.pravatar.cc/80?img=5" alt="Jessica Wong" />
+                <div class="learner-info">
+                  <h4>Jessica Wong</h4>
+                  <p>JESS.W@EXAMPLE.COM</p>
+                  <span class="learner-date">2024-01-12</span>
+                </div>
+              </div>
+              <div class="learner-card inactive">
+                <img src="https://i.pravatar.cc/80?img=3" alt="Marcus Thorne" />
+                <div class="learner-info">
+                  <h4>Marcus Thorne</h4>
+                  <p>MARCUS.T@EXAMPLE.COM</p>
+                  <span class="learner-date">2024-01-15</span>
+                </div>
+                <span class="inactive-badge">CHURN</span>
+              </div>
+              <div class="learner-card inactive">
+                <img src="https://i.pravatar.cc/80?img=9" alt="Elena Rodriguez" />
+                <div class="learner-info">
+                  <h4>Elena Rodriguez</h4>
+                  <p>ELENA.R@EXAMPLE.COM</p>
+                  <span class="learner-date">2024-01-20</span>
+                </div>
+                <span class="inactive-badge">CHURN</span>
+              </div>
+              <div class="learner-card">
+                <img src="https://i.pravatar.cc/80?img=7" alt="David Kim" />
+                <div class="learner-info">
+                  <h4>David Kim</h4>
+                  <p>DAVID.K@EXAMPLE.COM</p>
+                  <span class="learner-date">2024-02-01</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="course-right">
+            <div class="grading-card">
+              <div class="grading-head">
+                <i class="bi bi-lightning-fill grading-icon"></i>
+                <p>GRADING PROTOCOL</p>
+              </div>
+              <div class="grading-status">
+                <p>Oversight Status</p>
+                <h4>Active Automated</h4>
+              </div>
+              <ul class="grading-notes">
+                <li>System automatically calculates percentage scores.</li>
+                <li>Manual overrides are disabled for audit compliance.</li>
+              </ul>
+              <button class="grading-btn" type="button">View Audit Ledger</button>
+            </div>
+
+            <div class="instructor-card">
+              <p class="instructor-title">INSTRUCTOR HUB</p>
+              <div class="instructor-item">
+                <span class="dot"></span>
+                <div>
+                  <h4>Submit Assets</h4>
+                  <p>Pedagogical Materials</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {

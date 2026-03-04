@@ -7,7 +7,7 @@
 /* Import Components */
 @import url("components/sidebar.css");
 
-/* CSS Variables */
+/* CSS Variables - Global untuk diakses di .trainer-page */
 :root {
     /* Colors */
     --base-clr: #f8fafc;
@@ -98,21 +98,24 @@
     --breakpoint-xl: 1280px;
 }
 
-/* Global Reset */
-* {
-    margin: 0;
-    padding: 0;
+/* Scoped Reset untuk .trainer-page */
+.trainer-page,
+.trainer-page *,
+.trainer-page *::before,
+.trainer-page *::after {
     box-sizing: border-box;
 }
 
-/* Base Styles */
-html {
+.trainer-page * {
+    margin: 0;
+    padding: 0;
+}
+
+/* Base Styles - Scoped ke .trainer-page */
+.trainer-page {
     font-family: var(--font-family-base);
     line-height: var(--line-height-normal);
     font-size: var(--font-size-base);
-}
-
-body {
     min-height: 100vh;
     min-height: 100dvh;
     background-color: var(--base-clr);
@@ -124,7 +127,7 @@ body {
 }
 
 /* Main Content Styles */
-.main-content {
+.trainer-page .main-content {
     padding: var(--spacing-4xl);
     overflow-y: auto;
     max-width: 1200px;
@@ -132,48 +135,48 @@ body {
     width: 100%;
 }
 
-.dashboard-content {
+.trainer-page .dashboard-content {
     padding: var(--spacing-4xl);
     overflow-y: auto;
 }
 
 /* Typography Defaults */
-h1 {
+.trainer-page h1 {
     font-size: var(--font-size-6xl);
     font-weight: 800;
     line-height: var(--line-height-tight);
     margin: 0 0 var(--spacing-lg) 0;
 }
 
-h2 {
+.trainer-page h2 {
     font-size: var(--font-size-4xl);
     font-weight: 800;
     line-height: var(--line-height-tight);
     margin: 0 0 var(--spacing-md) 0;
 }
 
-h3 {
+.trainer-page h3 {
     font-size: var(--font-size-2xl);
     font-weight: 700;
     line-height: var(--line-height-tight);
     margin: 0 0 var(--spacing-md) 0;
 }
 
-h4 {
+.trainer-page h4 {
     font-size: var(--font-size-lg);
     font-weight: 700;
     line-height: var(--line-height-tight);
     margin: 0 0 var(--spacing-sm) 0;
 }
 
-p {
+.trainer-page p {
     margin: 0;
     line-height: var(--line-height-normal);
 }
 
 /* Common Components */
-button,
-a.btn {
+.trainer-page button,
+.trainer-page a.btn {
     font-family: var(--font-family-base);
     font-weight: 700;
     border: none;
@@ -182,8 +185,8 @@ a.btn {
 }
 
 /* Cards and Containers */
-.card,
-.widget-container {
+.trainer-page .card,
+.trainer-page .widget-container {
     background: var(--white-clr);
     border: 1px solid var(--line-clr);
     border-radius: var(--radius-xl);
@@ -192,105 +195,38 @@ a.btn {
 
 /* Responsive Default */
 @media (max-width: 1024px) {
-    .main-content,
-    .dashboard-content {
+    .trainer-page .main-content,
+    .trainer-page .dashboard-content {
         padding: var(--spacing-4xl);
     }
 }
 
 @media (max-width: 768px) {
-    .main-content,
-    .dashboard-content {
+    .trainer-page .main-content,
+    .trainer-page .dashboard-content {
         padding: var(--spacing-2xl);
     }
 }
 
 @media (max-width: 600px) {
-    .main-content,
-    .dashboard-content {
+    .trainer-page .main-content,
+    .trainer-page .dashboard-content {
         padding: var(--spacing-lg);
     }
 
-    body {
+    .trainer-page {
         grid-template-columns: 1fr;
     }
 
-    h1 {
+    .trainer-page h1 {
         font-size: var(--font-size-3xl);
     }
 
-    h2 {
+    .trainer-page h2 {
         font-size: var(--font-size-2xl);
     }
 
-    h3 {
+    .trainer-page h3 {
         font-size: var(--font-size-lg);
     }
-}
-/* Navbar Styles */
-@media (min-width: 992px) {
-    .navbar-toggler {
-        display: none !important;
-    }
-}
-
-.navbar-public {
-    background: radial-gradient(
-        circle at 10% 10%,
-        #51376c 0%,
-        #2e2050 100%
-    ) !important;
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-/* Mobile Menu Styling */
-@media (max-width: 991.98px) {
-    .navbar-collapse {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background: #2e2050;
-        padding: 20px;
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .navbar-nav {
-        flex-direction: column;
-        align-items: flex-start !important;
-        width: 100%;
-    }
-
-    .navbar-nav .nav-item {
-        width: 100%;
-        margin: 5px 0 !important;
-    }
-
-    .navbar-nav .nav-link {
-        width: 100%;
-        padding: 12px 20px !important;
-    }
-}
-
-.navbar-public .nav-link {
-    color: rgba(255, 255, 255, 0.7) !important;
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.3s ease;
-    padding: 0.5rem 1rem !important;
-    border-radius: 8px;
-}
-
-.navbar-public .nav-link:hover {
-    color: #fff !important;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.navbar-public .nav-link.active {
-    color: #f4a442 !important;
-    font-weight: 700;
 }

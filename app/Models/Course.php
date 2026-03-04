@@ -21,11 +21,17 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
+        'user_id',
     ];
 
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function trainer()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function modules()
