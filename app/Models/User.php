@@ -76,6 +76,11 @@ class User extends Authenticatable
         return $this->hasMany(Enrollment::class);
     }
 
+    public function courses()
+    {
+        return $this->hasMany(Course::class, 'user_id');
+    }
+
     public function profileReminder()
     {
         return $this->hasOne(ProfileReminder::class);
@@ -95,21 +100,21 @@ class User extends Authenticatable
             // Normalize common stored formats
             // Case 1: filename only -> storage/avatars/{filename}
             if (!str_contains($avatar, '/')) {
-                return asset('uploads/avatars/'.$avatar);
+                return asset('uploads/avatars/' . $avatar);
             }
             // Case 2: path like "avatars/filename"
             if (str_starts_with($avatar, 'avatars/')) {
-                return asset('uploads/'.$avatar);
+                return asset('uploads/' . $avatar);
             }
             // Case 3: already includes "storage/" prefix
             if (str_starts_with($avatar, 'storage/')) {
                 return asset($avatar);
             }
             // Fallback: treat as relative to storage
-            return asset('uploads/'.$avatar);
+            return asset('uploads/' . $avatar);
         }
         // Fallback to UI Avatars using user's name if available
-        $name = trim((string)($this->name ?? 'User'));
+        $name = trim((string) ($this->name ?? 'User'));
         $bg = '6b7280'; // slate-500
         $color = 'ffffff';
         return 'https://ui-avatars.com/api/?name=' . urlencode($name) . "&background={$bg}&color={$color}&format=png";
@@ -134,7 +139,7 @@ class User extends Authenticatable
 
         $completed = count(array_filter($fields));
         $total = count($fields);
-        
+
         return (int) round(($completed / $total) * 100);
     }
 
@@ -156,7 +161,7 @@ class User extends Authenticatable
     public function getMissingProfileFields(): array
     {
         $missing = [];
-        
+
         if (empty($this->name)) {
             $missing[] = 'name';
         }
@@ -172,7 +177,7 @@ class User extends Authenticatable
         if (empty($this->bio)) {
             $missing[] = 'bio';
         }
-        
+
         return $missing;
     }
 
@@ -189,18 +194,18 @@ class User extends Authenticatable
         }
 
         $phone = $this->phone;
-        
+
         // Extract country code dan number
         $countryCode = $this->phone_country_code;
         $number = $this->phone_number;
-        
+
         if ($countryCode && $number) {
             // Format dengan spasi untuk readability
             $formatted = preg_replace('/(\d{3})(\d{4})(\d{0,4})/', '$1 $2 $3', $number);
             $formatted = rtrim($formatted);
             return $countryCode . ' ' . $formatted;
         }
-        
+
         // Fallback: parse dari phone field lama
         if (str_starts_with($phone, '+')) {
             // Extract country code (biasanya 1-3 digit setelah +)
@@ -213,7 +218,7 @@ class User extends Authenticatable
                 return $code . ' ' . $formatted;
             }
         }
-        
+
         // Fallback: return as is
         return $phone;
     }
@@ -230,10 +235,22 @@ class User extends Authenticatable
         }
 
         $phone = $this->phone;
-        
+
         // Cek common country codes (urutkan dari yang terpanjang ke terpendek)
         $countryCodes = [
-            '+62', '+60', '+65', '+44', '+61', '+86', '+81', '+82', '+66', '+84', '+63', '+91', '+1'
+            '+62',
+            '+60',
+            '+65',
+            '+44',
+            '+61',
+            '+86',
+            '+81',
+            '+82',
+            '+66',
+            '+84',
+            '+63',
+            '+91',
+            '+1'
         ];
 
         foreach ($countryCodes as $code) {
@@ -259,7 +276,7 @@ class User extends Authenticatable
 
         $phone = $this->phone;
         $countryCode = $this->phone_country_code;
-        
+
         if ($countryCode && str_starts_with($phone, $countryCode)) {
             $number = substr($phone, strlen($countryCode));
             // Hapus leading zero jika ada
@@ -300,17 +317,17 @@ class User extends Authenticatable
         $service = app(\App\Services\UserPointsService::class);
         $currentPoints = $this->points ?? 0;
         $currentBadge = $this->badge ?? 'beginner';
-        
+
         $badges = ['beginner', 'explorer', 'learner', 'expert', 'master'];
         $currentIndex = array_search($currentBadge, $badges);
-        
+
         if ($currentIndex !== false && $currentIndex < count($badges) - 1) {
             $nextBadge = $badges[$currentIndex + 1];
             $nextBadgeInfo = $service->getBadgeInfo($nextBadge);
             $nextBadgeInfo['points_needed'] = $nextBadgeInfo['min_points'] - $currentPoints;
             return $nextBadgeInfo;
         }
-        
+
         return null;
     }
     // Nambahin relasi
@@ -331,7 +348,7 @@ class User extends Authenticatable
             // Bikin kode random 6 karakter (angka & huruf), lalu uppercase
             // Contoh output: 616JA0
             if (empty($user->referral_code)) {
-                $user->referral_code = strtoupper(Str::random(6) . rand(10,99)); 
+                $user->referral_code = strtoupper(Str::random(6) . rand(10, 99));
             }
         });
     }

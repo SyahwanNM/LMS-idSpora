@@ -5,19 +5,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Document</title>
-  @vite(['resources/css/app.css'])
+  @vite(['resources/css/app.css', 'resources/css/trainer/main.css'])
   <link rel="stylesheet" href="/assets/css/events.css" />
 </head>
 <style>
   /* Events Page Specific Styles - Using main.css variables */
 
   main {
-    padding: var(--spacing-4xl);
+    padding: var(--spacing-2xl);
     background-color: var(--base-clr);
     overflow-y: auto;
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: none;
     width: 100%;
+  }
+
+  .trainer-page main {
+    margin: 0;
+    padding: var(--spacing-2xl);
   }
 
   .top-page {
@@ -467,189 +471,191 @@
 
 <body>
   @include('partials.navbar-before-login')
-  @include('trainer.partials.sidebar', ['activeMenu' => 'events'])
-  <main>
-    <div class="top-page">
-      <div class="glow-circle glow-circle-1"></div>
-      <div class="glow-circle glow-circle-2"></div>
+  <div class="trainer-page">
+    @include('trainer.partials.sidebar', ['activeMenu' => 'events'])
+    <main>
+      <div class="top-page">
+        <div class="glow-circle glow-circle-1"></div>
+        <div class="glow-circle glow-circle-2"></div>
 
-      <div class="top-page-inner">
-        <div class="top-page-content">
-          <div class="title-page">
-            <span class="badge-top">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="top-page-inner">
+          <div class="top-page-content">
+            <div class="title-page">
+              <span class="badge-top">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M12 3l1.912 5.813a2 2 0 001.899 1.374h6.098l-4.931 3.582a2 2 0 00-.728 2.236l1.912 5.813-4.931-3.582a2 2 0 00-2.342 0l-4.931 3.582 1.912-5.813a2 2 0 00-.728-2.236L2.091 10.187h6.098a2 2 0 001.899-1.374L12 3z" />
+                </svg>
+                <span>SCHEDULE HUB + ACADEMIC EXCELLENCE</span>
+              </span>
+              <h1>Mastering the <br /><span>Session Ledger.</span></h1>
+              <h5>
+                Orchestrate your teaching commitments with precision. Track,
+                manage, and excel in every session.
+              </h5>
+            </div>
+          </div>
+          <div class="search-filter-bar">
+            <div class="search-column">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search"
+                viewBox="0 0 16 16">
                 <path
-                  d="M12 3l1.912 5.813a2 2 0 001.899 1.374h6.098l-4.931 3.582a2 2 0 00-.728 2.236l1.912 5.813-4.931-3.582a2 2 0 00-2.342 0l-4.931 3.582 1.912-5.813a2 2 0 00-.728-2.236L2.091 10.187h6.098a2 2 0 001.899-1.374L12 3z" />
+                  d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
               </svg>
-              <span>SCHEDULE HUB + ACADEMIC EXCELLENCE</span>
-            </span>
-            <h1>Mastering the <br /><span>Session Ledger.</span></h1>
-            <h5>
-              Orchestrate your teaching commitments with precision. Track,
-              manage, and excel in every session.
-            </h5>
+              <input type="text" placeholder="Lookup Session..." />
+            </div>
+            <button class="filter-bar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel"
+                viewBox="0 0 16 16">
+                <path
+                  d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z" />
+              </svg>
+            </button>
           </div>
-        </div>
-        <div class="search-filter-bar">
-          <div class="search-column">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search"
-              viewBox="0 0 16 16">
-              <path
-                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
-            </svg>
-            <input type="text" placeholder="Lookup Session..." />
-          </div>
-          <button class="filter-bar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel"
-              viewBox="0 0 16 16">
-              <path
-                d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z" />
-            </svg>
-          </button>
         </div>
       </div>
-    </div>
-    <div class="event-list">
-      <a href="detail-event.html" class="event-card">
-        <div class="event-image-container">
-          <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
-            alt="Visual Branding Architecture" class="event-image" />
-          <div class="event-date-badge">
-            <span class="month">APRIL</span>
-            <span class="day">10</span>
-          </div>
-          <button class="event-arrow-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-            </svg>
-          </button>
-        </div>
-        <div class="event-card-content">
-          <div class="event-type-badge">
-            <span class="badge-dash">—</span>
-            <span>HYBRID SESSION</span>
-          </div>
-          <h3 class="event-card-title">Visual Branding Architecture</h3>
-          <div class="event-info-row">
-            <div class="event-info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+      <div class="event-list">
+        <a href="detail-event.html" class="event-card">
+          <div class="event-image-container">
+            <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
+              alt="Visual Branding Architecture" class="event-image" />
+            <div class="event-date-badge">
+              <span class="month">APRIL</span>
+              <span class="day">10</span>
+            </div>
+            <button class="event-arrow-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
               </svg>
-              <div class="info-text">
-                <span class="info-label">START TIME</span>
-                <span class="info-value">01:00 PM</span>
+            </button>
+          </div>
+          <div class="event-card-content">
+            <div class="event-type-badge">
+              <span class="badge-dash">—</span>
+              <span>HYBRID SESSION</span>
+            </div>
+            <h3 class="event-card-title">Visual Branding Architecture</h3>
+            <div class="event-info-row">
+              <div class="event-info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+                </svg>
+                <div class="info-text">
+                  <span class="info-label">START TIME</span>
+                  <span class="info-value">01:00 PM</span>
+                </div>
+              </div>
+              <div class="event-info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
+                </svg>
+                <div class="info-text">
+                  <span class="info-label">CAPACITY</span>
+                  <span class="info-value">30 Learners</span>
+                </div>
               </div>
             </div>
-            <div class="event-info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path
-                  d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
-              </svg>
-              <div class="info-text">
-                <span class="info-label">CAPACITY</span>
-                <span class="info-value">30 Learners</span>
-              </div>
-            </div>
           </div>
-        </div>
-      </a>
+        </a>
 
-      <a href="detail-event.html" class="event-card">
-        <div class="event-image-container">
-          <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop"
-            alt="Web Design Workshop" class="event-image" />
-          <div class="event-date-badge">
-            <span class="month">APRIL</span>
-            <span class="day">15</span>
-          </div>
-          <button class="event-arrow-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-            </svg>
-          </button>
-        </div>
-        <div class="event-card-content">
-          <div class="event-type-badge">
-            <span class="badge-dash">—</span>
-            <span>ONLINE SESSION</span>
-          </div>
-          <h3 class="event-card-title">Web Design Workshop</h3>
-          <div class="event-info-row">
-            <div class="event-info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+        <a href="detail-event.html" class="event-card">
+          <div class="event-image-container">
+            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop"
+              alt="Web Design Workshop" class="event-image" />
+            <div class="event-date-badge">
+              <span class="month">APRIL</span>
+              <span class="day">15</span>
+            </div>
+            <button class="event-arrow-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
               </svg>
-              <div class="info-text">
-                <span class="info-label">START TIME</span>
-                <span class="info-value">02:00 PM</span>
+            </button>
+          </div>
+          <div class="event-card-content">
+            <div class="event-type-badge">
+              <span class="badge-dash">—</span>
+              <span>ONLINE SESSION</span>
+            </div>
+            <h3 class="event-card-title">Web Design Workshop</h3>
+            <div class="event-info-row">
+              <div class="event-info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+                </svg>
+                <div class="info-text">
+                  <span class="info-label">START TIME</span>
+                  <span class="info-value">02:00 PM</span>
+                </div>
+              </div>
+              <div class="event-info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
+                </svg>
+                <div class="info-text">
+                  <span class="info-label">CAPACITY</span>
+                  <span class="info-value">32 Learners</span>
+                </div>
               </div>
             </div>
-            <div class="event-info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path
-                  d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
-              </svg>
-              <div class="info-text">
-                <span class="info-label">CAPACITY</span>
-                <span class="info-value">32 Learners</span>
-              </div>
-            </div>
           </div>
-        </div>
-      </a>
+        </a>
 
-      <a href="detail-event.html" class="event-card">
-        <div class="event-image-container">
-          <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
-            alt="React Masterclass" class="event-image" />
-          <div class="event-date-badge">
-            <span class="month">APRIL</span>
-            <span class="day">20</span>
-          </div>
-          <button class="event-arrow-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-            </svg>
-          </button>
-        </div>
-        <div class="event-card-content">
-          <div class="event-type-badge">
-            <span class="badge-dash">—</span>
-            <span>ONLINE SESSION</span>
-          </div>
-          <h3 class="event-card-title">React Masterclass</h3>
-          <div class="event-info-row">
-            <div class="event-info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+        <a href="detail-event.html" class="event-card">
+          <div class="event-image-container">
+            <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
+              alt="React Masterclass" class="event-image" />
+            <div class="event-date-badge">
+              <span class="month">APRIL</span>
+              <span class="day">20</span>
+            </div>
+            <button class="event-arrow-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
               </svg>
-              <div class="info-text">
-                <span class="info-label">START TIME</span>
-                <span class="info-value">10:00 AM</span>
+            </button>
+          </div>
+          <div class="event-card-content">
+            <div class="event-type-badge">
+              <span class="badge-dash">—</span>
+              <span>ONLINE SESSION</span>
+            </div>
+            <h3 class="event-card-title">React Masterclass</h3>
+            <div class="event-info-row">
+              <div class="event-info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+                </svg>
+                <div class="info-text">
+                  <span class="info-label">START TIME</span>
+                  <span class="info-value">10:00 AM</span>
+                </div>
+              </div>
+              <div class="event-info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path
+                    d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
+                </svg>
+                <div class="info-text">
+                  <span class="info-label">CAPACITY</span>
+                  <span class="info-value">58 Learners</span>
+                </div>
               </div>
             </div>
-            <div class="event-info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path
-                  d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
-              </svg>
-              <div class="info-text">
-                <span class="info-label">CAPACITY</span>
-                <span class="info-value">58 Learners</span>
-              </div>
-            </div>
           </div>
-        </div>
-      </a>
-    </div>
-  </main>
+        </a>
+      </div>
+    </main>
+  </div>
 </body>
 
 <script type="text/javascript" src="/assets/js/components/sidebar.js" defer></script>
