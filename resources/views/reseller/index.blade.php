@@ -194,11 +194,11 @@
 
             <!-- Referral Tools Section -->
             <div class="card mb-4  shadow-sm">
-                    <div class="card-body p-4">
+                <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">
-            <i class="bi bi-megaphone-fill text-warning me-3"></i>
-            Referral Tools
-        </h5>
+                        <i class="bi bi-megaphone-fill text-warning me-3"></i>
+                        Referral Tools
+                    </h5>
                     <div class="row g-4 mt-1 align-items-end">
                         <div class="col-lg-4">
                             <label for="referralCode"
@@ -252,16 +252,19 @@
                     <div class="row row-cols-1 g-4 mt-1">
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-share-fill fs-1 mb-2 text-warning"></i><br>
-                            <p class="mt-3 text-body-secondary">Bagikan kode referralmu ke teman, keluarga, atau media sosial dan mulai kumpulkan keuntungan!</p>
+                            <p class="mt-3 text-body-secondary">Bagikan kode referralmu ke teman, keluarga, atau media
+                                sosial dan mulai kumpulkan keuntungan!</p>
                         </div>
 
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-gift-fill fs-1 mb-2 text-warning"></i><br>
-                            <p class="mt-3 text-body-secondary">Temanmu otomatis dapat diskon 10% untuk setiap kursus atau event yang mereka beli pakai kodemu.</p>
+                            <p class="mt-3 text-body-secondary">Temanmu otomatis dapat diskon 10% untuk setiap kursus
+                                atau event yang mereka beli pakai kodemu.</p>
                         </div>
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
-                            <p class="mt-3 text-body-secondary">Dapatkan komisi 10-15% dari setiap transaksi yang sukses. Makin banyak ajak teman, makin cuan!</p>
+                            <p class="mt-3 text-body-secondary">Dapatkan komisi 10-15% dari setiap transaksi yang
+                                sukses. Makin banyak ajak teman, makin cuan!</p>
                         </div>
                     </div>
                 </div>
@@ -380,113 +383,120 @@
                 </div>
 
                 {{-- Top Resellers Section --}}
-<div class="col-lg-4">
-    <div class="card h-100 shadow-sm rounded-4">
-        <div class="card-body p-4 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0">Top Resellers</h5>
-                <i class="bi bi-trophy-fill text-warning fs-5"></i>
-            </div>
+                <div class="col-lg-4">
+                    <div class="card h-100 shadow-sm rounded-4">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0">Top Resellers</h5>
+                                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                            </div>
 
-            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
-                @forelse($topResellers as $index => $reseller)
-                    <li class="list-group-item px-0 py-2 d-flex align-items-center {{ $loop->last ? 'opacity-75' : '' }}">
-                        {{-- Ranking Number --}}
-                        <div class="{{ $index < 3 ? 'text-warning' : 'text-secondary' }} fst-italic me-2" style="min-width: 30px;">
-                            #{{ $index + 1 }}
+                            <ul class="list-group list-group-flush flex-grow-1 fw-medium">
+                                @forelse($topResellers as $index => $reseller)
+                                <li
+                                    class="list-group-item px-0 py-2 d-flex align-items-center {{ $loop->last ? 'opacity-75' : '' }}">
+                                    {{-- Ranking Number --}}
+                                    <div class="{{ $index < 3 ? 'text-warning' : 'text-secondary' }} fst-italic me-2"
+                                        style="min-width: 30px;">
+                                        #{{ $index + 1 }}
+                                    </div>
+
+                                    {{-- FOTO PROFIL --}}
+                                    @if(!empty($reseller->profile_photo_path))
+                                    {{-- Jika punya foto di database --}}
+                                    <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}"
+                                        alt="{{ $reseller->name }}"
+                                        class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                    @else
+                                    {{-- Fallback: Pakai UI Avatars jika tidak punya foto --}}
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($reseller->name) }}&background={{ $index < 3 ? 'ffc107' : 'e9ecef' }}&color={{ $index < 3 ? 'ffffff' : '6c757d' }}&size=40"
+                                        alt="{{ $reseller->name }}"
+                                        class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                    @endif
+
+                                    {{-- Nama & Jumlah Referral --}}
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div class="fw-bold text-dark small">{{ Str::limit($reseller->name, 15) }}</div>
+                                        <small class="text-muted" style="font-size: 11px;">{{ $reseller->referrals_count
+                                            }} referrals</small>
+                                    </div>
+
+                                    {{-- Total Cuan (Badge) --}}
+                                    <span
+                                        class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
+                                        Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
+                                    </span>
+                                </li>
+                                @empty
+                                {{-- Empty State (Tetap sama seperti sebelumnya) --}}
+                                <li class="list-group-item border-0 text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-2">Papan Peringkat Masih Kosong!</h6>
+                                    <p class="text-muted small mb-3 lh-sm">
+                                        Belum ada yang masuk daftar ini. <br>
+                                        Ayo bagikan linkmu dan jadilah <strong>Juara #1</strong>!
+                                    </p>
+                                    <button class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-4"
+                                        onclick="copyToClipboard(this, 'referralLink')">
+                                        <i class="bi bi-share-fill me-1"></i> Bagikan Sekarang
+                                    </button>
+                                </li>
+                                @endforelse
+                            </ul>
+
+                            {{-- Sticky Rank User --}}
+                            @if($topResellers->isNotEmpty())
+                            <hr>
+                            <div
+                                class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
+                                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
+
+                                {{-- FOTO PROFIL USER SENDIRI --}}
+                                @if(!empty($user->profile_photo_path))
+                                <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name }}"
+                                    class="rounded-circle border border-warning me-3"
+                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                @else
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=ffc107&color=ffffff&size=40"
+                                    alt="{{ $user->name }}" class="rounded-circle border border-warning me-3"
+                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                @endif
+
+                                <div class="flex-grow-1 lh-sm">
+                                    <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
+                                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }}
+                                        referrals</small>
+                                </div>
+                                <div class="d-flex flex-column align-items-end gap-1">
+                                    <span class="badge bg-white text-warning border border-warning rounded-pill"
+                                        style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
+                                    <span class="badge bg-light text-dark border border-warning rounded-pill">
+                                        Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                                    </span>
+                                </div>
+                            </div>
+                            @endif
                         </div>
-
-                        {{-- FOTO PROFIL --}}
-                        @if(!empty($reseller->profile_photo_path))
-                            {{-- Jika punya foto di database --}}
-                            <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}" 
-                                 alt="{{ $reseller->name }}"
-                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
-                                 style="width: 40px; height: 40px; object-fit: cover;">
-                        @else
-                            {{-- Fallback: Pakai UI Avatars jika tidak punya foto --}}
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($reseller->name) }}&background={{ $index < 3 ? 'ffc107' : 'e9ecef' }}&color={{ $index < 3 ? 'ffffff' : '6c757d' }}&size=40"
-                                 alt="{{ $reseller->name }}"
-                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
-                                 style="width: 40px; height: 40px; object-fit: cover;">
-                        @endif
-
-                        {{-- Nama & Jumlah Referral --}}
-                        <div class="flex-grow-1 lh-sm">
-                            <div class="fw-bold text-dark small">{{ Str::limit($reseller->name, 15) }}</div>
-                            <small class="text-muted" style="font-size: 11px;">{{ $reseller->referrals_count }} referrals</small>
-                        </div>
-
-                        {{-- Total Cuan (Badge) --}}
-                        <span class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
-                            Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
-                        </span>
-                    </li>
-                @empty
-                    {{-- Empty State (Tetap sama seperti sebelumnya) --}}
-                    <li class="list-group-item border-0 text-center py-5">
-                        <div class="mb-3">
-                            <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-2">Papan Peringkat Masih Kosong!</h6>
-                        <p class="text-muted small mb-3 lh-sm">
-                            Belum ada yang masuk daftar ini. <br>
-                            Ayo bagikan linkmu dan jadilah <strong>Juara #1</strong>!
-                        </p>
-                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-4"
-                            onclick="copyToClipboard(this, 'referralLink')">
-                            <i class="bi bi-share-fill me-1"></i> Bagikan Sekarang
-                        </button>
-                    </li>
-                @endforelse
-            </ul>
-            
-            {{-- Sticky Rank User --}}
-            @if($topResellers->isNotEmpty())
-            <hr>
-            <div class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
-                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
-                
-                {{-- FOTO PROFIL USER SENDIRI --}}
-                @if(!empty($user->profile_photo_path))
-                    <img src="{{ asset('storage/' . $user->profile_photo_path) }}" 
-                         alt="{{ $user->name }}"
-                         class="rounded-circle border border-warning me-3"
-                         style="width: 40px; height: 40px; object-fit: cover;">
-                @else
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=ffc107&color=ffffff&size=40"
-                         alt="{{ $user->name }}"
-                         class="rounded-circle border border-warning me-3"
-                         style="width: 40px; height: 40px; object-fit: cover;">
-                @endif
-
-                <div class="flex-grow-1 lh-sm">
-                    <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
-                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }} referrals</small>
+                    </div>
                 </div>
-                <div class="d-flex flex-column align-items-end gap-1">
-                    <span class="badge bg-white text-warning border border-warning rounded-pill" style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
-                    <span class="badge bg-light text-dark border border-warning rounded-pill">
-                        Rp {{ number_format($totalEarnings / 1000, 0) }}k
-                    </span>
-                </div>
-            </div>
-            @endif
-        </div>
-    </div>
-</div>
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
                     <div class="card h-100 shadow-sm rounded-4">
                         <div class="card-body p-4 d-flex flex-column gap-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-    <h5 class="fw-bold mb-0">Riwayat Referral</h5>
-    
-    <a href="{{ route('reseller.history.download') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm" title="Download Riwayat">
-        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
-    </a>
-</div>
+                                <h5 class="fw-bold mb-0">Riwayat Referral</h5>
+
+                                <a href="{{ route('reseller.history.download') }}"
+                                    class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
+                                    title="Download Riwayat">
+                                    <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
+                                </a>
+                            </div>
 
                             @forelse($history as $item)
                             <div class="d-flex align-items-center justify-content-between mb-3">
@@ -494,12 +504,14 @@
                                     {{-- Icon Check/Pending/Reject --}}
                                     <div class="rounded-circle {{ $item->status == 'paid' ? 'bg-success text-success' : ($item->status == 'rejected' ? 'bg-danger text-danger' : 'bg-warning text-warning') }} bg-opacity-10 d-flex align-items-center justify-content-center me-3"
                                         style="width: 40px; height: 40px;">
-                                        <i class="bi {{ $item->status == 'paid' ? 'bi-check-lg' : ($item->status == 'rejected' ? 'bi-x-lg' : 'bi-clock-fill') }}"></i>
+                                        <i
+                                            class="bi {{ $item->status == 'paid' ? 'bi-check-lg' : ($item->status == 'rejected' ? 'bi-x-lg' : 'bi-clock-fill') }}"></i>
                                     </div>
 
                                     {{-- Nama User & Keterangan --}}
                                     <div>
-                                        <div class="fw-bold text-dark small {{ $item->status == 'rejected' ? 'text-decoration-line-through opacity-75' : '' }}">
+                                        <div
+                                            class="fw-bold text-dark small {{ $item->status == 'rejected' ? 'text-decoration-line-through opacity-75' : '' }}">
                                             {{ $item->referredUser->name ?? 'Pengguna Baru' }}
                                         </div>
                                         <small class="text-muted" style="font-size: 11px;">
@@ -510,10 +522,13 @@
 
                                 {{-- Jumlah Komisi & Badge Status --}}
                                 <div class="text-end">
-                                    <div class="fw-bold {{ $item->status == 'paid' ? 'text-success' : ($item->status == 'rejected' ? 'text-danger text-decoration-line-through opacity-75' : 'text-secondary') }} small">
-                                        {{ $item->status == 'rejected' ? '' : '+' }}Rp {{ number_format($item->amount, 0, ',', '.') }}
+                                    <div
+                                        class="fw-bold {{ $item->status == 'paid' ? 'text-success' : ($item->status == 'rejected' ? 'text-danger text-decoration-line-through opacity-75' : 'text-secondary') }} small">
+                                        {{ $item->status == 'rejected' ? '' : '+' }}Rp {{ number_format($item->amount,
+                                        0, ',', '.') }}
                                     </div>
-                                    <span class="badge {{ $item->status == 'paid' ? 'bg-success text-success' : ($item->status == 'rejected' ? 'bg-danger text-danger' : 'bg-warning text-warning') }} bg-opacity-10 rounded-1"
+                                    <span
+                                        class="badge {{ $item->status == 'paid' ? 'bg-success text-success' : ($item->status == 'rejected' ? 'bg-danger text-danger' : 'bg-warning text-warning') }} bg-opacity-10 rounded-1"
                                         style="font-size: 9px;">
                                         {{ ucfirst($item->status) }}
                                     </span>
@@ -533,81 +548,84 @@
 
             <!-- Withdraw History -->
             <div class="card mb-4 shadow-sm rounded-4">
-    <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0">
-                <i class="bi bi-arrow-up-right-circle-fill text-warning me-3"></i>
-                Riwayat Penarikan Dana
-            </h5>
-            
-            <a href="{{ route('reseller.withdraw.download') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm" title="Download Riwayat Penarikan">
-                <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
-            </a>
-        </div>
-        
-        <div class="table-responsive">
-            <table class="table table-hover align-middle border-top mb-0">
-                <thead>
-                    <tr class="text-muted small">
-                        <th class="py-3 border-0">ID Penarikan</th>
-                        <th class="py-3 border-0">Tanggal Pengajuan</th>
-                        <th class="py-3 border-0">Total</th>
-                        <th class="py-3 border-0 text-center">Status</th>
-                        <th class="py-3 border-0">Tanggal Diproses</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    
-                    @forelse($user->withdrawals()->latest()->get() as $wd)
-                    <tr>
-                        <td class="py-3">
-                            <div class="fw-bold text-dark">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
-                            <small class="text-muted">{{ $wd->bank_name }}</small>
-                        </td>
-                        <td>
-                            <div class="text-dark">{{ $wd->created_at->format('d M Y') }}</div>
-                            <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
-                        </td>
-                        <td class="fw-bold text-dark">
-                            Rp {{ number_format($wd->amount, 0, ',', '.') }}
-                        </td>
-                        <td class="text-center">
-                            @if($wd->status == 'approved')
-                                <span class="badge bg-success bg-opacity-10 text-success px-3">
-                                    <i class="bi bi-check-circle-fill me-1"></i> Approved
-                                </span>
-                            @elseif($wd->status == 'rejected')
-                                <span class="badge bg-danger bg-opacity-10 text-danger px-3">
-                                    <i class="bi bi-x-circle-fill me-1"></i> Rejected
-                                </span>
-                            @else
-                                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3">
-                                    <i class="bi bi-clock-fill me-1"></i> Pending
-                                </span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($wd->status != 'pending')
-                                <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
-                                <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
-                            @else
-                                <span class="text-muted small fst-italic">Belum diproses</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-5 text-muted small">
-                            <i class="bi bi-wallet2 fs-1 opacity-25 d-block mb-3"></i>
-                            Belum ada riwayat penarikan dana.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-arrow-up-right-circle-fill text-warning me-3"></i>
+                            Riwayat Penarikan Dana
+                        </h5>
+
+                        <a href="{{ route('reseller.withdraw.download') }}"
+                            class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
+                            title="Download Riwayat Penarikan">
+                            <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle border-top mb-0">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th class="py-3 border-0">ID Penarikan</th>
+                                    <th class="py-3 border-0">Tanggal Pengajuan</th>
+                                    <th class="py-3 border-0">Total</th>
+                                    <th class="py-3 border-0 text-center">Status</th>
+                                    <th class="py-3 border-0">Tanggal Diproses</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                @forelse($user->withdrawals()->latest()->get() as $wd)
+                                <tr>
+                                    <td class="py-3">
+                                        <div class="fw-bold text-dark">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}
+                                        </div>
+                                        <small class="text-muted">{{ $wd->bank_name }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="text-dark">{{ $wd->created_at->format('d M Y') }}</div>
+                                        <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
+                                    </td>
+                                    <td class="fw-bold text-dark">
+                                        Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                                    </td>
+                                    <td class="text-center">
+                                        @if($wd->status == 'approved')
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Approved
+                                        </span>
+                                        @elseif($wd->status == 'rejected')
+                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3">
+                                            <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                                        </span>
+                                        @else
+                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3">
+                                            <i class="bi bi-clock-fill me-1"></i> Pending
+                                        </span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($wd->status != 'pending')
+                                        <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
+                                        <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
+                                        @else
+                                        <span class="text-muted small fst-italic">Belum diproses</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted small">
+                                        <i class="bi bi-wallet2 fs-1 opacity-25 d-block mb-3"></i>
+                                        Belum ada riwayat penarikan dana.
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
 
 
@@ -615,9 +633,9 @@
                 <div class="card mb-4  shadow-sm">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-4">
-            <i class="bi bi-question-circle-fill text-warning me-3"></i>
-            Frequently Asked Questions
-        </h5>
+                            <i class="bi bi-question-circle-fill text-warning me-3"></i>
+                            Frequently Asked Questions
+                        </h5>
 
                         <div class="accordion" id="faqAccordion">
 
@@ -696,9 +714,13 @@
                         <div class="mt-4 p-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="fw-semibold">Masih ada pertanyaan?</div>
-                                <small class="text-muted">Tim support kami siap membantu Anda 24/7</small>
+                                <small class="text-muted">Tim support kami siap membantu Anda</small>
                             </div>
-                            <button class="btn btn-warning px-4">Hubungi Support</button>
+                            <a href="https://wa.me/628989260731" target="_blank" class="text-decoration-none">
+                                <button class="btn btn-warning px-4 fw-bold">
+                                    <i class="bi bi-whatsapp me-2"></i>Hubungi Support
+                                </button>
+                            </a>
                         </div>
 
                     </div>
