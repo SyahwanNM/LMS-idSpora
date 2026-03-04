@@ -9,6 +9,7 @@ use App\Models\ManualPayment;
 use App\Models\PaymentProof;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Referral; 
 
 class ManualPaymentController extends Controller
 {
@@ -32,11 +33,11 @@ class ManualPaymentController extends Controller
 
 
         // LOGIKA REFERRAL
-        // 1. Cek kode dari Input (prioritas) atau Cookie (cadangan)
+        // Cek kode dari Input (prioritas) atau Cookie (cadangan)
         $referralCode = $request->input('referral_code') ?? $request->cookie('referral_code');
         $resellerId = null;
 
-        // 2. Jika kode ada, cari pemiliknya (Reseller)
+        // Kalau kode ada, cari pemiliknya (Reseller)
         if ($referralCode) {
             $reseller = User::where('referral_code', $referralCode)->first();
 
@@ -110,6 +111,44 @@ class ManualPaymentController extends Controller
             // keep legacy field for admin UI convenience
             $existing->payment_proof = $path;
             $existing->save();
+        }
+        if ($resellerId) {
+            $cekReferral = Referral::where('referred_user_id', $user->id)
+                ->where('event_id', $event->id)
+                ->first();
+
+            if (!$cekReferral) {
+                // Cari data reseller untuk tahu levelnya
+                $resellerData = User::find($resellerId);
+                
+                // Hitung total referral si reseller
+                $totalReferrals = $resellerData ? $resellerData->referrals()->count() : 0;
+                
+                // Tentukan persentase berdasarkan level
+                $persentaseKomisi = 0.10; // Default Bronze (10%)
+                if ($totalReferrals >= 151) {
+                    $persentaseKomisi = 0.15; // Gold (15%)
+                } elseif ($totalReferrals >= 51) {
+                    $persentaseKomisi = 0.12; // Silver (12%)
+                }
+                
+                // Hitung nominal komisi fix
+                // Catatan: Asumsi komisi dihitung dari harga dasar ($event->price)
+                $komisiFix = ($event->price ?? 0) * $persentaseKomisi;
+
+                Referral::create([
+                    'user_id' => $resellerId,
+                    'referred_user_id' => $user->id, 
+                    'event_id' => $event->id, 
+                    'amount' => $komisiFix, // Komisi dinamis sesuai level
+                    'status' => 'pending',
+                    'description' => 'Pembelian Event: ' . $event->title // Lebih spesifik
+                ]);
+            } else {
+                // Kalp user upload ulang bukti (misal habis di-reject admin),
+                // mastiin status komisinya balik jadi pending
+                $cekReferral->update(['status' => 'pending']);
+            }
         }
 
         return redirect()->route('events.show', $event->id)->with('success', $msg);

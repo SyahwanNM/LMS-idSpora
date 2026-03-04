@@ -483,25 +483,23 @@
                             <div class="d-flex justify-content-between align-items-center mb-1">
     <h5 class="fw-bold mb-0">Riwayat Referral</h5>
     
-    {{-- UBAH BAGIAN HREF INI --}}
-    <a href="{{ route('reseller.history.download') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-3 shadow-sm" title="Download Riwayat">
+    <a href="{{ route('reseller.history.download') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm" title="Download Riwayat">
         <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
     </a>
 </div>
 
                             @forelse($history as $item)
-                            <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
                                 <div class="d-flex align-items-center">
-                                    {{-- Icon Check/Pending --}}
-                                    <div class="rounded-circle {{ $item->status == 'paid' ? 'bg-success text-success' : 'bg-warning text-warning' }} bg-opacity-10 d-flex align-items-center justify-content-center me-3"
+                                    {{-- Icon Check/Pending/Reject --}}
+                                    <div class="rounded-circle {{ $item->status == 'paid' ? 'bg-success text-success' : ($item->status == 'rejected' ? 'bg-danger text-danger' : 'bg-warning text-warning') }} bg-opacity-10 d-flex align-items-center justify-content-center me-3"
                                         style="width: 40px; height: 40px;">
-                                        <i
-                                            class="bi {{ $item->status == 'paid' ? 'bi-check-lg' : 'bi-clock-fill' }}"></i>
+                                        <i class="bi {{ $item->status == 'paid' ? 'bi-check-lg' : ($item->status == 'rejected' ? 'bi-x-lg' : 'bi-clock-fill') }}"></i>
                                     </div>
 
                                     {{-- Nama User & Keterangan --}}
                                     <div>
-                                        <div class="fw-bold text-dark small">
+                                        <div class="fw-bold text-dark small {{ $item->status == 'rejected' ? 'text-decoration-line-through opacity-75' : '' }}">
                                             {{ $item->referredUser->name ?? 'Pengguna Baru' }}
                                         </div>
                                         <small class="text-muted" style="font-size: 11px;">
@@ -512,12 +510,10 @@
 
                                 {{-- Jumlah Komisi & Badge Status --}}
                                 <div class="text-end">
-                                    <div
-                                        class="fw-bold {{ $item->status == 'paid' ? 'text-success' : 'text-secondary' }} small">
-                                        +Rp {{ number_format($item->amount, 0, ',', '.') }}
+                                    <div class="fw-bold {{ $item->status == 'paid' ? 'text-success' : ($item->status == 'rejected' ? 'text-danger text-decoration-line-through opacity-75' : 'text-secondary') }} small">
+                                        {{ $item->status == 'rejected' ? '' : '+' }}Rp {{ number_format($item->amount, 0, ',', '.') }}
                                     </div>
-                                    <span
-                                        class="badge {{ $item->status == 'paid' ? 'bg-success text-success' : 'bg-warning text-warning' }} bg-opacity-10 rounded-1"
+                                    <span class="badge {{ $item->status == 'paid' ? 'bg-success text-success' : ($item->status == 'rejected' ? 'bg-danger text-danger' : 'bg-warning text-warning') }} bg-opacity-10 rounded-1"
                                         style="font-size: 9px;">
                                         {{ ucfirst($item->status) }}
                                     </span>
@@ -538,10 +534,16 @@
             <!-- Withdraw History -->
             <div class="card mb-4 shadow-sm rounded-4">
     <div class="card-body p-4">
-        <h5 class="fw-bold mb-4">
-            <i class="bi bi-arrow-up-right-circle-fill text-warning me-3"></i>
-            Riwayat Penarikan Dana
-        </h5>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-arrow-up-right-circle-fill text-warning me-3"></i>
+                Riwayat Penarikan Dana
+            </h5>
+            
+            <a href="{{ route('reseller.withdraw.download') }}" class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm" title="Download Riwayat Penarikan">
+                <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
+            </a>
+        </div>
         
         <div class="table-responsive">
             <table class="table table-hover align-middle border-top mb-0">
@@ -571,15 +573,15 @@
                         </td>
                         <td class="text-center">
                             @if($wd->status == 'approved')
-                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">
+                                <span class="badge bg-success bg-opacity-10 text-success px-3">
                                     <i class="bi bi-check-circle-fill me-1"></i> Approved
                                 </span>
                             @elseif($wd->status == 'rejected')
-                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">
+                                <span class="badge bg-danger bg-opacity-10 text-danger px-3">
                                     <i class="bi bi-x-circle-fill me-1"></i> Rejected
                                 </span>
                             @else
-                                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-3">
+                                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3">
                                     <i class="bi bi-clock-fill me-1"></i> Pending
                                 </span>
                             @endif

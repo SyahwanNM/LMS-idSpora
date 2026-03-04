@@ -42,12 +42,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report/growth', [CourseReportController::class, 'growth'])->name('admin.report.growth');
 });
 
-Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
+Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
     // Pull non-admin users with event participations for the Manage User table and view modal
-    $users = \App\Models\User::with(['eventRegistrations' => function($q){
-            $q->with('event')->orderBy('created_at','desc');
-        }])
-        ->select('id','name','email','phone','profession','institution','avatar','created_at','bio')
+    $users = \App\Models\User::with(['eventRegistrations' => function ($q) {
+        $q->with('event')->orderBy('created_at', 'desc');
+    }])
+        ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
         ->where('role', '!=', 'admin')
         ->orderBy('name')
         ->get();
@@ -58,11 +58,12 @@ Route::middleware(['auth','admin'])->get('/admin/add-users', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
     Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
-    
+
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
 
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
+    Route::get('/reseller/withdraw/download', [App\Http\Controllers\ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
 
     // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
     Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
@@ -74,9 +75,9 @@ Route::get('/bandingin', function () {
 
 
 // Serve Add Event at a friendly URL using the canonical create form (auth+admin)
-Route::middleware(['auth','admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
+Route::middleware(['auth', 'admin'])->get('/admin/add-event', [EventController::class, 'create'])->name('admin.add-event');
 // History (finished events)
-Route::middleware(['auth','admin'])->get('/admin/events/history', [EventController::class, 'history'])->name('admin.events.history');
+Route::middleware(['auth', 'admin'])->get('/admin/events/history', [EventController::class, 'history'])->name('admin.events.history');
 
 // Detail event (registered) view should receive Event from DB
 Route::middleware('auth')->get('/detail-event-registered/{event}', function (Event $event) {
@@ -115,7 +116,7 @@ Route::get('admin/course-builder', function () {
 })->name('admin/course-builder');
 // Legacy Add Course page (standalone view) with categories for the form
 Route::get('/admin/add-course', function () {
-    $categories = \App\Models\Category::select('id','name')->orderBy('name')->get();
+    $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
     return view('admin/add-course', compact('categories'));
 })->name('admin.add-course');
 Route::get('/admin/view-modul-course', function () {
@@ -129,14 +130,14 @@ Route::get('/admin/add-course2', function () {
 })->name('add-course2');
 Route::get('/admin/preview-pendapatan', function () {
     return redirect()->route('admin.view-pendapatan', request()->query());
-})->middleware(['auth','admin'])->name('preview-pendapatan');
+})->middleware(['auth', 'admin'])->name('preview-pendapatan');
 
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
 Route::get('/storage/{path}', function ($path) {
     // Decode URL-encoded path
     $path = urldecode($path);
-    
+
     // Security: prevent directory traversal
     if (str_contains($path, "\0")) {
         abort(403, 'Invalid path');
@@ -144,7 +145,7 @@ Route::get('/storage/{path}', function ($path) {
 
     // Normalize separators then ensure no path traversal segments exist
     $pathNormalized = str_replace('\\', '/', $path);
-    $segments = array_values(array_filter(explode('/', $pathNormalized), fn ($s) => $s !== ''));
+    $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
     foreach ($segments as $seg) {
         if ($seg === '.' || $seg === '..') {
             abort(403, 'Invalid path');
@@ -153,15 +154,15 @@ Route::get('/storage/{path}', function ($path) {
 
     // Use normalized path for filesystem lookup
     $path = implode('/', $segments);
-    
+
     // Get file path in uploads
     $filePath = public_path('uploads/' . $path);
-    
+
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
         abort(404, 'File not found: ' . $path);
     }
-    
+
     // Get MIME type
     $mimeType = mime_content_type($filePath);
     if (!$mimeType) {
@@ -177,7 +178,7 @@ Route::get('/storage/{path}', function ($path) {
         ];
         $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
     }
-    
+
     return response()->file($filePath, [
         'Content-Type' => $mimeType,
         'Cache-Control' => 'public, max-age=31536000',
@@ -203,11 +204,11 @@ Route::post('/kendala', [PublicPagesController::class, 'storeSupport'])->name('p
 Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide'])->name('public.guide');
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
-Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
+Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
     $user = auth()->user();
-    $already = $user && $user->eventRegistrations()->where('event_id',$event->id)->exists();
-    if($already){
-        return redirect()->route('events.show',$event)->with('info','Anda sudah terdaftar.');
+    $already = $user && $user->eventRegistrations()->where('event_id', $event->id)->exists();
+    if ($already) {
+        return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
     }
     return view('payment', compact('event'));
 })->name('payment');
@@ -215,32 +216,41 @@ Route::middleware('auth')->get('/payment/{event}', function(Event $event) {
 
 
 // Event routes now require authentication to view & register
-Route::middleware('auth')->group(function(){
+Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
     Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
     Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-        // Redirect search to the best-matching event detail (exact title match preferred)
-        Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
+    // Redirect search to the best-matching event detail (exact title match preferred)
+    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
     Route::post('/events/{event}/register', [App\Http\Controllers\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     // Dedicated scan page for event QR (auth, require registration)
-    Route::get('/events/{event}/scan', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
+    Route::get('/events/{event}/scan', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
         $user = $request->user();
-        if(!$user){ return redirect()->route('login'); }
-        $registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
-        if(!$registration || $registration->status !== 'active'){
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        $registration = $user->eventRegistrations()->where('event_id', $event->id)->first();
+        if (!$registration || $registration->status !== 'active') {
             return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
         }
         // Compute event start/end for gating
         $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
-        $startTime = null; $endTime = null;
-        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch(\Throwable $e) {}
-        try { $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch(\Throwable $e) {}
-        if(!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if(!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        $startTime = null;
+        $endTime = null;
+        try {
+            $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null;
+        } catch (\Throwable $e) {
+        }
+        try {
+            $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
+        } catch (\Throwable $e) {
+        }
+        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
@@ -250,8 +260,8 @@ Route::middleware('auth')->group(function(){
     Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
     // Ticket page removed; use event detail instead
     // Notifications
-    Route::get('/notifications', [NotificationsController::class,'index'])->name('notifications.index');
-    Route::post('/notifications/mark-all-read', [NotificationsController::class,'markAllRead'])->name('notifications.markAllRead');
+    Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     // Certificate (event) - show & download (H+4 logic inside controller)
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');
@@ -264,7 +274,7 @@ Route::middleware('auth')->group(function(){
     Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
     Route::post('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
-    
+
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
     Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
@@ -274,41 +284,41 @@ Route::middleware('auth')->group(function(){
     Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
 
     // Save/unsave event
-    Route::post('/events/{event}/save', function(\Illuminate\Http\Request $request, \App\Models\Event $event){
+    Route::post('/events/{event}/save', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
         $user = $request->user();
-        if(!$user){
+        if (!$user) {
             // For non-AJAX, redirect to login; for AJAX, return JSON 401
             if ($request->expectsJson() || $request->ajax()) {
-                return response()->json(['success'=>false,'message'=>'Unauthorized'], 401);
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
             }
             return redirect()->route('login');
         }
 
         $exists = \DB::table('user_saved_events')
-            ->where('user_id',$user->id)
-            ->where('event_id',$event->id)
+            ->where('user_id', $user->id)
+            ->where('event_id', $event->id)
             ->exists();
 
         $saved = true;
-        if($exists){
+        if ($exists) {
             \DB::table('user_saved_events')
-                ->where('user_id',$user->id)
-                ->where('event_id',$event->id)
+                ->where('user_id', $user->id)
+                ->where('event_id', $event->id)
                 ->delete();
             $saved = false;
         } else {
             \DB::table('user_saved_events')->insert([
-                'user_id'=>$user->id,
-                'event_id'=>$event->id,
-                'created_at'=>now(),
-                'updated_at'=>now()
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
             $saved = true;
         }
 
         // If the request expects JSON (AJAX/fetch), return JSON; otherwise redirect back to detail page
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['success'=>true,'saved'=>$saved]);
+            return response()->json(['success' => true, 'saved' => $saved]);
         }
         return redirect()->route('events.registered.detail', $event)
             ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
@@ -345,19 +355,19 @@ Route::get('/verifikasi', [AuthController::class, 'showVerification'])->name('ve
 Route::post('/verifikasi', [AuthController::class, 'verifyCode'])->name('verifikasi.verify');
 Route::get('/new-password', [AuthController::class, 'showNewPassword'])->name('new-password');
 Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('new-password.reset');
-                                                                        
+
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
     // User dashboard (only for non-admin users)
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
-    
+
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
         Route::get('/admin/reseller/dashboard', [ResellerController::class, 'dashboard'])->name('admin.reseller.dashboard');
         Route::get('/admin/reseller/finance', [ResellerController::class, 'finance'])->name('admin.reseller.finance');
         Route::get('/admin/reseller/data-reseller', [ResellerController::class, 'data'])->name('admin.reseller.data');
-        
+
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');
@@ -369,7 +379,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
-        
+
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
         Route::get('/admin/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
         Route::post('/admin/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
@@ -378,35 +388,35 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/recent-activities', [AdminController::class, 'recentActivities'])->name('admin.recent-activities');
         // Note: Removed temporary '/admin/dashboard/create' shortcut; use admin.events.create or admin.events.index directly
         Route::get('/admin/active-users-count', [AdminController::class, 'activeUsersCount'])->name('admin.active-users-count');
-    Route::get('/admin/export', [AdminController::class, 'exportData'])->name('admin.export');
-    // The resource route below defines admin.events.store handled by EventController@store
-    // Removed legacy conflicting route to prevent route name collision
+        Route::get('/admin/export', [AdminController::class, 'exportData'])->name('admin.export');
+        // The resource route below defines admin.events.store handled by EventController@store
+        // Removed legacy conflicting route to prevent route name collision
         Route::get('/admin/reports', [AdminController::class, 'reports'])->name('admin.reports');
-    Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
-    Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
-    Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
-    Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+        Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
+        Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+        Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+        Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
 
-    // User management (Admin accounts & regular users)
-    Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');
-    Route::get('/admin/users/create', [UserManagementController::class, 'create'])->name('admin.users.create');
-    Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
-    Route::get('/admin/users/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
-    Route::put('/admin/users/{user}', [UserManagementController::class, 'update'])->name('admin.users.update');
-    Route::delete('/admin/users/{user}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
+        // User management (Admin accounts & regular users)
+        Route::get('/admin/users', [UserManagementController::class, 'index'])->name('admin.users.index');
+        Route::get('/admin/users/create', [UserManagementController::class, 'create'])->name('admin.users.create');
+        Route::post('/admin/users', [UserManagementController::class, 'store'])->name('admin.users.store');
+        Route::get('/admin/users/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
+        Route::put('/admin/users/{user}', [UserManagementController::class, 'update'])->name('admin.users.update');
+        Route::delete('/admin/users/{user}', [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
 
-    // Carousel Management
-    Route::get('/admin/carousels', [\App\Http\Controllers\Admin\CarouselController::class, 'index'])->name('admin.carousels.index');
-    Route::get('/admin/carousels/create', [\App\Http\Controllers\Admin\CarouselController::class, 'create'])->name('admin.carousels.create');
-    Route::post('/admin/carousels', [\App\Http\Controllers\Admin\CarouselController::class, 'store'])->name('admin.carousels.store');
-    Route::get('/admin/carousels/{carousel}/edit', [\App\Http\Controllers\Admin\CarouselController::class, 'edit'])->name('admin.carousels.edit');
-    Route::put('/admin/carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselController::class, 'update'])->name('admin.carousels.update');
-    Route::delete('/admin/carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselController::class, 'destroy'])->name('admin.carousels.destroy');
-    Route::post('/admin/carousels/{carousel}/toggle-active', [\App\Http\Controllers\Admin\CarouselController::class, 'toggleActive'])->name('admin.carousels.toggle-active');
-        
+        // Carousel Management
+        Route::get('/admin/carousels', [\App\Http\Controllers\Admin\CarouselController::class, 'index'])->name('admin.carousels.index');
+        Route::get('/admin/carousels/create', [\App\Http\Controllers\Admin\CarouselController::class, 'create'])->name('admin.carousels.create');
+        Route::post('/admin/carousels', [\App\Http\Controllers\Admin\CarouselController::class, 'store'])->name('admin.carousels.store');
+        Route::get('/admin/carousels/{carousel}/edit', [\App\Http\Controllers\Admin\CarouselController::class, 'edit'])->name('admin.carousels.edit');
+        Route::put('/admin/carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselController::class, 'update'])->name('admin.carousels.update');
+        Route::delete('/admin/carousels/{carousel}', [\App\Http\Controllers\Admin\CarouselController::class, 'destroy'])->name('admin.carousels.destroy');
+        Route::post('/admin/carousels/{carousel}/toggle-active', [\App\Http\Controllers\Admin\CarouselController::class, 'toggleActive'])->name('admin.carousels.toggle-active');
+
         // Course management routes
-            // Publish course (set status active)
-            Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
+        // Publish course (set status active)
+        Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');
@@ -414,7 +424,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/courses/{course}/edit', [CourseController::class, 'edit'])->name('admin.courses.edit');
         Route::put('/admin/courses/{course}', [CourseController::class, 'update'])->name('admin.courses.update');
         Route::delete('/admin/courses/{course}', [CourseController::class, 'destroy'])->name('admin.courses.destroy');
-        
+
         // Module management routes
         Route::get('/admin/courses/{course}/modules', [ModuleController::class, 'index'])->name('admin.courses.modules.index');
         Route::get('/admin/courses/{course}/modules/create', [ModuleController::class, 'create'])->name('admin.courses.modules.create');
@@ -423,16 +433,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/courses/{course}/modules/{module}/edit', [ModuleController::class, 'edit'])->name('admin.courses.modules.edit');
         Route::put('/admin/courses/{course}/modules/{module}', [ModuleController::class, 'update'])->name('admin.courses.modules.update');
         Route::delete('/admin/courses/{course}/modules/{module}', [ModuleController::class, 'destroy'])->name('admin.courses.modules.destroy');
-    Route::post('/admin/courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])->name('admin.courses.modules.reorder');
+        Route::post('/admin/courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])->name('admin.courses.modules.reorder');
 
-    // Event document uploads (admin)
-    Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
-    // Event QR actions (admin)
-    Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
-    Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
-    // Utility: resolve Google Maps short links to lat/lng
-    Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
-        
+        // Event document uploads (admin)
+        Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+        // Event QR actions (admin)
+        Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
+        Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
+        // Utility: resolve Google Maps short links to lat/lng
+        Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
+
         // Quiz management routes
         Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');
         Route::get('/admin/courses/{course}/modules/{module}/quiz/create', [QuizController::class, 'create'])->name('admin.courses.modules.quiz.create');
@@ -442,7 +452,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/courses/{course}/modules/{module}/quiz/{question}', [QuizController::class, 'update'])->name('admin.courses.modules.quiz.update');
         Route::delete('/admin/courses/{course}/modules/{module}/quiz/{question}', [QuizController::class, 'destroy'])->name('admin.courses.modules.quiz.destroy');
     });
-    
+
     // User module access routes
     Route::get('/courses/{course}/modules', [UserModuleController::class, 'index'])->name('user.modules.index');
     Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
@@ -454,7 +464,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/learning-time/heartbeat', [\App\Http\Controllers\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
         Route::get('/learning-time/chart', [\App\Http\Controllers\LearningTimeController::class, 'chart'])->name('learning-time.chart');
     });
-    
+
     // User quiz routes
     Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
@@ -463,16 +473,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
     Route::get('/course-quiz-result', function () {
-    return view('course.quiz.result');
+        return view('course.quiz.result');
     })->name('course.quiz.result');
 
     Route::get('/course-quiz', function () {
-    return view('course.quiz.intro');
-})->name('course.quiz.intro');
+        return view('course.quiz.intro');
+    })->name('course.quiz.intro');
 
-Route::get('/course-quiz-start', function () {
-    return view('course.quiz.start');
-})->name('course.quiz.start');
+    Route::get('/course-quiz-start', function () {
+        return view('course.quiz.start');
+    })->name('course.quiz.start');
 
 
 
@@ -492,19 +502,19 @@ Route::get('/course-quiz-start', function () {
         // CRM Routes
         Route::prefix('admin/crm')->name('admin.crm.')->group(function () {
             Route::get('/dashboard', [\App\Http\Controllers\CRMController::class, 'dashboard'])->name('dashboard');
-            
+
             // Certificate management (moved to CRM)
             Route::get('/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('certificates.index');
             Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CertificateController::class, 'edit'])->name('certificates.edit');
             Route::put('/certificates/{event}', [\App\Http\Controllers\CertificateController::class, 'update'])->name('certificates.update');
             Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
-            
+
             // Customer management
             Route::get('/customers', [\App\Http\Controllers\CRMController::class, 'customers'])->name('customers.index');
             Route::get('/customers/{customer}', [\App\Http\Controllers\CRMController::class, 'showCustomer'])->name('customers.show');
             Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRMController::class, 'editCustomer'])->name('customers.edit');
             Route::put('/customers/{customer}', [\App\Http\Controllers\CRMController::class, 'updateCustomer'])->name('customers.update');
-            
+
             // Feedback Analysis
             Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
 
@@ -517,21 +527,21 @@ Route::get('/course-quiz-start', function () {
             Route::get('/broadcast/create', [\App\Http\Controllers\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
             Route::post('/broadcast/send', [\App\Http\Controllers\CRMController::class, 'broadcastSend'])->name('broadcast.send');
         });
-        
+
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
-        Route::get('/admin/certificates', function() {
+        Route::get('/admin/certificates', function () {
             return redirect()->route('admin.crm.certificates.index');
         })->name('admin.certificates.index');
-        Route::get('/admin/certificates/{event}/edit', function(\App\Models\Event $event) {
+        Route::get('/admin/certificates/{event}/edit', function (\App\Models\Event $event) {
             return redirect()->route('admin.crm.certificates.edit', $event);
         })->name('admin.certificates.edit');
-        Route::put('/admin/certificates/{event}', function(\App\Models\Event $event) {
+        Route::put('/admin/certificates/{event}', function (\App\Models\Event $event) {
             return redirect()->route('admin.crm.certificates.update', $event);
         })->name('admin.certificates.update');
-        Route::get('/admin/events/{event}/certificates/generate-massal', function(\App\Models\Event $event) {
+        Route::get('/admin/events/{event}/certificates/generate-massal', function (\App\Models\Event $event) {
             return redirect()->route('admin.crm.certificates.generate-massal', $event);
         })->name('admin.certificates.generate-massal');
     });
 });
 // Include additional manual-payment routes (manual QRIS proof upload)
-require __DIR__.'/web_manual_payment.php';
+require __DIR__ . '/web_manual_payment.php';

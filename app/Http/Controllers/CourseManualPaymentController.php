@@ -9,6 +9,7 @@ use App\Models\PaymentProof;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Referral;
 
 class CourseManualPaymentController extends Controller
 {
@@ -28,7 +29,7 @@ class CourseManualPaymentController extends Controller
         $whatsapp = isset($validated['whatsapp']) ? trim((string) $validated['whatsapp']) : null;
         $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;
 
-        // --- TAMBAHAN LOGIKA DISKON REFERRAL ---
+        // --- LOGIKA DISKON REFERRAL ---
         $reseller = null;
         $finalPrice = (float) ($course->price ?? 0);
 
@@ -89,6 +90,38 @@ class CourseManualPaymentController extends Controller
             'file_size' => (int) $file->getSize(),
             'uploaded_by' => $user->id,
         ]);
+        if ($reseller) {
+            // Cari apakah sudah ada data komisi untuk transaksi ini
+            $existingReferral = Referral::where('referred_user_id', $user->id)
+                ->where('description', 'Komisi Course: ' . $course->name)
+                ->first();
+
+            if (!$existingReferral) {
+                // HITUNG TIER RESELLER SAAT INI
+                $totalReferrals = $reseller->referrals()->count();
+                $persentaseKomisi = 0.10; // Default Bronze (10%)
+                
+                if ($totalReferrals >= 151) {
+                    $persentaseKomisi = 0.15; // Gold (15%)
+                } elseif ($totalReferrals >= 51) {
+                    $persentaseKomisi = 0.12; // Silver (12%)
+                }
+                
+                // Kalikan harga transaksi dengan persentase tier-nya
+                $komisiFix = $manualPayment->amount * $persentaseKomisi;
+
+                Referral::create([
+                    'user_id' => $reseller->id,
+                    'referred_user_id' => $user->id,
+                    'amount' => $komisiFix, // Masukkan komisi dinamis
+                    'status' => 'pending',  // Masuk pending dulu
+                    'description' => 'Komisi Course: ' . $course->name
+                ]);
+            } else {
+                // Jika user upload ulang bukti, pastikan statusnya kembali pending
+                $existingReferral->update(['status' => 'pending']);
+            }
+        }
 
         return back()->with('success', 'Bukti pembayaran berhasil diupload. Menunggu verifikasi admin.');
     }
@@ -101,28 +134,44 @@ class CourseManualPaymentController extends Controller
             $manualPayment->status = 'settled'; // approved
             $manualPayment->save();
 
-            // Process Referral Commission (10%)
+            // Process Referral Commission (sesuai tier)
             if (!empty($manualPayment->referral_code)) {
                 $referrer = \App\Models\User::where('referral_code', $manualPayment->referral_code)->first();
+                
                 if ($referrer && $referrer->id !== $manualPayment->user_id) {
-                    $commissionAmount = $manualPayment->amount * 0.10; // 10% commission
                     
-                    // Prevent duplicate commission for the same payment
-                    $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
+                    // Nyari data referral pending yang udah dibuat waktu upload struk
+                    $existingReferral = Referral::where('user_id', $referrer->id)
                         ->where('referred_user_id', $manualPayment->user_id)
                         ->where('description', 'Komisi Course: ' . $course->name)
                         ->first();
 
-                    if (!$existingReferral && $commissionAmount > 0) {
-                        \App\Models\Referral::create([
-                            'user_id' => $referrer->id,
-                            'referred_user_id' => $manualPayment->user_id,
-                            'amount' => $commissionAmount,
-                            'status' => 'paid',
-                            'description' => 'Komisi Course: ' . $course->name
-                        ]);
+                    if ($existingReferral && $existingReferral->status !== 'paid') {
+                        // Ubah status dari pending ke paid
+                        $existingReferral->update(['status' => 'paid']);
+                        // Nambah saldo wallet SESUAI DENGAN NOMINAL YANG SUDAH DIHITUNG SAAT UPLOAD
+                        $referrer->increment('wallet_balance', $existingReferral->amount);
+                        
+                    } elseif (!$existingReferral) {
+                        // Jaga-jaga kalo datanya gak ada (langsung dibuat baru), hitung ulang tiernya
+                        $totalReferrals = $referrer->referrals()->count();
+                        $persentaseKomisi = 0.10; // Bronze
+                        
+                        if ($totalReferrals >= 151) $persentaseKomisi = 0.15; // Gold
+                        elseif ($totalReferrals >= 51) $persentaseKomisi = 0.12; // Silver
+                        
+                        $commissionAmount = $manualPayment->amount * $persentaseKomisi;
 
-                        $referrer->increment('wallet_balance', $commissionAmount);
+                        if ($commissionAmount > 0) {
+                            Referral::create([
+                                'user_id' => $referrer->id,
+                                'referred_user_id' => $manualPayment->user_id,
+                                'amount' => $commissionAmount,
+                                'status' => 'paid',
+                                'description' => 'Komisi Course: ' . $course->name
+                            ]);
+                            $referrer->increment('wallet_balance', $commissionAmount);
+                        }
                     }
                 }
             }
@@ -146,6 +195,14 @@ class CourseManualPaymentController extends Controller
         if ($manualPayment->enrollment) {
             $manualPayment->enrollment->status = 'canceled';
             $manualPayment->enrollment->save();
+        }
+
+        $existingReferral = Referral::where('referred_user_id', $manualPayment->user_id)
+            ->where('description', 'Komisi Course: ' . $course->name)
+            ->first();
+
+        if ($existingReferral && $existingReferral->status === 'pending') {
+            $existingReferral->update(['status' => 'rejected']);
         }
 
         return back()->with('success', 'Pembayaran berhasil di-reject.');
