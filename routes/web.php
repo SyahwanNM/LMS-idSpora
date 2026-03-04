@@ -18,7 +18,7 @@ use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SocialAuthController;
-use App\Http\Controllers\PaymentController;
+
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PublicPagesController;
 use App\Http\Controllers\Admin\CourseReportController;
@@ -99,8 +99,7 @@ Route::get('/quiz1-course', function () {
 })->name('quiz1-course');
 
 
-// Midtrans payment for course
-Route::post('/courses/{course}/pay', [App\Http\Controllers\PaymentController::class, 'payCourse'])->name('midtrans.pay');
+
 Route::get('/quiz-course', function () {
     return view('quiz-course');
 })->name('quiz-course');
@@ -389,6 +388,17 @@ Route::middleware(['auth'])->group(function () {
             ->name('admin.view-pendapatan');
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/admin/finance', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('admin.finance.index');
+        Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
+        Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
+        Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
+        Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
+        Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
+        
+        Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
+        Route::get('/admin/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
+        Route::post('/admin/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
+        Route::post('/admin/withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
         // Recent activities AJAX (returns latest login activities)
         Route::get('/admin/recent-activities', [AdminController::class, 'recentActivities'])->name('admin.recent-activities');
         // Note: Removed temporary '/admin/dashboard/create' shortcut; use admin.events.create or admin.events.index directly
@@ -526,6 +536,11 @@ Route::middleware(['auth'])->group(function () {
             // Support Messages
             Route::get('/support', [\App\Http\Controllers\CRMController::class, 'supportMessages'])->name('support.index');
             Route::post('/support/{message}/status', [\App\Http\Controllers\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
+
+            // Broadcast/Blast
+            Route::get('/broadcast', [\App\Http\Controllers\CRMController::class, 'broadcastIndex'])->name('broadcast.index');
+            Route::get('/broadcast/create', [\App\Http\Controllers\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
+            Route::post('/broadcast/send', [\App\Http\Controllers\CRMController::class, 'broadcastSend'])->name('broadcast.send');
         });
 
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)

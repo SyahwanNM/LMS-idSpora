@@ -34,6 +34,9 @@ class User extends Authenticatable
         'last_event_date',
         'profession',
         'institution',
+        'referral_code',
+        'wallet_balance',
+        'referrer_id',
     ];
 
     /**
@@ -73,7 +76,7 @@ class User extends Authenticatable
 
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasMany(Enrollment::class, 'user_id');
     }
 
     public function courses()
@@ -81,6 +84,21 @@ class User extends Authenticatable
         return $this->hasMany(Course::class, 'user_id');
     }
 
+    public function coursesAsTrainer()
+    {
+        return $this->hasMany(Course::class, 'trainer_id');
+    }
+
+    public function trainerEnrollments()
+    {
+        return $this->hasManyThrough(
+            Enrollment::class, //Model tujuan (Enrollment user)
+            Course::class, //Model perantara (Course)
+            'trainer_id', //Foreign key di Course yang mengarah ke User
+            'course_id', //Foreign key di Enrollment yang mengarah ke Course
+            'id', //Local key di User
+        );
+    }
     public function profileReminder()
     {
         return $this->hasOne(ProfileReminder::class);

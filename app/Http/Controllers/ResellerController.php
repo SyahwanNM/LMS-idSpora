@@ -14,7 +14,51 @@ class ResellerController extends Controller
 {
     public function admin()
     {
-        return view('admin.reseller');
+        // 1. Stats
+        $activeResellersCount = User::whereNotNull('referral_code')->count();
+        $totalSalesCount = Referral::where('status', 'paid')->count();
+        $totalPendingReferrals = Referral::where('status', 'pending')->count();
+        $pendingRequestsCount = Withdrawal::where('status', 'pending')->count(); // Tetap diambil untuk record tapi mungkin tidak ditampilkan utuh sebagai menu penarikan di sini
+
+        // 2. Resellers List
+        $resellers = User::whereNotNull('referral_code')
+            ->withCount('referrals')
+            ->withSum(['referrals as total_earned' => function($q) {
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->latest()
+            ->get();
+
+        // 3. Top Performer
+        $topResellers = User::whereNotNull('referral_code')
+            ->withSum(['referrals as total_earned' => function($q) {
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->orderByDesc('total_earned')
+            ->take(5)
+            ->get();
+
+        // 4. Chart Data (7 days)
+        $chartLabels = [];
+        $chartValues = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = \Carbon\Carbon::now()->subDays($i);
+            $count = User::whereNotNull('referral_code')
+                ->whereDate('created_at', $date->toDateString())
+                ->count();
+            $chartLabels[] = $date->format('D');
+            $chartValues[] = $count;
+        }
+
+        return view('admin.reseller', compact(
+            'activeResellersCount',
+            'totalSalesCount',
+            'totalPendingReferrals',
+            'resellers',
+            'topResellers',
+            'chartLabels',
+            'chartValues'
+        ));
     }
 
     public function index()
@@ -88,6 +132,11 @@ class ResellerController extends Controller
         // Ranking kita = jumlah orang di atas kita + 1
         $userRank = $usersAhead + 1;
 
+        $registrations = \App\Models\EventRegistration::where('user_id', $user->id)
+            ->with('event')
+            ->latest()
+            ->get();
+
         return view('reseller.index', compact(
             'user', 
             'totalEarnings', 
@@ -101,7 +150,8 @@ class ResellerController extends Controller
             'nextLevelTarget',
             'history',
             'topResellers',
-            'userRank' // <-- Variable baru untuk ranking di bawah HR
+            'userRank',
+            'registrations'
         ));
     }
 
