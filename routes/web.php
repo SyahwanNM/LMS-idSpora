@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\ResellerController;
+use App\Http\Controllers\TrainerController;
 
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
@@ -80,6 +81,13 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     $feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
+
+Route::middleware(['auth'])->group(
+    function () {
+        Route::get('/trainer/dashboard', [TrainerController::class, 'dashboard'])->name('trainer.dashboard');
+        Route::get('/trainer/profile', [TrainerController::class, 'show'])->name('trainer.profile');
+    }
+);
 
 // punya dini
 Route::get('/modul-course', function () {
@@ -394,7 +402,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
-        
+
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
         Route::get('/admin/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
         Route::post('/admin/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
@@ -561,27 +569,18 @@ Route::middleware(['auth'])->group(function () {
 // Include additional manual-payment routes (manual QRIS proof upload)
 require __DIR__ . '/web_manual_payment.php';
 
-// Trainer Routes
-Route::get('/trainer/home', function () {
-    return view('trainer.home');
-})->name('trainer.home');
 
-Route::get('/trainer/course', function () {
-    return view('trainer.course');
-})->name('trainer.course');
-
-Route::get('/trainer/detail-course', function () {
-    return view('trainer.detail-course');
-})->name('trainer.detail-course');
-
-Route::get('/trainer/events', function () {
-    return view('trainer.events');
-})->name('trainer.events');
-
-Route::get('/trainer/feedback', function () {
-    return view('trainer.feedback');
-})->name('trainer.feedback');
-
-Route::get('/trainer/profile', function () {
-    return view('trainer.profile');
-})->name('trainer.profile');
+Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->group(function () {
+    Route::get('/dashboard', [TrainerController::class, 'dashboard'])->name('dashboard');
+    Route::get('/courses', [TrainerController::class, 'courses'])->name('courses');
+    Route::get('/courses/{id}', [TrainerController::class, 'courseDetail'])->name('detail-course');
+    Route::get('/finance', [TrainerController::class, 'finance'])->name('finance');
+    Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
+    Route::view('/events', 'trainer.events')->name('events');
+    Route::view('/feedback', 'trainer.feedback')->name('feedback');
+    Route::get('/content-studio/{courseId?}', function ($courseId = null) {
+        return view('trainer.content-studio', ['courseId' => $courseId]);
+    })->name('content-studio');
+    Route::post('/upload-materials', [TrainerController::class, 'uploadMaterials'])->name('upload-materials');
+    Route::post('/save-quiz', [TrainerController::class, 'saveQuiz'])->name('save-quiz');
+});
