@@ -952,12 +952,7 @@
                     ->where('status', 'settled')
                     ->exists();
 
-              $hasMidtransSettledPayment = \App\Models\Payment::where('user_id', auth()->id())
-                ->where('course_id', $course->id)
-                ->whereIn('status', ['capture','settlement'])
-                ->exists();
-
-              $canLearn = $enrolledActive || $hasSettledPayment || $hasMidtransSettledPayment;
+              $canLearn = $enrolledActive || $hasSettledPayment;
             }
           @endphp
           @if($canLearn)

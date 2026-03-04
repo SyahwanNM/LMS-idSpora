@@ -530,6 +530,66 @@
 
             </div>
 
+            <!-- Purchase History & Invoices Section -->
+            <div class="card mb-4 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                        <i class="bi bi-receipt text-warning fs-2"></i>
+                        <span>Riwayat Pembelian & Invoice</span>
+                    </h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle border-top">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th class="py-3 border-0">Item / Event</th>
+                                    <th class="py-3 border-0">Tanggal</th>
+                                    <th class="py-3 border-0">Status</th>
+                                    <th class="py-3 border-0">Total</th>
+                                    <th class="py-3 border-0 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($registrations as $reg)
+                                @php
+                                    $isPaid = $reg->status === 'active' || !empty($reg->payment_verified_at);
+                                @endphp
+                                <tr>
+                                    <td class="py-3">
+                                        <div class="fw-bold text-dark">{{ $reg->event->title ?? 'Spora Item' }}</div>
+                                        <small class="text-muted">Ref: {{ $reg->registration_code }}</small>
+                                    </td>
+                                    <td>{{ $reg->created_at->format('d M Y') }}</td>
+                                    <td>
+                                        <span class="badge {{ $isPaid ? 'bg-success' : 'bg-warning' }} bg-opacity-10 {{ $isPaid ? 'text-success' : 'text-warning' }} rounded-pill px-3">
+                                            {{ strtoupper($reg->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold">Rp {{ number_format($reg->total_price, 0, ',', '.') }}</td>
+                                    <td class="text-center">
+                                        @if($isPaid && $reg->invoice_url)
+                                            <a href="{{ $reg->invoice_url }}" target="_blank" class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-3">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i> Invoice
+                                            </a>
+                                        @else
+                                            <span class="text-muted small">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted small">
+                                        <i class="bi bi-cart-x fs-1 opacity-25 d-block mb-3"></i>
+                                        Belum ada riwayat pembelian.
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
 
 
             {{-- <div class="card mb-4"> --}}
