@@ -62,7 +62,12 @@ class AuthController extends Controller
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
         }
-
+        //trainer
+        if (strcasecmp($user->role ?? '', 'trainer') === 0) {
+            return redirect()
+            ->route('trainer.dashboard')
+            ->with('success', 'Login berhasil! Selamat datang di dashboard trainer.');
+        }
         // For regular users, always redirect to the main dashboard after successful login
         return redirect('/dashboard')->with('success', 'Login berhasil. Selamat datang di IdSpora Academy!');
     }
@@ -447,6 +452,12 @@ class AuthController extends Controller
         $user = Auth::user();
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+        }
+        //trainer
+        if (strcasecmp($user->role ?? '', 'trainer') === 0) {
+            return redirect()
+            ->route('trainer.dashboard')
+            ->with('success', 'Login berhasil! Selamat datang di dashboard trainer.');
         }
         if ($redirect) {
             return redirect($redirect)->with('success', 'Login berhasil!');

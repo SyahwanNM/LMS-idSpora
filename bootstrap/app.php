@@ -12,10 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckUserMaintenance::class,
+        ]);
+
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
-            'profile.complete' => \App\Http\Middleware\RequireProfileComplete::class,
+            'profile.complete' => 
+            \App\Http\Middleware\RequireProfileComplete::class,
+            'trainer' => \App\Http\Middleware\TrainerMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

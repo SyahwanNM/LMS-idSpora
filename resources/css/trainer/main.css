@@ -5,6 +5,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
 
 /* Import Components */
+@import url("components/navbar.css");
 @import url("components/sidebar.css");
 
 /* CSS Variables - Global untuk diakses di .trainer-page */
@@ -116,12 +117,11 @@
     font-family: var(--font-family-base);
     line-height: var(--line-height-normal);
     font-size: var(--font-size-base);
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: calc(100vh - 60px);
     background-color: var(--base-clr);
     color: var(--text-clr);
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr;
     margin: 0;
     padding: 0;
 }
