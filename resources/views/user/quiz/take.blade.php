@@ -20,7 +20,7 @@
         $total = $questions->count();
         $prevIndex = max(0, $currentQuestionIndex - 1);
         $prevUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $prevIndex]);
-        $resultUrl = route('user.quiz.result', [$course, $module, $attempt]);
+        $resultUrl = route('user.quiz.result.short', $attempt);
         $finishUrl = route('user.quiz.finish', [$course, $module, $attempt]);
 
         $quizNumber = 1;
