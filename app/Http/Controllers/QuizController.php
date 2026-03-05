@@ -195,7 +195,7 @@ class QuizController extends Controller
         }
 
         if ($attempt->completed_at) {
-            return redirect()->route('user.quiz.result', [$course, $module, $attempt]);
+            return redirect()->route('user.quiz.result.short', $attempt);
         }
 
         $questions = $module->quizQuestions()->with('answers')->get();
@@ -221,7 +221,7 @@ class QuizController extends Controller
             });
             if ($currentQuestionIndex === false) {
                 $attempt->update(['completed_at' => now()]);
-                return redirect()->route('user.quiz.result', [$course, $module, $attempt]);
+                return redirect()->route('user.quiz.result.short', $attempt);
             }
         }
 
@@ -262,7 +262,7 @@ class QuizController extends Controller
         }
 
         if ($attempt->completed_at) {
-            return redirect()->route('user.quiz.result', [$course, $module, $attempt]);
+            return redirect()->route('user.quiz.result.short', $attempt);
         }
 
         $questionId = (int) $request->question_id;
@@ -307,7 +307,7 @@ class QuizController extends Controller
         if ($answers->count() >= $attempt->total_questions) {
             $attempt->update(['completed_at' => now()]);
             $this->syncProgressIfPassed($course, $module, $attempt);
-            return redirect()->route('user.quiz.result', [$course, $module, $attempt]);
+            return redirect()->route('user.quiz.result.short', $attempt);
         }
 
         // Go to next unanswered question (or next sequential)
@@ -328,7 +328,7 @@ class QuizController extends Controller
         if ($nextIdx === null) {
             $attempt->update(['completed_at' => now()]);
             $this->syncProgressIfPassed($course, $module, $attempt);
-            return redirect()->route('user.quiz.result', [$course, $module, $attempt]);
+            return redirect()->route('user.quiz.result.short', $attempt);
         }
 
         return redirect()->route('user.quiz.take', [$course, $module, $attempt, 'q' => $nextIdx]);
@@ -343,7 +343,24 @@ class QuizController extends Controller
             $attempt->update(['completed_at' => now()]);
         }
         $this->syncProgressIfPassed($course, $module, $attempt);
-        return redirect()->route('user.quiz.result', [$course, $module, $attempt]);
+        return redirect()->route('user.quiz.result.short', $attempt);
+    }
+
+    public function resultShort(QuizAttempt $attempt)
+    {
+        $attempt->load('courseModule.course');
+
+        $module = $attempt->courseModule;
+        if (!$module) {
+            abort(404, 'Module not found');
+        }
+
+        $course = $module->course;
+        if (!$course) {
+            abort(404, 'Course not found');
+        }
+
+        return $this->result($course, $module, $attempt);
     }
 
     public function result(Course $course, CourseModule $module, QuizAttempt $attempt)
@@ -357,6 +374,6 @@ class QuizController extends Controller
         $questions = $module->quizQuestions;
         $questions->load('answers');
 
-        return view('user.quiz.result', compact('course', 'module', 'attempt', 'questions'));
+        return view('user.quiz.hasil-course', compact('course', 'module', 'attempt', 'questions'));
     }
 }

@@ -273,7 +273,7 @@
                                             $statusStyle = $passed
                                                 ? 'background:#eafff3; color:#16a34a;'
                                                 : 'background:#ffecec; color:#ef4444;';
-                                            $detailsUrl = (isset($course) && $cm) ? route('user.quiz.result', [$course, $cm, $att]) : '#';
+                                            $detailsUrl = $att ? route('user.quiz.result.short', $att) : '#';
                                         @endphp
                                         <tr style="border-bottom:1px solid rgba(0,0,0,.06);">
                                             <td style="font-size:13px; color:#111827;">
