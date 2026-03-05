@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -33,6 +34,9 @@ class User extends Authenticatable
         'last_event_date',
         'profession',
         'institution',
+        'referral_code',
+        'wallet_balance',
+        'referrer_id',
     ];
 
     /**
@@ -311,5 +315,27 @@ class User extends Authenticatable
         }
         
         return null;
+    }
+    // Nambahin relasi
+    public function referrals()
+    {
+        return $this->hasMany(Referral::class, 'user_id'); // Orang yang kita ajak
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            // Bikin kode random 6 karakter (angka & huruf), lalu uppercase
+            // Contoh output: 616JA0
+            if (empty($user->referral_code)) {
+                $user->referral_code = strtoupper(Str::random(6) . rand(10,99)); 
+            }
+        });
     }
 }
