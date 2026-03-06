@@ -27,6 +27,7 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\ResellerController;
 use App\Http\Controllers\TrainerController;
+use App\Http\Controllers\Api\PaymentController;
 
 Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
@@ -105,8 +106,6 @@ Route::get('/payment-course', function () {
 Route::get('/quiz1-course', function () {
     return view('quiz1-course');
 })->name('quiz1-course');
-
-
 
 Route::get('/quiz-course', function () {
     return view('quiz-course');
@@ -576,11 +575,42 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/courses/{id}', [TrainerController::class, 'courseDetail'])->name('detail-course');
     Route::get('/finance', [TrainerController::class, 'finance'])->name('finance');
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
-    Route::view('/events', 'trainer.events')->name('events');
-    Route::view('/feedback', 'trainer.feedback')->name('feedback');
+
+    Route::get('/events', [TrainerController::class, 'events'])->name('events');
+
+    Route::get('/events/{id}', [TrainerController::class, 'eventDetail'])->name('events.show');
+    Route::get('/feedback', [TrainerController::class, 'feedback'])->name('feedback');
+
+    // --- STUDIO UNTUK COURSE ---
+    Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
+    Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
+    Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
+
+    // --- STUDIO UNTUK EVENT ---
+    Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
+    Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
+
     Route::get('/content-studio/{courseId?}', function ($courseId = null) {
         return view('trainer.content-studio', ['courseId' => $courseId]);
     })->name('content-studio');
     Route::post('/upload-materials', [TrainerController::class, 'uploadMaterials'])->name('upload-materials');
     Route::post('/save-quiz', [TrainerController::class, 'saveQuiz'])->name('save-quiz');
+});
+
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'index'])->name('admin.trainer.index');
+    Route::get('/admin/trainer/create', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'create'])->name('admin.trainer.create');
+    Route::post('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'store'])->name('admin.trainer.store');
+    Route::get('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'show'])->name('admin.trainer.show');
+    Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
+    Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
+    Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
+
+    // Material Approval Routes
+    Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.material.approvals');
+    Route::get('/admin/material/approved', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approved'])->name('admin.material.approved');
+    Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.material.rejected');
+    Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
+    Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
+    Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
 });

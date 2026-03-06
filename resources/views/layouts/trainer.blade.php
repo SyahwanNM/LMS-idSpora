@@ -10,8 +10,13 @@
     @vite([
         'resources/css/app.css',
         'resources/css/trainer/main.css',
-        'resources/css/trainer/course.css'
-    ])
+        "resources/css/trainer/dashboard.css",
+        'resources/css/trainer/course.css',
+        "resources/css/trainer/detail-course.css",
+        'resources/css/trainer/events.css',
+        "resources/css/trainer/detail-event.css",
+        "resources/css/trainer/feedback.css",
+        ])
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 

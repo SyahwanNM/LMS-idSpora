@@ -1,6 +1,6 @@
 @extends('layouts.trainer')
 
-@section('title', 'Event Detail - Trainer')
+@section('title', $event->title . ' - Trainer')
 
 @php
   $pageTitle = 'Event Detail';
@@ -11,24 +11,32 @@
   ];
 @endphp
 
-@push('styles')
-  <link rel="stylesheet" href="/assets/css/detail-event.css" />
-@endpush
-
 @section('content')
   <div class="hero-section">
     <div class="hero-container">
       <div class="hero-top-row">
-        <button class="back-button" onclick="window.location.href = 'events.html'">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button
+          class="back-button"
+          onclick="window.location.href = '{{ route('trainer.events') }}'"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           <span>ALL SESSIONS</span>
         </button>
 
         <div class="event-status-badges">
-          <span class="status-badge">VIRTUAL STUDIO</span>
+          <span class="status-badge">{{ strtoupper($event->jenis ?? 'VIRTUAL STUDIO') }}</span>
           <span class="status-badge">CONFIRMED COMMITMENT</span>
         </div>
       </div>
@@ -37,20 +45,29 @@
         <div class="hero-left">
           <div class="event-category-badge">
             <span class="badge-icon"></span>
-            <span>HYBRID MASTERCLASS</span>
+            <span>{{ strtoupper($event->category ?? 'HYBRID MASTERCLASS') }}</span>
             <span class="badge-sep">•</span>
             <span>SESSION LEDGER</span>
           </div>
 
           <h1 class="event-hero-title">
-            Visual Branding <span>Architecture</span>
+            {{ $event->title }}
           </h1>
 
           <div class="event-info-cards">
             <div class="info-card">
               <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                   <line x1="16" y1="2" x2="16" y2="6"></line>
                   <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -59,43 +76,73 @@
               </div>
               <div class="info-card-content">
                 <span class="info-card-label">DATE</span>
-                <span class="info-card-value">Wed Apr 10 2024</span>
+                <span class="info-card-value">
+                  {{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('D M d Y') : 'TBA' }}
+                </span>
               </div>
             </div>
 
             <div class="info-card">
               <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
               </div>
               <div class="info-card-content">
                 <span class="info-card-label">TIME</span>
-                <span class="info-card-value">01:00 PM - 04:00 PM</span>
+                <span class="info-card-value">
+                  {{ $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('h:i A') : 'TBA' }}
+                  @if($event->event_time_end)
+                    - {{ \Carbon\Carbon::parse($event->event_time_end)->format('h:i A') }}
+                  @endif
+                </span>
               </div>
             </div>
 
             <div class="info-card">
               <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
               </div>
               <div class="info-card-content">
                 <span class="info-card-label">VENUE</span>
-                <span class="info-card-value">Tech Hub Hall A</span>
+                <span class="info-card-value">{{ $event->location ?? 'Tech Hub Hall A' }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="hero-media">
-          <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop"
-            alt="Visual Branding Architecture" class="hero-image" />
+          @if(Str::startsWith($event->image, ['http://', 'https://']))
+              <img src="{{ $event->image }}" alt="{{ $event->title }}" class="hero-image" />
+          @elseif($event->image)
+              <img src="{{ asset('storage/'.$event->image) }}" alt="{{ $event->title }}" class="hero-image" />
+          @else
+              <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop" alt="Default Event Image" class="hero-image" />
+          @endif
         </div>
       </div>
     </div>
@@ -107,33 +154,58 @@
       <div class="vsa-grid">
         <article class="vsa-card">
           <div class="vsa-icon vsa-icon-blue">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd"
-                d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z"
+              />
             </svg>
           </div>
           <div class="vsa-meta">
             <p class="vsa-label">MEETING PORTAL</p>
             <h3>Session Conference</h3>
-            <p class="vsa-link">https://zoom.us/j/123456789</p>
+            <p class="vsa-link">{{ $event->zoom_link ?? 'Link belum tersedia' }}</p>
           </div>
-          <button class="vsa-btn vsa-btn-primary">
+          <a href="{{ $event->zoom_link ?? '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($event->zoom_link) ? 'disabled' : '' }}>
             JOIN SESSION
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd"
-                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-              <path fill-rule="evenodd"
-                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"
+              />
             </svg>
-          </button>
+          </a>
         </article>
 
         <article class="vsa-card">
           <div class="vsa-icon vsa-icon-amber">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
               <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
               <path
-                d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
+                d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z"
+              />
             </svg>
           </div>
           <div class="vsa-meta">
@@ -141,15 +213,23 @@
             <h3>Virtual Background</h3>
             <p class="vsa-desc">High-Res PNG • Pre-branded</p>
           </div>
-          <button class="vsa-btn vsa-btn-amber">
+          <a href="{{ $event->vbg_path ? asset('storage/'.$event->vbg_path) : '#' }}" class="vsa-btn vsa-btn-amber" download>
             DOWNLOAD VBG
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
               <path
-                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"
+              />
               <path
-                d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"
+              />
             </svg>
-          </button>
+          </a>
         </article>
       </div>
 
@@ -158,7 +238,7 @@
           <span class="context-dot"></span>
           <span>PEDAGOGICAL CONTEXT</span>
         </div>
-        <p>Deep dive into responsive design systems.</p>
+        <p>{{ $event->description ?? 'Deskripsi detail event belum tersedia.' }}</p>
       </div>
 
       <p class="vsa-subtitle">SESSION LEDGER</p>
@@ -171,7 +251,7 @@
           </li>
           <li>
             <span class="time-rundown">13:20 - 14:10</span>
-            <span class="activity-rundown">Materi inti: Visual Branding Architecture</span>
+            <span class="activity-rundown">Materi inti: {{ $event->title }}</span>
           </li>
           <li>
             <span class="time-rundown">14:10 - 14:30</span>
@@ -194,24 +274,38 @@
       <div class="hub-section">
         <p class="hub-section-title">ENGAGEMENT REQUIREMENTS</p>
         <div class="hub-pill-grid">
-          <div class="hub-pill" data-redirect="content-studio.html?tab=module">
+          <div
+            class="hub-pill"
+            data-redirect="{{ route('trainer.events.studio', $event->id) }}"
+          >
             <p class="hub-pill-label">MATERIALS</p>
-            <p class="hub-pill-value">2 PDF • 1 Video</p>
+            <p class="hub-pill-value">Upload Content</p>
           </div>
-          <div class="hub-pill" data-redirect="content-studio.html?tab=quiz">
+          <div
+            class="hub-pill"
+            data-redirect="#"
+          >
             <p class="hub-pill-label">ASSESSMENTS</p>
-            <p class="hub-pill-value">Pre-test &amp; Post-test</p>
+            <p class="hub-pill-value">Quizzes</p>
           </div>
         </div>
       </div>
 
       <div class="hub-item">
         <div class="hub-item-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
             <path
-              d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+              d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"
+            />
             <path
-              d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+              d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"
+            />
           </svg>
         </div>
         <div>
@@ -222,10 +316,19 @@
 
       <div class="hub-item">
         <div class="hub-item-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            fill="currentColor"
+            viewBox="0 0 16 16"
+          >
             <path
-              d="M5.338 5.59a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75zm6 0a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75z" />
+              d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+            />
+            <path
+              d="M5.338 5.59a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75zm6 0a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75z"
+            />
           </svg>
         </div>
         <div>
@@ -235,10 +338,19 @@
       </div>
 
       <div class="hub-alert">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
           <path
-            d="m10.97 4.97-.02.02-3.36 3.36a.75.75 0 1 1-1.06-1.06l3.36-3.36a.75.75 0 1 1 1.06 1.06l-.02.02zm-9.47 8.47H6a.75.75 0 0 1 0 1.5H.539l-.427 2.154a.75.75 0 0 0 .921.921l2.154-.427V16a.75.75 0 0 1 1.5 0v2.039l2.154.427a.75.75 0 0 0 .921-.921l-.427-2.154H6a.75.75 0 0 1 0-1.5H1.5z" />
+            d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
+          />
+          <path
+            d="m10.97 4.97-.02.02-3.36 3.36a.75.75 0 1 1-1.06-1.06l3.36-3.36a.75.75 0 1 1 1.06 1.06l-.02.02zm-9.47 8.47H6a.75.75 0 0 1 0 1.5H.539l-.427 2.154a.75.75 0 0 0 .921.921l2.154-.427V16a.75.75 0 0 1 1.5 0v2.039l2.154.427a.75.75 0 0 0 .921-.921l-.427-2.154H6a.75.75 0 0 1 0-1.5H1.5z"
+          />
         </svg>
         <p>
           VALIDATION REQUIRED: PLEASE UPLOAD PEDAGOGICAL ASSETS AT LEAST 24H
@@ -247,21 +359,21 @@
       </div>
     </aside>
   </div>
-  </main>
-  </div>
-  <script>
-    document.addEventListener("click", (event) => {
-      const pill = event.target.closest(".hub-pill[data-redirect]");
-      if (!pill) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const targetPath = pill.getAttribute("data-redirect");
-      if (targetPath) {
-        window.location.href = targetPath;
-      }
-    });
-  </script>
-
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener("click", (event) => {
+    const pill = event.target.closest(".hub-pill[data-redirect]");
+    if (!pill) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const targetPath = pill.getAttribute("data-redirect");
+    if (targetPath && targetPath !== '#') {
+      window.location.href = targetPath;
+    }
+  });
+</script>
+@endpush

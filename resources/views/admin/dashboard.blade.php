@@ -343,7 +343,7 @@
                             </button>
                         </div>
                         <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button" class="btn w-100 quick-action-btn btn-outline-purple d-flex flex-column align-items-center py-4 rounded-4" onclick="location.href='#'">
+                            <button type="button" class="btn w-100 quick-action-btn btn-outline-purple d-flex flex-column align-items-center py-4 rounded-4" onclick="location.href='{{ route('admin.trainer.index') }}'">
                                 <i class="bi bi-person-badge-fill fs-3 mb-2"></i>
                                 <small class="fw-semibold">Manage Trainer</small>
                             </button>

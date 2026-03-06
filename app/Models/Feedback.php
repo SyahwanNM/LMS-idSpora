@@ -25,4 +25,9 @@ class Feedback extends Model
     {
         return $this->belongsTo(Event::class);
     }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
 }

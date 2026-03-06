@@ -10,6 +10,7 @@ class Event extends Model
 {
     use SoftDeletes;
     protected $fillable = [
+        'trainer_id',
         'title',
         'image',
         'vbg_path',
