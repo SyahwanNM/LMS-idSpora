@@ -89,6 +89,11 @@ class User extends Authenticatable
         return $this->hasMany(Course::class, 'trainer_id');
     }
 
+    public function eventsAsTrainer()
+    {
+        return $this->hasMany(Event::class, 'trainer_id');
+    }
+
     public function trainerEnrollments()
     {
         return $this->hasManyThrough(

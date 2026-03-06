@@ -60,22 +60,193 @@ class TrainerController extends Controller
 
     public function courseDetail($id)
     {
-        $course = Course::with(['modules', 'enrollments'])
+        $trainerId = \Illuminate\Support\Facades\Auth::id();
+
+        // 1. Ambil data course dan relasinya
+        $course = \App\Models\Course::with([
+            'modules' => function ($query) {
+                // Urutkan modul, dan load relasi kuis
+                $query->orderBy('order_no', 'asc')->with('quizQuestions');
+            },
+            'enrollments.student',
+            'reviews'
+        ])
             ->where('id', $id)
-            ->where('trainer_id', Auth::id())
+            ->where('trainer_id', $trainerId)
             ->firstOrFail();
 
-        return view('trainer.detail-course', compact('course'));
+        // 2. Hitung statistik dasar
+        $enrollmentCount = $course->enrollments->where('status', 'active')->count();
+        $averageRating = number_format($course->reviews->avg('rating') ?? 0, 1);
+        $moduleCount = $course->modules->count();
+        $activeStudents = $course->enrollments->where('status', 'active');
+
+        // 3. Kalkulasi Quiz Recap (Berdasarkan model QuizAttempt)
+        $totalSubmissions = 0;
+        $totalScores = 0;
+        $classAverage = 0;
+
+        // Ambil semua percobaan kuis (QuizAttempt) yang terkait dengan modul-modul di course ini
+        $moduleIds = $course->modules->pluck('id');
+        $quizAttempts = \App\Models\QuizAttempt::with(['user', 'courseModule'])
+            ->whereIn('course_module_id', $moduleIds)
+            ->orderBy('completed_at', 'desc')
+            ->get();
+
+        if ($quizAttempts->count() > 0) {
+            $totalSubmissions = $quizAttempts->count();
+
+            // Hitung rata-rata persentase kelas
+            foreach ($quizAttempts as $attempt) {
+                $totalScores += $attempt->percentage;
+            }
+            $classAverage = round($totalScores / $totalSubmissions, 1);
+        }
+
+        return view('trainer.detail-course', compact(
+            'course',
+            'enrollmentCount',
+            'averageRating',
+            'moduleCount',
+            'activeStudents',
+            'quizAttempts',
+            'classAverage',
+            'totalSubmissions'
+        ));
+    }
+    public function events(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $search = $request->query('search');
+
+        $query = \App\Models\Event::where('trainer_id', $user->id)
+            ->withCount([
+                'registrations as participants_count' => function ($q) {
+                    $q->where('status', 'active');
+                }
+            ]);
+
+        if ($search) {
+            $query->where('title', 'LIKE', "%{$search}%");
+        }
+
+        $events = $query->orderBy('event_date', 'asc')->paginate(9);
+
+        $upcomingCount = \App\Models\Event::where('trainer_id', $user->id)
+            ->where('event_date', '>=', now())
+            ->count();
+
+        return view('trainer.events', compact('events', 'upcomingCount', 'search'));
+    }
+
+    public function eventDetail($id)
+    {
+        $trainerId = \Illuminate\Support\Facades\Auth::id();
+
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        return view('trainer.detail-event', compact('event'));
+    }
+
+    public function feedback(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        $eventIds = \App\Models\Event::where('trainer_id', $user->id)->pluck('id');
+        $courseIds = \App\Models\Course::where('trainer_id', $user->id)->pluck('id');
+
+        $query = \App\Models\Feedback::with(['user', 'event', 'course'])
+            ->where(function ($q) use ($eventIds, $courseIds) {
+                $q->whereIn('event_id', $eventIds)
+                    ->orWhereIn('course_id', $courseIds);
+            })
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'LIKE', "%{$search}%");
+                })->orWhere('comment', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $feedbacks = $query->paginate(10);
+
+        $statQuery = \App\Models\Feedback::where(function ($q) use ($eventIds, $courseIds) {
+            $q->whereIn('event_id', $eventIds)->orWhereIn('course_id', $courseIds);
+        });
+
+        $totalFeedbacks = $statQuery->count();
+        $averageRating = 0;
+        $satisfactionRate = 0;
+        $ratingStats = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+
+        if ($totalFeedbacks > 0) {
+            $averageRating = round((clone $statQuery)->avg('rating'), 1);
+
+            $ratingsCount = (clone $statQuery)
+                ->selectRaw('rating, count(*) as count')
+                ->groupBy('rating')
+                ->pluck('count', 'rating')
+                ->toArray();
+
+            foreach ($ratingsCount as $star => $count) {
+                if (isset($ratingStats[$star])) {
+                    $ratingStats[$star] = round(($count / $totalFeedbacks) * 100);
+                }
+            }
+
+            $satisfactionRate = $ratingStats[5] + $ratingStats[4];
+        }
+
+        return view('trainer.feedback', compact(
+            'feedbacks',
+            'totalFeedbacks',
+            'averageRating',
+            'ratingStats',
+            'satisfactionRate'
+        ));
+    }
+
+    public function courseStudio($id)
+    {
+        $trainerId = \Illuminate\Support\Facades\Auth::id();
+
+        // 1. Ambil data course
+        $course = \App\Models\Course::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        // 2. Ambil data materials/modules milik course ini
+        $materials = \App\Models\CourseModule::where('course_id', $id)
+            ->orderBy('order_no', 'asc')
+            ->get();
+
+        // 3. Kirimkan ke view (termasuk $materials)
+        return view('trainer.content-studio', compact('course', 'materials'));
+    }
+
+    public function eventStudio($id)
+    {
+        $trainerId = \Illuminate\Support\Facades\Auth::id();
+
+        // Cari event, pastikan ini milik trainer yang sedang login
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        // Tampilkan halaman khusus studio event
+        return view('trainer.event-studio', compact('event'));
     }
 
     public function finance()
     {
         $user = Auth::user();
 
-        // 1. Ambil Total Pendapatan (Hanya angka total)
         $totalEarned = $user->trainerPayments()->sum('amount');
-
-        // 2. Ambil Riwayat Pembayaran (List detail)
         $payments = $user->trainerPayments()
             ->orderBy('payment_date', 'desc')
             ->paginate(10);
@@ -93,9 +264,6 @@ class TrainerController extends Controller
         return view('trainer.profile', compact('trainer', 'courses'));
     }
 
-    /**
-     * Handle materials upload for a course
-     */
     public function uploadMaterials(Request $request)
     {
         $request->validate([
@@ -106,7 +274,6 @@ class TrainerController extends Controller
         $courseId = $request->input('courseId');
         $course = Course::findOrFail($courseId);
 
-        // Check if trainer owns this course
         if ($course->trainer_id !== Auth::id()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
@@ -118,7 +285,6 @@ class TrainerController extends Controller
                 $filename = time() . '_' . $file->getClientOriginalName();
                 $filepath = $file->storeAs('courses/' . $courseId . '/materials', $filename, 'public');
 
-                // Create course module record
                 CourseModule::create([
                     'course_id' => $courseId,
                     'title' => $file->getClientOriginalName(),
@@ -142,10 +308,6 @@ class TrainerController extends Controller
             'files' => $uploadedFiles
         ]);
     }
-
-    /**
-     * Save quiz for a course
-     */
     public function saveQuiz(Request $request)
     {
         $request->validate([
@@ -161,12 +323,10 @@ class TrainerController extends Controller
         $courseId = $request->input('courseId');
         $course = Course::findOrFail($courseId);
 
-        // Check if trainer owns this course
         if ($course->trainer_id !== Auth::id()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Create or update quiz
         $quiz = Quiz::firstOrCreate(
             ['course_id' => $courseId],
             ['passing_grade' => $request->input('passingGrade')]
@@ -174,8 +334,6 @@ class TrainerController extends Controller
 
         $quiz->update(['passing_grade' => $request->input('passingGrade')]);
 
-        // Store questions (this depends on your QuizQuestion model)
-        // Adjust based on your actual database structure
         $quiz->questions()->delete();
 
         foreach ($request->input('questions') as $index => $question) {
@@ -197,9 +355,6 @@ class TrainerController extends Controller
         ]);
     }
 
-    /**
-     * Determine module type based on file extension
-     */
     private function getModuleType($extension)
     {
         return match (strtolower($extension)) {
