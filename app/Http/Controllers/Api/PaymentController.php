@@ -93,6 +93,7 @@ class PaymentController extends Controller
                     'event_id' => $event->id,
                     'event_registration_id' => $registration->id,
                     'user_id' => $user->id,
+                    'order_id' => 'MP-' . strtoupper(uniqid()),
                     'amount' => $amount,
                     'currency' => 'IDR',
                     'method' => 'manual_transfer', // Default method

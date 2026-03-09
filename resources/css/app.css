@@ -4226,6 +4226,191 @@ input[type="time"] {
     cursor: pointer;
     margin-bottom: 20px;
 }
+/*RATING COURSE*/
+.rating_box_luar{
+    width: 80%;
+    margin: auto;
+    margin-top: 50px;
+}
+.circle{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    background:#f4c430;
+}
+.circle.inactive{
+    background:#cfcfcf;
+}
+.line{
+    width:120px;
+    height:2px;
+    background:#888;
+}
+.box_dalam_penilaian{
+    border:1px solid black;
+    padding:40px;
+    width:100%;
+    margin-top:40px;
+    border-radius:8px;
+}
+.pertanyaan_penilaian{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:25px;
+}
+.pertanyaan_penilaian h4{
+    width:60%;
+}
+.stars,
+.stars_trainer{
+    display:flex;
+    gap:8px;
+    font-size:28px;
+}
+.submit-rating{
+    margin-left:20px;
+    border:none;
+    background:transparent;
+    font-size:24px;
+    cursor:pointer;
+}
+.box_feedback{
+    border:1px solid black;
+    padding:40px;
+    width:100%;
+    margin-top:40px;
+    border-radius:8px;
+}
+.comment-box textarea{
+    width:100%;
+    padding:15px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    margin-top:10px;
+}
+.tata_cara_feedback{
+    border:1px solid black;
+    padding:15px;
+    margin-top:20px;
+}
+.tombol_next_sertifikat{
+    display:flex;
+    margin-top:30px;
+    margin-left: 1460px;
+}
+.next_halaman_sertif{
+    width:160px;
+    padding:10px;
+    border-radius:8px;
+    font-size:16px;
+    background-color:#FFD33B;
+    border:none;
+}
+
+/*CETAK SERTIFIKAT*/
+body{
+    font-family: Arial, sans-serif;
+    background:#f3f3f3;
+    margin:0;
+  }
+  
+  .container{
+    max-width:1000px;
+    margin:auto;
+    text-align:center;
+    padding:40px 20px;
+  }
+  
+  /* STEP */
+  .steps{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid #ddd;
+    padding:20px;
+    border-radius:15px;
+    margin-bottom:40px;
+    background:white;
+  }
+  
+  .step{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:500;
+  }
+  
+  .circle{
+    width:35px;
+    height:35px;
+    border-radius:50%;
+    background:#ddd;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+  }
+  
+  .active .circle{
+    background:#f4c542;
+  }
+  
+  .line{
+    width:80px;
+    height:2px;
+    background:#ccc;
+    margin:0 20px;
+  }
+  
+  /* TITLE */
+  
+  h1{
+    color:#3b5fbf;
+    font-size:36px;
+  }
+  
+  .desc{
+    max-width:700px;
+    margin:20px auto;
+    color:#444;
+    line-height:1.6;
+  }
+  
+  /* CERTIFICATE */
+  
+  .certificate img{
+    width:100%;
+    max-width:800px;
+    border-radius:10px;
+    margin-top:20px;
+    box-shadow:0 10px 20px rgba(0,0,0,0.1);
+  }
+  
+  /* BUTTON */
+  
+  .btn-area{
+    margin-top:40px;
+    text-align:right;
+  }
+  
+  button{
+    background:#f4c542;
+    border:none;
+    padding:14px 30px;
+    font-size:16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  
+  button:hover{
+    background:#e5b735;
+  }
 
 /*ADMIN COURSE BUILDER*/
 .box_luar_course_builder {
@@ -4241,7 +4426,18 @@ input[type="time"] {
     margin-left: 70px;
     font-size: 20px;
 }
-
+.tabel_participant_course{
+    padding: 10px;
+}
+.judul_tabel_participant{
+    text-align: center;
+    margin-right: 100px;
+    padding: 50px;
+}
+.isi_tabel_participant{
+    text-align: center;
+    margin-right: 100px;
+}
 .tambah_course {
     display: flex;
     gap: 10px;
@@ -4319,6 +4515,9 @@ input[type="time"] {
     color: white;
     text-align: center;
     border: none;
+}
+.syllabus-ringkasan{
+    text-align: left;
 }
 
 .aksi_daftar_course svg {
@@ -5192,6 +5391,14 @@ input[type="time"] {
 .box_cari_pendapatan {
     margin-top: 50px;
 }
+.box_filter_cari{
+    display: flex;
+    gap: 500px;
+}
+.box_filter{
+    margin-left: 20px;
+    margin-top: -40px;
+}
 
 .cari_pendapatan {
     display: flex;
@@ -5735,6 +5942,7 @@ input[type="time"] {
         border: 1px solid #e2e8f0;
         border-radius: 20px;
         padding: 24px;
+        margin-top: 20px;
     }
 
     .ringkasan-konten h3 {
@@ -5994,6 +6202,7 @@ input[type="time"] {
     margin-left: 50px;
     margin-top: 30px;
     margin-bottom: 30px;
+    display: flex;
 }
 .btn_report{
     background-color: white;

@@ -9,6 +9,8 @@ Route::post('/payment/{event}/manual-register', [ManualPaymentController::class,
 // Course manual payment proof upload (user-uploaded proof)
 Route::middleware(['auth'])->group(function () {
 	Route::post('/manual-payment/upload/{course}', [CourseManualPaymentController::class, 'upload'])->name('courses.manual-payment.upload');
+	Route::post('/courses/{course}/free-enroll', [CourseManualPaymentController::class, 'freeEnroll'])->name('courses.free-enroll');
+
 });
 
 // Admin endpoints to verify or reject uploaded proofs

@@ -77,9 +77,11 @@
                         @endif
 
                         <div class="mb-3">
-                            <label class="form-label text-dark" for="course-duration">Durasi (jam) <span class="sanity-dot" data-for="course-duration"></span></label>
-                            <input id="course-duration" name="duration" type="number" class="form-control" min="1" placeholder="Masukkan durasi course dalam jam">
-                            <div class="sanity-msg" data-for="course-duration"></div>
+                            <label class="form-label text-dark" for="course-duration">Trainer <span class="sanity-dot"></span></label>
+                            <select class="form-select">
+                                <option>Pilih Trainer</option>
+                                <option> stephanie</option>
+                            </select>
                         </div>
 
                         <div class="mb-3">

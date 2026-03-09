@@ -192,9 +192,9 @@ class ProfileController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // Get all payments for this user
-        $payments = \App\Models\Payment::where('user_id', $user->id)
-            ->whereIn('status', ['capture', 'settlement'])
+        // Get all manual payments for this user
+        $payments = \App\Models\ManualPayment::where('user_id', $user->id)
+            ->where('status', 'settled')
             ->get()
             ->keyBy('event_id');
         

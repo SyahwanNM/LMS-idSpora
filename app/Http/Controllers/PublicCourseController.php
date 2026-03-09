@@ -6,7 +6,7 @@ use App\Models\Course;
 use App\Models\Carousel;
 use App\Models\Enrollment;
 use App\Models\ManualPayment;
-use App\Models\Payment;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -88,14 +88,7 @@ class PublicCourseController extends Controller
                 ->pluck('course_id')
                 ->all();
 
-            $fromMidtransPayments = Payment::query()
-                ->where('user_id', $user->id)
-                ->whereNotNull('course_id')
-                ->whereIn('status', ['capture', 'settlement'])
-                ->pluck('course_id')
-                ->all();
-
-            $learnableCourseIds = array_values(array_unique(array_merge($fromEnrollments, $fromManualPayments, $fromMidtransPayments)));
+            $learnableCourseIds = array_values(array_unique(array_merge($fromEnrollments, $fromManualPayments)));
 
             // Continue learning: active enrollments, sorted by recent activity
             $continueEnrollments = Enrollment::query()
