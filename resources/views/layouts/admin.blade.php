@@ -16,8 +16,14 @@
     </style>
 </head>
 <body>
-    <!-- Admin Navbar (Bootstrap) -->
-    @php $user = auth()->user(); @endphp
+    @php 
+        $user = auth()->user();
+        $isSpecialPage = request()->routeIs('admin.finance.*') || 
+                         request()->routeIs('admin.withdrawals.*') || 
+                         request()->routeIs('admin.crm.*');
+    @endphp
+
+    @unless($isSpecialPage)
     <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
@@ -81,6 +87,7 @@
             </div>
         </div>
     </nav>
+    @endunless
         <!-- Logout Confirmation Modal -->
         <div class="modal fade logout-modal" id="confirmLogoutModal" tabindex="-1" aria-labelledby="confirmLogoutLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-md">
@@ -125,9 +132,17 @@
         </div>
     {{-- Quick Actions Scrollable Bar (override with @section('admin_quick_actions') if needed) --}}
     {{-- Quick actions bar removed per request: New Course/Event/User, All Courses/Events/Users, Reports --}}
-    <div class="container">
+    @yield('navbar')
+
+    <div class="@if($isSpecialPage) container-fluid p-0 @else container @endif">
         @yield('content')
     </div>
+
+    @if($isSpecialPage)
+    <style>
+        body { padding-top: 0 !important; }
+    </style>
+    @endif
     
     
     <script>

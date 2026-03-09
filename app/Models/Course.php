@@ -54,10 +54,7 @@ class Course extends Model
     /**
      * Payments relation (payments made for this course)
      */
-    public function payments()
-    {
-        return $this->hasMany(\App\Models\Payment::class);
-    }
+
 
     /**
      * Manual payments relation (QRIS proof uploads)
