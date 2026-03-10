@@ -22,7 +22,6 @@
             <div class="btn-group" role="group" aria-label="Report sections">
                 <button type="button" class="btn_report active" data-target="pendapatan">Pendapatan</button>
                 <button type="button" class="btn_report" data-target="pertumbuhan">Pertumbuhan</button>
-                <button type="button" class="btn_report" data-target="organize_course">Organize Course</button>
             </div>
             <div class="box_unduh">
                 <button class="btn_unduh">
@@ -185,99 +184,77 @@
             </div>
         </div>
         <div id="pertumbuhan" class="box_report">
-            <h3>Laporan Pertumbuhan</h3>
-            <div class="box_pendapatan">
-                
-               
-            </div>
-            <div class="box_detail_laporan">
-                <div class="detail_laporan_pertumbuhan">
-                    <h4>Jumlah User yang menyelesaikan Course</h4>
-                    <p>Total peserta yang menuntaskan kursus</p>
-                    <h3 class="total_pertumbuhan" id="growthCompletedUsers">{{ (int)($growthReport['summary']['completed_users'] ?? 0) }}</h3>
-                    <div class="informasi_kenaikan_pendapatan">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" class="bi bi-arrow-up" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5" />
-                        </svg>
-                        <p>12% dari bulan lalu</p>
+            <div class="container-fluid mt-4">
+                <div class="row g-3">
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6>Total View</h6>
+                                <h3 id="totalViews">0</h3>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6>Waktu Tonton Rata-rata</h6>
+                                <h3 id="avgWatch">0 Menit</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6>Peserta</h6>
+                                <h3 id="totalStudents">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center">
+                                <h6>Rating Keseluruhan</h6>
+                                <h3 id="courseRating">0 ⭐</h3>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="detail_laporan_pertumbuhan">
-                    <h4>Engagement Rate</h4>
-                    <p>Interaksi Peserta</p>
-                    <div class="analisis_pertumbuhan">
-                        <div class="angka_penilaian_pertumbuhan">
-                            <p>Rating</p>
-                            <p class="total_perhitungan">250</p>
-                        </div>
-                        <div class="angka_penilaian_pertumbuhan">
-                            <p>Durasi Penyelesaian Course</p>
-                            <p class="total_perhitungan">120</p>
-                        </div>
-                        <div class="angka_penilaian_pertumbuhan">
-                            <p>Peserta Aktif</p>
-                            <p class="total_perhitungan">50</p>
-                        </div>
-                        <div class="angka_penilaian_pertumbuhan">
-                            <p>Rata-rata Nilai Pengerjaan Kuis</p>
-                            <p class="total_perhitungan">90</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="detail_laporan_pertumbuhan">
-                    <h4>Waktu Tonton Permodul</h4>
-                    <p>Durasi menonton</p>
-                    <div class="durasi_menonton">
-                        <div class="analisis_durasi">
-                            <p>Modul Intro</p>
-                            <p>90%</p>
-                        </div>
-                        <div class="progress_bg">
-                            <div class="progress_fill" style="width: 90%"></div>
-                        </div>
 
-                    </div>
-                    <div class="durasi_menonton">
-                        <div class="analisis_durasi">
-                            <p>Modul Dasar</p>
-                            <p>90%</p>
-                        </div>
-                        <div class="progress_bg">
-                            <div class="progress_fill" style="width: 90%"></div>
-                        </div>
-
-                    </div>
-                    <div class="durasi_menonton">
-                        <div class="analisis_durasi">
-                            <p>Modul Lanjut</p>
-                            <p>90%</p>
-                        </div>
-                        <div class="progress_bg">
-                            <div class="progress_fill" style="width: 90%"></div>
-                        </div>
-
-                    </div>
-                    <div class="durasi_menonton">
-                        <div class="analisis_durasi">
-                            <p>Modul Akhir</p>
-                            <p>90%</p>
-                        </div>
-                        <div class="progress_bg">
-                            <div class="progress_fill" style="width: 90%"></div>
-                        </div>
-
+                <div class="card mt-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-3">Report Pertumbuhan Course</h5>
+                        <canvas id="growthChart" height="90"></canvas>
                     </div>
                 </div>
             </div>
             <div class="box_cari_pendapatan">
                 <h3>Detail Performa Course</h3>
             </div>
-            <div class="box_tabel_performa">
-                <div class="tabel_performa">
-                    <h5>Performa Course</h5>
-                    <p>Detail pertumbuhan dan interaksi per course</p>
+            <div class="box_cari_pendapatan">
+                <h5>Pertumbuhan per Course</h5>
+                <div class="box_filter_cari">
+                    <div class="cari_pendapatan">
+                        <div class="box_pendapatan_per_course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                            </svg>
+                            <input class="cari_course" type="text" placeholder="Cari Course">
+                        </div>
+                    </div>
+                    <div class="box_filter">
+                        <p class="mulai_course">Bulan</p>
+                        <input class="tanggal_course" type="month">
+                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                    </div>
+
                 </div>
             </div>
+
             <div class="table-responsive">
                 <table class="tabel_pertumbuhan table table-striped table-hover align-middle">
                     <thead>
@@ -298,7 +275,7 @@
                             <td>{{ $row['total_views_compact'] ?? '0' }}</td>
                             <td>{{ $row['avg_watch_time_label'] ?? '0 min' }}</td>
                             <td></td>
-                            
+
                             <td>{{ (int)($row['comments_count'] ?? 0) }}</td>
                         </tr>
                         @empty
@@ -310,60 +287,68 @@
                 </table>
             </div>
         </div>
-        <div id="organize_course" class="box_report">
-            <div class="box_kelengkapan">
-                <div class="box_pencarian">
-                    <h3>Tabel Kelengkapan per Course</h3>
-                </div>
-                <div class="table-responsive">
-                    <table class="tabel_organize table table-striped table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Nama Course</th>
-                                <th>Jumlah Modul</th>
-                                <th>Status Kelengkapan</th>
-                                <th>Jumlah Video</th>
-                                <th>Jumlah PDF</th>
-                                <th>Quiz/Tugas Akhir</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse(($courses ?? []) as $course)
-                            @php
-                            $status = strtolower((string)($course->status ?? ''));
-                            $statusClass = 'status_kelengkapan_inprogress';
-                            $statusText = $course->status ?? 'In Progress';
-                            if (in_array($status, ['published', 'active', 'complete', 'completed'])) {
-                            $statusClass = 'status_kelengkapan_complete';
-                            $statusText = 'Complete';
-                            } elseif (in_array($status, ['missing', 'draft', 'inactive'])) {
-                            $statusClass = 'status_kelengkapan_miss';
-                            $statusText = 'Missing';
-                            }
-                            @endphp
-                            <tr>
-                                <td>{{ $course->name }}</td>
-                                <td>{{ (int)($course->video_count ?? 0) + (int)($course->pdf_count ?? 0) }}</td>
-                                <td>
-                                    <div class="{{ $statusClass }}">
-                                        <p>{{ $statusText }}</p>
-                                    </div>
-                                </td>
-                                <td>{{ (int)($course->video_count ?? 0) }}</td>
-                                <td>{{ (int)($course->pdf_count ?? 0) }}</td>
-                                <td>{{ (int)($course->quiz_count ?? 0) }}</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">Belum ada course.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const ctx = document.getElementById('growthChart');
+
+            const growthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [
+                        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+                    ],
+                    datasets: [{
+                            label: 'Total View',
+                            data: [120, 200, 250, 300, 450, 600, 700, 850, 900, 1100, 1300, 1500],
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78,115,223,0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Peserta',
+                            data: [5, 10, 20, 35, 50, 65, 80, 100, 120, 150, 180, 210],
+                            borderColor: '#1cc88a',
+                            backgroundColor: 'rgba(28,200,138,0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Waktu Tonton (Menit)',
+                            data: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                            borderColor: '#f6c23e',
+                            backgroundColor: 'rgba(246,194,62,0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Rating Course',
+                            data: [3.5, 3.7, 3.8, 4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8],
+                            borderColor: '#e74a3b',
+                            backgroundColor: 'rgba(231,74,59,0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+        });
+    </script>
     <script>
         const buttons = document.querySelectorAll(".btn_report");
         const sections = document.querySelectorAll(".box_report");

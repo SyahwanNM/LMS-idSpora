@@ -840,16 +840,7 @@
         </div>
       </div>
 
-      <div class="comments">
-        <h6>Leave a Comment</h6>
-        <form action="#" method="POST">
-          <div class="form-group">
-            <textarea id="comment" name="comment" rows="4" class="form-control" placeholder="Comment"
-              required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Post Comment</button>
-        </form>
-      </div>
+      
     </div>
 
     <aside class="sidebar">
