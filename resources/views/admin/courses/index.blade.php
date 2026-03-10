@@ -81,6 +81,7 @@
     <div class="box_luar_course_builder">
         <h1 class="judul_course_builder">Daftar Course</h1>
         <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
+
         <a href="{{ route('admin.add-course') }}" class="tambah_course" style="text-decoration: none;">
             <svg style="margin-top: 7px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
@@ -89,6 +90,40 @@
         </a>
         <div class="box_daftar_course">
             <h4 class="judul_daftar_course">Daftar Course yang Ada</h4>
+            <div class="box_cari_course_builder">
+                <div class="box_filter_cari">
+                    <div class="cari_pendapatan">
+                        <div class="box_pendapatan_per_course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                            </svg>
+                            <input class="cari_course_builder" type="text" placeholder="Cari Course">
+                        </div>
+                    </div>
+                    <div class="box_filter_course_builder">
+                        <p class="mulai_course">Bulan</p>
+                        <input class="tanggal_course" type="month">
+                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                    </div>
+                    <div class="box_unduh_course">
+                        <button class="btn_unduh">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                            </svg>
+                            <p>Export PDF</p>
+                        </button>
+                        <button class="btn_unduh">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1m-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0" />
+                            </svg>
+                            <p>Export Excel</p>
+                        </button>
+                    </div>
+
+
+                </div>
+            </div>
             <table class="tabel_daftar_course">
                 <thead>
                     <tr>
@@ -254,7 +289,7 @@
                                 'status_text' => $isPublished ? 'Published' : ($hasModules ? 'Draft' : 'Incomplete'),
                                 ];
                                 @endphp
-                                <button type="button" class="btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
+                                <button type="button" class="btn_view_course btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                                         <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
                                         <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
@@ -269,6 +304,9 @@
                                         </svg>
                                     </button>
                                 </form>
+                                <button class="btn_publish_course">
+                                    Publish
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -293,13 +331,20 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="option">
-                        <div class="list-option">
-                            <button class="tab-btn active" data-target="tab-ringkasan">Ringkasan</button>
-                            <button class="tab-btn" data-target="tab-pdf">Modul PDF</button>
-                            <button class="tab-btn" data-target="tab-video">Video</button>
-                            <button class="tab-btn" data-target="tab-kuis">Kuis</button>
-                            <button class="tab-btn" data-target="tab-participant">Participant</button>
+                        <div class="list_box_preview">
+                            <div class="list-option">
+                                <button class="tab-btn active" data-target="tab-ringkasan">Ringkasan</button>
+                                <button class="tab-btn" data-target="tab-pdf">Modul PDF</button>
+                                <button class="tab-btn" data-target="tab-video">Video</button>
+                                <button class="tab-btn" data-target="tab-kuis">Kuis</button>
+                                <button class="tab-btn" data-target="tab-participant">Participant</button>
+                            </div>
+
+                            <div>
+                                <button class="button_edit_preview">Edit</button>
+                            </div>
                         </div>
+
                     </div>
                     <div class="modal-body">
                         <div id="tab-ringkasan" class="tab-content active">
@@ -400,6 +445,7 @@
                                         <h4>Pengenalan UI/UX Dasar</h4>
                                         <p>Materi dasar tentang UI dan UX design</p>
                                     </div>
+
                                 </div>
 
                                 <div class="list-pdf">
@@ -458,6 +504,7 @@
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
 
                                 <div class="list-kuis">
@@ -482,230 +529,234 @@
                             </div>
                         </div>
                         <div id="tab-participant" class="tab-content">
-                            <table class="tabel_participant_course">
-                                <thead>
-                                    <tr class="judul_tabel_participant">
-                                        <th>Nama Peserta</th>
-                                        <th>Email</th>
-                                        <th>Progress</th>
-                                        <th>Terdaftar Aktif</th>
-                                        <th>Bukti Pembayaran</th>
-                                        <th>Approval Pembayaran</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="isi_tabel_participant">
-                                        <td>Dini</td>
-                                        <td>Dini@gmail.com</td>
-                                        <td>80%</td>
-                                        <td>hgkg</td>
-                                        <td>ds</td>
-                                        <td><input type="checkbox"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+
+                            <div class="participant-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Peserta</th>
+                                            <th>Email</th>
+                                            <th>Progress</th>
+                                            <th>Status</th>
+                                            <th>Tanggal Aktif</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        <tr>
+                                            <td>Dini</td>
+                                            <td>Dini@gmail.com</td>
+                                            <td>80%</td>
+                                            <td>Aktif</td>
+                                            <td>17-10-2025</td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-
                 </div>
 
             </div>
+
         </div>
+    </div>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var modalEl = document.getElementById('coursePreviewModal');
-                var modal = null;
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modalEl = document.getElementById('coursePreviewModal');
+            var modal = null;
 
-                // --- 1. Logic Tab Switching ---
-                const tabButtons = document.querySelectorAll('.tab-btn');
-                const tabContents = document.querySelectorAll('.tab-content');
+            // --- 1. Logic Tab Switching ---
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
 
-                tabButtons.forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const target = this.getAttribute('data-target');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.getAttribute('data-target');
 
-                        // Update Button Active State
-                        tabButtons.forEach(b => b.classList.remove('active'));
-                        this.classList.add('active');
+                    // Update Button Active State
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
 
-                        // Update Content Visibility
-                        tabContents.forEach(content => {
-                            content.style.display = 'none';
-                            content.classList.remove('active');
-                        });
-
-                        const targetEl = document.getElementById(target);
-                        if (targetEl) {
-                            targetEl.style.display = 'block';
-                            targetEl.classList.add('active');
-                        }
+                    // Update Content Visibility
+                    tabContents.forEach(content => {
+                        content.style.display = 'none';
+                        content.classList.remove('active');
                     });
-                });
 
-                // --- 2. Modal Helper Functions (Bootstrap & Fallback) ---
-                if (window.bootstrap && modalEl) {
+                    const targetEl = document.getElementById(target);
+                    if (targetEl) {
+                        targetEl.style.display = 'block';
+                        targetEl.classList.add('active');
+                    }
+                });
+            });
+
+            // --- 2. Modal Helper Functions (Bootstrap & Fallback) ---
+            if (window.bootstrap && modalEl) {
+                try {
+                    modal = new window.bootstrap.Modal(modalEl);
+                } catch (e) {}
+            }
+            var _fallbackBackdrop = null;
+
+            function showCourseModal() {
+                // Reset ke tab Ringkasan setiap kali modal dibuka
+                if (tabButtons.length > 0) {
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    tabButtons[0].classList.add('active');
+                    tabContents.forEach(c => {
+                        c.style.display = 'none';
+                        c.classList.remove('active');
+                    });
+                    tabContents[0].style.display = 'block';
+                    tabContents[0].classList.add('active');
+                }
+
+                if (window.bootstrap && modal) {
                     try {
-                        modal = new window.bootstrap.Modal(modalEl);
+                        modal.show();
+                        return;
                     } catch (e) {}
                 }
-                var _fallbackBackdrop = null;
-
-                function showCourseModal() {
-                    // Reset ke tab Ringkasan setiap kali modal dibuka
-                    if (tabButtons.length > 0) {
-                        tabButtons.forEach(b => b.classList.remove('active'));
-                        tabButtons[0].classList.add('active');
-                        tabContents.forEach(c => {
-                            c.style.display = 'none';
-                            c.classList.remove('active');
-                        });
-                        tabContents[0].style.display = 'block';
-                        tabContents[0].classList.add('active');
-                    }
-
-                    if (window.bootstrap && modal) {
-                        try {
-                            modal.show();
-                            return;
-                        } catch (e) {}
-                    }
-                    if (!modalEl) return;
-                    modalEl.classList.add('show');
-                    modalEl.style.display = 'block';
-                    document.body.classList.add('modal-open');
-                    if (!_fallbackBackdrop) {
-                        _fallbackBackdrop = document.createElement('div');
-                        _fallbackBackdrop.className = 'modal-backdrop fade show';
-                        document.body.appendChild(_fallbackBackdrop);
-                    }
+                if (!modalEl) return;
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                document.body.classList.add('modal-open');
+                if (!_fallbackBackdrop) {
+                    _fallbackBackdrop = document.createElement('div');
+                    _fallbackBackdrop.className = 'modal-backdrop fade show';
+                    document.body.appendChild(_fallbackBackdrop);
                 }
+            }
 
-                function hideCourseModal() {
-                    if (window.bootstrap && modal) {
-                        try {
-                            modal.hide();
-                            return;
-                        } catch (e) {}
-                    }
-                    if (!modalEl) return;
-                    modalEl.classList.remove('show');
-                    modalEl.style.display = 'none';
-                    document.body.classList.remove('modal-open');
-                    if (_fallbackBackdrop) {
-                        _fallbackBackdrop.remove();
-                        _fallbackBackdrop = null;
-                    }
-                }
-
-                if (modalEl) {
-                    modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
-                        btn.addEventListener('click', hideCourseModal);
-                    });
-                    modalEl.addEventListener('click', ev => {
-                        if (ev.target === modalEl) hideCourseModal();
-                    });
-                }
-
-                // --- 3. Content Setter Functions ---
-                function setText(id, val) {
-                    var el = document.getElementById(id);
-                    if (el) el.textContent = val || '';
-                }
-
-                function setImage(id, url) {
-                    var el = document.getElementById(id);
-                    if (el) {
-                        el.src = url || '';
-                        el.style.display = url ? 'block' : 'none';
-                    }
-                }
-
-                // --- 4. Event Delegation for Preview Click ---
-                document.addEventListener('click', function(ev) {
-                    var btn = ev.target.closest('.preview-course');
-                    if (!btn) return;
-
-                    var raw = btn.getAttribute('data-course') || '';
-                    var data = {};
+            function hideCourseModal() {
+                if (window.bootstrap && modal) {
                     try {
-                        data = JSON.parse(atob(raw));
-                    } catch (e) {
-                        try {
-                            data = JSON.parse(raw);
-                        } catch (e2) {
-                            data = {};
-                        }
+                        modal.hide();
+                        return;
+                    } catch (e) {}
+                }
+                if (!modalEl) return;
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                if (_fallbackBackdrop) {
+                    _fallbackBackdrop.remove();
+                    _fallbackBackdrop = null;
+                }
+            }
+
+            if (modalEl) {
+                modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+                    btn.addEventListener('click', hideCourseModal);
+                });
+                modalEl.addEventListener('click', ev => {
+                    if (ev.target === modalEl) hideCourseModal();
+                });
+            }
+
+            // --- 3. Content Setter Functions ---
+            function setText(id, val) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = val || '';
+            }
+
+            function setImage(id, url) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.src = url || '';
+                    el.style.display = url ? 'block' : 'none';
+                }
+            }
+
+            // --- 4. Event Delegation for Preview Click ---
+            document.addEventListener('click', function(ev) {
+                var btn = ev.target.closest('.preview-course');
+                if (!btn) return;
+
+                var raw = btn.getAttribute('data-course') || '';
+                var data = {};
+                try {
+                    data = JSON.parse(atob(raw));
+                } catch (e) {
+                    try {
+                        data = JSON.parse(raw);
+                    } catch (e2) {
+                        data = {};
                     }
+                }
 
-                    // Update UI Dasar
-                    setText('coursePreviewLabel', 'Preview Course: ' + (data.title || ''));
-                    setText('modal-course-name', data.title || '-');
-                    setText('modal-course-desc', data.description || 'Tidak ada deskripsi.');
+                // Update UI Dasar
+                setText('coursePreviewLabel', 'Preview Course: ' + (data.title || ''));
+                setText('modal-course-name', data.title || '-');
+                setText('modal-course-desc', data.description || 'Tidak ada deskripsi.');
 
-                    setText('cp-level', data.level || '-');
-                    setText('cp-price', data.price || 'Rp0');
+                setText('cp-level', data.level || '-');
+                setText('cp-price', data.price || 'Rp0');
 
-                    // Status Color
-                    var statusEl = document.getElementById('cp-status');
-                    if (statusEl) {
-                        statusEl.textContent = data.status_text || '-';
-                        // Reset colors
-                        statusEl.parentElement.className = 'list-info'; // base
-                        if (data.published === '1') statusEl.parentElement.classList.add('info-green'); // Active
-                        else if (data.status_text === 'Incomplete') statusEl.parentElement.classList.add('info-yellow'); // Warning
-                        else statusEl.parentElement.classList.add('info-blue'); // Draft
-                    }
+                // Status Color
+                var statusEl = document.getElementById('cp-status');
+                if (statusEl) {
+                    statusEl.textContent = data.status_text || '-';
+                    // Reset colors
+                    statusEl.parentElement.className = 'list-info'; // base
+                    if (data.published === '1') statusEl.parentElement.classList.add('info-green'); // Active
+                    else if (data.status_text === 'Incomplete') statusEl.parentElement.classList.add('info-yellow'); // Warning
+                    else statusEl.parentElement.classList.add('info-blue'); // Draft
+                }
 
-                    // --- MODULES PARSING ---
-                    var modules = data.modules || [];
+                // --- MODULES PARSING ---
+                var modules = data.modules || [];
 
-                    // 1. Hitung Ringkasan
-                    var countPdf = modules.filter(m => m.type === 'pdf').length;
-                    var countVideo = modules.filter(m => m.type === 'video').length;
-                    var countQuiz = modules.filter(m => m.type === 'quiz').length;
+                // 1. Hitung Ringkasan
+                var countPdf = modules.filter(m => m.type === 'pdf').length;
+                var countVideo = modules.filter(m => m.type === 'video').length;
+                var countQuiz = modules.filter(m => m.type === 'quiz').length;
 
-                    setText('count-pdf', countPdf);
-                    setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
-                    setText('count-quiz', countQuiz); // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
+                setText('count-pdf', countPdf);
+                setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
+                setText('count-quiz', countQuiz); // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
 
-                    // Fix: Update HTML Ringkasan agar ID-nya sesuai
-                    // Kita akan update HTML ringkasan via JS jika ID tidak ditemukan, atau pengguna harus memastikan HTML punya ID
-                    // Di HTML asli: 
-                    // <h5 id="count-pdf">0</h5> -> OK
-                    // <div class="detail-ringkasan"><h5>2</h5><p>Video Pembelajaran</p></div> -> Belum ada ID
-                    // Mari kita cari elemennya secara manual jika ID tidak ada, atau inject konten ringkasan ulang.
+                // Fix: Update HTML Ringkasan agar ID-nya sesuai
+                // Kita akan update HTML ringkasan via JS jika ID tidak ditemukan, atau pengguna harus memastikan HTML punya ID
+                // Di HTML asli: 
+                // <h5 id="count-pdf">0</h5> -> OK
+                // <div class="detail-ringkasan"><h5>2</h5><p>Video Pembelajaran</p></div> -> Belum ada ID
+                // Mari kita cari elemennya secara manual jika ID tidak ada, atau inject konten ringkasan ulang.
 
-                    // Strategy: Re-render ringkasan numbers specific locations
-                    // PDF
-                    var pdfCountEl = document.getElementById('count-pdf');
-                    if (pdfCountEl) pdfCountEl.textContent = countPdf;
+                // Strategy: Re-render ringkasan numbers specific locations
+                // PDF
+                var pdfCountEl = document.getElementById('count-pdf');
+                if (pdfCountEl) pdfCountEl.textContent = countPdf;
 
-                    // Video
-                    // Cari elemen SVG video, lalu next sibling div > h5
-                    // Cara lebih aman: Assign ID ke HTML (saya akan lakukan di chunk lain), 
-                    // tapi di sini kita pakai selector pintar.
-                    var summaryContainer = modalEl.querySelector('.info-ringkasan');
-                    if (summaryContainer) {
-                        // Item 2: Video
-                        var vidSummary = summaryContainer.children[1];
-                        if (vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
+                // Video
+                // Cari elemen SVG video, lalu next sibling div > h5
+                // Cara lebih aman: Assign ID ke HTML (saya akan lakukan di chunk lain), 
+                // tapi di sini kita pakai selector pintar.
+                var summaryContainer = modalEl.querySelector('.info-ringkasan');
+                if (summaryContainer) {
+                    // Item 2: Video
+                    var vidSummary = summaryContainer.children[1];
+                    if (vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
 
-                        // Item 3: Quiz
-                        var quizSummary = summaryContainer.children[2];
-                        if (quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
-                    }
+                    // Item 3: Quiz
+                    var quizSummary = summaryContainer.children[2];
+                    if (quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
+                }
 
-                    // --- RENDER TAB CONTENTS ---
+                // --- RENDER TAB CONTENTS ---
 
-                    // 1. PDF Tab
-                    var pdfContainer = document.getElementById('list-pdf-container');
-                    if (pdfContainer) {
-                        var pdfs = modules.filter(m => m.type === 'pdf');
-                        if (pdfs.length === 0) {
-                            pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada modul PDF.</p>';
-                        } else {
-                            pdfContainer.innerHTML = pdfs.map(m => `
+                // 1. PDF Tab
+                var pdfContainer = document.getElementById('list-pdf-container');
+                if (pdfContainer) {
+                    var pdfs = modules.filter(m => m.type === 'pdf');
+                    if (pdfs.length === 0) {
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload modul.</p> <button>Ingatkan Trainer</button>';
+                    } else {
+                        pdfContainer.innerHTML = pdfs.map(m => `
                              <div class="list-pdf">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
@@ -716,17 +767,17 @@
                                 </div>
                             </div>
                         `).join('');
-                        }
                     }
+                }
 
-                    // 2. Video Tab
-                    var vidContainer = document.getElementById('list-video-container');
-                    if (vidContainer) {
-                        var vids = modules.filter(m => m.type === 'video');
-                        if (vids.length === 0) {
-                            vidContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada video pembelajaran.</p>';
-                        } else {
-                            vidContainer.innerHTML = vids.map(m => `
+                // 2. Video Tab
+                var vidContainer = document.getElementById('list-video-container');
+                if (vidContainer) {
+                    var vids = modules.filter(m => m.type === 'video');
+                    if (vids.length === 0) {
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload video.</p> <button>Ingatkan Trainer</button>';
+                    } else {
+                        vidContainer.innerHTML = vids.map(m => `
                             <div class="list-video">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
                                     <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
@@ -737,17 +788,17 @@
                                 </div>
                             </div>
                         `).join('');
-                        }
                     }
+                }
 
-                    // 3. Quiz Tab
-                    var quizContainer = document.getElementById('list-kuis-container');
-                    if (quizContainer) {
-                        var quizzes = modules.filter(m => m.type === 'quiz');
-                        if (quizzes.length === 0) {
-                            quizContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada kuis.</p>';
-                        } else {
-                            quizContainer.innerHTML = quizzes.map(m => `
+                // 3. Quiz Tab
+                var quizContainer = document.getElementById('list-kuis-container');
+                if (quizContainer) {
+                    var quizzes = modules.filter(m => m.type === 'quiz');
+                    if (quizzes.length === 0) {
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload kuis.</p> <button>Ingatkan Trainer</button>';
+                    } else {
+                        quizContainer.innerHTML = quizzes.map(m => `
                              <div class="list-kuis">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
@@ -768,13 +819,13 @@
                                 </div>
                             </div>
                         `).join('');
-                        }
                     }
+                }
 
-                    showCourseModal();
-                });
+                showCourseModal();
             });
-        </script>
+        });
+    </script>
 </body>
 
 </html>
