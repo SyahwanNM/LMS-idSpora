@@ -21,6 +21,7 @@
     --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
+    
   }
 
   html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
@@ -30,7 +31,7 @@
   .course-hero {
     background: var(--navy);
     height: fit-content;
-    padding-top: 90px;
+    padding-top: 40px;
     padding-bottom: 20px;
   }
 
@@ -39,7 +40,10 @@
     width: 100%;
     margin: 0 auto;
     padding: 0 20px;
+    margin-right: 575px;
+    margin-top: 0px;
   }
+  
 
   .title-course-hero {
     color: var(--white);
@@ -47,6 +51,7 @@
     width: 100%;
     margin: 60px auto 0;
     padding: 0 20px;
+    margin-right: 575px;
   }
 
   .sub-title {
@@ -103,8 +108,8 @@
   .video-container .plyr {
     width: 100%;
     max-width: 100%;
-    height: 40vw;
-    max-height: 400px;
+    height: 60vw;
+    max-height: 600px;
     min-height: 200px;
     display: block;
     border-radius: 20px;
@@ -139,7 +144,7 @@
 
   .content-description {
     background: var(--white);
-    max-width: 800px;
+    max-width: 100%;
     border-radius: 20px;
     margin: 0;
     padding: 0;
@@ -187,11 +192,10 @@
   }
 
   .comments form {
-    max-width: 800px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    /* jarak antara textarea & button */
   }
 
   .textarea {
@@ -204,7 +208,10 @@
     border-radius: 10px;
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
     flex: 1.5;
-    max-width: 400px;
+    margin-left: 50px;
+    max-width: 900px;
+    width: 550px;
+
   }
 
   .price-text {
@@ -475,6 +482,9 @@
   .main-col>*+* {
     margin-top: 20px;
   }
+  .box_kiri_vid_course{
+    margin-left: -280px;
+  }
 
   @media (max-width: 992px) {
     .hero-inner {
@@ -667,7 +677,7 @@
   </section>
 
   <section class="course-body">
-    <div class="main-col">
+    <div class="box_kiri_vid_course main-col">
 
       @php
         $previewMedia = $course->media ?? null;
@@ -755,7 +765,7 @@
         $progressPercent = $progressTotal > 0 ? round(($progressCompleted / $progressTotal) * 100) : 0;
       @endphp
 
-      <div class="course-progress-card" style="margin:16px 0;">
+      <div class="course-progress-card" style="margin:16px 0; width:100%;">
         <div style="background:#fff;border:1px solid #E4E4E6;padding:14px;border-radius:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <div style="font-weight:600;color:#111827;">Course Progress</div>
@@ -830,16 +840,7 @@
         </div>
       </div>
 
-      <div class="comments">
-        <h6>Leave a Comment</h6>
-        <form action="#" method="POST">
-          <div class="form-group">
-            <textarea id="comment" name="comment" rows="4" class="form-control" placeholder="Comment"
-              required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Post Comment</button>
-        </form>
-      </div>
+      
     </div>
 
     <aside class="sidebar">
