@@ -208,7 +208,7 @@
                             <tr>
                                 <th>Nama Course</th>
                                 <th>Jumlah Modul</th>
-                                <th>Status kelengkapan</th>
+                                <th>Status Kelengkapan</th>
                                 <th>Jumlah Video</th>
                                 <th>Jumlah PDF</th>
                                 <th>Quiz/Tugas Akhir</th>

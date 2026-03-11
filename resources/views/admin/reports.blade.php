@@ -674,10 +674,10 @@
                                     <td>
                                         <button class="add-dokumen" data-bs-toggle="modal" data-bs-target="#uploadOperasionalModal" 
                                             data-bs-id="{{ $row['id'] }}"
-                                            data-vbg="{{ $row['vbg_url'] }}"
-                                            data-cert="{{ $row['cert_url'] }}"
-                                            data-abs="{{ $row['abs_url'] }}"
-                                            data-qr-img="{{ $row['qr_image_url'] }}"
+                                            data-vbg="{{ $row['vbg_url'] ?? '' }}"
+                                            data-cert="{{ $row['cert_url'] ?? '' }}"
+                                            data-abs="{{ $row['abs_url'] ?? '' }}"
+                                            data-qr-img="{{ $row['qr_image_url'] ?? '' }}"
                                         >
                                             {{ $row['documents_percent'] }}%
                                         </button>
@@ -689,7 +689,7 @@
                                             $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
                                             $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('uploads/'.$ev->attendance_qr_image) : '';
                                         @endphp
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] }}" data-cert="{{ $row['cert_url'] }}" data-abs="{{ $row['abs_url'] }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] ?? '' }}" data-cert="{{ $row['cert_url'] ?? '' }}" data-abs="{{ $row['abs_url'] ?? '' }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
                                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
                                             <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
                                         </svg>
