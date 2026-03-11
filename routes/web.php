@@ -577,7 +577,6 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
 
     Route::get('/events', [TrainerController::class, 'events'])->name('events');
-
     Route::get('/events/{id}', [TrainerController::class, 'eventDetail'])->name('events.show');
     Route::get('/feedback', [TrainerController::class, 'feedback'])->name('feedback');
 
@@ -589,12 +588,14 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     // --- STUDIO UNTUK EVENT ---
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
     Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
+    Route::post('/events/{id}/studio/quiz', [TrainerController::class, 'saveEventQuiz'])->name('events.studio.quiz');
 
-    Route::get('/content-studio/{courseId?}', function ($courseId = null) {
-        return view('trainer.content-studio', ['courseId' => $courseId]);
-    })->name('content-studio');
-    Route::post('/upload-materials', [TrainerController::class, 'uploadMaterials'])->name('upload-materials');
-    Route::post('/save-quiz', [TrainerController::class, 'saveQuiz'])->name('save-quiz');
+    // --- STUDIO UNTUK COURSE ---
+    Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
+    Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
+    Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
+    Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
+Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {

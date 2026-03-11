@@ -1,12 +1,13 @@
 @extends('layouts.trainer')
 
-@section('title', 'Content Studio - Trainer')
+@section('title', 'Event Studio - ' . $event->title)
 
 @php
-    $pageTitle = 'Content Studio';
+    $pageTitle = 'Event Studio';
     $breadcrumbs = [
         ['label' => 'Home', 'url' => route('trainer.dashboard')],
-        ['label' => 'Content Studio']
+        ['label' => 'Events', 'url' => route('trainer.events')],
+        ['label' => 'Studio']
     ];
 @endphp
 
@@ -329,6 +330,7 @@
             border-radius: 24px;
             padding: var(--spacing-lg);
             background: var(--white-clr);
+            margin-bottom: 24px;
         }
 
         .q-head {
@@ -389,6 +391,12 @@
             gap: var(--spacing-md);
         }
 
+        .option-container {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: stretch;
+        }
+
         .option-btn {
             border: 1px solid #e1e8f3;
             background: #f8fafc;
@@ -425,32 +433,6 @@
             font-weight: 600;
         }
 
-        .delete-question {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            height: fit-content;
-            margin-top: 22px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s ease;
-        }
-
-        .delete-question:hover {
-            background: #e25555;
-        }
-
-        .option-container {
-            display: flex;
-            gap: var(--spacing-sm);
-            align-items: stretch;
-        }
-
         .option-input {
             border: 1px solid #d9e1ee;
             border-radius: 8px;
@@ -482,6 +464,97 @@
             letter-spacing: 0.08em;
         }
 
+        .delete-question {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            height: fit-content;
+            margin-top: 22px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .delete-question:hover {
+            background: #e25555;
+        }
+
+        .module-form,
+        .quiz-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        .file-list h3 {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--main-navy-clr);
+            margin: 0 0 var(--spacing-md) 0;
+        }
+
+        .quiz-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            justify-content: flex-start;
+        }
+
+        .quiz-actions .primary-btn {
+            border-radius: 999px;
+            border: none;
+            padding: var(--spacing-md) var(--spacing-2xl);
+            font-weight: 700;
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            transition: all 0.2s ease;
+        }
+
+        .quiz-add-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #dbe3ef;
+        }
+
+        .quiz-add-btn i {
+            color: #94a3b8;
+        }
+
+        .quiz-add-btn:hover {
+            background: #f1f5f9;
+            color: var(--main-navy-clr);
+            border-color: #cbd5e1;
+        }
+
+        .quiz-add-btn:hover i {
+            color: var(--main-navy-clr);
+        }
+
+        .quiz-save-btn {
+            background: #1f1b5a;
+            color: var(--white-clr);
+            box-shadow: 0 10px 20px rgba(31, 27, 90, 0.2);
+        }
+
+        .quiz-save-btn i {
+            color: var(--yellow-clr);
+        }
+
+        .quiz-save-btn:hover {
+            background: #19164a;
+        }
+
+
+        /* Responsive */
         @media (max-width: 1024px) {
             main.content-studio-main {
                 padding: var(--spacing-lg);
@@ -540,13 +613,6 @@
             .delete-question {
                 margin-top: 0;
             }
-        }
-
-        .module-form,
-        .quiz-form {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-lg);
         }
 
         .file-list h3 {
@@ -628,21 +694,21 @@
     <main class="content-studio-main">
         <header class="studio-header">
             <div class="studio-title-wrap">
-                <a class="back-btn" href="{{ route('trainer.courses') }}">
+                <a class="back-btn" href="{{ route('trainer.events.show', $event->id) }}">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>
-                    <p class="kicker">STUDIO NARASUMBER • PENYUSUNAN MATERI</p>
-                    <h1>{{ $course->name }}</h1>
+                    <p class="kicker">EVENT STUDIO • MATERIAL MANAGEMENT</p>
+                    <h1>{{ $event->title }}</h1>
                 </div>
             </div>
 
             <div class="studio-tabs" role="tablist">
                 <button class="studio-tab active" data-tab="module" type="button">
-                    MODUL &amp; VIDEO
+                    MODUL &amp; ASSETS
                 </button>
                 <button class="studio-tab" data-tab="quiz" type="button">
-                    PENYUSUNAN QUIZ
+                    QUIZ EVENT
                 </button>
             </div>
         </header>
@@ -650,16 +716,23 @@
         <section class="studio-layout">
             <div class="studio-left">
                 <section class="panel panel-module active" data-panel="module">
-                    <form id="moduleForm" class="module-form" action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST" enctype="multipart/form-data">
+                    <form id="moduleForm" class="module-form"
+                        action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
+                        enctype="multipart/form-data">
                         @csrf
-                        <input type="hidden" name="courseId" value="{{ $course->id }}">
-                        
+                        {{-- Menggunakan eventId --}}
+                        <input type="hidden" name="eventId" value="{{ $event->id }}">
+
                         <div class="dropzone" id="dropzone">
-                            <input type="file" id="fileInput" multiple accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" name="files[]" style="display: none" />
-                            <i class="bi bi-file-earmark-arrow-up"></i>
-                            <h2>Drop Pedagogical Assets</h2>
+                            <input type="file" id="fileInput" multiple
+                                accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" name="files[]"
+                                style="display: none" />
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <h2>Drop Event Assets Here</h2>
                             <p>SUPPORT: PDF, MP4, PPTX</p>
-                            <p style="font-size: 12px; color: #999; margin-top: 8px">atau klik untuk memilih file</p>
+                            <p style="font-size: 12px; color: #999; margin-top: 8px">
+                                atau klik untuk memilih file
+                            </p>
                         </div>
 
                         <div id="fileList" class="file-list" style="margin-top: 20px; display: none">
@@ -668,23 +741,26 @@
                         </div>
 
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="uploadSubmitBtn">
-                                SUBMIT FOR REVIEW <i class="bi bi-send"></i>
+                            <button type="submit" class="primary-btn" id="submitBtn">
+                                SUBMIT FOR AUDIT <i class="bi bi-send"></i>
                             </button>
                         </div>
                     </form>
                 </section>
 
                 <section class="panel panel-quiz" data-panel="quiz">
-                    <form id="quizForm" class="quiz-form" action="{{ route('trainer.courses.studio.quiz', $course->id) }}" method="POST">
+                    <form id="quizForm" class="quiz-form" action="{{ route('trainer.events.studio.quiz', $event->id) }}"
+                        method="POST">
                         @csrf
-                        <input type="hidden" name="courseId" value="{{ $course->id }}">
-                        
+                        {{-- Menggunakan eventId --}}
+                        <input type="hidden" name="eventId" value="{{ $event->id }}">
+
                         <div class="quiz-meta">
                             <div class="meta-box" id="passingGradeBox">
                                 <p>BATAS KELULUSAN (PASSING GRADE)</p>
                                 <div class="meta-value">
-                                    <input type="text" id="passingGradeInput" class="meta-input" value="70" inputmode="numeric" pattern="[0-9]*" />
+                                    <input type="text" id="passingGradeInput" class="meta-input" value="70"
+                                        inputmode="numeric" pattern="[0-9]*" style="display:none;" />
                                     <strong id="passingGrade">70</strong>
                                     <span>%</span>
                                 </div>
@@ -692,14 +768,16 @@
                             <div class="meta-box">
                                 <p>BOBOT TOTAL TERDETEKSI</p>
                                 <div class="meta-value">
-                                    <strong id="totalWeight">0</strong><span> Points</span><em id="verifyStatus">PENDING</em>
+                                    <strong id="totalWeight">0</strong><span> Points</span><em
+                                        id="verifyStatus">PENDING</em>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="questionsContainer" style="display: flex; flex-direction: column; gap: var(--spacing-lg);"></div>
+                        <div id="questionsContainer" style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
+                        </div>
 
-                        <div class="quiz-actions" style="margin-top: 24px;">
+                        <div class="quiz-actions">
                             <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn">
                                 <i class="bi bi-plus-lg"></i> TAMBAH SOAL
                             </button>
@@ -713,27 +791,27 @@
 
             <aside class="studio-right">
                 <div class="validation-card">
-                    <h3>ALUR VALIDASI MATERI</h3>
+                    <h3>ALUR VALIDASI EVENT</h3>
                     <ol>
                         <li>
                             <span>1</span>
                             <div>
-                                <h4>DRAFTING & UPLOAD</h4>
-                                <p>Pastikan nama file dan konten sesuai dengan standar platform.</p>
+                                <h4>ASSET SUBMISSION</h4>
+                                <p>Upload materi presentasi dan handout H-1 acara.</p>
                             </div>
                         </li>
                         <li>
                             <span>2</span>
                             <div>
-                                <h4>AUDIT ADMIN</h4>
-                                <p>Tim Admin akan mereview kualitas video/PDF dan logika soal kuis Anda.</p>
+                                <h4>ADMIN AUDIT</h4>
+                                <p>Tim admin akan memeriksa format dan konten materi.</p>
                             </div>
                         </li>
                         <li>
                             <span>3</span>
                             <div>
-                                <h4>STATUS: APPROVED</h4>
-                                <p>Materi yang lolos akan langsung bisa diakses oleh seluruh siswa terdaftar.</p>
+                                <h4>READY TO STREAM</h4>
+                                <p>Materi akan tersedia di dashboard peserta saat acara dimulai.</p>
                             </div>
                         </li>
                     </ol>
@@ -743,60 +821,88 @@
     </main>
 
     <script>
+        let uploadedFiles = [];
+        let quizQuestions = [];
+        let questionCounter = 1;
+
         document.addEventListener("DOMContentLoaded", function () {
-            // --- TAB SWITCHING ---
+            // --- Tab Logic ---
             const tabs = document.querySelectorAll(".studio-tab");
             const panels = document.querySelectorAll("[data-panel]");
-            
+            const url = new URL(window.location.href);
+            const queryTab = url.searchParams.get("tab");
+            const initialTab = queryTab === "quiz" ? "quiz" : "module";
+
             const setTab = (targetTab) => {
-                tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === targetTab));
-                panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === targetTab));
+                tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.tab === targetTab));
+                panels.forEach(panel => panel.classList.toggle("active", panel.dataset.panel === targetTab));
+                url.searchParams.set("tab", targetTab);
+                window.history.replaceState({}, "", url);
             };
 
-            tabs.forEach((tab) => {
-                tab.addEventListener("click", () => setTab(tab.dataset.tab));
-            });
+            setTab(initialTab);
+            tabs.forEach(tab => tab.addEventListener("click", () => setTab(tab.dataset.tab)));
 
-            // --- UPLOAD LOGIC ---
-            let uploadedFiles = [];
+            // --- File Upload Logic ---
             const dropzone = document.getElementById("dropzone");
             const fileInput = document.getElementById("fileInput");
             const fileList = document.getElementById("fileList");
             const uploadedFilesList = document.getElementById("uploadedFiles");
             const moduleForm = document.getElementById("moduleForm");
-            const uploadBtn = document.getElementById("uploadSubmitBtn");
+            const submitBtn = document.getElementById("submitBtn");
 
             dropzone.addEventListener("click", () => fileInput.click());
-            dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.style.borderColor = "#1a237e"; dropzone.style.background = "#f0f5fc"; });
-            dropzone.addEventListener("dragleave", () => { dropzone.style.borderColor = "#dfe6f2"; dropzone.style.background = "#f8fafc"; });
-            dropzone.addEventListener("drop", (e) => { e.preventDefault(); dropzone.style.borderColor = "#dfe6f2"; dropzone.style.background = "#f8fafc"; handleFiles(e.dataTransfer.files); });
+
+            dropzone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = "#1a237e";
+                dropzone.style.backgroundColor = "#e0e7ff";
+            });
+
+            dropzone.addEventListener("dragleave", () => {
+                dropzone.style.borderColor = "#dfe6f2";
+                dropzone.style.backgroundColor = "#f8fafc";
+            });
+
+            dropzone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = "#dfe6f2";
+                dropzone.style.backgroundColor = "#f8fafc";
+                handleFiles(e.dataTransfer.files);
+            });
+
             fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
 
             function handleFiles(files) {
-                Array.from(files).forEach(file => uploadedFiles.push(file)); // Simpan file objek asli
+                Array.from(files).forEach((file) => {
+                    if (!uploadedFiles.some(f => f.name === file.name)) {
+                        uploadedFiles.push(file);
+                    }
+                });
                 updateFileList();
-                fileInput.value = "";
+                fileInput.value = '';
             }
 
             function updateFileList() {
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
                     uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                <div>
-                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                    <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                    <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                    <div>
+                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                        <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024).toFixed(2)} KB</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                        </li>
-                    `).join("");
+                                <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                            </li>
+                        `).join("");
 
-                    document.querySelectorAll(".delete-file").forEach(btn => {
+                    uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
-                            uploadedFiles.splice(parseInt(e.target.dataset.index), 1);
+                            const index = parseInt(e.target.dataset.index);
+                            uploadedFiles.splice(index, 1);
                             updateFileList();
                         });
                     });
@@ -805,110 +911,108 @@
                 }
             }
 
-            // AJAX SUBMIT UPLOAD
             moduleForm.addEventListener("submit", (e) => {
                 e.preventDefault();
-                if (uploadedFiles.length === 0) return alert("Silakan pilih minimal 1 file untuk diupload.");
-
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = 'UPLOADING... <i class="spinner-border spinner-border-sm"></i>';
+                if (uploadedFiles.length === 0) {
+                    alert("Silakan upload minimal 1 file sebelum submit.");
+                    return;
+                }
 
                 const formData = new FormData(moduleForm);
-                uploadedFiles.forEach(file => formData.append('files[]', file));
+                uploadedFiles.forEach(file => {
+                    formData.append('files[]', file);
+                });
+
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
 
                 fetch(moduleForm.action, {
                     method: 'POST',
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success) {
-                        alert("Materi berhasil disubmit ke Admin!");
-                        uploadedFiles = [];
-                        updateFileList();
-                    } else {
-                        alert("Gagal: " + (data.error || "Unknown error"));
-                    }
-                })
-                .catch(err => alert("Terjadi kesalahan koneksi."))
-                .finally(() => {
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = 'SUBMIT FOR REVIEW <i class="bi bi-send"></i>';
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`Success! ${data.files ? data.files.length : 'Files'} assets uploaded.`);
+                            window.location.href = "{{ route('trainer.events.show', $event->id) }}";
+                        } else {
+                            alert('Upload failed: ' + (data.error || 'Unknown error'));
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred during upload.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    });
             });
 
-
-            // --- QUIZ LOGIC (FIXED FOR CONTROLLER) ---
-            let quizQuestions = [];
-            let questionCounter = 1;
-            const qContainer = document.getElementById("questionsContainer");
+            // --- Quiz Logic (Exactly same as Course Studio) ---
+            const quizForm = document.getElementById("quizForm");
+            const questionsContainer = document.getElementById("questionsContainer");
             const addQuestionBtn = document.getElementById("addQuestionBtn");
+            const passingGradeBox = document.getElementById("passingGradeBox");
             const passingGradeInput = document.getElementById("passingGradeInput");
             const passingGradeDisplay = document.getElementById("passingGrade");
             const totalWeightDisplay = document.getElementById("totalWeight");
             const verifyStatusDisplay = document.getElementById("verifyStatus");
 
-            addQuestionBtn.addEventListener("click", addQuestion);
+            addQuestionBtn.addEventListener("click", (e) => { e.preventDefault(); addQuestion(); });
 
             function addQuestion() {
-                quizQuestions.push({ id: questionCounter++, text: "", weight: 10, options: ["", "", "", ""], correctAnswer: 0 });
-                renderAllQuestions();
+                const questionIndex = quizQuestions.length;
+                const question = { id: questionCounter++, text: "", weight: 10, options: ["", "", "", ""], correctAnswer: 0 };
+                quizQuestions.push(question);
+                renderQuestion(questionIndex);
+                updateTotalWeight();
             }
 
-            function renderAllQuestions() {
-                qContainer.innerHTML = "";
-                quizQuestions.forEach((q, index) => {
-                    const qEl = document.createElement("article");
-                    qEl.className = "quiz-editor";
-                    qEl.innerHTML = `
+            function renderQuestion(index) {
+                const question = quizQuestions[index];
+                const questionEl = document.createElement("article");
+                questionEl.className = "quiz-editor";
+                questionEl.setAttribute("data-question-id", question.id);
+                questionEl.innerHTML = `
                         <div class="q-head">
                             <div class="q-number">${index + 1}</div>
                             <div class="q-inputs">
                                 <label>PERTANYAAN</label>
-                                <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                <input type="text" class="question-input" data-index="${index}" placeholder="Masukkan pertanyaan..." value="${question.text}" />
                             </div>
                             <div class="q-score">
                                 <label>BOBOT</label>
-                                <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                <input type="number" class="weight-input" data-index="${index}" value="${question.weight}" min="1" />
                             </div>
-                            <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
+                            <button type="button" class="delete-question" data-index="${index}"><i class="bi bi-trash"></i> HAPUS</button>
                         </div>
                         <div class="options-section">
                             <p class="options-label">PILIHAN JAWABAN</p>
                             <div class="options-grid">
-                                ${q.options.map((opt, oIdx) => `
+                                ${question.options.map((opt, i) => `
                                     <div class="option-container">
-                                        <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                            <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                            <span>Opsi ${oIdx + 1}</span>
+                                        <button type="button" class="option-btn ${question.correctAnswer === i ? "is-correct" : ""}" data-q="${index}" data-opt="${i}">
+                                            <i class="bi ${question.correctAnswer === i ? "bi-check-circle-fill" : "bi-circle"}"></i>
+                                            <span>Opsi ${i + 1}</span>
                                         </button>
-                                        <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                        <input type="text" class="option-input" data-q="${index}" data-opt="${i}" placeholder="Jawaban..." value="${opt}" />
                                     </div>
                                 `).join("")}
                             </div>
-                        </div>
-                    `;
+                        </div>`;
 
-                    // Event Listeners for this question
-                    qEl.querySelector(".q-text").addEventListener("input", (e) => q.text = e.target.value);
-                    qEl.querySelector(".q-weight").addEventListener("input", (e) => { q.weight = parseInt(e.target.value) || 0; updateTotalWeight(); });
-                    qEl.querySelector(".delete-question").addEventListener("click", () => { quizQuestions.splice(index, 1); renderAllQuestions(); });
-                    
-                    qEl.querySelectorAll(".option-btn").forEach(btn => {
-                        btn.addEventListener("click", () => {
-                            q.correctAnswer = parseInt(btn.dataset.opt);
-                            renderAllQuestions(); // Re-render to update UI
-                        });
-                    });
-                    
-                    qEl.querySelectorAll(".option-input").forEach((inp, oIdx) => {
-                        inp.addEventListener("input", (e) => q.options[oIdx] = e.target.value);
-                    });
+                const existing = questionsContainer.querySelector(`[data-question-id="${question.id}"]`);
+                if (existing) existing.replaceWith(questionEl);
+                else questionsContainer.appendChild(questionEl);
 
-                    qContainer.appendChild(qEl);
-                });
-                updateTotalWeight();
+                questionEl.querySelector(".question-input").addEventListener("input", e => quizQuestions[index].text = e.target.value);
+                questionEl.querySelector(".weight-input").addEventListener("input", e => { quizQuestions[index].weight = parseInt(e.target.value) || 0; updateTotalWeight(); });
+                questionEl.querySelector(".delete-question").addEventListener("click", () => { quizQuestions.splice(index, 1); questionsContainer.innerHTML = ""; quizQuestions.forEach((_, i) => renderQuestion(i)); updateTotalWeight(); });
+                questionEl.querySelectorAll(".option-btn").forEach(btn => btn.addEventListener("click", () => { quizQuestions[index].correctAnswer = parseInt(btn.dataset.opt); renderQuestion(index); }));
+                questionEl.querySelectorAll(".option-input").forEach(inp => inp.addEventListener("input", e => quizQuestions[index].options[parseInt(e.target.dataset.opt)] = e.target.value));
             }
 
             function updateTotalWeight() {
@@ -918,74 +1022,30 @@
                 verifyStatusDisplay.style.background = total > 0 ? "#2c237f" : "#ff6b6b";
             }
 
-            // Passing Grade UI Edit
-            document.getElementById("passingGradeBox").addEventListener("click", () => {
-                passingGradeDisplay.style.display = "none";
-                passingGradeInput.style.display = "inline-block";
-                passingGradeInput.focus();
-                passingGradeInput.select();
+            passingGradeBox.addEventListener("click", () => {
+                passingGradeDisplay.style.display = "none"; passingGradeInput.style.display = "inline-block"; passingGradeInput.focus();
             });
-
             passingGradeInput.addEventListener("blur", () => {
-                let val = parseInt(passingGradeInput.value) || 70;
-                val = Math.max(0, Math.min(100, val));
-                passingGradeInput.value = val;
-                passingGradeDisplay.textContent = val;
-                passingGradeDisplay.style.display = "inline";
-                passingGradeInput.style.display = "none";
+                passingGradeDisplay.textContent = passingGradeInput.value; passingGradeDisplay.style.display = "inline"; passingGradeInput.style.display = "none";
             });
 
-            // Initialize first question
-            addQuestion();
-
-            // AJAX SUBMIT QUIZ
-            document.getElementById("quizForm").addEventListener("submit", function(e) {
+            quizForm.addEventListener("submit", (e) => {
                 e.preventDefault();
+                if (quizQuestions.length === 0) return alert("Minimal 1 soal.");
 
-                // Validasi Kosong
-                if(quizQuestions.length === 0) return alert("Tambahkan minimal 1 soal!");
-                const isInvalid = quizQuestions.some(q => q.text.trim() === "" || q.options.some(o => o.trim() === ""));
-                if(isInvalid) return alert("Semua pertanyaan dan opsi jawaban wajib diisi!");
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'questions';
+                hiddenInput.value = JSON.stringify(quizQuestions);
+                quizForm.appendChild(hiddenInput);
 
-                // Format data untuk dikirim ke Controller via fetch JSON
-                const quizData = {
-                    courseId: document.querySelector('input[name="courseId"]').value,
-                    passingGrade: parseInt(passingGradeInput.value),
-                    questions: quizQuestions.map(q => ({
-                        text: q.text,
-                        options: q.options,
-                        correctAnswer: q.correctAnswer, // Nama key ini wajib cocok dengan validasi Controller
-                        weight: q.weight
-                    }))
-                };
+                const pgInput = document.createElement('input');
+                pgInput.type = 'hidden';
+                pgInput.name = 'passingGrade';
+                pgInput.value = passingGradeInput.value;
+                quizForm.appendChild(pgInput);
 
-                const btnSubmit = this.querySelector('.quiz-save-btn');
-                const origText = btnSubmit.innerHTML;
-                btnSubmit.innerHTML = 'MENYIMPAN...';
-                btnSubmit.disabled = true;
-
-                fetch(this.action, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(quizData)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success) {
-                        alert("Kuis berhasil disimpan! " + data.message);
-                    } else {
-                        alert("Gagal: " + (data.message || "Pastikan data terisi dengan benar."));
-                    }
-                })
-                .catch(err => alert("Terjadi kesalahan jaringan."))
-                .finally(() => {
-                    btnSubmit.innerHTML = origText;
-                    btnSubmit.disabled = false;
-                });
+                quizForm.submit();
             });
         });
     </script>

@@ -164,6 +164,101 @@
     color: var(--main-navy-clr);
 }
 
+/* Curriculum accordion visual match */
+main.detail-course .unit-card {
+    background: #f4f6f8;
+    border: 1px solid #e6eaef;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: none;
+    gap: 10px;
+}
+
+main.detail-course .unit-card + .unit-card {
+    margin-top: 12px;
+}
+
+main.detail-course .unit-card .unit-top {
+    gap: 12px;
+}
+
+main.detail-course .unit-card .unit-index {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #e8edf3;
+    color: #b3bdc9;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+main.detail-course .unit-card .unit-title h3 {
+    font-size: 24px;
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+main.detail-course .unit-card .unit-meta {
+    margin-top: 0;
+}
+
+main.detail-course .unit-card .unit-status {
+    color: #12b981;
+}
+
+main.detail-course .unit-card .unit-toggle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #1a1d78;
+}
+
+main.detail-course .unit-card .unit-toggle i {
+    font-size: 13px;
+    transform: rotate(0deg);
+}
+
+main.detail-course .unit-card .unit-assets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+main.detail-course .unit-card .asset-mini {
+    background: #eef2f6;
+    border: 1px solid #e3e8ef;
+    border-radius: 10px;
+    padding: 12px;
+    min-height: 74px;
+}
+
+main.detail-course .unit-card .asset-mini h4 {
+    margin-top: 6px;
+}
+
+main.detail-course .unit-card.expanded {
+    background: #f7f9fb;
+    border: 2px solid #1a1d78;
+}
+
+main.detail-course .unit-card.expanded .unit-index {
+    background: #1a1d78;
+    color: #f7cf45;
+}
+
+main.detail-course .unit-card.expanded .unit-toggle i {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 1024px) {
+    main.detail-course .unit-card .unit-title h3 {
+        font-size: 18px;
+    }
+
+    main.detail-course .unit-card .unit-assets {
+        grid-template-columns: 1fr;
+    }
+}
+
 .stat-chip:nth-child(2) .stat-icon {
     background: rgba(255, 165, 0, 0.25);
     color: #ffa500;

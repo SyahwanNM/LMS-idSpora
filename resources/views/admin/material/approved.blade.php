@@ -2,41 +2,32 @@
 
 @section('title', 'Approved Materials')
 
+@section('navbar')
+    @include('partials.navbar-admin-trainer')
+@endsection
+
 @section('styles')
     <style>
-        /* Custom Navbar */
-        .material-navbar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(46, 125, 50, 0.1);
-            padding: 16px 32px;
-            box-shadow: 0 2px 12px rgba(46, 125, 50, 0.08);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        :root {
+            --admin-primary: #1e1b4b;
+            --admin-secondary: #4338ca;
+            --admin-bg: #f8fafc;
+            --admin-card-bg: #ffffff;
+            --admin-border: #e2e8f0;
+            --admin-text-main: #0f172a;
+            --admin-text-muted: #64748b;
         }
 
-        .material-navbar h4 {
-            font-weight: 800;
-            color: #2e7d32;
-            margin: 0;
-            font-size: 1.5rem;
+        body {
+            background-color: var(--admin-bg);
         }
 
-        .material-navbar .breadcrumb {
-            margin: 0;
-            background: transparent;
-            padding: 0;
-            font-size: 0.85rem;
-        }
-
-        /* Main Layout */
         .material-wrapper {
             display: flex;
             min-height: calc(100vh - 72px);
         }
 
-        .material-sidebar {
+        .trainer-sidebar {
             width: 260px;
             background: #fff;
             padding: 24px 16px;
@@ -48,13 +39,12 @@
             overflow-y: auto;
         }
 
-        .material-main {
+        .trainer-main {
             flex-grow: 1;
             padding: 32px;
             background-color: #F8F9FA;
         }
 
-        /* Sidebar Navigation */
         .nav-menu-label {
             font-size: 11px;
             text-transform: uppercase;
@@ -80,28 +70,28 @@
             border-radius: 10px;
             margin-bottom: 4px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 14px;
             transition: all 0.2s ease;
             gap: 12px;
         }
 
         .sidebar-link i {
-            font-size: 1.15rem;
+            font-size: 18px;
             color: #64748b;
             transition: color 0.2s ease;
         }
 
         .sidebar-link:hover {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+            background-color: #f8fafc;
+            color: #3949ab;
         }
 
         .sidebar-link:hover i {
-            color: #2e7d32;
+            color: #3949ab;
         }
 
         .sidebar-link.active {
-            background-color: #2e7d32;
+            background-color: #3949ab;
             color: #fff;
         }
 
@@ -109,134 +99,166 @@
             color: #fff;
         }
 
-        /* Content Card */
-        .content-card {
-            background: #fff;
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f0;
+        .sidebar-parent {
+            justify-content: space-between;
         }
 
-        .content-header {
+        .sidebar-parent .sidebar-chevron {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-submenu {
+            margin: 4px 0 8px;
+        }
+
+        .sidebar-submenu .sidebar-link {
+            margin-left: 14px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+        }
+
+        .sidebar-submenu .sidebar-link i {
+            font-size: 0.95rem;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .material-main {
+            flex-grow: 1;
+            padding: 32px;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        .page-header {
+            margin-bottom: 32px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 28px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f5f5f5;
+            align-items: flex-end;
         }
 
-        .content-header h5 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #212529;
-            margin: 0;
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #166534;
+            /* Warna hijau khusus approved */
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
-        /* Toolbar */
+        /* --- TABLE CARD --- */
+        .content-card {
+            background: var(--admin-card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--admin-border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
         .toolbar {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--admin-border);
+            background: #fff;
             display: flex;
             gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .search-box {
-            flex: 1;
-            min-width: 300px;
             position: relative;
+            width: 300px;
         }
 
         .search-box input {
             width: 100%;
-            padding: 12px 16px 12px 44px;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
             font-size: 0.9rem;
-            transition: all 0.2s ease;
-        }
-
-        .search-box input:focus {
-            border-color: #2e7d32;
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.1);
+            background: #f8fafc;
         }
 
         .search-box i {
             position: absolute;
-            left: 16px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #adb5bd;
+            color: #94a3b8;
         }
 
-        /* Table Styles */
-        .materials-table {
+        .search-box input:focus {
+            border-color: #166534;
+            outline: none;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
+        }
+
+        .table {
+            margin-bottom: 0;
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
         }
 
-        .materials-table thead th {
-            background: #f8f9fa;
-            color: #495057;
+        .table th {
+            background: #f8fafc;
+            color: var(--admin-text-muted);
+            font-size: 0.75rem;
             font-weight: 700;
-            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 16px;
-            border-bottom: 2px solid #e9ecef;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--admin-border);
             white-space: nowrap;
         }
 
-        .materials-table tbody td {
-            padding: 20px 16px;
-            border-bottom: 1px solid #f0f0f0;
+        .table td {
+            padding: 20px 24px;
             vertical-align: middle;
+            border-bottom: 1px solid var(--admin-border);
         }
 
-        .materials-table tbody tr {
-            transition: background-color 0.2s ease;
+        .table tr:hover {
+            background-color: #f8fafc;
         }
 
-        .materials-table tbody tr:hover {
-            background-color: #f1f8f4;
-        }
-
-        /* Material Info */
-        .material-info {
+        /* --- COMPONENT STYLES --- */
+        .course-info {
             display: flex;
             align-items: center;
             gap: 16px;
         }
 
-        .material-thumbnail {
+        .course-thumb {
             width: 80px;
             height: 60px;
-            border-radius: 10px;
+            border-radius: 8px;
             object-fit: cover;
-            border: 2px solid #f0f0f0;
+            border: 1px solid var(--admin-border);
+            background: #eee;
         }
 
-        .material-details h6 {
-            font-size: 0.95rem;
+        .course-title {
             font-weight: 700;
-            color: #212529;
-            margin: 0 0 6px 0;
+            color: var(--admin-text-main);
+            margin: 0 0 4px 0;
+            font-size: 0.95rem;
         }
 
-        .material-category {
-            display: inline-block;
+        .badge-cat {
+            background: #e2e8f0;
+            color: #475569;
             padding: 4px 10px;
-            background: #f8f9fa;
             border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #6c757d;
+            font-size: 0.7rem;
+            font-weight: 700;
         }
 
-        /* Trainer Info */
         .trainer-info {
             display: flex;
             align-items: center;
@@ -244,259 +266,268 @@
         }
 
         .trainer-avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            border: 2px solid #f0f0f0;
         }
 
         .trainer-name {
             font-weight: 600;
-            color: #212529;
+            color: var(--admin-text-main);
             font-size: 0.9rem;
         }
 
-        /* Status Badge */
-        .status-badge {
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            white-space: nowrap;
         }
 
-        .status-approved {
-            background: #d4edda;
-            color: #155724;
+        .badge-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
         }
 
-        /* Module Count Badge */
-        .module-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            background: #e3f2fd;
-            color: #1565c0;
+        /* Status khusus Approved */
+        .badge-approved-status {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-approved-status::before {
+            background: #166534;
+        }
+
+        .btn-action {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: var(--admin-text-main);
+            padding: 8px 16px;
             border-radius: 8px;
             font-size: 0.85rem;
-            font-weight: 700;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        /* Action Button */
-        .btn-view {
-            background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
-            color: #fff;
+        .btn-action:hover {
+            border-color: var(--admin-secondary);
+            color: var(--admin-secondary);
+            background: #f8fafc;
+        }
+
+        .btn-back-header {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: var(--admin-text-main);
             padding: 10px 20px;
             border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            border: 0;
-            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.2s;
         }
 
-        .btn-view:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(46, 125, 50, 0.3);
-            color: #fff;
+        .btn-back-header:hover {
+            background: #f1f5f9;
+            color: var(--admin-primary);
         }
 
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
         }
 
         .empty-state i {
-            font-size: 4rem;
-            color: #dee2e6;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+            display: block;
         }
 
-        .empty-state h5 {
-            color: #6c757d;
-            margin-bottom: 12px;
-        }
-
-        .empty-state p {
-            color: #adb5bd;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .material-sidebar {
                 display: none;
             }
 
-            .material-main {
-                padding: 20px;
-            }
-
             .toolbar {
                 flex-direction: column;
+                align-items: stretch;
             }
 
             .search-box {
-                min-width: 100%;
+                width: 100%;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
             }
         }
     </style>
 @endsection
 
 @section('content')
-    <!-- Custom Navbar -->
-    <nav class="material-navbar">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h4>✅ Approved Materials</h4>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.material.approvals') }}">Material Approval</a>
-                        </li>
-                        <li class="breadcrumb-item active">Approved</li>
-                    </ol>
-                </nav>
-            </div>
-        </div>
-    </nav>
-
     <div class="material-wrapper">
-        <!-- Sidebar Navigation -->
-        <aside class="material-sidebar d-none d-lg-block">
-            <span class="nav-menu-label">APPROVAL STATUS</span>
-            <a href="{{ route('admin.material.approvals') }}" class="sidebar-link">
-                <i class="bi bi-hourglass-split"></i> Pending Review
+        <aside class="trainer-sidebar d-none d-lg-block">
+            <span class="nav-menu-label">TRAINER MANAGEMENT</span>
+            <a href="{{ route('admin.trainer.index') }}" class="sidebar-link">
+                <i class="bi bi-people"></i> All Trainers
             </a>
-            <a href="{{ route('admin.material.approved') }}" class="sidebar-link active">
-                <i class="bi bi-check-circle"></i> Approved
-            </a>
-            <a href="{{ route('admin.material.rejected') }}" class="sidebar-link">
-                <i class="bi bi-x-circle"></i> Rejected
+            <a href="{{ route('admin.trainer.create') }}" class="sidebar-link">
+                <i class="bi bi-person-plus"></i> Add New Trainer
             </a>
 
             <span class="nav-menu-label">QUICK ACCESS</span>
+            <a href="#materialApprovalMenu"
+                class="sidebar-link sidebar-parent {{ request()->routeIs('admin.material.*') ? 'active' : '' }}"
+                data-bs-toggle="collapse" role="button"
+                aria-expanded="{{ request()->routeIs('admin.material.*') ? 'true' : 'false' }}"
+                aria-controls="materialApprovalMenu">
+                <span><i class="bi bi-clipboard-check"></i> Material Approval</span>
+                <i class="bi bi-chevron-down sidebar-chevron"></i>
+            </a>
+            <div class="collapse sidebar-submenu {{ request()->routeIs('admin.material.*') ? 'show' : '' }}"
+                id="materialApprovalMenu">
+                <a href="{{ route('admin.material.approvals') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approvals') ? 'active' : '' }}">
+                    <i class="bi bi-hourglass-split"></i> Pending Review
+                </a>
+                <a href="{{ route('admin.material.approved') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approved') ? 'active' : '' }}">
+                    <i class="bi bi-check-circle"></i> Approved
+                </a>
+                <a href="{{ route('admin.material.rejected') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.rejected') ? 'active' : '' }}">
+                    <i class="bi bi-x-circle"></i> Rejected
+                </a>
+            </div>
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
-            <a href="{{ route('admin.trainer.index') }}" class="sidebar-link">
-                <i class="bi bi-people"></i> Trainers
-            </a>
             <a href="{{ route('admin.courses.index') }}" class="sidebar-link">
-                <i class="bi bi-book"></i> All Courses
+                <i class="bi bi-book"></i> Courses
+            </a>
+            <a href="{{ route('admin.events.history') }}" class="sidebar-link">
+                <i class="bi bi-calendar-event"></i> Events
             </a>
         </aside>
 
         <main class="material-main">
-            <!-- Main Content Card -->
-            <div class="content-card">
-                <div class="content-header">
-                    <h5>🟢 Materi yang Telah Disetujui</h5>
-                    <span class="badge bg-success" style="padding: 10px 16px; font-size: 0.9rem;">
-                        {{ $approvedMaterials->total() }} Materi
-                    </span>
+            <div class="page-header mb-4">
+                <div>
+                    <h1 class="page-title"><i class="bi bi-check-circle-fill me-2"></i>Materi Disetujui</h1>
+                    <p class="text-muted mb-0">Daftar kelas yang sudah tervalidasi dan aktif di platform.</p>
                 </div>
+                <a href="{{ route('admin.material.approvals') }}" class="btn-back-header">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Antrean
+                </a>
+            </div>
 
-                <!-- Toolbar -->
+            <div class="content-card">
                 <div class="toolbar">
                     <form method="GET" class="search-box">
                         <i class="bi bi-search"></i>
-                        <input type="text" name="search" placeholder="Cari judul materi atau nama trainer..."
+                        <input type="text" name="search" placeholder="Cari materi yang disetujui..."
                             value="{{ request('search') }}">
                     </form>
 
                     @if(request('search'))
-                        <a href="{{ route('admin.material.approved') }}" class="btn btn-outline-secondary"
-                            style="padding: 12px 20px; border-radius: 12px; font-weight: 600;">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Reset
+                        <a href="{{ route('admin.material.approved') }}" class="btn-action">
+                            <i class="bi bi-x-circle"></i> Reset
                         </a>
                     @endif
                 </div>
 
-                <!-- Materials Table -->
-                @if($approvedMaterials->count() > 0)
-                    <div class="table-responsive">
-                        <table class="materials-table">
-                            <thead>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Materi (Course)</th>
+                                <th>Trainer</th>
+                                <th>Isi Modul</th>
+                                <th>Tanggal Disetujui</th>
+                                <th>Status</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($approvedMaterials as $material)
                                 <tr>
-                                    <th>Materi</th>
-                                    <th>Trainer</th>
-                                    <th>Modul</th>
-                                    <th>Disetujui</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
+                                    <td>
+                                        <div class="course-info">
+                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
+                                                class="course-thumb" alt="Cover">
+                                            <div>
+                                                <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
+                                                <span class="badge-cat"><i
+                                                        class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="trainer-info">
+                                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                                class="trainer-avatar">
+                                            <div>
+                                                <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 600; color: #334155;">
+                                            {{ $material->approved_at ? $material->approved_at->format('d M Y') : '-' }}
+                                        </div>
+                                        <div style="font-size: 0.75rem; color:#64748b;">
+                                            {{ $material->approved_at ? $material->approved_at->diffForHumans() : '' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge-status badge-approved-status">Live</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action">
+                                            Lihat <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($approvedMaterials as $material)
-                                    <tr>
-                                        <td>
-                                            <div class="material-info">
-                                                <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e3f2fd/1565c0?text=Course' }}"
-                                                    alt="{{ $material->name }}" class="material-thumbnail">
-                                                <div class="material-details">
-                                                    <h6>{{ Str::limit($material->name, 50) }}</h6>
-                                                    <span class="material-category">
-                                                        <i class="bi bi-folder me-1"></i>
-                                                        {{ $material->category->name ?? 'Uncategorized' }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="trainer-info">
-                                                <img src="https://ui-avatars.com/api/?name={{ urlencode($material->trainer->name ?? 'Unknown') }}&background=2e7d32&color=fff&bold=true&size=80"
-                                                    alt="{{ $material->trainer->name ?? 'Unknown' }}" class="trainer-avatar">
-                                                <div>
-                                                    <div class="trainer-name">{{ $material->trainer->name ?? 'Unknown' }}</div>
-                                                    <small class="text-muted">{{ $material->trainer->email ?? '-' }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="module-badge">
-                                                <i class="bi bi-files me-1"></i>
-                                                {{ $material->modules_count }} Modul
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div style="font-weight: 600; color: #495057;">
-                                                {{ $material->approved_at ? $material->approved_at->format('d M Y') : '-' }}
-                                            </div>
-                                            <small class="text-muted">
-                                                {{ $material->approved_at ? $material->approved_at->diffForHumans() : '' }}
-                                            </small>
-                                        </td>
-                                        <td>
-                                            <span class="status-badge status-approved">
-                                                ✅ Approved
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('admin.material.show', $material) }}" class="btn-view">
-                                                <i class="bi bi-eye-fill"></i> Lihat Detail
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <h5 class="fw-bold text-dark">Belum ada materi</h5>
+                                            <p class="text-muted mb-0">Belum ada materi kelas yang disetujui saat ini.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
 
-                    <!-- Pagination -->
-                    <div class="mt-4">
-                        {{ $approvedMaterials->links() }}
-                    </div>
-                @else
-                    <div class="empty-state">
-                        <i class="bi bi-inbox"></i>
-                        <h5>Belum Ada Materi Disetujui</h5>
-                        <p>Belum ada materi yang disetujui.</p>
+                @if($approvedMaterials->hasPages())
+                    <div class="p-3 border-top">
+                        {{ $approvedMaterials->links('pagination::bootstrap-5') }}
                     </div>
                 @endif
             </div>
