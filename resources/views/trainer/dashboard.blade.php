@@ -11,7 +11,7 @@
 @endphp
 
 @push('styles')
-  @vite(['resources/css/trainer/feedback.css'])
+  @vite(['resources/css/trainer/dashboard.css'])
 @endpush
 
 @section('content')

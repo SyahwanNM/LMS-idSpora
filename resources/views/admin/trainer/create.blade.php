@@ -3,7 +3,7 @@
 @section('title', 'Tambah Trainer Baru')
 
 @section('navbar')
-    @include('partials.navbar-trainer')
+    @include('partials.navbar-admin-trainer')
 @endsection
 
 @section('styles')
@@ -287,6 +287,34 @@
             color: #fff;
         }
 
+        .sidebar-parent {
+            justify-content: space-between;
+        }
+
+        .sidebar-parent .sidebar-chevron {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-submenu {
+            margin: 4px 0 8px;
+        }
+
+        .sidebar-submenu .sidebar-link {
+            margin-left: 14px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+        }
+
+        .sidebar-submenu .sidebar-link i {
+            font-size: 0.95rem;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .trainer-hero {
@@ -325,9 +353,29 @@
             </a>
 
             <span class="nav-menu-label">QUICK ACCESS</span>
-            <a href="{{ route('admin.material.approvals') }}" class="sidebar-link">
-                <i class="bi bi-clipboard-check"></i> Material Approval
+            <a href="#materialApprovalMenu"
+                class="sidebar-link sidebar-parent {{ request()->routeIs('admin.material.*') ? 'active' : '' }}"
+                data-bs-toggle="collapse" role="button"
+                aria-expanded="{{ request()->routeIs('admin.material.*') ? 'true' : 'false' }}"
+                aria-controls="materialApprovalMenu">
+                <span><i class="bi bi-clipboard-check"></i> Material Approval</span>
+                <i class="bi bi-chevron-down sidebar-chevron"></i>
             </a>
+            <div class="collapse sidebar-submenu {{ request()->routeIs('admin.material.*') ? 'show' : '' }}"
+                id="materialApprovalMenu">
+                <a href="{{ route('admin.material.approvals') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approvals') ? 'active' : '' }}">
+                    <i class="bi bi-hourglass-split"></i> Pending Review
+                </a>
+                <a href="{{ route('admin.material.approved') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approved') ? 'active' : '' }}">
+                    <i class="bi bi-check-circle"></i> Approved
+                </a>
+                <a href="{{ route('admin.material.rejected') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.rejected') ? 'active' : '' }}">
+                    <i class="bi bi-x-circle"></i> Rejected
+                </a>
+            </div>
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>

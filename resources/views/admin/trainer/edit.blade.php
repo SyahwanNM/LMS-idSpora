@@ -3,7 +3,7 @@
 @section('title', 'Edit Trainer')
 
 @section('navbar')
-    @include('partials.navbar-trainer')
+    @include('partials.navbar-admin-trainer')
 @endsection
 
 @section('styles')
@@ -62,7 +62,7 @@
         }
 
         .hero-title {
-            font-size: 40px;
+            font-size: 2.5rem;
             font-weight: 800;
             margin-bottom: 12px;
             letter-spacing: -0.8px;
@@ -78,7 +78,7 @@
             margin-bottom: 0;
             position: relative;
             z-index: 2;
-            font-size: 17px;
+            font-size: 1.05rem;
         }
 
         /* Form Card Styling */
@@ -94,7 +94,7 @@
         }
 
         .form-section-title {
-            font-size: 17px;
+            font-size: 1.05rem;
             font-weight: 700;
             color: #1a237e;
             letter-spacing: -0.3px;
@@ -258,13 +258,13 @@
             border-radius: 10px;
             margin-bottom: 4px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 0.9rem;
             transition: all 0.2s ease;
             gap: 12px;
         }
 
         .sidebar-link i {
-            font-size: 18px;
+            font-size: 1.15rem;
             color: #64748b;
             transition: color 0.2s ease;
         }
@@ -287,6 +287,34 @@
             color: #fff;
         }
 
+        .sidebar-parent {
+            justify-content: space-between;
+        }
+
+        .sidebar-parent .sidebar-chevron {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-submenu {
+            margin: 4px 0 8px;
+        }
+
+        .sidebar-submenu .sidebar-link {
+            margin-left: 14px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+        }
+
+        .sidebar-submenu .sidebar-link i {
+            font-size: 0.95rem;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .trainer-hero {
@@ -294,11 +322,11 @@
             }
 
             .hero-title {
-                font-size: 29px;
+                font-size: 1.8rem;
             }
 
             .hero-subtitle {
-                font-size: 16px;
+                font-size: 1rem;
             }
 
             .trainer-sidebar {
@@ -314,7 +342,6 @@
 
 @section('content')
     <div class="trainer-wrapper">
-        <!-- Sidebar Navigation -->
         <aside class="trainer-sidebar d-none d-lg-block">
             <span class="nav-menu-label">TRAINER MANAGEMENT</span>
             <a href="{{ route('admin.trainer.index') }}" class="sidebar-link">
@@ -325,9 +352,29 @@
             </a>
 
             <span class="nav-menu-label">QUICK ACCESS</span>
-            <a href="{{ route('admin.material.approvals') }}" class="sidebar-link">
-                <i class="bi bi-clipboard-check"></i> Material Approval
+            <a href="#materialApprovalMenu"
+                class="sidebar-link sidebar-parent {{ request()->routeIs('admin.material.*') ? 'active' : '' }}"
+                data-bs-toggle="collapse" role="button"
+                aria-expanded="{{ request()->routeIs('admin.material.*') ? 'true' : 'false' }}"
+                aria-controls="materialApprovalMenu">
+                <span><i class="bi bi-clipboard-check"></i> Material Approval</span>
+                <i class="bi bi-chevron-down sidebar-chevron"></i>
             </a>
+            <div class="collapse sidebar-submenu {{ request()->routeIs('admin.material.*') ? 'show' : '' }}"
+                id="materialApprovalMenu">
+                <a href="{{ route('admin.material.approvals') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approvals') ? 'active' : '' }}">
+                    <i class="bi bi-hourglass-split"></i> Pending Review
+                </a>
+                <a href="{{ route('admin.material.approved') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approved') ? 'active' : '' }}">
+                    <i class="bi bi-check-circle"></i> Approved
+                </a>
+                <a href="{{ route('admin.material.rejected') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.rejected') ? 'active' : '' }}">
+                    <i class="bi bi-x-circle"></i> Rejected
+                </a>
+            </div>
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
@@ -340,25 +387,24 @@
         </aside>
 
         <main class="trainer-main">
-            <!-- Hero Header -->
-            <div class="trainer-hero">
-                <span class="hero-label">Admin Panel</span>
-                <h1 class="hero-title">Edit Data Trainer</h1>
-                <p class="hero-subtitle">
-                    Perbarui informasi trainer <strong>{{ $trainer->name }}</strong>. Kosongkan password jika tidak ingin
-                    mengubahnya.
-                </p>
+            <!-- Hero Section -->
+            <div class="trainer-hero mb-5">
+                <div>
+                    <span class="hero-label"><i class="bi bi-shield-check me-2"></i>Admin Panel</span>
+                    <h1 class="hero-title">Edit Data Trainer</h1>
+                    <p class="hero-subtitle">Perbarui informasi instruktur. Kosongkan password jika tidak ingin mengubahnya.
+                    </p>
+                </div>
             </div>
 
             <div class="row">
-                <div class="col-xl-8">
-                    <div class="card trainer-form-card">
-                        <div class="card-body p-5">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-body p-4 p-md-5">
                             @if ($errors->any())
-                                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4"
-                                    role="alert">
+                                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
                                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <strong>Terdapat kesalahan!</strong> Silakan periksa form kembali.
+                                    <strong>Terdapat kesalahan input!</strong>
                                     <ul class="mb-0 mt-2">
                                         @foreach ($errors->all() as $error)
                                             <li>{{ $error }}</li>
@@ -368,172 +414,140 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST">
+                            {{-- PENTING: enctype="multipart/form-data" untuk upload foto --}}
+                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST"
+                                enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
 
-                                <!-- Personal Information Section -->
                                 <div class="mb-5">
                                     <h5 class="form-section-title">
-                                        <i class="bi bi-person-circle" style="color: #3949ab;"></i>
-                                        Informasi Pribadi
+                                        <i class="bi bi-person-circle text-primary"></i> Informasi Pribadi
                                     </h5>
 
+                                    {{-- Foto Profil --}}
+                                    <div class="mb-4 text-center">
+                                        <div class="position-relative d-inline-block">
+                                            {{-- Gunakan accessor avatar_url dari Model User --}}
+                                            <img src="{{ $trainer->avatar_url }}" class="rounded-circle shadow-sm mb-3"
+                                                style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #fff;">
+                                        </div>
+                                        <div>
+                                            <label class="btn btn-sm btn-outline-primary rounded-pill"
+                                                style="cursor: pointer;">
+                                                <i class="bi bi-camera me-1"></i> Ganti Foto
+                                                <input type="file" name="avatar" class="d-none" accept="image/*">
+                                            </label>
+                                            <div class="form-text small mt-1">Max 2MB (JPG, PNG)</div>
+                                        </div>
+                                    </div>
+
                                     <div class="row g-4">
-                                        <div class="col-md-12">
+                                        <div class="col-md-6">
                                             <label class="form-label">Nama Lengkap <span
                                                     class="text-danger">*</span></label>
-                                            <div class="input-group input-group-lg">
-                                                <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                                <input type="text" name="name"
-                                                    class="form-control @error('name') is-invalid @enderror"
-                                                    placeholder="Contoh: Budi Santoso"
-                                                    value="{{ old('name', $trainer->name) }}" required>
-                                            </div>
-                                            @error('name')<div class="text-danger small mt-2"><i
-                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                            <input type="text" name="name" class="form-control"
+                                                value="{{ old('name', $trainer->name) }}" required>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <!-- Credentials Section -->
-                                <div class="mb-5">
-                                    <h5 class="form-section-title">
-                                        <i class="bi bi-lock-circle" style="color: #3949ab;"></i>
-                                        Kredensial Akun
-                                    </h5>
-
-                                    <div class="row g-4">
                                         <div class="col-md-6">
-                                            <label class="form-label">Alamat Email <span
-                                                    class="text-danger">*</span></label>
-                                            <div class="input-group input-group-lg">
-                                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                                <input type="email" name="email"
-                                                    class="form-control @error('email') is-invalid @enderror"
-                                                    placeholder="budi@example.com"
-                                                    value="{{ old('email', $trainer->email) }}" required>
-                                            </div>
-                                            @error('email')<div class="text-danger small mt-2"><i
-                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                                            <input type="email" name="email" class="form-control"
+                                                value="{{ old('email', $trainer->email) }}" required>
                                         </div>
-
                                         <div class="col-md-6">
                                             <label class="form-label">Nomor WhatsApp</label>
-                                            <div class="input-group input-group-lg">
-                                                <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
-                                                <input type="text" name="phone"
-                                                    class="form-control @error('phone') is-invalid @enderror"
-                                                    placeholder="+628123456789" value="{{ old('phone', $trainer->phone) }}">
-                                            </div>
-                                            @error('phone')<div class="text-danger small mt-2"><i
-                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                            <input type="text" name="phone" class="form-control"
+                                                value="{{ old('phone', $trainer->phone) }}" placeholder="0812...">
                                         </div>
 
+                                        {{-- INPUT BARU: Profesi --}}
                                         <div class="col-md-6">
-                                            <label class="form-label">Password Baru <small class="text-muted">(Kosongkan
-                                                    jika tidak diubah)</small></label>
-                                            <div class="input-group input-group-lg">
-                                                <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                                <input type="password" name="password" id="passwordInput"
-                                                    class="form-control @error('password') is-invalid @enderror"
-                                                    placeholder="Minimal 6 karakter">
-                                            </div>
-                                            @error('password')<div class="text-danger small mt-2"><i
-                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                            <label class="form-label">Profesi / Jabatan</label>
+                                            <input type="text" name="profession" class="form-control"
+                                                value="{{ old('profession', $trainer->profession) }}"
+                                                placeholder="Contoh: Senior Developer">
                                         </div>
 
+                                        {{-- INPUT BARU: Institusi --}}
                                         <div class="col-md-6">
-                                            <label class="form-label">Konfirmasi Password Baru</label>
-                                            <div class="input-group input-group-lg">
-                                                <span class="input-group-text"><i class="bi bi-check-circle"></i></span>
-                                                <input type="password" name="password_confirmation"
-                                                    id="passwordConfirmInput" class="form-control"
-                                                    placeholder="Ketik ulang password">
-                                            </div>
+                                            <label class="form-label">Institusi / Perusahaan</label>
+                                            <input type="text" name="institution" class="form-control"
+                                                value="{{ old('institution', $trainer->institution) }}"
+                                                placeholder="Contoh: PT. Maju Jaya">
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Bio Section -->
                                 <div class="mb-5">
                                     <h5 class="form-section-title">
-                                        <i class="bi bi-file-text" style="color: #3949ab;"></i>
-                                        Informasi Tambahan
+                                        <i class="bi bi-key text-primary"></i> Update Password
                                     </h5>
-
+                                    <div class="alert alert-light border border-primary-subtle text-primary small mb-3">
+                                        <i class="bi bi-info-circle me-1"></i> Kosongkan jika tidak ingin mengganti
+                                        password.
+                                    </div>
                                     <div class="row g-4">
-                                        <div class="col-md-12">
-                                            <label class="form-label">Bio / Deskripsi</label>
-                                            <textarea name="bio" rows="4"
-                                                class="form-control @error('bio') is-invalid @enderror"
-                                                placeholder="Deskripsi singkat tentang trainer (keahlian, pengalaman, sertifikasi, dll)">{{ old('bio', $trainer->bio) }}</textarea>
-                                            @error('bio')<div class="text-danger small mt-2"><i
-                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
-                                            <small class="text-muted mt-2">Misalnya: Instruktur UI/UX Design dengan 10+
-                                                tahun pengalaman</small>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Password Baru</label>
+                                            <input type="password" name="password" class="form-control"
+                                                placeholder="Minimal 6 karakter">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Konfirmasi Password</label>
+                                            <input type="password" name="password_confirmation" class="form-control"
+                                                placeholder="Ulangi password baru">
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Action Buttons -->
-                                <div class="d-flex justify-content-between align-items-center pt-4 border-top">
-                                    <a href="{{ route('admin.trainer.index') }}" class="btn btn-reset">
-                                        <i class="bi bi-arrow-left me-2"></i>Kembali
-                                    </a>
-                                    <div class="d-flex gap-3">
-                                        <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-reset">
-                                            <i class="bi bi-eye me-2"></i>Lihat Detail
-                                        </a>
-                                        <button type="submit" class="btn btn-submit">
-                                            <i class="bi bi-check-circle me-2"></i>Simpan Perubahan
-                                        </button>
-                                    </div>
+                                <div class="mb-5">
+                                    <h5 class="form-section-title">
+                                        <i class="bi bi-file-text text-primary"></i> Bio & Keahlian
+                                    </h5>
+                                    <textarea name="bio" rows="4" class="form-control"
+                                        placeholder="Ceritakan pengalaman trainer...">{{ old('bio', $trainer->bio) }}</textarea>
                                 </div>
+
+                                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                    <a href="{{ route('admin.trainer.index') }}" class="btn btn-light text-muted fw-bold">
+                                        <i class="bi bi-arrow-left me-1"></i> Kembali
+                                    </a>
+                                    <button type="submit" class="btn btn-submit">
+                                        <i class="bi bi-save me-2"></i> Simpan Perubahan
+                                    </button>
+                                </div>
+
                             </form>
                         </div>
                     </div>
                 </div>
 
                 <!-- Info Panel -->
-                <div class="col-xl-4">
+                <div class="col-lg-4">
                     <div class="info-panel sticky-top" style="top: 100px;">
-                        <h5>
-                            <i class="bi bi-info-circle" style="color: #3949ab;"></i>
-                            Tips Edit Data Trainer
-                        </h5>
+                        <h5><i class="bi bi-info-circle-fill me-2"></i>Panduan Edit Data</h5>
 
-                        <div class="alert alert-warning border-0 mt-3 mb-3" style="background: #fff3cd;">
-                            <i class="bi bi-exclamation-triangle-fill me-2" style="color: #856404;"></i>
-                            <small><strong>Perhatian!</strong> Perubahan email akan mengubah kredensial login
-                                trainer.</small>
-                        </div>
-
-                        <h6 class="text-success mt-3 mb-3">
-                            <i class="bi bi-check-circle me-2" style="color: #2e7d32;"></i>
-                            Yang Bisa Diubah:
-                        </h6>
-                        <ul class="list-unstyled mb-4">
-                            <li><i class="bi bi-check-circle text-success me-2"></i>Nama Lengkap</li>
-                            <li><i class="bi bi-check-circle text-success me-2"></i>Email & Nomor HP</li>
-                            <li><i class="bi bi-check-circle text-success me-2"></i>Password Login</li>
-                            <li><i class="bi bi-check-circle text-success me-2"></i>Bio / Keahlian</li>
-                        </ul>
-
-                        <h6 class="text-info mb-3">
-                            <i class="bi bi-info-circle me-2" style="color: #0288d1;"></i>
-                            Info Trainer:
-                        </h6>
+                        <h6 class="mt-4 mb-3"><i class="bi bi-shield-check text-success me-2"></i>Wajib Diisi</h6>
                         <ul class="list-unstyled">
-                            <li class="mb-2"><small><strong>Bergabung:</strong>
-                                    {{ $trainer->created_at->format('d M Y') }}</small></li>
-                            <li class="mb-2"><small><strong>Total Kelas:</strong>
-                                    {{ $trainer->courses_as_trainer_count ?? 0 }}</small></li>
-                            <li class="mb-2"><small><strong>Total Event:</strong>
-                                    {{ $trainer->events_as_trainer_count ?? 0 }}</small></li>
+                            <li><i class="bi bi-check-circle text-success"></i>Nama Lengkap</li>
+                            <li><i class="bi bi-check-circle text-success"></i>Email Aktif</li>
                         </ul>
+
+                        <h6 class="mt-4 mb-3"><i class="bi bi-shield-exclamation text-warning me-2"></i>Opsional</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i>Nomor WhatsApp</li>
+                            <li><i class="bi bi-check-circle text-success"></i>Profesi & Institusi</li>
+                            <li><i class="bi bi-check-circle text-success"></i>Bio & Keahlian</li>
+                            <li><i class="bi bi-check-circle text-success"></i>Foto Profil</li>
+                        </ul>
+
+                        <div class="alert alert-warning mt-4 mb-0 small">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Password:</strong> Kosongkan kolom password jika tidak ingin mengubahnya.
+                        </div>
                     </div>
                 </div>
+            </div>
         </main>
     </div>
 @endsection

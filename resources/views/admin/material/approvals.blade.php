@@ -1,285 +1,70 @@
 @extends('layouts.admin')
 
-@section('title', 'Material Approvals - Trainer Management')
+@section('title', 'Material Approvals - Pending')
 
 @section('navbar')
-    @include('partials.navbar-trainer')
+    @include('partials.navbar-admin-trainer')
 @endsection
 
 @section('styles')
     <style>
-        /* === MENGGUNAKAN CSS YANG SAMA DENGAN DASHBOARD UTAMA === */
+        :root {
+            --admin-primary: #1e1b4b;
+            --admin-secondary: #4338ca;
+            --admin-bg: #f8fafc;
+            --admin-card-bg: #ffffff;
+            --admin-border: #e2e8f0;
+            --admin-text-main: #0f172a;
+            --admin-text-muted: #64748b;
 
-        /* Trainer Hero Section */
-        .trainer-hero {
-            background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
-            border-radius: 24px;
-            padding: 32px;
-            color: #fff;
-            margin-bottom: 24px;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            --status-pending-bg: #fffbeb;
+            --status-pending-text: #b45309;
         }
 
-        .trainer-hero::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(138, 43, 226, 0.25) 0%, rgba(138, 43, 226, 0) 70%);
-            border-radius: 50%;
-            z-index: 1;
+        body {
+            background-color: var(--admin-bg);
         }
 
-        .hero-header {
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero-title {
-            font-size: 1.85rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .hero-subtitle {
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 1rem;
-            margin-bottom: 0;
-        }
-
-        /* Table Card & Header */
-        .trainer-table-card {
-            border: 0;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-
-        .table-header-row {
-            background: linear-gradient(to right, #f8f9ff 0%, #f5f7ff 100%);
-            border-bottom: 2px solid #e3f2fd;
-        }
-
-        .table-header-row th {
-            color: #1a237e;
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            padding: 14px;
-        }
-
-        .table tbody tr {
-            border-bottom: 1px solid #f0f0f0;
-            transition: all 0.2s ease;
-        }
-
-        .table tbody tr:hover {
-            background-color: #f8f9ff;
-            box-shadow: inset 0 0 10px rgba(57, 73, 171, 0.05);
-        }
-
-        .table tbody td {
-            padding: 14px;
-            vertical-align: middle;
-        }
-
-        /* Statistics Cards */
-        .stat-card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-
-        .stat-card:hover {
-            border-color: #3949ab;
-            box-shadow: 0 4px 16px rgba(57, 73, 171, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .stat-card .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+        .material-wrapper {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            margin-bottom: 14px;
+            min-height: calc(100vh - 72px);
         }
 
-        .stat-card .stat-value {
-            font-size: 1.7rem;
+        .material-sidebar {
+            width: 260px;
+            background: var(--admin-card-bg);
+            padding: 24px 16px;
+            border-right: 1px solid var(--admin-border);
+            flex-shrink: 0;
+            position: sticky;
+            top: 72px;
+            height: calc(100vh - 72px);
+            overflow-y: auto;
+        }
+
+        .nav-menu-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
             font-weight: 700;
-            color: #1a237e;
-            line-height: 1;
-            margin-bottom: 6px;
+            color: var(--admin-text-muted);
+            letter-spacing: 1px;
+            margin: 24px 0 12px 16px;
+            display: block;
         }
 
-        .stat-card .stat-label {
-            font-size: 0.9rem;
-            color: #6c757d;
-            font-weight: 500;
-        }
-
-        /* CSS TAMBAHAN UNTUK MATERIAL APPROVALS */
-        .stat-card.stat-warning .stat-icon {
-            background: linear-gradient(135deg, #f57f17 0%, #ffb300 100%);
-            color: #fff;
-        }
-
-        .stat-card.stat-danger .stat-icon {
-            background: linear-gradient(135deg, #c62828 0%, #e53935 100%);
-            color: #fff;
-        }
-
-        /* Filter Dropdown & Search */
-        .filter-select {
-            border-radius: 10px;
-            border: 1.5px solid #e9ecef;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            min-width: 180px;
-        }
-
-        .filter-select:focus {
-            border-color: #3949ab;
-            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
-        }
-
-        .search-input {
-            border-radius: 12px;
-            border: 1.5px solid #e9ecef;
-            padding: 10px 16px;
-            font-size: 0.9rem;
-        }
-
-        .search-input:focus {
-            border-color: #3949ab;
-            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
-            background-color: #f8f9ff;
-        }
-
-        /* Status Badge */
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .status-approved {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .status-approved::before {
-            background: #2e7d32;
-        }
-
-        .status-pending {
-            background: #fff8e1;
-            color: #f57f17;
-        }
-
-        .status-pending::before {
-            background: #f57f17;
-        }
-
-        .status-revision {
-            background: #fce4ec;
-            color: #c62828;
-        }
-
-        .status-revision::before {
-            background: #c62828;
-        }
-
-        /* Type Badges */
-        .badge-type {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border: 1px solid #e9ecef;
-            color: #495057;
-            background: #f8f9fa;
-        }
-
-        /* Action Buttons */
-        .btn-action {
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
-            border: 1.5px solid #e9ecef;
-            font-weight: 600;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-action-review {
-            color: #fff;
-            background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-            border: none;
-        }
-
-        .btn-action-review:hover {
-            background: linear-gradient(135deg, #283593 0%, #3949ab 100%);
-            color: #fff;
-        }
-
-        .btn-action-view {
-            color: #1976d2;
-            background-color: #e3f2fd;
-        }
-
-        /* Empty State & Sidebar (Sama persis) */
-        .empty-state {
-            padding: 60px 20px;
-            text-align: center;
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: #ccc;
-            margin-bottom: 20px;
+        .nav-menu-label:first-child {
+            margin-top: 0;
         }
 
         .trainer-wrapper {
             display: flex;
             min-height: calc(100vh - 72px);
-
-            
-
         }
 
         .trainer-sidebar {
-            width: 220px;
+            width: 260px;
             background: #fff;
-            padding: 16px 10px;
+            padding: 24px 16px;
             border-right: 1px solid #eee;
             flex-shrink: 0;
             position: sticky;
@@ -290,7 +75,7 @@
 
         .trainer-main {
             flex-grow: 1;
-            padding: 24px;
+            padding: 32px;
             background-color: #F8F9FA;
         }
 
@@ -300,10 +85,10 @@
             font-weight: 700;
             color: #94a3b8;
             letter-spacing: 1px;
-            margin-bottom: 8px;
-            margin-top: 16px;
+            margin-bottom: 12px;
+            margin-top: 24px;
             display: block;
-            padding-left: 12px;
+            padding-left: 16px;
         }
 
         .nav-menu-label:first-child {
@@ -313,19 +98,19 @@
         .sidebar-link {
             display: flex;
             align-items: center;
-            padding: 9px 12px;
+            padding: 11px 16px;
             color: #1e293b;
             text-decoration: none;
             border-radius: 10px;
             margin-bottom: 4px;
             font-weight: 600;
-            font-size: 0.86rem;
+            font-size: 14px;
             transition: all 0.2s ease;
-            gap: 10px;
+            gap: 12px;
         }
 
         .sidebar-link i {
-            font-size: 1rem;
+            font-size: 18px;
             color: #64748b;
             transition: color 0.2s ease;
         }
@@ -348,32 +133,331 @@
             color: #fff;
         }
 
-        @media (max-width: 768px) {
-            .trainer-hero {
-                padding: 24px;
+        .sidebar-parent {
+            justify-content: space-between;
+        }
+
+        .sidebar-parent .sidebar-chevron {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-submenu {
+            margin: 4px 0 8px;
+        }
+
+        .sidebar-submenu .sidebar-link {
+            margin-left: 14px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+        }
+
+        .sidebar-submenu .sidebar-link i {
+            font-size: 0.95rem;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .material-main {
+            flex-grow: 1;
+            padding: 32px;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER & STATS --- */
+        .page-header {
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--admin-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--admin-card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--admin-border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .stat-card.pending .stat-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .stat-card.approved .stat-icon {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .stat-card.rejected .stat-icon {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0 0 4px 0;
+            color: var(--admin-text-main);
+            line-height: 1;
+        }
+
+        .stat-info p {
+            margin: 0;
+            color: var(--admin-text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- TABLE CARD --- */
+        .content-card {
+            background: var(--admin-card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--admin-border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .toolbar {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--admin-border);
+            background: #fff;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            background: #f8fafc;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-box input:focus {
+            border-color: var(--admin-secondary);
+            outline: none;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1);
+        }
+
+        .table {
+            margin-bottom: 0;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: #f8fafc;
+            color: var(--admin-text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--admin-border);
+            white-space: nowrap;
+        }
+
+        .table td {
+            padding: 20px 24px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--admin-border);
+        }
+
+        .table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* --- COMPONENT STYLES --- */
+        .course-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .course-thumb {
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--admin-border);
+            background: #eee;
+        }
+
+        .course-title {
+            font-weight: 700;
+            color: var(--admin-text-main);
+            margin: 0 0 4px 0;
+            font-size: 0.95rem;
+        }
+
+        .badge-cat {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .trainer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trainer-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+
+        .trainer-name {
+            font-weight: 600;
+            color: var(--admin-text-main);
+            font-size: 0.9rem;
+        }
+
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .badge-pending {
+            background: var(--status-pending-bg);
+            color: var(--status-pending-text);
+        }
+
+        .badge-pending::before {
+            background: var(--status-pending-text);
+        }
+
+        .btn-action {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: var(--admin-text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            border-color: var(--admin-secondary);
+            color: var(--admin-secondary);
+            background: #f8fafc;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 992px) {
+            .material-sidebar {
+                display: none;
             }
 
-            .hero-title {
-                font-size: 1.5rem;
+            .stat-grid {
+                grid-template-columns: 1fr;
             }
 
-            .hero-subtitle {
-                font-size: 0.9rem;
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .trainer-sidebar {
-                display: none !important;
-            }
-
-            .trainer-main {
-                padding: 20px;
+            .search-box {
+                width: 100%;
             }
         }
     </style>
 @endsection
 
 @section('content')
-    <div class="trainer-wrapper">
+    <div class="material-wrapper">
         <aside class="trainer-sidebar d-none d-lg-block">
             <span class="nav-menu-label">TRAINER MANAGEMENT</span>
             <a href="{{ route('admin.trainer.index') }}" class="sidebar-link">
@@ -384,9 +468,29 @@
             </a>
 
             <span class="nav-menu-label">QUICK ACCESS</span>
-            <a href="{{ route('admin.material.approvals') }}" class="sidebar-link active">
-                <i class="bi bi-clipboard-check"></i> Material Approval
+            <a href="#materialApprovalMenu"
+                class="sidebar-link sidebar-parent {{ request()->routeIs('admin.material.*') ? 'active' : '' }}"
+                data-bs-toggle="collapse" role="button"
+                aria-expanded="{{ request()->routeIs('admin.material.*') ? 'true' : 'false' }}"
+                aria-controls="materialApprovalMenu">
+                <span><i class="bi bi-clipboard-check"></i> Material Approval</span>
+                <i class="bi bi-chevron-down sidebar-chevron"></i>
             </a>
+            <div class="collapse sidebar-submenu {{ request()->routeIs('admin.material.*') ? 'show' : '' }}"
+                id="materialApprovalMenu">
+                <a href="{{ route('admin.material.approvals') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approvals') ? 'active' : '' }}">
+                    <i class="bi bi-hourglass-split"></i> Pending Review
+                </a>
+                <a href="{{ route('admin.material.approved') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approved') ? 'active' : '' }}">
+                    <i class="bi bi-check-circle"></i> Approved
+                </a>
+                <a href="{{ route('admin.material.rejected') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.rejected') ? 'active' : '' }}">
+                    <i class="bi bi-x-circle"></i> Rejected
+                </a>
+            </div>
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
@@ -398,182 +502,143 @@
             </a>
         </aside>
 
-        <main class="trainer-main">
-            <div class="trainer-hero mb-5">
-                <div class="hero-header d-flex justify-content-between align-items-start">
-                    <div>
-                        <h1 class="hero-title">
-                            <i class="bi bi-clipboard-check-fill me-3"></i>Material Approvals
-                        </h1>
-                        <p class="hero-subtitle">Validasi dan pantau kualitas materi yang diunggah oleh trainer sebelum
-                            dipublikasikan ke peserta.</p>
-                    </div>
-                    <button class="btn btn-light rounded-3 shadow-sm" style="font-weight: 600; padding: 10px 20px;"
-                        onclick="window.location.reload();">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
-                    </button>
+        <main class="material-main">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Material Approvals</h1>
+                    <p class="text-muted mb-0">Review materi dari trainer sebelum tayang ke publik.</p>
                 </div>
+                <button class="btn btn-action" onclick="window.location.reload();">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
             </div>
 
             @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    <strong>Berhasil!</strong> {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                    <div>{{ session('success') }}</div>
                 </div>
             @endif
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="stat-card stat-warning">
-                        <div class="stat-icon">
-                            <i class="bi bi-hourglass-split"></i>
-                        </div>
-                        <div class="stat-value">{{ $totalPending ?? 0 }}</div>
-                        <div class="stat-label">Pending Review</div>
+            <div class="stat-grid">
+                <div class="stat-card pending" style="border: 2px solid #fbbf24;">
+                    <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="stat-info">
+                        <h3>{{ $totalPending ?? 0 }}</h3>
+                        <p>Menunggu Review</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="stat-card stat-success">
-                        <div class="stat-icon">
-                            <i class="bi bi-check-circle-fill"></i>
-                        </div>
-                        <div class="stat-value">{{ $approvedTodayCount ?? 0}}</div>
-                        <div class="stat-label">Disetujui Hari Ini</div>
+                <div class="stat-card approved">
+                    <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+                    <div class="stat-info">
+                        <h3>{{ $totalApproved ?? 0}}</h3>
+                        <p>Total Disetujui</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="stat-card stat-danger">
-                        <div class="stat-icon">
-                            <i class="bi bi-x-circle-fill"></i>
-                        </div>
-                        <div class="stat-value">{{ $revisionCount ?? 2 }}</div>
-                        <div class="stat-label">Perlu Direvisi</div>
+                <div class="stat-card rejected">
+                    <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
+                    <div class="stat-info">
+                        <h3>{{ $totalRejected ?? 0 }}</h3>
+                        <p>Perlu Revisi</p>
                     </div>
                 </div>
             </div>
 
-            <div class="row mb-4 g-3">
-                <div class="col-lg-5">
-                    <form action="{{ route('admin.material.approvals') }}" method="GET" class="d-flex gap-2">
-                        <input type="hidden" name="status" value="{{ request('status') }}">
-                        <div class="flex-grow-1">
-                            <input type="text" name="search" class="form-control search-input"
-                                placeholder="🔍 Cari judul materi atau nama trainer..." value="{{ request('search') }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary rounded-3 px-4"
-                            style="background: #3949ab; border: none; font-weight: 600;">
-                            Cari
-                        </button>
+            <div class="content-card">
+                <div class="toolbar">
+                    <form method="GET" class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" placeholder="Cari course atau nama trainer..."
+                            value="{{ request('search') }}">
                     </form>
-                </div>
-                <div class="col-lg-4">
-                    <form action="{{ route('admin.material.approvals') }}" method="GET" class="d-flex gap-2">
-                        <input type="hidden" name="search" value="{{ request('search') }}">
-                        <select name="status" class="form-select filter-select" onchange="this.form.submit()">
-                            <option value="">📋 Semua Status</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>⏳ Pending Review
-                            </option>
-                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>✅ Disetujui
-                            </option>
-                            <option value="revision" {{ request('status') == 'revision' ? 'selected' : '' }}>❌ Perlu Revisi
-                            </option>
-                        </select>
-                    </form>
-                </div>
-                <div class="col-lg-3">
-                    <div class="text-end">
-                        <small class="text-muted d-block mb-1">Total Antrean</small>
-                        <strong style="color: #1a237e; font-size: 1.1rem;">{{ $pendingMaterials->total() ?? 19 }}
-                            Materi</strong>
+
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.material.approved') }}" class="btn-action"
+                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
+                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
-            </div>
 
-            <div class="card trainer-table-card">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-header-row">
+                    <table class="table">
+                        <thead>
                             <tr>
-                                <th class="ps-4" style="min-width: 250px;">Detail Materi</th>
-                                <th style="min-width: 180px;">Trainer</th>
-                                <th class="text-center" style="width: 120px;">Total Modul</th>
-                                <th style="width: 150px;">Tanggal Upload</th>
-                                <th class="text-center" style="width: 140px;">Status</th>
-                                <th class="text-center pe-4" style="width: 130px;">Aksi</th>
+                                <th>Materi (Course)</th>
+                                <th>Trainer</th>
+                                <th>Isi Modul</th>
+                                <th>Tanggal Submit</th>
+                                <th>Status</th>
+                                <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($pendingMaterials as $material)
                                 <tr>
-                                    <td class="ps-4">
-                                        <h6 class="mb-1 fw-bold" style="color: #1a237e;">{{ $material->name }}</h6>
-                                        <small class="text-muted">Kategori: {{ $material->category->name ?? 'Umum' }}</small>
-                                    </td>
                                     <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <img src="{{ 'https://ui-avatars.com/api/?name=' . urlencode($material->trainer->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
-                                                class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
-                                            <span class="fw-semibold text-dark small"
-                                                style="color: #424242;">{{ $material->trainer->name ?? 'Anonim' }}</span>
+                                        <div class="course-info">
+                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
+                                                class="course-thumb" alt="Cover">
+                                            <div>
+                                                <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
+                                                <span class="badge-cat"><i
+                                                        class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge-type"><i class="bi bi-collection text-primary me-1"></i>
-                                            {{ $material->modules_count }} Modul</span>
+                                    <td>
+                                        <div class="trainer-info">
+                                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                                class="trainer-avatar">
+                                            <div>
+                                                <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                        <div class="small" style="color: #424242;">{{ $material->created_at->format('d M Y') }}
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis
                                         </div>
-                                        <small class="text-muted">{{ $material->created_at->format('H:i') }} WIB</small>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="status-badge status-pending">Pending Review</span>
+                                    <td>
+                                        <div style="font-weight: 600; color: #334155;">
+                                            {{ $material->created_at->format('d M Y') }}</div>
+                                        <div style="font-size: 0.75rem; color:#64748b;">
+                                            {{ $material->created_at->diffForHumans() }}</div>
                                     </td>
-                                    <td class="text-center pe-4">
-                                        <a href="{{ route('admin.material.show', $material->id) }}"
-                                            class="btn btn-action btn-action-review shadow-sm">
-                                            <i class="bi bi-search me-1"></i> Review
+                                    <td>
+                                        <span class="badge-status badge-pending">Review Pending</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action"
+                                            style="background: var(--admin-primary); color:white; border:none;">
+                                            Mulai Review <i class="bi bi-play-fill"></i>
                                         </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">Belum ada antrean materi.</td>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <h5 class="fw-bold text-dark">Antrean Kosong</h5>
+                                            <p class="text-muted mb-0">Hore! Tidak ada materi yang perlu di-review saat ini.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                {{-- Gunakan kode ini jika data dari controller sudah siap --}}
-                {{-- @if($materials->hasPages()) --}}
-                <div class="card-footer bg-light border-top" style="padding: 14px 18px;">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            Menampilkan <strong>{{ $pendingMaterials->firstItem() ?? 0 }}</strong> sampai
-                            <strong>{{ $pendingMaterials->lastItem() ?? 0 }}</strong> dari
-                            <strong>{{ $pendingMaterials->total() ?? 0 }}</strong> antrean materi
-                        </small>
-                        <div>
-                            {{ $pendingMaterials->links('pagination::bootstrap-5') }}
-                        </div>
+                @if($pendingMaterials->hasPages())
+                    <div class="p-3 border-top">
+                        {{ $pendingMaterials->links('pagination::bootstrap-5') }}
                     </div>
-                </div>
+                @endif
             </div>
         </main>
     </div>
-@endsection
-
-@section('scripts')
-    <script>
-        // Success message auto-hide after 5 seconds
-        setTimeout(function () {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-    </script>
 @endsection

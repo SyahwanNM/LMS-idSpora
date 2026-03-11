@@ -52,6 +52,7 @@ class TrainerController extends Controller
                 },
                 'modules' // Tambahkan ini untuk menghitung jumlah modul
             ])
+            ->withAvg('reviews', 'rating')
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
@@ -215,17 +216,14 @@ class TrainerController extends Controller
     {
         $trainerId = \Illuminate\Support\Facades\Auth::id();
 
-        // 1. Ambil data course
         $course = \App\Models\Course::where('id', $id)
             ->where('trainer_id', $trainerId)
             ->firstOrFail();
 
-        // 2. Ambil data materials/modules milik course ini
         $materials = \App\Models\CourseModule::where('course_id', $id)
             ->orderBy('order_no', 'asc')
             ->get();
 
-        // 3. Kirimkan ke view (termasuk $materials)
         return view('trainer.content-studio', compact('course', 'materials'));
     }
 
@@ -233,13 +231,51 @@ class TrainerController extends Controller
     {
         $trainerId = \Illuminate\Support\Facades\Auth::id();
 
-        // Cari event, pastikan ini milik trainer yang sedang login
         $event = \App\Models\Event::where('id', $id)
             ->where('trainer_id', $trainerId)
             ->firstOrFail();
 
-        // Tampilkan halaman khusus studio event
         return view('trainer.event-studio', compact('event'));
+    }
+
+    public function saveEventQuiz(Request $request, $id)
+    {
+
+        $request->validate([
+            'questions' => 'required|string',
+            'passingGrade' => 'required|integer|min:0|max:100',
+        ]);
+
+        $trainerId = Auth::id();
+
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+
+        $questionsData = json_decode($request->questions, true);
+
+        if (empty($questionsData)) {
+            return back()->with('error', 'Data soal tidak valid.');
+        }
+
+        $quiz = \App\Models\Quiz::updateOrCreate(
+            ['event_id' => $event->id],
+            ['passing_grade' => $request->passingGrade]
+        );
+
+        $quiz->questions()->delete();
+
+        foreach ($questionsData as $q) {
+            $quiz->questions()->create([
+                'question_text' => $q['text'],
+                'options' => json_encode($q['options']),
+                'correct_answer_index' => $q['correctAnswer'],
+                'weight' => $q['weight'] ?? 10,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Kuis event berhasil disimpan!');
     }
 
     public function finance()
@@ -264,95 +300,100 @@ class TrainerController extends Controller
         return view('trainer.profile', compact('trainer', 'courses'));
     }
 
-    public function uploadMaterials(Request $request)
+    public function uploadCourseMaterials(Request $request, $id)
     {
+        // 1. Validasi File & module_id
         $request->validate([
-            'courseId' => 'required|integer',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:102400'
+            'module_id' => 'required|exists:course_module,id',
+            'file' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
         ]);
 
-        $courseId = $request->input('courseId');
+        $courseId = $id;
         $course = Course::findOrFail($courseId);
 
+        // 2. Security Check: Pastikan yang upload adalah trainer pemilik kelas
         if ($course->trainer_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return back()->with('error', 'Akses ditolak. Anda tidak memiliki izin untuk kelas ini.');
         }
 
-        $uploadedFiles = [];
+        // 3. Ambil data modul "cangkang" yang sudah disiapkan Admin
+        $module = CourseModule::where('id', $request->module_id)
+            ->where('course_id', $courseId)
+            ->firstOrFail();
 
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $filepath = $file->storeAs('courses/' . $courseId . '/materials', $filename, 'public');
+        // 4. Proses Upload File
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = time() . '_' . $file->getClientOriginalName();
 
-                CourseModule::create([
-                    'course_id' => $courseId,
-                    'title' => $file->getClientOriginalName(),
-                    'description' => null,
-                    'type' => $this->getModuleType($file->getClientOriginalExtension()),
-                    'content' => $filepath,
-                    'order' => CourseModule::where('course_id', $courseId)->max('order') + 1 ?? 1,
-                ]);
-
-                $uploadedFiles[] = [
-                    'filename' => $filename,
-                    'type' => $file->getClientOriginalExtension(),
-                    'size' => $file->getSize(),
-                ];
+            // Opsional: Hapus file fisik lama di storage jika sebelumnya trainer sudah pernah upload (Revisi)
+            if ($module->content_url && Storage::disk('public')->exists($module->content_url)) {
+                Storage::disk('public')->delete($module->content_url);
             }
+
+            // Simpan file baru ke storage
+            $filepath = $file->storeAs('courses/' . $courseId . '/materials', $filename, 'public');
+
+            // 5. UPDATE data modul (BUKAN create baru)
+            $module->update([
+                'content_url' => $filepath,
+                'file_name' => $filename,
+                'mime_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+            ]);
+
+            // 6. Ubah status Course menjadi pending_review agar masuk ke antrean Admin
+            $course->update(['status' => 'pending_review']);
+
+            return back()->with('success', 'File untuk materi "' . $module->title . '" berhasil diunggah dan masuk antrean review.');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Materials uploaded successfully',
-            'files' => $uploadedFiles
-        ]);
+        return back()->with('error', 'Gagal mengunggah file. Silakan coba lagi.');
     }
-    public function saveQuiz(Request $request)
+    public function saveCourseQuiz(Request $request, $id)
     {
+        // 1. Validasi Input
         $request->validate([
-            'courseId' => 'required|integer',
             'passingGrade' => 'required|integer|min:0|max:100',
-            'questions' => 'required|array|min:1',
-            'questions.*.text' => 'required|string',
-            'questions.*.options' => 'required|array|min:2',
-            'questions.*.correctAnswer' => 'required|integer',
-            'questions.*.weight' => 'required|integer|min:1',
+            'questions' => 'required|json', // Data dikirim dalam bentuk JSON string dari Blade
         ]);
 
-        $courseId = $request->input('courseId');
-        $course = Course::findOrFail($courseId);
+        $course = \App\Models\Course::findOrFail($id);
 
-        if ($course->trainer_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        // 2. Security Check
+        if ($course->trainer_id !== \Illuminate\Support\Facades\Auth::id()) {
+            return back()->with('error', 'Akses ditolak.');
         }
 
-        $quiz = Quiz::firstOrCreate(
-            ['course_id' => $courseId],
-            ['passing_grade' => $request->input('passingGrade')]
+        // 3. Decode JSON Data
+        $questionsData = json_decode($request->questions, true);
+        if (empty($questionsData)) {
+            return back()->with('error', 'Kuis harus memiliki minimal 1 pertanyaan.');
+        }
+
+        // 4. Simpan atau Update Quiz Master
+        $quiz = \App\Models\Quiz::updateOrCreate(
+            ['course_id' => $course->id],
+            ['passing_grade' => $request->passingGrade]
         );
 
-        $quiz->update(['passing_grade' => $request->input('passingGrade')]);
-
+        // 5. Hapus soal lama, lalu masukkan soal baru (Replace All)
         $quiz->questions()->delete();
 
-        foreach ($request->input('questions') as $index => $question) {
+        foreach ($questionsData as $index => $q) {
             $quiz->questions()->create([
-                'question_text' => $question['text'],
-                'options' => $question['options'],
-                'correct_answer' => $question['correctAnswer'],
-                'point_value' => $question['weight'],
+                'question_text' => $q['text'],
+                'options' => is_array($q['options']) ? json_encode($q['options']) : $q['options'],
+                'correct_answer' => $q['correctAnswer'], // Sesuai dengan DB kamu
+                'point_value' => $q['weight'] ?? 10,
                 'order' => $index + 1,
             ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Quiz saved successfully',
-            'quizId' => $quiz->id,
-            'totalQuestions' => count($request->input('questions')),
-            'totalPoints' => collect($request->input('questions'))->sum('weight'),
-        ]);
+        // 6. Ubah status Course menjadi pending_review agar di-cek Admin
+        $course->update(['status' => 'pending_review']);
+
+        return back()->with('success', 'Kuis berhasil disimpan dan otomatis masuk antrean review Admin!');
     }
 
     private function getModuleType($extension)

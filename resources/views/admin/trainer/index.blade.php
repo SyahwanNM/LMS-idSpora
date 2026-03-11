@@ -3,7 +3,7 @@
 @section('title', 'Manage Trainers')
 
 @section('navbar')
-    @include('partials.navbar-trainer')
+    @include('partials.navbar-admin-trainer')
 @endsection
 
 @section('styles')
@@ -39,16 +39,20 @@
         }
 
         .hero-title {
-            font-size: 32px;
+            font-size: 2.5rem;
             font-weight: 800;
             margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.8px;
+            display: flex;
+            align-items: center;
         }
 
         .hero-subtitle {
-            color: rgba(255, 255, 255, 0.75);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 16px;
             margin-bottom: 0;
+            line-height: 1.5;
+            max-width: 600px;
         }
 
         /* Table Card */
@@ -111,18 +115,21 @@
 
         /* Statistics Cards */
         .stat-card {
+            display: flex;
+            align-items: center;
             background: #fff;
             border-radius: 16px;
-            padding: 24px;
+            padding: 20px;
             border: 1px solid #e9ecef;
             transition: all 0.3s ease;
+            gap: 16px;
             height: 100%;
         }
 
         .stat-card:hover {
             border-color: #3949ab;
-            box-shadow: 0 4px 16px rgba(57, 73, 171, 0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(57, 73, 171, 0.12);
+            transform: translateY(-4px);
         }
 
         .stat-card .stat-icon {
@@ -133,50 +140,61 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            margin-bottom: 16px;
+            flex-shrink: 0;
         }
 
         .stat-card.stat-primary .stat-icon {
             background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
             color: #fff;
+            box-shadow: 0 4px 12px rgba(57, 73, 171, 0.3);
         }
 
         .stat-card.stat-success .stat-icon {
             background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
             color: #fff;
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
         }
 
         .stat-card.stat-info .stat-icon {
             background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
             color: #fff;
+            box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
+        }
+
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .stat-card .stat-value {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 28px;
+            font-weight: 800;
             color: #1a237e;
-            line-height: 1;
-            margin-bottom: 8px;
+            line-height: 1.1;
+            margin-bottom: 4px;
         }
 
         .stat-card .stat-label {
             font-size: 14px;
-            color: #6c757d;
-            font-weight: 500;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.2;
         }
 
         /* Filter Dropdown */
         .filter-select {
             border-radius: 10px;
             border: 1.5px solid #e9ecef;
-            padding: 8px 12px;
+            padding: 10px 12px;
             font-size: 14px;
             min-width: 180px;
+            height: 44px;
         }
 
         .filter-select:focus {
             border-color: #3949ab;
-            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.12);
+            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
         }
 
         /* Status Badge */
@@ -269,11 +287,12 @@
             border: 1.5px solid #e9ecef;
             padding: 10px 16px;
             font-size: 14px;
+            height: 44px;
         }
 
         .search-input:focus {
             border-color: #3949ab;
-            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.12);
+            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
             background-color: #f8f9ff;
         }
 
@@ -293,6 +312,7 @@
         .trainer-wrapper {
             display: flex;
             min-height: calc(100vh - 72px);
+            overflow-x: hidden;
         }
 
         .trainer-sidebar {
@@ -309,8 +329,10 @@
 
         .trainer-main {
             flex-grow: 1;
+            min-width: 0;
             padding: 32px;
             background-color: #F8F9FA;
+            overflow-x: auto;
         }
 
         .nav-menu-label {
@@ -338,13 +360,13 @@
             border-radius: 10px;
             margin-bottom: 4px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 0.9rem;
             transition: all 0.2s ease;
             gap: 12px;
         }
 
         .sidebar-link i {
-            font-size: 18px;
+            font-size: 1.15rem;
             color: #64748b;
             transition: color 0.2s ease;
         }
@@ -367,18 +389,46 @@
             color: #fff;
         }
 
+        .sidebar-parent {
+            justify-content: space-between;
+        }
+
+        .sidebar-parent .sidebar-chevron {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-submenu {
+            margin: 4px 0 8px;
+        }
+
+        .sidebar-submenu .sidebar-link {
+            margin-left: 14px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+        }
+
+        .sidebar-submenu .sidebar-link i {
+            font-size: 0.95rem;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .trainer-hero {
-                padding: 24px;
+                padding: 32px 24px;
             }
 
             .hero-title {
-                font-size: 24px;
+                font-size: 1.8rem;
             }
 
             .hero-subtitle {
-                font-size: 14px;
+                font-size: 1rem;
             }
 
             .table {
@@ -409,9 +459,29 @@
             </a>
 
             <span class="nav-menu-label">QUICK ACCESS</span>
-            <a href="{{ route('admin.material.approvals') }}" class="sidebar-link">
-                <i class="bi bi-clipboard-check"></i> Material Approval
+            <a href="#materialApprovalMenu"
+                class="sidebar-link sidebar-parent {{ request()->routeIs('admin.material.*') ? 'active' : '' }}"
+                data-bs-toggle="collapse" role="button"
+                aria-expanded="{{ request()->routeIs('admin.material.*') ? 'true' : 'false' }}"
+                aria-controls="materialApprovalMenu">
+                <span><i class="bi bi-clipboard-check"></i> Material Approval</span>
+                <i class="bi bi-chevron-down sidebar-chevron"></i>
             </a>
+            <div class="collapse sidebar-submenu {{ request()->routeIs('admin.material.*') ? 'show' : '' }}"
+                id="materialApprovalMenu">
+                <a href="{{ route('admin.material.approvals') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approvals') ? 'active' : '' }}">
+                    <i class="bi bi-hourglass-split"></i> Pending Review
+                </a>
+                <a href="{{ route('admin.material.approved') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.approved') ? 'active' : '' }}">
+                    <i class="bi bi-check-circle"></i> Approved
+                </a>
+                <a href="{{ route('admin.material.rejected') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.material.rejected') ? 'active' : '' }}">
+                    <i class="bi bi-x-circle"></i> Rejected
+                </a>
+            </div>
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
@@ -432,10 +502,11 @@
                         <h1 class="hero-title">
                             <i class="bi bi-person-badge-fill me-3"></i>Trainer Management
                         </h1>
-                        <p class="hero-subtitle">Kelola akun instruktur, monitor penugasan kelas, dan track performa
-                            trainer.</p>
+                        <p class="hero-subtitle">Kelola akun instruktur, monitor penugasan kelas, dan track performa trainer
+                            secara real-time.</p>
                     </div>
-                    <a href="{{ route('admin.trainer.create') }}" class="btn btn-primary px-4 rounded-3 shadow-sm">
+                    <a href="{{ route('admin.trainer.create') }}" class="btn btn-light rounded-3 shadow-sm"
+                        style="font-weight: 600; padding: 10px 20px;">
                         <i class="bi bi-plus-lg me-2"></i>Tambah Trainer
                     </a>
                 </div>
@@ -456,8 +527,10 @@
                         <div class="stat-icon">
                             <i class="bi bi-people-fill"></i>
                         </div>
-                        <div class="stat-value">{{ $totalTrainers }}</div>
-                        <div class="stat-label">Total Trainer</div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ $totalTrainers }}</div>
+                            <div class="stat-label">Total Trainer</div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -465,8 +538,10 @@
                         <div class="stat-icon">
                             <i class="bi bi-person-check-fill"></i>
                         </div>
-                        <div class="stat-value">{{ $activeTrainers }}</div>
-                        <div class="stat-label">Trainer Aktif (30 Hari)</div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ $activeTrainers }}</div>
+                            <div class="stat-label">Trainer Aktif (30 Hari)</div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -474,8 +549,10 @@
                         <div class="stat-icon">
                             <i class="bi bi-easel-fill"></i>
                         </div>
-                        <div class="stat-value">{{ $teachingTrainers }}</div>
-                        <div class="stat-label">Sedang Mengajar</div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ $teachingTrainers }}</div>
+                            <div class="stat-label">Sedang Mengajar</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -483,18 +560,19 @@
             <!-- Filter & Search Toolbar -->
             <div class="row mb-4 g-3">
                 <div class="col-lg-5">
-                    <form action="{{ route('admin.trainer.index') }}" method="GET" class="d-flex w-25">
+                    <form action="{{ route('admin.trainer.index') }}" method="GET" class="d-flex gap-2">
                         <input type="hidden" name="sort" value="{{ request('sort') }}">
                         <div class="flex-grow-1">
                             <input type="text" name="search" class="form-control search-input"
-                                placeholder="🔍 Cari nama, email, atau nomor HP..." value="{{ request('search') }}">
+                                placeholder="Cari nama, email, atau nomor HP..." value="{{ request('search') }}">
                         </div>
-                        <button type="submit" class="btn btn-primary rounded-3 px-4" style="font-weight: 600;">
+                        <button type="submit" class="btn btn-primary rounded-3 px-4"
+                            style="background: #3949ab; border: none; font-weight: 600; height: 44px;">
                             <i class="bi bi-search me-1"></i>Cari
                         </button>
                         @if(request('search') || request('sort'))
                             <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary rounded-3 px-3"
-                                title="Reset Filter">
+                                style="height: 44px; display: flex; align-items: center;" title="Reset Filter">
                                 <i class="bi bi-x-circle"></i>
                             </a>
                         @endif
@@ -504,7 +582,7 @@
                     <form action="{{ route('admin.trainer.index') }}" method="GET">
                         <input type="hidden" name="search" value="{{ request('search') }}">
                         <select name="sort" class="form-select filter-select" onchange="this.form.submit()">
-                            <option value="">📊 Urutkan Berdasarkan...</option>
+                            <option value="">Urutkan Berdasarkan...</option>
                             <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Terbaru Bergabung
                             </option>
                             <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Terlama Bergabung
@@ -606,7 +684,7 @@
                                             </a>
                                             <form action="{{ route('admin.trainer.destroy', $trainer) }}" method="POST"
                                                 class="d-inline"
-                                                onsubmit="return confirm('⚠️ Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?\n\nData yang terhapus tidak dapat dikembalikan!')">
+                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?\n\nData yang terhapus tidak dapat dikembalikan!')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-action btn-action-delete"
@@ -656,13 +734,13 @@
 
 @section('scripts')
     <script>
-        // Success message auto-hide after 5 seconds
-        setTimeout(function () {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-    </script>
+            // Success message     auto-hide after 5 seconds
+            setTimeout(function () {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        </script>
 @endsection
