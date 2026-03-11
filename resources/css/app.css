@@ -4226,6 +4226,191 @@ input[type="time"] {
     cursor: pointer;
     margin-bottom: 20px;
 }
+/*RATING COURSE*/
+.rating_box_luar{
+    width: 80%;
+    margin: auto;
+    margin-top: 50px;
+}
+.circle{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    background:#f4c430;
+}
+.circle.inactive{
+    background:#cfcfcf;
+}
+.line{
+    width:120px;
+    height:2px;
+    background:#888;
+}
+.box_dalam_penilaian{
+    border:1px solid black;
+    padding:40px;
+    width:100%;
+    margin-top:40px;
+    border-radius:8px;
+}
+.pertanyaan_penilaian{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:25px;
+}
+.pertanyaan_penilaian h4{
+    width:60%;
+}
+.stars,
+.stars_trainer{
+    display:flex;
+    gap:8px;
+    font-size:28px;
+}
+.submit-rating{
+    margin-left:20px;
+    border:none;
+    background:transparent;
+    font-size:24px;
+    cursor:pointer;
+}
+.box_feedback{
+    border:1px solid black;
+    padding:40px;
+    width:100%;
+    margin-top:40px;
+    border-radius:8px;
+}
+.comment-box textarea{
+    width:100%;
+    padding:15px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    margin-top:10px;
+}
+.tata_cara_feedback{
+    border:1px solid black;
+    padding:15px;
+    margin-top:20px;
+}
+.tombol_next_sertifikat{
+    display:flex;
+    margin-top:30px;
+    margin-left: 1460px;
+}
+.next_halaman_sertif{
+    width:160px;
+    padding:10px;
+    border-radius:8px;
+    font-size:16px;
+    background-color:#FFD33B;
+    border:none;
+}
+
+/*CETAK SERTIFIKAT*/
+body{
+    font-family: Arial, sans-serif;
+    background:#f3f3f3;
+    margin:0;
+  }
+  
+  .container{
+    max-width:1000px;
+    margin:auto;
+    text-align:center;
+    padding:40px 20px;
+  }
+  
+  /* STEP */
+  .steps{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid #ddd;
+    padding:20px;
+    border-radius:15px;
+    margin-bottom:40px;
+    background:white;
+  }
+  
+  .step{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:500;
+  }
+  
+  .circle{
+    width:35px;
+    height:35px;
+    border-radius:50%;
+    background:#ddd;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+  }
+  
+  .active .circle{
+    background:#f4c542;
+  }
+  
+  .line{
+    width:80px;
+    height:2px;
+    background:#ccc;
+    margin:0 20px;
+  }
+  
+  /* TITLE */
+  
+  h1{
+    color:#3b5fbf;
+    font-size:36px;
+  }
+  
+  .desc{
+    max-width:700px;
+    margin:20px auto;
+    color:#444;
+    line-height:1.6;
+  }
+  
+  /* CERTIFICATE */
+  
+  .certificate img{
+    width:100%;
+    max-width:800px;
+    border-radius:10px;
+    margin-top:20px;
+    box-shadow:0 10px 20px rgba(0,0,0,0.1);
+  }
+  
+  /* BUTTON */
+  
+  .btn-area{
+    margin-top:40px;
+    text-align:right;
+  }
+  
+  button{
+    background:#f4c542;
+    border:none;
+    padding:14px 30px;
+    font-size:16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+  }
+  
+  button:hover{
+    background:#e5b735;
+  }
 
 /*ADMIN COURSE BUILDER*/
 .box_luar_course_builder {
@@ -4241,7 +4426,31 @@ input[type="time"] {
     margin-left: 70px;
     font-size: 20px;
 }
+.participant-table{
+    width: 100%;
+    margin-top: 20px;
+}
 
+.participant-table table{
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.participant-table th{
+    text-align: left;
+    padding: 14px;
+    font-weight: 600;
+    border-bottom: 2px solid #ddd;
+}
+
+.participant-table td{
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+.participant-table tbody tr:hover{
+    background-color: #f7f7f7;
+}
 .tambah_course {
     display: flex;
     gap: 10px;
@@ -4320,10 +4529,16 @@ input[type="time"] {
     text-align: center;
     border: none;
 }
+.syllabus-ringkasan{
+    text-align: left;
+}
 
 .aksi_daftar_course svg {
     margin: 5px;
 }
+
+
+
 
 /*ADD COURSE ADMIN*/
 .box_luar_add_course {
@@ -4341,11 +4556,12 @@ input[type="time"] {
 }
 
 .box_judul {
-    margin-left: 50px;
+    margin-left: -150px;
 }
 
 .box_judul h1 {
     font-weight: 500;
+    margin-left: -100px;
 }
 
 .box_judul p {
@@ -4359,6 +4575,7 @@ input[type="time"] {
 
 .box_form p {
     font-weight: 500;
+    margin-left: -100px;
 }
 
 .box_form input {
@@ -4395,8 +4612,42 @@ input[type="time"] {
 
 .box_select_level_status {
     display: flex;
+    text-align: left;
 }
-
+.box_select_kategori{
+    text-align: left;
+}
+.box_select_trainer{
+    text-align: left;
+}
+.box_select_harga{
+    text-align: left;
+}
+.box_select_deskripsi{
+    text-align: left;
+}
+.box_select_deskripsi textarea{
+    width: 100%;
+}
+.box_select_diskon{
+    text-align: left;
+}
+.box_form{
+    text-align: left;
+}
+.box_form input{
+    width: 100%;
+}
+.box_select_tanggal_diskon{
+    text-align: left;
+}
+.tombol_tambah_pengeluaran{
+    padding: 10px;
+}
+.box_select_trainer label{
+    text-align: left;
+    color: #000;
+}
 .choose_level {
     background-color: white;
     width: 410%;
@@ -4431,6 +4682,58 @@ input[type="time"] {
     border-radius: 5px;
     font-weight: 450;
     color: white;
+}
+.input_add_course{
+    width: 30px;
+}
+/*EDIT COURSE*/
+.box_button_modul{
+    display: flex;
+    gap: 20px;
+}
+
+.box_button_modul:hover{
+    background-color: #ffffff;
+}
+.box_upload_video_after h3{
+    font-weight: bold;
+
+}
+.box_upload_video_after input{
+    margin-top: 10px;
+
+}
+.logo_video{
+    --tw-bg-opacity: 1;
+    background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+    padding: 10px;
+    width: 50px;
+    border-radius: 5px;
+}
+.box_view_video{
+    display: flex;
+    background-color: white;
+    border: 1px solid rgb(217, 213, 213);
+    box-shadow: 0px 0px 10px 3px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+} 
+.btn_publish_course{
+    padding: 5px;
+    margin-left: 10px;
+}
+.btn_view_course{
+    margin-top: -10px;
+}
+.box_button_video{
+    display: flex;
+    gap: 20px;
+    margin-left: 350px;
+    margin-top: 20px;
+}
+.judul_video{
+    margin-left: 20px;
 }
 
 /*VIEW MODUL*/
@@ -5190,7 +5493,25 @@ input[type="time"] {
 }
 
 .box_cari_pendapatan {
-    margin-top: 50px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+.box_filter_course_builder{
+    margin-left: -450px;
+    margin-top: -50px;
+}
+
+.cari_course_builder{
+    padding: 5px;
+    width: 400px;
+}
+.box_filter_cari{
+    display: flex;
+    gap: 500px;
+}
+.box_filter{
+    margin-left: 20px;
+    margin-top: -40px;
 }
 
 .cari_pendapatan {
@@ -5292,7 +5613,14 @@ input[type="time"] {
     flex-wrap: wrap;
     justify-content: flex-end;
 }
+.box_unduh_course{
+        margin-left: 30px;
+        display:flex ;
+        gap: 12px;
+        flex-wrap: wrap;
 
+        justify-content: flex-end;
+}
 .btn_unduh_pertumbuhan{
     display: flex;
     gap: 10px;
@@ -5556,6 +5884,19 @@ input[type="time"] {
             color: #000 !important;
         }
     /*ADD VIEW QUIZ*/
+    .list_box_preview{
+        display: flex;
+        gap: 30px;
+    }
+    
+    .button_edit_preview{
+        background-color: #4B2DBF;
+        padding: 10px;
+        color: white;
+        width: 120px;
+        margin-top: 10px;
+        margin-left: 200px;
+    }
 .judul_nama_quiz{
     color: black;
 }
@@ -5735,6 +6076,7 @@ input[type="time"] {
         border: 1px solid #e2e8f0;
         border-radius: 20px;
         padding: 24px;
+        margin-top: 20px;
     }
 
     .ringkasan-konten h3 {
@@ -5994,6 +6336,7 @@ input[type="time"] {
     margin-left: 50px;
     margin-top: 30px;
     margin-bottom: 30px;
+    display: flex;
 }
 .btn_report{
     background-color: white;

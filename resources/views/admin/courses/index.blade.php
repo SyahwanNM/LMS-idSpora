@@ -15,12 +15,12 @@
 <body>
     @include('partials.navbar-admin-course')
     @if(session('success'))
-        <div class="container mt-3">
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+    <div class="container mt-3">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+    </div>
     @endif
     @if(session('success'))
     <div aria-live="polite" aria-atomic="true" class="position-relative">
@@ -81,6 +81,7 @@
     <div class="box_luar_course_builder">
         <h1 class="judul_course_builder">Daftar Course</h1>
         <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
+
         <a href="{{ route('admin.add-course') }}" class="tambah_course" style="text-decoration: none;">
             <svg style="margin-top: 7px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
@@ -89,6 +90,40 @@
         </a>
         <div class="box_daftar_course">
             <h4 class="judul_daftar_course">Daftar Course yang Ada</h4>
+            <div class="box_cari_course_builder">
+                <div class="box_filter_cari">
+                    <div class="cari_pendapatan">
+                        <div class="box_pendapatan_per_course">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                            </svg>
+                            <input class="cari_course_builder" type="text" placeholder="Cari Course">
+                        </div>
+                    </div>
+                    <div class="box_filter_course_builder">
+                        <p class="mulai_course">Bulan</p>
+                        <input class="tanggal_course" type="month">
+                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                    </div>
+                    <div class="box_unduh_course">
+                        <button class="btn_unduh">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                            </svg>
+                            <p>Export PDF</p>
+                        </button>
+                        <button class="btn_unduh">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1m-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0" />
+                            </svg>
+                            <p>Export Excel</p>
+                        </button>
+                    </div>
+
+
+                </div>
+            </div>
             <table class="tabel_daftar_course">
                 <thead>
                     <tr>
@@ -121,10 +156,10 @@
                         </td>
                         <td>
                             @php
-                                $coursePayments = $course->manualPayments ?? collect();
-                                $countPending = $coursePayments->where('status', 'pending')->count();
-                                $countApproved = $coursePayments->where('status', 'settled')->count();
-                                $countRejected = $coursePayments->where('status', 'rejected')->count();
+                            $coursePayments = $course->manualPayments ?? collect();
+                            $countPending = $coursePayments->where('status', 'pending')->count();
+                            $countApproved = $coursePayments->where('status', 'settled')->count();
+                            $countRejected = $coursePayments->where('status', 'rejected')->count();
                             @endphp
 
                             <div class="d-flex flex-wrap gap-1 align-items-center">
@@ -134,94 +169,94 @@
                             </div>
 
                             @if($coursePayments->count() > 0)
-                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
-                                    Lihat user
-                                </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
+                                Lihat user
+                            </button>
 
-                                <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm align-middle">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>User</th>
-                                                                <th>WhatsApp</th>
-                                                                <th>Referral</th>
-                                                                <th>Status</th>
-                                                                <th>Bukti</th>
-                                                                <th>Aksi</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($coursePayments->sortByDesc('created_at') as $payment)
+                            <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm align-middle">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>User</th>
+                                                            <th>WhatsApp</th>
+                                                            <th>Referral</th>
+                                                            <th>Status</th>
+                                                            <th>Bukti</th>
+                                                            <th>Aksi</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($coursePayments->sortByDesc('created_at') as $payment)
+                                                        @php
+                                                        $proof = $payment->proofs->sortByDesc('created_at')->first();
+                                                        $status = $payment->status;
+                                                        $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
+                                                        $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
+                                                        @endphp
+                                                        <tr>
+                                                            <td>
+                                                                <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
+                                                                <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
+                                                            </td>
+                                                            <td>{{ $payment->whatsapp_number ?? '-' }}</td>
+                                                            <td>{{ $payment->referral_code ?: '-' }}</td>
+                                                            <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
+                                                            <td>
+                                                                @if($proof)
                                                                 @php
-                                                                    $proof = $payment->proofs->sortByDesc('created_at')->first();
-                                                                    $status = $payment->status;
-                                                                    $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
-                                                                    $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
+                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
+                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
+                                                                $proofPath = substr($proofPath, strlen('uploads/'));
+                                                                }
+                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
                                                                 @endphp
-                                                                <tr>
-                                                                    <td>
-                                                                        <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
-                                                                        <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
-                                                                    </td>
-                                                                    <td>{{ $payment->whatsapp_number ?? '-' }}</td>
-                                                                    <td>{{ $payment->referral_code ?: '-' }}</td>
-                                                                    <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
-                                                                    <td>
-                                                                        @if($proof)
-                                                                            @php
-                                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
-                                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
-                                                                                    $proofPath = substr($proofPath, strlen('uploads/'));
-                                                                                }
-                                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
-                                                                            @endphp
-                                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
-                                                                        @else
-                                                                            <span class="text-muted">-</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td>
-                                                                        <form method="POST" class="d-flex flex-wrap gap-1 m-0">
-                                                                            @csrf
-                                                                            <button type="submit" class="btn btn-sm btn-success"
-                                                                                formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
-                                                                                onclick="return confirm('Approve pembayaran ini?')">
-                                                                                Approve
-                                                                            </button>
-                                                                            <button type="submit" class="btn btn-sm btn-danger"
-                                                                                formaction="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
-                                                                                onclick="return confirm('Reject pembayaran ini?')">
-                                                                                Reject
-                                                                            </button>
-                                                                            <button type="submit" class="btn btn-sm btn-warning"
-                                                                                formaction="{{ route('admin.courses.manual-payments.pending', [$course, $payment]) }}"
-                                                                                onclick="return confirm('Set ke pending lagi?')">
-                                                                                Pending
-                                                                            </button>
-                                                                        </form>
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                                                                <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
+                                                                @else
+                                                                <span class="text-muted">-</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>
+                                                                <form method="POST" class="d-flex flex-wrap gap-1 m-0">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-sm btn-success"
+                                                                        formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
+                                                                        onclick="return confirm('Approve pembayaran ini?')">
+                                                                        Approve
+                                                                    </button>
+                                                                    <button type="submit" class="btn btn-sm btn-danger"
+                                                                        formaction="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
+                                                                        onclick="return confirm('Reject pembayaran ini?')">
+                                                                        Reject
+                                                                    </button>
+                                                                    <button type="submit" class="btn btn-sm btn-warning"
+                                                                        formaction="{{ route('admin.courses.manual-payments.pending', [$course, $payment]) }}"
+                                                                        onclick="return confirm('Set ke pending lagi?')">
+                                                                        Pending
+                                                                    </button>
+                                                                </form>
+                                                            </td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                             @else
-                                <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
+                            <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
                             @endif
                         </td>
                         <td>
@@ -234,27 +269,27 @@
                                 </a>
                                 @php
                                 $previewData = [
-                                    'title' => $course->name,
-                                    'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
-                                    'description' => trim($course->description),
-                                    'modules' => $course->modules->map(function($m) {
-                                        return [
-                                            'type' => $m->type, // pdf, video, quiz
-                                            'title' => $m->title,
-                                            'subtitle' => $m->description ?? '',
-                                            'duration' => $m->formatted_duration ?? '',
-                                            // Extra fields for Quiz if needed
-                                            'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
-                                        ];
-                                    })->values()->toArray(),
-                                    'published' => $isPublished ? '1' : '0',
-                                    'level' => ucfirst($course->level),
-                                    'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
-                                    'duration' => $course->duration . ' jam',
-                                    'status_text' => $isPublished ? 'Published' : ($hasModules ? 'Draft' : 'Incomplete'),
+                                'title' => $course->name,
+                                'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                'description' => trim($course->description),
+                                'modules' => $course->modules->map(function($m) {
+                                return [
+                                'type' => $m->type, // pdf, video, quiz
+                                'title' => $m->title,
+                                'subtitle' => $m->description ?? '',
+                                'duration' => $m->formatted_duration ?? '',
+                                // Extra fields for Quiz if needed
+                                'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
+                                ];
+                                })->values()->toArray(),
+                                'published' => $isPublished ? '1' : '0',
+                                'level' => ucfirst($course->level),
+                                'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
+                                'duration' => $course->duration . ' jam',
+                                'status_text' => $isPublished ? 'Published' : ($hasModules ? 'Draft' : 'Incomplete'),
                                 ];
                                 @endphp
-                                <button type="button" class="btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
+                                <button type="button" class="btn_view_course btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                                         <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
                                         <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
@@ -269,6 +304,9 @@
                                         </svg>
                                     </button>
                                 </form>
+                                <button class="btn_publish_course">
+                                    Publish
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -286,19 +324,27 @@
     </div>
     <div class="preview">
         <div class="modal" id="coursePreviewModal" tabindex="-1">
-            <div class="modal-dialog">
+            <div class="modal-dialog ">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 id="coursePreviewLabel" class="modal-title">Modal title</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="option">
-                        <div class="list-option">
-                            <button class="tab-btn active" data-target="tab-ringkasan">Ringkasan</button>
-                            <button class="tab-btn" data-target="tab-pdf">Modul PDF</button>
-                            <button class="tab-btn" data-target="tab-video">Video</button>
-                            <button class="tab-btn" data-target="tab-kuis">Kuis</button>
+                        <div class="list_box_preview">
+                            <div class="list-option">
+                                <button class="tab-btn active" data-target="tab-ringkasan">Ringkasan</button>
+                                <button class="tab-btn" data-target="tab-pdf">Modul PDF</button>
+                                <button class="tab-btn" data-target="tab-video">Video</button>
+                                <button class="tab-btn" data-target="tab-kuis">Kuis</button>
+                                <button class="tab-btn" data-target="tab-participant">Participant</button>
+                            </div>
+
+                            <div>
+                                <button class="button_edit_preview">Edit</button>
+                            </div>
                         </div>
+
                     </div>
                     <div class="modal-body">
                         <div id="tab-ringkasan" class="tab-content active">
@@ -320,6 +366,37 @@
                                 <div class="list-info info-yellow">
                                     <h5>Status</h5>
                                     <h4 id="cp-status">Selesai</h4>
+                                </div>
+                                <div class="list-info info-green">
+                                    <h5>STUDENT ENROLL</h5>
+                                    <h4 id="cp-price">80 Peserta</h4>
+                                </div>
+                                <div class="list-info info-yellow">
+                                    <h5>Benefit</h5>
+                                    <h4 id="cp-status">
+                                        <ol>
+                                            <li>Sertifikat</li>
+                                            <li>Materi</li>
+                                            <li>Video</li>
+                                        </ol>
+                                    </h4>
+                                </div>
+                            </div>
+                            <div class="ringkasan-konten">
+                                <h3>Deskripsi Konten</h3>
+                                <div class="info-ringkasan">
+                                    <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum</p>
+                                </div>
+                            </div>
+                            <div class="ringkasan-konten">
+                                <h3>Syllabus</h3>
+                                <div class="syllabus-ringkasan">
+                                    <ol>
+                                        <li>akjbgkFGFD</li>
+                                        <li>akjbgkFGFD</li>
+                                        <li>akjbgkFGFD</li>
+                                        <li>akjbgkFGFD</li>
+                                    </ol>
                                 </div>
                             </div>
                             <div class="ringkasan-konten">
@@ -368,6 +445,7 @@
                                         <h4>Pengenalan UI/UX Dasar</h4>
                                         <p>Materi dasar tentang UI dan UX design</p>
                                     </div>
+
                                 </div>
 
                                 <div class="list-pdf">
@@ -426,6 +504,7 @@
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
 
                                 <div class="list-kuis">
@@ -449,12 +528,38 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <div id="tab-participant" class="tab-content">
+
+                            <div class="participant-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Peserta</th>
+                                            <th>Email</th>
+                                            <th>Progress</th>
+                                            <th>Status</th>
+                                            <th>Tanggal Aktif</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        <tr>
+                                            <td>Dini</td>
+                                            <td>Dini@gmail.com</td>
+                                            <td>80%</td>
+                                            <td>Aktif</td>
+                                            <td>17-10-2025</td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
+
         </div>
     </div>
 
@@ -591,10 +696,10 @@
 
                 setText('cp-level', data.level || '-');
                 setText('cp-price', data.price || 'Rp0');
-                
+
                 // Status Color
                 var statusEl = document.getElementById('cp-status');
-                if(statusEl) {
+                if (statusEl) {
                     statusEl.textContent = data.status_text || '-';
                     // Reset colors
                     statusEl.parentElement.className = 'list-info'; // base
@@ -605,7 +710,7 @@
 
                 // --- MODULES PARSING ---
                 var modules = data.modules || [];
-                
+
                 // 1. Hitung Ringkasan
                 var countPdf = modules.filter(m => m.type === 'pdf').length;
                 var countVideo = modules.filter(m => m.type === 'video').length;
@@ -613,7 +718,7 @@
 
                 setText('count-pdf', countPdf);
                 setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
-                setText('count-quiz', countQuiz);   // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
+                setText('count-quiz', countQuiz); // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
 
                 // Fix: Update HTML Ringkasan agar ID-nya sesuai
                 // Kita akan update HTML ringkasan via JS jika ID tidak ditemukan, atau pengguna harus memastikan HTML punya ID
@@ -621,35 +726,35 @@
                 // <h5 id="count-pdf">0</h5> -> OK
                 // <div class="detail-ringkasan"><h5>2</h5><p>Video Pembelajaran</p></div> -> Belum ada ID
                 // Mari kita cari elemennya secara manual jika ID tidak ada, atau inject konten ringkasan ulang.
-                
+
                 // Strategy: Re-render ringkasan numbers specific locations
                 // PDF
                 var pdfCountEl = document.getElementById('count-pdf');
-                if(pdfCountEl) pdfCountEl.textContent = countPdf;
+                if (pdfCountEl) pdfCountEl.textContent = countPdf;
 
                 // Video
                 // Cari elemen SVG video, lalu next sibling div > h5
                 // Cara lebih aman: Assign ID ke HTML (saya akan lakukan di chunk lain), 
                 // tapi di sini kita pakai selector pintar.
                 var summaryContainer = modalEl.querySelector('.info-ringkasan');
-                if(summaryContainer) {
+                if (summaryContainer) {
                     // Item 2: Video
-                    var vidSummary = summaryContainer.children[1]; 
-                    if(vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
+                    var vidSummary = summaryContainer.children[1];
+                    if (vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
 
                     // Item 3: Quiz
                     var quizSummary = summaryContainer.children[2];
-                    if(quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
+                    if (quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
                 }
 
                 // --- RENDER TAB CONTENTS ---
-                
+
                 // 1. PDF Tab
                 var pdfContainer = document.getElementById('list-pdf-container');
-                if(pdfContainer) {
+                if (pdfContainer) {
                     var pdfs = modules.filter(m => m.type === 'pdf');
-                    if(pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada modul PDF.</p>';
+                    if (pdfs.length === 0) {
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload modul.</p> <button>Ingatkan Trainer</button>';
                     } else {
                         pdfContainer.innerHTML = pdfs.map(m => `
                              <div class="list-pdf">
@@ -667,10 +772,10 @@
 
                 // 2. Video Tab
                 var vidContainer = document.getElementById('list-video-container');
-                if(vidContainer) {
+                if (vidContainer) {
                     var vids = modules.filter(m => m.type === 'video');
-                    if(vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada video pembelajaran.</p>';
+                    if (vids.length === 0) {
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload video.</p> <button>Ingatkan Trainer</button>';
                     } else {
                         vidContainer.innerHTML = vids.map(m => `
                             <div class="list-video">
@@ -688,10 +793,10 @@
 
                 // 3. Quiz Tab
                 var quizContainer = document.getElementById('list-kuis-container');
-                if(quizContainer) {
+                if (quizContainer) {
                     var quizzes = modules.filter(m => m.type === 'quiz');
-                    if(quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Tidak ada kuis.</p>';
+                    if (quizzes.length === 0) {
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload kuis.</p> <button>Ingatkan Trainer</button>';
                     } else {
                         quizContainer.innerHTML = quizzes.map(m => `
                              <div class="list-kuis">
