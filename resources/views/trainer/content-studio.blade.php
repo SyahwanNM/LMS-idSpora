@@ -650,12 +650,19 @@
         <section class="studio-layout">
             <div class="studio-left">
                 <section class="panel panel-module active" data-panel="module">
-                    <form id="moduleForm" class="module-form" action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST" enctype="multipart/form-data">
+                    <form id="moduleForm" class="module-form"
+                        action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST"
+                        enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="courseId" value="{{ $course->id }}">
-                        
+                        <input type="hidden" name="target_modules"
+                            value="{{ $activeUnitModules->pluck('id')->implode(',') }}">
+                        <input type="hidden" name="replace_module_id" value="">
+
                         <div class="dropzone" id="dropzone">
-                            <input type="file" id="fileInput" multiple accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" name="files[]" style="display: none" />
+                            <input type="file" id="fileInput" multiple
+                                accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" name="files[]"
+                                style="display: none" />
                             <i class="bi bi-file-earmark-arrow-up"></i>
                             <h2>Drop Pedagogical Assets</h2>
                             <p>SUPPORT: PDF, MP4, PPTX</p>
@@ -667,24 +674,147 @@
                             <ul id="uploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
                         </div>
 
+                        @php
+                            $existingMaterials = $activeUnitModules->filter(function ($module) {
+                                return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
+                            });
+                        @endphp
+                        @if($existingMaterials->isNotEmpty())
+                            <div class="file-list" style="margin-top: 16px; display: block;">
+                                <h3>Materi Tersimpan Sebelumnya</h3>
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    @foreach($existingMaterials as $material)
+                                        <li
+                                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                <i class="bi {{ $material->type === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}"
+                                                    style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                <div>
+                                                    <p
+                                                        style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
+                                                        {{ $material->file_name ?: basename($material->content_url) }}</p>
+                                                    <p style="margin: 0; font-size: 12px; color: #999;">
+                                                        {{ strtoupper($material->type) }} • Slot {{ $material->order_no }}</p>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; gap: 6px;">
+                                                <a href="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
+                                                    target="_blank" title="Lihat File"
+                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                    <i class="bi bi-eye-fill"></i>
+                                                </a>
+                                                <button type="button" class="select-replace-btn"
+                                                    data-module-id="{{ $material->id }}" data-module-type="{{ $material->type }}"
+                                                    data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
+                                                    title="Ganti File"
+                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                    <i class="bi bi-arrow-repeat"></i>
+                                                </button>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="panel-footer">
                             <button type="submit" class="primary-btn" id="uploadSubmitBtn">
-                                SUBMIT FOR REVIEW <i class="bi bi-send"></i>
+                                <i class="bi bi-send"></i> SUBMIT FOR REVIEW
                             </button>
                         </div>
                     </form>
                 </section>
 
                 <section class="panel panel-quiz" data-panel="quiz">
-                    <form id="quizForm" class="quiz-form" action="{{ route('trainer.courses.studio.quiz', $course->id) }}" method="POST">
+                    @php
+                        $existingQuizModules = $activeUnitModules->filter(function ($module) {
+                            return $module->type === 'quiz' && (
+                                !empty($module->content_url) ||
+                                (($module->quiz_questions_count ?? 0) > 0)
+                            );
+                        });
+                    @endphp
+
+                    @if($existingQuizModules->isNotEmpty())
+                        <div class="file-list" style="margin-bottom: 16px; display: block;">
+                            <h3>Quiz Tersimpan Sebelumnya</h3>
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                @foreach($existingQuizModules as $quizModule)
+                                    <li style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                <i class="bi bi-patch-check" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                <div>
+                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
+                                                        {{ $quizModule->title ?: ('Quiz Unit ' . ($unitIndex + 1)) }}
+                                                    </p>
+                                                    <p style="margin: 0; font-size: 12px; color: #999;">
+                                                        {{ $quizModule->quiz_questions_count ?? 0 }} Soal • Slot {{ $quizModule->order_no }}
+                                                        @if($quizModule->updated_at)
+                                                            • Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(27, 23, 99, 0.1); color: var(--main-navy-clr); font-size: 12px; font-weight: 600;">
+                                                    <i class="bi bi-clock-history"></i>
+                                                    Riwayat
+                                                </span>
+                                                @if($quizModule->quizQuestions->isNotEmpty())
+                                                    <button type="button"
+                                                        class="quiz-history-toggle"
+                                                        data-target="quiz-history-{{ $quizModule->id }}"
+                                                        title="Lihat Riwayat Soal"
+                                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                        <i class="bi bi-eye-fill"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        @if($quizModule->quizQuestions->isNotEmpty())
+                                            <div id="quiz-history-{{ $quizModule->id }}" style="margin-top: 10px; display: none; flex-direction: column; gap: 8px;">
+                                                    @foreach($quizModule->quizQuestions as $questionIndex => $question)
+                                                        <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px;">
+                                                            <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr);">
+                                                                {{ $questionIndex + 1 }}. {{ $question->question }}
+                                                            </p>
+                                                            <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #64748b;">
+                                                                @foreach($question->answers as $answer)
+                                                                    <li style="margin-bottom: 4px; color: {{ $answer->is_correct ? '#0f766e' : '#64748b' }}; font-weight: {{ $answer->is_correct ? '600' : '400' }};">
+                                                                        {{ $answer->answer_text }}
+                                                                        @if($answer->is_correct)
+                                                                            <span style="margin-left: 6px; font-size: 11px;">(Jawaban benar)</span>
+                                                                        @endif
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endforeach
+                                            </div>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <form id="quizForm" class="quiz-form" action="{{ route('trainer.courses.studio.quiz', $course->id) }}"
+                        method="POST">
                         @csrf
                         <input type="hidden" name="courseId" value="{{ $course->id }}">
-                        
+                        <input type="hidden" id="quizModuleId" name="quiz_module_id" value="">
+
                         <div class="quiz-meta">
                             <div class="meta-box" id="passingGradeBox">
                                 <p>BATAS KELULUSAN (PASSING GRADE)</p>
                                 <div class="meta-value">
-                                    <input type="text" id="passingGradeInput" class="meta-input" value="70" inputmode="numeric" pattern="[0-9]*" />
+                                    <input type="text" id="passingGradeInput" class="meta-input" value="70"
+                                        inputmode="numeric" pattern="[0-9]*" />
                                     <strong id="passingGrade">70</strong>
                                     <span>%</span>
                                 </div>
@@ -692,19 +822,21 @@
                             <div class="meta-box">
                                 <p>BOBOT TOTAL TERDETEKSI</p>
                                 <div class="meta-value">
-                                    <strong id="totalWeight">0</strong><span> Points</span><em id="verifyStatus">PENDING</em>
+                                    <strong id="totalWeight">0</strong><span> Points</span><em
+                                        id="verifyStatus">PENDING</em>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="questionsContainer" style="display: flex; flex-direction: column; gap: var(--spacing-lg);"></div>
+                        <div id="questionsContainer" style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
+                        </div>
 
                         <div class="quiz-actions" style="margin-top: 24px;">
                             <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn">
                                 <i class="bi bi-plus-lg"></i> TAMBAH SOAL
                             </button>
                             <button type="submit" class="primary-btn quiz-save-btn">
-                                SIMPAN QUIZ <i class="bi bi-check-lg"></i>
+                                <i class="bi bi-check-lg"></i> SIMPAN QUIZ
                             </button>
                         </div>
                     </form>
@@ -742,29 +874,390 @@
         </section>
     </main>
 
+    <!-- REPLACEMENT CONFIRMATION MODAL -->
+    <div id="replacementModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+        <div
+            style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width: 100%; animation: slideUp 0.3s ease; overflow-y: auto; max-height: 90vh;">
+            <!-- Header -->
+            <div
+                style="padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px; background: #f9fafb;">
+                <i class="bi bi-arrow-repeat" style="font-size: 24px; color: var(--main-navy-clr);"></i>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--main-navy-clr);">Ganti File Materi
+                </h3>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+                <!-- File Lama -->
+                <div>
+                    <p
+                        style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">
+                        File Saat Ini</p>
+                    <div
+                        style="padding: 12px; background: #f3f4f6; border-radius: 8px; border-left: 3px solid var(--main-navy-clr);">
+                        <p id="modalOldFileName"
+                            style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);"></p>
+                        <p id="modalOldFileInfo" style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;"></p>
+                    </div>
+                </div>
+
+                <!-- File Baru -->
+                <div>
+                    <p
+                        style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">
+                        Pilih File Pengganti</p>
+                    <div style="position: relative; border: 2px dashed #dfe6f2; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #f8fafc;"
+                        id="replacementDropzone"
+                        onmouseover="this.style.borderColor='var(--main-navy-clr)'; this.style.background='#f0f5fc';"
+                        onmouseout="this.style.borderColor='#dfe6f2'; this.style.background='#f8fafc';">
+                        <i class="bi bi-cloud-arrow-up"
+                            style="font-size: 28px; color: var(--main-navy-clr); display: block; margin-bottom: 8px;"></i>
+                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr);">Pilih File
+                            Baru</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">atau drag & drop</p>
+                        <input type="file" id="replacementFileInput" style="display: none;"
+                            accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" />
+                    </div>
+                </div>
+
+                <!-- Preview File Baru -->
+                <div id="replacementPreview" style="display: none;">
+                    <p
+                        style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">
+                        Preview Pengganti</p>
+                    <div
+                        style="padding: 12px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #10b981; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-check-circle-fill" style="font-size: 20px; color: #10b981;"></i>
+                        <div style="flex: 1;">
+                            <p id="replacementFileName"
+                                style="margin: 0; font-size: 14px; font-weight: 600; color: #059669;"></p>
+                            <p id="replacementFileSize" style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div
+                style="padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; justify-content: flex-end; background: #f9fafb;">
+                <button type="button" id="replacementCancelBtn"
+                    style="padding: 10px 16px; background: #e5e7eb; color: var(--main-navy-clr); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;"
+                    onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">
+                    BATAL
+                </button>
+                <button type="button" id="replacementConfirmBtn" disabled
+                    style="padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: not-allowed; font-weight: 600; font-size: 13px; transition: all 0.2s; opacity: 0.5;">
+                    GANTI FILE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION MODAL -->
+    <div id="notificationModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div
+            style="background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 400px; width: 90%; animation: slideUp 0.3s ease;">
+            <div style="padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px;">
+                <i id="modalIcon" class="bi" style="font-size: 24px;"></i>
+                <h3 id="modalTitle" style="margin: 0; font-size: 18px; font-weight: 600; color: var(--main-navy-clr);"></h3>
+            </div>
+            <div style="padding: 16px 24px; color: #64748b; font-size: 14px; line-height: 1.6;">
+                <p id="modalMessage" style="margin: 0;"></p>
+            </div>
+            <div
+                style="padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; justify-content: flex-end;">
+                <button id="modalCloseBtn" type="button"
+                    style="padding: 8px 16px; background: #f3f4f6; color: var(--main-navy-clr); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.2s;"
+                    onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+
     <script>
+        let replacementState = {
+            moduleId: null,
+            fileName: null,
+            fileType: null,
+            selectedFile: null
+        };
+
+        function showNotificationModal(title, message, type = 'info') {
+            const modal = document.getElementById('notificationModal');
+            const icon = document.getElementById('modalIcon');
+            const titleEl = document.getElementById('modalTitle');
+            const messageEl = document.getElementById('modalMessage');
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+
+            if (type === 'success') {
+                icon.className = 'bi bi-check-circle-fill';
+                icon.style.color = '#10b981';
+                titleEl.style.color = '#10b981';
+            } else if (type === 'error') {
+                icon.className = 'bi bi-exclamation-circle-fill';
+                icon.style.color = '#ef4444';
+                titleEl.style.color = '#ef4444';
+            } else {
+                icon.className = 'bi bi-info-circle-fill';
+                icon.style.color = 'var(--main-navy-clr)';
+                titleEl.style.color = 'var(--main-navy-clr)';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function openReplacementModal(moduleId, fileName, fileType) {
+            console.log('🔵 openReplacementModal CALLED with:', { moduleId, fileName, fileType });
+
+            replacementState = { moduleId, fileName, fileType, selectedFile: null };
+
+            const modal = document.getElementById('replacementModal');
+            const oldFileName = document.getElementById('modalOldFileName');
+            const oldFileInfo = document.getElementById('modalOldFileInfo');
+            const preview = document.getElementById('replacementPreview');
+            const confirmBtn = document.getElementById('replacementConfirmBtn');
+            const fileInput = document.getElementById('replacementFileInput');
+
+            console.log('🔍 Elements check:', { 
+                modal: !!modal, 
+                oldFileName: !!oldFileName, 
+                oldFileInfo: !!oldFileInfo,
+                preview: !!preview,
+                confirmBtn: !!confirmBtn,
+                fileInput: !!fileInput
+            });
+
+            if (!modal || !oldFileName || !oldFileInfo || !preview || !confirmBtn || !fileInput) {
+                console.error('❌ ERROR: One or more modal elements not found!', { modal, oldFileName, oldFileInfo, preview, confirmBtn, fileInput });
+                return;
+            }
+
+            oldFileName.textContent = fileName;
+            oldFileInfo.textContent = `Tipe: ${String(fileType).toUpperCase()}`;
+            preview.style.display = 'none';
+            confirmBtn.disabled = true;
+            confirmBtn.style.opacity = '0.5';
+            fileInput.value = '';
+
+            modal.style.display = 'flex';
+            console.log('✅ Modal displayed successfully!');
+        }
+
+        function closeReplacementModal() {
+            document.getElementById('replacementModal').style.display = 'none';
+            replacementState = { moduleId: null, fileName: null, fileType: null, selectedFile: null };
+        }
+
+        function validateReplacementFile(file) {
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
+            const uploadType = ext === 'mp4' ? 'video' : 'pdf';
+
+            if (uploadType !== replacementState.fileType) {
+                showNotificationModal('Tipe File Tidak Sesuai', `File harus bertipe ${String(replacementState.fileType).toUpperCase()}.`, 'error');
+                return false;
+            }
+
+            if (file.size > 512 * 1024 * 1024) {
+                showNotificationModal('File Terlalu Besar', 'Ukuran file maksimal 512MB.', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        document.getElementById('modalCloseBtn').addEventListener('click', closeNotificationModal);
+        document.getElementById('notificationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'notificationModal') closeNotificationModal();
+        });
+        document.getElementById('replacementModal').addEventListener('click', (e) => {
+            if (e.target.id === 'replacementModal') closeReplacementModal();
+        });
+
         document.addEventListener("DOMContentLoaded", function () {
             // --- TAB SWITCHING ---
             const tabs = document.querySelectorAll(".studio-tab");
             const panels = document.querySelectorAll("[data-panel]");
-            
-            const setTab = (targetTab) => {
+
+            const setTab = (targetTab, updateUrl = true) => {
                 tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === targetTab));
                 panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === targetTab));
+
+                if (updateUrl) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', targetTab);
+                    window.history.replaceState({}, '', url.toString());
+                }
             };
 
             tabs.forEach((tab) => {
                 tab.addEventListener("click", () => setTab(tab.dataset.tab));
             });
 
+            const requestedTab = new URLSearchParams(window.location.search).get('tab');
+            if (requestedTab === 'module' || requestedTab === 'quiz') {
+                setTab(requestedTab, false);
+            }
+
             // --- UPLOAD LOGIC ---
             let uploadedFiles = [];
+            const activeUnitModules = @json($activeUnitModules->map(fn($module) => ['id' => $module->id, 'type' => $module->type])->values());
             const dropzone = document.getElementById("dropzone");
             const fileInput = document.getElementById("fileInput");
             const fileList = document.getElementById("fileList");
             const uploadedFilesList = document.getElementById("uploadedFiles");
             const moduleForm = document.getElementById("moduleForm");
             const uploadBtn = document.getElementById("uploadSubmitBtn");
+            const targetModulesInput = moduleForm.querySelector('input[name="target_modules"]');
+
+            // Attach replace button listeners
+            const replaceButtons = document.querySelectorAll('.select-replace-btn');
+            console.log('🔴 Replace buttons found:', replaceButtons.length);
+            
+            replaceButtons.forEach((button) => {
+                button.addEventListener('click', function () {
+                    console.log('🟡 GANTI button CLICKED! Data:', {
+                        moduleId: this.dataset.moduleId,
+                        fileName: this.dataset.fileName,
+                        moduleType: this.dataset.moduleType
+                    });
+                    openReplacementModal(
+                        parseInt(this.dataset.moduleId, 10),
+                        this.dataset.fileName || 'file',
+                        this.dataset.moduleType
+                    );
+                });
+            });
+
+            const quizHistoryToggleButtons = document.querySelectorAll('.quiz-history-toggle');
+            quizHistoryToggleButtons.forEach((button) => {
+                button.addEventListener('click', function () {
+                    const targetId = this.dataset.target;
+                    const target = document.getElementById(targetId);
+                    if (!target) return;
+
+                    const isHidden = target.style.display === 'none' || target.style.display === '';
+                    target.style.display = isHidden ? 'flex' : 'none';
+                });
+            });
+
+            // Setup replacement modal
+            const replacementDropzone = document.getElementById('replacementDropzone');
+            const replacementFileInput = document.getElementById('replacementFileInput');
+            const replacementCancelBtn = document.getElementById('replacementCancelBtn');
+            const replacementConfirmBtn = document.getElementById('replacementConfirmBtn');
+
+            replacementDropzone.addEventListener('click', () => replacementFileInput.click());
+            replacementDropzone.addEventListener('dragover', (e) => { e.preventDefault(); });
+            replacementDropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    if (validateReplacementFile(file)) {
+                        replacementState.selectedFile = file;
+                        showReplacementPreview(file);
+                    }
+                }
+            });
+
+            replacementFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    if (validateReplacementFile(file)) {
+                        replacementState.selectedFile = file;
+                        showReplacementPreview(file);
+                    }
+                }
+            });
+
+            replacementCancelBtn.addEventListener('click', closeReplacementModal);
+
+            replacementConfirmBtn.addEventListener('click', () => {
+                if (!replacementState.selectedFile) {
+                    showNotificationModal('Perhatian', 'Silakan pilih file terlebih dahulu.', 'error');
+                    return;
+                }
+
+                replacementConfirmBtn.disabled = true;
+                replacementConfirmBtn.textContent = 'MEMPROSES...';
+
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('input[name="_token"]').value);
+                formData.append('target_modules', String(replacementState.moduleId));
+                formData.append('replace_module_id', String(replacementState.moduleId));
+                formData.append('files[]', replacementState.selectedFile);
+
+                fetch(moduleForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                    .then(async (res) => {
+                        let data = {};
+                        try {
+                            data = await res.json();
+                        } catch (_) {
+                            data = {};
+                        }
+
+                        if (!res.ok) {
+                            const firstValidationError = data.errors ? Object.values(data.errors).flat()[0] : null;
+                            throw new Error(data.error || data.message || firstValidationError || "Unknown error");
+                        }
+
+                        return data;
+                    })
+                    .then(data => {
+                        closeReplacementModal();
+                        if (data.success) {
+                            showNotificationModal('Berhasil', 'File berhasil diganti!', 'success');
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            const errorMsg = data.error || data.message || 'Unknown error';
+                            showNotificationModal('Gagal', errorMsg, 'error');
+                        }
+                    })
+                    .catch(err => {
+                        closeReplacementModal();
+                        showNotificationModal('Gagal', err.message || 'Terjadi kesalahan koneksi.', 'error');
+                    })
+                    .finally(() => {
+                        replacementConfirmBtn.disabled = false;
+                        replacementConfirmBtn.textContent = 'GANTI FILE';
+                    });
+            });
+
+            // Define showReplacementPreview inside DOMContentLoaded
+            window.showReplacementPreview = function(file) {
+                document.getElementById('replacementFileName').textContent = file.name;
+                document.getElementById('replacementFileSize').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+                document.getElementById('replacementPreview').style.display = 'block';
+                replacementConfirmBtn.disabled = false;
+                replacementConfirmBtn.style.opacity = '1';
+                replacementConfirmBtn.style.cursor = 'pointer';
+            };
 
             dropzone.addEventListener("click", () => fileInput.click());
             dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.style.borderColor = "#1a237e"; dropzone.style.background = "#f0f5fc"; });
@@ -778,21 +1271,26 @@
                 fileInput.value = "";
             }
 
+            function getUploadType(file) {
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+                return ext === 'mp4' ? 'video' : 'pdf';
+            }
+
             function updateFileList() {
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
                     uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                <div>
-                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                    <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                    <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                    <div>
+                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                        <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                        </li>
-                    `).join("");
+                                <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                            </li>
+                        `).join("");
 
                     document.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -808,12 +1306,28 @@
             // AJAX SUBMIT UPLOAD
             moduleForm.addEventListener("submit", (e) => {
                 e.preventDefault();
-                if (uploadedFiles.length === 0) return alert("Silakan pilih minimal 1 file untuk diupload.");
+                if (uploadedFiles.length === 0) return showNotificationModal('Perhatian', 'Silakan pilih minimal 1 file untuk diupload.', 'error');
 
                 uploadBtn.disabled = true;
-                uploadBtn.innerHTML = 'UPLOADING... <i class="spinner-border spinner-border-sm"></i>';
+                uploadBtn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> UPLOADING...';
 
                 const formData = new FormData(moduleForm);
+                formData.delete('files[]');
+                formData.set('replace_module_id', '');
+
+                const selectedTypes = [...new Set(uploadedFiles.map(getUploadType))];
+                const filteredModuleIds = activeUnitModules
+                    .filter(module => selectedTypes.includes(module.type))
+                    .map(module => module.id);
+
+                if (filteredModuleIds.length > 0) {
+                    const dynamicTargetModules = filteredModuleIds.join(',');
+                    formData.set('target_modules', dynamicTargetModules);
+                    if (targetModulesInput) {
+                        targetModulesInput.value = dynamicTargetModules;
+                    }
+                }
+
                 uploadedFiles.forEach(file => formData.append('files[]', file));
 
                 fetch(moduleForm.action, {
@@ -821,21 +1335,41 @@
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success) {
-                        alert("Materi berhasil disubmit ke Admin!");
-                        uploadedFiles = [];
-                        updateFileList();
-                    } else {
-                        alert("Gagal: " + (data.error || "Unknown error"));
-                    }
-                })
-                .catch(err => alert("Terjadi kesalahan koneksi."))
-                .finally(() => {
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerHTML = 'SUBMIT FOR REVIEW <i class="bi bi-send"></i>';
-                });
+                    .then(async (res) => {
+                        let data = {};
+                        try {
+                            data = await res.json();
+                        } catch (_) {
+                            data = {};
+                        }
+
+                        if (!res.ok) {
+                            const firstValidationError = data.errors
+                                ? Object.values(data.errors).flat()[0]
+                                : null;
+                            throw new Error(data.error || data.message || firstValidationError || "Unknown error");
+                        }
+
+                        return data;
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            showNotificationModal('Berhasil', 'Materi berhasil disubmit ke Admin!', 'success');
+                            setTimeout(() => window.location.reload(), 1500);
+                            return;
+                        } else {
+                            const firstValidationError = data.errors
+                                ? Object.values(data.errors).flat()[0]
+                                : null;
+                            const errorMsg = data.error || data.message || firstValidationError || 'Unknown error';
+                            showNotificationModal('Gagal', errorMsg, 'error');
+                        }
+                    })
+                    .catch(err => showNotificationModal('Gagal', err.message || 'Terjadi kesalahan koneksi.', 'error'))
+                    .finally(() => {
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = '<i class="bi bi-send"></i> SUBMIT FOR REVIEW';
+                    });
             });
 
 
@@ -848,12 +1382,51 @@
             const passingGradeDisplay = document.getElementById("passingGrade");
             const totalWeightDisplay = document.getElementById("totalWeight");
             const verifyStatusDisplay = document.getElementById("verifyStatus");
+            const currentUnit = new URLSearchParams(window.location.search).get('unit') || '0';
+            const quizDraftStorageKey = `trainer_quiz_draft_{{ $course->id }}_${currentUnit}`;
+
+            function saveQuizDraft() {
+                const payload = {
+                    passingGrade: parseInt(passingGradeInput.value) || 70,
+                    questions: quizQuestions,
+                    questionCounter,
+                };
+                localStorage.setItem(quizDraftStorageKey, JSON.stringify(payload));
+            }
+
+            function loadQuizDraft() {
+                const raw = localStorage.getItem(quizDraftStorageKey);
+                if (!raw) {
+                    return false;
+                }
+
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+                        return false;
+                    }
+
+                    quizQuestions = parsed.questions;
+                    questionCounter = Math.max(parsed.questionCounter || 1, quizQuestions.length + 1);
+
+                    const restoredPassingGrade = parseInt(parsed.passingGrade);
+                    const finalPassingGrade = Number.isNaN(restoredPassingGrade) ? 70 : Math.max(0, Math.min(100, restoredPassingGrade));
+                    passingGradeInput.value = finalPassingGrade;
+                    passingGradeDisplay.textContent = finalPassingGrade;
+
+                    renderAllQuestions();
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
 
             addQuestionBtn.addEventListener("click", addQuestion);
 
             function addQuestion() {
                 quizQuestions.push({ id: questionCounter++, text: "", weight: 10, options: ["", "", "", ""], correctAnswer: 0 });
                 renderAllQuestions();
+                saveQuizDraft();
             }
 
             function renderAllQuestions() {
@@ -862,48 +1435,63 @@
                     const qEl = document.createElement("article");
                     qEl.className = "quiz-editor";
                     qEl.innerHTML = `
-                        <div class="q-head">
-                            <div class="q-number">${index + 1}</div>
-                            <div class="q-inputs">
-                                <label>PERTANYAAN</label>
-                                <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                            <div class="q-head">
+                                <div class="q-number">${index + 1}</div>
+                                <div class="q-inputs">
+                                    <label>PERTANYAAN</label>
+                                    <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                </div>
+                                <div class="q-score">
+                                    <label>BOBOT</label>
+                                    <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                </div>
+                                <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
                             </div>
-                            <div class="q-score">
-                                <label>BOBOT</label>
-                                <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                            <div class="options-section">
+                                <p class="options-label">PILIHAN JAWABAN</p>
+                                <div class="options-grid">
+                                    ${q.options.map((opt, oIdx) => `
+                                        <div class="option-container">
+                                            <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
+                                                <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                                <span>Opsi ${oIdx + 1}</span>
+                                            </button>
+                                            <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                        </div>
+                                    `).join("")}
+                                </div>
                             </div>
-                            <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
-                        </div>
-                        <div class="options-section">
-                            <p class="options-label">PILIHAN JAWABAN</p>
-                            <div class="options-grid">
-                                ${q.options.map((opt, oIdx) => `
-                                    <div class="option-container">
-                                        <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                            <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                            <span>Opsi ${oIdx + 1}</span>
-                                        </button>
-                                        <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
-                                    </div>
-                                `).join("")}
-                            </div>
-                        </div>
-                    `;
+                        `;
 
                     // Event Listeners for this question
-                    qEl.querySelector(".q-text").addEventListener("input", (e) => q.text = e.target.value);
-                    qEl.querySelector(".q-weight").addEventListener("input", (e) => { q.weight = parseInt(e.target.value) || 0; updateTotalWeight(); });
-                    qEl.querySelector(".delete-question").addEventListener("click", () => { quizQuestions.splice(index, 1); renderAllQuestions(); });
-                    
+                    qEl.querySelector(".q-text").addEventListener("input", (e) => {
+                        q.text = e.target.value;
+                        saveQuizDraft();
+                    });
+                    qEl.querySelector(".q-weight").addEventListener("input", (e) => {
+                        q.weight = parseInt(e.target.value) || 0;
+                        updateTotalWeight();
+                        saveQuizDraft();
+                    });
+                    qEl.querySelector(".delete-question").addEventListener("click", () => {
+                        quizQuestions.splice(index, 1);
+                        renderAllQuestions();
+                        saveQuizDraft();
+                    });
+
                     qEl.querySelectorAll(".option-btn").forEach(btn => {
                         btn.addEventListener("click", () => {
                             q.correctAnswer = parseInt(btn.dataset.opt);
                             renderAllQuestions(); // Re-render to update UI
+                            saveQuizDraft();
                         });
                     });
-                    
+
                     qEl.querySelectorAll(".option-input").forEach((inp, oIdx) => {
-                        inp.addEventListener("input", (e) => q.options[oIdx] = e.target.value);
+                        inp.addEventListener("input", (e) => {
+                            q.options[oIdx] = e.target.value;
+                            saveQuizDraft();
+                        });
                     });
 
                     qContainer.appendChild(qEl);
@@ -933,28 +1521,44 @@
                 passingGradeDisplay.textContent = val;
                 passingGradeDisplay.style.display = "inline";
                 passingGradeInput.style.display = "none";
+                saveQuizDraft();
             });
 
-            // Initialize first question
-            addQuestion();
+            // Initialize from draft, fallback to first empty question
+            if (!loadQuizDraft()) {
+                addQuestion();
+            }
 
             // AJAX SUBMIT QUIZ
-            document.getElementById("quizForm").addEventListener("submit", function(e) {
+            document.getElementById("quizForm").addEventListener("submit", function (e) {
                 e.preventDefault();
 
                 // Validasi Kosong
-                if(quizQuestions.length === 0) return alert("Tambahkan minimal 1 soal!");
+                if (quizQuestions.length === 0) return showNotificationModal('Perhatian', 'Tambahkan minimal 1 soal!', 'error');
                 const isInvalid = quizQuestions.some(q => q.text.trim() === "" || q.options.some(o => o.trim() === ""));
-                if(isInvalid) return alert("Semua pertanyaan dan opsi jawaban wajib diisi!");
+                if (isInvalid) return showNotificationModal('Perhatian', 'Semua pertanyaan dan opsi jawaban wajib diisi!', 'error');
+
+                // Dapatkan quiz_module_id dari activeUnitModules
+                let quizModuleId = null;
+                for (const module of activeUnitModules) {
+                    if (module.type === 'quiz') {
+                        quizModuleId = module.id;
+                        break;
+                    }
+                }
+                
+                if (!quizModuleId) {
+                    return showNotificationModal('Perhatian', 'Modul quiz tidak ditemukan untuk bab ini.', 'error');
+                }
 
                 // Format data untuk dikirim ke Controller via fetch JSON
                 const quizData = {
-                    courseId: document.querySelector('input[name="courseId"]').value,
+                    quiz_module_id: quizModuleId,
                     passingGrade: parseInt(passingGradeInput.value),
                     questions: quizQuestions.map(q => ({
                         text: q.text,
                         options: q.options,
-                        correctAnswer: q.correctAnswer, // Nama key ini wajib cocok dengan validasi Controller
+                        correctAnswer: q.correctAnswer,
                         weight: q.weight
                     }))
                 };
@@ -973,19 +1577,20 @@
                     },
                     body: JSON.stringify(quizData)
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if(data.success) {
-                        alert("Kuis berhasil disimpan! " + data.message);
-                    } else {
-                        alert("Gagal: " + (data.message || "Pastikan data terisi dengan benar."));
-                    }
-                })
-                .catch(err => alert("Terjadi kesalahan jaringan."))
-                .finally(() => {
-                    btnSubmit.innerHTML = origText;
-                    btnSubmit.disabled = false;
-                });
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            localStorage.removeItem(quizDraftStorageKey);
+                            showNotificationModal('Berhasil', 'Kuis berhasil disimpan! ' + data.message, 'success');
+                        } else {
+                            showNotificationModal('Gagal', data.message || 'Pastikan data terisi dengan benar.', 'error');
+                        }
+                    })
+                    .catch(err => showNotificationModal('Gagal', 'Terjadi kesalahan jaringan.', 'error'))
+                    .finally(() => {
+                        btnSubmit.innerHTML = origText;
+                        btnSubmit.disabled = false;
+                    });
             });
         });
     </script>
