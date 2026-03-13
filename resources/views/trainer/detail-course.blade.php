@@ -129,7 +129,7 @@
                                         $assetTab = $module->type === 'quiz' ? 'quiz' : 'module';
                                       @endphp
                                     <div class="asset-mini"
-                                        data-redirect="{{ route('trainer.courses.studio', $course->id) }}?tab={{ $assetTab }}">
+                                        data-redirect="{{ route('trainer.courses.studio', $course->id) }}?unit={{ $idx }}&tab={{ $assetTab }}">
                                         <i class="bi {{ $icon }}"></i>
                                         <div>
                                             <h4>{{ Str::limit($module->title, 25) }}</h4>

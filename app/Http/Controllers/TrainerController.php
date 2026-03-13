@@ -212,19 +212,35 @@ class TrainerController extends Controller
         ));
     }
 
-    public function courseStudio($id)
+    public function courseStudio(Request $request, $id)
     {
-        $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $course = \App\Models\Course::where('id', $id)->where('trainer_id', Auth::id())->firstOrFail();
 
-        $course = \App\Models\Course::where('id', $id)
-            ->where('trainer_id', $trainerId)
-            ->firstOrFail();
-
-        $materials = \App\Models\CourseModule::where('course_id', $id)
+        // 1. Ambil semua modul course, lalu pecah per Bab (chunk 3)
+        $unitIndex = $request->query('unit', 0); // Default ke Bab 1 (index 0)
+        $allModules = \App\Models\CourseModule::where('course_id', $id)
+            ->with([
+                'quizQuestions' => function ($query) {
+                    $query->orderBy('order_no', 'asc')->with(['answers' => function ($answerQuery) {
+                        $answerQuery->orderBy('order_no', 'asc');
+                    }]);
+                }
+            ])
+            ->withCount('quizQuestions')
             ->orderBy('order_no', 'asc')
             ->get();
+        $chunks = $allModules->chunk(3)->values();
 
-        return view('trainer.content-studio', compact('course', 'materials'));
+        // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
+        $activeUnitModules = $chunks->get($unitIndex, collect());
+
+        if ($activeUnitModules->isEmpty()) {
+            return redirect()->route('trainer.courses')->with('error', 'Silabus untuk bab ini belum tersedia.');
+        }
+
+        $unitTitle = "Modul " . ($unitIndex + 1);
+
+        return view('trainer.content-studio', compact('course', 'activeUnitModules', 'unitTitle', 'unitIndex'));
     }
 
     public function eventStudio($id)
@@ -302,98 +318,215 @@ class TrainerController extends Controller
 
     public function uploadCourseMaterials(Request $request, $id)
     {
-        // 1. Validasi File & module_id
         $request->validate([
-            'module_id' => 'required|exists:course_module,id',
-            'file' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
-        ]);
-
-        $courseId = $id;
-        $course = Course::findOrFail($courseId);
-
-        // 2. Security Check: Pastikan yang upload adalah trainer pemilik kelas
-        if ($course->trainer_id !== Auth::id()) {
-            return back()->with('error', 'Akses ditolak. Anda tidak memiliki izin untuk kelas ini.');
-        }
-
-        // 3. Ambil data modul "cangkang" yang sudah disiapkan Admin
-        $module = CourseModule::where('id', $request->module_id)
-            ->where('course_id', $courseId)
-            ->firstOrFail();
-
-        // 4. Proses Upload File
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $filename = time() . '_' . $file->getClientOriginalName();
-
-            // Opsional: Hapus file fisik lama di storage jika sebelumnya trainer sudah pernah upload (Revisi)
-            if ($module->content_url && Storage::disk('public')->exists($module->content_url)) {
-                Storage::disk('public')->delete($module->content_url);
-            }
-
-            // Simpan file baru ke storage
-            $filepath = $file->storeAs('courses/' . $courseId . '/materials', $filename, 'public');
-
-            // 5. UPDATE data modul (BUKAN create baru)
-            $module->update([
-                'content_url' => $filepath,
-                'file_name' => $filename,
-                'mime_type' => $file->getMimeType(),
-                'file_size' => $file->getSize(),
-            ]);
-
-            // 6. Ubah status Course menjadi pending_review agar masuk ke antrean Admin
-            $course->update(['status' => 'pending_review']);
-
-            return back()->with('success', 'File untuk materi "' . $module->title . '" berhasil diunggah dan masuk antrean review.');
-        }
-
-        return back()->with('error', 'Gagal mengunggah file. Silakan coba lagi.');
-    }
-    public function saveCourseQuiz(Request $request, $id)
-    {
-        // 1. Validasi Input
-        $request->validate([
-            'passingGrade' => 'required|integer|min:0|max:100',
-            'questions' => 'required|json', // Data dikirim dalam bentuk JSON string dari Blade
+            'target_modules' => 'required|string', // Kumpulan ID modul di Bab ini
+            'replace_module_id' => 'nullable|integer',
+            'files' => 'required|array',
+            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
         ]);
 
         $course = \App\Models\Course::findOrFail($id);
-
-        // 2. Security Check
-        if ($course->trainer_id !== \Illuminate\Support\Facades\Auth::id()) {
-            return back()->with('error', 'Akses ditolak.');
+        if ($course->trainer_id !== Auth::id()) {
+            return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
         }
 
-        // 3. Decode JSON Data
-        $questionsData = json_decode($request->questions, true);
+        // Ubah string "1,2" menjadi array [1, 2]
+        $targetIds = collect(explode(',', $request->target_modules))
+            ->map(fn($value) => (int) trim($value))
+            ->filter(fn($value) => $value > 0)
+            ->unique()
+            ->values();
+
+        if ($targetIds->isEmpty()) {
+            return response()->json(['success' => false, 'error' => 'Target modul tidak valid.']);
+        }
+
+        $uploadedCount = 0;
+        $rejectedFiles = [];
+
+        if ($request->hasFile('files')) {
+            $replaceModuleId = $request->input('replace_module_id');
+
+            if (!empty($replaceModuleId)) {
+                $replaceModule = \App\Models\CourseModule::where('course_id', $id)
+                    ->where('id', (int) $replaceModuleId)
+                    ->first();
+
+                if (!$replaceModule || !$targetIds->contains((int) $replaceModuleId)) {
+                    return response()->json(['success' => false, 'error' => 'File target penggantian tidak valid.']);
+                }
+
+                $files = $request->file('files');
+                if (count($files) !== 1) {
+                    return response()->json(['success' => false, 'error' => 'Mode ganti file hanya menerima 1 file.']);
+                }
+
+                $file = $files[0];
+                $ext = strtolower($file->getClientOriginalExtension());
+                $uploadType = in_array($ext, ['mp4']) ? 'video' : 'pdf';
+
+                if ($uploadType !== $replaceModule->type) {
+                    return response()->json(['success' => false, 'error' => 'Tipe file tidak sesuai dengan target yang dipilih.']);
+                }
+
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+
+                if ($replaceModule->content_url && \Illuminate\Support\Facades\Storage::disk('public')->exists($replaceModule->content_url)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($replaceModule->content_url);
+                }
+
+                $filepath = $file->storeAs('courses/' . $id . '/materials', $filename, 'public');
+
+                $replaceModule->update([
+                    'content_url' => $filepath,
+                    'file_name' => $filename,
+                    'mime_type' => $file->getMimeType(),
+                    'file_size' => $file->getSize(),
+                ]);
+
+                $course->update(['status' => 'pending_review']);
+
+                return response()->json(['success' => true, 'message' => 'File berhasil diganti.']);
+            }
+
+            $modulesByType = \App\Models\CourseModule::where('course_id', $id)
+                ->whereIn('id', $targetIds)
+                ->get()
+                ->groupBy('type')
+                ->map(fn($group) => $group->values());
+
+            foreach ($request->file('files') as $file) {
+                $ext = strtolower($file->getClientOriginalExtension());
+                $type = in_array($ext, ['mp4']) ? 'video' : 'pdf';
+
+                // Ambil slot silabus kosong di DALAM BAB INI sesuai tipe
+                $typeModules = $modulesByType->get($type, collect());
+                $moduleIndex = $typeModules->search(function ($candidate) {
+                    return empty($candidate->content_url);
+                });
+
+                if ($moduleIndex !== false) {
+                    $module = $typeModules->get($moduleIndex);
+                    $typeModules->forget($moduleIndex);
+                    $modulesByType->put($type, $typeModules->values());
+                } else {
+                    $module = null;
+                }
+
+                if ($module) {
+                    $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+
+                    if ($module->content_url && \Illuminate\Support\Facades\Storage::disk('public')->exists($module->content_url)) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($module->content_url);
+                    }
+
+                    $filepath = $file->storeAs('courses/' . $id . '/materials', $filename, 'public');
+
+                    $module->update([
+                        'content_url' => $filepath,
+                        'file_name' => $filename,
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
+                    ]);
+                    $uploadedCount++;
+                } else {
+                    $suffix = ' (slot ' . strtoupper($type) . ' sudah terisi, pilih file di riwayat lalu klik GANTI untuk overwrite)';
+                    $rejectedFiles[] = $file->getClientOriginalName() . $suffix;
+                }
+            }
+
+            if ($uploadedCount > 0) {
+                $course->update(['status' => 'pending_review']);
+            }
+
+            $msg = "$uploadedCount file berhasil diunggah.";
+            if (count($rejectedFiles) > 0) {
+                $msg .= " File (" . implode(", ", $rejectedFiles) . ") ditolak karena tipe tidak sesuai dengan silabus Bab ini.";
+            }
+
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+        return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+    }
+    public function saveCourseQuiz(Request $request, $id)
+    {
+        $request->validate([
+            'quiz_module_id' => 'required|exists:course_module,id',
+            'passingGrade' => 'required|integer|min:0|max:100',
+            'questions' => 'required|array',
+        ]);
+
+        $course = \App\Models\Course::findOrFail($id);
+        if ($course->trainer_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.']);
+        }
+
+        $questionsData = $request->questions;
         if (empty($questionsData)) {
-            return back()->with('error', 'Kuis harus memiliki minimal 1 pertanyaan.');
+            return response()->json(['success' => false, 'message' => 'Kuis minimal 1 soal.']);
         }
 
-        // 4. Simpan atau Update Quiz Master
-        $quiz = \App\Models\Quiz::updateOrCreate(
-            ['course_id' => $course->id],
-            ['passing_grade' => $request->passingGrade]
-        );
+        // Kunci Quiz ke Slot Bab Ini
+        $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
+        $quizModule->update(['content_url' => 'quiz_submitted']);
 
-        // 5. Hapus soal lama, lalu masukkan soal baru (Replace All)
-        $quiz->questions()->delete();
+        // Delete old questions
+        $quizModule->quizQuestions()->delete();
 
-        foreach ($questionsData as $index => $q) {
-            $quiz->questions()->create([
-                'question_text' => $q['text'],
-                'options' => is_array($q['options']) ? json_encode($q['options']) : $q['options'],
-                'correct_answer' => $q['correctAnswer'], // Sesuai dengan DB kamu
-                'point_value' => $q['weight'] ?? 10,
-                'order' => $index + 1,
+        // Create new questions
+        foreach ($questionsData as $orderIndex => $questionData) {
+            $quizQuestion = $quizModule->quizQuestions()->create([
+                'question' => $questionData['text'],
+                'points' => $questionData['weight'] ?? 10,
+                'order_no' => $orderIndex + 1,
             ]);
+
+            // Create answers for this question
+            if (!empty($questionData['options']) && is_array($questionData['options'])) {
+                foreach ($questionData['options'] as $optionIndex => $optionText) {
+                    $quizQuestion->answers()->create([
+                        'answer_text' => $optionText,
+                        'is_correct' => ($optionIndex === (int)$questionData['correctAnswer']),
+                        'order_no' => $optionIndex + 1,
+                    ]);
+                }
+            }
         }
 
-        // 6. Ubah status Course menjadi pending_review agar di-cek Admin
         $course->update(['status' => 'pending_review']);
 
-        return back()->with('success', 'Kuis berhasil disimpan dan otomatis masuk antrean review Admin!');
+        return response()->json(['success' => true, 'message' => 'Kuis Bab berhasil disimpan!']);
+    }
+
+    public function viewCourseMaterial($courseId, $moduleId)
+    {
+        $course = \App\Models\Course::where('id', $courseId)
+            ->where('trainer_id', Auth::id())
+            ->firstOrFail();
+
+        $module = \App\Models\CourseModule::where('id', $moduleId)
+            ->where('course_id', $course->id)
+            ->firstOrFail();
+
+        if (empty($module->content_url)) {
+            abort(404, 'File materi tidak ditemukan.');
+        }
+
+        if (!Storage::disk('public')->exists($module->content_url)) {
+            abort(404, 'File materi tidak tersedia di storage.');
+        }
+
+        $headers = [];
+        if (!empty($module->mime_type)) {
+            $headers['Content-Type'] = $module->mime_type;
+        }
+
+        $filePath = Storage::disk('public')->path($module->content_url);
+        if (!file_exists($filePath)) {
+            abort(404, 'File materi tidak tersedia di server.');
+        }
+
+        return response()->file($filePath, $headers);
     }
 
     private function getModuleType($extension)
