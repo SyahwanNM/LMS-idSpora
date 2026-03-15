@@ -102,7 +102,10 @@
                 border-radius: 999px;
                 width: fit-content;
                 max-width: 100%;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
             }
             .share .share-action {
                 display: inline-flex;
@@ -122,14 +125,54 @@
                 cursor: pointer;
                 -webkit-tap-highlight-color: transparent;
                 user-select: none;
+                flex: 0 0 auto;
+                white-space: nowrap;
             }
             .share .share-action svg { flex: 0 0 auto; }
             .share .share-action:hover { background: #f3f4f6; }
             .share .share-action:active { background: #e5e7eb; }
             .share .share-icon { width: 32px; padding: 0; }
             .share .share-action--disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+            .share .share-list::-webkit-scrollbar { height: 0; }
             @media (max-width: 420px){
                 .share .share-list { width: 100%; justify-content: flex-start; }
+            }
+
+            /* Event info (Date/Time/Location/Students Enrolled) */
+            .info-boxluar {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                padding: 6px 0;
+            }
+            .event-info-item {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 14px;
+            }
+            .event-info-left {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 0;
+            }
+            .event-info-left svg { flex: 0 0 auto; }
+            .event-info-label {
+                font-weight: 600;
+                color: #111827;
+                line-height: 1.15;
+            }
+            .event-info-value {
+                font-weight: 600;
+                color: #111827;
+                text-align: right;
+                line-height: 1.15;
+                max-width: 60%;
+                word-break: break-word;
+            }
+            @media (max-width: 420px) {
+                .event-info-value { max-width: 55%; }
             }
             /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
             .resource-card.locked { opacity: 0.6; }
@@ -592,8 +635,9 @@
                     </div>
                     <div class="event-info-item">
                         <div class="event-info-left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94"/>
+                                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4"/>
                             </svg>
                             <span class="event-info-label">Location</span>
                         </div>
@@ -855,6 +899,46 @@
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;">
                             
                         </span>
+                    @endif
+                </div>
+
+                @php
+                    $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
+                    $moduleUnlocked = $isRegistered && $eventIsFinished && !empty($event->module_path);
+                @endphp
+                <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
+                    <div class="img-resource">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16">
+                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                            <path d="M5.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                            <path d="M5.5 11a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z"/>
+                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                            <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                        </svg>
+                    </div>
+                    <div class="resource-value">
+                        <h6>Modules Materi</h6>
+                        <p>
+                            @if(!$isRegistered)
+                                Available upon registration
+                            @elseif(!$eventIsFinished)
+                                Available after event completion
+                            @elseif(empty($event->module_path))
+                                Not available
+                            @else
+                                Download materi event
+                            @endif
+                        </p>
+                    </div>
+                    @if($moduleUnlocked)
+                        <a class="link-share" href="{{ route('events.modules.download', $event) }}" title="Unduh Materi">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                            </svg>
+                        </a>
+                    @else
+                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                     @endif
                 </div>
 
