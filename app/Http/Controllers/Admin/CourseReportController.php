@@ -51,15 +51,26 @@ class CourseReportController extends Controller
             hasCustomRange: $hasCustomRange,
         );
 
-        // Growth tab uses its own defaults (no from/to inputs there).
+        // Growth tab uses its own filter (month + search).
         $growthPeriod = 'monthly';
-        [$growthFrom, $growthTo] = $this->defaultDateRange($growthPeriod);
-        $growthReport = $this->buildGrowthReport(from: $growthFrom, to: $growthTo, period: $growthPeriod);
+        $growthMonth = trim((string) $request->query('month', $request->query('growth_month', Carbon::now()->format('Y-m')))); // YYYY-MM
+        $growthQuery = trim((string) $request->query('q', ''));
+        [$growthFrom, $growthTo, $growthMonthResolved] = $this->parseGrowthRangeFromMonth($growthMonth, $growthPeriod);
+        $growthReport = $this->buildGrowthReport(from: $growthFrom, to: $growthTo, period: $growthPeriod, q: $growthQuery);
+
+        // Chart (Jan–Dec) should be DB-backed but keep the same UI/labels.
+        // The year should follow the selected growth month.
+        $growthChartYear = $growthMonthResolved instanceof Carbon ? (int) $growthMonthResolved->year : (int) Carbon::now()->year;
+        $growthChart = $this->buildGrowthChartYearSeries($growthChartYear);
 
         return view('admin.report', [
             'courses' => $courses,
             'revenueReport' => $revenueReport,
             'growthReport' => $growthReport,
+            'growthChart' => $growthChart,
+            'growthChartYear' => $growthChartYear,
+            'growthMonth' => $growthMonth,
+            'growthQuery' => $growthQuery,
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
         ]);
@@ -78,11 +89,132 @@ class CourseReportController extends Controller
     public function growth(Request $request)
     {
         $period = $this->normalizePeriod($request->query('period', 'monthly'));
-        [$from, $to] = $this->defaultDateRange($period);
+        $month = trim((string) $request->query('month', '')); // YYYY-MM
+        $q = trim((string) $request->query('q', ''));
 
-        $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period);
+        [$from, $to, $monthResolved] = $this->parseGrowthRangeFromMonth($month, $period);
+
+        // Fallback to default if month is empty/invalid.
+        if (!$monthResolved) {
+            [$from, $to] = $this->defaultDateRange($period);
+        }
+
+        $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period, q: $q);
+
+        // Also include chart series for the selected year (based on selected month when provided).
+        $chartYear = $monthResolved instanceof Carbon ? (int) $monthResolved->year : (int) Carbon::now()->year;
+        $growthReport['chart'] = $this->buildGrowthChartYearSeries($chartYear);
 
         return response()->json($growthReport);
+    }
+
+    /**
+     * Determine a [from,to] range from a YYYY-MM month picker.
+     *
+     * - monthly: whole selected month
+     * - weekly: last week of the selected month (clamped within the month)
+     * - daily: last day of the selected month
+     */
+    private function parseGrowthRangeFromMonth(string $month, string $period = 'monthly'): array
+    {
+        $month = trim($month);
+        if ($month === '') {
+            return [Carbon::now()->startOfMonth()->startOfDay(), Carbon::now()->endOfDay(), null];
+        }
+
+        try {
+            // Parse "YYYY-MM".
+            $base = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        } catch (\Throwable $e) {
+            return [Carbon::now()->startOfMonth()->startOfDay(), Carbon::now()->endOfDay(), null];
+        }
+
+        $monthStart = $base->copy()->startOfMonth()->startOfDay();
+        $monthEnd = $base->copy()->endOfMonth()->endOfDay();
+
+        if ($period === 'daily') {
+            $to = $monthEnd->copy()->endOfDay();
+            $from = $to->copy()->startOfDay();
+            return [$from, $to, $base];
+        }
+
+        if ($period === 'weekly') {
+            $to = $monthEnd->copy()->endOfDay();
+            $from = $to->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+            if ($from->lessThan($monthStart)) {
+                $from = $monthStart->copy();
+            }
+            return [$from, $to, $base];
+        }
+
+        return [$monthStart, $monthEnd, $base];
+    }
+
+    private function buildGrowthChartYearSeries(int $year): array
+    {
+        $year = $year > 0 ? $year : (int) Carbon::now()->year;
+        $start = Carbon::create($year, 1, 1, 0, 0, 0)->startOfDay();
+        $end = Carbon::create($year, 12, 31, 23, 59, 59)->endOfDay();
+
+        $viewsByMonth = Enrollment::query()
+            ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
+            ->whereBetween('enrolled_at', [$start, $end])
+            ->selectRaw('MONTH(enrolled_at) as m')
+            ->selectRaw('COUNT(*) as total_views')
+            ->groupBy('m')
+            ->pluck('total_views', 'm');
+
+        $participantsByMonth = Enrollment::query()
+            ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
+            ->whereBetween('enrolled_at', [$start, $end])
+            ->selectRaw('MONTH(enrolled_at) as m')
+            ->selectRaw('COUNT(DISTINCT user_id) as participants')
+            ->groupBy('m')
+            ->pluck('participants', 'm');
+
+        // Total watch time in minutes (sum seconds / 60) from LearningTimeDaily.
+        $watchByMonth = LearningTimeDaily::query()
+            ->whereBetween('learned_on', [$start->toDateString(), $end->toDateString()])
+            ->selectRaw('MONTH(learned_on) as m')
+            ->selectRaw('SUM(seconds) as total_seconds')
+            ->groupBy('m')
+            ->pluck('total_seconds', 'm');
+
+        $ratingByMonth = Review::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('MONTH(created_at) as m')
+            ->selectRaw('AVG(rating) as rating_avg')
+            ->groupBy('m')
+            ->pluck('rating_avg', 'm');
+
+        $views = [];
+        $participants = [];
+        $watchMinutes = [];
+        $rating = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $v = (int) ($viewsByMonth[$m] ?? 0);
+            $p = (int) ($participantsByMonth[$m] ?? 0);
+            $sec = (int) ($watchByMonth[$m] ?? 0);
+            $min = (int) round($sec / 60);
+            $r = (float) ($ratingByMonth[$m] ?? 0);
+
+            $views[] = $v;
+            $participants[] = $p;
+            $watchMinutes[] = $min;
+            // Keep numeric values; one decimal is enough.
+            $rating[] = $r > 0 ? (float) round($r, 1) : 0;
+        }
+
+        return [
+            'year' => $year,
+            'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+            'series' => [
+                'views' => $views,
+                'participants' => $participants,
+                'watch_minutes' => $watchMinutes,
+                'rating' => $rating,
+            ],
+        ];
     }
 
     public function exportPdf(Request $request)
@@ -106,8 +238,17 @@ class CourseReportController extends Controller
         };
 
         if ($tab === 'pertumbuhan') {
+            $month = trim((string) $request->query('month', '')); // YYYY-MM
+            $q = trim((string) $request->query('q', ''));
             [$fromDt, $toDt] = $this->defaultDateRange($period);
-            $growth = $this->buildGrowthReport(from: $fromDt, to: $toDt, period: $period);
+            if ($month !== '') {
+                [$fromDt, $toDt, $resolved] = $this->parseGrowthRangeFromMonth($month, $period);
+                if (!$resolved) {
+                    [$fromDt, $toDt] = $this->defaultDateRange($period);
+                }
+            }
+
+            $growth = $this->buildGrowthReport(from: $fromDt, to: $toDt, period: $period, q: $q);
             $rows = $growth['rows'] ?? [];
             $from = (string) ($growth['from'] ?? $fromDt->toDateString());
             $to = (string) ($growth['to'] ?? $toDt->toDateString());
@@ -159,8 +300,16 @@ class CourseReportController extends Controller
         return [$from, $to];
     }
 
-    private function buildGrowthReport(Carbon $from, Carbon $to, string $period = 'monthly'): array
+    private function buildGrowthReport(Carbon $from, Carbon $to, string $period = 'monthly', string $q = ''): array
     {
+        $q = trim($q);
+        $courseIdFilter = null;
+        if ($q !== '') {
+            $courseIdFilter = Course::query()
+                ->where('name', 'like', '%' . $q . '%')
+                ->select('id');
+        }
+
         // Base: paid/valid enrollments in range.
         $courseAgg = Course::query()
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
@@ -168,8 +317,12 @@ class CourseReportController extends Controller
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
                     ->whereBetween('enrollments.enrolled_at', [$from, $to]);
             })
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where('courses.name', 'like', '%' . $q . '%');
+            })
             ->select('courses.id', 'courses.name', 'courses.level')
             ->selectRaw('COUNT(enrollments.id) as total_views')
+            ->selectRaw('COUNT(DISTINCT enrollments.user_id) as participants_count')
             ->selectRaw('SUM(CASE WHEN enrollments.completed_at IS NOT NULL THEN 1 ELSE 0 END) as completed_count')
             ->groupBy('courses.id', 'courses.name', 'courses.level')
             ->havingRaw('COUNT(enrollments.id) > 0')
@@ -197,6 +350,7 @@ class CourseReportController extends Controller
         $rows = $courseAgg->map(function ($r) use ($timeByCourse, $reviewsByCourse) {
             $courseId = (int) $r->id;
             $totalViews = (int) ($r->total_views ?? 0);
+            $participantsCount = (int) ($r->participants_count ?? 0);
             $completedCount = (int) ($r->completed_count ?? 0);
             $completionRate = $totalViews > 0 ? (float) round(($completedCount / $totalViews) * 100, 0) : 0.0;
 
@@ -208,6 +362,7 @@ class CourseReportController extends Controller
 
             $reviewRow = $reviewsByCourse->get($courseId);
             $commentsCount = (int) ($reviewRow->comments_count ?? 0);
+            $ratingAvg = (float) ($reviewRow->rating_avg ?? 0);
 
             return [
                 'course_id' => $courseId,
@@ -215,12 +370,46 @@ class CourseReportController extends Controller
                 'course_level' => $r->level,
                 'total_views' => $totalViews,
                 'total_views_compact' => $this->formatCompactNumber($totalViews),
+                'participants_count' => $participantsCount,
                 'avg_watch_minutes' => $avgMinutes,
                 'avg_watch_time_label' => $avgMinutes > 0 ? ($avgMinutes . ' min') : '0 min',
                 'completion_rate' => $completionRate,
                 'comments_count' => $commentsCount,
+                'rating_avg' => $ratingAvg > 0 ? (float) round($ratingAvg, 1) : 0,
             ];
         })->values();
+
+        $baseEnrollments = Enrollment::query()
+            ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
+            ->whereBetween('enrolled_at', [$from, $to]);
+
+        if ($courseIdFilter) {
+            $baseEnrollments->whereIn('course_id', $courseIdFilter);
+        }
+
+        $summaryTotalViews = (int) $baseEnrollments->clone()->count();
+        $summaryParticipants = (int) $baseEnrollments->clone()->distinct('user_id')->count('user_id');
+
+        $timeAggAllQuery = LearningTimeDaily::query()
+            ->whereBetween('learned_on', [$from->toDateString(), $to->toDateString()]);
+        if ($courseIdFilter) {
+            $timeAggAllQuery->whereIn('course_id', $courseIdFilter);
+        }
+        $timeAggAll = $timeAggAllQuery
+            ->selectRaw('SUM(seconds) as total_seconds')
+            ->selectRaw('COUNT(DISTINCT user_id) as viewers')
+            ->first();
+        $allSeconds = (int) ($timeAggAll->total_seconds ?? 0);
+        $allViewers = (int) ($timeAggAll->viewers ?? 0);
+        $avgAllSeconds = $allViewers > 0 ? (int) floor($allSeconds / $allViewers) : 0;
+        $avgAllMinutes = (int) round($avgAllSeconds / 60);
+
+        $ratingAllQuery = Review::query()
+            ->whereBetween('created_at', [$from, $to]);
+        if ($courseIdFilter) {
+            $ratingAllQuery->whereIn('course_id', $courseIdFilter);
+        }
+        $ratingAll = (float) ($ratingAllQuery->avg('rating') ?: 0);
 
         $completedUsers = Enrollment::query()
             ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -235,6 +424,10 @@ class CourseReportController extends Controller
             'to' => $to->toDateString(),
             'summary' => [
                 'completed_users' => (int) $completedUsers,
+                'total_views' => $summaryTotalViews,
+                'participants' => $summaryParticipants,
+                'avg_watch_minutes' => $avgAllMinutes,
+                'rating_avg' => $ratingAll > 0 ? (float) round($ratingAll, 1) : 0,
             ],
             'rows' => $rows,
         ];

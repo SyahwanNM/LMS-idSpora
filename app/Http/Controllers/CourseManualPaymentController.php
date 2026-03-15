@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Auth;
 
 class CourseManualPaymentController extends Controller
 {
+    private const REJECTION_REASONS = [
+        'Nominal pembayaran kurang',
+        'Nominal pembayaran lebih',
+        'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang',
+        'Pembayaran dinyatakan tidak valid',
+    ];
+
     public function upload(Request $request, Course $course): RedirectResponse
     {
         $user = Auth::user();
@@ -51,6 +58,7 @@ class CourseManualPaymentController extends Controller
         $manualPayment->currency = 'IDR';
         $manualPayment->method = 'qris';
         $manualPayment->status = 'pending';
+        $manualPayment->rejection_reason = null;
         $manualPayment->whatsapp_number = $whatsapp;
         $manualPayment->referral_code = $referralCode;
         if (!$manualPayment->order_id) {
@@ -82,6 +90,7 @@ class CourseManualPaymentController extends Controller
 
         if ($manualPayment->status !== 'settled') {
             $manualPayment->status = 'settled'; // approved
+            $manualPayment->rejection_reason = null;
             $manualPayment->save();
 
             // Process Referral Commission (10%)
@@ -123,7 +132,14 @@ class CourseManualPaymentController extends Controller
     {
         $this->assertPaymentBelongsToCourse($course, $manualPayment);
 
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'in:' . implode(',', self::REJECTION_REASONS)],
+        ]);
+
+        $reason = trim((string) $validated['reason']);
+
         $manualPayment->status = 'rejected';
+        $manualPayment->rejection_reason = $reason;
         $manualPayment->save();
 
         if ($manualPayment->enrollment) {
@@ -139,6 +155,7 @@ class CourseManualPaymentController extends Controller
         $this->assertPaymentBelongsToCourse($course, $manualPayment);
 
         $manualPayment->status = 'pending';
+        $manualPayment->rejection_reason = null;
         $manualPayment->save();
 
         if ($manualPayment->enrollment) {

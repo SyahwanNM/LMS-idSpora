@@ -270,24 +270,24 @@
                                                                 @endif
                                                             </td>
                                                             <td>
-                                                                <form method="POST" class="d-flex flex-wrap gap-1 m-0">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-sm btn-success"
-                                                                        formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
-                                                                        onclick="return confirm('Approve pembayaran ini?')">
-                                                                        Approve
-                                                                    </button>
-                                                                    <button type="submit" class="btn btn-sm btn-danger"
-                                                                        formaction="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
-                                                                        onclick="return confirm('Reject pembayaran ini?')">
-                                                                        Reject
-                                                                    </button>
-                                                                    <button type="submit" class="btn btn-sm btn-warning"
-                                                                        formaction="{{ route('admin.courses.manual-payments.pending', [$course, $payment]) }}"
-                                                                        onclick="return confirm('Set ke pending lagi?')">
-                                                                        Pending
-                                                                    </button>
-                                                                </form>
+                                                                @if($status === 'pending')
+                                                                    <form method="POST" class="d-flex flex-wrap gap-1 m-0">
+                                                                        @csrf
+                                                                        <button type="submit" class="btn btn-sm btn-success"
+                                                                            formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
+                                                                            onclick="return confirm('Approve pembayaran ini?')">
+                                                                            Approve
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-sm btn-danger js-reject-course-payment"
+                                                                            data-action="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
+                                                                            data-user="{{ $payment->user->name ?? 'User' }}"
+                                                                            data-course="{{ $course->name }}">
+                                                                            Reject
+                                                                        </button>
+                                                                    </form>
+                                                                @else
+                                                                    <span class="text-muted">-</span>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                         @endforeach
@@ -1138,8 +1138,78 @@
                     return;
                 }
             });
+
+            // Reject course manual payment: show modal with rejection reason options (same as event)
+            var rejectModalEl = document.getElementById('rejectCoursePaymentModal');
+            var rejectFormEl = document.getElementById('rejectCoursePaymentForm');
+            var rejectReasonEl = document.getElementById('rejectCoursePaymentReason');
+            var rejectMetaEl = document.getElementById('rejectCoursePaymentMeta');
+
+            function openRejectCoursePaymentModal(btnEl) {
+                if (!btnEl || !rejectModalEl || !rejectFormEl) return;
+
+                var action = btnEl.getAttribute('data-action') || '';
+                rejectFormEl.setAttribute('action', action);
+
+                if (rejectReasonEl) {
+                    rejectReasonEl.value = '';
+                }
+
+                if (rejectMetaEl) {
+                    var user = btnEl.getAttribute('data-user') || 'User';
+                    var course = btnEl.getAttribute('data-course') || '';
+                    rejectMetaEl.textContent = course ? (user + ' • ' + course) : user;
+                }
+
+                try {
+                    if (window.bootstrap && window.bootstrap.Modal) {
+                        window.bootstrap.Modal.getOrCreateInstance(rejectModalEl).show();
+                    }
+                } catch (e) {}
+            }
+
+            document.addEventListener('click', function(ev) {
+                var btn = ev.target.closest('.js-reject-course-payment');
+                if (!btn) return;
+                ev.preventDefault();
+                openRejectCoursePaymentModal(btn);
+            });
         });
     </script>
+
+    <!-- Reject Course Manual Payment Modal (UI, no browser alert/confirm) -->
+    <div class="modal fade" id="rejectCoursePaymentModal" tabindex="-1" aria-labelledby="rejectCoursePaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectCoursePaymentModalLabel">Tolak Pembayaran Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectCoursePaymentForm" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="text-muted" style="font-size: 0.9rem;" id="rejectCoursePaymentMeta"></div>
+                        <p class="mt-2 mb-2">Pilih alasan penolakan:</p>
+                        <div class="mb-3">
+                            <label for="rejectCoursePaymentReason" class="form-label text-danger">Alasan Penolakan <span class="text-danger">*</span></label>
+                            <select class="form-select" id="rejectCoursePaymentReason" name="reason" required>
+                                <option value="" selected disabled>Pilih alasan penolakan</option>
+                                <option value="Nominal pembayaran kurang">Nominal pembayaran kurang</option>
+                                <option value="Nominal pembayaran lebih">Nominal pembayaran lebih</option>
+                                <option value="Gambar bukti pembayaran blur/buram. Silahkan kirim ulang">Gambar bukti pembayaran blur/buram. Silahkan kirim ulang</option>
+                                <option value="Pembayaran dinyatakan tidak valid">Pembayaran dinyatakan tidak valid</option>
+                            </select>
+                            <div class="form-text">Alasan ini akan digunakan sebagai keterangan penolakan.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 w-auto" style="flex: 0 0 auto;" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-3 w-auto" style="flex: 0 0 auto;">Tolak Pembayaran</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

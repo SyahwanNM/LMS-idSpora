@@ -64,8 +64,8 @@
                     <th style="width:10%">Level</th>
                     <th style="width:10%" class="text-right">Total View</th>
                     <th style="width:14%" class="text-right">Avg Watch (min)</th>
-                    <th style="width:16%" class="text-right">Completion Rate</th>
-                    <th style="width:14%" class="text-right">Komentar</th>
+                    <th style="width:10%" class="text-right">Peserta</th>
+                    <th style="width:10%" class="text-right">Rating</th>
                 </tr>
             </thead>
             <tbody>
@@ -75,8 +75,9 @@
                         <td>{{ $r['course_level'] ?? '-' }}</td>
                         <td class="text-right">{{ $r['total_views'] ?? 0 }}</td>
                         <td class="text-right">{{ $r['avg_watch_minutes'] ?? 0 }}</td>
-                        <td class="text-right">{{ ($r['completion_rate'] ?? 0) }}%</td>
-                        <td class="text-right">{{ $r['comments_count'] ?? 0 }}</td>
+                        <td class="text-right">{{ (int)($r['participants_count'] ?? 0) }}</td>
+                        @php($rowRating = (float)($r['rating_avg'] ?? 0))
+                        <td class="text-right">{{ $rowRating > 0 ? number_format($rowRating, 1, '.', '') : '0' }}</td>
                     </tr>
                 @empty
                     <tr>
