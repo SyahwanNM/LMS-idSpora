@@ -21,6 +21,7 @@ class ManualPayment extends Model
         'whatsapp_number',
         'referral_code',
         'status',
+        'rejection_reason',
         'metadata',
     ];
 

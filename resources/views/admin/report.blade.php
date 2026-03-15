@@ -191,7 +191,7 @@
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
                                 <h6>Total View</h6>
-                                <h3 id="totalViews">0</h3>
+                                <h3 id="totalViews">{{ (int)(data_get($growthReport, 'summary.total_views', 0)) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -200,7 +200,7 @@
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
                                 <h6>Waktu Tonton Rata-rata</h6>
-                                <h3 id="avgWatch">0 Menit</h3>
+                                <h3 id="avgWatch">{{ (int)(data_get($growthReport, 'summary.avg_watch_minutes', 0)) }} Menit</h3>
                             </div>
                         </div>
                     </div>
@@ -209,7 +209,7 @@
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
                                 <h6>Peserta</h6>
-                                <h3 id="totalStudents">0</h3>
+                                <h3 id="totalStudents">{{ (int)(data_get($growthReport, 'summary.participants', 0)) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -243,13 +243,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" type="text" placeholder="Cari Course">
+                            <input class="cari_course" id="growthSearch" type="text" placeholder="Cari Course" value="{{ $growthQuery ?? '' }}">
                         </div>
                     </div>
                     <div class="box_filter">
                         <p class="mulai_course">Bulan</p>
-                        <input class="tanggal_course" type="month">
-                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                        <input class="tanggal_course" id="growthMonth" type="month" value="{{ $growthMonth ?? now()->format('Y-m') }}">
+                        <button class="btn_terapkan" id="applyGrowthFilter" type="button">Terapkan</button>
                     </div>
 
                 </div>
@@ -274,9 +274,9 @@
                             <td>{{ $row['course_level'] ?? '-' }}</td>
                             <td>{{ $row['total_views_compact'] ?? '0' }}</td>
                             <td>{{ $row['avg_watch_time_label'] ?? '0 min' }}</td>
-                            <td></td>
-
-                            <td>{{ (int)($row['comments_count'] ?? 0) }}</td>
+                            <td>{{ (int)($row['participants_count'] ?? 0) }}</td>
+                            @php($rowRating = (float)($row['rating_avg'] ?? 0))
+                            <td>{{ $rowRating > 0 ? number_format($rowRating, 1, '.', '') : '0' }}</td>
                         </tr>
                         @empty
                         <tr>
@@ -484,6 +484,11 @@
                         const t = (activeBtn ? (activeBtn.getAttribute('data-target') || '') : '').toLowerCase();
                         const p = (t === 'harian') ? 'daily' : (t === 'mingguan' ? 'weekly' : 'monthly');
                         url.searchParams.set('period', p);
+
+                        const month = (document.getElementById('growthMonth')?.value || '').trim();
+                        const q = (document.getElementById('growthSearch')?.value || '').trim();
+                        if (month) url.searchParams.set('month', month);
+                        if (q) url.searchParams.set('q', q);
                     }
 
                     window.location.href = url.toString();
@@ -512,6 +517,13 @@
 
             const ctx = document.getElementById('growthChart');
 
+            const growthChartPayload = @json($growthChart ?? null);
+            const dbSeries = (growthChartPayload && growthChartPayload.series) ? growthChartPayload.series : {};
+            const seriesViews = Array.isArray(dbSeries.views) ? dbSeries.views : [];
+            const seriesParticipants = Array.isArray(dbSeries.participants) ? dbSeries.participants : [];
+            const seriesWatch = Array.isArray(dbSeries.watch_minutes) ? dbSeries.watch_minutes : [];
+            const seriesRating = Array.isArray(dbSeries.rating) ? dbSeries.rating : [];
+
             const growthChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -521,28 +533,28 @@
                     ],
                     datasets: [{
                             label: 'Total View',
-                            data: [120, 200, 250, 300, 450, 600, 700, 850, 900, 1100, 1300, 1500],
+                            data: (seriesViews.length === 12 ? seriesViews : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                             borderColor: '#4e73df',
                             backgroundColor: 'rgba(78,115,223,0.1)',
                             tension: 0.4
                         },
                         {
                             label: 'Peserta',
-                            data: [5, 10, 20, 35, 50, 65, 80, 100, 120, 150, 180, 210],
+                            data: (seriesParticipants.length === 12 ? seriesParticipants : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                             borderColor: '#1cc88a',
                             backgroundColor: 'rgba(28,200,138,0.1)',
                             tension: 0.4
                         },
                         {
                             label: 'Waktu Tonton (Menit)',
-                            data: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+                            data: (seriesWatch.length === 12 ? seriesWatch : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                             borderColor: '#f6c23e',
                             backgroundColor: 'rgba(246,194,62,0.1)',
                             tension: 0.4
                         },
                         {
                             label: 'Rating Course',
-                            data: [3.5, 3.7, 3.8, 4, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8],
+                            data: (seriesRating.length === 12 ? seriesRating : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                             borderColor: '#e74a3b',
                             backgroundColor: 'rgba(231,74,59,0.1)',
                             tension: 0.4
@@ -563,6 +575,9 @@
                     }
                 }
             });
+
+            // Expose for the filter script (keeps style/config identical; only data changes).
+            window.__growthChart = growthChart;
 
         });
     </script>
@@ -774,11 +789,15 @@
 
             const tbody = document.getElementById('growthTableBody');
             const completedUsersEl = document.getElementById('growthCompletedUsers');
+            const totalViewsEl = document.getElementById('totalViews');
+            const avgWatchEl = document.getElementById('avgWatch');
+            const totalStudentsEl = document.getElementById('totalStudents');
+            const monthInput = document.getElementById('growthMonth');
+            const searchInput = document.getElementById('growthSearch');
+            const applyBtn = document.getElementById('applyGrowthFilter');
             const periodButtons = document.querySelectorAll('#pertumbuhan .btn_laporan[data-target]');
 
-            if (!tbody || periodButtons.length === 0) {
-                return;
-            }
+            if (!tbody) return;
 
             const escapeHtml = (s) => String(s ?? '')
                 .replace(/&/g, '&amp;')
@@ -805,8 +824,8 @@
                     const level = escapeHtml(r.course_level ?? '-');
                     const views = escapeHtml(r.total_views_compact ?? String(r.total_views ?? 0));
                     const avg = escapeHtml(r.avg_watch_time_label ?? '0 min');
-                    const completion = escapeHtml(String(r.completion_rate ?? 0)) + '%';
-                    const comments = escapeHtml(String(r.comments_count ?? 0));
+                    const participants = escapeHtml(String(r.participants_count ?? 0));
+                    const rating = escapeHtml(String(typeof r.rating_avg !== 'undefined' ? r.rating_avg : 0));
 
                     return (
                         '<tr>' +
@@ -814,16 +833,48 @@
                         '<td>' + level + '</td>' +
                         '<td>' + views + '</td>' +
                         '<td>' + avg + '</td>' +
-                        '<td><button class="persentase" type="button">' + completion + '</button></td>' +
-                        '<td>' + comments + '</td>' +
+                        '<td>' + participants + '</td>' +
+                        '<td>' + rating + '</td>' +
                         '</tr>'
                     );
                 }).join('');
             };
 
+            const updateSummary = (summary) => {
+                if (!summary) return;
+                if (totalViewsEl) totalViewsEl.textContent = String(summary.total_views || 0);
+                if (avgWatchEl) avgWatchEl.textContent = String(summary.avg_watch_minutes || 0) + ' Menit';
+                if (totalStudentsEl) totalStudentsEl.textContent = String(summary.participants || 0);
+                if (completedUsersEl && typeof summary.completed_users !== 'undefined') {
+                    completedUsersEl.textContent = String(summary.completed_users || 0);
+                }
+            };
+
+            const updateChart = (chartPayload) => {
+                const ch = window.__growthChart;
+                if (!ch || !chartPayload || !chartPayload.series) return;
+
+                const s = chartPayload.series || {};
+                const views = Array.isArray(s.views) ? s.views : [];
+                const participants = Array.isArray(s.participants) ? s.participants : [];
+                const watch = Array.isArray(s.watch_minutes) ? s.watch_minutes : [];
+                const rating = Array.isArray(s.rating) ? s.rating : [];
+
+                if (views.length === 12) ch.data.datasets[0].data = views;
+                if (participants.length === 12) ch.data.datasets[1].data = participants;
+                if (watch.length === 12) ch.data.datasets[2].data = watch;
+                if (rating.length === 12) ch.data.datasets[3].data = rating;
+                ch.update();
+            };
+
             const fetchAndRender = async (period) => {
                 const url = new URL(apiUrl, window.location.origin);
                 url.searchParams.set('period', period);
+
+                const month = (monthInput?.value || '').trim();
+                const q = (searchInput?.value || '').trim();
+                if (month) url.searchParams.set('month', month);
+                if (q) url.searchParams.set('q', q);
 
                 const res = await fetch(url.toString(), {
                     headers: {
@@ -836,9 +887,13 @@
                 const data = await res.json();
 
                 renderRows(data.rows || []);
-                if (completedUsersEl && data.summary && typeof data.summary.completed_users !== 'undefined') {
-                    completedUsersEl.textContent = String(data.summary.completed_users || 0);
-                }
+                updateSummary(data.summary || {});
+                if (data.chart) updateChart(data.chart);
+            };
+
+            const getCurrentPeriod = () => {
+                const activeBtn = document.querySelector('#pertumbuhan .btn_laporan.active[data-target]');
+                return mapTargetToPeriod(activeBtn ? activeBtn.dataset.target : 'bulanan');
             };
 
             periodButtons.forEach((btn) => {
@@ -855,6 +910,28 @@
                     }
                 });
             });
+
+            if (applyBtn) {
+                applyBtn.addEventListener('click', async () => {
+                    try {
+                        await fetchAndRender(getCurrentPeriod());
+                    } catch (e) {
+                        console.warn(e);
+                    }
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('keydown', async (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    try {
+                        await fetchAndRender(getCurrentPeriod());
+                    } catch (err) {
+                        console.warn(err);
+                    }
+                });
+            }
         })();
     </script>
 
