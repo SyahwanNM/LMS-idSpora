@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'trainer' => \App\Http\Middleware\TrainerMiddleware::class,
             'profile.complete' => \App\Http\Middleware\RequireProfileComplete::class,
         ]);
     })

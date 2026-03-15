@@ -10,6 +10,9 @@ use App\Models\ManualPayment;
 
 use App\Models\QuizAttempt;
 use App\Models\Progress;
+use Carbon\Carbon;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Str;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -17,11 +20,24 @@ use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
 {
+    private function ensureCoursePublishedForPublic(?\Illuminate\Contracts\Auth\Authenticatable $user, Course $course): void
+    {
+        $isAdmin = $user && (($user->role ?? null) === 'admin');
+        if ($isAdmin) {
+            return;
+        }
+
+        if (((string) ($course->status ?? '')) !== 'active') {
+            abort(404);
+        }
+    }
+
     /**
      * Show the payment page for a course.
      */
-    public function payment(Course $course)
+    public function payment(Request $request, Course $course)
     {
+        $this->ensureCoursePublishedForPublic($request->user(), $course);
         // Use the custom payment-course view for payment page
         return view('payment-course', compact('course'));
     }
@@ -32,6 +48,8 @@ class CourseController extends Controller
     public function learn(Request $request, Course $course)
     {
         $user = $request->user();
+
+        $this->ensureCoursePublishedForPublic($user, $course);
 
         $enrollment = Enrollment::query()
             ->where('user_id', $user->id)
@@ -179,9 +197,43 @@ class CourseController extends Controller
      */
     public function publish(Request $request, Course $course)
     {
+        if (((string) $course->status) === 'active') {
+            return redirect()
+                ->route('admin.courses.index')
+                ->with('already_published', true);
+        }
+
+        // Compute material completeness (server-side safety net; UI also warns before publish)
+        $totalModules = (int) $course->modules()->count();
+        $pdfCount = (int) $course->modules()->where('type', 'pdf')->count();
+        $videoCount = (int) $course->modules()->where('type', 'video')->count();
+        $quizCount = (int) $course->modules()->where('type', 'quiz')->count();
+
+        $missing = [];
+        if ($totalModules <= 0) {
+            $missing[] = 'Modul';
+        }
+        if ($pdfCount <= 0) {
+            $missing[] = 'Modul (PDF)';
+        }
+        if ($videoCount <= 0) {
+            $missing[] = 'Video';
+        }
+        if ($quizCount <= 0) {
+            $missing[] = 'Kuis';
+        }
+
         $course->status = 'active';
         $course->save();
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diterbitkan!');
+
+        $redirect = redirect()->route('admin.courses.index')
+            ->with('success', 'Course berhasil diterbitkan!');
+
+        if (!empty($missing)) {
+            $redirect->with('publish_warning', $missing);
+        }
+
+        return $redirect;
     }
 
     /**
@@ -246,19 +298,216 @@ class CourseController extends Controller
         return null;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::with([
+        $q = trim((string) $request->get('q', ''));
+        $month = trim((string) $request->get('month', '')); // YYYY-MM
+
+        $coursesQuery = Course::query()->with([
             'category',
             'modules.quizQuestions',
             'manualPayments.user',
             'manualPayments.proofs',
-        ])->paginate(10);
+        ])->withCount('enrollments')->orderByDesc('created_at');
+
+        if ($q !== '') {
+            $coursesQuery->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', '%' . $q . '%')
+                    ->orWhereHas('category', function ($cat) use ($q) {
+                        $cat->where('name', 'like', '%' . $q . '%');
+                    });
+            });
+        }
+
+        if ($month !== '') {
+            try {
+                $dt = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+                $coursesQuery->whereYear('created_at', $dt->year)
+                    ->whereMonth('created_at', $dt->month);
+            } catch (\Throwable $e) {
+                // ignore invalid month
+            }
+        }
+
+        $courses = $coursesQuery->paginate(10)->withQueryString();
         return view('admin.courses.index', compact('courses'));
     }
 
-    public function show(Course $course)
+    public function export(Request $request)
     {
+        $format = (string) $request->get('format', 'pdf');
+        $q = trim((string) $request->get('q', ''));
+        $month = trim((string) $request->get('month', '')); // YYYY-MM
+
+        $coursesQuery = Course::query()
+            ->with(['category', 'modules'])
+            ->orderByDesc('created_at');
+
+        if ($q !== '') {
+            $coursesQuery->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', '%' . $q . '%')
+                    ->orWhereHas('category', function ($cat) use ($q) {
+                        $cat->where('name', 'like', '%' . $q . '%');
+                    });
+            });
+        }
+
+        $periodName = 'Semua Data';
+        if ($month !== '') {
+            try {
+                $dt = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+                $coursesQuery->whereYear('created_at', $dt->year)
+                    ->whereMonth('created_at', $dt->month);
+                $periodName = 'Bulan ' . $dt->translatedFormat('F Y');
+            } catch (\Throwable $e) {
+                // ignore invalid month
+            }
+        }
+
+        $courses = $coursesQuery->get();
+
+        if ($format === 'excel') {
+            return $this->exportCoursesToCsv($courses, $periodName, $q, $month);
+        }
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+
+        $html = view('admin.courses.report_pdf', [
+            'courses' => $courses,
+            'periodName' => $periodName,
+            'q' => $q,
+        ])->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="Daftar_Course_' . now()->format('YmdHis') . '.pdf"');
+    }
+
+    public function participants(Request $request, Course $course)
+    {
+        $course->loadMissing(['modules:id,course_id']);
+        $totalModules = $course->modules ? $course->modules->count() : $course->modules()->count();
+
+        $enrollments = $course->enrollments()
+            ->with(['user:id,name,email', 'progress:enrollment_id,course_module_id,completed'])
+            ->orderByDesc('enrolled_at')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = $enrollments->map(function ($enr) use ($totalModules) {
+            $completed = 0;
+            if ($enr->relationLoaded('progress') && $enr->progress) {
+                $completed = $enr->progress
+                    ->where('completed', true)
+                    ->unique('course_module_id')
+                    ->count();
+            }
+            $percent = ($totalModules > 0)
+                ? (int) round(($completed / $totalModules) * 100)
+                : 0;
+
+            $enrolledAt = $enr->enrolled_at ?? $enr->created_at;
+
+            return [
+                'name' => $enr->user->name ?? 'User',
+                'email' => $enr->user->email ?? '-',
+                'progress_percent' => $percent,
+                'status' => (string) ($enr->status ?? ''),
+                'status_label' => ((string) ($enr->status ?? '')) === 'active' ? 'Aktif' : ucfirst((string) ($enr->status ?? '-')),
+                'enrolled_at' => $enrolledAt ? $enrolledAt->format('d-m-Y') : '-',
+            ];
+        })->values();
+
+        return response()->json([
+            'course_id' => $course->id,
+            'total_modules' => $totalModules,
+            'participants' => $rows,
+        ]);
+    }
+
+    private function exportCoursesToCsv($courses, string $periodName, string $q = '', string $month = '')
+    {
+        $filename = 'Daftar_Course_' . now()->format('YmdHis') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($courses, $periodName, $q, $month) {
+            $file = fopen('php://output', 'w');
+            fputs($file, (chr(0xEF) . chr(0xBB) . chr(0xBF))); // BOM for Excel UTF-8
+
+            fputcsv($file, ['IDSPORA - DAFTAR COURSE']);
+            fputcsv($file, ['Periode:', $periodName]);
+            if ($q !== '') {
+                fputcsv($file, ['Filter Pencarian:', $q]);
+            }
+            if ($month !== '') {
+                fputcsv($file, ['Filter Bulan (YYYY-MM):', $month]);
+            }
+            fputcsv($file, []);
+
+            fputcsv($file, [
+                'ID',
+                'Nama Course',
+                'Kategori',
+                'Level',
+                'Harga',
+                'Status',
+                'Status Kelengkapan',
+                'Total Modul',
+                'PDF',
+                'Video',
+                'Kuis',
+                'Dibuat',
+            ]);
+
+            foreach ($courses as $course) {
+                $modules = $course->modules ?? collect();
+                $pdfCount = $modules->where('type', 'pdf')->count();
+                $videoCount = $modules->where('type', 'video')->count();
+                $quizCount = $modules->where('type', 'quiz')->count();
+                $totalModules = $modules->count();
+
+                $hasModules = $totalModules > 0;
+                $isPublished = ((string) $course->status) === 'active';
+                $kelengkapan = $isPublished ? 'Complete' : ($hasModules ? 'In Progress' : 'Missing Material');
+
+                fputcsv($file, [
+                    $course->id,
+                    $course->name,
+                    optional($course->category)->name,
+                    ucfirst((string) $course->level),
+                    (int) $course->price,
+                    (string) $course->status,
+                    $kelengkapan,
+                    $totalModules,
+                    $pdfCount,
+                    $videoCount,
+                    $quizCount,
+                    $course->created_at ? $course->created_at->format('Y-m-d H:i') : '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function show(Request $request, Course $course)
+    {
+        $this->ensureCoursePublishedForPublic($request->user(), $course);
         $course->load('category', 'modules');
         // Students enrolled (use active enrollments for the count)
         $course->loadCount([
@@ -304,9 +553,41 @@ class CourseController extends Controller
             'discount_start' => 'nullable|date',
             'discount_end' => 'nullable|date|after_or_equal:discount_start',
             'free_access_mode' => 'nullable|in:all,limit_2',
+            'expenses' => 'nullable|array',
+            'expenses.*.item' => 'nullable|string|max:255',
+            'expenses.*.quantity' => 'nullable|integer|min:0',
+            'expenses.*.unit_price' => 'nullable|integer|min:0',
+            'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
+
+        $expensesInput = $request->input('expenses');
+        $expensesJson = null;
+        if (is_array($expensesInput)) {
+            $normalized = [];
+            foreach ($expensesInput as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $item = trim((string)($row['item'] ?? ''));
+                $qty = (int)($row['quantity'] ?? 0);
+                $unit = (int)($row['unit_price'] ?? 0);
+                if ($item === '' && $qty === 0 && $unit === 0) {
+                    continue;
+                }
+                $qty = max(0, $qty);
+                $unit = max(0, $unit);
+                $total = max(0, $qty * $unit);
+                $normalized[] = [
+                    'item' => $item,
+                    'quantity' => $qty,
+                    'unit_price' => $unit,
+                    'total' => $total,
+                ];
+            }
+            $expensesJson = !empty($normalized) ? $normalized : null;
+        }
 
         // Handle media upload (image or video)
         $mediaFile = $request->file('image');
@@ -335,6 +616,7 @@ class CourseController extends Controller
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
             'discount_end' => $request->discount_end,
+            'expenses_json' => $expensesJson,
         ]);
 
         // Create modules from payload
@@ -453,10 +735,25 @@ class CourseController extends Controller
             'price' => 'required|integer|min:0',
             'duration' => 'required|integer|min:0',
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
+            // Legacy single-upload (kept for backward compatibility)
+            'admin_video_file' => 'nullable|file|mimes:mp4,webm,ogg|max:204800',
+            'admin_video_title' => 'nullable|string|max:255',
+            'admin_video_description' => 'nullable|string',
+            // New multi-upload list
+            'admin_videos' => 'nullable|array',
+            'admin_videos.*.title' => 'nullable|string|max:255',
+            'admin_videos.*.description' => 'nullable|string',
+            'admin_videos.*.order_no' => 'nullable|integer|min:1',
+            'admin_videos.*.file' => 'nullable|file|mimes:mp4,webm,ogg|max:204800',
             'modules_delete_ids' => 'nullable|string',
             'modules_payload_new' => 'nullable|string',
             'modules_order_updates' => 'nullable|string',
             'free_access_mode' => 'nullable|in:all,limit_2',
+            'expenses' => 'nullable|array',
+            'expenses.*.item' => 'nullable|string|max:255',
+            'expenses.*.quantity' => 'nullable|integer|min:0',
+            'expenses.*.unit_price' => 'nullable|integer|min:0',
+            'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
@@ -474,6 +771,36 @@ class CourseController extends Controller
             'discount_start' => $request->discount_start,
             'discount_end' => $request->discount_end,
         ];
+
+        if ($request->has('expenses')) {
+            $expensesInput = $request->input('expenses');
+            $expensesJson = null;
+            if (is_array($expensesInput)) {
+                $normalized = [];
+                foreach ($expensesInput as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $item = trim((string)($row['item'] ?? ''));
+                    $qty = (int)($row['quantity'] ?? 0);
+                    $unit = (int)($row['unit_price'] ?? 0);
+                    if ($item === '' && $qty === 0 && $unit === 0) {
+                        continue;
+                    }
+                    $qty = max(0, $qty);
+                    $unit = max(0, $unit);
+                    $total = max(0, $qty * $unit);
+                    $normalized[] = [
+                        'item' => $item,
+                        'quantity' => $qty,
+                        'unit_price' => $unit,
+                        'total' => $total,
+                    ];
+                }
+                $expensesJson = !empty($normalized) ? $normalized : null;
+            }
+            $data['expenses_json'] = $expensesJson;
+        }
 
         if ($request->hasFile('card_thumbnail')) {
             if ($course->card_thumbnail && Storage::disk('public')->exists($course->card_thumbnail)) {
@@ -600,6 +927,109 @@ class CourseController extends Controller
                     }
                 }
             }
+        }
+
+        // Admin: upload multiple videos directly from Edit Course (creates new video modules)
+        $adminVideosInput = $request->input('admin_videos');
+        if (is_array($adminVideosInput) && !empty($adminVideosInput)) {
+            $usedOrders = CourseModule::where('course_id', $course->id)->pluck('order_no')->map(fn($v) => (int) $v)->all();
+            $usedOrdersSet = array_fill_keys($usedOrders, true);
+            $maxOrder = !empty($usedOrders) ? max($usedOrders) : 0;
+
+            foreach ($adminVideosInput as $i => $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $file = $request->file("admin_videos.$i.file");
+                if (!$file) {
+                    continue;
+                }
+
+                $storedPath = $file->store("courses/{$course->id}/modules", 'public');
+                $fileNameMeta = $file->getClientOriginalName() ?: 'admin-video';
+                $mimeMeta = $file->getMimeType();
+                $sizeMeta = (int) $file->getSize();
+
+                $titleInput = trim((string) ($row['title'] ?? ''));
+                $title = $titleInput !== '' ? $titleInput : (pathinfo($fileNameMeta, PATHINFO_FILENAME) ?: 'Admin Video');
+                $desc = isset($row['description']) && trim((string) $row['description']) !== '' ? (string) $row['description'] : null;
+
+                $requestedOrder = (int) ($row['order_no'] ?? 0);
+                $orderNo = 0;
+                if ($requestedOrder >= 1 && empty($usedOrdersSet[$requestedOrder])) {
+                    $orderNo = $requestedOrder;
+                } else {
+                    $orderNo = $maxOrder + 1;
+                }
+                $usedOrdersSet[$orderNo] = true;
+                $maxOrder = max($maxOrder, $orderNo);
+
+                $durationSeconds = 0;
+                try {
+                    $abs = Storage::disk('public')->path($storedPath);
+                    $dur = $this->probeVideoDurationSeconds($abs);
+                    if (is_int($dur) && $dur > 0) {
+                        $durationSeconds = $dur;
+                    }
+                } catch (\Throwable $e) {
+                    // ignore duration probing failures
+                }
+
+                CourseModule::create([
+                    'course_id' => $course->id,
+                    'order_no' => $orderNo,
+                    'title' => $title,
+                    'description' => $desc,
+                    'type' => 'video',
+                    'content_url' => $storedPath,
+                    'file_name' => $fileNameMeta,
+                    'mime_type' => $mimeMeta,
+                    'file_size' => $sizeMeta,
+                    'is_free' => false,
+                    'preview_pages' => 0,
+                    'duration' => $durationSeconds,
+                ]);
+            }
+        }
+
+        // Admin: upload video directly from Edit Course (creates a new video module)
+        if ($request->hasFile('admin_video_file')) {
+            $file = $request->file('admin_video_file');
+            $storedPath = $file->store("courses/{$course->id}/modules", 'public');
+            $fileNameMeta = $file->getClientOriginalName() ?: 'admin-video';
+            $mimeMeta = $file->getMimeType();
+            $sizeMeta = (int) $file->getSize();
+            $titleInput = trim((string) $request->input('admin_video_title', ''));
+            $title = $titleInput !== '' ? $titleInput : (pathinfo($fileNameMeta, PATHINFO_FILENAME) ?: 'Admin Video');
+            $desc = $request->filled('admin_video_description') ? (string) $request->input('admin_video_description') : null;
+
+            $durationSeconds = 0;
+            try {
+                $abs = Storage::disk('public')->path($storedPath);
+                $dur = $this->probeVideoDurationSeconds($abs);
+                if (is_int($dur) && $dur > 0) {
+                    $durationSeconds = $dur;
+                }
+            } catch (\Throwable $e) {
+                // ignore duration probing failures
+            }
+
+            $nextOrder = (int) (CourseModule::where('course_id', $course->id)->max('order_no') ?? 0) + 1;
+            CourseModule::create([
+                'course_id' => $course->id,
+                'order_no' => $nextOrder,
+                'title' => $title,
+                'description' => $desc,
+                'type' => 'video',
+                'content_url' => $storedPath,
+                'file_name' => $fileNameMeta,
+                'mime_type' => $mimeMeta,
+                'file_size' => $sizeMeta,
+                'is_free' => false,
+                'preview_pages' => 0,
+                'duration' => $durationSeconds,
+            ]);
         }
 
         return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diedit!');

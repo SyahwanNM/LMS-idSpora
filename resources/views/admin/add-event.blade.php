@@ -164,16 +164,17 @@
                                         $pct = $event->documents_completion_percent; 
                                         $hasVbg = !empty($event->vbg_path);
                                         $hasCert = !empty($event->certificate_path);
+                                        $hasModule = !empty($event->module_path);
                                         // Absensi dianggap selesai jika ada file atau QR sudah aktif
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
                                         // Tooltip ringkas
-                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
+                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        // Tampilkan count UI sebagai 3 komponen (termasuk Absensi via QR)
-                                        $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        // Tampilkan count UI sebagai 4 komponen (termasuk Absensi via QR)
+                                        $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Kelengkapan Dokumen">{{ $pct }}%</span>
@@ -183,7 +184,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/3 selesai</small>
+                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/4 selesai</small>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
@@ -301,18 +302,19 @@
                                 @php 
                                     $hasVbg = !empty($event->vbg_path);
                                     $hasCert = !empty($event->certificate_path);
+                                    $hasModule = !empty($event->module_path);
                                     // Absensi: selesai jika file atau QR aktif
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     $pct = $event->documents_completion_percent;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
                                     <span class="{{ $pctClass }}" title="Kelengkapan Dokumen">{{ $pct }}%</span>
-                                    <small class="text-muted">{{ $completedDisplay }}/3 selesai</small>
+                                    <small class="text-muted">{{ $completedDisplay }}/4 selesai</small>
                                 </div>
                                 <ul class="list-group list-group-flush mb-3 small">
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -361,6 +363,19 @@
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span>
+                                            <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
+                                            Module (Trainer)
+                                        </span>
+                                        <span>
+                                            @if($hasModule)
+                                                <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                            @else
+                                                <span class="text-muted">Belum ada</span>
+                                            @endif
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>
                                             <i class="bi {{ $hasAbs ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
                                             Absensi
                                         </span>
@@ -390,10 +405,27 @@
                                         </span>
                                     </li>
                                 </ul>
+
+                                @if(!$hasModule)
+                                    <div class="alert alert-warning small mb-3">
+                                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                                            <div>
+                                                <strong>Reminder:</strong> Module belum diupload. Ingatkan trainer untuk mengunggah module/materi sebelum event dimulai.
+                                            </div>
+                                            <form action="{{ route('admin.events.module.remind', $event) }}" method="POST" class="m-0">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-bell me-1"></i>Ingatkan Trainer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <form action="{{ route('admin.events.documents.upload', $event) }}" method="post" enctype="multipart/form-data" id="docForm-{{ $event->id }}">
                                     @csrf
-                                    @php $allComplete = $hasVbg && $hasCert && $hasAbs; @endphp
-                                    @if($allComplete)
+                                    @php $adminDocsComplete = $hasVbg && $hasCert && $hasAbs; @endphp
+                                    @if($adminDocsComplete)
                                         <div class="text-center mb-3">
                                             <button type="button" class="btn btn-outline-primary btn-sm" data-edit-doc-toggle="{{ $event->id }}">
                                                 <i class="bi bi-pencil-square me-1"></i>Edit Upload
@@ -465,13 +497,18 @@
                                         @if(!empty($oldSpeakers))
                                             @foreach($oldSpeakers as $i => $sp)
                                             <div class="input-group speaker-row">
-                                                <input type="text" name="speakers[]" class="form-control" value="{{ $sp }}" placeholder="Nama pembicara" {{ $i === 0 ? 'required' : '' }}>
+                                                <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                    <option value="" disabled>Memuat pembicara...</option>
+                                                    <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                </select>
                                                 <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i === 0 ? 'disabled' : '' }} title="Hapus">&times;</button>
                                             </div>
                                             @endforeach
                                         @else
                                             <div class="input-group speaker-row">
-                                                <input type="text" name="speakers[]" class="form-control" placeholder="Nama pembicara" required>
+                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                    <option value="" selected disabled>Pilih pembicara</option>
+                                                </select>
                                                 <button type="button" class="btn btn-outline-danger remove-speaker" disabled title="Hapus">&times;</button>
                                             </div>
                                         @endif
@@ -735,6 +772,38 @@
         #addEventModal .text-muted { color:#000 !important; }
         /* Sticky side panel so Tips/Status follows scroll in modal */
         #addEventModal .event-side-sticky { position: sticky; top: .5rem; }
+
+        /* Modal footer (Add Event): prevent global full-width .btn-secondary overrides */
+        #addEventModal .modal-footer {
+            border-top: 1px solid rgba(0,0,0,.08);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        #addEventModal .modal-footer .btn {
+            width: auto !important;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: .95rem;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        #addEventModal .modal-footer .btn-secondary {
+            background: #fff !important;
+            color: #000 !important;
+            border: 1px solid rgba(0,0,0,.15) !important;
+        }
+        #addEventModal .modal-footer .btn-secondary:hover,
+        #addEventModal .modal-footer .btn-secondary:active {
+            background: #f8f9fa !important;
+            color: #000 !important;
+            filter: none !important;
+        }
+        #addEventModal .modal-footer #submitHint { margin-right: auto; }
             /* Draggable modal UX */
             .modal-draggable .modal-header { cursor: move; user-select: none; }
         /* Modern danger modal styling */
@@ -1043,43 +1112,108 @@
         // Apply to all per-event document modals
         document.querySelectorAll('.modal-upload-operasional').forEach(m => enableDraggableModal(m));
 
-        // Speakers (dynamic) - first required, others optional
+        // Speakers (dynamic) - sourced from Trainer API; first required, others optional
         const speakersContainer = document.getElementById('speakersContainer');
         const addSpeakerBtn = document.getElementById('addSpeakerRow');
+        const speakerCombined = document.getElementById('speakerCombined');
+        const trainersUrl = @json(route('admin.api.trainers'));
+        let trainersCache = null;
+
+        async function fetchTrainers(){
+            if (trainersCache !== null) return trainersCache;
+            try {
+                const res = await fetch(trainersUrl, { headers: { 'Accept': 'application/json' } });
+                const json = await res.json();
+                const list = (json && Array.isArray(json.data)) ? json.data : [];
+                trainersCache = list.map(t => ({ id: t.id, name: String(t.name || '').trim() })).filter(t => t.name !== '');
+            } catch (e) {
+                trainersCache = [];
+            }
+            return trainersCache;
+        }
+
         function updateSpeakerRowsState(){
             if(!speakersContainer) return;
             const rows = speakersContainer.querySelectorAll('.speaker-row');
             rows.forEach((row, idx) => {
-                const inp = row.querySelector('input[name="speakers[]"]');
+                const sel = row.querySelector('select[name="speakers[]"]');
                 const rm  = row.querySelector('.remove-speaker');
-                if(inp){ inp.required = (idx === 0); }
+                if(sel){ sel.required = (idx === 0); }
                 if(rm){ rm.disabled = (idx === 0); }
             });
         }
+
+        function updateSpeakerCombined(){
+            if(!speakerCombined || !speakersContainer) return;
+            const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]'))
+                .map(s => String(s.value || '').trim())
+                .filter(Boolean);
+            speakerCombined.value = names.join(', ');
+        }
+
+        function populateSpeakerSelect(selectEl, selectedName, trainers){
+            if(!selectEl) return;
+            const selected = String(selectedName || '').trim();
+            const options = [];
+            options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Pilih pembicara</option>');
+            const names = new Set();
+            (trainers || []).forEach(t => {
+                const name = String(t.name || '').trim();
+                if(!name || names.has(name)) return;
+                names.add(name);
+                const isSel = selected && name === selected;
+                options.push('<option value="' + name.replace(/"/g,'&quot;') + '" ' + (isSel ? 'selected' : '') + '>' + name + '</option>');
+            });
+            if(selected && !names.has(selected)){
+                options.push('<option value="' + selected.replace(/"/g,'&quot;') + '" selected>' + selected + ' (tidak ditemukan)</option>');
+            }
+            selectEl.innerHTML = options.join('');
+            if(selected){ selectEl.value = selected; }
+        }
+
+        async function refreshSpeakerSelects(){
+            if(!speakersContainer) return;
+            const trainers = await fetchTrainers();
+            speakersContainer.querySelectorAll('select[name="speakers[]"]').forEach(sel => {
+                const selected = sel.getAttribute('data-selected') || sel.value || '';
+                populateSpeakerSelect(sel, selected, trainers);
+                sel.setAttribute('data-selected', sel.value || '');
+            });
+            updateSpeakerCombined();
+        }
+
         function addSpeakerRow(prefill=''){
             if(!speakersContainer) return;
             const div = document.createElement('div');
             div.className = 'input-group speaker-row';
-            const safeVal = prefill ? prefill.replace(/"/g, '&quot;') : '';
+            const safeVal = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
             div.innerHTML = `
-                <input type="text" name="speakers[]" class="form-control" placeholder="Nama pembicara" value="${safeVal}">
+                <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
+                    <option value="" selected disabled>Pilih pembicara</option>
+                </select>
                 <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>
             `;
             speakersContainer.appendChild(div);
             updateSpeakerRowsState();
+            refreshSpeakerSelects();
         }
+
         if(speakersContainer){
             speakersContainer.addEventListener('click', (e) => {
                 const btn = e.target.closest('.remove-speaker');
                 if(btn){
                     const row = btn.closest('.speaker-row');
-                    if(row){ row.remove(); updateSpeakerRowsState(); }
+                    if(row){ row.remove(); updateSpeakerRowsState(); updateSpeakerCombined(); }
                 }
+            });
+            speakersContainer.addEventListener('change', (e) => {
+                const sel = e.target.closest('select[name="speakers[]"]');
+                if(sel){ sel.setAttribute('data-selected', sel.value || ''); updateSpeakerCombined(); }
             });
         }
         if(addSpeakerBtn){ addSpeakerBtn.addEventListener('click', () => addSpeakerRow()); }
-        // Ensure initial state correct (server-rendered rows)
         updateSpeakerRowsState();
+        refreshSpeakerSelects();
 
         // Benefits (dynamic list -> serialized to hidden 'benefit')
         const benefitsContainer = document.getElementById('benefitsContainer');
@@ -1391,12 +1525,7 @@
                 if (window.editorDeskripsi) document.getElementById('deskripsi').value = window.editorDeskripsi.getData();
                 if (window.editorTerms) document.getElementById('terms').value = window.editorTerms.getData();
                 // Build combined speaker string for backward compatibility
-                const speakerCombined = document.getElementById('speakerCombined');
-                if (speakerCombined && speakersContainer){
-                    const names = Array.from(speakersContainer.querySelectorAll('input[name="speakers[]"]'))
-                        .map(i => (i.value || '').trim()).filter(Boolean);
-                    speakerCombined.value = names.join(', ');
-                }
+                updateSpeakerCombined();
                 // Serialize benefits list to hidden field using ' | ' separator
                 if(benefitHidden && benefitsContainer){
                     const items = Array.from(benefitsContainer.querySelectorAll('input[name="benefits[]"]'))

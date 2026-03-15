@@ -91,7 +91,19 @@
         .event .card-event { border: 1px solid #eee; border-radius: 12px; transition: box-shadow 0.3s; background: #fff; }
         .event .card-event:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
         .event .card-event .card-body { padding: 20px; }
-        .event .card-event .event-title { color: #212529; font-weight: 600; font-size: 1.25rem; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+        .event .card-event .event-title {
+            color: #212529;
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+            margin-left: 0;
+            text-align: left;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
 
         /* Badges */
         .event .card-event .discount-badge {
@@ -159,6 +171,17 @@
         /* Dropdowns */
         .header-card .dropdown-menu { z-index: 1100; }
         .header-card .dropdown-box, .header-card .dropdown { overflow: visible; }
+
+        .header-card .dropdown-menu .dropdown-header {
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding-top: .4rem;
+            padding-bottom: .25rem;
+        }
+        .header-card .dropdown-menu .dropdown-divider { margin: .35rem 0; }
+        .header-card .dropdown-menu .dropdown-item.active { font-weight: 700; }
     </style>
 </head>
 
@@ -298,11 +321,30 @@
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="statusFilterBtn">
                             {{ $statusLabel }}
                         </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-status-filter data-value="all">Semua Status</a></li>
-                            <li><a class="dropdown-item" href="#" data-status-filter data-value="upcoming">Mendatang</a></li>
-                            <li><a class="dropdown-item" href="#" data-status-filter data-value="ongoing">Sedang Berlangsung</a></li>
-                            <li><a class="dropdown-item" href="#" data-status-filter data-value="finished">Telah Selesai</a></li>
+                        <ul class="dropdown-menu" aria-labelledby="statusFilterBtn">
+                            <li><h6 class="dropdown-header">Tampilkan</h6></li>
+                            <li>
+                                <a class="dropdown-item {{ empty($reqStatus) ? 'active' : '' }}" href="#" data-status-filter data-value="all" aria-current="{{ empty($reqStatus) ? 'true' : 'false' }}">
+                                    Semua Status
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Status Event</h6></li>
+                            <li>
+                                <a class="dropdown-item {{ $reqStatus === 'upcoming' ? 'active' : '' }}" href="#" data-status-filter data-value="upcoming" aria-current="{{ $reqStatus === 'upcoming' ? 'true' : 'false' }}">
+                                    Mendatang
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {{ $reqStatus === 'ongoing' ? 'active' : '' }}" href="#" data-status-filter data-value="ongoing" aria-current="{{ $reqStatus === 'ongoing' ? 'true' : 'false' }}">
+                                    Sedang Berlangsung
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {{ $reqStatus === 'finished' ? 'active' : '' }}" href="#" data-status-filter data-value="finished" aria-current="{{ $reqStatus === 'finished' ? 'true' : 'false' }}">
+                                    Telah Selesai
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -419,9 +461,11 @@
                                 @php 
                                     $registered = !empty($event->is_registered);
                                     $isFinished = ($status === 'finished');
+                                    $btnLabel = $isFinished ? 'Telah Selesai' : ($registered ? 'Anda Terdaftar' : 'Daftar');
+                                    $btnClass = $isFinished ? 'btn-secondary' : ($registered ? 'btn-success' : 'btn-primary');
                                 @endphp
-                                <button class="btn-register register-btn btn {{ $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary') }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
-                                    {{ $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar') }}
+                                <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
+                                    {{ $btnLabel }}
                                 </button>
                             </div>
                         </div>
