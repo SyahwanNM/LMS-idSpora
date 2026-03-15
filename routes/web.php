@@ -19,6 +19,8 @@ use App\Http\Controllers\UserModuleController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\PublicPagesController;
@@ -40,6 +42,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
     Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');
     Route::get('/admin/report/growth', [CourseReportController::class, 'growth'])->name('admin.report.growth');
+    Route::get('/admin/report/export/pdf', [CourseReportController::class, 'exportPdf'])->name('admin.report.export.pdf');
 });
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
@@ -209,12 +212,34 @@ Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
     $user = auth()->user();
-    $already = $user && $user->eventRegistrations()->where('event_id', $event->id)->exists();
-    if ($already) {
+    $registration = $user ? $user->eventRegistrations()->where('event_id', $event->id)->latest('id')->first() : null;
+    if ($registration && $registration->status === 'active') {
         return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
     }
     return view('payment', compact('event'));
 })->name('payment');
+
+// Download event module (materi) — only available after event completion for active registrants
+Route::middleware('auth')->get('/events/{event}/modules/download', function (Event $event) {
+    $user = auth()->user();
+    $registration = $user ? $user->eventRegistrations()->where('event_id', $event->id)->latest('id')->first() : null;
+    if (!$registration || $registration->status !== 'active') {
+        abort(403);
+    }
+
+    if (!$event->isFinished()) {
+        return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi tersedia setelah acara selesai.');
+    }
+
+    $path = (string) ($event->module_path ?? '');
+    if ($path === '' || !\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+        return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi belum tersedia.');
+    }
+
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $downloadName = 'materi-event-' . $event->id . ($ext ? ('.' . $ext) : '');
+    return \Illuminate\Support\Facades\Storage::disk('public')->download($path, $downloadName);
+})->name('events.modules.download');
 
 
 
@@ -385,6 +410,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
         // Recent activities AJAX (returns latest login activities)
         Route::get('/admin/recent-activities', [AdminController::class, 'recentActivities'])->name('admin.recent-activities');
+        // Admin JSON endpoints
+        Route::get('/admin/api/trainers', [TrainerApiController::class, 'index'])->name('admin.api.trainers');
         // Note: Removed temporary '/admin/dashboard/create' shortcut; use admin.events.create or admin.events.index directly
         Route::get('/admin/active-users-count', [AdminController::class, 'activeUsersCount'])->name('admin.active-users-count');
         Route::get('/admin/export', [AdminController::class, 'exportData'])->name('admin.export');
@@ -416,6 +443,8 @@ Route::middleware(['auth'])->group(function () {
         // Course management routes
         // Publish course (set status active)
         Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
+        Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
+        Route::get('/admin/courses/{course}/participants', [CourseController::class, 'participants'])->name('admin.courses.participants');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');
@@ -437,6 +466,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Event document uploads (admin)
         Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+        // Admin: remind trainer to upload module
+        Route::post('/admin/events/{event}/module/remind', [EventController::class, 'remindModuleUpload'])->name('admin.events.module.remind');
         // Event QR actions (admin)
         Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
         Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
@@ -451,6 +482,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/courses/{course}/modules/{module}/quiz/{question}/edit', [QuizController::class, 'edit'])->name('admin.courses.modules.quiz.edit');
         Route::put('/admin/courses/{course}/modules/{module}/quiz/{question}', [QuizController::class, 'update'])->name('admin.courses.modules.quiz.update');
         Route::delete('/admin/courses/{course}/modules/{module}/quiz/{question}', [QuizController::class, 'destroy'])->name('admin.courses.modules.quiz.destroy');
+    });
+
+    // Trainer routes
+    Route::middleware(['trainer'])->group(function () {
+        Route::get('/trainer/event-modules', [TrainerEventModuleController::class, 'index'])->name('trainer.events.modules');
+        Route::get('/trainer/api/event-modules', [TrainerEventModuleController::class, 'apiIndex'])->name('trainer.api.event-modules');
+        Route::post('/trainer/events/{event}/module', [TrainerEventModuleController::class, 'upload'])->name('trainer.events.module.upload');
     });
 
     // User module access routes

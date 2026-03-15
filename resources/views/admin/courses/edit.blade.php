@@ -36,14 +36,6 @@
                 <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
                     <ul class="list-disc pl-5 space-y-1">
                         @foreach ($errors->all() as $error)
-                        <div class="shrink-0 flex items-center gap-2">
-                            <span class="text-xs text-gray-500">Order</span>
-                            <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
-                        </div>
-                        <div class="shrink-0 flex items-center gap-2">
-                            <span class="text-xs text-gray-500">Order</span>
-                            <input type="number" min="1" value="{{ (int) $m->order_no }}" data-id="{{ $m->id }}" data-original="{{ (int) $m->order_no }}" class="input-module-order w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500">
-                        </div>
                         <li>{{ $error }}</li>
                         @endforeach
                     </ul>
@@ -198,7 +190,7 @@
                                 </button>
                             </div>
                             @empty
-                            <div class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">No PDF modules.</div>
+                            <div class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">Trainer belum upload modul.</div>
                             @endforelse
                             <!-- New PDFs -->
                             <div id="new-pdf-list" class="space-y-3"></div>
@@ -210,37 +202,59 @@
                         <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
                             Video Before Edit
                         </h3>
-                        <div class="box_view_video">
-                            <div class="logo_video">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
-                                </svg>
-                            </div>
-                            <div class="judul_video">
-                                <h5>UI/UX</h5>
-                                <p>Video Document • Timeline PA D3-RPLA_2.pdf</p>
-                            </div>
-                            <div>
-                                <button type="button" data-id="{{ $m->id }}" class="box_button_video btn-remove-existing">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
+                        <div class="space-y-3">
+                            @forelse($course->modules->where('type', 'video') as $m)
+                            <div class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
+                                <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-purple-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
                                     </svg>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
-                                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                                    </svg>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
-                                        <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
-                                    </svg>
-                                </button>
+                                </div>
+                                <div class="grow">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h5 class="text-sm font-bold text-gray-900 m-0">{{ $m->title }}</h5>
+                                        <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 m-0">Video • {{ $m->file_name ?? $m->content_url }}</p>
+                                </div>
                             </div>
+                            @empty
+                            <div class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">Trainer belum upload video.</div>
+                            @endforelse
                         </div>
                     </div>
                 </div>
-                <div class="box_upload_video_after">
-                    <h3>Video After Edit</h3>
-                    <input type="file">
+
+                <div class="mt-10">
+                    <div class="flex items-center justify-between gap-4 mb-3">
+                        <h3 class="font-bold text-gray-900">Video After Edit (Admin)</h3>
+                        <button type="button" id="btnAddAdminVideoRow" class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
+                            Tambah Video
+                        </button>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Judul</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Deskripsi</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600" style="width:110px">Order</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">File Video</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600" style="width:90px">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminVideoRows" class="bg-white divide-y divide-gray-100">
+                                    <tr id="adminVideoEmptyState">
+                                        <td colspan="5" class="px-4 py-4 text-sm text-gray-400 italic">Belum ada video yang ditambahkan.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <p class="mt-2 text-xs text-gray-500">Video yang diupload di sini akan disimpan sebagai beberapa modul video saat klik Save.</p>
                 </div>
 
 
@@ -340,11 +354,7 @@
         const listNewQuiz = document.getElementById('new-quiz-list');
 
         // Count existing modules to determine next order
-        const existingCount = {
-            {
-                $course - > modules - > count()
-            }
-        };
+        const existingCount = {{ (int) ($course->modules?->count() ?? 0) }};
 
         // Inputs in Generic Modal
         const btnQueue = document.getElementById('btn-queue-module');
@@ -690,6 +700,58 @@
             if (m) m.hide();
         });
 
+    })();
+</script>
+
+<script>
+    // Admin Video After Edit - multi upload list
+    (function() {
+        const addBtn = document.getElementById('btnAddAdminVideoRow');
+        const tbody = document.getElementById('adminVideoRows');
+        const empty = document.getElementById('adminVideoEmptyState');
+        if (!addBtn || !tbody) return;
+
+        let idx = 0;
+
+        function showEmptyIfNeeded() {
+            const hasRows = tbody.querySelectorAll('tr[data-admin-video-row]').length > 0;
+            if (empty) empty.style.display = hasRows ? 'none' : '';
+        }
+
+        function addRow() {
+            const rowIndex = idx++;
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-admin-video-row', '1');
+            tr.innerHTML = `
+                <td class="px-4 py-3 align-top">
+                    <input type="text" name="admin_videos[${rowIndex}][title]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500" placeholder="Judul (opsional)">
+                </td>
+                <td class="px-4 py-3 align-top">
+                    <input type="text" name="admin_videos[${rowIndex}][description]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500" placeholder="Deskripsi (opsional)">
+                </td>
+                <td class="px-4 py-3 align-top">
+                    <input type="number" min="1" name="admin_videos[${rowIndex}][order_no]" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500" placeholder="#">
+                </td>
+                <td class="px-4 py-3 align-top">
+                    <input type="file" name="admin_videos[${rowIndex}][file]" accept="video/mp4,video/webm,video/ogg" class="block w-full text-sm text-gray-500 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer">
+                </td>
+                <td class="px-4 py-3 text-center align-top">
+                    <button type="button" class="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50" data-action="remove-admin-video">Hapus</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            showEmptyIfNeeded();
+        }
+
+        tbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action="remove-admin-video"]');
+            if (!btn) return;
+            btn.closest('tr')?.remove();
+            showEmptyIfNeeded();
+        });
+
+        addBtn.addEventListener('click', addRow);
+        showEmptyIfNeeded();
     })();
 </script>
 @endsection

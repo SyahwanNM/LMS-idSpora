@@ -21,6 +21,13 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
+        'expenses_json',
+    ];
+
+    protected $casts = [
+        'expenses_json' => 'array',
+        'discount_start' => 'date',
+        'discount_end' => 'date',
     ];
 
     public function category()

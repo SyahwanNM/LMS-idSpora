@@ -62,6 +62,7 @@ class DashboardController extends Controller
             ->with(['category', 'modules'])
             ->withCount('enrollments')
             ->withAvg('reviews', 'rating')
+            ->where('status', 'active')
             ->orderByDesc('created_at')
             ->limit(6)
             ->get();

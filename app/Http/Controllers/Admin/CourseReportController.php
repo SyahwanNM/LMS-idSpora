@@ -8,9 +8,12 @@ use App\Models\Enrollment;
 use App\Models\LearningTimeDaily;
 use App\Models\Review;
 use Carbon\Carbon;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class CourseReportController extends Controller
 {
@@ -80,6 +83,68 @@ class CourseReportController extends Controller
         $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period);
 
         return response()->json($growthReport);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $tab = strtolower(trim((string) $request->query('tab', 'pendapatan')));
+        if (!in_array($tab, ['pendapatan', 'pertumbuhan'], true)) {
+            $tab = 'pendapatan';
+        }
+
+        $period = $this->normalizePeriod((string) $request->query('period', 'monthly'));
+
+        $title = $tab === 'pertumbuhan' ? 'Pertumbuhan' : 'Pendapatan';
+        $subtitle = '';
+        $rows = [];
+        $from = '';
+        $to = '';
+        $periodLabel = match ($period) {
+            'daily' => 'Harian',
+            'weekly' => 'Mingguan',
+            default => 'Bulanan',
+        };
+
+        if ($tab === 'pertumbuhan') {
+            [$fromDt, $toDt] = $this->defaultDateRange($period);
+            $growth = $this->buildGrowthReport(from: $fromDt, to: $toDt, period: $period);
+            $rows = $growth['rows'] ?? [];
+            $from = (string) ($growth['from'] ?? $fromDt->toDateString());
+            $to = (string) ($growth['to'] ?? $toDt->toDateString());
+            $subtitle = 'Periode: ' . $periodLabel . ' | Rentang: ' . $from . ' s/d ' . $to;
+        } else {
+            [$fromDt, $toDt, $hasCustomRange] = $this->parseDateRange($request, $period);
+            $revenue = $this->buildRevenueReport(from: $fromDt, to: $toDt, period: $period, hasCustomRange: $hasCustomRange);
+            $rows = $revenue['rows'] ?? [];
+            $from = (string) ($revenue['totals']['from'] ?? $fromDt->toDateString());
+            $to = (string) ($revenue['totals']['to'] ?? $toDt->toDateString());
+            $subtitle = 'Periode: ' . $periodLabel . ' | Rentang: ' . $from . ' s/d ' . $to;
+        }
+
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', false);
+        $dompdf = new Dompdf($options);
+
+        $html = view('admin.report_export_pdf', [
+            'tab' => $tab,
+            'title' => 'Laporan Course - ' . $title,
+            'subtitle' => $subtitle,
+            'periodLabel' => $periodLabel,
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows,
+            'generatedAt' => now(),
+        ])->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $filename = 'report-course-' . $tab . '-' . Str::slug($periodLabel) . '-' . now()->format('YmdHis') . '.pdf';
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     private function defaultDateRange(string $period = 'monthly'): array

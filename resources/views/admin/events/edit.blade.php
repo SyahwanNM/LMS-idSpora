@@ -62,13 +62,18 @@
                             @if($speakerList->count())
                                 @foreach($speakerList as $i => $sp)
                                 <div class="input-group speaker-row">
-                                    <input type="text" name="speakers[]" class="form-control" value="{{ $sp }}" placeholder="Nama pembicara" {{ $i===0 ? 'required' : '' }}>
+                                    <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i===0 ? 'required' : '' }}>
+                                        <option value="" disabled>Memuat pembicara...</option>
+                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                    </select>
                                     <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i===0 ? 'disabled' : '' }} title="Hapus">&times;</button>
                                 </div>
                                 @endforeach
                             @else
                                 <div class="input-group speaker-row">
-                                    <input type="text" name="speakers[]" class="form-control" placeholder="Nama pembicara" required>
+                                    <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                        <option value="" selected disabled>Pilih pembicara</option>
+                                    </select>
                                     <button type="button" class="btn btn-outline-danger remove-speaker" disabled title="Hapus">&times;</button>
                                 </div>
                             @endif
@@ -276,12 +281,53 @@ document.addEventListener('DOMContentLoaded', () => {
     mapsInput?.addEventListener('change',tryRenderMap); mapsInput?.addEventListener('blur',tryRenderMap); tryRenderMap();
     btnResolveMaps?.addEventListener('click',async()=>{const url=mapsInput?.value||''; if(!url){alert('Masukkan link terlebih dahulu'); return;} try{ btnResolveMaps.disabled=true; const resp=await fetch(resolveMapsUrl,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrfToken},body:JSON.stringify({url})}); const data=await resp.json(); if(resp.ok && data.lat && data.lng){ showMap(data.lat,data.lng);} else alert(data.message||'Koordinat tidak ditemukan.'); }catch(e){ alert('Gagal mendeteksi koordinat.'); } finally{ btnResolveMaps.disabled=false; }});
 
-    // Speakers dynamic
-    const speakersContainer=document.getElementById('speakersContainer'); const addSpeakerBtn=document.getElementById('addSpeakerRow');
-    function updateSpeakerRowsState(){ speakersContainer?.querySelectorAll('.speaker-row').forEach((row,idx)=>{ const inp=row.querySelector('input[name="speakers[]"]'); const rm=row.querySelector('.remove-speaker'); if(inp) inp.required=(idx===0); if(rm) rm.disabled=(idx===0); }); }
-    function addSpeakerRow(prefill=''){ if(!speakersContainer) return; const div=document.createElement('div'); div.className='input-group speaker-row'; const safe=prefill.replace(/"/g,'&quot;'); div.innerHTML=`<input type="text" name="speakers[]" class="form-control" placeholder="Nama pembicara" value="${safe}"><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>`; speakersContainer.appendChild(div); updateSpeakerRowsState(); }
-    speakersContainer?.addEventListener('click',e=>{ const btn=e.target.closest('.remove-speaker'); if(btn){ const row=btn.closest('.speaker-row'); row.remove(); updateSpeakerRowsState(); } });
-    addSpeakerBtn?.addEventListener('click',()=>addSpeakerRow()); updateSpeakerRowsState();
+    // Speakers (from Trainer API)
+    const speakersContainer=document.getElementById('speakersContainer');
+    const addSpeakerBtn=document.getElementById('addSpeakerRow');
+    const speakerCombined=document.getElementById('speakerCombined');
+    const trainersUrl=@json(route('admin.api.trainers'));
+    let trainersCache=null;
+
+    async function fetchTrainers(){
+        if(trainersCache!==null) return trainersCache;
+        try{ const res=await fetch(trainersUrl,{headers:{'Accept':'application/json'}}); const json=await res.json(); const list=(json && Array.isArray(json.data))?json.data:[]; trainersCache=list.map(t=>({id:t.id,name:String(t.name||'').trim()})).filter(t=>t.name!==''); }
+        catch(e){ trainersCache=[]; }
+        return trainersCache;
+    }
+    function updateSpeakerRowsState(){ speakersContainer?.querySelectorAll('.speaker-row').forEach((row,idx)=>{ const sel=row.querySelector('select[name="speakers[]"]'); const rm=row.querySelector('.remove-speaker'); if(sel) sel.required=(idx===0); if(rm) rm.disabled=(idx===0); }); }
+    function updateSpeakerCombined(){ if(!speakerCombined || !speakersContainer) return; const names=Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s=>String(s.value||'').trim()).filter(Boolean); speakerCombined.value=names.join(', '); }
+    function populateSpeakerSelect(selectEl, selectedName, trainers){
+        if(!selectEl) return;
+        const selected=String(selectedName||'').trim();
+        const options=[];
+        options.push('<option value="" disabled '+(selected?'':'selected')+'>Pilih pembicara</option>');
+        const names=new Set();
+        (trainers||[]).forEach(t=>{ const name=String(t.name||'').trim(); if(!name||names.has(name)) return; names.add(name); const isSel=selected && name===selected; options.push('<option value="'+name.replace(/"/g,'&quot;')+'" '+(isSel?'selected':'')+'>'+name+'</option>'); });
+        if(selected && !names.has(selected)){ options.push('<option value="'+selected.replace(/"/g,'&quot;')+'" selected>'+selected+' (tidak ditemukan)</option>'); }
+        selectEl.innerHTML=options.join('');
+        if(selected){ selectEl.value=selected; }
+    }
+    async function refreshSpeakerSelects(){
+        if(!speakersContainer) return;
+        const trainers=await fetchTrainers();
+        speakersContainer.querySelectorAll('select[name="speakers[]"]').forEach(sel=>{ const selected=sel.getAttribute('data-selected')||sel.value||''; populateSpeakerSelect(sel, selected, trainers); sel.setAttribute('data-selected', sel.value||''); });
+        updateSpeakerCombined();
+    }
+    function addSpeakerRow(prefill=''){
+        if(!speakersContainer) return;
+        const div=document.createElement('div');
+        div.className='input-group speaker-row';
+        const safe=prefill?String(prefill).replace(/"/g,'&quot;'):'';
+        div.innerHTML=`<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih pembicara</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>`;
+        speakersContainer.appendChild(div);
+        updateSpeakerRowsState();
+        refreshSpeakerSelects();
+    }
+    speakersContainer?.addEventListener('click',e=>{ const btn=e.target.closest('.remove-speaker'); if(btn){ const row=btn.closest('.speaker-row'); row.remove(); updateSpeakerRowsState(); updateSpeakerCombined(); } });
+    speakersContainer?.addEventListener('change',e=>{ const sel=e.target.closest('select[name="speakers[]"]'); if(sel){ sel.setAttribute('data-selected', sel.value||''); updateSpeakerCombined(); } });
+    addSpeakerBtn?.addEventListener('click',()=>addSpeakerRow());
+    updateSpeakerRowsState();
+    refreshSpeakerSelects();
 
     // Harga dengan format ribuan + status + kontrol diskon
     const hargaHidden = document.getElementById('harga');
@@ -429,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         requiredFields.forEach(f=>['input','change','blur'].forEach(ev=>f.addEventListener(ev,window.updateSubmitState)));
         window.updateSubmitState();
-        form.addEventListener('submit',ev=>{ if(window.editorDeskripsi) document.getElementById('deskripsi').value=window.editorDeskripsi.getData(); if(window.editorTerms) document.getElementById('terms').value=window.editorTerms.getData(); const speakerCombined=document.getElementById('speakerCombined'); if(speakerCombined && speakersContainer){ const names=Array.from(speakersContainer.querySelectorAll('input[name="speakers[]"]')).map(i=>(i.value||'').trim()).filter(Boolean); speakerCombined.value=names.join(', ');} // sync hidden harga
+        form.addEventListener('submit',ev=>{ if(window.editorDeskripsi) document.getElementById('deskripsi').value=window.editorDeskripsi.getData(); if(window.editorTerms) document.getElementById('terms').value=window.editorTerms.getData(); updateSpeakerCombined(); // sync hidden harga
             if(hargaHidden && hargaDisplay){ hargaHidden.value = unformatNumber(hargaDisplay.value); }
             // serialize benefits to hidden field (pipe-separated)
             if(benefitHidden && benefitsContainer){

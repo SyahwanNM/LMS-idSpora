@@ -205,6 +205,16 @@
                                         </span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span><i class="bi {{ !empty($event->module_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Module (Trainer)</span>
+                                        <span>
+                                            @if(!empty($event->module_path))
+                                                <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                            @else
+                                                <span class="text-muted">Belum ada</span>
+                                            @endif
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Absensi</span>
                                         <span class="d-flex align-items-center gap-2">
                                             @if(!empty($event->attendance_qr_image))
@@ -228,6 +238,22 @@
                                         </span>
                                     </li>
                                 </ul>
+
+                                @if(empty($event->module_path))
+                                    <div class="alert alert-warning small mt-3 mb-0">
+                                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                                            <div>
+                                                <strong>Reminder:</strong> Module belum diupload. Ingatkan trainer untuk mengunggah module/materi.
+                                            </div>
+                                            <form action="{{ route('admin.events.module.remind', $event) }}" method="POST" class="m-0">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-bell me-1"></i>Ingatkan Trainer
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -551,6 +577,8 @@
 
 @section('styles')
 <style>
+.btn-close.btn-close-sm { background-size: .75em .75em; }
+
 .event-description {
     line-height: 1.6;
     color: #333;
@@ -654,7 +682,7 @@
         <div class="modal-content border-0 shadow-lg image-preview-modal">
             <div class="modal-header border-0 pb-0">
                 <h6 class="modal-title small text-muted" id="imagePreviewLabel">Preview Gambar Event</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-2">
                 <div class="image-preview-container">
@@ -890,7 +918,7 @@ document.addEventListener('DOMContentLoaded', function(){
             if(variant === 'reject') {
                 // Open rejection modal
                 if(rejectForm) rejectForm.setAttribute('action', action);
-                if(rejectReasonHtml) rejectReasonHtml.value = ''; // clear previous text
+                if(rejectReasonHtml) rejectReasonHtml.value = ''; // clear previous selection
                 if(rejectModal) rejectModal.show();
             } else {
                 // Open standard confirmation modal
@@ -919,7 +947,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         <small class="text-muted">Tindakan ini tidak dapat dibatalkan</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p class="mb-2">Anda akan menghapus event:</p>
@@ -948,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="registrationActionLabel">Confirm</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p id="registrationActionMessage">Are you sure?</p>
@@ -970,7 +998,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="rejectRegistrationLabel">Tolak Pendaftaran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="rejectRegistrationForm" method="POST">
                     @csrf
@@ -978,8 +1006,14 @@ document.addEventListener('DOMContentLoaded', function(){
                         <p>Apakah Anda yakin ingin menolak pendaftaran ini?</p>
                         <div class="mb-3">
                             <label for="rejectionReason" class="form-label text-danger">Alasan Penolakan <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="rejectionReason" name="reason" rows="3" required placeholder="Contoh: Bukti transfer tidak terbaca"></textarea>
-                            <div class="form-text">Alasan ini akan dikirimkan kepada pendaftar melalui notifikasi.</div>
+                            <select class="form-select" id="rejectionReason" name="reason" required>
+                                <option value="" selected disabled>Pilih alasan penolakan</option>
+                                <option value="Nominal pembayaran kurang">Nominal pembayaran kurang</option>
+                                <option value="Nominal pembayaran lebih">Nominal pembayaran lebih</option>
+                                <option value="Gambar bukti pembayaran blur/buram. Silahkan kirim ulang">Gambar bukti pembayaran blur/buram. Silahkan kirim ulang</option>
+                                <option value="Pembayaran dinyatakan tidak valid">Pembayaran dinyatakan tidak valid</option>
+                            </select>
+                            <div class="form-text">Alasan ini akan dikirimkan kepada pendaftar melalui notifikasi dan email.</div>
                         </div>
                     </div>
                     <div class="modal-footer">

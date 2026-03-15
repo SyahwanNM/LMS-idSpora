@@ -14,7 +14,7 @@
 </head>
 
 
-<style>
+{{-- <style>
   :root {
     --navy: #252346;
     --white: #FFFFFF;
@@ -40,7 +40,6 @@
     width: 100%;
     margin: 0 auto;
     padding: 0 20px;
-    margin-right: 575px;
     margin-top: 0px;
   }
   
@@ -51,7 +50,6 @@
     width: 100%;
     margin: 60px auto 0;
     padding: 0 20px;
-    margin-right: 575px;
   }
 
   .sub-title {
@@ -208,9 +206,9 @@
     border-radius: 10px;
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
     flex: 1.5;
-    margin-left: 50px;
-    max-width: 900px;
-    width: 550px;
+    margin-left: 0;
+    max-width: 100%;
+    width: 100%;
 
   }
 
@@ -253,9 +251,9 @@
   }
 
   .info-box>div p:last-of-type {
-    margin-left: 0;
+    margin-left: auto;
     white-space: nowrap;
-    text-align: left;
+    text-align: right;
   }
 
   .info-box svg {
@@ -263,7 +261,7 @@
   }
 
   .info-box p {
-    margin: 0 0 0 10px;
+    margin: 0;
   }
 
   .time-alert {
@@ -308,7 +306,7 @@
   }
 
   .date-text {
-    margin-left: 118px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -325,7 +323,7 @@
   }
 
   .time-text {
-    margin-left: 140px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -338,7 +336,7 @@
   }
 
   .location-text {
-    margin-left: 185px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -351,7 +349,7 @@
   }
 
   .bahasa-text {
-    margin-left: 197px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -364,7 +362,7 @@
   }
 
   .sertifikat-text {
-    margin-left: 220px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -483,7 +481,7 @@
     margin-top: 20px;
   }
   .box_kiri_vid_course{
-    margin-left: -280px;
+    margin-left: 0;
   }
 
   @media (max-width: 992px) {
@@ -502,6 +500,10 @@
 
     .sidebar .kanan {
       position: static;
+    }
+
+    .kanan {
+      padding: 24px 18px;
     }
   }
 
@@ -610,9 +612,9 @@
     color: #333;
     line-height: 1.5;
   }
-</style>
+</style> --}}
 
-<body>
+<body class="course-detail-page">
   
   <section class="course-hero">
     <nav aria-label="breadcrumb">
@@ -678,6 +680,28 @@
 
   <section class="course-body">
     <div class="box_kiri_vid_course main-col">
+
+      @php
+        $modulesCol = $course->modules ?? collect();
+        $totalModules = $modulesCol->count();
+        $pdfCount = $modulesCol->where('type', 'pdf')->count();
+        $videoCount = $modulesCol->where('type', 'video')->count();
+        $quizCount = $modulesCol->where('type', 'quiz')->count();
+        $missingMaterials = [];
+        if ($totalModules <= 0) { $missingMaterials[] = 'Modul'; }
+        if ($pdfCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+        if ($videoCount <= 0) { $missingMaterials[] = 'Video'; }
+        if ($quizCount <= 0) { $missingMaterials[] = 'Kuis'; }
+      @endphp
+
+      @if(!empty($missingMaterials))
+        <div class="alert alert-warning" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
+          <div style="margin-top:6px;">
+            {{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.
+          </div>
+        </div>
+      @endif
 
       @php
         $previewMedia = $course->media ?? null;

@@ -77,19 +77,18 @@
                         @endif
 
                         <div class="box_select_trainer mb-3">
-                            <label for="course-duration">Trainer <span class="sanity-dot" data-for="course-duration"></span></label>
-                            <select id="course-trainer" name="category_id" class="form-select">
-                                <option selected disabled>Pilih kategori</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
+                            <label for="course-trainer">Trainer</label>
+                            <select id="course-trainer" name="trainer_id" class="form-select">
+                                <option selected disabled>Pilih trainer</option>
                             </select>
-                            <div class="sanity-msg" data-for="course-duration"></div>
                         </div>
+
+                        <input type="hidden" id="course-duration" name="duration" value="0">
 
                         <div class="box_select_harga mb-3">
                             <label class="form-label text-dark" for="course-price">Harga <span class="sanity-dot" data-for="course-price"></span></label>
-                            <input id="course-price" name="price" type="text" class="form-control" placeholder="Masukkan Harga Course">
+                            <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0">
+                            <div class="form-text">Isi 0 untuk course gratis</div>
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
@@ -129,7 +128,8 @@
                         </div>
                         <div class="box_select_diskon mb-3">
                             <label class="form-label text-dark" for="discount-percent">Pengeluaran<span class="sanity-dot" data-for="discount-percent"></span></label>
-                            <table class="table">
+                            <div class="table-responsive">
+                            <table class="table" id="courseExpensesTable">
                                 <thead>
                                     <tr>
                                         <th scope="col">No</th>
@@ -141,36 +141,10 @@
 
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <th scope="row">1</th>
-                                        <td>Mark</td>
-                                        <td>2</td>
-                                        <td>10.000</td>
-                                        <td>20.000</td>
-                                        <td>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
-                                                <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5" />
-                                            </svg>
-                                        </td>
-
-                                    </tr>
-                                    <tr>
-                                        <th scope="row">1</th>
-                                        <td>Mark</td>
-                                        <td>2</td>
-                                        <td>10.000</td>
-                                        <td>20.000</td>
-                                        <td>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
-                                                <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5" />
-                                            </svg>
-                                        </td>
-
-                                    </tr>
-                                </tbody>
+                                <tbody></tbody>
                             </table>
-                            <button class="tombol_tambah_pengeluaran">Tambah Pengeluaran</button>
+                            </div>
+                            <button type="button" class="tombol_tambah_pengeluaran" id="addCourseExpenseRow">Tambah Pengeluaran</button>
                             <div class="sanity-msg" data-for="discount-percent"></div>
                         </div>
 
@@ -229,7 +203,7 @@
             const pdfAddBtn = document.getElementById('pdf-modal-add-btn');
             let quizModalInstance = null;
 
-            if (window.bootstrap && bootstrap.Modal) {
+            if (window.bootstrap && bootstrap.Modal && quizModalEl) {
                 quizModalInstance = new bootstrap.Modal(quizModalEl);
             }
 
@@ -244,8 +218,12 @@
             let videoModalInstance = null;
             let pdfModalInstance = null;
             if (window.bootstrap && bootstrap.Modal) {
-                videoModalInstance = new bootstrap.Modal(videoModalEl);
-                pdfModalInstance = new bootstrap.Modal(pdfModalEl);
+                if (videoModalEl) {
+                    videoModalInstance = new bootstrap.Modal(videoModalEl);
+                }
+                if (pdfModalEl) {
+                    pdfModalInstance = new bootstrap.Modal(pdfModalEl);
+                }
             }
 
             function updatePayload() {
@@ -889,8 +867,8 @@
                 const raw = (fields.price.value || '').trim();
                 const digits = raw.replace(/[^0-9]/g, '');
                 const val = parseInt(digits || '0', 10);
-                const ok = val > 0;
-                setIndicator('course-price', ok, 'Harga harus angka > 0.');
+                    const ok = val >= 0;
+                    setIndicator('course-price', ok, 'Harga harus angka >= 0.');
                 return ok;
             }
 
@@ -920,10 +898,14 @@
             }
 
             function validateDuration() {
+                // Some pages don't have #course-duration (legacy markup uses different fields).
+                // Treat it as optional to avoid runtime errors that block other scripts.
+                if (!fields.duration) return true;
                 const raw = (fields.duration.value || '').trim();
                 const val = parseInt(raw || '0', 10);
-                const ok = val > 0;
-                setIndicator('course-duration', ok, 'Durasi harus lebih dari 0 menit.');
+                // Backend allows duration >= 0; duration is a hidden field on this page.
+                const ok = !isNaN(val) && val >= 0;
+                setIndicator('course-duration', ok, 'Durasi tidak valid.');
                 return ok;
             }
 
@@ -932,14 +914,14 @@
                 return checks.every(Boolean);
             }
 
-            // live validation
-            fields.title.addEventListener('input', validateTitle);
-            fields.status.addEventListener('change', validateStatus);
-            fields.level.addEventListener('change', validateLevel);
-            fields.price.addEventListener('input', validatePrice);
-            fields.description.addEventListener('input', validateDescription);
-            fields.thumbnail.addEventListener('change', validateThumbnail);
-            fields.duration.addEventListener('input', validateDuration);
+            // live validation (guard for optional fields)
+            fields.title?.addEventListener('input', validateTitle);
+            fields.status?.addEventListener('change', validateStatus);
+            fields.level?.addEventListener('change', validateLevel);
+            fields.price?.addEventListener('input', validatePrice);
+            fields.description?.addEventListener('input', validateDescription);
+            fields.thumbnail?.addEventListener('change', validateThumbnail);
+            fields.duration?.addEventListener('input', validateDuration);
 
             // initial state
             validateAll();
@@ -965,6 +947,11 @@
                         const digits = (priceInput.value || '').replace(/[^0-9]/g, '');
                         priceInput.value = digits;
                     }
+
+                        // Ensure expense totals are recalculated before submit
+                        if (typeof window.__recalcAllCourseExpenseRows === 'function') {
+                            window.__recalcAllCourseExpenseRows();
+                        }
                     // ensure level value is valid
                     const levelSel = document.getElementById('course-level');
                     if (levelSel && levelSel.value === 'advance') {
@@ -972,6 +959,113 @@
                     }
                 });
             }
+        })();
+
+        // Pengeluaran (Course) - dynamic editable rows
+        (function() {
+            const tableBody = document.querySelector('#courseExpensesTable tbody');
+            const addBtn = document.getElementById('addCourseExpenseRow');
+            if (!tableBody || !addBtn) return;
+
+            let idx = 0;
+            function clampNonNeg(inp) {
+                if (!inp) return;
+                inp.addEventListener('input', () => {
+                    const v = parseInt(inp.value || '0', 10);
+                    if (isNaN(v) || v < 0) inp.value = 0;
+                });
+            }
+
+            function recalcRow(tr) {
+                const qty = parseInt(tr.querySelector('input[data-expense-qty]')?.value || '0', 10);
+                const unit = parseInt(tr.querySelector('input[data-expense-unit]')?.value || '0', 10);
+                const totalEl = tr.querySelector('input[data-expense-total]');
+                const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit);
+                if (totalEl) totalEl.value = Math.max(0, total);
+            }
+
+            function renumberRows() {
+                tableBody.querySelectorAll('tr').forEach((tr, i) => {
+                    const no = tr.querySelector('[data-expense-no]');
+                    if (no) no.textContent = String(i + 1);
+                });
+            }
+
+            function addRow() {
+                const tr = document.createElement('tr');
+                const rowIndex = idx++;
+                tr.innerHTML = `
+                    <th scope="row" data-expense-no></th>
+                    <td><input type="text" class="form-control form-control-sm" name="expenses[${rowIndex}][item]" placeholder="Nama kebutuhan"></td>
+                    <td style="width:120px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][quantity]" data-expense-qty min="0" step="1" value="0"></td>
+                    <td style="width:180px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][unit_price]" data-expense-unit min="0" step="1" value="0"></td>
+                    <td style="width:180px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][total]" data-expense-total readonly value="0"></td>
+                    <td style="width:80px" class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </td>
+                `;
+
+                const qtyInp = tr.querySelector('input[data-expense-qty]');
+                const unitInp = tr.querySelector('input[data-expense-unit]');
+                clampNonNeg(qtyInp);
+                clampNonNeg(unitInp);
+                qtyInp?.addEventListener('input', () => recalcRow(tr));
+                unitInp?.addEventListener('input', () => recalcRow(tr));
+
+                tableBody.appendChild(tr);
+                recalcRow(tr);
+                renumberRows();
+            }
+
+            tableBody.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action="remove-expense"]');
+                if (!btn) return;
+                btn.closest('tr')?.remove();
+                renumberRows();
+            });
+
+            addBtn.addEventListener('click', addRow);
+
+            // Expose for form submit hook
+            window.__recalcAllCourseExpenseRows = function() {
+                tableBody.querySelectorAll('tr').forEach((tr) => recalcRow(tr));
+            };
+        })();
+
+        // Trainer dropdown - load from admin JSON endpoint
+        (function() {
+            const trainerSelect = document.getElementById('course-trainer');
+            if (!trainerSelect) return;
+
+            const endpoint = '/admin/api/trainers';
+            fetch(endpoint, {
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then((r) => r.ok ? r.json() : Promise.reject(r))
+                .then((json) => {
+                    const trainers = Array.isArray(json?.data) ? json.data : [];
+                    if (trainers.length === 0) {
+                        trainerSelect.innerHTML = '<option selected disabled>Belum ada trainer</option>';
+                        return;
+                    }
+                    trainerSelect.innerHTML = '<option selected disabled>Pilih trainer</option>';
+                    trainers.forEach((t) => {
+                        if (!t || typeof t.id === 'undefined') return;
+                        const opt = document.createElement('option');
+                        opt.value = String(t.id);
+                        opt.textContent = (t.name || ('Trainer #' + t.id));
+                        trainerSelect.appendChild(opt);
+                    });
+                })
+                .catch(() => {
+                    // Keep UI usable even if endpoint not ready
+                    trainerSelect.innerHTML = '<option selected disabled>Gagal memuat trainer</option>';
+                });
         })();
     </script>
 </body>
