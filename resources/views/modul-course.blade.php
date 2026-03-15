@@ -63,9 +63,26 @@
                 if ($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') {
                     $currentQuizPassed = in_array((int) $activeModule->id, $passedQuizModuleIds, true);
                 }
+
+                $totalModules = $modulesList->count();
+                $pdfCount = $modulesList->where('type', 'pdf')->count();
+                $videoCount = $modulesList->where('type', 'video')->count();
+                $quizCount = $modulesList->where('type', 'quiz')->count();
+                $missingMaterials = [];
+                if ($totalModules <= 0) { $missingMaterials[] = 'Modul'; }
+                if ($pdfCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+                if ($videoCount <= 0) { $missingMaterials[] = 'Video'; }
+                if ($quizCount <= 0) { $missingMaterials[] = 'Kuis'; }
             @endphp
 
             {{-- UI tetap seperti sebelumnya, tapi konten dinamis dari backend --}}
+            @if(!empty($missingMaterials))
+                <div class="alert alert-warning" role="alert" style="margin: 0 0 12px 0;">
+                    <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
+                    <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.</div>
+                </div>
+            @endif
+
             <div class="accordion-box"
                 data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
                 data-active-module-id="{{ $activeModule?->id }}"

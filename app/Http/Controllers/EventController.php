@@ -5,24 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\EventPaymentRejectedMail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
 class EventController extends Controller
 {
     public function index()
     {
-        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
-        $events = Event::query()
-            ->where(function($q) use ($threshold){
-                $q->whereNull('event_date')
-                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
-            })
-            ->latest()
-            ->paginate(10);
+        $events = Event::query()->latest()->paginate(10);
         return view('admin.events.index', compact('events'));
     }
 
@@ -509,6 +506,53 @@ class EventController extends Controller
         return back()->with('success', 'Dokumen berhasil diperbarui.');
     }
 
+    // Admin: remind trainer(s) to upload event module
+    public function remindModuleUpload(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+        }
+
+        if (!empty($event->module_path)) {
+            return back()->with('success', 'Module sudah diupload.');
+        }
+
+        $speaker = trim((string) ($event->speaker ?? ''));
+        if ($speaker === '') {
+            return back()->with('error', 'Tidak ada pembicara yang terdaftar pada event ini.');
+        }
+
+        $parts = preg_split('/\s*[,;]+\s*/', $speaker) ?: [];
+        $names = array_values(array_unique(array_filter(array_map('trim', $parts))));
+        if (empty($names)) {
+            return back()->with('error', 'Tidak dapat membaca nama pembicara.');
+        }
+
+        $trainers = User::query()
+            ->where('role', 'trainer')
+            ->whereIn('name', $names)
+            ->get();
+
+        if ($trainers->isEmpty()) {
+            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: '.implode(', ', $names));
+        }
+
+        $sent = 0;
+        foreach ($trainers as $t) {
+            UserNotification::create([
+                'user_id' => $t->id,
+                'type' => 'trainer_module_reminder',
+                'title' => 'Ingat Upload Module Event',
+                'message' => 'Mohon upload module/materi untuk event "'.$event->title.'".',
+                'data' => ['url' => route('trainer.events.modules')],
+                'expires_at' => now()->addDays(14),
+            ]);
+            $sent++;
+        }
+
+        return back()->with('success', 'Reminder terkirim ke '.$sent.' trainer.');
+    }
+
     // Admin: download event QR image
     public function downloadQr(Event $event)
     {
@@ -700,11 +744,27 @@ class EventController extends Controller
             return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
         }
 
-        $request->validate([
-            'reason' => 'required|string|max:500',
+        $adminContactNumber = '+62 898-9260-731';
+        $allowedReasons = [
+            'Nominal pembayaran kurang',
+            'Nominal pembayaran lebih',
+            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang',
+            'Pembayaran dinyatakan tidak valid',
+        ];
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500', Rule::in($allowedReasons)],
         ]);
 
-        $reason = $request->input('reason');
+        $reason = $validated['reason'];
+
+        $userFacingMessage = match ($reason) {
+            'Nominal pembayaran kurang' => 'Nominal pembayaran Anda kurang dari yang seharusnya. Silahkan lakukan pembayaran tambahan (top up) dan kirim ulang bukti pembayaran. Anda dapat melakukan registrasi lagi sekarang.',
+            'Nominal pembayaran lebih' => 'Nominal pembayaran Anda lebih dari yang seharusnya. Admin akan menghubungi Anda untuk meminta nomor rekening agar selisih dapat dikembalikan. Anda dapat melakukan registrasi lagi sekarang.',
+            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang' => 'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang bukti pembayaran yang lebih jelas. Anda dapat melakukan registrasi lagi sekarang.',
+            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor '.$adminContactNumber.'. Anda dapat melakukan registrasi lagi sekarang.',
+            default => 'Pendaftaran Anda ditolak. Anda dapat melakukan registrasi lagi sekarang.',
+        };
 
         $registration->status = 'rejected';
         $registration->rejection_reason = $reason;
@@ -727,11 +787,25 @@ class EventController extends Controller
                 'user_id' => $registration->user_id,
                 'type' => 'event_registration_rejected',
                 'title' => 'Pendaftaran Ditolak',
-                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. Alasan: ' . $reason,
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. ' . $userFacingMessage,
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id, 'reason' => $reason],
                 'expires_at' => now()->addDays(14),
             ]);
         } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        // Send email to user (best-effort)
+        try {
+            $user = $registration->user;
+            if ($user && !empty($user->email)) {
+                Mail::to($user->email)->send(new EventPaymentRejectedMail(
+                    userName: (string) ($user->name ?? 'User'),
+                    eventTitle: (string) ($event->title ?? 'Event'),
+                    reason: (string) $reason,
+                    messageText: (string) $userFacingMessage,
+                    adminContactNumber: (string) $adminContactNumber,
+                ));
+            }
+        } catch (\Throwable $e) { /* ignore mail errors */ }
 
         return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
     }

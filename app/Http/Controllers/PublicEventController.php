@@ -19,9 +19,13 @@ class PublicEventController extends Controller
 				}
 			]);
 
-		// Server-side status filter: upcoming | ongoing | finished | default(not finished)
+		// Server-side status filter: upcoming | ongoing | finished | all (Semua Status)
 		$now = now()->format('Y-m-d H:i:s');
-		$status = $request->get('status');
+		$status = (string) $request->get('status', '');
+		// Treat missing/empty status as 'all' (Semua Status)
+		if ($status === '' || $status === 'all') {
+			$status = 'all';
+		}
 		$startExpr = "TIMESTAMP(event_date, COALESCE(event_time,'00:00:00'))";
 		$endExpr = "TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59')))";
 		if ($status === 'finished') {
@@ -31,8 +35,7 @@ class PublicEventController extends Controller
 		} elseif ($status === 'upcoming') {
 			$query->whereRaw("$startExpr > ?", [$now]);
 		} else {
-			// Default: only show active events (upcoming + ongoing)
-			$query->active();
+			// all: no additional status constraints
 		}
 
 		// Search
@@ -97,9 +100,17 @@ class PublicEventController extends Controller
 			if ($status === 'finished') {
 				// Show recently finished first
 				$query->orderByRaw("$endExpr DESC");
-			} else {
+			} elseif (in_array($status, ['upcoming', 'ongoing'], true)) {
 				// Show soonest events first
 				$query->orderByRaw("$startExpr ASC");
+			} else {
+				// all: show ongoing/upcoming first, finished last
+				$rankExpr = "CASE WHEN $startExpr <= ? AND $endExpr >= ? THEN 0 WHEN $startExpr > ? THEN 1 ELSE 2 END";
+				$query->orderByRaw("$rankExpr ASC", [$now, $now, $now]);
+				// Order active events by start time (soonest first)
+				$query->orderByRaw("CASE WHEN $endExpr >= ? THEN $startExpr ELSE NULL END ASC", [$now]);
+				// Order finished events by end time (most recent first)
+				$query->orderByRaw("CASE WHEN $endExpr < ? THEN $endExpr ELSE NULL END DESC", [$now]);
 			}
 		}
 

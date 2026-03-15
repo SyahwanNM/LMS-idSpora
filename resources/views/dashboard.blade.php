@@ -267,7 +267,7 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center pe-4 py-3">
-                                                    <a href="{{ route('user.modules.index', $course->id) }}"
+                                                    <a href="{{ route('course.learn', $course->id) }}"
                                                         class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
                                                         style="width: 36px; height: 36px; background-color: var(--navy);">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
@@ -355,7 +355,7 @@
                                                 <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
                                                     {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
                                                 </div>
-                                                <a href="{{ route('courses.show', $course->id) }}"
+                                                <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
                                                     class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
                                             </div>
                                         </div>

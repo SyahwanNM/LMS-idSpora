@@ -24,14 +24,14 @@
                 <button type="button" class="btn_report" data-target="pertumbuhan">Pertumbuhan</button>
             </div>
             <div class="box_unduh">
-                <button class="btn_unduh">
+                <button type="button" class="btn_unduh" id="btnCourseExportPdf">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
                         <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
                         <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
                     </svg>
                     <p>Export PDF</p>
                 </button>
-                <button class="btn_unduh">
+                <button type="button" class="btn_unduh" id="btnCourseExportExcel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
                         <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1m-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0" />
                     </svg>
@@ -290,6 +290,223 @@
     </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script>
+        (function() {
+            function sanitizeFilenamePart(str) {
+                return String(str || '')
+                    .replace(/[^a-z0-9-_]+/gi, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/(^-|-$)/g, '')
+                    .toLowerCase();
+            }
+
+            function getActiveTabId() {
+                const active = document.querySelector('.box_report.active');
+                return active ? (active.getAttribute('id') || '') : '';
+            }
+
+            function removeColumnsByHeaderText(table, matcher) {
+                const headRow = table.tHead && table.tHead.rows && table.tHead.rows[0] ? table.tHead.rows[0] : null;
+                if (!headRow) return;
+
+                const indices = [];
+                Array.from(headRow.cells).forEach((th, idx) => {
+                    const txt = (th.textContent || '').trim();
+                    if (matcher.test(txt)) indices.push(idx);
+                });
+                if (indices.length === 0) return;
+
+                indices.sort((a, b) => b - a);
+                const removeCellsAt = (row) => {
+                    indices.forEach(i => {
+                        if (row.cells && row.cells[i]) row.deleteCell(i);
+                    });
+                };
+                removeCellsAt(headRow);
+                Array.from(table.tBodies || []).forEach(tb => {
+                    Array.from(tb.rows || []).forEach(tr => removeCellsAt(tr));
+                });
+            }
+
+            function cleanupInteractiveElements(root) {
+                root.querySelectorAll('svg').forEach(svg => svg.remove());
+                root.querySelectorAll('button').forEach(btn => {
+                    const span = document.createElement('span');
+                    span.textContent = (btn.textContent || '').trim();
+                    btn.replaceWith(span);
+                });
+                root.querySelectorAll('a').forEach(a => {
+                    const span = document.createElement('span');
+                    span.textContent = (a.textContent || '').trim();
+                    a.replaceWith(span);
+                });
+            }
+
+            function cloneCleanTable(sourceTable) {
+                const cloned = sourceTable.cloneNode(true);
+                cloned.removeAttribute('id');
+                cleanupInteractiveElements(cloned);
+                removeColumnsByHeaderText(cloned, /^aksi$/i);
+
+                cloned.style.borderCollapse = 'collapse';
+                cloned.style.width = '100%';
+                cloned.querySelectorAll('th, td').forEach(cell => {
+                    cell.style.border = '1px solid #e5e7eb';
+                    cell.style.padding = '6px 8px';
+                    cell.style.verticalAlign = 'top';
+                });
+                cloned.querySelectorAll('th').forEach(th => {
+                    th.style.backgroundColor = '#E4E4E6';
+                    th.style.fontWeight = '700';
+                });
+                return cloned;
+            }
+
+            function buildPrintable(titleText, subtitleText, tableEl) {
+                const printable = document.createElement('div');
+                printable.style.width = '1120px';
+                printable.style.padding = '16px';
+                printable.style.background = '#ffffff';
+                printable.style.color = '#111827';
+                printable.style.fontSize = '12px';
+                printable.style.boxSizing = 'border-box';
+
+                const title = document.createElement('div');
+                title.style.fontWeight = '700';
+                title.style.fontSize = '16px';
+                title.style.marginBottom = '4px';
+                title.style.width = '100%';
+                title.style.overflow = 'visible';
+                title.style.whiteSpace = 'normal';
+                title.textContent = titleText;
+
+                const subtitle = document.createElement('div');
+                subtitle.style.color = '#6B7280';
+                subtitle.style.marginBottom = '12px';
+                subtitle.style.width = '100%';
+                subtitle.style.overflow = 'visible';
+                subtitle.style.whiteSpace = 'normal';
+                subtitle.textContent = subtitleText;
+
+                printable.appendChild(title);
+                printable.appendChild(subtitle);
+                printable.appendChild(tableEl);
+                return printable;
+            }
+
+            function getExportMeta(activeTab) {
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const todayPart = `${yyyy}${mm}${dd}`;
+
+                if (activeTab === 'pertumbuhan') {
+                    const activeBtn = document.querySelector('#pertumbuhan .btn_laporan.active[data-target]');
+                    const periodLabel = activeBtn ? (activeBtn.textContent || '').trim() : 'Bulanan';
+                    return {
+                        title: 'Laporan Course - Pertumbuhan',
+                        subtitle: `Periode: ${periodLabel}`,
+                        fileLabel: `pertumbuhan-${sanitizeFilenamePart(periodLabel) || 'bulanan'}-${todayPart}`,
+                        sheetName: 'Pertumbuhan'
+                    };
+                }
+
+                // default: pendapatan
+                const activeBtn = document.querySelector('#pendapatan .btn_laporan.active[data-period]');
+                const periodLabel = activeBtn ? (activeBtn.textContent || '').trim() : 'Bulanan';
+                const from = (document.getElementById('reportFrom')?.value || '').trim();
+                const to = (document.getElementById('reportTo')?.value || '').trim();
+                const rangeLabel = (from || to) ? `, Tanggal: ${from || '-'} s/d ${to || '-'}` : '';
+                return {
+                    title: 'Laporan Course - Pendapatan',
+                    subtitle: `Periode: ${periodLabel}${rangeLabel}`,
+                    fileLabel: `pendapatan-${sanitizeFilenamePart(periodLabel) || 'bulanan'}-${todayPart}`,
+                    sheetName: 'Pendapatan'
+                };
+            }
+
+            function computeWorksheetColWidths(ws) {
+                const ref = ws['!ref'];
+                if (!ref || !window.XLSX) return;
+                const range = window.XLSX.utils.decode_range(ref);
+
+                const widths = [];
+                for (let C = range.s.c; C <= range.e.c; C++) {
+                    let maxLen = 10;
+                    for (let R = range.s.r; R <= range.e.r; R++) {
+                        const cell = ws[window.XLSX.utils.encode_cell({ r: R, c: C })];
+                        const v = cell && typeof cell.v !== 'undefined' ? String(cell.v) : '';
+                        maxLen = Math.max(maxLen, v.length);
+                    }
+                    // Clamp widths so they don't get absurd
+                    widths.push({ wch: Math.min(Math.max(maxLen + 2, 10), 45) });
+                }
+                ws['!cols'] = widths;
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const btnPdf = document.getElementById('btnCourseExportPdf');
+                const btnExcel = document.getElementById('btnCourseExportExcel');
+                if (!btnPdf || !btnExcel) return;
+
+                const exportPdfBaseUrl = @json(route('admin.report.export.pdf'));
+
+                function getActiveTable() {
+                    const tab = getActiveTabId() || 'pendapatan';
+                    if (tab === 'pertumbuhan') {
+                        return document.querySelector('#pertumbuhan table.tabel_pertumbuhan');
+                    }
+                    return document.querySelector('#pendapatan table.tabel_pendapatan');
+                }
+
+                btnPdf.addEventListener('click', function() {
+                    const activeTab = getActiveTabId() || 'pendapatan';
+                    const url = new URL(exportPdfBaseUrl, window.location.origin);
+                    url.searchParams.set('tab', activeTab);
+
+                    if (activeTab === 'pendapatan') {
+                        // period comes from active button if present
+                        const activeBtn = document.querySelector('#pendapatan .btn_laporan.active[data-period]');
+                        const period = activeBtn ? (activeBtn.getAttribute('data-period') || '') : '';
+                        if (period) url.searchParams.set('period', period);
+
+                        const from = (document.getElementById('reportFrom')?.value || '').trim();
+                        const to = (document.getElementById('reportTo')?.value || '').trim();
+                        if (from) url.searchParams.set('from', from);
+                        if (to) url.searchParams.set('to', to);
+                    } else {
+                        const activeBtn = document.querySelector('#pertumbuhan .btn_laporan.active[data-target]');
+                        // map UI labels -> API period
+                        const t = (activeBtn ? (activeBtn.getAttribute('data-target') || '') : '').toLowerCase();
+                        const p = (t === 'harian') ? 'daily' : (t === 'mingguan' ? 'weekly' : 'monthly');
+                        url.searchParams.set('period', p);
+                    }
+
+                    window.location.href = url.toString();
+                });
+
+                btnExcel.addEventListener('click', function() {
+                    if (!window.XLSX) return;
+                    const activeTab = getActiveTabId() || 'pendapatan';
+                    const table = getActiveTable();
+                    if (!table) return;
+
+                    const meta = getExportMeta(activeTab);
+                    const tableClone = cloneCleanTable(table);
+
+                    const wb = window.XLSX.utils.book_new();
+                    const ws = window.XLSX.utils.table_to_sheet(tableClone);
+                    computeWorksheetColWidths(ws);
+                    window.XLSX.utils.book_append_sheet(wb, ws, meta.sheetName);
+                    window.XLSX.writeFile(wb, `report-course-${meta.fileLabel}.xlsx`);
+                });
+            });
+        })();
+    </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
 

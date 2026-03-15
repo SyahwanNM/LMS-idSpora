@@ -21,6 +21,14 @@
     .qr-box { display:flex; align-items:center; gap:12px; }
     .qr-box canvas { border:1px solid #eee; border-radius:8px; }
     .qr-box img { width:140px; height:140px; object-fit:contain; border:1px solid #eee; border-radius:8px; }
+
+    .btn-export-report { background:#0A3EB6; color:#fff; border:none; padding:8px 12px; border-radius:6px; }
+    .btn-export-report:hover { background:#08339A; color:#fff; }
+    .btn-export-report:disabled { opacity:.6; cursor:not-allowed; }
+
+    /* Export modal: keep close controls compact */
+    #exportReportModal .btn-close { background-size: .75em .75em; }
+    #exportReportModal .btn-export-close { width:auto !important; padding:.375rem .75rem !important; }
 </style>
 @endsection
 @section('content')
@@ -72,7 +80,10 @@
                     <a href="{{ $isPastPrev ? '#' : url()->current().'?period='.$periodFmt($prevDate) }}" class="btn btn-outline-secondary btn-sm {{ $isPastPrev ? 'disabled' : '' }}" style="height:38px;">&laquo; {{ $prevDate->translatedFormat('F Y') }}</a>
                     <a href="{{ $isFutureNext ? '#' : url()->current().'?period='.$periodFmt($nextDate) }}" class="btn btn-outline-secondary btn-sm {{ $isFutureNext ? 'disabled' : '' }}" style="height:38px;">{{ $nextDate->translatedFormat('F Y') }} &raquo;</a>
                 </div>
-                <div class="ms-auto small text-muted">Menampilkan data bulan: <strong>{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-pendapatan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                    <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pendapatan" style="height:38px;">Export</button>
+                </div>
             </form>
             @php
                 $paidStatuses = ['settlement','capture','success'];
@@ -260,7 +271,7 @@
                         </div>
                     </div>
                 </div>
-                <table class="tabel-pendapatan">
+                <table class="tabel-pendapatan" id="table-pendapatan">
                     <thead>
                         <tr>
                             <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
@@ -481,7 +492,7 @@
                         <button type="submit" class="btn btn-primary btn-sm ms-2">Tampilkan</button>
                     </form>
                 </div>
-                <div class="filter-kanan">
+                <div class="filter-kanan d-flex align-items-end gap-2">
                     <!-- Additional JS-based Date Range (Optional, currently reused for table filtering) -->
                     <!-- We keep them but hidden or secondary if Month Filter is primary -->
                     <div class="filter-group d-none">
@@ -489,9 +500,11 @@
                         <label for="date-from-pertumbuhan" class="filter-label">Dari</label>
                          <input type="date" id="date-from-pertumbuhan" class="filter-input">
                     </div>
+                    <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                    <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan">Export</button>
                 </div>
             </div>
-            <table class="tabel-pendapatan">
+            <table class="tabel-pendapatan" id="table-pertumbuhan">
                 <thead>
                     <tr>
                         <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
@@ -576,7 +589,10 @@
                             <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
                             <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
                         </div>
-                        <div class="ms-auto small text-muted">Menampilkan data bulan: <strong>{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                            <button type="button" class="btn-export-report btn btn-sm" data-export-tab="operasional" style="height:38px;">Export</button>
+                        </div>
                     </form>
                 </div>
                 
@@ -632,7 +648,7 @@
                             <div class="filter-actions"><button type="button" class="btn-apply btn-reset" id="btn-reset-operasional" style="background:#6c757d;">Reset</button></div>
                         </div>
                     </div>
-                    <table class="tabel-pendapatan">
+                    <table class="tabel-pendapatan" id="table-operasional">
                         <thead>
                             <tr>
                                 <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
@@ -657,6 +673,7 @@
                                                 'documents_percent' => $e->documents_completion_percent,
                                                 'vbg_url' => !empty($e->vbg_path) ? Storage::url($e->vbg_path) : '',
                                                 'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
+                                                'module_url' => !empty($e->module_path) ? Storage::url($e->module_path) : '',
                                                 'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                                                 // attendance QR data
                                                 'qr_token' => $e->attendance_qr_token,
@@ -676,6 +693,7 @@
                                             data-bs-id="{{ $row['id'] }}"
                                             data-vbg="{{ $row['vbg_url'] ?? '' }}"
                                             data-cert="{{ $row['cert_url'] ?? '' }}"
+                                            data-module="{{ $row['module_url'] ?? '' }}"
                                             data-abs="{{ $row['abs_url'] ?? '' }}"
                                             data-qr-img="{{ $row['qr_image_url'] ?? '' }}"
                                         >
@@ -689,7 +707,7 @@
                                             $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
                                             $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('uploads/'.$ev->attendance_qr_image) : '';
                                         @endphp
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] ?? '' }}" data-cert="{{ $row['cert_url'] ?? '' }}" data-abs="{{ $row['abs_url'] ?? '' }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] ?? '' }}" data-cert="{{ $row['cert_url'] ?? '' }}" data-module="{{ $row['module_url'] ?? '' }}" data-abs="{{ $row['abs_url'] ?? '' }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
                                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
                                             <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
                                         </svg>
@@ -702,6 +720,34 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Preview Modal -->
+    <div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportReportModalLabel">Export Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div>
+                            <div class="fw-semibold" id="exportReportTitle">-</div>
+                            <div class="small text-muted">Menampilkan data bulan: <strong id="exportReportMonth">-</strong></div>
+                        </div>
+                    </div>
+                    <div id="exportReportPreviewWrapper" style="background:#fff;">
+                        <div id="exportReportPreview" class="table-responsive"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm btn-export-close" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn-export-report" id="btnExportPdf">Save PDF</button>
+                    <button type="button" class="btn-export-report" id="btnExportExcel">Save Excel</button>
                 </div>
             </div>
         </div>
@@ -968,6 +1014,9 @@ document.addEventListener("DOMContentLoaded", function () {
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Export helpers -->
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const buttons = document.querySelectorAll('.btn-report');
@@ -1153,6 +1202,7 @@ document.addEventListener('DOMContentLoaded', function(){
             const eventId = button.getAttribute('data-bs-id');
             const vbgUrl = button.getAttribute('data-vbg');
             const certUrl = button.getAttribute('data-cert');
+            const moduleUrl = button.getAttribute('data-module');
             const absUrl = button.getAttribute('data-abs');
             const qrImgUrl = button.getAttribute('data-qr-img');
 
@@ -1187,6 +1237,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             setPreview('preview-vbg', vbgUrl, 'Virtual Background');
             setPreview('preview-sertif', certUrl, 'Sertifikat');
+            setPreview('preview-module', moduleUrl, 'Module');
             setPreview('preview-absensi', absUrl, 'Absensi', qrImgUrl);
         });
     }
@@ -1200,6 +1251,7 @@ document.addEventListener('DOMContentLoaded', function(){
             // Urls
             const vbgUrl = trigger?.getAttribute('data-vbg') || '';
             const certUrl = trigger?.getAttribute('data-cert') || '';
+            const moduleUrl = trigger?.getAttribute('data-module') || '';
             const absUrl = trigger?.getAttribute('data-abs') || '';
             
             const qrText = trigger?.getAttribute('data-qr') || '';
@@ -1246,6 +1298,7 @@ document.addEventListener('DOMContentLoaded', function(){
             container.innerHTML = [
                 row('Virtual Background', vbgUrl),
                 row('Sertifikat', certUrl),
+                row('Module (Trainer)', moduleUrl),
                 row('Dokumen Absensi', absUrl),
                 qrRow()
             ].join('');
@@ -1338,6 +1391,268 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const exportButtons = document.querySelectorAll('[data-export-tab]');
+    const modalEl = document.getElementById('exportReportModal');
+    if (!modalEl || exportButtons.length === 0) return;
+
+    const titleEl = document.getElementById('exportReportTitle');
+    const monthEl = document.getElementById('exportReportMonth');
+    const previewEl = document.getElementById('exportReportPreview');
+    const previewWrapperEl = document.getElementById('exportReportPreviewWrapper');
+    const btnPdf = document.getElementById('btnExportPdf');
+    const btnExcel = document.getElementById('btnExportExcel');
+
+    let currentExport = { tab: null, title: null, period: null };
+
+    const tabConfig = {
+        pendapatan: {
+            title: 'Pendapatan',
+            tableId: 'table-pendapatan',
+            monthLabelId: 'month-label-pendapatan',
+            periodInputId: 'period',
+        },
+        pertumbuhan: {
+            title: 'Pertumbuhan',
+            tableId: 'table-pertumbuhan',
+            monthLabelId: 'month-label-pertumbuhan',
+            periodInputId: 'period_pertumbuhan',
+        },
+        operasional: {
+            title: 'Operasional',
+            tableId: 'table-operasional',
+            monthLabelId: 'month-label-operasional',
+            periodInputId: 'period_op',
+        },
+    };
+
+    function getPeriodValue(tab){
+        const cfg = tabConfig[tab];
+        const input = cfg?.periodInputId ? document.getElementById(cfg.periodInputId) : null;
+        const value = input && typeof input.value === 'string' ? input.value.trim() : '';
+        return value !== '' ? value : null;
+    }
+
+    function sanitizeFilenamePart(str){
+        return String(str || '').replace(/[^a-z0-9-_]+/gi,'-').replace(/-+/g,'-').replace(/(^-|-$)/g,'').toLowerCase();
+    }
+
+    function removeColumnsByHeaderText(table, matcher){
+        const headRow = table.tHead && table.tHead.rows && table.tHead.rows[0] ? table.tHead.rows[0] : null;
+        if (!headRow) return;
+
+        const indices = [];
+        Array.from(headRow.cells).forEach((th, idx) => {
+            const txt = (th.textContent || '').trim();
+            if (matcher.test(txt)) indices.push(idx);
+        });
+        if (indices.length === 0) return;
+
+        // remove from end to start to keep indices stable
+        indices.sort((a,b) => b-a);
+        const removeCellsAt = (row) => {
+            indices.forEach(i => {
+                if (row.cells && row.cells[i]) row.deleteCell(i);
+            });
+        };
+        // head
+        removeCellsAt(headRow);
+        // bodies
+        Array.from(table.tBodies || []).forEach(tb => {
+            Array.from(tb.rows || []).forEach(tr => removeCellsAt(tr));
+        });
+    }
+
+    function cleanupInteractiveElements(root){
+        // Replace buttons/links with plain text; remove svg icons.
+        root.querySelectorAll('svg').forEach(svg => svg.remove());
+        root.querySelectorAll('button').forEach(btn => {
+            const span = document.createElement('span');
+            span.textContent = (btn.textContent || '').trim();
+            btn.replaceWith(span);
+        });
+        root.querySelectorAll('a').forEach(a => {
+            const span = document.createElement('span');
+            span.textContent = (a.textContent || '').trim();
+            a.replaceWith(span);
+        });
+    }
+
+    function cloneVisibleTable(tab){
+        const cfg = tabConfig[tab];
+        if (!cfg) return null;
+        const source = document.getElementById(cfg.tableId);
+        if (!source) return null;
+
+        const visibleRowIdx = new Set();
+        const sourceBody = source.tBodies && source.tBodies[0] ? source.tBodies[0] : null;
+        if (sourceBody) {
+            Array.from(sourceBody.rows).forEach((tr, idx) => {
+                const style = window.getComputedStyle(tr);
+                if (style && style.display !== 'none') visibleRowIdx.add(idx);
+            });
+        }
+
+        const cloned = source.cloneNode(true);
+        cloned.removeAttribute('id');
+
+        const clonedBody = cloned.tBodies && cloned.tBodies[0] ? cloned.tBodies[0] : null;
+        if (clonedBody) {
+            for (let i = clonedBody.rows.length - 1; i >= 0; i--) {
+                if (!visibleRowIdx.has(i)) clonedBody.deleteRow(i);
+            }
+        }
+
+        // Remove action/detail columns
+        removeColumnsByHeaderText(cloned, /^(aksi|detail)$/i);
+
+        cleanupInteractiveElements(cloned);
+
+        // Slightly improve preview readability
+        cloned.classList.add('table', 'table-sm');
+        cloned.querySelectorAll('th').forEach(th => {
+            th.style.backgroundColor = '#E4E4E6';
+        });
+        return cloned;
+    }
+
+    function openExport(tab){
+        const cfg = tabConfig[tab];
+        if (!cfg) return;
+
+        const monthLabel = document.getElementById(cfg.monthLabelId);
+        const monthText = monthLabel ? (monthLabel.textContent || '').trim() : '-';
+        const period = getPeriodValue(tab);
+
+        const table = cloneVisibleTable(tab);
+        previewEl.innerHTML = '';
+        titleEl.textContent = 'Laporan ' + cfg.title;
+        monthEl.textContent = monthText;
+
+        const header = document.createElement('div');
+        header.style.marginBottom = '10px';
+        header.innerHTML = `
+            <div style="font-weight:700; font-size:16px;">${titleEl.textContent}</div>
+            <div class="small text-muted">Menampilkan data bulan: <strong>${monthText}</strong></div>
+        `;
+
+        if (!table || !table.tBodies || table.tBodies.length === 0 || table.tBodies[0].rows.length === 0) {
+            previewEl.innerHTML = '<div class="text-muted">Tidak ada data untuk diexport.</div>';
+            btnPdf.disabled = true;
+            btnExcel.disabled = true;
+        } else {
+            // ensure borders for preview readability
+            table.querySelectorAll('th, td').forEach(cell => {
+                cell.style.border = '1px solid #e5e7eb';
+            });
+            table.style.borderCollapse = 'collapse';
+            table.style.width = '100%';
+
+            previewEl.appendChild(header);
+            previewEl.appendChild(table);
+            btnPdf.disabled = false;
+            btnExcel.disabled = false;
+        }
+
+        currentExport = { tab, title: cfg.title, period };
+
+        const bsModal = window.bootstrap?.Modal ? new window.bootstrap.Modal(modalEl) : null;
+        if (bsModal) {
+            bsModal.show();
+        } else {
+            // Fallback (shouldn't happen in admin)
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+        }
+    }
+
+    exportButtons.forEach(btn => {
+        btn.addEventListener('click', function(){
+            const tab = this.getAttribute('data-export-tab');
+            openExport(tab);
+        });
+    });
+
+    btnPdf.addEventListener('click', function(){
+        const periodPart = currentExport.period ? sanitizeFilenamePart(currentExport.period) : 'periode';
+        const tabPart = sanitizeFilenamePart(currentExport.title);
+        const filename = `report-${tabPart}-${periodPart}.pdf`;
+        if (typeof window.html2pdf !== 'function') return;
+
+        // Build a clean, full-width printable layout off-screen to avoid cramped modal sizing
+        const printable = document.createElement('div');
+        printable.style.width = '1120px';
+        printable.style.padding = '16px';
+        printable.style.background = '#ffffff';
+        printable.style.color = '#111827';
+        printable.style.fontSize = '12px';
+        printable.style.boxSizing = 'border-box';
+
+        const title = document.createElement('div');
+        title.style.fontWeight = '700';
+        title.style.fontSize = '16px';
+        title.style.marginBottom = '4px';
+        title.textContent = 'Laporan ' + (currentExport.title || '');
+
+        const subtitle = document.createElement('div');
+        subtitle.style.color = '#6B7280';
+        subtitle.style.marginBottom = '12px';
+        subtitle.innerHTML = 'Menampilkan data bulan: <strong>' + (monthEl?.textContent || '-') + '</strong>';
+
+        const table = previewEl.querySelector('table');
+        if (!table) return;
+        const tableClone = table.cloneNode(true);
+        tableClone.querySelectorAll('th, td').forEach(cell => {
+            cell.style.border = '1px solid #e5e7eb';
+            cell.style.padding = '6px 8px';
+        });
+        tableClone.style.borderCollapse = 'collapse';
+        tableClone.style.width = '100%';
+        tableClone.querySelectorAll('th').forEach(th => {
+            th.style.backgroundColor = '#E4E4E6';
+        });
+
+        printable.appendChild(title);
+        printable.appendChild(subtitle);
+        printable.appendChild(tableClone);
+
+        const offscreen = document.createElement('div');
+        offscreen.style.position = 'fixed';
+        offscreen.style.left = '-10000px';
+        offscreen.style.top = '0';
+        offscreen.appendChild(printable);
+        document.body.appendChild(offscreen);
+
+        const opt = {
+            margin: 8,
+            filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, windowWidth: 1120 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        window.html2pdf().set(opt).from(printable).save().then(() => {
+            offscreen.remove();
+        }).catch(() => {
+            offscreen.remove();
+        });
+    });
+
+    btnExcel.addEventListener('click', function(){
+        if (!window.XLSX) return;
+        const table = previewEl.querySelector('table');
+        if (!table) return;
+        const periodPart = currentExport.period ? sanitizeFilenamePart(currentExport.period) : 'periode';
+        const tabPart = sanitizeFilenamePart(currentExport.title);
+        const filename = `report-${tabPart}-${periodPart}.xlsx`;
+        const wb = window.XLSX.utils.book_new();
+        const ws = window.XLSX.utils.table_to_sheet(table);
+        window.XLSX.utils.book_append_sheet(wb, ws, currentExport.title || 'Report');
+        window.XLSX.writeFile(wb, filename);
+    });
 });
 </script>
 

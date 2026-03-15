@@ -13,6 +13,7 @@ class LandingPageController extends Controller
     {
         // Get 4 latest courses or best rated courses
         $featuredCourses = Course::with(['category', 'modules'])
+            ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->limit(4)
             ->get();
