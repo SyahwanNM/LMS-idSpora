@@ -83,13 +83,6 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
     return view('detail-event-registered', compact('event', 'feedbacks'));
 })->name('events.registered.detail');
 
-Route::middleware(['auth'])->group(
-    function () {
-        Route::get('/trainer/dashboard', [TrainerController::class, 'dashboard'])->name('trainer.dashboard');
-        Route::get('/trainer/profile', [TrainerController::class, 'show'])->name('trainer.profile');
-    }
-);
-
 // punya dini
 Route::get('/modul-course', function () {
     return view('modul-course');
@@ -575,6 +568,8 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/courses/{id}', [TrainerController::class, 'courseDetail'])->name('detail-course');
     Route::get('/finance', [TrainerController::class, 'finance'])->name('finance');
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
+    Route::get('/profile/edit', [TrainerController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');
 
     Route::get('/events', [TrainerController::class, 'events'])->name('events');
     Route::get('/events/{id}', [TrainerController::class, 'eventDetail'])->name('events.show');
@@ -590,13 +585,6 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
     Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
     Route::post('/events/{id}/studio/quiz', [TrainerController::class, 'saveEventQuiz'])->name('events.studio.quiz');
-
-    // --- STUDIO UNTUK COURSE ---
-    Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
-    Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
-    Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
-    Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
-    Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {

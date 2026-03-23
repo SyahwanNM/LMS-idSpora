@@ -3,2049 +3,1091 @@
 @section('title', 'Profile - Trainer')
 
 @php
-  $pageTitle = 'Profile';
-  $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
-    ['label' => 'Profile']
-  ];
+    $pageTitle = 'Profile';
+    $breadcrumbs = [
+        ['label' => 'Home', 'url' => route('trainer.dashboard')],
+        ['label' => 'Profile']
+    ];
+
+    $displayRole = $trainer->profession ?: 'Trainer';
+    $displayLocation = $trainer->institution ?: 'Location not set';
+    $displayBio = $trainer->bio ?: 'Profil belum dilengkapi. Tambahkan bio agar peserta mengenal Anda lebih baik.';
 @endphp
 
 @push('styles')
-  <link rel="stylesheet" href="/assets/css/pages.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
-  <style>
-    /* Profile Page Specific Styles */
-
-    main {
-      padding: var(--spacing-2xl);
-      background-color: var(--base-clr);
-      overflow-y: auto;
-      width: 100%;
-    }
-
-    .trainer-page main {
-      margin: 0;
-      padding: var(--spacing-2xl);
-    }
-
-    /* Header Sections */
-    .top-content {
-      margin: 0 0 var(--spacing-xl) 0;
-      position: relative;
-      border-radius: var(--radius-2xl);
-      padding: var(--spacing-xl) var(--spacing-2xl);
-      background-color: var(--main-navy-clr);
-      box-shadow: 0 10px 32px rgba(11, 9, 38, 0.75);
-      color: var(--white-clr);
-      overflow: hidden;
-    }
-
-    .top-content::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: url("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1600") center/cover no-repeat;
-      opacity: 0.75;
-    }
-
-    .top-content::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg,
-          rgba(20, 18, 68, 0.98),
-          rgba(27, 23, 99, 0.85),
-          rgba(27, 23, 99, 0.55));
-    }
-
-    .top-content-inner {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--spacing-lg);
-    }
-
-    /* Profile Section */
-    .profile-header {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-xl);
-    }
-
-    .profile-left {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md);
-    }
-
-    .profile-photo {
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .profile-photo img {
-      width: 80px;
-      height: 80px;
-      border-radius: var(--radius-lg);
-      border: 3px solid var(--white-clr);
-      object-fit: cover;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-    }
-
-    .photo-badge {
-      position: absolute;
-      right: -6px;
-      bottom: -6px;
-      width: 24px;
-      height: 24px;
-      background: var(--yellow-clr);
-      border-radius: var(--radius-lg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-    }
-
-    .level-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--spacing-xs);
-      background: var(--yellow-background-clr);
-      color: var(--yellow-clr);
-      border: 1px solid rgba(251, 197, 49, 0.45);
-      padding: var(--spacing-xs) var(--spacing-md);
-      border-radius: 16px;
-      font-size: var(--font-size-xs);
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      margin-bottom: var(--spacing-md);
-    }
-
-    .profile-text h2 {
-      margin: 0;
-      font-size: 18px;
-      line-height: var(--line-height-tight);
-      color: var(--white-clr);
-    }
-
-    .profile-text .role {
-      margin: var(--spacing-sm) 0 var(--spacing-md) 0;
-      font-size: var(--font-size-base);
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .info {
-      display: flex;
-      flex-direction: row;
-      gap: var(--spacing-lg);
-      margin-top: var(--spacing-xs);
-      flex-wrap: wrap;
-    }
-
-    .loc-mail {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: var(--spacing-xs);
-      font-size: var(--font-size-xs);
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .loc-mail svg {
-      color: var(--yellow-clr);
-    }
-
-    .profile-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md);
-    }
-
-    .profile-actions button {
-      border: none;
-      cursor: pointer;
-    }
-
-    .btn-configure {
-      background: var(--white-clr);
-      color: var(--main-navy-clr);
-      padding: var(--spacing-md) var(--spacing-xl);
-      border-radius: var(--radius-lg);
-      font-weight: 700;
-      font-size: var(--font-size-sm);
-      letter-spacing: 0.5px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-    }
-
-    .btn-configure:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    }
-
-    .btn-share {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-lg);
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--white-clr);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-share:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-
-    /* Records/Cards */
-    .trainer-record,
-    .record-card {
-      background: var(--white-clr);
-      border-radius: var(--radius-2xl);
-      padding: var(--spacing-lg);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-      border: 1px solid var(--line-clr);
-    }
-
-    .info-record {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--spacing-md);
-      margin-bottom: var(--spacing-lg);
-    }
-
-    .detail-record {
-      background: var(--base-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-md);
-      text-align: center;
-      box-shadow: inset 0 0 0 1px var(--line-clr);
-    }
-
-    .detail-record p {
-      margin: 0;
-      font-size: var(--font-size-xs);
-      letter-spacing: 0.6px;
-      color: var(--gray-clr);
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .detail-record h2 {
-      margin: var(--spacing-sm) 0 0 0;
-      font-size: 16px;
-      color: var(--main-navy-clr);
-      display: inline-flex;
-      align-items: center;
-      gap: var(--spacing-xs);
-    }
-
-    .detail-record .score-star {
-      color: #facc15;
-    }
-
-    .trainer-record h4,
-    .record-card h4 {
-      margin: var(--spacing-md) 0 var(--spacing-md) 0;
-      font-size: var(--font-size-xs);
-      letter-spacing: 0.6px;
-      color: var(--secondary-text-clr);
-      text-transform: uppercase;
-    }
-
-    /* Expertise/Skills */
-    .expertise-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--spacing-sm);
-      margin-bottom: var(--spacing-lg);
-    }
-
-    .expertise-list span,
-    .skill-tag {
-      background: var(--main-navy-clr);
-      color: var(--white-clr);
-      padding: var(--spacing-xs) var(--spacing-md);
-      border-radius: 20px;
-      font-size: var(--font-size-xs);
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-
-    /* Social Media */
-    .info-socmed {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-lg);
-      padding-top: var(--spacing-lg);
-      border-top: 1px solid var(--line-clr);
-    }
-
-    .info-socmed a {
-      width: 34px;
-      height: 34px;
-      border-radius: var(--radius-lg);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--base-clr);
-      color: var(--main-navy-clr);
-      transition: all 0.2s ease;
-      text-decoration: none;
-    }
-
-    .info-socmed a:hover {
-      background: var(--main-navy-clr);
-      color: var(--white-clr);
-      transform: translateY(-2px);
-    }
-
-    /* Course/Content Cards */
-    .card-course,
-    .cards-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: var(--spacing-xl);
-      padding: var(--spacing-lg);
-    }
-
-    .card-item,
-    .content-card {
-      background-color: var(--white-clr);
-      border-radius: var(--radius-2xl);
-      overflow: hidden;
-      box-shadow: var(--shadow-lg);
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .card-item:hover,
-    .content-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Page Header */
-    .top-page {
-      margin: 0 0 var(--spacing-2xl) 0;
-      color: var(--main-navy-clr);
-      padding: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
-    /* Search and Filter */
-    .search-filter-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-right: var(--spacing-lg);
-      gap: var(--spacing-md);
-      flex-wrap: wrap;
-    }
-
-    .search-column,
-    .filter-bar {
-      background-color: var(--white-clr);
-      padding: var(--spacing-md) var(--spacing-lg);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--line-clr);
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md);
-      box-shadow: var(--shadow-md);
-      transition: all 0.3s ease;
-    }
-
-    .search-column:hover,
-    .search-column:focus-within,
-    .filter-bar:hover {
-      border-color: var(--main-navy-clr);
-      box-shadow: 0 4px 12px rgba(45, 27, 105, 0.15);
-    }
-
-    .search-column {
-      width: auto;
-      max-width: 280px;
-    }
-
-    .search-column input,
-    .filter-bar input {
-      border: none;
-      outline: none;
-      flex: 1;
-      font-size: var(--font-size-base);
-      color: var(--gray-clr);
-      background: transparent;
-    }
-
-    .search-column input::placeholder,
-    .filter-bar input::placeholder {
-      color: #999;
-    }
-
-    .search-column svg,
-    .filter-bar svg {
-      color: var(--gray-clr);
-      flex-shrink: 0;
-    }
-
-    .filter-bar {
-      width: auto;
-      cursor: pointer;
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .top-content {
-        margin: 0 0 var(--spacing-2xl) 0;
-      }
-
-      .top-page {
-        margin: 0 0 var(--spacing-lg) 0;
-      }
-
-      .card-course,
-      .cards-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-      }
-
-      .info-record {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .top-content {
-        margin: 0 0 var(--spacing-lg) 0;
-        padding: var(--spacing-lg);
-      }
-
-      .top-content-inner {
-        flex-direction: column;
-        gap: var(--spacing-lg);
-      }
-
-      .profile-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-lg);
-      }
-
-      .profile-actions {
-        width: 100%;
-        justify-content: flex-start;
-      }
-
-      .profile-text h2 {
-        font-size: 16px;
-      }
-
-      .card-course,
-      .cards-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-lg);
-        padding: var(--spacing-lg);
-      }
-
-      .search-filter-bar {
-        margin-right: var(--spacing-lg);
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .search-column {
-        max-width: none;
-      }
-
-      .info-record {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-md);
-      }
-
-      .top-page {
-        flex-direction: column;
-        margin: 0 0 var(--spacing-lg) 0;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .top-content {
-        margin: 0 0 var(--spacing-lg) 0;
-        padding: var(--spacing-lg);
-        border-radius: var(--radius-lg);
-      }
-
-      .top-content-inner {
-        flex-direction: column;
-        gap: var(--spacing-md);
-      }
-
-      .profile-header {
-        flex-direction: column;
-        gap: var(--spacing-md);
-      }
-
-      .profile-left {
-        gap: var(--spacing-md);
-      }
-
-      .profile-photo img {
-        width: 70px;
-        height: 70px;
-        border-radius: var(--radius-lg);
-      }
-
-      .profile-text h2 {
-        font-size: 16px;
-      }
-
-      .profile-text .role {
-        font-size: var(--font-size-sm);
-      }
-
-      .profile-actions {
-        width: 100%;
-        gap: var(--spacing-sm);
-      }
-
-      .btn-configure {
-        flex: 1;
-        padding: var(--spacing-sm) var(--spacing-md);
-        font-size: var(--font-size-xs);
-      }
-
-      .btn-share {
-        width: 32px;
-        height: 32px;
-      }
-
-      .card-course,
-      .cards-container {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-md);
-        padding: var(--spacing-md);
-      }
-
-      .trainer-record,
-      .record-card {
-        padding: var(--spacing-md);
-        margin: var(--spacing-md);
-      }
-
-      .info-record {
-        grid-template-columns: 1fr;
-        gap: var(--spacing-sm);
-        margin-bottom: var(--spacing-md);
-      }
-
-      .detail-record {
-        padding: var(--spacing-sm);
-      }
-
-      .detail-record p {
-        font-size: var(--font-size-xs);
-      }
-
-      .detail-record h2 {
-        font-size: 14px;
-      }
-
-      .expertise-list {
-        gap: var(--spacing-xs);
-        margin-bottom: var(--spacing-md);
-      }
-
-      .expertise-list span,
-      .skill-tag {
-        padding: 4px 8px;
-        font-size: 9px;
-      }
-
-      .search-filter-bar {
-        margin-right: var(--spacing-md);
-        gap: var(--spacing-sm);
-      }
-
-      .search-column,
-      .filter-bar {
-        padding: var(--spacing-sm) var(--spacing-md);
-        gap: var(--spacing-sm);
-      }
-
-      .search-column input,
-      .filter-bar input {
-        font-size: var(--font-size-sm);
-      }
-
-      .top-page {
-        margin: 0 0 var(--spacing-lg) 0;
-        flex-direction: column;
-      }
-
-      .info-socmed {
-        gap: var(--spacing-md);
-        padding-top: var(--spacing-md);
-      }
-
-      .info-socmed a {
-        width: 30px;
-        height: 30px;
-      }
-    }
-
-    .profile-dashboard {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: var(--spacing-xl);
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .dashboard-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-lg);
-    }
-
-    /* Stats Card (deprecated - use profile-info-card instead) */
-    .stats-card {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-xl);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-xl);
-    }
-
-    .stat-item {
-      flex: 1;
-    }
-
-    .stat-label {
-      display: block;
-      font-size: 8px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.8px;
-      margin-bottom: var(--spacing-xs);
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-xs);
-    }
-
-    .stat-star {
-      width: 16px;
-      height: 16px;
-    }
-
-    .stat-divider {
-      width: 1px;
-      height: 40px;
-      background: var(--line-clr);
-    }
-
-    /* Expertise Card */
-    .expertise-card {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .section-title {
-      font-size: 6px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.8px;
-      margin: 0 0 var(--spacing-sm) 0;
-      text-transform: uppercase;
-    }
-
-    .expertise-pills {
-      display: flex;
-      gap: var(--spacing-md);
-      flex-wrap: wrap;
-    }
-
-    .expertise-pill {
-      display: inline-block;
-      padding: 4px 8px;
-      background: var(--main-navy-clr);
-      color: var(--white-clr);
-      border-radius: var(--radius-md);
-      font-size: 8px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    /* Network Card */
-    .network-card {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .network-icons {
-      display: flex;
-      gap: var(--spacing-md);
-      justify-content: flex-start;
-    }
-
-    .network-icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-md);
-      background: #f8f9fa;
-      color: var(--text-tertiary);
-      transition: all 0.3s ease;
-      text-decoration: none;
-    }
-
-    .network-icon:hover {
-      background: var(--main-navy-clr);
-      color: var(--white-clr);
-      transform: translateY(-2px);
-    }
-
-    /* Combined Profile Info Card */
-    .profile-info-card {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .stats-section {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-lg);
-    }
-
-    .stats-section .stat-item {
-      flex: 1;
-    }
-
-    .stats-section .stat-label {
-      display: block;
-      font-size: 8px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.8px;
-      margin-bottom: var(--spacing-xs);
-      text-transform: uppercase;
-    }
-
-    .stats-section .stat-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-xs);
-    }
-
-    .info-divider {
-      height: 1px;
-      background: var(--line-clr);
-      margin: var(--spacing-md) 0;
-    }
-
-    .expertise-section {
-      padding: 0;
-    }
-
-    .expertise-section .section-title {
-      margin-bottom: var(--spacing-md);
-    }
-
-    .network-section {
-      padding: 0;
-    }
-
-    .network-section .section-title {
-      margin-bottom: var(--spacing-md);
-    }
-
-    /* Reward Card */
-    .reward-card {
-      background: var(--main-navy-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 4px 12px rgba(27, 23, 99, 0.3);
-      color: var(--white-clr);
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-md);
-    }
-
-    .reward-title {
-      color: var(--yellow-clr);
-      margin: 0 0 var(--spacing-xs) 0;
-    }
-
-    .reward-content {
-      flex: 1;
-    }
-
-    .reward-label {
-      font-size: 8px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.65);
-      letter-spacing: 0.8px;
-      margin: 0 0 var(--spacing-sm) 0;
-      text-transform: uppercase;
-    }
-
-    .reward-amount {
-      font-size: 20px;
-      font-weight: 800;
-      margin: 0;
-      color: var(--white-clr);
-      display: flex;
-      align-items: baseline;
-      gap: 2px;
-      letter-spacing: -1px;
-    }
-
-    .reward-cents {
-      font-size: 16px;
-      color: var(--yellow-clr);
-      font-weight: 700;
-      opacity: 0.95;
-    }
-
-    .btn-view-records {
-      width: 100%;
-      padding: var(--spacing-md) var(--spacing-lg);
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: var(--radius-md);
-      color: var(--white-clr);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--spacing-sm);
-    }
-
-    .btn-view-records i {
-      font-size: 12px;
-    }
-
-    .btn-view-records:hover {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-    }
-
-    /* Upcoming Schedule Card */
-    .schedule-card {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .schedule-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--spacing-md);
-    }
-
-    .schedule-title-main {
-      font-size: 8px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.8px;
-      margin: 0;
-      text-transform: uppercase;
-    }
-
-    .schedule-header svg {
-      color: var(--main-navy-clr);
-      opacity: 0.6;
-    }
-
-    .schedule-header i {
-      color: var(--main-navy-clr);
-      opacity: 0.6;
-      font-size: 20px;
-    }
-
-    .schedule-list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-sm);
-      margin-bottom: var(--spacing-md);
-    }
-
-    .schedule-item-link {
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.3s ease;
-    }
-
-    .schedule-item {
-      padding: var(--spacing-md);
-      background: #f8f9fa;
-      border-radius: var(--radius-lg);
-      transition: all 0.3s ease;
-    }
-
-    .schedule-item-link:hover .schedule-item {
-      background: var(--main-navy-clr);
-      box-shadow: 0 4px 12px rgba(27, 23, 99, 0.2);
-    }
-
-    .schedule-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: var(--spacing-sm);
-      text-transform: uppercase;
-    }
-
-    .schedule-badge.workshop {
-      background: #fbbf24;
-      color: #000;
-    }
-
-    .schedule-badge.one-on-one {
-      background: #fbbf24;
-      color: #000;
-    }
-
-    .schedule-item-link:hover .schedule-badge {
-      background: rgba(255, 255, 255, 0.25);
-      color: var(--white-clr);
-    }
-
-    .schedule-item-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0 0 var(--spacing-xs) 0;
-    }
-
-    .schedule-item-link:hover .schedule-item-title {
-      color: var(--white-clr);
-    }
-
-    .schedule-item-meta {
-      font-size: 10px;
-      color: var(--text-secondary);
-      margin: 0 0 4px 0;
-      font-weight: 500;
-    }
-
-    .schedule-item-link:hover .schedule-item-meta {
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .schedule-item-time {
-      font-size: 12px;
-      color: var(--text-tertiary);
-      margin: 0;
-    }
-
-    .schedule-item-link:hover .schedule-item-time {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .schedule-manage-link {
-      display: block;
-      text-align: center;
-      padding: var(--spacing-sm);
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      text-decoration: none;
-      letter-spacing: 0.5px;
-      transition: color 0.2s ease;
-    }
-
-    .schedule-manage-link:hover {
-      color: var(--brand-purple);
-    }
-
-    .dashboard-content {
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-lg);
-    }
-
-    /* Pedagogical Statement */
-    .pedagogical-statement {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
-      border: 2px solid transparent;
-    }
-
-    .pedagogical-statement:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      border-color: var(--main-navy-clr);
-    }
-
-    .statement-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--spacing-md);
-    }
-
-    .statement-title {
-      font-size: 9px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-    }
-
-    .statement-title svg {
-      color: #fbbf24;
-    }
-
-    .btn-edit-statement {
-      padding: 8px;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      color: var(--main-navy-clr);
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-    }
-
-    .btn-edit-statement:hover {
-      background: #fbbf24;
-      color: var(--main-navy-clr);
-      border-color: transparent;
-      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
-    }
-
-    .statement-text {
-      font-size: 13px;
-      line-height: 1.5;
-      color: var(--text-primary);
-      margin: 0;
-    }
-
-    /* Course Portfolio */
-    .portfolio-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--spacing-md);
-      padding: 0 var(--spacing-sm);
-    }
-
-    .portfolio-title {
-      font-size: 9px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-    }
-
-    .portfolio-title svg {
-      color: var(--brand-purple);
-    }
-
-    .view-all {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      text-decoration: none;
-      letter-spacing: 0.5px;
-      transition: color 0.2s ease;
-    }
-
-    .view-all:hover {
-      color: var(--brand-purple);
-    }
-
-    .course-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: var(--spacing-lg);
-      margin-bottom: var(--spacing-lg);
-    }
-
-    .course-card-item {
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      background: transparent;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
-    }
-
-    .course-card-item:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-    }
-
-    .course-card-item:hover .course-title {
-      color: #fbbf24;
-    }
-
-    .course-card-item:hover .course-info {
-      background: var(--white-clr);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .course-card-item:hover .course-bottom {
-      background: var(--white-clr);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .course-image {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
-    }
-
-    .course-info {
-      padding: var(--spacing-lg);
-      background: var(--white-clr);
-      transition: background 0.3s ease;
-    }
-
-    .course-meta {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md);
-      margin-bottom: var(--spacing-sm);
-    }
-
-    .course-rating {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--main-navy-clr);
-    }
-
-    .course-learners {
-      font-size: 9px;
-      font-weight: 600;
-      color: var(--text-tertiary);
-      letter-spacing: 0.5px;
-    }
-    }
-
-    .course-title {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--main-navy-clr);
-      margin: 0 0 var(--spacing-sm) 0;
-      transition: color 0.3s ease;
-    }
-
-    .course-bottom {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-      justify-content: space-between;
-      padding: var(--spacing-md) var(--spacing-lg);
-      background: #f8f9fa;
-      transition: background 0.3s ease;
-    }
-
-    .course-level {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: var(--radius-sm);
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    .course-modules {
-      font-size: 9px;
-      font-weight: 600;
-      color: var(--text-tertiary);
-      letter-spacing: 0.5px;
-    }
-
-    .course-arrow {
-      font-size: 16px;
-      color: var(--main-navy-clr);
-      transition: transform 0.2s ease;
-    }
-
-    .course-card-item:hover .course-arrow {
-      transform: translateX(4px);
-    }
-
-    .course-level.intermediate {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .course-level.advanced {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    /* Student Feedback */
-    .student-feedback {
-      background: var(--white-clr);
-      border-radius: var(--radius-lg);
-      padding: var(--spacing-lg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
-    }
-
-    .student-feedback:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .feedback-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--spacing-md);
-    }
-
-    .feedback-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-    }
-
-    .feedback-title svg {
-      color: var(--brand-purple);
-    }
-
-    .feedback-rating {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-xs);
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-    }
-
-    .feedback-list {
-      display: grid;
-      gap: var(--spacing-md);
-      margin-bottom: var(--spacing-md);
-    }
-
-    .feedback-item {
-      padding: var(--spacing-md);
-      background: #f8f9fa;
-      border-radius: var(--radius-lg);
-      border-left: 4px solid #fbbf24;
-      transition: all 0.3s ease;
-    }
-
-    .feedback-item:hover {
-      background: #f0f1f3;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-
-    .feedback-stars {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: var(--spacing-sm);
-    }
-
-    .feedback-time {
-      margin-left: var(--spacing-sm);
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-tertiary);
-      letter-spacing: 0.5px;
-    }
-
-    .feedback-text {
-      font-size: 12px;
-      line-height: 1.5;
-      color: var(--text-primary);
-      margin: 0 0 var(--spacing-md) 0;
-      position: relative;
-      padding-left: var(--spacing-md);
-    }
-
-    .feedback-text::before {
-      content: '"';
-      position: absolute;
-      left: 0;
-      top: -5px;
-      font-size: 24px;
-      color: #fbbf24;
-      opacity: 0.5;
-    }
-
-    .feedback-author {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-    }
-
-    .author-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--main-navy-clr);
-      color: var(--white-clr);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 12px;
-    }
-
-    .author-name {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.5px;
-    }
-
-    .view-all-reviews {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: var(--spacing-sm);
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      text-decoration: none;
-      letter-spacing: 0.5px;
-      transition: color 0.2s ease;
-    }
-
-    .view-all-reviews:hover {
-      color: var(--brand-purple);
-    }
-
-    .view-all-reviews i {
-      font-size: 12px;
-      transition: transform 0.2s ease;
-    }
-
-    .view-all-reviews:hover i {
-      transform: translateX(4px);
-    }
-
-    /* ============================================
-     RESPONSIVE DESIGN
-     ============================================ */
-
-    @media (max-width: 1200px) {
-      .profile-dashboard {
-        grid-template-columns: 280px 1fr;
-        gap: var(--spacing-lg);
-      }
-    }
-
-    @media (max-width: 992px) {
-      .profile-dashboard {
-        grid-template-columns: 1fr;
-      }
-
-      .course-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      }
-    }
-
-    @media (max-width: 768px) {
-      .stats-card {
-        flex-direction: column;
-        gap: var(--spacing-lg);
-      }
-
-      .stat-divider {
-        width: 50px;
-        height: 1px;
-      }
-
-      .course-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .statement-header,
-      .portfolio-header,
-      .feedback-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--spacing-md);
-      }
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      cursor: pointer;
-    }
-
-    .modal-content {
-      position: relative;
-      z-index: 1001;
-      background: var(--white-clr);
-      border-radius: 24px;
-      padding: var(--spacing-2xl) var(--spacing-2xl);
-      max-width: 480px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-      animation: slideUp 0.3s ease-out;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(50px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .financial-ledger-modal {
-      background: var(--white-clr);
-    }
-
-    .modal-header {
-      margin-bottom: var(--spacing-2xl);
-      text-align: center;
-    }
-
-    .modal-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-      margin: 0;
-      text-align: center;
-    }
-
-    .ledger-items {
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-xl);
-      margin-bottom: var(--spacing-2xl);
-    }
-
-    .ledger-item {
-      background: var(--base-clr);
-      padding: var(--spacing-lg) var(--spacing-xl);
-      border-radius: var(--radius-lg);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--spacing-lg);
-      border: 1px solid var(--line-clr);
-    }
-
-    .ledger-info {
-      flex: 1;
-    }
-
-    .ledger-item-name {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--main-navy-clr);
-      margin: 0 0 var(--spacing-xs) 0;
-    }
-
-    .ledger-item-date {
-      font-size: 12px;
-      color: var(--gray-light);
-      margin: 0;
-    }
-
-    .ledger-amount-section {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: var(--spacing-sm);
-    }
-
-    .ledger-amount {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--main-navy-clr);
-    }
-
-    .ledger-status {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .ledger-status.success {
-      background-color: #d1fae5;
-      color: #059669;
-    }
-
-    .btn-close-records {
-      width: 100%;
-      padding: var(--spacing-lg) var(--spacing-2xl);
-      background-color: var(--main-navy-clr);
-      color: var(--white-clr);
-      border: none;
-      border-radius: var(--radius-lg);
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-    }
-
-    .btn-close-records:hover {
-      background-color: #0d0c47;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(27, 23, 99, 0.3);
-    }
-
-    .btn-close-records:active {
-      transform: translateY(0);
-    }
-
-    @media (max-width: 640px) {
-      .modal-content {
-        padding: var(--spacing-xl);
-        border-radius: 16px;
-      }
-
-      .modal-title {
-        font-size: 20px;
-      }
-
-      .ledger-item {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .ledger-amount-section {
-        width: 100%;
-        align-items: flex-end;
-      }
-
-      .ledger-items {
-        gap: var(--spacing-lg);
-      }
-    }
-  </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+        .profile-wrap {
+            display: grid;
+            gap: 16px;
+        }
+
+        .top-content {
+            margin: 0 0 var(--spacing-xl) 0;
+            position: relative;
+            border-radius: var(--radius-2xl);
+            padding: var(--spacing-xl) var(--spacing-2xl);
+            background-color: var(--main-navy-clr);
+            box-shadow: 0 10px 32px rgba(11, 9, 38, 0.75);
+            color: var(--white-clr);
+            overflow: hidden;
+        }
+
+        .top-content::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: url("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1600") center/cover no-repeat;
+            opacity: 0.75;
+        }
+
+        .top-content::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                    rgba(20, 18, 68, 0.98),
+                    rgba(27, 23, 99, 0.85),
+                    rgba(27, 23, 99, 0.55));
+        }
+
+        .top-content-inner {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: var(--spacing-md);
+        }
+
+        .top-main-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-lg);
+        }
+
+        .profile-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+            min-width: 0;
+            flex: 1;
+        }
+
+        .profile-photo {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .profile-photo img {
+            width: 110px;
+            height: 110px;
+            border-radius: var(--radius-lg);
+            border: 3px solid var(--white-clr);
+            object-fit: cover;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+
+        .photo-badge {
+            position: absolute;
+            right: -6px;
+            bottom: -6px;
+            width: 24px;
+            height: 24px;
+            background: var(--yellow-clr);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .photo-badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+        }
+
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: var(--yellow-background-clr);
+            color: var(--yellow-clr);
+            border: 1px solid rgba(251, 197, 49, 0.45);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: 16px;
+            font-size: var(--font-size-xs);
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .profile-text h2 {
+            margin: 0 0 var(--spacing-xs) 0;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: var(--line-height-tight);
+            color: var(--white-clr);
+        }
+
+        .profile-text .role {
+            margin: 0 0 var(--spacing-sm) 0;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .profile-text {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .info {
+            display: flex;
+            flex-direction: row;
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .loc-mail {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .loc-mail svg {
+            color: var(--yellow-clr);
+        }
+
+        .btn-configure {
+            background: var(--white-clr);
+            color: var(--main-navy-clr);
+            padding: var(--spacing-md) var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            font-weight: 700;
+            font-size: var(--font-size-sm);
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .btn-configure:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-share {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white-clr);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-share:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .top-edit-form {
+            display: none;
+            margin-top: 4px;
+            width: 100%;
+        }
+
+        .top-edit-form.active {
+            display: grid;
+            gap: 10px;
+        }
+
+        .top-edit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .top-edit-field {
+            display: grid;
+            gap: 5px;
+        }
+
+        .top-edit-field label {
+            font-size: 11px;
+            letter-spacing: .04em;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .top-edit-field input {
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .top-edit-field input[readonly] {
+            opacity: 0.85;
+            cursor: not-allowed;
+        }
+
+        .top-edit-field input::placeholder {
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .top-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 2px;
+        }
+
+        .top-edit-save,
+        .top-edit-cancel {
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+
+        .top-edit-save {
+            background: #ffffff;
+            color: #1b1763;
+        }
+
+        .top-edit-cancel {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+        }
+
+        @media (max-width: 768px) {
+            .top-main-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .profile-actions {
+                justify-content: flex-start;
+            }
+
+            .top-edit-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-hero {
+            background: linear-gradient(135deg, #1b1763 0%, #27227e 70%, #332fa0 100%);
+            color: #fff;
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .profile-hero-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .profile-wrap .profile-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, .45);
+            background: #fff;
+        }
+
+        .profile-hero h1 {
+            font-size: 22px;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .profile-hero p {
+            margin: 4px 0 0;
+            color: rgba(255, 255, 255, .82);
+        }
+
+        .profile-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, .82);
+        }
+
+        .profile-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .profile-btn {
+            border: 1px solid rgba(255, 255, 255, .35);
+            background: rgba(255, 255, 255, .14);
+            color: #fff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 992px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card-box {
+            background: #fff;
+            border: 1px solid #e8ecf3;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .card-title {
+            margin: 0 0 10px;
+            font-size: 11px;
+            letter-spacing: .08em;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stats-item {
+            background: #f8fafc;
+            border: 1px solid #eef2f7;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .stats-item p {
+            margin: 0;
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .stats-item h4 {
+            margin: 6px 0 0;
+            color: #0f172a;
+            font-size: 18px;
+        }
+
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .pill {
+            background: #1b1763;
+            color: #fff;
+            font-size: 11px;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-weight: 600;
+            letter-spacing: .03em;
+        }
+
+        .reward-box {
+            background: #1b1763;
+            color: #fff;
+            border-radius: 14px;
+            padding: 14px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .reward-box p {
+            margin: 0;
+            color: rgba(255, 255, 255, .75);
+            font-size: 11px;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .reward-box h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .reward-box button {
+            border: 1px solid rgba(255, 255, 255, .25);
+            background: rgba(255, 255, 255, .12);
+            color: #fff;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+
+        .list-stack {
+            display: grid;
+            gap: 10px;
+        }
+
+        .item-box {
+            border: 1px solid #edf1f7;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .item-box h5 {
+            margin: 0;
+            color: #0f172a;
+            font-size: 14px;
+        }
+
+        .item-box p {
+            margin: 6px 0 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .content-section {
+            display: grid;
+            gap: 14px;
+        }
+
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+        }
+
+        .course-card {
+            border: 1px solid #e8ecf3;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .course-card img {
+            width: 100%;
+            height: 128px;
+            object-fit: cover;
+            background: #eef2ff;
+        }
+
+        .course-card-body {
+            padding: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .course-title {
+            margin: 0;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .feedback-item {
+            border: 1px solid #e8ecf3;
+            border-radius: 10px;
+            padding: 10px;
+            background: #fff;
+            display: grid;
+            gap: 6px;
+        }
+
+        .feedback-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .stars {
+            color: #f59e0b;
+            letter-spacing: 1px;
+            font-size: 12px;
+        }
+
+        .feedback-author {
+            font-size: 12px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+
+        .profile-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+        }
+
+        .profile-modal.active {
+            display: block;
+        }
+
+        .profile-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, .55);
+        }
+
+        .profile-modal-content {
+            position: relative;
+            z-index: 1;
+            width: min(620px, 94vw);
+            margin: 8vh auto;
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px;
+            max-height: 84vh;
+            overflow: auto;
+        }
+
+        .ledger-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #e8ecf3;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f8fafc;
+            margin-bottom: 8px;
+        }
+
+        .ledger-row h6 {
+            margin: 0;
+            font-size: 14px;
+            color: #0f172a;
+        }
+
+        .ledger-row p {
+            margin: 4px 0 0;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .ledger-amount {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+    </style>
 @endpush
 
 @section('content')
-  <!-- Top Profile Section -->
-  <section class="top-content">
-    <div class="top-content-inner">
-      <div class="profile-left">
-        <div class="profile-photo">
-          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300"
-            alt="Sarah Jenkins" />
-          <span class="photo-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#1b1763" viewBox="0 0 24 24">
-              <path
-                d="M12 2l7 4v6c0 5-3.5 9-7 10-3.5-1-7-5-7-10V6l7-4zm0 4.5L8 8v4.2c0 3.2 2.1 6 4 6.8 1.9-.8 4-3.6 4-6.8V8l-4-1.5z" />
-            </svg>
-          </span>
-        </div>
-
-        <div class="profile-text">
-          <div class="level-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-            MASTER LEVEL ACADEMIC
-          </div>
-          <h2>Sarah Jenkins</h2>
-          <p class="role">Senior Product Design Specialist</p>
-          <div class="info">
-            <div class="loc-mail">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
-                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-              </svg>
-              <span>NEW YORK, USA</span>
+    <div class="profile-wrap">
+        @if(session('success'))
+            <div
+                style="background:#ecfdf5;border:1px solid #86efac;color:#166534;padding:10px 12px;border-radius:10px;font-size:13px;">
+                {{ session('success') }}
             </div>
-            <div class="loc-mail">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z" />
-              </svg>
-              <span>SARAH.J@IDSPORA.COM</span>
-            </div>
-          </div>
-        </div>
-      </div>
+        @endif
 
-      <div class="profile-actions">
-        <button class="btn-configure">CONFIGURE PROFILE</button>
-        <button class="btn-share" aria-label="Share">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path
-              d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.5 2.5 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5m-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3" />
-          </svg>
-        </button>
-      </div>
+        @if($errors->any())
+            <div
+                style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:10px;font-size:13px;">
+                <ul style="margin:0;padding-left:18px;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <section class="top-content">
+            <div class="top-content-inner">
+                <div class="top-main-row">
+                    <div class="profile-left">
+                        <div class="profile-photo">
+                            <img src="{{ $trainer->avatar_url }}" alt="{{ $trainer->name }}" />
+                            <button type="button" id="profilePhotoBadge" class="photo-badge" title="Ganti Foto">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="#1b1763" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                                    </path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </button>
+                            <input type="file" id="avatarFileInput" name="avatar_file" accept="image/*"
+                                style="display: none;" />
+                        </div>
+
+                        <div class="profile-text">
+                            <div class="level-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="currentColor">
+                                    <path
+                                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                                MASTER LEVEL ACADEMIC
+                            </div>
+                            <h2>{{ $trainer->name }}</h2>
+                            <p class="role">{{ $displayRole }}</p>
+                            <div class="info">
+                                <div class="loc-mail">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
+                                        <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+                                    </svg>
+                                    <span>{{ strtoupper($displayLocation) }}</span>
+                                </div>
+                                <div class="loc-mail">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z" />
+                                    </svg>
+                                    <span>{{ strtoupper($trainer->email) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <button type="button" id="topEditToggleBtn" class="btn-configure">CONFIGURE PROFILE</button>
+                        <button type="button" class="btn-share" aria-label="Share">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.5 2.5 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <form id="topInlineEditForm" class="top-edit-form {{ $errors->any() ? 'active' : '' }}"
+                    action="{{ route('trainer.profile.update') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="top-edit-grid">
+                        <div class="top-edit-field">
+                            <label for="top_name">Nama</label>
+                            <input id="top_name" type="text" name="name" value="{{ old('name', $trainer->name) }}" required>
+                        </div>
+                        <div class="top-edit-field">
+                            <label for="top_profession">Profesi</label>
+                            <input id="top_profession" type="text" name="profession"
+                                value="{{ old('profession', $trainer->profession) }}">
+                        </div>
+                        <div class="top-edit-field">
+                            <label for="top_institution">Institusi / Lokasi</label>
+                            <input id="top_institution" type="text" name="institution"
+                                value="{{ old('institution', $trainer->institution) }}">
+                        </div>
+                        <div class="top-edit-field">
+                            <label for="top_phone">Telepon</label>
+                            <input id="top_phone" type="text" name="phone" value="{{ old('phone', $trainer->phone) }}">
+                        </div>
+                        <div class="top-edit-field">
+                            <label>Email</label>
+                            <input type="text" value="{{ $trainer->email }}" readonly>
+                        </div>
+                    </div>
+                    <div class="top-edit-actions">
+                        <button type="button" id="topEditCancelBtn" class="top-edit-cancel">BATAL</button>
+                        <button type="submit" class="top-edit-save">SIMPAN</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <div class="profile-grid">
+            <aside class="list-stack">
+                <div class="card-box">
+                    <h3 class="card-title">Trainer Insights</h3>
+                    <div class="stats-row">
+                        <div class="stats-item">
+                            <p>Global Learners</p>
+                            <h4>{{ number_format($totalStudents) }}</h4>
+                        </div>
+                        <div class="stats-item">
+                            <p>Quality Score</p>
+                            <h4>{{ number_format($averageRating, 1) }} <i class="bi bi-star-fill" style="color:#f59e0b"></i>
+                            </h4>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e8ecf3;display:flex;justify-content:space-between;font-size:12px;color:#64748b;">
+                        <div style="text-align:center;flex:1;">
+                            <p style="margin:0 0 4px;font-weight:700;color:#0f172a;">{{ number_format($totalCourses) }}</p>
+                            <span>Courses</span>
+                        </div>
+                        <div style="text-align:center;flex:1;">
+                            <p style="margin:0 0 4px;font-weight:700;color:#0f172a;">{{ number_format($totalFeedbacks) }}</p>
+                            <span>Reviews</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-box">
+                    <h3 class="card-title">Professional Info</h3>
+                    <div style="display:grid;gap:10px;font-size:12px;">
+                        @if(!empty($trainer->profession))
+                            <div style="display:flex;gap:8px;align-items:flex-start;">
+                                <i class="bi bi-briefcase-fill" style="color:#1b1763;flex-shrink:0;margin-top:2px;"></i>
+                                <div>
+                                    <p style="margin:0;font-weight:700;color:#0f172a;">{{ $trainer->profession }}</p>
+                                    <p style="margin:2px 0 0;color:#64748b;">Role</p>
+                                </div>
+                            </div>
+                        @endif
+                        @if(!empty($trainer->institution))
+                            <div style="display:flex;gap:8px;align-items:flex-start;">
+                                <i class="bi bi-building" style="color:#1b1763;flex-shrink:0;margin-top:2px;"></i>
+                                <div>
+                                    <p style="margin:0;font-weight:700;color:#0f172a;">{{ $trainer->institution }}</p>
+                                    <p style="margin:2px 0 0;color:#64748b;">Institution</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="card-box">
+                    <h3 class="card-title">Area of Expertise</h3>
+                    <div class="pill-list">
+                        @foreach($expertiseTags as $tag)
+                            <span class="pill">{{ strtoupper($tag) }}</span>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="reward-box">
+                    <p>Gross Earnings</p>
+                    <h3>Rp {{ number_format($totalEarned, 0, ',', '.') }}</h3>
+                    <button type="button" id="openLedgerBtn"><i class="bi bi-window-stack"></i> VIEW PAYMENT
+                        RECORDS</button>
+                </div>
+
+                <div class="card-box">
+                    <h3 class="card-title">Upcoming Schedule</h3>
+                    <div class="list-stack">
+                        @forelse($upcomingEvents as $event)
+                            <a href="{{ route('trainer.events.show', $event->id) }}" class="item-box"
+                                style="text-decoration:none;color:inherit;">
+                                <h5>{{ $event->title }}</h5>
+                                <p>{{ optional($event->event_date)->format('d M Y') }} • {{ $event->participants_count }}
+                                    peserta</p>
+                            </a>
+                        @empty
+                            <div class="item-box">
+                                <h5>Belum ada jadwal terdekat</h5>
+                                <p>Event yang akan datang akan tampil di sini.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </aside>
+
+            <div class="content-section">
+                <div class="card-box">
+                    <h3 class="card-title">Pedagogical Statement</h3>
+                    <p style="margin:0;color:#334155;line-height:1.6;">{{ $displayBio }}</p>
+                </div>
+
+                <div style="background:linear-gradient(135deg, #f0f4ff 0%, #fbf8ff 100%);border-left:4px solid #1b1763;border-radius:10px;padding:14px;display:grid;gap:8px;">
+                    <h4 style="margin:0;font-size:13px;font-weight:700;color:#1b1763;">Trainer Impact</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+                        <div>
+                            <p style="margin:0;color:#64748b;font-weight:600;">Student Base</p>
+                            <p style="margin:4px 0 0;color:#0f172a;font-size:16px;font-weight:700;">{{ number_format($totalStudents) }} Active</p>
+                        </div>
+                        <div>
+                            <p style="margin:0;color:#64748b;font-weight:600;">Teaching Portfolio</p>
+                            <p style="margin:4px 0 0;color:#0f172a;font-size:16px;font-weight:700;">{{ number_format($totalCourses) }} Courses</p>
+                        </div>
+                        <div>
+                            <p style="margin:0;color:#64748b;font-weight:600;">Community Feedback</p>
+                            <p style="margin:4px 0 0;color:#0f172a;font-size:16px;font-weight:700;">{{ number_format($totalFeedbacks) }} Reviews</p>
+                        </div>
+                        <div>
+                            <p style="margin:0;color:#64748b;font-weight:600;">Quality Rating</p>
+                            <p style="margin:4px 0 0;color:#0f172a;font-size:16px;font-weight:700;">{{ number_format($averageRating, 1) }} ⭐</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-box">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+                        <h3 class="card-title" style="margin:0;">Featured Courses</h3>
+                        <a href="{{ route('trainer.courses') }}"
+                            style="font-size:12px;font-weight:700;text-decoration:none;color:#1b1763;">SEE ALL ({{ $totalCourses }})</a>
+                    </div>
+
+                    <div class="course-grid">
+                        @forelse($topCourses as $course)
+                            @php
+                                $thumbnail = $course->card_thumbnail;
+                                $thumbnailUrl = null;
+                                if (!empty($thumbnail)) {
+                                    $thumbnailUrl = \Illuminate\Support\Str::startsWith($thumbnail, ['http://', 'https://'])
+                                        ? $thumbnail
+                                        : asset('storage/' . ltrim($thumbnail, '/'));
+                                }
+                                $displayCourseImage = $thumbnailUrl ?: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=900';
+                                $rating = number_format((float) ($course->reviews_avg_rating ?? 0), 1);
+                              @endphp
+                            <a href="{{ route('trainer.detail-course', $course->id) }}" class="course-card" style="position:relative;">
+                                @if((float)$rating >= 4.5)
+                                    <div style="position:absolute;top:8px;right:8px;background:#fbbf24;color:#78350f;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:10;display:flex;align-items:center;gap:3px;">
+                                        <i class="bi bi-star-fill"></i> TOP
+                                    </div>
+                                @endif
+                                <img src="{{ $displayCourseImage }}" alt="{{ $course->name }}">
+                                <div class="course-card-body">
+                                    <div class="course-meta">
+                                        <span><i class="bi bi-star-fill" style="color:#f59e0b"></i> {{ $rating }}</span>
+                                        <span>{{ number_format($course->active_enrollments_count) }} LEARNERS</span>
+                                    </div>
+                                    <h4 class="course-title">{{ $course->name }}</h4>
+                                    <div class="course-meta">
+                                        <span>{{ strtoupper($course->level ?? 'GENERAL') }}</span>
+                                        <span>{{ $course->modules_count }} MODULES</span>
+                                    </div>
+                                </div>
+                            </a>
+                        @empty
+                            <div class="item-box" style="grid-column:1/-1;">
+                                <h5>Belum ada course</h5>
+                                <p>Course yang Anda ampu akan muncul di sini.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="card-box">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+                        <h3 class="card-title" style="margin:0;">Recent Student Feedback</h3>
+                        <div style="font-size:12px;font-weight:700;color:#1b1763;">
+                            {{ number_format($averageRating, 1) }} <i class="bi bi-star-fill" style="color:#f59e0b"></i>
+                        </div>
+                    </div>
+
+                    <div class="list-stack">
+                        @forelse($recentFeedbacks as $feedback)
+                            @php
+                                $rating = max(1, min(5, (int) $feedback->rating));
+                                $authorName = optional($feedback->user)->name ?: 'Anonymous';
+                              @endphp
+                            <div class="feedback-item">
+                                <div class="feedback-head">
+                                    <span class="stars">{{ str_repeat('★', $rating) }}{{ str_repeat('☆', 5 - $rating) }}</span>
+                                    <span>{{ optional($feedback->created_at)->diffForHumans() }}</span>
+                                </div>
+                                <div style="font-size:13px;color:#334155;line-height:1.55;">
+                                    {{ $feedback->comment ?: 'Tidak ada komentar.' }}
+                                </div>
+                                <div class="feedback-author">{{ strtoupper($authorName) }}</div>
+                            </div>
+                        @empty
+                            <div class="item-box">
+                                <h5>Belum ada feedback</h5>
+                                <p>Feedback peserta untuk course Anda akan tampil di sini.</p>
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <a href="{{ route('trainer.feedback') }}"
+                        style="display:inline-flex;gap:6px;align-items:center;margin-top:10px;text-decoration:none;font-size:12px;font-weight:700;color:#1b1763;">
+                        VIEW ALL REVIEWS <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-  </section>
 
-  <div class="profile-dashboard">
-    <!-- Left Sidebar -->
-    <aside class="dashboard-sidebar">
-      <!-- Combined Info Card: Stats + Expertise + Network -->
-      <div class="profile-info-card">
-        <!-- Stats Section -->
-        <div class="stats-section">
-          <div class="stat-item">
-            <span class="stat-label">GLOBAL LEARNERS</span>
-            <h2 class="stat-value">1,250</h2>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-label">QUALITY SCORE</span>
-            <h2 class="stat-value">
-              4.8
-              <svg class="stat-star" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fbbf24"
-                viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-            </h2>
-          </div>
+    <div id="ledgerModal" class="profile-modal">
+        <div class="profile-modal-overlay" id="ledgerModalOverlay"></div>
+        <div class="profile-modal-content">
+            <h3 style="margin:0 0 12px;color:#0f172a;">Financial Ledger</h3>
+
+            @forelse($ledgerPayments as $payment)
+                <div class="ledger-row">
+                    <div>
+                        <h6>{{ optional($payment->course)->name ?: optional($payment->event)->title ?: 'Pembayaran' }}</h6>
+                        <p>{{ optional($payment->created_at)->format('d M Y H:i') }} • {{ strtoupper($payment->method ?? '-') }}
+                        </p>
+                    </div>
+                    <div class="ledger-amount">+ Rp {{ number_format($payment->amount, 0, ',', '.') }}</div>
+                </div>
+            @empty
+                <div class="item-box">
+                    <h5>Belum ada transaksi</h5>
+                    <p>Data pembayaran settled akan tampil di sini.</p>
+                </div>
+            @endforelse
+
+            <button type="button" id="closeLedgerBtn"
+                style="width:100%;margin-top:10px;border:none;background:#1b1763;color:#fff;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;">CLOSE
+                RECORDS</button>
         </div>
-
-        <div class="info-divider"></div>
-
-        <!-- Expertise Stack Section -->
-        <div class="expertise-section">
-          <h3 class="section-title">EXPERTISE STACK</h3>
-          <div class="expertise-pills">
-            <span class="expertise-pill">FIGMA</span>
-            <span class="expertise-pill">SYSTEM DESIGN</span>
-          </div>
-        </div>
-
-        <div class="info-divider"></div>
-
-        <!-- Network Tunnels Section -->
-        <div class="network-section">
-          <h3 class="section-title">NETWORK TUNNELS</h3>
-          <div class="network-icons">
-            <a href="#" class="network-icon" aria-label="LinkedIn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z" />
-              </svg>
-            </a>
-            <a href="#" class="network-icon" aria-label="Website">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-4.468 12.39c.69-1.2 1.92-2.39 3.468-2.39 1.55 0 2.78 1.19 3.47 2.39A7 7 0 0 0 8 1m0 1c-1.44 0-2.71 1.13-3.44 2.78A7.8 7.8 0 0 0 4 8c0 1.12.2 2.18.56 3.22C5.29 12.87 6.56 14 8 14s2.71-1.13 3.44-2.78A7.8 7.8 0 0 0 12 8c0-1.12-.2-2.18-.56-3.22C10.71 3.13 9.44 2 8 2" />
-              </svg>
-            </a>
-            <a href="#" class="network-icon" aria-label="Twitter">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334q0-.213-.006-.425A6.7 6.7 0 0 0 16 3.542a6.6 6.6 0 0 1-1.889.518 3.3 3.3 0 0 0 1.447-1.817 6.6 6.6 0 0 1-2.087.793A3.28 3.28 0 0 0 7.88 6.03a9.3 9.3 0 0 1-6.766-3.43 3.28 3.28 0 0 0 1.015 4.381A3.3 3.3 0 0 1 .64 6.575v.045A3.28 3.28 0 0 0 3.277 9.84a3.3 3.3 0 0 1-1.482.056 3.28 3.28 0 0 0 3.064 2.277A6.58 6.58 0 0 1 .78 13.58 6.6 6.6 0 0 1 0 13.54a9.29 9.29 0 0 0 5.026 1.47" />
-              </svg>
-            </a>
-            <a href="#" class="network-icon" aria-label="GitHub">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Reward Ledger -->
-      <div class="reward-card">
-        <h3 class="section-title reward-title">REWARD LEDGER</h3>
-        <div class="reward-content">
-          <p class="reward-label">GROSS EARNINGS</p>
-          <h2 class="reward-amount">
-            $12,450<span class="reward-cents">.00</span>
-          </h2>
-        </div>
-        <button class="btn-view-records">
-          <i class="bi bi-window-stack"></i>
-          VIEW PAYMENT RECORDS
-        </button>
-      </div>
-
-      <!-- Upcoming Schedule -->
-      <div class="schedule-card">
-        <div class="schedule-header">
-          <h3 class="schedule-title-main">UPCOMING SCHEDULE</h3>
-          <i class="bi bi-calendar3"></i>
-        </div>
-
-        <div class="schedule-list">
-          <!-- Schedule Item 1 -->
-          <a href="/pages/detail-course.html" class="schedule-item-link">
-            <div class="schedule-item">
-              <div class="schedule-badge workshop">WORKSHOP</div>
-              <h4 class="schedule-item-title">Advanced UI Patterns</h4>
-              <p class="schedule-item-meta">45 Learners Enrolled</p>
-              <p class="schedule-item-time">Tomorrow, 10:00 AM</p>
-            </div>
-          </a>
-
-          <!-- Schedule Item 2 -->
-          <a href="/pages/detail-course.html" class="schedule-item-link">
-            <div class="schedule-item">
-              <div class="schedule-badge workshop">WORKSHOP</div>
-              <h4 class="schedule-item-title">Design Systems Workshop</h4>
-              <p class="schedule-item-meta">28 Learners Enrolled</p>
-              <p class="schedule-item-time">Wed, 2:00 PM</p>
-            </div>
-          </a>
-
-          <!-- Schedule Item 3 -->
-          <a href="/pages/detail-course.html" class="schedule-item-link">
-            <div class="schedule-item">
-              <div class="schedule-badge one-on-one">1-ON-1</div>
-              <h4 class="schedule-item-title">Portfolio Review</h4>
-              <p class="schedule-item-meta">1 Learners Enrolled</p>
-              <p class="schedule-item-time">Fri, 4:30 PM</p>
-            </div>
-          </a>
-        </div>
-
-        <a href="/pages/dashboard.html" class="schedule-manage-link">
-          MANAGE FULL CALENDAR
-        </a>
-      </div>
-    </aside>
-
-    <!-- Right Content Area -->
-    <div class="dashboard-content">
-      <!-- Pedagogical Statement -->
-      <div class="pedagogical-statement">
-        <div class="statement-header">
-          <h2 class="statement-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-              <path
-                d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
-            </svg>
-            Pedagogical Statement
-          </h2>
-          <button class="btn-edit-statement" aria-label="Edit Statement">
-            <i class="bi bi-pencil"></i>
-          </button>
-        </div>
-        <p class="statement-text">
-          Transforming complex problems into elegant solutions.
-        </p>
-      </div>
-
-      <!-- Active Course Portfolio -->
-      <div class="portfolio-header">
-        <h2 class="portfolio-title">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path
-              d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z" />
-          </svg>
-          ACTIVE COURSE PORTFOLIO
-        </h2>
-        <a href="course.html" class="view-all">VIEW ALL</a>
-      </div>
-      <div class="course-grid">
-        <div class="course-card-item">
-          <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&q=80&w=600"
-            alt="Visual Branding Architecture" class="course-image" />
-          <div class="course-info">
-            <div class="course-meta">
-              <span class="course-rating">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                  <path
-                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                </svg>
-                4.9
-              </span>
-              <span class="course-learners">850 LEARNERS</span>
-            </div>
-            <h3 class="course-title">Visual Branding Architecture</h3>
-            <span class="course-level intermediate">INTERMEDIATE</span>
-          </div>
-          <div class="course-bottom">
-            <span class="course-modules">4 MODULES</span>
-            <i class="bi bi-arrow-right course-arrow"></i>
-          </div>
-        </div>
-        <div class="course-card-item">
-          <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=600"
-            alt="Advanced AI Architectures" class="course-image" />
-          <div class="course-info">
-            <div class="course-meta">
-              <span class="course-rating">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                  <path
-                    d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                </svg>
-                4.7
-              </span>
-              <span class="course-learners">420 LEARNERS</span>
-            </div>
-            <h3 class="course-title">Advanced AI Architectures</h3>
-            <span class="course-level advanced">ADVANCED</span>
-          </div>
-          <div class="course-bottom">
-            <span class="course-modules">6 MODULES</span>
-            <i class="bi bi-arrow-right course-arrow"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Student Feedback -->
-      <div class="student-feedback">
-        <div class="feedback-header">
-          <h2 class="feedback-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-              <path
-                d="M12 12a1 1 0 0 0 1-1V8.558a1 1 0 0 0-1-1h-1.388q0-.527.062-1.054.093-.558.31-.992t.559-.683q.34-.279.868-.279V3q-.868 0-1.52.372a3.3 3.3 0 0 0-1.085.992 4.9 4.9 0 0 0-.62 1.458A7.7 7.7 0 0 0 9 7.558V11a1 1 0 0 0 1 1zm-6 0a1 1 0 0 0 1-1V8.558a1 1 0 0 0-1-1H4.612q0-.527.062-1.054.094-.558.31-.992.217-.434.559-.683.34-.279.868-.279V3q-.868 0-1.52.372a3.3 3.3 0 0 0-1.085.992 4.9 4.9 0 0 0-.62 1.458A7.7 7.7 0 0 0 3 7.558V11a1 1 0 0 0 1 1z" />
-            </svg>
-            Recent Student Feedback
-          </h2>
-          <span class="feedback-rating">
-            4.8
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#fbbf24" viewBox="0 0 16 16">
-              <path
-                d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-            </svg>
-          </span>
-        </div>
-        <div class="feedback-list">
-          <div class="feedback-item">
-            <div class="feedback-stars">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <span class="feedback-time">2 DAYS AGO</span>
-            </div>
-            <p class="feedback-text">
-              "Sarah is an amazing mentor! Her insights on design systems
-              changed how I work."
-            </p>
-            <div class="feedback-author">
-              <div class="author-avatar">J</div>
-              <span class="author-name">JOHN DOE</span>
-            </div>
-          </div>
-          <div class="feedback-item">
-            <div class="feedback-stars">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#fbbf24" viewBox="0 0 16 16">
-                <path
-                  d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-              </svg>
-              <span class="feedback-time">5 DAYS AGO</span>
-            </div>
-            <p class="feedback-text">
-              "The course was very practical and the feedback was extremely
-              helpful."
-            </p>
-            <div class="feedback-author">
-              <div class="author-avatar">J</div>
-              <span class="author-name">JANE SMITH</span>
-            </div>
-          </div>
-        </div>
-        <a href="feedback.html" class="view-all-reviews">VIEW ALL REVIEWS <i class="bi bi-arrow-right"></i></a>
-      </div>
     </div>
-  </div>
-  </main>
-  <div id="financial-ledger-modal" class="modal">
-    <div class="modal-overlay" id="modal-overlay"></div>
-    <div class="modal-content financial-ledger-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">Financial Ledger</h2>
-      </div>
-
-      <div class="ledger-items">
-        <div class="ledger-item">
-          <div class="ledger-info">
-            <h4 class="ledger-item-name">Monthly Course Royalty</h4>
-            <p class="ledger-item-date">2024-03-01</p>
-          </div>
-          <div class="ledger-amount-section">
-            <span class="ledger-amount">+$1250</span>
-            <span class="ledger-status success">SUCCESS</span>
-          </div>
-        </div>
-
-        <div class="ledger-item">
-          <div class="ledger-info">
-            <h4 class="ledger-item-name">Masterclass Workshop Fee</h4>
-            <p class="ledger-item-date">2024-02-28</p>
-          </div>
-          <div class="ledger-amount-section">
-            <span class="ledger-amount">+$2500</span>
-            <span class="ledger-status success">SUCCESS</span>
-          </div>
-        </div>
-
-        <div class="ledger-item">
-          <div class="ledger-info">
-            <h4 class="ledger-item-name">Academic Audit Bonus</h4>
-            <p class="ledger-item-date">2024-02-15</p>
-          </div>
-          <div class="ledger-amount-section">
-            <span class="ledger-amount">+$800</span>
-            <span class="ledger-status success">SUCCESS</span>
-          </div>
-        </div>
-      </div>
-
-      <button class="btn-close-records" id="close-modal-btn">CLOSE RECORDS</button>
-    </div>
-  </div>
-  </div>
-
 @endsection
 
 @push('scripts')
-  <script>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-          const viewRecordsBtn = document.querySelector('.btn-view-records');
-      const modal = document.getElementById('financial-ledger-modal');
-      const closeModalBtn = document.getElementById('close-modal-btn');
-      const modalOverlay = document.getElementById('modal-overlay');
+        document.addEventListener('DOMContentLoaded', function () {
+            const topEditToggleBtn = document.getElementById('topEditToggleBtn');
+            const topInlineEditForm = document.getElementById('topInlineEditForm');
+            const topEditCancelBtn = document.getElementById('topEditCancelBtn');
 
-      if (viewRecordsBtn) {
-        viewRecordsBtn.addEventListener('click', function () {
-          modal.classList.add('active');
-          document.body.style.overflow = 'hidden';
-        });
-          }
+            const syncTopEditButton = () => {
+                if (!topEditToggleBtn || !topInlineEditForm) return;
+                const isActive = topInlineEditForm.classList.contains('active');
+                topEditToggleBtn.textContent = isActive ? 'TUTUP CONFIGURE' : 'CONFIGURE PROFILE';
+            };
 
-      if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', function () {
-          modal.classList.remove('active');
-          document.body.style.overflow = 'auto';
-        });
-          }
+            if (topEditToggleBtn && topInlineEditForm) {
+                topEditToggleBtn.addEventListener('click', function () {
+                    topInlineEditForm.classList.toggle('active');
+                    syncTopEditButton();
+                });
+            }
 
-      if (modalOverlay) {
-        modalOverlay.addEventListener('click', function () {
-          modal.classList.remove('active');
-          document.body.style.overflow = 'auto';
+            if (topEditCancelBtn && topInlineEditForm) {
+                topEditCancelBtn.addEventListener('click', function () {
+                    topInlineEditForm.classList.remove('active');
+                    syncTopEditButton();
+                });
+            }
+
+            syncTopEditButton();
+
+            // Profile photo upload handler
+            const profilePhotoBadge = document.getElementById('profilePhotoBadge');
+            const avatarFileInput = document.getElementById('avatarFileInput');
+
+            if (profilePhotoBadge && avatarFileInput) {
+                profilePhotoBadge.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    avatarFileInput.click();
+                });
+
+                avatarFileInput.addEventListener('change', function (e) {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        const formData = new FormData();
+                        formData.append('_token', document.querySelector('input[name="_token"]')?.value || '');
+                        formData.append('_method', 'PUT');
+                        formData.append('avatar', file);
+
+                        fetch('{{ route("trainer.profile.update") }}', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Update image src
+                                    const profileImg = document.querySelector('.profile-photo img');
+                                    if (profileImg && data.avatar_url) {
+                                        profileImg.src = data.avatar_url + '?' + new Date().getTime();
+                                    }
+                                    // Reset file input
+                                    avatarFileInput.value = '';
+                                }
+                            })
+                            .catch(err => console.error('Upload error:', err));
+                    }
+                });
+            }
+
+            const modal = document.getElementById('ledgerModal');
+            const openBtn = document.getElementById('openLedgerBtn');
+            const closeBtn = document.getElementById('closeLedgerBtn');
+            const overlay = document.getElementById('ledgerModalOverlay');
+
+            if (!modal || !openBtn || !closeBtn || !overlay) {
+                return;
+            }
+
+            const openModal = () => {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            };
+
+            const closeModal = () => {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            };
+
+            openBtn.addEventListener('click', openModal);
+            closeBtn.addEventListener('click', closeModal);
+            overlay.addEventListener('click', closeModal);
         });
-          }
-        });
-  </script>
+    </script>
 @endpush

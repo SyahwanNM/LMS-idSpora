@@ -221,9 +221,11 @@ class TrainerController extends Controller
         $allModules = \App\Models\CourseModule::where('course_id', $id)
             ->with([
                 'quizQuestions' => function ($query) {
-                    $query->orderBy('order_no', 'asc')->with(['answers' => function ($answerQuery) {
-                        $answerQuery->orderBy('order_no', 'asc');
-                    }]);
+                    $query->orderBy('order_no', 'asc')->with([
+                        'answers' => function ($answerQuery) {
+                            $answerQuery->orderBy('order_no', 'asc');
+                        }
+                    ]);
                 }
             ])
             ->withCount('quizQuestions')
@@ -296,11 +298,22 @@ class TrainerController extends Controller
 
     public function finance()
     {
-        $user = Auth::user();
+        $trainerId = Auth::id();
 
-        $totalEarned = $user->trainerPayments()->sum('amount');
-        $payments = $user->trainerPayments()
-            ->orderBy('payment_date', 'desc')
+        $baseQuery = \App\Models\ManualPayment::query()
+            ->with(['user:id,name', 'event:id,title,trainer_id', 'course:id,name,trainer_id'])
+            ->where('status', 'settled')
+            ->where(function ($query) use ($trainerId) {
+                $query->whereHas('course', function ($courseQuery) use ($trainerId) {
+                    $courseQuery->where('trainer_id', $trainerId);
+                })->orWhereHas('event', function ($eventQuery) use ($trainerId) {
+                    $eventQuery->where('trainer_id', $trainerId);
+                });
+            });
+
+        $totalEarned = (clone $baseQuery)->sum('amount');
+        $payments = (clone $baseQuery)
+            ->latest('created_at')
             ->paginate(10);
 
         return view('trainer.finance', compact('totalEarned', 'payments'));
@@ -310,10 +323,171 @@ class TrainerController extends Controller
     {
         $trainer = Auth::user();
         $courses = $trainer->coursesAsTrainer()
-            ->with(['modules', 'reviews', 'enrollments'])
+            ->with(['modules', 'reviews', 'enrollments', 'category'])
+            ->withCount([
+                'enrollments as active_enrollments_count' => function ($query) {
+                    $query->where('status', 'active');
+                },
+                'modules'
+            ])
+            ->withAvg('reviews', 'rating')
             ->get();
 
-        return view('trainer.profile', compact('trainer', 'courses'));
+        $courseIds = $courses->pluck('id');
+
+        $totalStudents = $trainer->trainerEnrollments()
+            ->where('enrollments.status', 'active')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $feedbackQuery = \App\Models\Feedback::query();
+        if ($courseIds->isNotEmpty()) {
+            $feedbackQuery->whereIn('course_id', $courseIds);
+        } else {
+            $feedbackQuery->whereRaw('1 = 0');
+        }
+
+        $averageRating = round((clone $feedbackQuery)->avg('rating') ?? 0, 1);
+
+        $recentFeedbacks = (clone $feedbackQuery)
+            ->with('user:id,name')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        $upcomingEvents = $trainer->eventsAsTrainer()
+            ->whereDate('event_date', '>=', now()->toDateString())
+            ->withCount([
+                'registrations as participants_count' => function ($query) {
+                    $query->where('status', 'active');
+                }
+            ])
+            ->orderBy('event_date', 'asc')
+            ->take(3)
+            ->get();
+
+        $paymentsQuery = \App\Models\ManualPayment::query()
+            ->with(['course:id,name,trainer_id', 'event:id,title,trainer_id'])
+            ->where('status', 'settled')
+            ->where(function ($query) use ($trainer) {
+                $query->whereHas('course', function ($courseQuery) use ($trainer) {
+                    $courseQuery->where('trainer_id', $trainer->id);
+                })->orWhereHas('event', function ($eventQuery) use ($trainer) {
+                    $eventQuery->where('trainer_id', $trainer->id);
+                });
+            });
+
+        $totalEarned = (clone $paymentsQuery)->sum('amount');
+        $ledgerPayments = (clone $paymentsQuery)
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        $expertiseTags = $courses
+            ->pluck('category.name')
+            ->filter()
+            ->unique()
+            ->values()
+            ->take(6);
+
+        if ($expertiseTags->isEmpty() && !empty($trainer->profession)) {
+            $expertiseTags = collect(explode(' ', strtoupper($trainer->profession)))
+                ->filter()
+                ->take(4)
+                ->values();
+        }
+
+        if ($expertiseTags->isEmpty()) {
+            $expertiseTags = collect(['TRAINING', 'MENTORING']);
+        }
+
+        // Additional stats for enhanced profile
+        $totalCourses = $courses->count();
+        $totalEvents = $trainer->eventsAsTrainer()->count();
+        $totalFeedbacks = (clone $feedbackQuery)->count();
+        $topCourses = $courses->sortByDesc('reviews_avg_rating')->take(3);
+
+        return view('trainer.profile', compact(
+            'trainer',
+            'courses',
+            'totalStudents',
+            'averageRating',
+            'recentFeedbacks',
+            'upcomingEvents',
+            'totalEarned',
+            'ledgerPayments',
+            'expertiseTags',
+            'totalCourses',
+            'totalEvents',
+            'totalFeedbacks',
+            'topCourses'
+        ));
+    }
+
+    public function editProfile()
+    {
+        $trainer = Auth::user();
+
+        return view('trainer.profile-edit', compact('trainer'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $trainer = Auth::user();
+
+        // Check if this is avatar-only upload (AJAX or file input only)
+        $isAvatarOnly = $request->hasFile('avatar') && !$request->filled('name');
+
+        $rules = [
+            'phone' => 'nullable|string|max:30',
+            'profession' => 'nullable|string|max:100',
+            'institution' => 'nullable|string|max:255',
+            'website' => 'nullable|string|max:255',
+            'bio' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ];
+
+        if (!$isAvatarOnly) {
+            $rules['name'] = 'required|string|max:255';
+        }
+
+        $validated = $request->validate($rules);
+
+        if ($request->hasFile('avatar') || $request->hasFile('avatar_file')) {
+            $avatarFile = $request->file('avatar') ?? $request->file('avatar_file');
+
+            if ($avatarFile) {
+                // Delete old avatar
+                if (!empty($trainer->avatar) && !str_starts_with((string) $trainer->avatar, 'http')) {
+                    $oldPath = str_starts_with((string) $trainer->avatar, 'avatars/')
+                        ? (string) $trainer->avatar
+                        : 'avatars/' . $trainer->avatar;
+
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
+
+                $filename = uniqid('ava_') . '.' . $avatarFile->getClientOriginalExtension();
+                Storage::disk('public')->putFileAs('avatars', $avatarFile, $filename);
+                $validated['avatar'] = $filename;
+            }
+        } else {
+            unset($validated['avatar']);
+        }
+
+        $trainer->update($validated);
+
+        // Return JSON for AJAX avatar uploads
+        if ($isAvatarOnly) {
+            return response()->json([
+                'success' => true,
+                'avatar_url' => $trainer->avatar_url,
+                'message' => 'Foto profil berhasil diperbarui.'
+            ]);
+        }
+
+        return redirect()->route('trainer.profile')->with('success', 'Profil trainer berhasil diperbarui.');
     }
 
     public function uploadCourseMaterials(Request $request, $id)
@@ -448,6 +622,52 @@ class TrainerController extends Controller
         }
         return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
     }
+
+    public function uploadEventMaterials(Request $request, $id)
+    {
+        $request->validate([
+            'files' => 'required|array|min:1',
+            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
+        ]);
+
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', Auth::id())
+            ->firstOrFail();
+
+        if (!$request->hasFile('files')) {
+            return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+        }
+
+        $storedFiles = [];
+        $latestImagePath = null;
+
+        foreach ($request->file('files') as $file) {
+            $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+            $filepath = $file->storeAs('events/' . $event->id . '/materials', $filename, 'public');
+
+            $storedFiles[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $filepath,
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ];
+
+            if (str_starts_with((string) $file->getMimeType(), 'image/')) {
+                $latestImagePath = $filepath;
+            }
+        }
+
+        if ($latestImagePath) {
+            $event->update(['vbg_path' => $latestImagePath]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => count($storedFiles) . ' file berhasil diunggah.',
+            'files' => $storedFiles,
+        ]);
+    }
+
     public function saveCourseQuiz(Request $request, $id)
     {
         $request->validate([
@@ -486,7 +706,7 @@ class TrainerController extends Controller
                 foreach ($questionData['options'] as $optionIndex => $optionText) {
                     $quizQuestion->answers()->create([
                         'answer_text' => $optionText,
-                        'is_correct' => ($optionIndex === (int)$questionData['correctAnswer']),
+                        'is_correct' => ($optionIndex === (int) $questionData['correctAnswer']),
                         'order_no' => $optionIndex + 1,
                     ]);
                 }
