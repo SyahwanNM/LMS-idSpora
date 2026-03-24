@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\Quiz;
+use App\Models\TrainerNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +39,28 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
-        return view('trainer.dashboard', compact('myCourses', 'students', 'totalCourses', 'totalStudents'));
+        $dashboardInvitations = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->whereIn('type', ['course_invitation', 'event_invitation'])
+            ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        $unreadInvitationCount = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->whereIn('type', ['course_invitation', 'event_invitation'])
+            ->whereNull('read_at')
+            ->count();
+
+        return view('trainer.dashboard', compact(
+            'myCourses',
+            'students',
+            'totalCourses',
+            'totalStudents',
+            'dashboardInvitations',
+            'unreadInvitationCount'
+        ));
     }
 
     public function courses()
@@ -156,13 +178,9 @@ class TrainerController extends Controller
         $user = \Illuminate\Support\Facades\Auth::user();
 
         $eventIds = \App\Models\Event::where('trainer_id', $user->id)->pluck('id');
-        $courseIds = \App\Models\Course::where('trainer_id', $user->id)->pluck('id');
 
-        $query = \App\Models\Feedback::with(['user', 'event', 'course'])
-            ->where(function ($q) use ($eventIds, $courseIds) {
-                $q->whereIn('event_id', $eventIds)
-                    ->orWhereIn('course_id', $courseIds);
-            })
+        $query = \App\Models\Feedback::with(['user', 'event', 'replies.trainer'])
+            ->whereIn('event_id', $eventIds)
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('search')) {
@@ -176,9 +194,7 @@ class TrainerController extends Controller
 
         $feedbacks = $query->paginate(10);
 
-        $statQuery = \App\Models\Feedback::where(function ($q) use ($eventIds, $courseIds) {
-            $q->whereIn('event_id', $eventIds)->orWhereIn('course_id', $courseIds);
-        });
+        $statQuery = \App\Models\Feedback::whereIn('event_id', $eventIds);
 
         $totalFeedbacks = $statQuery->count();
         $averageRating = 0;
@@ -340,9 +356,10 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
+        $eventIds = $trainer->eventsAsTrainer()->pluck('id');
         $feedbackQuery = \App\Models\Feedback::query();
-        if ($courseIds->isNotEmpty()) {
-            $feedbackQuery->whereIn('course_id', $courseIds);
+        if ($eventIds->isNotEmpty()) {
+            $feedbackQuery->whereIn('event_id', $eventIds);
         } else {
             $feedbackQuery->whereRaw('1 = 0');
         }
@@ -350,7 +367,7 @@ class TrainerController extends Controller
         $averageRating = round((clone $feedbackQuery)->avg('rating') ?? 0, 1);
 
         $recentFeedbacks = (clone $feedbackQuery)
-            ->with('user:id,name')
+            ->with(['user:id,name', 'replies.trainer'])
             ->latest('created_at')
             ->take(3)
             ->get();
@@ -470,7 +487,7 @@ class TrainerController extends Controller
 
                 $filename = uniqid('ava_') . '.' . $avatarFile->getClientOriginalExtension();
                 Storage::disk('public')->putFileAs('avatars', $avatarFile, $filename);
-                $validated['avatar'] = $filename;
+                $validated['avatar'] = 'avatars/' . $filename;
             }
         } else {
             unset($validated['avatar']);
@@ -759,5 +776,42 @@ class TrainerController extends Controller
             'jpg', 'jpeg', 'png' => 'image',
             default => 'file',
         };
+    }
+
+    public function storeFeedbackReply(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        $validated = $request->validate([
+            'feedback_id' => 'required|exists:feedback,id',
+            'response' => 'required|string|min:3|max:5000',
+        ]);
+
+        // Verify that the feedback belongs to an event the trainer manages
+        $feedback = \App\Models\Feedback::findOrFail($validated['feedback_id']);
+
+        $trainerHasAccess = \App\Models\Event::where('id', $feedback->event_id)
+            ->where('trainer_id', $user->id)
+            ->exists();
+
+        if (!$trainerHasAccess) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access to this feedback'
+            ], 403);
+        }
+
+        // Create the reply
+        $reply = \App\Models\FeedbackReply::create([
+            'feedback_id' => $validated['feedback_id'],
+            'trainer_id' => $user->id,
+            'response' => $validated['response'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reply saved successfully',
+            'data' => $reply
+        ]);
     }
 }

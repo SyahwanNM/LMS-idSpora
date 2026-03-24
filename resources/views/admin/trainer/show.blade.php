@@ -412,6 +412,25 @@
                             <div class="detail-value">{{ $trainer->phone ?? '—' }}</div>
                         </div>
                         <div class="detail-row">
+                            <div class="detail-label">Profesi</div>
+                            <div class="detail-value">{{ $trainer->profession ?? '—' }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Institusi</div>
+                            <div class="detail-value">{{ $trainer->institution ?? '—' }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Website</div>
+                            <div class="detail-value">
+                                @if(!empty($trainer->website))
+                                    <a href="{{ $trainer->website }}" target="_blank"
+                                        rel="noopener noreferrer">{{ $trainer->website }}</a>
+                                @else
+                                    —
+                                @endif
+                            </div>
+                        </div>
+                        <div class="detail-row">
                             <div class="detail-label">Role</div>
                             <div class="detail-value">
                                 <span class="badge" style="background: #3949ab; padding: 6px 12px;">

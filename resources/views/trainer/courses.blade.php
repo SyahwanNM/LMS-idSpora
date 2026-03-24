@@ -17,7 +17,7 @@
 @endpush
 
 @section('content')
-    <main>
+    <div class="courses-page">
         <section class="top-page">
             <div class="glow-circle glow-circle-1"></div>
             <div class="glow-circle glow-circle-2"></div>
@@ -55,22 +55,6 @@
                                 d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z" />
                         </svg>
                     </button>
-
-                    <div class="upcoming-card">
-                        <div class="upcoming-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                class="bi bi-journal-bookmark-fill" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M6 8V1h1v6.117L8.447 5.67l.553.553L6.5 8.723zm8 5V2.5A1.5 1.5 0 0 0 12.5 1h-1A1.5 1.5 0 0 0 10 2.5V13l2-1 2 1z" />
-                                <path
-                                    d="M0 2a2 2 0 0 1 2-2h9.5A2.5 2.5 0 0 1 14 2.5V14a1 1 0 0 1-1.447.894L12 14.618l-.553.276A1 1 0 0 1 10 14V2.5a.5.5 0 0 0-.5-.5H2a1 1 0 0 0-1 1v11.5a.5.5 0 0 0 .5.5H9v1H1.5A1.5 1.5 0 0 1 0 14.5z" />
-                            </svg>
-                        </div>
-                        <div class="upcoming-text">
-                            <span class="upcoming-label">TOTAL COURSES</span>
-                            <span class="upcoming-count">{{ $courses->total() }}</span>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
@@ -146,5 +130,5 @@
                 {{ $courses->links() }}
             </div>
         @endif
-    </main>
+    </div>
 @endsection

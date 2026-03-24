@@ -439,13 +439,39 @@
 
             <div class="content-card">
                 <div class="toolbar">
+                    @php
+                        $activeDeadlineFilter = $deadlineFilter ?? 'all';
+                        $activeSearch = trim((string) request('search', ''));
+                        $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
+                        $deadlineLabelMap = [
+                            'all' => 'Semua Deadline',
+                            'overdue' => 'Overdue',
+                            'on_time' => 'Tepat Waktu',
+                            'no_deadline' => 'Tanpa Deadline',
+                        ];
+                    @endphp
                     <form method="GET" class="search-box">
                         <i class="bi bi-search"></i>
                         <input type="text" name="search" placeholder="Cari materi yang disetujui..."
                             value="{{ request('search') }}">
+                        <select name="deadline_filter" onchange="this.form.submit()"
+                            style="border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.85rem;">
+                            <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline
+                            </option>
+                            <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Overdue
+                            </option>
+                            <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
+                                Waktu</option>
+                            <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                                Tanpa Deadline</option>
+                        </select>
                     </form>
 
-                    @if(request('search'))
+                    @if($hasActiveFilter)
+                        <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
+                            Filter:
+                            {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
+                        </span>
                         <a href="{{ route('admin.material.approved') }}" class="btn-action">
                             <i class="bi bi-x-circle"></i> Reset
                         </a>
@@ -461,6 +487,7 @@
                                 <th>Isi Modul</th>
                                 <th>Tanggal Disetujui</th>
                                 <th>Status</th>
+                                <th>Monitoring Deadline</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
@@ -504,6 +531,16 @@
                                     <td>
                                         <span class="badge-status badge-approved-status">Live</span>
                                     </td>
+                                    <td>
+                                        @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
+                                        <div style="font-weight: 600; color: #334155;">
+                                            {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
+                                        </div>
+                                        <div
+                                            style="font-size: 0.75rem; color: {{ ($monitor['status'] ?? '') === 'late' ? '#b91c1c' : '#64748b' }};">
+                                            {{ $monitor['status_text'] ?? 'Tanpa deadline' }}
+                                        </div>
+                                    </td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action">
                                             Lihat <i class="bi bi-eye"></i>
@@ -512,7 +549,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="7">
                                         <div class="empty-state">
                                             <i class="bi bi-inbox"></i>
                                             <h5 class="fw-bold text-dark">Belum ada materi</h5>
@@ -527,7 +564,7 @@
 
                 @if($approvedMaterials->hasPages())
                     <div class="p-3 border-top">
-                        {{ $approvedMaterials->links('pagination::bootstrap-5') }}
+                        {{ $approvedMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
                     </div>
                 @endif
             </div>

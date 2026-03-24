@@ -417,8 +417,24 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('admin.trainer.store') }}" method="POST">
+                            <form action="{{ route('admin.trainer.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
+
+                                <div class="mb-5">
+                                    <h5 class="form-section-title">
+                                        <i class="bi bi-image" style="color: #3949ab;"></i>
+                                        Foto Profil
+                                    </h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Avatar</label>
+                                            <input type="file" name="avatar"
+                                                class="form-control @error('avatar') is-invalid @enderror" accept="image/*">
+                                            @error('avatar')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <!-- Personal Information Section -->
                                 <div class="mb-5">
@@ -509,6 +525,33 @@
                                     </h5>
 
                                     <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Profesi / Jabatan</label>
+                                            <input type="text" name="profession"
+                                                class="form-control @error('profession') is-invalid @enderror"
+                                                placeholder="Contoh: Senior Developer" value="{{ old('profession') }}">
+                                            @error('profession')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Institusi / Perusahaan</label>
+                                            <input type="text" name="institution"
+                                                class="form-control @error('institution') is-invalid @enderror"
+                                                placeholder="Contoh: PT. Maju Jaya" value="{{ old('institution') }}">
+                                            @error('institution')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <label class="form-label">Website</label>
+                                            <input type="text" name="website"
+                                                class="form-control @error('website') is-invalid @enderror"
+                                                placeholder="https://example.com" value="{{ old('website') }}">
+                                            @error('website')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
                                         <div class="col-md-12">
                                             <label class="form-label">Bio / Deskripsi</label>
                                             <textarea name="bio" rows="4"

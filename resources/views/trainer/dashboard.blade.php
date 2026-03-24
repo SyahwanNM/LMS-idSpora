@@ -173,19 +173,72 @@
             </svg>
           </div>
           <div>
-            <p class="invitation-badge">Insight Feedback</p>
+            <p class="invitation-badge">Undangan Trainer</p>
             <h3 class="invitation-title">
-              Pantau Kepuasan Siswa Anda
+              Tugas Baru dari Admin
             </h3>
+            <p class="invitation-meta">
+              {{ $unreadInvitationCount }} undangan belum dibaca
+            </p>
           </div>
         </div>
-        <div class="invitation-buttons">
-          <a href="{{ route('trainer.feedback') }}" class="btn-review" style="width:100%">
-            LIHAT FEEDBACK
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 3L11 8L6 13" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </a>
+        <div class="invitation-list">
+          @forelse($dashboardInvitations as $invite)
+            @php
+              $inviteUrl = data_get($invite->data, 'url');
+              $inviteStatus = data_get($invite->data, 'invitation_status', 'pending');
+              $inviteDueAt = data_get($invite->data, 'due_at');
+              $dueDate = $inviteDueAt ? \Illuminate\Support\Carbon::parse($inviteDueAt) : null;
+              $isOverdue = $dueDate ? $dueDate->isPast() : false;
+            @endphp
+            <div class="invitation-item {{ is_null($invite->read_at) ? 'is-unread' : '' }}">
+              <div class="invitation-item-top">
+                <h4 class="invitation-item-title">{{ $invite->title }}</h4>
+                @if($inviteStatus === 'accepted')
+                  <span class="invitation-pill is-accepted">Diterima</span>
+                @elseif($inviteStatus === 'rejected')
+                  <span class="invitation-pill is-rejected">Ditolak</span>
+                @elseif(is_null($invite->read_at))
+                  <span class="invitation-pill">Baru</span>
+                @endif
+              </div>
+              <p class="invitation-item-message">{{ $invite->message }}</p>
+              @if($dueDate)
+                <p class="invitation-deadline {{ $isOverdue && $inviteStatus === 'pending' ? 'is-overdue' : '' }}">
+                  Deadline: {{ $dueDate->format('d M Y H:i') }}
+                  @if($isOverdue && $inviteStatus === 'pending')
+                    (Terlambat)
+                  @endif
+                </p>
+              @endif
+              <div class="invitation-item-footer">
+                <span class="invitation-item-time">{{ $invite->created_at?->diffForHumans() }}</span>
+                @if(!empty($inviteUrl))
+                  <a href="{{ route('trainer.notifications.open', $invite->id) }}" class="invitation-item-link">Buka</a>
+                @endif
+              </div>
+              @if($inviteStatus === 'pending')
+                <div class="invitation-actions">
+                  <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                    class="js-invitation-response-form">
+                    @csrf
+                    <input type="hidden" name="decision" value="accept">
+                    <button type="submit" class="invitation-btn accept" data-loading-text="Memproses...">Terima</button>
+                  </form>
+                  <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                    class="js-invitation-response-form" data-confirm="Yakin ingin menolak undangan ini?">
+                    @csrf
+                    <input type="hidden" name="decision" value="reject">
+                    <button type="submit" class="invitation-btn reject" data-loading-text="Memproses...">Tolak</button>
+                  </form>
+                </div>
+              @endif
+            </div>
+          @empty
+            <div class="invitation-empty">
+              Belum ada undangan trainer saat ini.
+            </div>
+          @endforelse
         </div>
       </div>
 

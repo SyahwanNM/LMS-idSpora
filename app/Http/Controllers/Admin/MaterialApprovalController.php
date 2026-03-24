@@ -4,12 +4,86 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\TrainerNotification;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class MaterialApprovalController extends Controller
 {
+    private function buildDeadlineMonitoring(Collection $materials): array
+    {
+        if ($materials->isEmpty()) {
+            return [];
+        }
+
+        $trainerIds = $materials->pluck('trainer_id')->filter()->unique()->values();
+        if ($trainerIds->isEmpty()) {
+            return [];
+        }
+
+        $courseIds = $materials->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+
+        $notifications = TrainerNotification::query()
+            ->where('type', 'course_invitation')
+            ->whereIn('trainer_id', $trainerIds)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $map = [];
+        foreach ($materials as $material) {
+            $map[$material->id] = [
+                'has_deadline' => false,
+                'deadline_text' => 'Belum ditentukan',
+                'status' => 'neutral',
+                'status_text' => 'Tanpa deadline',
+            ];
+
+            if (empty($material->trainer_id)) {
+                continue;
+            }
+
+            $invite = $notifications->first(function (TrainerNotification $notification) use ($material, $courseIds) {
+                if ((int) $notification->trainer_id !== (int) $material->trainer_id) {
+                    return false;
+                }
+                $entityType = (string) data_get($notification->data, 'entity_type');
+                $entityId = (int) data_get($notification->data, 'entity_id');
+
+                return $entityType === 'course' && $entityId === (int) $material->id && in_array($entityId, $courseIds, true);
+            });
+
+            if (!$invite) {
+                continue;
+            }
+
+            $dueAtRaw = data_get($invite->data, 'due_at');
+            if (empty($dueAtRaw)) {
+                continue;
+            }
+
+            try {
+                $dueAt = Carbon::parse($dueAtRaw);
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $submittedAt = $material->updated_at ? Carbon::parse($material->updated_at) : null;
+            $isLate = $submittedAt ? $submittedAt->gt($dueAt) : Carbon::now()->gt($dueAt);
+
+            $map[$material->id] = [
+                'has_deadline' => true,
+                'deadline_text' => $dueAt->format('d M Y H:i'),
+                'status' => $isLate ? 'late' : 'on_time',
+                'status_text' => $isLate ? 'Melewati deadline' : 'Tepat waktu',
+            ];
+        }
+
+        return $map;
+    }
+
     /**
      * Display queue of materials pending review
      */
@@ -47,6 +121,36 @@ class MaterialApprovalController extends Controller
                 break;
         }
 
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $candidateMaterials = (clone $query)
+                ->get(['id', 'trainer_id', 'updated_at']);
+
+            $candidateMonitoring = $this->buildDeadlineMonitoring($candidateMaterials);
+
+            $matchedIds = $candidateMaterials
+                ->filter(function (Course $material) use ($candidateMonitoring, $deadlineFilter) {
+                    $monitor = $candidateMonitoring[$material->id] ?? null;
+                    $status = (string) ($monitor['status'] ?? 'neutral');
+
+                    return match ($deadlineFilter) {
+                        'overdue' => $status === 'late',
+                        'on_time' => $status === 'on_time',
+                        'no_deadline' => $status === 'neutral',
+                        default => true,
+                    };
+                })
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            if (empty($matchedIds)) {
+                $query->whereRaw('1=0');
+            } else {
+                $query->whereIn('id', $matchedIds);
+            }
+        }
+
         $pendingMaterials = $query->paginate(15);
 
         // Statistics
@@ -54,11 +158,15 @@ class MaterialApprovalController extends Controller
         $totalApproved = Course::where('status', 'approved')->count();
         $totalRejected = Course::where('status', 'rejected')->count();
 
+        $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
+
         return view('admin.material.approvals', compact(
             'pendingMaterials',
             'totalPending',
             'totalApproved',
-            'totalRejected'
+            'totalRejected',
+            'deadlineMonitoring',
+            'deadlineFilter'
         ));
     }
 
@@ -140,9 +248,41 @@ class MaterialApprovalController extends Controller
             });
         }
 
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $candidateMaterials = (clone $query)
+                ->get(['id', 'trainer_id', 'updated_at']);
+
+            $candidateMonitoring = $this->buildDeadlineMonitoring($candidateMaterials);
+
+            $matchedIds = $candidateMaterials
+                ->filter(function (Course $material) use ($candidateMonitoring, $deadlineFilter) {
+                    $monitor = $candidateMonitoring[$material->id] ?? null;
+                    $status = (string) ($monitor['status'] ?? 'neutral');
+
+                    return match ($deadlineFilter) {
+                        'overdue' => $status === 'late',
+                        'on_time' => $status === 'on_time',
+                        'no_deadline' => $status === 'neutral',
+                        default => true,
+                    };
+                })
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            if (empty($matchedIds)) {
+                $query->whereRaw('1=0');
+            } else {
+                $query->whereIn('id', $matchedIds);
+            }
+        }
+
         $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
 
-        return view('admin.material.approved', compact('approvedMaterials'));
+        $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
+
+        return view('admin.material.approved', compact('approvedMaterials', 'deadlineMonitoring', 'deadlineFilter'));
     }
 
     /**
@@ -164,9 +304,41 @@ class MaterialApprovalController extends Controller
             });
         }
 
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $candidateMaterials = (clone $query)
+                ->get(['id', 'trainer_id', 'updated_at']);
+
+            $candidateMonitoring = $this->buildDeadlineMonitoring($candidateMaterials);
+
+            $matchedIds = $candidateMaterials
+                ->filter(function (Course $material) use ($candidateMonitoring, $deadlineFilter) {
+                    $monitor = $candidateMonitoring[$material->id] ?? null;
+                    $status = (string) ($monitor['status'] ?? 'neutral');
+
+                    return match ($deadlineFilter) {
+                        'overdue' => $status === 'late',
+                        'on_time' => $status === 'on_time',
+                        'no_deadline' => $status === 'neutral',
+                        default => true,
+                    };
+                })
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            if (empty($matchedIds)) {
+                $query->whereRaw('1=0');
+            } else {
+                $query->whereIn('id', $matchedIds);
+            }
+        }
+
         $rejectedMaterials = $query->orderBy('rejected_at', 'desc')->paginate(15);
 
-        return view('admin.material.rejected', compact('rejectedMaterials'));
+        $deadlineMonitoring = $this->buildDeadlineMonitoring($rejectedMaterials->getCollection());
+
+        return view('admin.material.rejected', compact('rejectedMaterials', 'deadlineMonitoring', 'deadlineFilter'));
     }
 }
 

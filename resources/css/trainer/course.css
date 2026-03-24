@@ -1,12 +1,6 @@
-main {
-    padding: var(--spacing-2xl) var(--spacing-2xl);
-    background-color: var(--base-clr);
-    overflow-y: auto;
-}
-
-.trainer-page main {
+.courses-page {
     margin: 0;
-    padding: var(--spacing-2xl);
+    padding: 0;
 }
 
 .top-page {
@@ -396,6 +390,7 @@ main {
     color: #2b2350;
     line-height: 1.25;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -408,6 +403,7 @@ main {
     margin: 4px 0 0 0;
     line-height: 1.35;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
