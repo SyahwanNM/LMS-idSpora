@@ -26,8 +26,8 @@ class Feedback extends Model
         return $this->belongsTo(Event::class);
     }
 
-    public function course()
+    public function replies()
     {
-        return $this->belongsTo(Course::class);
+        return $this->hasMany(FeedbackReply::class);
     }
 }

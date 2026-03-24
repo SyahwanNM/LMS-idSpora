@@ -5,7 +5,7 @@
         </svg>
     </button>
     <ul>
-        <li class="{{ ($activeMenu ?? '') === 'dashboard' ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('trainer.dashboard') ? 'active' : '' }}">
             <a href="{{ route('trainer.dashboard') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#e3e3e3">
@@ -15,7 +15,7 @@
                 <span>Dashboard</span>
             </a>
         </li>
-        <li class="{{ ($activeMenu ?? '') === 'events' ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('trainer.events', 'trainer.events.*') ? 'active' : '' }}">
             <a href="{{ route('trainer.events') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#e3e3e3">
@@ -25,7 +25,8 @@
                 <span>Event</span>
             </a>
         </li>
-        <li class="{{ ($activeMenu ?? '') === 'course' ? 'active' : '' }}">
+        <li
+            class="{{ request()->routeIs('trainer.courses', 'trainer.courses.*', 'trainer.detail-course') ? 'active' : '' }}">
             <a href="{{ route('trainer.courses') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#e3e3e3">
@@ -35,7 +36,7 @@
                 <span>Course</span>
             </a>
         </li>
-        <li class="{{ ($activeMenu ?? '') === 'feedback' ? 'active' : '' }}">
+        <li class="{{ request()->routeIs('trainer.feedback', 'trainer.feedback.*') ? 'active' : '' }}">
             <a href="{{ route('trainer.feedback') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
                     fill="#e3e3e3">

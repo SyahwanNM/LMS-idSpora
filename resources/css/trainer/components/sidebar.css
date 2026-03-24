@@ -9,7 +9,7 @@
     top: 60px;
     left: 0;
     align-self: start;
-    transition: 300ms ease-in-out;
+    transition: none;
     overflow: hidden;
     white-space: nowrap;
     display: flex;
@@ -19,6 +19,14 @@
 
 .trainer-page #sidebar + .main-wrapper {
     margin-left: 250px;
+    transition: none;
+}
+
+html.sidebar-ready .trainer-page #sidebar {
+    transition: 300ms ease-in-out;
+}
+
+html.sidebar-ready .trainer-page #sidebar + .main-wrapper {
     transition: margin-left 300ms ease-in-out;
 }
 
@@ -31,7 +39,16 @@
     width: 60px;
 }
 
+html.sidebar-collapsed .trainer-page #sidebar {
+    padding: 0 5px 8px;
+    width: 60px;
+}
+
 .trainer-page #sidebar.close + .main-wrapper {
+    margin-left: 60px;
+}
+
+html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
     margin-left: 60px;
 }
 

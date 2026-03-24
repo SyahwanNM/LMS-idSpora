@@ -475,6 +475,13 @@
                                                 value="{{ old('institution', $trainer->institution) }}"
                                                 placeholder="Contoh: PT. Maju Jaya">
                                         </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Website</label>
+                                            <input type="text" name="website" class="form-control"
+                                                value="{{ old('website', $trainer->website) }}"
+                                                placeholder="https://example.com">
+                                        </div>
                                     </div>
                                 </div>
 
