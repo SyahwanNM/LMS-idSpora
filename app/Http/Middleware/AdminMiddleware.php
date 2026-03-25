@@ -15,13 +15,29 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $isApiRequest = $request->expectsJson() || $request->is('api/*');
+
         if (!auth()->check()) {
+            if ($isApiRequest) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized',
+                ], 401);
+            }
+
             return redirect()->route('login')->with('error', 'Anda harus login terlebih dahulu.');
         }
 
         // Only allow admin role
         $user = auth()->user();
         if ($user->role !== 'admin') {
+            if ($isApiRequest) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Forbidden',
+                ], 403);
+            }
+
             return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman admin.');
         }
 
