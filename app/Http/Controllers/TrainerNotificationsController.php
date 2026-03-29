@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Event;
 use App\Models\TrainerNotification;
+use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -151,6 +153,58 @@ class TrainerNotificationsController extends Controller
             $notification->read_at = now();
         }
         $notification->save();
+
+        $entityLabel = match ($entityType) {
+            'event' => 'event',
+            'course' => 'course',
+            default => 'penugasan',
+        };
+
+        $entityTitle = '';
+        if ($entityType === 'course' && $entityId > 0) {
+            $entityTitle = (string) (Course::query()->whereKey($entityId)->value('name') ?? '');
+        }
+        if ($entityType === 'event' && $entityId > 0) {
+            $entityTitle = (string) (Event::query()->whereKey($entityId)->value('title') ?? '');
+        }
+
+        $decisionLabel = $decision === 'accept' ? 'menerima' : 'menolak';
+        $trainerName = (string) (Auth::user()?->name ?? ('Trainer #' . (int) $uid));
+        $adminMessage = $trainerName . ' ' . $decisionLabel . ' undangan ' . $entityLabel;
+        if ($entityTitle !== '') {
+            $adminMessage .= ' "' . $entityTitle . '"';
+        }
+        $adminMessage .= '.';
+
+        $adminUrl = $entityType === 'event'
+            ? route('admin.add-event')
+            : route('admin.courses.index');
+
+        $adminIds = User::query()
+            ->where('role', 'admin')
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->values();
+
+        foreach ($adminIds as $adminId) {
+            UserNotification::create([
+                'user_id' => $adminId,
+                'type' => 'trainer_invitation_response',
+                'title' => 'Respons Undangan Trainer',
+                'message' => $adminMessage,
+                'data' => [
+                    'entity_type' => $entityType,
+                    'entity_id' => $entityId,
+                    'invitation_status' => $data['invitation_status'],
+                    'responded_at' => $data['responded_at'],
+                    'responded_by_trainer_id' => (int) $uid,
+                    'source_notification_id' => (int) $notification->id,
+                    'url' => $adminUrl,
+                ],
+                'expires_at' => now()->addDays(14),
+            ]);
+        }
 
         $message = $decision === 'accept'
             ? 'Undangan berhasil diterima.'
