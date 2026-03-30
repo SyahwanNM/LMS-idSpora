@@ -214,7 +214,6 @@ Route::get('/', function () {
 
         return redirect()->route('dashboard');
     }
-    return app(\App\Http\Controllers\LandingPageController::class)->index();
     return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
 })->name('landing-page');
 

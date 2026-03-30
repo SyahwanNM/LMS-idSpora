@@ -53,7 +53,16 @@
                     <path
                         d="M640-160H320q-33 0-56.5-23.5T240-240v-480q0-33 23.5-56.5T320-800h240l160 160v400q0 33-23.5 56.5T640-160Zm-80-440V-640H400v40h160ZM400-520h320v-40H400v40Zm0 80h320v-40H400v40Zm0 80h200v-40H400v40Zm-80 120h320v-360H520v-160H320v520Zm0 0v-520 520Z" />
                 </svg>
-                <span>Riwayat Mengajar / Sertifikat</span>
+                <span>Riwayat Kegiatan</span>
+            </a>
+        </li>
+        <li class="{{ request()->routeIs('trainer.certificates.send') ? 'active' : '' }}">
+            <a href="{{ route('trainer.certificates.send') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#e3e3e3">
+                    <path d="M12 19V5M5 12l7-7 7 7" stroke="#e3e3e3" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" fill="none" />
+                </svg>
+                <span>Kirim Sertifikat</span>
             </a>
         </li>
     </ul>
