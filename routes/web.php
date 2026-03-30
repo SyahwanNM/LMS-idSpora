@@ -18,7 +18,6 @@ use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Public\SocialAuthController;
-use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\TrainerApiController;
 use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
@@ -201,7 +200,6 @@ Route::get('/storage/{path}', function ($path) {
 Route::get('/auth', function () {
     return view('auth.auth');
 });
-
 Route::get('/', function () {
     if (Auth::check()) {
         $role = strtolower(trim((string) (Auth::user()->role ?? '')));
@@ -216,8 +214,8 @@ Route::get('/', function () {
 
         return redirect()->route('dashboard');
     }
-    
     return app(\App\Http\Controllers\LandingPageController::class)->index();
+    return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
 })->name('landing-page');
 
 // Public pages
