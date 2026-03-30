@@ -158,12 +158,20 @@ class AdminController extends Controller
         $overdueAssignmentsCount = $overdueAssignments->count();
         $overdueAssignmentsPreview = $overdueAssignments->take(4);
 
+        // Materi yang sudah disetujui trainer (untuk panel dashboard)
+        $recentApprovedMaterials = Course::with(['trainer', 'category'])
+            ->where('status', 'approved')
+            ->orderByDesc('approved_at')
+            ->take(4)
+            ->get();
+
         return view('admin.dashboard', compact(
             'activeUsers',
             'totalCourses',
             'totalEvents',
             'totalCertificates',
             'totalRevenue',
+            'recentApprovedMaterials',
             'recentActivities',
             'activeUsersChangePercent',
             'totalCoursesChangePercent',

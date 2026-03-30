@@ -479,7 +479,8 @@
                 </div>
             </div>
         </div>
-        <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #22c55e !important;">
+        <div class="col-12 col-xl-4 fade-in fade-in-delay-4">
+            <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #22c55e !important;">
             <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
                 <h5 class="card-title mb-0 fw-bold">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>Materi Disetujui Terbaru
@@ -514,9 +515,9 @@
                 </a>
             </div>
         </div>
-    </div>
+        </div>
 
-    <div class="card shadow-sm border-0 rounded-4" style="border-top: 4px solid #667eea !important;">
+            <div class="card shadow-sm border-0 rounded-4" style="border-top: 4px solid #667eea !important;">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
             <h5 class="card-title mb-0 fw-bold">
                 <i class="bi bi-clock-history text-warning me-2"
@@ -561,8 +562,10 @@
             </div>
         </div>
     </div>
-</div>
-</div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
