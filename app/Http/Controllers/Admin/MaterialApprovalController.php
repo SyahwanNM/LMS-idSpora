@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\CourseModule;
 use App\Models\TrainerNotification;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class MaterialApprovalController extends Controller
 {
@@ -180,10 +182,56 @@ class MaterialApprovalController extends Controller
             'trainer',
             'category',
             'modules.quizQuestions',
+            'modules.quizQuestions.answers',
             'reviews'
         ]);
 
         return view('admin.material.show', compact('material'));
+    }
+
+    /**
+     * Stream module file for admin review (inline) or download.
+     */
+    public function streamModule(Request $request, Course $material, CourseModule $module)
+    {
+        if ((int) $module->course_id !== (int) $material->id) {
+            abort(404, 'Modul tidak ditemukan pada materi ini.');
+        }
+
+        if ($module->isQuiz()) {
+            abort(404, 'Modul kuis tidak memiliki file untuk dipreview.');
+        }
+
+        $contentPath = trim((string) ($module->content_url ?? ''));
+        if ($contentPath === '' || $contentPath === 'quiz_submitted') {
+            abort(404, 'File modul tidak tersedia.');
+        }
+
+        if (str_starts_with($contentPath, 'storage/')) {
+            $contentPath = ltrim(substr($contentPath, 8), '/');
+        }
+
+        $contentPath = ltrim($contentPath, '/');
+
+        if (!Storage::disk('public')->exists($contentPath)) {
+            abort(404, 'File modul tidak ditemukan di storage.');
+        }
+
+        $absolutePath = Storage::disk('public')->path($contentPath);
+        $downloadName = $module->file_name ?: basename($contentPath);
+        $detectedMime = @mime_content_type($absolutePath);
+        $mime = (string) ($module->mime_type ?: $detectedMime ?: 'application/octet-stream');
+
+        if ($request->boolean('download')) {
+            return response()->download($absolutePath, $downloadName, [
+                'Content-Type' => $mime,
+            ]);
+        }
+
+        return response()->file($absolutePath, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        ]);
     }
 
     /**

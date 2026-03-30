@@ -23,17 +23,21 @@
             background-color: var(--admin-bg);
         }
 
+        html {
+            scrollbar-gutter: stable;
+        }
+
         .material-wrapper {
             display: flex;
             min-height: calc(100vh - 72px);
         }
 
         /* --- SIDEBAR --- */
-        .material-sidebar {
+        .trainer-sidebar {
             width: 260px;
-            background: var(--admin-card-bg);
+            background: #fff;
             padding: 24px 16px;
-            border-right: 1px solid var(--admin-border);
+            border-right: 1px solid #eee;
             flex-shrink: 0;
             position: sticky;
             top: 72px;
@@ -42,13 +46,15 @@
         }
 
         .nav-menu-label {
-            font-size: 0.7rem;
+            font-size: 11px;
             text-transform: uppercase;
             font-weight: 700;
-            color: var(--admin-text-muted);
+            color: #94a3b8;
             letter-spacing: 1px;
-            margin: 24px 0 12px 16px;
+            margin-bottom: 12px;
+            margin-top: 24px;
             display: block;
+            padding-left: 16px;
         }
 
         .nav-menu-label:first-child {
@@ -58,29 +64,34 @@
         .sidebar-link {
             display: flex;
             align-items: center;
-            padding: 10px 16px;
-            color: var(--admin-text-main);
+            padding: 11px 16px;
+            color: #1e293b;
             text-decoration: none;
             border-radius: 10px;
             margin-bottom: 4px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 14px;
             transition: all 0.2s ease;
             gap: 12px;
         }
 
         .sidebar-link i {
-            font-size: 1.1rem;
-            color: var(--admin-text-muted);
+            font-size: 18px;
+            color: #64748b;
+            transition: color 0.2s ease;
         }
 
         .sidebar-link:hover {
-            background-color: #f1f5f9;
-            color: var(--admin-secondary);
+            background-color: #f8fafc;
+            color: #3949ab;
+        }
+
+        .sidebar-link:hover i {
+            color: #3949ab;
         }
 
         .sidebar-link.active {
-            background-color: var(--admin-primary);
+            background-color: #3949ab;
             color: #fff;
         }
 
@@ -154,23 +165,39 @@
             border-bottom: 1px solid var(--admin-border);
             background: #fff;
             display: flex;
-            gap: 16px;
-            align-items: center;
+            gap: 14px;
+            align-items: flex-start;
             justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left {
+            flex: 1 1 560px;
+            min-width: 280px;
+        }
+
+        .toolbar-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .search-box {
             position: relative;
-            width: 300px;
+            flex: 1 1 340px;
+            min-width: 220px;
         }
 
         .search-box input {
             width: 100%;
             padding: 10px 16px 10px 40px;
+            height: 44px;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
             font-size: 0.9rem;
             background: #f8fafc;
+            line-height: 1.2;
         }
 
         .search-box i {
@@ -186,6 +213,32 @@
             outline: none;
             background: #fff;
             box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+        }
+
+        .filter-select {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0 12px;
+            height: 44px;
+            font-size: 0.88rem;
+            min-width: 180px;
+            background: #fff;
+            color: #334155;
+        }
+
+        .filter-select:focus {
+            border-color: #991b1b;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-left: auto;
         }
 
         .table {
@@ -309,15 +362,18 @@
             background: #fff;
             border: 1px solid #cbd5e1;
             color: var(--admin-text-main);
-            padding: 8px 16px;
+            height: 44px;
+            padding: 0 16px;
             border-radius: 8px;
             font-size: 0.85rem;
             font-weight: 600;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .btn-action:hover {
@@ -359,7 +415,7 @@
         }
 
         @media (max-width: 992px) {
-            .material-sidebar {
+            .trainer-sidebar {
                 display: none;
             }
 
@@ -368,8 +424,26 @@
                 align-items: stretch;
             }
 
+            .toolbar-left {
+                width: 100%;
+            }
+
+            .toolbar-form {
+                width: 100%;
+            }
+
             .search-box {
                 width: 100%;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .toolbar-right {
+                width: 100%;
+                justify-content: flex-start;
+                margin-left: 0;
             }
 
             .page-header {
@@ -383,7 +457,7 @@
 
 @section('content')
     <div class="material-wrapper">
-        <aside class="material-sidebar d-none d-lg-block">
+        <aside class="trainer-sidebar d-none d-lg-block">
             <span class="nav-menu-label">TRAINER MANAGEMENT</span>
             <a href="{{ route('admin.trainer.index') }}" class="sidebar-link">
                 <i class="bi bi-people"></i> All Trainers
@@ -416,15 +490,6 @@
                     <i class="bi bi-x-circle"></i> Rejected
                 </a>
             </div>
-            <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a>
-            <a href="{{ route('admin.courses.index') }}" class="sidebar-link">
-                <i class="bi bi-book"></i> Courses
-            </a>
-            <a href="{{ route('admin.events.history') }}" class="sidebar-link">
-                <i class="bi bi-calendar-event"></i> Events
-            </a>
         </aside>
 
         <main class="material-main">
@@ -451,32 +516,44 @@
                             'no_deadline' => 'Tanpa Deadline',
                         ];
                     @endphp
-                    <form method="GET" class="search-box">
-                        <i class="bi bi-search"></i>
-                        <input type="text" name="search" placeholder="Cari materi yang direvisi..."
-                            value="{{ request('search') }}">
-                        <select name="deadline_filter" onchange="this.form.submit()"
-                            style="border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.85rem;">
-                            <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline
-                            </option>
-                            <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Overdue
-                            </option>
-                            <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
-                                Waktu</option>
-                            <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                                Tanpa Deadline</option>
-                        </select>
-                    </form>
+                    <div class="toolbar-left">
+                        <form method="GET" class="toolbar-form">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" name="search" placeholder="Cari materi yang direvisi..."
+                                    value="{{ request('search') }}">
+                            </div>
+                            <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
+                                <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
+                                    Deadline
+                                </option>
+                                <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                                    Overdue
+                                </option>
+                                <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
+                                    Waktu</option>
+                                <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                                    Tanpa Deadline</option>
+                            </select>
+                        </form>
+                    </div>
 
-                    @if($hasActiveFilter)
-                        <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
-                            Filter:
-                            {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
-                        </span>
-                        <a href="{{ route('admin.material.rejected') }}" class="btn-action">
-                            <i class="bi bi-x-circle"></i> Reset
+                    <div class="toolbar-right">
+                        @if($hasActiveFilter)
+                            <span class="btn-action"
+                                style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
+                                Filter:
+                                {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
+                            </span>
+                            <a href="{{ route('admin.material.rejected') }}" class="btn-action">
+                                <i class="bi bi-x-circle"></i> Reset
+                            </a>
+                        @endif
+                        <a href="{{ route('admin.material.approved') }}" class="btn-action"
+                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
+                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
                         </a>
-                    @endif
+                    </div>
                 </div>
 
                 <div class="table-responsive">

@@ -16,6 +16,7 @@ use App\Models\TrainerNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
@@ -325,7 +326,12 @@ class CourseController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'trainer_id' => 'nullable|exists:users,id',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -490,7 +496,12 @@ class CourseController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'trainer_id' => 'nullable|exists:users,id',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
