@@ -324,7 +324,7 @@
                             <tr class="activity-row border-bottom" onclick="window.location='{{ route('admin.crm.customers.show', $registration->user->id) }}'">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ $registration->user->avatar_url }}" class="customer-avatar me-3 border" alt="user" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($registration->user->name) }}&background=6d28d9&color=fff'">
+                                        <img src="{{ $registration->user->avatar_url }}" class="customer-avatar rounded-circle me-3 border shadow-sm" style="width: 48px; height: 48px; object-fit: cover;" alt="user" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($registration->user->name) }}&background=6d28d9&color=fff'">
                                         <div>
                                             <div class="fw-700 text-navy fs-6">{{ $registration->user->name }}</div>
                                             <div class="text-muted smaller">{{ $registration->user->email }}</div>
@@ -340,9 +340,9 @@
                                     <div class="text-muted smaller">{{ $registration->created_at->format('H:i') }} WIB</div>
                                 </td>
                                 <td class="pe-4 text-end">
-                                    <button class="btn btn-icon btn-light rounded-circle btn-sm">
+                                    <a href="{{ route('admin.crm.customers.show', $registration->user->id) }}" class="btn btn-icon btn-light rounded-circle btn-sm">
                                         <i class="bi bi-chevron-right"></i>
-                                    </button>
+                                    </a>
                                 </td>
                             </tr>
                             @empty

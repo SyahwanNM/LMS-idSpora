@@ -165,7 +165,7 @@
                             <tr>
                                 <td>
                                     <div class="course-pill">
-                                        <img src="{{ \Illuminate\Support\Str::startsWith($course->image, 'http') ? $course->image : asset('uploads/' . $course->image) }}" class="course-img">
+                                        <img src="{{ \Illuminate\Support\Str::startsWith($course->media, 'http') ? $course->media : asset('uploads/' . $course->media) }}" class="course-img">
                                         <div>
                                             <div class="fw-bold">{{ $course->name }}</div>
                                             <div class="text-muted small">ID: #{{ $course->id }}</div>
