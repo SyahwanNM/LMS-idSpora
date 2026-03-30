@@ -22,16 +22,9 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            
-            @if(isset($totalTrainers) && $totalTrainers > 0)
-                <div class="d-none d-sm-flex align-items-center gap-2 text-decoration-none bg-indigo bg-opacity-10 text-indigo px-3 py-2 rounded-pill" style="font-size: 0.85rem; font-weight: 700;">
-                    <i class="bi bi-people-fill"></i>
-                    <span>{{ number_format($totalTrainers) }} Active</span>
-                </div>
-            @endif
 
             <div class="dropdown">
-                <button class="btn border-0 p-1 d-flex align-items-center gap-3 dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn border-0 p-1 d-flex align-items-center gap-3 shadow-none admin-profile-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="text-end d-none d-sm-block">
                         <div class="fw-bold text-dark mb-0 small">{{ Auth::user()->name ?? 'Admin' }}</div>
                         <div class="text-muted small" style="font-size: 11px;">Super Admin</div>
@@ -114,5 +107,28 @@
     }
     .dropdown-item {
         transition: all 0.2s ease;
+    }
+
+    /* Ensure no caret/ellipsis indicator appears next to admin profile trigger */
+    .admin-profile-trigger {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: none !important;
+        padding-right: 0 !important;
+    }
+
+    .admin-profile-trigger::after {
+        display: none !important;
+        content: none !important;
+    }
+
+    .admin-profile-trigger.dropdown-toggle::after {
+        display: none !important;
+        content: none !important;
+    }
+
+    .admin-profile-trigger::-ms-expand {
+        display: none !important;
     }
 </style>

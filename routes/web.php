@@ -188,9 +188,19 @@ Route::get('/auth', function () {
 });
 Route::get('/', function () {
     if (Auth::check()) {
+        $role = strtolower(trim((string) (Auth::user()->role ?? '')));
+
+        if ($role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($role === 'trainer') {
+            return redirect()->route('trainer.dashboard');
+        }
+
         return redirect()->route('dashboard');
     }
-    return app(\App\Http\Controllers\LandingPageController::class)->index(request());
+    return app(\App\Http\Controllers\LandingPageController::class)->index();
 })->name('landing-page');
 
 // Public pages
@@ -606,6 +616,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.material.approvals');
     Route::get('/admin/material/approved', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approved'])->name('admin.material.approved');
     Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.material.rejected');
+    Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.material.module.stream');
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');

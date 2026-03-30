@@ -375,15 +375,6 @@
                     <i class="bi bi-x-circle"></i> Rejected
                 </a>
             </div>
-            <a href="{{ route('admin.dashboard') }}" class="sidebar-link">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a>
-            <a href="{{ route('admin.courses.index') }}" class="sidebar-link">
-                <i class="bi bi-book"></i> Courses
-            </a>
-            <a href="{{ route('admin.events.history') }}" class="sidebar-link">
-                <i class="bi bi-calendar-event"></i> Events
-            </a>
         </aside>
 
         <main class="trainer-main">

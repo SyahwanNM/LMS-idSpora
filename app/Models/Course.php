@@ -43,7 +43,7 @@ class Course extends Model
 
     public function trainer()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'trainer_id');
     }
 
     public function modules()

@@ -11,6 +11,7 @@ use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
 class EventController extends Controller
@@ -138,7 +139,12 @@ class EventController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'trainer_id' => 'nullable|exists:users,id',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'speaker' => 'required|string|max:255',
             'manage_action' => 'required|in:manage,create',
             // Relax validation so new dynamic materi/jenis values allowed
@@ -358,7 +364,12 @@ class EventController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'trainer_id' => 'nullable|exists:users,id',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'speaker' => 'required|string|max:255',
             'manage_action' => 'required|in:manage,create',
             'materi' => 'nullable|string|max:255',

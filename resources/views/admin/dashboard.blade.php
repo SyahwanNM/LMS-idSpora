@@ -282,7 +282,8 @@
                                 style="letter-spacing: 0.5px;">Active Users</div>
                             <div class="d-flex align-items-baseline flex-wrap">
                                 <div class="display-6 fs-2 fw-bold text-dark" data-active-users>
-                                    {{ number_format($activeUsers ?? 0) }}</div>
+                                    {{ number_format($activeUsers ?? 0) }}
+                                </div>
                                 @php $val = $activeUsersChangePercent; @endphp
                                 <div class="ms-2 small fw-bold @if(is_null($val)) text-secondary @elseif($val > 0) text-success @elseif($val < 0) text-danger @else text-muted @endif"
                                     title="{{ isset($usingIntraDayBaseline) && $usingIntraDayBaseline && !is_null($val) ? 'Perubahan sejak awal hari ini' : 'Perubahan dibanding kemarin' }}">
@@ -369,7 +370,8 @@
                                 style="letter-spacing: 0.5px;">Total Revenue</div>
                             <div class="d-flex align-items-baseline flex-wrap">
                                 <div class="display-6 fs-5 fw-bold text-dark">Rp
-                                    {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</div>
+                                    {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}
+                                </div>
                                 @php $val = $totalRevenueChangePercent; @endphp
                                 <div class="ms-2 small fw-bold @if(is_null($val)) text-secondary @elseif($val > 0) text-success @elseif($val < 0) text-danger @else text-muted @endif"
                                     title="{{ isset($usingIntraDayBaseline) && $usingIntraDayBaseline && !is_null($val) ? 'Perubahan sejak awal hari ini' : 'Perubahan dibanding kemarin' }}">
@@ -477,88 +479,90 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-xl-4 fade-in fade-in-delay-4">
-            <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #ef4444 !important;">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
-                    <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Overdue Assignments
-                    </h5>
-                    <span
-                        class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-3 py-2 fw-semibold">
-                        {{ $overdueAssignmentsCount ?? 0 }} kasus
-                    </span>
-                </div>
-                <div class="card-body p-4">
-                    @if(($overdueAssignmentsCount ?? 0) > 0)
-                        <div class="d-flex flex-column gap-2 mb-3">
-                            @foreach(($overdueAssignmentsPreview ?? collect()) as $item)
-                                <div class="overdue-item">
-                                    <div class="overdue-item-title">{{ $item['trainer'] }}</div>
-                                    <div class="overdue-item-meta">{{ $item['title'] }}</div>
-                                    <div class="overdue-item-meta">Deadline: {{ $item['due_at_text'] }}</div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-check-circle-fill fs-2 d-block mb-2 text-success"></i>
-                            <small>Tidak ada assignment yang terlambat.</small>
-                        </div>
-                    @endif
-
-                    <a href="{{ route('admin.material.approvals') }}" class="btn btn-outline-danger w-100 fw-semibold">
-                        Buka Monitoring Materi
-                    </a>
-                </div>
+        <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #22c55e !important;">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
+                <h5 class="card-title mb-0 fw-bold">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>Materi Disetujui Terbaru
+                </h5>
             </div>
-
-            <div class="card shadow-sm border-0 rounded-4" style="border-top: 4px solid #667eea !important;">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
-                    <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-clock-history text-warning me-2"
-                            style="filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));"></i>Recent Activity
-                    </h5>
-                    <button id="refreshRecentBtn" class="btn btn-sm btn-outline-warning rounded-circle" type="button"
-                        title="Refresh list" style="width: 36px; height: 36px; border-color: #fbbf24;">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-                <div class="card-body p-4">
-                    <div id="recentActivityList" style="max-height:320px; overflow-y:auto; padding-right: 8px;">
-                        @php $list = collect($recentActivities ?? [])->take(4); @endphp
-                        @if($list->isNotEmpty())
-                            @foreach($list as $index => $activity)
-                                <div class="activity-item mb-3">
-                                    <div class="d-flex">
-                                        <img src="{{ $activity['avatar'] }}" alt="{{ $activity['user'] }}"
-                                            class="rounded-circle flex-shrink-0 shadow-sm"
-                                            style="width:48px;height:48px;object-fit:cover; border: 2px solid #e9ecef;">
-                                        <div class="ms-3 flex-grow-1">
-                                            <div class="fw-semibold text-dark mb-1">{{ $activity['user'] }}</div>
-                                            <div class="small text-muted mb-1">{{ $activity['action'] }}</div>
-                                            @if(!empty($activity['description']))
-                                                <div class="small text-secondary mb-2">{{ $activity['description'] }}</div>
-                                            @endif
-                                            <div class="small text-muted">
-                                                <i class="bi bi-clock me-1"></i>{{ $activity['time'] }}
-                                            </div>
-                                        </div>
+            <div class="card-body p-4">
+                @if(($recentApprovedMaterials ?? collect())->count() > 0)
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        @foreach($recentApprovedMaterials as $material)
+                            <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                                <div>
+                                    <div class="fw-bold">{{ $material->name }}</div>
+                                    <div class="text-muted small">
+                                        {{ $material->category->name ?? 'Umum' }} •
+                                        {{ $material->trainer->name ?? 'Anonim' }}
                                     </div>
                                 </div>
-                                @if($index < $list->count() - 1)
-                                <hr class="my-3 border-light opacity-25">@endif
-                            @endforeach
-                        @else
-                            <div class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                                <small>No recent activity</small>
+                                <a href="{{ route('admin.material.show', $material->id) }}" class="btn btn-sm btn-success">
+                                    Detail
+                                </a>
                             </div>
-                        @endif
+                        @endforeach
                     </div>
-                </div>
+                @else
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-success"></i>
+                        <small>Belum ada materi yang disetujui.</small>
+                    </div>
+                @endif
+                <a href="{{ route('admin.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
+                    Lihat Semua Materi Disetujui
+                </a>
             </div>
         </div>
     </div>
+
+    <div class="card shadow-sm border-0 rounded-4" style="border-top: 4px solid #667eea !important;">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
+            <h5 class="card-title mb-0 fw-bold">
+                <i class="bi bi-clock-history text-warning me-2"
+                    style="filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));"></i>Recent Activity
+            </h5>
+            <button id="refreshRecentBtn" class="btn btn-sm btn-outline-warning rounded-circle" type="button"
+                title="Refresh list" style="width: 36px; height: 36px; border-color: #fbbf24;">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+        <div class="card-body p-4">
+            <div id="recentActivityList" style="max-height:320px; overflow-y:auto; padding-right: 8px;">
+                @php $list = collect($recentActivities ?? [])->take(4); @endphp
+                @if($list->isNotEmpty())
+                    @foreach($list as $index => $activity)
+                        <div class="activity-item mb-3">
+                            <div class="d-flex">
+                                <img src="{{ $activity['avatar'] }}" alt="{{ $activity['user'] }}"
+                                    class="rounded-circle flex-shrink-0 shadow-sm"
+                                    style="width:48px;height:48px;object-fit:cover; border: 2px solid #e9ecef;">
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="fw-semibold text-dark mb-1">{{ $activity['user'] }}</div>
+                                    <div class="small text-muted mb-1">{{ $activity['action'] }}</div>
+                                    @if(!empty($activity['description']))
+                                        <div class="small text-secondary mb-2">{{ $activity['description'] }}</div>
+                                    @endif
+                                    <div class="small text-muted">
+                                        <i class="bi bi-clock me-1"></i>{{ $activity['time'] }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @if($index < $list->count() - 1)
+                        <hr class="my-3 border-light opacity-25">@endif
+                    @endforeach
+                @else
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                        <small>No recent activity</small>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+</div>
 </div>
 
 <script>
