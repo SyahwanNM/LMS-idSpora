@@ -150,7 +150,7 @@
                     $course = $enrollment->course;
                     if(!$course) continue;
                     $courseHref = route('course.detail', $course->id);
-                    $cardImage = $course->card_thumbnail ?? ($course->image ?? null);
+                    $cardImage = $course->card_thumbnail ?? ($course->media ?? null);
                     $pct = $enrollment->getProgressPercentage();
                     $pct = max(0, min(100, (int) $pct));
                 @endphp
@@ -158,11 +158,14 @@
                     <a href="{{ $courseHref }}" style="text-decoration:none;color:inherit;">
                         <article class="course-card">
                             <div class="thumb-wrapper">
-                                @if($cardImage)
-                                    <img class="thumb" src="{{ Storage::url($cardImage) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
-                                @else
-                                    <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
-                                @endif
+                                @php
+                                    if ($cardImage) {
+                                        $imgSrc = str_starts_with($cardImage, 'http') ? $cardImage : asset('uploads/' . $cardImage);
+                                    } else {
+                                        $imgSrc = 'https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image';
+                                    }
+                                @endphp
+                                <img class="thumb" src="{{ $imgSrc }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                                 <div class="badge-save-group" style="gap:12px;">
                                     <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
                                     <button class="save-btn" aria-label="Save course" type="button" onclick="event.preventDefault();">
@@ -244,13 +247,16 @@
                 <article class="course-card">
                     <div class="thumb-wrapper">
                         @php
-                            $cardImage = $course->card_thumbnail ?? $course->image;
+                            $cardImage = $course->card_thumbnail ?? $course->media;
                         @endphp
-                        @if($cardImage)
-                            <img class="thumb" src="{{ Storage::url($cardImage) }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
-                        @else
-                            <img class="thumb" src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
-                        @endif
+                        @php
+                            if ($cardImage) {
+                                $imgSrc = str_starts_with($cardImage, 'http') ? $cardImage : asset('uploads/' . $cardImage);
+                            } else {
+                                $imgSrc = 'https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image';
+                            }
+                        @endphp
+                        <img class="thumb" src="{{ $imgSrc }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         <div class="badge-save-group" style="gap:12px;">
                             <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
                             <button class="save-btn" aria-label="Save course" type="button">
