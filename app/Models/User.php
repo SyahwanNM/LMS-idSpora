@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -28,8 +29,14 @@ class User extends Authenticatable
         'phone',
         'website',
         'bio',
+        'points',
+        'badge',
+        'last_event_date',
         'profession',
         'institution',
+        'referral_code',
+        'wallet_balance',
+        'referrer_id',
     ];
 
     /**
@@ -52,6 +59,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_event_date' => 'date',
+            'points' => 'integer',
         ];
     }
 
@@ -89,18 +98,18 @@ class User extends Authenticatable
             // Normalize common stored formats
             // Case 1: filename only -> storage/avatars/{filename}
             if (!str_contains($avatar, '/')) {
-                return asset('storage/avatars/'.$avatar);
+                return asset('uploads/avatars/'.$avatar);
             }
             // Case 2: path like "avatars/filename"
             if (str_starts_with($avatar, 'avatars/')) {
-                return asset('storage/'.$avatar);
+                return asset('uploads/'.$avatar);
             }
             // Case 3: already includes "storage/" prefix
             if (str_starts_with($avatar, 'storage/')) {
                 return asset($avatar);
             }
             // Fallback: treat as relative to storage
-            return asset('storage/'.$avatar);
+            return asset('uploads/'.$avatar);
         }
         // Fallback to UI Avatars using user's name if available
         $name = trim((string)($this->name ?? 'User'));
@@ -275,5 +284,58 @@ class User extends Authenticatable
         }
 
         return $phone;
+    }
+
+    /**
+     * Get badge information
+     */
+    public function getBadgeInfoAttribute(): array
+    {
+        $service = app(\App\Services\UserPointsService::class);
+        return $service->getBadgeInfo($this->badge ?? 'beginner');
+    }
+
+    /**
+     * Get next badge information
+     */
+    public function getNextBadgeInfoAttribute(): ?array
+    {
+        $service = app(\App\Services\UserPointsService::class);
+        $currentPoints = $this->points ?? 0;
+        $currentBadge = $this->badge ?? 'beginner';
+        
+        $badges = ['beginner', 'explorer', 'learner', 'expert', 'master'];
+        $currentIndex = array_search($currentBadge, $badges);
+        
+        if ($currentIndex !== false && $currentIndex < count($badges) - 1) {
+            $nextBadge = $badges[$currentIndex + 1];
+            $nextBadgeInfo = $service->getBadgeInfo($nextBadge);
+            $nextBadgeInfo['points_needed'] = $nextBadgeInfo['min_points'] - $currentPoints;
+            return $nextBadgeInfo;
+        }
+        
+        return null;
+    }
+    // Nambahin relasi
+    public function referrals()
+    {
+        return $this->hasMany(Referral::class, 'user_id'); // Orang yang kita ajak
+    }
+
+    public function withdrawals()
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            // Bikin kode random 6 karakter (angka & huruf), lalu uppercase
+            // Contoh output: 616JA0
+            if (empty($user->referral_code)) {
+                $user->referral_code = strtoupper(Str::random(6) . rand(10,99)); 
+            }
+        });
     }
 }

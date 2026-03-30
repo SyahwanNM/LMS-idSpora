@@ -1,6 +1,5 @@
-    @include("partials.navbar-after-login")
-    <!DOCTYPE html>
-    <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
     <head>
                 <style>
@@ -24,43 +23,6 @@
                 .add-stars .stars-bi.hovered,
                 .add-stars .stars-bi.hovered:focus {
                     transform: scale(1.22) rotate(-8deg) !important;
-
-            // Free event registration via AJAX (avoid ticket redirect, stay on detail page)
-            (function(){
-                const freeBtn = document.getElementById('bookFreeBtn');
-                if(!freeBtn) return;
-                freeBtn.addEventListener('click', function(){
-                    const original = this.textContent;
-                    this.disabled = true;
-                    this.textContent = 'Registering...';
-                    fetch('{{ route('events.register', $event) }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({})
-                    })
-                    .then(async (r) => {
-                        // On success, server redirects back; for XHR, read text
-                        if (r.ok) {
-                            // Reload to reflect registered state
-                            window.location.reload();
-                        } else {
-                            const t = await r.text();
-                            alert('Gagal mendaftar: '+t);
-                            this.disabled = false;
-                            this.textContent = original;
-                        }
-                    })
-                    .catch(() => {
-                        alert('Gagal mendaftar.');
-                        this.disabled = false;
-                        this.textContent = original;
-                    });
-                });
-            })();
                     color: #FFD600 !important;
                     filter: drop-shadow(0 2px 6px #FFD600cc) !important;
                     z-index: 2 !important;
@@ -82,9 +44,31 @@
             html, body { margin: 0; padding: 0; }
             .container-ungu { margin-top: 0 !important; }
             /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-            .container-ungu .link-box { padding-top: 80px; }
+            .container-ungu .link-box { 
+                padding-top: 110px; 
+                padding-bottom: 15px; 
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: 14px;
+                color: rgba(255, 255, 255, 0.7);
+                margin-left: 70px; /* Align with title on desktop */
+            }
+            .container-ungu .link-box a { 
+                text-decoration: none; 
+                color: #fbbf24; 
+                font-weight: 500;
+            }
+            .container-ungu .link-box a:hover { color: #ffd33b; text-decoration: underline; }
+            .container-ungu .link-box span.sep { color: rgba(255, 255, 255, 0.3); }
+            .container-ungu .link-box .active { color: white; font-weight: 600; }
+
+            @media (max-width: 992px) {
+                .container-ungu .link-box { margin-left: 20px !important; padding-top: 100px; }
+            }
+
             @media (max-width: 576px){
-                .container-ungu .link-box { padding-top: 64px; }
+                .container-ungu .link-box { margin-left: 15px !important; padding-top: 100px; gap: 6px; font-size: 13px; }
             }
             /* Add breathing space inside tab panes (Overview, etc.) */
             .desc-box .tab-content .tab-pane { padding: 16px 20px 24px; }
@@ -104,6 +88,92 @@
             }
             /* Align Facebook icon baseline with other share icons */
             .share .share-list .bi-facebook { position: relative; top: -1px; }
+
+            /* Share this event: pill bar with copy link + icons (scoped) */
+            .share { display: flex; flex-direction: column; gap: 8px; }
+            .share .share-title { margin: 0; font-weight: 600; color: #111827; }
+            .share .share-list {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                background: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 999px;
+                width: fit-content;
+                max-width: 100%;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+            .share .share-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                height: 32px;
+                padding: 0 12px;
+                border-radius: 999px;
+                border: 1px solid transparent;
+                background: transparent;
+                color: #111827;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 14px;
+                line-height: 1;
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+            .share .share-action svg { flex: 0 0 auto; }
+            .share .share-action:hover { background: #f3f4f6; }
+            .share .share-action:active { background: #e5e7eb; }
+            .share .share-icon { width: 32px; padding: 0; }
+            .share .share-action--disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+            .share .share-list::-webkit-scrollbar { height: 0; }
+            @media (max-width: 420px){
+                .share .share-list { width: 100%; justify-content: flex-start; }
+            }
+
+            /* Event info (Date/Time/Location/Students Enrolled) */
+            .info-boxluar {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                padding: 6px 0;
+            }
+            .event-info-item {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 14px;
+            }
+            .event-info-left {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                min-width: 0;
+            }
+            .event-info-left svg { flex: 0 0 auto; }
+            .event-info-label {
+                font-weight: 600;
+                color: #111827;
+                line-height: 1.15;
+            }
+            .event-info-value {
+                font-weight: 600;
+                color: #111827;
+                text-align: right;
+                line-height: 1.15;
+                max-width: 60%;
+                word-break: break-word;
+            }
+            @media (max-width: 420px) {
+                .event-info-value { max-width: 55%; }
+            }
             /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
             .resource-card.locked { opacity: 0.6; }
             .resource-card.locked .img-resource svg { opacity: 0.6; }
@@ -205,8 +275,7 @@
             }
             .bookseat { background:#f5c400; color:#111; border:none; order:1; }
             .bookseat[disabled], .bookseat.disabled { background:#ddd; color:#666; }
-            .save { background:#1f2235; color:#ffd400; border:none; order:2; }
-            /* Remove responsive horizontal override; keep vertical layout on all sizes */
+            .save { background:#1f2235; color:#ffd400; border:none; order:2; cursor:pointer; position:relative; z-index:2; pointer-events:auto !important; }
             /* Price + info tidy */
             .price-box > span { color:#6b7280; text-decoration: line-through; display:inline-block; min-height: 20px; }
             .price-free { color:#16a34a; font-weight:700; letter-spacing:.3px; }
@@ -216,18 +285,62 @@
             .stars { user-select: none; }
             .stars span { cursor: pointer; font-size: 20px; color: #c9c9c9; margin-right: 2px; }
             .stars span.selected { color: #FFD600; }
+            /* Push icons down slightly to align with text (legacy) */
+            .info-item svg { margin-top: 12px; }
+
+            /* RESPONSIVENESS FIXES */
+            @media (max-width: 992px) {
+                .container-ungu { padding: 40px 15px 20px !important; }
+                .link-box { padding-top: 80px !important; margin-left: 0 !important; padding-left: 0 !important; } 
+                .box-event-creator { margin-left: 0 !important; flex-direction: column !important; gap: 15px; align-items: flex-start !important; }
+                .event-title { margin-left: 0 !important; }
+                .add-calender { margin-right: 0 !important; margin-top: 0 !important; }
+                .detail-box { flex-direction: column !important; gap: 30px; display: flex !important; padding: 0 15px !important; }
+                .detail-box-left { width: 100% !important; flex: none !important; }
+                .detail-box-left img { max-width: 100% !important; height: auto !important; width: 100% !important; border-radius: 12px !important; }
+                .detail-box-right { width: 100% !important; margin-right: 0 !important; max-width: 100% !important; flex: none !important; }
+                .progress-box { width: 100% !important; margin-left: 0 !important; }
+            }
+
+            @media (max-width: 768px) {
+                .progress-steps { gap: 10px; }
+                .step p { font-size: 11px !important; margin-left: 0 !important; }
+                .circle { width: 30px !important; height: 30px !important; }
+                .circle p { font-size: 20px !important; margin-top: 0 !important; }
+                .progress-steps::before { top: 15px !important; height: 4px !important; }
+                .progress-steps .step::after { top: 15px !important; height: 4px !important; }
+
+                .desc-box { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+                .nav-event { width: auto !important; flex: 1 !important; padding: 10px 5px !important; text-align: center; font-size: 11px !important; }
+                
+                .resource-box { margin-left: 0 !important; width: 100% !important; padding: 20px !important; }
+                .participant-resources { margin-left: 0 !important; grid-template-columns: 1fr !important; }
+                #feedbackSection { margin-left: 0 !important; width: 100% !important; }
+                .tab-pane p { margin-left: 10px !important; }
+            }
+
+            @media (max-width: 576px) {
+                .event-title h4 { font-size: 1.5rem !important; }
+                .tab-pane { padding: 15px !important; }
+                .nav-tabs .nav-link { font-size: 12px !important; }
+                .price-box h5 { font-size: 1.25rem !important; }
+                .box-copy { flex-direction: column !important; align-items: stretch !important; }
+                .box-copy button { width: 100% !important; }
+            }
         </style>
 
     </head>
 
     <body>
+    @include("partials.navbar-after-login")
+    <div class="all">
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
-                <p>></p>
-                <a href="{{ route('events.index') }}">Events</a>
-                <p>></p>
-                <a href="#">{{ isset($event) ? $event->title : 'Event' }}</a>
+                <span class="sep">/</span>
+                <a href="{{ route('events.index') }}">Event</a>
+                <span class="sep">/</span>
+                <span class="active">{{ isset($event) ? $event->title : 'Event' }}</span>
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">
@@ -369,13 +482,21 @@
                         $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                     }
-                    // Attendance dianggap selesai jika user sudah submit attendance (menggunakan attendance_status)
-                    $attendanceSubmitted = $registration && !empty($registration->attendance_status);
+                    // Attendance via QR verification (check-in)
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
                     $hasCertificate = $registration && $registration->certificate_issued_at;
+                    $attendanceSubmitted = false;
+                    if ($registration) {
+                        $status = strtolower((string)($registration->attendance_status ?? ''));
+                        $attendanceSubmitted = (
+                            in_array($status, ['present','attended','checked-in'], true)
+                            || !empty($registration->attended_at)
+                            || !empty($registration->attendance_code_used_at)
+                        );
+                    }
                     $stepStates = [
                         'Registered' => $isRegistered,
-                        'Attended' => $attendanceSubmitted,
+                        'Attendance' => $attendanceSubmitted,
                         'Feedback' => $hasFeedback,
                         'Certificate' => $hasCertificate,
                     ];
@@ -472,23 +593,24 @@
                 </div>
                 <hr class="line-info">
                 <div class="info-boxluar">
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16">
-                            <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Date</span>
-                            <span class="isi-event">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-date" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M6.445 11.688V6.354h-.633A13 13 0 0 0 4.5 7.16v.695c.375-.257.969-.62 1.258-.777h.012v4.61zm1.188-1.305c.047.64.594 1.406 1.703 1.406 1.258 0 2-1.066 2-2.871 0-1.934-.781-2.668-1.953-2.668-.926 0-1.797.672-1.797 1.809 0 1.16.824 1.77 1.676 1.77.746 0 1.23-.376 1.383-.79h.027c-.004 1.316-.461 2.164-1.305 2.164-.664 0-1.008-.45-1.05-.82zm2.953-2.317c0 .696-.559 1.18-1.184 1.18-.601 0-1.144-.383-1.144-1.2 0-.823.582-1.21 1.168-1.21.633 0 1.16.398 1.16 1.23" />
+                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                            </svg>
+                            <span class="event-info-label">Date</span>
                         </div>
+                        <span class="event-info-value">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
                     </div>
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
-                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Time</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
+                            </svg>
+                            <span class="event-info-label">Time</span>
+                        </div>
                             @php
                                 $formatTimeOnly = function($raw){
                                     if(empty($raw)) return null;
@@ -509,26 +631,26 @@
                                     $timeRange = '-';
                                 }
                             @endphp
-                            <span class="isi-event">{{ $timeRange }}</span>
-                        </div>
+                        <span class="event-info-value">{{ $timeRange }}</span>
                     </div>
-                    <div class="info-item ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="20" fill="currentColor" class="bi bi-bar-chart" viewBox="0 0 16 16">
-                            <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Location</span>
-                            <span class="isi-event">{{ $event->location ?? '-' }}</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94"/>
+                                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4"/>
+                            </svg>
+                            <span class="event-info-label">Location</span>
                         </div>
+                        <span class="event-info-value">{{ $event->location ?? '-' }}</span>
                     </div>
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
-                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
-                        </svg>
-                        <div class="info-text">
-                            <span class="label-event">Student Enrolled</span>
-                            <span class="isi-event">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
+                            </svg>
+                            <span class="event-info-label">Students Enrolled</span>
                         </div>
+                        <span class="event-info-value">{{ isset($event) ? $event->registrations()->where('status','active')->count() : 0 }}</span>
                     </div>
                 </div>
                 <hr>
@@ -542,9 +664,25 @@
                 @endphp
                 <div class="booksave-row">
                         @php
-                            // Show Book Seat when user not registered and event not finished
-                            // Allow booking only before the event starts
-                            $canRegister = (!$isRegistered) && (!$eventStarted);
+                            // Registration rules
+                            // - FREE events: allow booking until event finished (ignore started state)
+                            // - PAID events: allow booking only before start time when available; else until end-of-day
+                            $hasStartTime = isset($event) && !empty($event->event_time);
+                                                        $canRegister = (!$isRegistered) && (
+                                                                $eventDate
+                                                                        ? (
+                                                                                // For FREE events: block booking once started or finished
+                                                                                ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
+                                                                            )
+                                                                        : true
+                                                        );
+                            // Pre-compute saved state for current user to render initial label
+                            $isSaved = false;
+                            if(isset($event) && auth()->check()){
+                                try {
+                                    $isSaved = auth()->user()->savedEvents()->where('event_id', $event->id)->exists();
+                                } catch (\Throwable $e) { $isSaved = false; }
+                            }
                         @endphp
                         @if($canRegister)
                             @if($isFree)
@@ -563,7 +701,7 @@
                                 <button class="bookseat" disabled>Unavailable</button>
                             @endif
                         @endif
-                        <button class="save" id="saveEventBtn" data-event-id="{{ $event->id }}">Save</button>
+                        <button type="button" class="save" id="saveEventBtn" data-event-id="{{ $event->id }}" style="cursor:pointer; position:relative; z-index:10;">{{ $isSaved ? 'Saved' : 'Save' }}</button>
                     </div>
                 <hr>
                 <div class="include-box">
@@ -587,31 +725,39 @@
                 <div class="share">
                     <h6 class="share-title">Share this event:</h6>
                     <div class="share-list">
-                        @if($isRegistered && $eventFinished && !$hasFeedback)
-                            
-                        @elseif($hasFeedback)
-                        
-                        @else
-                            <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-lock" viewBox="0 0 16 16">
-                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2" />
+                        @php
+                            $canShareLink = ($isRegistered && $eventFinished && !$hasFeedback) || $hasFeedback;
+                        @endphp
+                        @if($canShareLink)
+                            <button type="button" id="copyShareLink" class="share-action" aria-label="Copy link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="#4E5566" aria-hidden="true">
+                                    <path d="M6.354 5.5H4A2.5 2.5 0 0 0 4 10h2.354a.5.5 0 0 1 0 1H4a3.5 3.5 0 1 1 0-7h2.354a.5.5 0 0 1 0 1Zm3.292 0a.5.5 0 0 1 0-1H12a3.5 3.5 0 1 1 0 7H9.646a.5.5 0 0 1 0-1H12a2.5 2.5 0 1 0 0-5H9.646Z"/>
+                                    <path d="M5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z"/>
                                 </svg>
+                                <span id="copyShareLinkText">Copy link</span>
+                            </button>
+                        @else
+                            <span class="share-action share-action--disabled" aria-label="Copy link locked" title="Complete required steps to unlock sharing">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#4E5566" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zM7 3a1 1 0 0 1 2 0v2H7V3z" />
+                                </svg>
+                                <span>Copy link</span>
                             </span>
                         @endif
 
-                        <a id="fbShare" class="share-item" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
+                        <a id="fbShare" class="share-action share-icon" aria-label="Share on Facebook" href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" target="_blank" rel="noopener" title="Share on Facebook">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-facebook" viewBox="0 0 16 16" aria-hidden="true">
                                 <path d="M12 2.04V.5H9.75C8.26.5 7.5 1.5 7.5 2.83V4H6v2h1.5v6H10V6h1.5l.5-2H10V2.83C10 2.2 10.4 2 11 2H13v.04z"/>
                             </svg>
                         </a>
 
-                        <a id="xShare" class="share-item">
+                        <a id="xShare" class="share-action share-icon" aria-label="Share on X" href="#" target="_blank" rel="noopener" title="Share on X">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-twitter-x" viewBox="0 0 16 16">
                                 <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
                             </svg>
                         </a>
 
-                        <a id="emailShare" href="#" class="share-item">
+                        <a id="emailShare" href="#" class="share-action share-icon" aria-label="Share via Email" title="Share via Email">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-envelope" viewBox="0 0 16 16">
                                 <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8z"/>
                                 <path d="M0 4.697v7.104l5.803-3.482z"/>
@@ -620,7 +766,7 @@
                             </svg>
                         </a>
 
-                        <a id="waShare" href="#" class="share-item">
+                        <a id="waShare" href="#" class="share-action share-icon" aria-label="Share on WhatsApp" target="_blank" rel="noopener" title="Share on WhatsApp">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#4E5566" class="bi bi-whatsapp" viewBox="0 0 16 16">
                                 <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232" />
                             </svg>
@@ -653,12 +799,7 @@
                                     <label class="form-label">Registration Code</label>
                                     <input type="text" class="form-control" value="{{ $registration->registration_code ?? 'Pending assignment' }}" disabled>
                                 </div>
-                                @if(isset($event) && strtolower((string)$event->type) === 'offline')
-                                <div class="mb-3">
-                                    <label class="form-label">Attendance Code (Unique)</label>
-                                    <input type="text" class="form-control" value="{{ $registration->attendance_code ?? 'Generating...' }}" disabled>
-                                </div>
-                                @endif
+                                
                             </form>
                         @else
                             <p class="text-muted">You are not registered yet.</p>
@@ -668,31 +809,37 @@
             </div>
         </div>
         
-        <!-- Attendance Modal -->
-        <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
+        <!-- Scan QR Modal -->
+        <div class="modal fade" id="scanQrModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Attendance Form</h5>
-                        <button type="button" class="btn-close"  style="cursor:pointer;" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <h5 class="modal-title">Scan QR Event</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                       <div class="modal-body">
-                            <form method="POST" action="{{ route('events.attendance', $event) }}"> 
-                                @csrf
-        
-                                <div class="mb-3">
-                                    <label for="inputKode" class="label-kode">Masukkan Kode</label>
-                                    <input type="text" class="form-control input-kode" id="inputKode" name="unique_code" placeholder="Kode Kehadiran" required>
-            
-                                    <div class="note-text"> * kode kehadiran didapatkan dari panitia kegiatan pada saat acara</div>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary w-100 btn-submit-attendance">
-                                Kirim Attendance
-                                </button>
-
-                            </form>
+                        <div id="qr-reader" style="width:100%; max-width:520px; margin:0 auto;"></div>
+                        <div id="qr-success" class="text-center d-none" style="padding: 16px 8px;">
+                            <div style="display:flex;justify-content:center;margin:16px 0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                            <p class="mb-1 fw-semibold text-success">Absensi Berhasil Dilakukan</p>
+                            <p class="text-muted" style="margin-bottom:16px;">{{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}</p>
+                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
+                        </div>
+                        <div class="mt-3">
+                            <div id="qr-status" class="alert alert-info small">Arahkan kamera ke QR event untuk memindai.</div>
+                            <div class="d-flex justify-content-center mt-2 gap-2 flex-wrap">
+                                <button id="qr-permission-btn" type="button" class="btn btn-sm btn-primary d-none">Izinkan Kamera</button>
+                                <button id="qr-test-btn" type="button" class="btn btn-sm btn-outline-primary d-none">Test Kamera</button>
+                                <label class="btn btn-sm btn-outline-secondary d-none" id="qr-upload-btn">
+                                    Unggah QR
+                                    <input type="file" id="qr-file-input" accept="image/*" class="d-none">
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -755,34 +902,75 @@
                     @endif
                 </div>
 
-                <div class="resource-card {{ ($isRegistered && $eventFinished && !$hasFeedback) ? '' : 'locked' }}">
+                @php
+                    $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
+                    $moduleUnlocked = $isRegistered && $eventIsFinished && !empty($event->module_path);
+                @endphp
+                <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
                     <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-check" viewBox="0 0 16 16">
-                            <path d="M10.854 7.854a.5.5 0 0 0-.708-.708L7.5 9.793 6.354 8.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z" />
-                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-text" viewBox="0 0 16 16">
+                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                            <path d="M5.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                            <path d="M5.5 11a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z"/>
+                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                            <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Attendance Form</h6>
+                        <h6>Modules Materi</h6>
                         <p>
-                            @if($isRegistered && $eventFinished && !$attendanceSubmitted)
-                                Please submit your attendance & feedback
-                            @elseif($attendanceSubmitted)
-                                Attendance submitted
-                            @else
+                            @if(!$isRegistered)
+                                Available upon registration
+                            @elseif(!$eventIsFinished)
                                 Available after event completion
+                            @elseif(empty($event->module_path))
+                                Not available
+                            @else
+                                Download materi event
                             @endif
                         </p>
                     </div>
-                    @if($isRegistered && $eventFinished && !$hasFeedback)
-                        <button type="button" class="link-share" data-bs-toggle="modal" data-bs-target="#attendanceModal" style="border:none;background:transparent;padding:0;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    @if($moduleUnlocked)
+                        <a class="link-share" href="{{ route('events.modules.download', $event) }}" title="Unduh Materi">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
                             </svg>
-                        </button>
+                        </a>
                     @else
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                    @endif
+                </div>
+
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}" style="position:relative;">
+                    <div class="img-resource">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-qr-code-scan" viewBox="0 0 16 16"><path d="M2 2h2v2H2V2Z"/><path d="M6 0H0v6h6V0ZM2 4V2h2v2H2Z"/><path d="M12 2h2v2h-2V2Z"/><path d="M16 0h-6v6h6V0Zm-4 4V2h2v2h-2Z"/><path d="M2 12h2v2H2v-2Z"/><path d="M6 10H0v6h6v-6Zm-4 4v-2h2v2H2Z"/><path d="M7 2h1v1H7V2Z"/><path d="M8 4h1v1H8V4Z"/><path d="M2 7h1v1H2V7Z"/><path d="M4 8h1v1H4V8Z"/><path d="M12 7h1v1h-1V7Z"/><path d="M7 12h1v1H7v-1Z"/><path d="M8 13h1v1H8v-1Z"/><path d="M9 7h1v1H9V7Z"/><path d="M10 2h1v1h-1V2Z"/><path d="M10 11h1v1h-1v-1Z"/><path d="M11 10h1v1h-1v-1Z"/><path d="M12 9h1v1h-1V9Z"/><path d="M13 8h1v1h-1V8Z"/><path d="M14 7h1v1h-1V7Z"/><path d="M15 6h1v1h-1V6Z"/><path d="M12 12h1v1h-1v-1Z"/><path d="M13 13h1v1h-1v-1Z"/><path d="M14 12h1v1h-1v-1Z"/></svg>
+                    </div>
+                    <div class="resource-value">
+                        <h6>Attendance QR Event</h6>
+                        @if(isset($attendanceSubmitted) && $attendanceSubmitted)
+                            <p class="text-success" style="font-weight:600;">Absensi Berhasil Dilakukan</p>
+                        @else
+                            <p>Scan QR Event to mark your attendance.</p>
+                        @endif
+                    </div>
+                    @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
+                        <span class="d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px;" title="Absensi Berhasil Dilakukan">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Absensi Berhasil">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <polyline points="8 12 11 15 16 10"></polyline>
+                            </svg>
+                        </span>
+                    @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
+                        <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan" style="position:absolute; top:24px; right:10px; text-decoration:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Buka Halaman Scan">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                        </a>
+                    @else
+                        <span class="link-share d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px; opacity:.4; cursor:not-allowed;" title="Scan tersedia saat acara dimulai"></span>
                     @endif
                 </div>
 
@@ -796,29 +984,27 @@
                     
                     <div class="resource-value">
                         <h6>Certificate</h6>
-                        @php
-                            // Show certificate availability only when user registered and has submitted feedback (post-event)
-                            // $isRegistered and $hasFeedback are computed earlier in the view
-                        @endphp
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                @if(!empty($event->certificate_path))
-                                    <p>Certificate available — <a href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a></p>
+                                @php
+                                    $certReady = $event->event_date && now()->greaterThanOrEqualTo($event->event_date->copy()->addDays(3));
+                                @endphp
+                                @if($certReady)
+                                    <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
+                                    <div class="d-flex gap-2 mt-2">
+                                        <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
+                                        <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                                    </div>
                                 @else
-                                    <p>Your certificate will be available soon. Thank you for submitting feedback.</p>
+                                    <p>Sertifikat akan tersedia 3 hari setelah acara selesai.</p>
                                 @endif
                             @else
-                                <p>Available after you submit feedback for this event.</p>
+                                <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
                             @endif
                         @else
-                            <p>Available after event completion.</p>
+                            <p>Tersedia setelah acara selesai.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback && !empty($event->certificate_path))
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">Download</a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
                 </div>
             
             <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
@@ -996,12 +1182,6 @@
                                     <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
                                 </svg>
                             </a>
-                        @else
-                            <span class="link-share" style="opacity:.4; cursor:not-allowed;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="lock-bi bi-lock" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3" />
-                                </svg>
-                            </span>
                         @endif
                     </span>
                 </div>
@@ -1013,24 +1193,374 @@
                         <div class="scroll-schedule-box">
                             <div class="schedule-box">
                             <h6 class="title-schedule">Event Schedule</h6>
-                            @php
+                        
+
+                        <!-- QR scanning library -->
+                        <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function(){
+                            var scanner = null;
+                            var modalEl = document.getElementById('scanQrModal');
+                            if(!modalEl) return;
+                            // Helper to detect secure origin acceptance (https or localhost)
+                            function isSecureEnough(){
+                                var isLocalhost = ['localhost','127.0.0.1','::1'].indexOf(location.hostname) !== -1;
+                                return window.isSecureContext || isLocalhost;
+                            }
+
+                            // Attempt to request camera permission directly (user-gesture)
+                            function requestCameraPermission(statusEl, onDone){
+                                var constraintsAttempts = [
+                                    { video: { facingMode: { exact: 'environment' } } },
+                                    { video: { facingMode: { ideal: 'environment' } } },
+                                    { video: true }
+                                ];
+                                var p = Promise.resolve();
+                                constraintsAttempts.forEach(function(constraints){
+                                    p = p.catch(function(){
+                                        return navigator.mediaDevices.getUserMedia(constraints).then(function(stream){
+                                            try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(_e){}
+                                            if (typeof onDone === 'function') onDone(true);
+                                            throw '__BREAK__';
+                                        });
+                                    });
+                                });
+                                return p.catch(function(e){ if(e==='__BREAK__') return; if (typeof onDone === 'function') onDone(false, e); });
+                            }
+
+                            // Try to read Permissions API when available
+                            function checkPermissionState(){
+                                if (navigator.permissions && navigator.permissions.query) {
+                                    try { return navigator.permissions.query({ name: 'camera' }); } catch(_e) { return Promise.resolve(null); }
+                                }
+                                return Promise.resolve(null);
+                            }
+
+                            modalEl.addEventListener('shown.bs.modal', function(){
+                                try {
+                                    var el = document.getElementById('qr-reader');
+                                    if (!el) return;
+                                    if (scanner) { try { scanner.stop(); } catch(e){} }
+                                    // Ensure Html5Qrcode library is available; load fallback if missing
+                                    if (!window.Html5Qrcode) {
+                                        if (statusEl) {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.textContent = 'Memuat library pemindaian QR...';
+                                        }
+                                        var fallback = document.createElement('script');
+                                        fallback.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js';
+                                        fallback.async = true;
+                                        fallback.onload = function(){
+                                            try {
+                                                scanner = new Html5Qrcode('qr-reader');
+                                            } catch (err) {
+                                                console.error('Init Html5Qrcode gagal setelah fallback', err);
+                                                if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memuat library QR. Gunakan unggah gambar sebagai alternatif.'; }
+                                                if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                                return;
+                                            }
+                                            // Lanjut ke alur normal di bawah
+                                        };
+                                        fallback.onerror = function(){
+                                            console.error('Gagal memuat library Html5Qrcode dari CDN');
+                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Library QR tidak termuat. Silakan gunakan unggah gambar.'; }
+                                            if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                        };
+                                        document.head.appendChild(fallback);
+                                        // Jangan lanjutkan hingga library termuat
+                                        return;
+                                    }
+                                    scanner = new Html5Qrcode("qr-reader");
+                                    var statusEl = document.getElementById('qr-status');
+                                    var successEl = document.getElementById('qr-success');
+                                    var permBtn = document.getElementById('qr-permission-btn');
+                                    var testBtn = document.getElementById('qr-test-btn');
+                                    var uploadBtn = document.getElementById('qr-upload-btn');
+                                    var fileInput = document.getElementById('qr-file-input');
+                                    var eventStartedFlag = {{ (isset($eventStarted) && $eventStarted) ? 'true' : 'false' }};
+                                    // Reset views each time modal opens
+                                    if (successEl) successEl.classList.add('d-none');
+                                    if (el) el.style.display = '';
+                                    var currentEventId = {{ (int) ($event->id ?? 0) }};
+                                    var eventQrToken = @json($event->attendance_qr_token ?? null);
+                                    // Gate scanning if event hasn't started
+                                    if (!eventStartedFlag) {
+                                        if (statusEl) {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.textContent = 'Scan tersedia saat acara dimulai.';
+                                        }
+                                        if (permBtn) { permBtn.classList.add('d-none'); }
+                                        if (uploadBtn) { uploadBtn.classList.add('d-none'); }
+                                        return;
+                                    }
+                                    // If insecure origin and not localhost, camera will be blocked
+                                    if (!isSecureEnough()) {
+                                        if (statusEl) {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.innerHTML = 'Kamera diblokir pada koneksi non-HTTPS.<br>Gunakan HTTPS atau localhost.<br><small>Opsi solusi cepat:<br>- Aktifkan SSL di Laragon lalu akses: https://domain.test<br>- atau gunakan ngrok/cloudflared untuk URL https publik.</small>';
+                                        }
+                                        if (permBtn) { permBtn.classList.add('d-none'); }
+                                        if (testBtn) { testBtn.classList.remove('d-none'); }
+                                        if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                        return;
+                                    }
+
+                                    function beginScan(cameraIdOrFacingMode){
+                                        return scanner.start(cameraIdOrFacingMode, { fps: 10, qrbox: { width: 250, height: 250 } }, function(decodedText) {
+                                        // Validate QR: must contain event URL with matching token
+                                        var ok = false;
+                                        try {
+                                            var url = new URL(decodedText);
+                                            ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
+                                        } catch(_e) {
+                                            // Fallback string check
+                                            ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
+                                        }
+                                        if (ok) {
+                                            if (statusEl){ statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil! Menyimpan absensi...'; }
+                                            // Stop camera and show success UI
+                                            try { scanner.stop(); } catch(e){}
+                                            if (el) el.style.display = 'none';
+                                            if (successEl) successEl.classList.remove('d-none');
+                                            // NOTE: If you want to persist attendance here via AJAX, call a route.
+                                            // Currently no attendance route is exposed in routes/web.php. If added, perform fetch here.
+                                        } else {
+                                            statusEl.className = 'alert alert-warning small';
+                                            statusEl.textContent = 'QR tidak cocok dengan event ini.';
+                                        }
+                                        }, function(err){ /* per-frame failure, ignore */ });
+                                    }
+
+                                    // Helper: robust start attempts sequence
+                                    function tryStartSequence(){
+                                        // Attempt environment, then user, then enumerate
+                                        var tried = false;
+                                        return beginScan({ facingMode: 'environment' }).catch(function(e1){
+                                            tried = true;
+                                            // If permission denied, show controls
+                                            if (permBtn && e1 && (e1.name === 'NotAllowedError' || e1.message?.toLowerCase().includes('permission'))) {
+                                                permBtn.classList.remove('d-none'); permBtn.disabled = false;
+                                            }
+                                            return beginScan({ facingMode: 'user' });
+                                        }).catch(function(e2){
+                                            if (Html5Qrcode && Html5Qrcode.getCameras) {
+                                                return Html5Qrcode.getCameras().then(function(cameras){
+                                                    if (!cameras || !cameras.length) { throw new Error('Tidak ada kamera terdeteksi'); }
+                                                    var back = cameras.find(function(c){ return /back|rear|environment/i.test(c.label); });
+                                                    var chosen = (back || cameras[0]).id;
+                                                    return beginScan(chosen);
+                                                });
+                                            }
+                                            throw e2;
+                                        }).catch(function(eFinal){
+                                            console.warn('Gagal memulai kamera', eFinal);
+                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (eFinal && eFinal.message ? eFinal.message : eFinal); }
+                                            if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
+                                            if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                            return Promise.reject(eFinal);
+                                        });
+                                    }
+
+                                    // Preflight permission to improve camera availability (especially iOS)
+                                    var preflight = function(){
+                                        if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
+                                        if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { return Promise.resolve(); }
+                                        return checkPermissionState().then(function(state){
+                                            if (state && state.state === 'denied') {
+                                                if (statusEl) {
+                                                    statusEl.className = 'alert alert-danger small';
+                                                    statusEl.innerHTML = 'Izin kamera ditolak oleh browser. Buka pengaturan situs dan izinkan kamera, lalu coba lagi.';
+                                                }
+                                                if (permBtn) {
+                                                    permBtn.classList.remove('d-none');
+                                                    permBtn.disabled = false;
+                                                }
+                                                return Promise.resolve();
+                                            }
+                                            // Attempt a quick silent preflight; if it fails, we’ll show the manual button
+                                            return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                                                .then(function(stream){ try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(_e){} })
+                                                .catch(function(e){ console.warn('Preflight getUserMedia failed', e); });
+                                        });
+                                    };
+
+                                    preflight().then(function(){
+                                        // If permission still not granted, show manual button to request
+                                        if (navigator.permissions && navigator.permissions.query) {
+                                            navigator.permissions.query({name: 'camera'}).then(function(ps){
+                                                if (ps && ps.state !== 'granted' && permBtn) {
+                                                    permBtn.classList.remove('d-none');
+                                                    permBtn.disabled = false;
+                                                    if (testBtn) { testBtn.classList.remove('d-none'); }
+                                                }
+                                            }).catch(function(){});
+                                        } else {
+                                            if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
+                                            if (testBtn) { testBtn.classList.remove('d-none'); }
+                                        }
+                                        // Try robust start
+                                        return tryStartSequence();
+                                    }).catch(function(){ /* already handled in tryStartSequence */ });
+
+                                    // Hook manual permission button
+                                    // Test camera button (diagnostic)
+                                    if (testBtn) {
+                                        testBtn.onclick = function(){
+                                            if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                                                statusEl.className = 'alert alert-danger small';
+                                                statusEl.textContent = 'Browser tidak mendukung kamera.';
+                                                return;
+                                            }
+                                            statusEl.className = 'alert alert-info small';
+                                            statusEl.textContent = 'Menguji akses kamera...';
+                                            navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                                                .then(function(stream){
+                                                    try { stream.getTracks().forEach(function(t){ t.stop(); }); } catch(_e){}
+                                                    statusEl.className = 'alert alert-success small';
+                                                    statusEl.textContent = 'Tes berhasil: kamera dapat diakses.';
+                                                    testBtn.classList.add('d-none');
+                                                    // Attempt start after successful test
+                                                    tryStartSequence();
+                                                })
+                                                .catch(function(err){
+                                                    statusEl.className = 'alert alert-danger small';
+                                                    statusEl.textContent = 'Tes gagal: ' + (err && err.message ? err.message : err);
+                                                    uploadBtn && uploadBtn.classList.remove('d-none');
+                                                    permBtn && (permBtn.classList.remove('d-none'), permBtn.disabled = false);
+                                                });
+                                        };
+                                    }
+                                    if (permBtn) {
+                                        permBtn.onclick = function(){
+                                            permBtn.disabled = true;
+                                            if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
+                                            if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                                                if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Browser tidak mendukung kamera.'; }
+                                                return;
+                                            }
+                                            requestCameraPermission(statusEl, function(granted, err){
+                                                if (!granted) {
+                                                    if (statusEl) {
+                                                        statusEl.className = 'alert alert-danger small';
+                                                        statusEl.textContent = 'Izin kamera gagal: ' + (err && err.message ? err.message : 'Unknown error');
+                                                    }
+                                                    permBtn.disabled = false;
+                                                    return;
+                                                }
+                                                // After permission granted, try to start scan again
+                                                if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memulai kamera...'; }
+                                                if (Html5Qrcode && Html5Qrcode.getCameras) {
+                                                    Html5Qrcode.getCameras().then(function(cameras){
+                                                        var back = cameras && cameras.find(function(c){ return /back|rear|environment/i.test(c.label); });
+                                                        var chosen = (back || (cameras && cameras[0]) || {}).id || { facingMode: 'environment' };
+                                                        beginScan(chosen).then(function(){
+                                                            permBtn.classList.add('d-none');
+                                                        }).catch(function(e){
+                                                            console.error('start error', e);
+                                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                            permBtn.disabled = false;
+                                                        });
+                                                    }).catch(function(){
+                                                        beginScan({ facingMode: 'environment' }).then(function(){
+                                                            permBtn.classList.add('d-none');
+                                                        }).catch(function(e){
+                                                            console.error('start error', e);
+                                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                            permBtn.disabled = false;
+                                                        });
+                                                    });
+                                                } else {
+                                                    tryStartSequence().then(function(){ permBtn.classList.add('d-none'); }).catch(function(e){
+                                                        console.error('start error', e);
+                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                        permBtn.disabled = false;
+                                                    });
+                                                }
+                                            });
+                                        };
+                                    }
+                                    // File upload fallback
+                                    if (fileInput) {
+                                        fileInput.onchange = function(){
+                                            var f = fileInput.files && fileInput.files[0];
+                                            if (!f) return;
+                                            statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memindai gambar...';
+                                            scanner.scanFile(f, true).then(function(decodedText){
+                                                var ok = false;
+                                                try {
+                                                    var url = new URL(decodedText);
+                                                    ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
+                                                } catch(_e) {
+                                                    ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
+                                                }
+                                                if (ok) {
+                                                    if (statusEl){ statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil dari gambar! Menyimpan absensi...'; }
+                                                    try { scanner.stop(); } catch(e){}
+                                                    if (el) el.style.display = 'none';
+                                                    if (successEl) successEl.classList.remove('d-none');
+                                                } else {
+                                                    statusEl.className = 'alert alert-warning small';
+                                                    statusEl.textContent = 'Gambar tidak cocok dengan event ini.';
+                                                }
+                                            }).catch(function(err){
+                                                console.error('scanFile error', err);
+                                                statusEl.className = 'alert alert-danger small';
+                                                statusEl.textContent = 'Gagal memindai gambar QR.';
+                                            });
+                                        };
+                                        if (uploadBtn) {
+                                            uploadBtn.onclick = function(){ fileInput && fileInput.click(); };
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            });
+                            modalEl.addEventListener('hidden.bs.modal', function(){
+                                if (scanner) {
+                                    scanner.stop().catch(function(){/* ignore */});
+                                    scanner.clear();
+                                    scanner = null;
+                                }
+                                // Reset UI for next open
+                                var el = document.getElementById('qr-reader');
+                                var successEl = document.getElementById('qr-success');
+                                var permBtn = document.getElementById('qr-permission-btn');
+                                if (el) el.style.display = '';
+                                if (successEl) successEl.classList.add('d-none');
+                                if (permBtn) permBtn.classList.add('d-none');
+                            });
+                        });
+                        </script>
+                        @php
                                 $items = collect();
                                 if(isset($event)){
-                                    if($event->relationLoaded('scheduleItems')){
-                                        $items = $event->scheduleItems;
-                                    } else {
-                                        // prefer DB relation ordered by start if available
-                                        try { $items = $event->scheduleItems()->orderBy('start')->get(); } catch (\Throwable $e) { $items = collect(); }
+                                    // Schedule MUST come from schedule_json
+                                    $rawSchedule = $event->schedule_json ?? null;
+
+                                    // Normalize to array (supports casted array, JSON string, or stdClass)
+                                    $scheduleArr = null;
+                                    if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                                        $decoded = json_decode($rawSchedule, true);
+                                        $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                                    } elseif (is_array($rawSchedule)) {
+                                        $scheduleArr = $rawSchedule;
+                                    } elseif (is_object($rawSchedule)) {
+                                        $scheduleArr = json_decode(json_encode($rawSchedule), true);
                                     }
-                                    if($items->isEmpty() && is_array($event->schedule_json)){
-                                        $items = collect($event->schedule_json)->map(function($row){
+
+                                    if (is_array($scheduleArr)) {
+                                        $items = collect($scheduleArr)->map(function($row){
+                                            $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
                                             return (object) [
                                                 'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
                                                 'end' => $row['end'] ?? ($row['time_end'] ?? null),
                                                 'title' => $row['title'] ?? ($row['activity'] ?? ''),
                                                 'description' => $row['description'] ?? ($row['desc'] ?? ''),
                                             ];
-                                        });
+                                        })->filter(function($it){
+                                            return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                                        })->values();
                                     }
                                 }
                                 $formatTime = function($t){
@@ -1063,7 +1593,16 @@
                     <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab" tabindex="0">
                         <h6 class="mb-3 mt-2">Terms & Condition</h6>
                         <div class="terms-content" style="margin-top: 10px;">
-                            {!! $event->terms_and_conditions ?? '' !!}
+                            @php
+                                $termsHtml = isset($event) ? ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')) : '';
+                                $termsText = trim(preg_replace('/\xC2\xA0|\s+/', ' ', strip_tags((string) $termsHtml)));
+                            @endphp
+
+                            @if($termsText === '')
+                                <p class="text-muted" style="margin:0;">Terms and Condition akan segera diumumkan</p>
+                            @else
+                                {!! $termsHtml !!}
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -1081,7 +1620,7 @@
                             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, 100);
                     } else {
-                        section.style.display = 'none';a
+                        section.style.display = 'none';
                     }
                 }
             }
@@ -1340,34 +1879,125 @@
             })();
         </script>
         <script>
-            // Save/Unsave event handler
+            // Save/Unsave event handler (supports ID and fallback by class)
             (function(){
-                const btn = document.getElementById('saveEventBtn');
-                if(!btn) return;
-                btn.addEventListener('click', function(){
-                    const id = this.dataset.eventId;
+                const nodeList = document.querySelectorAll('#saveEventBtn, .booksave-row .save');
+                // Deduplicate elements in case the selector matches the same node twice
+                const buttons = Array.from(new Set(Array.from(nodeList)));
+                if(!buttons.length) return;
+
+                function getCsrfToken(){
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if(meta && meta.content) return meta.content;
+                    // Fallback to blade-injected token
+                    return '{{ csrf_token() }}';
+                }
+
+                function onClick(e){
+                    try { e.preventDefault(); e.stopPropagation(); } catch(_) {}
+                    if (this.disabled) return; // guard against double-clicks
+
+                    const original = (this.textContent || '').trim();
+                    const wasSaved = original.toLowerCase() === 'saved';
                     this.disabled = true;
-                    const original = this.textContent;
+                    this.setAttribute('aria-busy', 'true');
                     this.textContent = 'Saving...';
+
                     fetch('{{ route('events.save', $event) }}', {
                         method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With':'XMLHttpRequest' }
+                        headers: {
+                            'Accept': 'application/json, text/html;q=0.9,*/*;q=0.8',
+                            'X-CSRF-TOKEN': getCsrfToken(),
+                            'X-Requested-With':'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
                     })
-                    .then(r=>r.json())
+                    .then(async (r)=>{
+                        if (r.redirected && r.url) {
+                            if (r.url.includes('/sign-in') || r.url.includes('/login')) {
+                                // Preserve return URL so user returns to this event after login
+                                const ret = encodeURIComponent(window.location.href);
+                                const loginUrl = r.url.includes('?') ? `${r.url}&return=${ret}` : `${r.url}?return=${ret}`;
+                                window.location.href = loginUrl;
+                                return { success: false, saved: wasSaved };
+                            }
+                        }
+                        if (r.status === 401 || r.status === 419) {
+                            const ret = encodeURIComponent(window.location.href);
+                            window.location.href = '{{ route('login') }}' + `?return=${ret}`;
+                            return { success: false, saved: wasSaved };
+                        }
+                        const ct = (r.headers.get('content-type')||'').toLowerCase();
+                        if (ct.includes('application/json')) {
+                            try {
+                                const data = await r.json();
+                                // Normalize payload
+                                return {
+                                    success: !!data.success,
+                                    saved: typeof data.saved === 'boolean' ? data.saved : (!wasSaved)
+                                };
+                            } catch(_) {
+                                return { success:false, saved: wasSaved };
+                            }
+                        }
+                        return { success: r.ok, saved: r.ok ? (!wasSaved) : wasSaved };
+                    })
                     .then(({success, saved})=>{
-                        if(success){ this.textContent = saved ? 'Saved' : 'Save'; }
-                        else { this.textContent = original; }
+                        if(success){
+                            this.textContent = saved ? 'Saved' : 'Save';
+                            this.dataset.state = saved ? 'saved' : 'unsaved';
+                            this.setAttribute('aria-pressed', saved ? 'true' : 'false');
+                        } else {
+                            this.textContent = original;
+                        }
                     })
-                    .catch(()=>{ this.textContent = original; })
-                    .finally(()=>{ this.disabled = false; });
-                });
+                    .catch(()=>{
+                        // Network or fetch error: fallback to form POST
+                        try {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = '{{ route('events.save', $event) }}';
+                            const csrf = document.createElement('input');
+                            csrf.type = 'hidden'; csrf.name = '_token'; csrf.value = getCsrfToken();
+                            form.appendChild(csrf);
+                            document.body.appendChild(form);
+                            form.submit();
+                            return;
+                        } catch(_e) {
+                            // Visual feedback if even fallback fails
+                            this.textContent = original;
+                            try { this.classList.add('shake'); setTimeout(()=>this.classList.remove('shake'), 500); } catch(_){ }
+                        }
+                    })
+                    .finally(()=>{
+                        this.disabled = false;
+                        this.removeAttribute('aria-busy');
+                    });
+                }
+
+                buttons.forEach(function(b){ b.addEventListener('click', onClick); });
             })();
         </script>
         <script>
             // Free event booking via AJAX: redirect to ticket page
-            (function(){
-                const btn = document.getElementById('bookFreeBtn');
+                (function(){
+                    const btn = document.getElementById('bookFreeBtn');
                 if(!btn) return;
+                function submitFallbackForm(){
+                    try {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '{{ route('events.register.form', $event) }}';
+                        form.style.display = 'none';
+                        const csrf = document.createElement('input');
+                        csrf.type = 'hidden';
+                        csrf.name = '_token';
+                        csrf.value = '{{ csrf_token() }}';
+                        form.appendChild(csrf);
+                        document.body.appendChild(form);
+                        form.submit();
+                    } catch (_e) {}
+                }
                 btn.addEventListener('click', function(){
                     const original = this.textContent;
                     this.disabled = true;
@@ -1376,38 +2006,115 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json, text/html;q=0.9,*/*;q=0.8',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'X-Requested-With': 'XMLHttpRequest'
                         },
+                        credentials: 'same-origin',
                         body: JSON.stringify({})
                     })
-                    .then(r => r.json())
-                    .then(({status, redirect, message, button_text}) => {
-                        if (redirect) {
-                            window.location.href = redirect;
+                    .then(async (r) => {
+                        // Handle auth/CSRF issues explicitly
+                        if (r.status === 401 || r.status === 419) {
+                            // Redirect to login so the user can re-authenticate
+                            window.location.href = '{{ route('login') }}';
                             return;
                         }
-                        if (status === 'ok' || status === 'already') {
-                            this.textContent = button_text || 'Seat Booked';
-                            this.disabled = true;
-                        } else if (status === 'payment_required' && redirect) {
-                            window.location.href = redirect;
-                        } else {
+                        const ct = (r.headers.get('content-type') || '').toLowerCase();
+                        if (!r.ok) {
+                            // Read body for message when possible
+                            const t = await r.text();
                             this.textContent = original;
+                            this.disabled = false;
+                            // Fallback to form-based registration
+                            submitFallbackForm();
+                            return;
                         }
+                        if (r.redirected && r.url) {
+                            window.location.href = r.url; return;
+                        }
+                        if (ct.includes('application/json')) {
+                            const data = await r.json();
+                            if (data && data.redirect) { window.location.href = data.redirect; return; }
+                            if (data && (data.status === 'ok' || data.status === 'already')) {
+                                this.textContent = data.button_text || 'Seat Booked';
+                                this.disabled = true;
+                                // Trigger notification refresh immediately
+                                try { if (typeof loadNotifications === 'function') setTimeout(() => loadNotifications(), 50); } catch(_e){}
+                                // Ensure UI reflects registered state
+                                setTimeout(()=> window.location.reload(), 300);
+                                return;
+                            }
+                            // Unknown JSON shape: just reload to update state
+                            window.location.reload();
+                            return;
+                        }
+                        // Non-JSON success: reload to reflect state
+                        window.location.reload();
                     })
                     .catch(() => {
                         this.textContent = original;
+                        // Fallback to form-based registration on network errors
+                        submitFallbackForm();
                     })
                     .finally(() => {
-                        // keep disabled only if booked; otherwise re-enable
                         if (this.textContent === original) this.disabled = false;
                     });
                 });
             })();
         </script>
+
+        <script>
+            // Share actions: copy link + generate share URLs
+            (function(){
+                const copyBtn = document.getElementById('copyShareLink');
+                const copyText = document.getElementById('copyShareLinkText');
+                const xShare = document.getElementById('xShare');
+                const emailShare = document.getElementById('emailShare');
+                const waShare = document.getElementById('waShare');
+
+                const pageUrl = window.location.href;
+                const eventTitle = @json($event->title ?? 'Event');
+                const urlEnc = encodeURIComponent(pageUrl);
+                const textEnc = encodeURIComponent(eventTitle);
+
+                if (xShare) xShare.href = `https://twitter.com/intent/tweet?text=${textEnc}&url=${urlEnc}`;
+                if (emailShare) emailShare.href = `mailto:?subject=${textEnc}&body=${urlEnc}`;
+                if (waShare) waShare.href = `https://wa.me/?text=${textEnc}%20${urlEnc}`;
+
+                function fallbackCopy(text){
+                    const input = document.createElement('input');
+                    input.value = text;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'absolute';
+                    input.style.left = '-9999px';
+                    document.body.appendChild(input);
+                    input.select();
+                    try { document.execCommand('copy'); } catch (_e) {}
+                    document.body.removeChild(input);
+                }
+
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', async function(){
+                        try {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                await navigator.clipboard.writeText(pageUrl);
+                            } else {
+                                fallbackCopy(pageUrl);
+                            }
+                            if (copyText) {
+                                const prev = copyText.textContent;
+                                copyText.textContent = 'Copied';
+                                window.setTimeout(() => { copyText.textContent = prev; }, 1200);
+                            }
+                        } catch (_e) {
+                            fallbackCopy(pageUrl);
+                        }
+                    });
+                }
+            })();
+        </script>
+         @include('partials.footer-before-login')
     </body>
 
     </html>
-
-    @include('partials.footer-before-login')

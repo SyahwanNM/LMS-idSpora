@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Http\Resources\EventResource;
+use App\Http\Resources\EventRegistrationResource;
+use App\Models\ManualPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Midtrans\Snap;
-use Midtrans\Config;
 
 class EventController extends Controller
 {
@@ -48,10 +48,26 @@ class EventController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
         }
 
-        // 2. Cek Apakah User Sudah Terdaftar
+        // 1b. Cek apakah event sudah selesai
+        if (method_exists($event, 'isFinished') && $event->isFinished()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event sudah selesai, pendaftaran ditutup.'
+            ], 422);
+        }
+
+        // 2. Hitung Harga
+        $isFree = (float) ($event->discounted_price ?? 0) <= 0;
+        $amount = $isFree ? 0 : (float) $event->discounted_price;
+
+        // Buat Nomor Order Unik (Must be unique for each registration attempt)
+        // Format: REG-{UserID}-{EventID}-{Timestamp}
+        $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
+
+        // 3. Cek Apakah User Sudah Terdaftar
         $existing = \App\Models\EventRegistration::where('user_id', $user->id)
-                    ->where('event_id', $event->id)
-                    ->first();
+            ->where('event_id', $event->id)
+            ->first();
 
         if ($existing) {
             // Kalau sudah daftar tapi belum bayar, kasih link bayar yang lama
@@ -62,21 +78,74 @@ class EventController extends Controller
                     'data' => $existing
                 ], 200);
             }
-            
+
+            // Jika sebelumnya ditolak, izinkan daftar lagi: reset jadi attempt baru
+            if ($existing->status == 'rejected') {
+                try {
+                    DB::beginTransaction();
+
+                    $existing->status = $isFree ? 'active' : 'pending';
+                    $existing->registration_code = $orderId;
+                    $existing->total_price = $amount;
+                    $existing->payment_url = null;
+                    $existing->payment_proof = null;
+                    $existing->rejection_reason = null;
+                    $existing->payment_verified_at = null;
+                    $existing->payment_verified_by = null;
+                    $existing->save();
+
+                    $manualPayment = ManualPayment::query()
+                        ->where('event_id', $event->id)
+                        ->where('event_registration_id', $existing->id)
+                        ->where('user_id', $user->id)
+                        ->latest('id')
+                        ->first();
+
+                    if (!$manualPayment) {
+                        $manualPayment = new ManualPayment();
+                    }
+
+                    $manualPayment->event_id = $event->id;
+                    $manualPayment->event_registration_id = $existing->id;
+                    $manualPayment->user_id = $user->id;
+                    $manualPayment->order_id = $orderId;
+                    $manualPayment->amount = $amount;
+                    $manualPayment->currency = 'IDR';
+                    $manualPayment->method = $isFree ? 'free' : 'manual_transfer';
+                    $manualPayment->status = $isFree ? 'settled' : 'pending';
+                    $manualPayment->note = null;
+                    $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
+                        'source' => 'event',
+                        'type' => $isFree ? 'free' : 'paid',
+                        'retry_after_reject' => true,
+                    ]);
+                    $manualPayment->save();
+
+                    DB::commit();
+
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Pendaftaran berhasil. Silakan lakukan pembayaran manual dan upload bukti bayar.',
+                        'data' => [
+                            'registration' => $existing,
+                            'payment_url' => null
+                        ]
+                    ], 201);
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Gagal memproses pendaftaran ulang: ' . $e->getMessage(),
+                    ], 500);
+                }
+            }
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Kamu sudah terdaftar di event ini!',
                 'data' => $existing
             ], 409);
         }
-
-        // 3. Hitung Harga
-        $isFree = $event->discounted_price <= 0;
-        $amount = $isFree ? 0 : $event->discounted_price;
-        
-        // Buat Nomor Order Unik (PENTING: Midtrans menolak order_id yang sama persis)
-        // Format: REG-{UserID}-{EventID}-{Timestamp}
-        $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
 
         try {
             DB::beginTransaction();
@@ -91,51 +160,31 @@ class EventController extends Controller
                 'payment_url' => null, // Nanti diisi
             ]);
 
-            $paymentUrl = null;
 
-            // 5. JIKA BERBAYAR -> Panggil Midtrans
-            if (!$isFree) {
-                // Setup Konfigurasi Midtrans (pakai config agar konsisten dgn web)
-                Config::$serverKey = config('midtrans.server_key');
-                Config::$isProduction = (bool) config('midtrans.is_production');
-                Config::$isSanitized = (bool) config('midtrans.sanitize');
-                Config::$is3ds = (bool) config('midtrans.enable_3ds');
-
-                // Siapkan Data Transaksi
-                $params = [
-                    'transaction_details' => [
-                        'order_id' => $orderId,
-                        'gross_amount' => (int) $amount,
-                    ],
-                    'customer_details' => [
-                        'first_name' => $user->name,
-                        'email' => $user->email,
-                    ],
-                    'item_details' => [
-                        [
-                            'id' => $event->id,
-                            'price' => (int) $amount,
-                            'quantity' => 1,
-                            'name' => substr($event->title, 0, 49), // Midtrans max 50 huruf
-                        ]
-                    ]
-                ];
-
-                // Minta Link Pembayaran ke Midtrans
-                $paymentUrl = Snap::createTransaction($params)->redirect_url;
-                
-                // Update Database dengan Link baru
-                $registration->update(['payment_url' => $paymentUrl]);
-            }
+            // 5. JIKA BERBAYAR -> Arahkan ke Manual Payment
+            // Tidak perlu panggil Midtrans. User akan upload bukti bayar nanti.
+           
+            // 6. Track in Finance (ManualPayment Trace)
+            \App\Models\ManualPayment::create([
+                'event_id' => $event->id,
+                'event_registration_id' => $registration->id,
+                'user_id' => $user->id,
+                'order_id' => $orderId,
+                'amount' => $amount,
+                'currency' => 'IDR',
+                'method' => $isFree ? 'free' : 'manual_transfer',
+                'status' => $isFree ? 'settled' : 'pending',
+                'metadata' => ['source' => 'event', 'type' => $isFree ? 'free' : 'paid']
+            ]);
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Silakan lakukan pembayaran melalui link di bawah.',
+                'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Pendaftaran berhasil. Silakan lakukan pembayaran manual dan upload bukti bayar.',
                 'data' => [
                     'registration' => $registration,
-                    'payment_url' => $paymentUrl 
+                    'payment_url' => null // Tidak ada link otomatis
                 ]
             ], 201);
 
@@ -147,4 +196,159 @@ class EventController extends Controller
                 ], 500);
             }
         }
+    
+    /**
+     * Cek status pendaftaran event untuk user saat ini.
+     */
+    public function registrationStatus(Request $request, $id)
+    {
+        $user = $request->user();
+
+        $event = Event::find($id);
+        if (!$event) {
+            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        // Tidak bisa membuat pembayaran jika event sudah selesai
+        if (method_exists($event, 'isFinished') && $event->isFinished()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event sudah selesai, pembayaran tidak tersedia.'
+            ], 422);
+        }
+
+        $registration = \App\Models\EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->latest()
+            ->first();
+
+        if (!$registration) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Belum terdaftar di event ini'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Status pendaftaran',
+            'data' => new EventRegistrationResource($registration->load('event')),
+        ]);
+    }
+
+    /**
+     * Daftar pendaftaran event milik user.
+     */
+    public function listRegistrations(Request $request)
+    {
+        $user = $request->user();
+
+        $registrations = \App\Models\EventRegistration::with('event')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->paginate(10);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Daftar pendaftaran event milik user',
+            'data' => EventRegistrationResource::collection($registrations),
+        ]);
+    }
+
+    /**
+     * Buat/refresh pendaftaran pending untuk pembayaran manual.
+     */
+    public function createPayment(Request $request, $id)
+    {
+        $user = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        $registration = \App\Models\EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->latest()
+            ->first();
+
+        if (!$registration) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Belum mendaftar pada event ini'
+            ], 409);
+        }
+
+        if ($registration->status === 'active') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pendaftaran sudah LUNAS'
+            ], 409);
+        }
+
+        // Gunakan total_price yang sudah tercatat di pendaftaran
+        $amount = (int) max(0, (int) $registration->total_price);
+
+        if ($amount <= 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event ini gratis, tidak memerlukan pembayaran'
+            ], 400);
+        }
+
+        // Buat order id baru agar unik (Update registration_code in DB)
+        $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
+        $registration->update([
+            'registration_code' => $orderId
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Silakan lakukan pembayaran manual dan upload bukti bayar.',
+            'data' => new EventRegistrationResource($registration->load('event')),
+        ]);
+    }
+
+    /**
+     * Batalkan pendaftaran pending.
+     */
+    public function cancelRegistration(Request $request, $id)
+    {
+        $user = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        $registration = \App\Models\EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->latest()
+            ->first();
+
+        if (!$registration) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data pendaftaran tidak ditemukan'
+            ], 404);
+        }
+
+        if ($registration->status !== 'pending') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya pendaftaran dengan status pending yang dapat dibatalkan'
+            ], 409);
+        }
+
+        $registration->update([
+            'status' => 'canceled',
+            'payment_url' => null,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pendaftaran berhasil dibatalkan',
+            'data' => $registration,
+        ]);
+    }
     }

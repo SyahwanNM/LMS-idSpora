@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\Event;
+use App\Models\Carousel;
 use Illuminate\Http\Request;
 
 class LandingPageController extends Controller
@@ -12,6 +13,7 @@ class LandingPageController extends Controller
     {
         // Get 4 latest courses or best rated courses
         $featuredCourses = Course::with(['category', 'modules'])
+            ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->limit(4)
             ->get();
@@ -23,13 +25,19 @@ class LandingPageController extends Controller
             ->limit(4)
             ->get();
 
-        // Ambil sampai 3 event untuk hero carousel (gambar poster event)
+        // Ambil sampai 3 event untuk hero carousel (gambar poster event) - fallback jika tidak ada carousel
         $carouselEvents = Event::active()
             ->orderByDesc('created_at')
             ->limit(3)
             ->get();
 
+        // Get carousel images for landing page
+        $landingCarousels = Carousel::active()
+            ->forLocation('landing')
+            ->orderBy('order')
+            ->get();
+
         // View membutuhkan variabel $upcomingEvents untuk menampilkan daftar event.
-        return view('landing-page', compact('featuredCourses', 'upcomingEvents', 'carouselEvents'));
+        return view('landing-page', compact('featuredCourses', 'upcomingEvents', 'carouselEvents', 'landingCarousels'));
     }
 }

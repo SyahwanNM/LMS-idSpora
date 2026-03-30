@@ -5,24 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\EventPaymentRejectedMail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
 class EventController extends Controller
 {
     public function index()
     {
-        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
-        $events = Event::query()
-            ->where(function($q) use ($threshold){
-                $q->whereNull('event_date')
-                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
-            })
-            ->latest()
-            ->paginate(10);
+        $events = Event::query()->latest()->paginate(10);
         return view('admin.events.index', compact('events'));
     }
 
@@ -180,6 +177,45 @@ class EventController extends Controller
                 ]);
             }
         }
+
+        // Generate one-time attendance QR (only once per event)
+        try {
+            if (empty($event->attendance_qr_token) && empty($event->attendance_qr_image)) {
+                $token = bin2hex(random_bytes(16));
+                $content = url('/events/'.$event->id.'?t='.$token);
+                // Try PNG first; if GD not available, fallback to SVG
+                $png = null; $svg = null; $filename = null;
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) { $png = null; }
+                if ($png) {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                } else {
+                    // Attempt SVG generation as a reliable fallback
+                    try {
+                        if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                        }
+                    } catch (\Throwable $e) { $svg = null; }
+                    if ($svg) {
+                        $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                    } else {
+                        // Final minimal PNG to avoid errors
+                        $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                    }
+                }
+                $event->attendance_qr_token = $token;
+                $event->attendance_qr_image = $filename;
+                $event->attendance_qr_generated_at = now();
+                $event->save();
+            }
+        } catch (\Throwable $e) { /* ignore QR errors */ }
 
         // If the newly created event is already finished based on end time, pre-select the Finished filter
         $statusFilter = $event->isFinished() ? 'finished' : null;
@@ -350,12 +386,17 @@ class EventController extends Controller
         }
         $existing = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->first();
         if($existing){
-            return response()->json([
-                'status' => 'already',
-                'message' => 'Sudah terdaftar',
-                'event_title' => $event->title,
-                'redirect' => route('events.show', $event)
-            ]);
+            if($existing->status === 'rejected'){
+                // Allow re-registration: delete old rejected record
+                $existing->delete();
+            } else {
+                return response()->json([
+                    'status' => 'already',
+                    'message' => 'Sudah terdaftar',
+                    'event_title' => $event->title,
+                    'redirect' => route('events.show', $event)
+                ]);
+            }
         }
         // Hitung final price (sesudah diskon bila ada)
         $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
@@ -371,28 +412,60 @@ class EventController extends Controller
         }
 
         // Event gratis: langsung daftarkan
-        $reg = EventRegistration::create([
-            'user_id' => $user->id,
-            'event_id' => $event->id,
-            'status' => 'active',
-            'registration_code' => 'EVT-'.strtoupper(uniqid())
-        ]);
-        // Generate per-user unique attendance code so it's never NULL
-        if (empty($reg->attendance_code)) {
-            $base = 'AT'.$event->id.'-'.$user->id.'-';
-            do {
-                $code = $base.strtoupper(\Illuminate\Support\Str::random(6));
-            } while (\App\Models\EventRegistration::where('attendance_code', $code)->exists());
-            $reg->attendance_code = $code;
-            $reg->save();
+        if($isFree){
+            $reg = EventRegistration::create([
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'active',
+                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'total_price' => 0.00,
+            ]);
+
+            // Track in Finance (Amount 0)
+            \App\Models\ManualPayment::create([
+                'event_id' => $event->id,
+                'event_registration_id' => $reg->id,
+                'user_id' => $user->id,
+                'order_id' => $reg->registration_code,
+                'amount' => 0,
+                'currency' => 'IDR',
+                'method' => 'free',
+                'status' => 'settled',
+                'metadata' => ['source' => 'event', 'type' => 'free']
+            ]);
+        } else {
+            // Paid event: create pending registration and accept uploaded proof if provided
+            $regData = [
+                'user_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'pending',
+                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'total_price' => $event->discounted_price ?? $event->price,
+            ];
+            // handle proof upload if present (this API used by web/mobile)
+            if($request->hasFile('payment_proof')){
+                $file = $request->file('payment_proof');
+                if($file->isValid()){
+                    $path = $file->store('payments', 'public');
+                    $regData['payment_proof'] = $path;
+                }
+            }
+            $reg = EventRegistration::create($regData);
         }
+        
+        // Add points for event registration
+        try {
+            $pointsService = app(\App\Services\UserPointsService::class);
+            $pointsService->addEventPoints($user, $event, $reg);
+        } catch (\Throwable $e) { /* ignore */ }
+
         // Create notification (expires in 14 days)
         try{
             UserNotification::create([
                 'user_id' => $user->id,
                 'type' => 'event_registration',
-                'title' => 'Pendaftaran Event Berhasil',
-                'message' => 'Kamu terdaftar di "'.$event->title.'".',
+                'title' => 'Pendaftaran Dikonfirmasi',
+                'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
                 'data' => ['url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
@@ -431,6 +504,114 @@ class EventController extends Controller
         }
 
         return back()->with('success', 'Dokumen berhasil diperbarui.');
+    }
+
+    // Admin: remind trainer(s) to upload event module
+    public function remindModuleUpload(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+        }
+
+        if (!empty($event->module_path)) {
+            return back()->with('success', 'Module sudah diupload.');
+        }
+
+        $speaker = trim((string) ($event->speaker ?? ''));
+        if ($speaker === '') {
+            return back()->with('error', 'Tidak ada pembicara yang terdaftar pada event ini.');
+        }
+
+        $parts = preg_split('/\s*[,;]+\s*/', $speaker) ?: [];
+        $names = array_values(array_unique(array_filter(array_map('trim', $parts))));
+        if (empty($names)) {
+            return back()->with('error', 'Tidak dapat membaca nama pembicara.');
+        }
+
+        $trainers = User::query()
+            ->where('role', 'trainer')
+            ->whereIn('name', $names)
+            ->get();
+
+        if ($trainers->isEmpty()) {
+            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: '.implode(', ', $names));
+        }
+
+        $sent = 0;
+        foreach ($trainers as $t) {
+            UserNotification::create([
+                'user_id' => $t->id,
+                'type' => 'trainer_module_reminder',
+                'title' => 'Ingat Upload Module Event',
+                'message' => 'Mohon upload module/materi untuk event "'.$event->title.'".',
+                'data' => ['url' => route('trainer.events.modules')],
+                'expires_at' => now()->addDays(14),
+            ]);
+            $sent++;
+        }
+
+        return back()->with('success', 'Reminder terkirim ke '.$sent.' trainer.');
+    }
+
+    // Admin: download event QR image
+    public function downloadQr(Event $event)
+    {
+        $path = (string) $event->attendance_qr_image;
+        if (!$path) abort(404, 'QR image not available');
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        if (!$disk->exists($path)) {
+            // Fallback: try public/storage
+            $alt = public_path('storage/'.ltrim($path,'/'));
+            if (!is_file($alt)) abort(404, 'QR image file missing');
+            $ext = strtolower(pathinfo($alt, PATHINFO_EXTENSION));
+            $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+            return response()->download($alt, $downloadName);
+        }
+        $full = $disk->path($path);
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+        return response()->download($full, $downloadName);
+    }
+
+    // Admin: generate or regenerate event attendance QR
+    public function generateQr(Event $event)
+    {
+        try {
+            // Generate new token and QR image (PNG preferred, SVG fallback)
+            $token = bin2hex(random_bytes(16));
+            $content = url('/events/'.$event->id.'?t='.$token);
+            $png = null; $svg = null; $filename = null;
+            try {
+                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                }
+            } catch (\Throwable $e) { $png = null; }
+            if ($png) {
+                $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+            } else {
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) { $svg = null; }
+                if ($svg) {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                } else {
+                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+                }
+            }
+            $event->attendance_qr_token = $token;
+            $event->attendance_qr_image = $filename;
+            $event->attendance_qr_generated_at = now();
+            $event->save();
+            return back()->with('success', 'QR Absensi berhasil digenerate.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal generate QR Absensi.');
+        }
     }
 
     // Resolve Google Maps short links to coordinates (admin only)
@@ -489,5 +670,143 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Gagal memproses link.'], 422);
         }
+    }
+
+    /**
+     * Admin: Approve a pending event registration (manual proof verification).
+     */
+    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if($registration->event_id !== $event->id){
+            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+        }
+        $registration->status = 'active';
+        $registration->payment_verified_at = now();
+        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
+        $registration->save();
+
+        // mark any related manual payments as settled
+        try {
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                if ($m->status !== 'settled') {
+                    $m->status = 'settled';
+                    $m->save();
+
+                    // Process Referral Commission (10%)
+                    if (!empty($m->referral_code)) {
+                        $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
+                        if ($referrer && $referrer->id !== $m->user_id) {
+                            $commissionAmount = $m->amount * 0.10; // 10% commission
+                            
+                            $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
+                                ->where('referred_user_id', $m->user_id)
+                                ->where('description', 'Komisi Event: ' . $event->title)
+                                ->first();
+
+                            if (!$existingReferral && $commissionAmount > 0) {
+                                \App\Models\Referral::create([
+                                    'user_id' => $referrer->id,
+                                    'referred_user_id' => $m->user_id,
+                                    'amount' => $commissionAmount,
+                                    'status' => 'paid',
+                                    'description' => 'Komisi Event: ' . $event->title
+                                ]);
+
+                                $referrer->increment('wallet_balance', $commissionAmount);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try{
+            UserNotification::create([
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_verified',
+                'title' => 'Pembayaran Diterima',
+                'message' => 'Pembayaran Anda untuk event "'.$event->title.'" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        return back()->with('success', 'Pendaftaran berhasil diverifikasi dan diaktifkan.');
+    }
+
+    /**
+     * Admin: Reject a pending event registration (manual proof verification).
+     */
+    public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if($registration->event_id !== $event->id){
+            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+        }
+
+        $adminContactNumber = '+62 898-9260-731';
+        $allowedReasons = [
+            'Nominal pembayaran kurang',
+            'Nominal pembayaran lebih',
+            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang',
+            'Pembayaran dinyatakan tidak valid',
+        ];
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500', Rule::in($allowedReasons)],
+        ]);
+
+        $reason = $validated['reason'];
+
+        $userFacingMessage = match ($reason) {
+            'Nominal pembayaran kurang' => 'Nominal pembayaran Anda kurang dari yang seharusnya. Silahkan lakukan pembayaran tambahan (top up) dan kirim ulang bukti pembayaran. Anda dapat melakukan registrasi lagi sekarang.',
+            'Nominal pembayaran lebih' => 'Nominal pembayaran Anda lebih dari yang seharusnya. Admin akan menghubungi Anda untuk meminta nomor rekening agar selisih dapat dikembalikan. Anda dapat melakukan registrasi lagi sekarang.',
+            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang' => 'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang bukti pembayaran yang lebih jelas. Anda dapat melakukan registrasi lagi sekarang.',
+            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor '.$adminContactNumber.'. Anda dapat melakukan registrasi lagi sekarang.',
+            default => 'Pendaftaran Anda ditolak. Anda dapat melakukan registrasi lagi sekarang.',
+        };
+
+        $registration->status = 'rejected';
+        $registration->rejection_reason = $reason;
+        $registration->payment_verified_at = now();
+        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
+        $registration->save();
+
+        // mark any related manual payments as rejected
+        try {
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $m->status = 'rejected';
+                $m->note = $reason; // Save reason to manual payment note as well if applicable
+                $m->save();
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+
+        try{
+            UserNotification::create([
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_rejected',
+                'title' => 'Pendaftaran Ditolak',
+                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. ' . $userFacingMessage,
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id, 'reason' => $reason],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch(\Throwable $e) { /* ignore notification errors */ }
+
+        // Send email to user (best-effort)
+        try {
+            $user = $registration->user;
+            if ($user && !empty($user->email)) {
+                Mail::to($user->email)->send(new EventPaymentRejectedMail(
+                    userName: (string) ($user->name ?? 'User'),
+                    eventTitle: (string) ($event->title ?? 'Event'),
+                    reason: (string) $reason,
+                    messageText: (string) $userFacingMessage,
+                    adminContactNumber: (string) $adminContactNumber,
+                ));
+            }
+        } catch (\Throwable $e) { /* ignore mail errors */ }
+
+        return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
     }
 }

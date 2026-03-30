@@ -3,455 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>History Event - idSPORA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <title>Aktivitas & Histori - idSPORA</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-        
         body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #f8fafc;
-            min-height: 100vh;
-            padding-top: 70px;
+            padding-top: 110px; /* Increased spacer for fixed premium navbar */
         }
-        
-        .navbar {
-            z-index: 1050 !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
+
+        .activity-container {
+            max-width: 1200px; /* Increased for better laptop display */
+            margin: 0 auto;
+            padding: clamp(1.5rem, 3vw, 2.5rem) 1rem 4rem;
         }
-        
-        .navbar-gradient {
-            background: linear-gradient(90deg, #252346 0%, #5b56ac 100%) !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        .navbar-gradient .navbar-brand,
-        .navbar-gradient .nav-link,
-        .navbar-gradient .navbar-text {
-            color: #fff !important;
-        }
-        
-        .navbar-gradient .nav-link:hover,
-        .navbar-gradient .nav-link:focus {
-            color: #ffe8b3 !important;
-        }
-        
-        .navbar-gradient .nav-link.active {
-            font-weight: 600;
-            color: #ffe8b3 !important;
-        }
-        
-        #notifBtn,
-        #userDropdown {
-            color: white !important;
-        }
-        
-        #notifBtn:hover,
-        #userDropdown:hover {
-            color: #ffe8b3 !important;
-        }
-        
-        .navbar .form-control {
-            color: white !important;
-        }
-        
-        .navbar .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-        
-        .navbar .container-fluid {
-            display: flex !important;
-            visibility: visible !important;
-        }
-        
-        .navbar-brand,
-        .navbar-nav,
-        .navbar-collapse {
-            display: flex !important;
-            visibility: visible !important;
-        }
-        
-        .glass-card {
+
+        .stat-card {
             background: white;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            border-radius: 0.75rem;
-        }
-        
-        .glass-sidebar {
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-            border-right: none;
-            position: fixed;
-            top: 70px;
-            left: 0;
-            height: calc(100vh - 70px);
-            overflow-y: auto;
-            z-index: 1000;
-            width: 280px;
-        }
-        
-        .sidebar-header {
+            border-radius: 20px;
+            padding: clamp(1rem, 2vw, 1.5rem);
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             text-align: center;
-            padding: 1.5rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s ease;
         }
         
-        .main-content-with-sidebar {
-            margin-left: 280px;
-            padding: 2rem;
+        .stat-card:hover {
+            transform: translateY(-5px);
         }
-        
-        /* Sidebar Menu Item - Matching Navbar Gradient */
-        .menu-item {
-            transition: all 0.3s ease;
-            color: rgba(255, 255, 255, 0.7);
+
+        .tab-button {
+            padding: 0.625rem 1.25rem;
             border-radius: 12px;
-            margin: 0.5rem 1rem;
-            padding: 0.875rem 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            position: relative;
-        }
-        
-        .menu-item:hover {
-            color: rgba(255, 255, 255, 0.9);
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .menu-item.active {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1e1b4b;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: #1e1b4b;
-        }
-        
-        .menu-item .menu-text {
-            color: inherit;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .menu-icon {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 20px;
-            transition: color 0.3s ease;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .menu-item:hover .menu-icon {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .menu-item.active .menu-icon {
-            color: white;
-        }
-        
-        
-        .event-card {
+            font-weight: 700;
+            font-size: 0.813rem;
+            transition: all 0.2s;
+            border: 1px solid transparent;
             background: white;
-            border: 1px solid #e5e7eb;
-            transition: all 0.3s;
+            color: #64748b;
         }
-        
-        .event-card:hover {
-            background: #f9fafb;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+        .tab-button.active {
+            background: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
-        
-        .gold-accent {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+
+        .activity-item-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
         }
-        
-        .gold-accent:hover {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
-            transform: translateY(-1px);
+
+        .activity-item-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        
-        .badge-status {
+
+        .status-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
             padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
+            border-radius: 50px;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.upcoming {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .btn-certificate {
+            background: #4f46e5;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.813rem;
             font-weight: 600;
+            transition: all 0.2s;
         }
-        
-        .badge-status.active {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .badge-status.pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .badge-status.canceled {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
+
+        .btn-certificate:hover { background: #4338ca; color: white; transform: scale(1.05); }
+
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            body {
-                padding-top: 70px;
-            }
-            .flex.min-h-screen {
-                flex-direction: column;
-            }
-            .glass-sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                top: 0;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            }
-            .main-content-with-sidebar {
-                margin-left: 0;
-                margin-top: 0;
-                padding: 1.5rem;
-            }
-        }
-        
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+
         @media (max-width: 768px) {
-            body {
-                padding-top: 70px;
-            }
-            .flex.min-h-screen {
-                flex-direction: column;
-            }
-            .glass-sidebar {
-                width: 100%;
-            }
-            .main-content-with-sidebar {
-                padding: 1rem;
-            }
-            .glass-card {
-                padding: 1.5rem !important;
-            }
-            .menu-item {
-                padding: 0.75rem !important;
-            }
+            .activity-container { padding: 1rem 0.75rem 2rem; }
         }
     </style>
 </head>
 <body>
     @include("partials.navbar-after-login")
     
-    <div class="flex min-h-screen">
-        <!-- Sidebar - Dark Theme with Purple Gradient Active -->
-        <aside class="glass-sidebar flex flex-col">
-            <!-- Sidebar Header -->
-            <div class="sidebar-header">
-                MENU NAVIGASI
+    @php
+        $user = Auth::user();
+        $currentFilter = request()->get('filter', 'all');
+        
+        // Filter registrations based on tab
+        $filteredRegistrations = $registrations->filter(function($reg) use ($currentFilter) {
+            if (!$reg->event) return false;
+            $event = $reg->event;
+            
+            if ($currentFilter === 'completed') {
+                return $event->isFinished() || !empty($reg->certificate_issued_at);
+            } elseif ($currentFilter === 'upcoming') {
+                return !$event->isFinished() && empty($reg->certificate_issued_at);
+            }
+            return true;
+        });
+
+        // Calculate points earned from events
+        $pointsEarned = 0;
+        foreach ($registrations as $reg) {
+            if ($reg->event) {
+                if ($reg->event->price > 0) { $pointsEarned += 30; } 
+                else { $pointsEarned += 10; }
+            }
+        }
+    @endphp
+
+    <div class="activity-container fade-in mt-4 lg:mt-6">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+                <h1 class="text-3xl lg:text-4xl font-extrabold mb-2" style="color: #0f172a;">Aktivitas & Histori</h1>
+                <p class="text-base" style="color: #64748b;">Kelola semua sertifikat dan perkembangan belajarmu di sini.</p>
             </div>
             
-            <!-- Menu Items -->
-            <nav class="flex-1 py-4">
-                <a href="{{ route('profile.index') }}" class="menu-item {{ request()->routeIs('profile.index') || request()->routeIs('profile.edit') ? 'active' : '' }}">
-                    <i class="bi bi-person menu-icon"></i>
-                    <span class="menu-text">Profile</span>
-                </a>
-                
-                <a href="{{ route('profile.events') }}" class="menu-item {{ request()->routeIs('profile.events') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check menu-icon"></i>
-                    <span class="menu-text">History Event</span>
-                </a>
-            </nav>
-        </aside>
-        
-        <!-- Main Content -->
-        <main class="main-content-with-sidebar flex-1 overflow-y-auto" style="margin-top: 70px;">
-            <div class="max-w-6xl mx-auto fade-in">
-                <!-- Header -->
-                <div class="mb-6">
-                    <h1 class="text-3xl font-bold mb-2" style="color: #111827;">History Event</h1>
-                    <p class="text-sm" style="color: #6b7280;">Daftar event yang telah Anda ikuti</p>
+            <!-- Tab Navigation -->
+            <div class="flex gap-2 mt-4 md:mt-0 p-1 bg-slate-100 rounded-xl">
+                <button class="tab-button {{ $currentFilter === 'all' ? 'active' : '' }}" onclick="filterActivities('all')">SEMUA</button>
+                <button class="tab-button {{ $currentFilter === 'completed' ? 'active' : '' }}" onclick="filterActivities('completed')">SELESAI</button>
+                <button class="tab-button {{ $currentFilter === 'upcoming' ? 'active' : '' }}" onclick="filterActivities('upcoming')">AKAN DATANG</button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3 mx-auto" style="width: 48px; height: 48px; background: #eef2ff; border-radius: 12px; color: #4f46e5;">
+                    <i class="bi bi-calendar-event" style="font-size: 1.5rem;"></i>
                 </div>
-                
-                <!-- Events List -->
-                @if($registrations->count() > 0)
-                    <div class="space-y-4">
-                        @foreach($registrations as $registration)
-                            @php
-                                $event = $registration->event;
-                                $isCertificateReady = false;
-                                if($event && $event->event_date) {
-                                    $eventDate = \Carbon\Carbon::parse($event->event_date);
-                                    $isCertificateReady = now()->greaterThanOrEqualTo($eventDate->copy()->addDays(3));
-                                }
-                            @endphp
-                            <div class="glass-card rounded-2xl p-6 shadow-lg event-card">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center space-x-3 mb-3">
-                                            <h3 class="text-xl font-bold" style="color: #111827;">{{ $event->title ?? 'Event Tidak Ditemukan' }}</h3>
-                                            <span class="badge-status {{ $registration->status }}">
-                                                {{ ucfirst($registration->status) }}
-                                            </span>
-                                        </div>
-                                        
-                                        @if($event)
-                                            <div class="grid md:grid-cols-2 gap-4 mb-4" style="color: #6b7280;">
-                                                @if($event->event_date)
-                                                    <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-calendar3"></i>
-                                                        <span>{{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</span>
-                                                    </div>
-                                                @endif
-                                                @if($event->location)
-                                                    <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-geo-alt"></i>
-                                                        <span>{{ $event->location }}</span>
-                                                    </div>
-                                                @endif
-                                                @if($registration->registration_code)
-                                                    <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-ticket-perforated"></i>
-                                                        <span>Kode: {{ $registration->registration_code }}</span>
-                                                    </div>
-                                                @endif
-                                                @if($registration->attended_at)
-                                                    <div class="flex items-center space-x-2">
-                                                        <i class="bi bi-check-circle"></i>
-                                                        <span>Hadir: {{ \Carbon\Carbon::parse($registration->attended_at)->format('d M Y H:i') }}</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            
-                                            @if($event->short_description)
-                                                <p class="text-sm mb-4" style="color: #6b7280;">{{ \Illuminate\Support\Str::limit($event->short_description, 150) }}</p>
-                                            @endif
-                                        @endif
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">{{ $totalEvents }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Event Diikuti</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3 mx-auto" style="width: 48px; height: 48px; background: #fff7ed; border-radius: 12px; color: #f59e0b;">
+                    <i class="bi bi-award" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">{{ $certifiedEvents }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Sertifikat</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3 mx-auto" style="width: 48px; height: 48px; background: #e0f2fe; border-radius: 12px; color: #0ea5e9;">
+                    <i class="bi bi-chat-left-text" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">{{ $feedbackSubmitted }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Feedback</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="flex items-center justify-center mb-3 mx-auto" style="width: 48px; height: 48px; background: #fee2e2; border-radius: 12px; color: #ef4444;">
+                    <i class="bi bi-lightning-charge-fill" style="font-size: 1.5rem;"></i>
+                </div>
+                <div class="text-3xl font-bold mb-1" style="color: #0f172a;">+{{ number_format($pointsEarned, 0, ',', '.') }}</div>
+                <div class="text-xs font-semibold uppercase tracking-wider" style="color: #94a3b8;">Poin Masuk</div>
+            </div>
+        </div>
+
+        <!-- Activity List -->
+        <div class="mb-10">
+            <div class="flex items-center gap-3 mb-6">
+                <i class="bi bi-clock-history text-2xl" style="color: #4f46e5;"></i>
+                <h2 class="text-2xl font-bold" style="color: #0f172a;">Aktivitas Terbaru</h2>
+            </div>
+
+            @if($filteredRegistrations->count() > 0)
+                <div class="space-y-4">
+                    @foreach($filteredRegistrations as $registration)
+                        @php
+                            $event = $registration->event;
+                            if (!$event) continue;
+                            $isCompleted = $event->isFinished() || !empty($registration->certificate_issued_at);
+                            $isUpcoming = !$event->isFinished() && empty($registration->certificate_issued_at);
+                        @endphp
+                        <div class="activity-item-card p-5">
+                            <div class="flex flex-col md:flex-row gap-5">
+                                <img src="{{ $event->image_url ?? 'https://via.placeholder.com/300x200' }}" class="w-full md:w-48 h-32 object-cover rounded-xl" alt="{{ $event->title }}">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="status-badge {{ $isCompleted ? 'completed' : 'upcoming' }}">{{ $isCompleted ? 'COMPLETED' : 'UPCOMING' }}</span>
+                                        <span class="text-xs text-slate-400 fw-bold">{{ $event->event_date }}</span>
                                     </div>
-                                </div>
-                                
-                                <div class="flex items-center justify-between pt-4 border-t" style="border-color: #e5e7eb;">
-                                    <div>
-                                        @if($registration->certificate_number)
-                                            <span class="text-xs" style="color: #6b7280;">
-                                                <i class="bi bi-award"></i> Sertifikat: {{ $registration->certificate_number }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <div class="flex items-center space-x-3 flex-wrap">
-                                        @if($event)
-                                            <a 
-                                                href="{{ route('events.show', $event) }}" 
-                                                class="px-4 py-2 rounded-lg border-2 font-semibold transition-all duration-300 text-sm"
-                                                style="border-color: #d1d5db; color: #374151; text-decoration: none;"
-                                                onmouseover="this.style.backgroundColor='#f9fafb'"
-                                                onmouseout="this.style.backgroundColor='transparent'"
-                                            >
-                                                <i class="bi bi-eye mr-2"></i>Detail
+                                    <h3 class="text-xl font-bold mb-1 text-slate-800">{{ $event->title }}</h3>
+                                    <p class="text-sm text-slate-500 mb-4 line-clamp-2">{{ $event->short_description ?? 'Learn amazing skills in this event.' }}</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @if($isCompleted)
+                                            <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition" target="_blank">
+                                                <i class="bi bi-eye me-1"></i> Lihat Sertifikat
+                                            </a>
+                                            <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="inline-flex items-center px-4 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50 transition" target="_blank">
+                                                <i class="bi bi-download me-1"></i> Unduh PDF
                                             </a>
                                         @endif
-                                        
-                                        @if($event && Route::has('certificates.show'))
-                                            <a 
-                                                href="{{ route('certificates.show', [$event, $registration]) }}" 
-                                                class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 text-sm"
-                                                style="background: #535088; color: #f4d24b; text-decoration: none;"
-                                                onmouseover="this.style.filter='brightness(1.1)'"
-                                                onmouseout="this.style.filter='brightness(1)'"
-                                            >
-                                                <i class="bi bi-eye mr-2"></i>
-                                                <span>@if($isCertificateReady) Lihat / Unduh Sertifikat @else Preview Sertifikat @endif</span>
-                                            </a>
-                                        @endif
-                                        
-                                        @if($event && Route::has('certificates.download'))
-                                            @if($isCertificateReady)
-                                                <a 
-                                                    href="{{ route('certificates.download', [$event, $registration]) }}" 
-                                                    class="gold-accent px-4 py-2 rounded-lg text-gray-900 font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
-                                                    style="text-decoration: none;"
-                                                >
-                                                    <i class="bi bi-download"></i>
-                                                    <span>Download Sertifikat</span>
-                                                </a>
-                                            @else
-                                                <a 
-                                                    href="{{ route('certificates.download', [$event, $registration]) }}?force=1" 
-                                                    class="px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transition-all duration-300 text-sm"
-                                                    style="background: #f59e0b; color: #fff; text-decoration: none;"
-                                                    title="Download untuk testing (bypass H+3)"
-                                                >
-                                                    <i class="bi bi-download"></i>
-                                                    <span>Download (Testing)</span>
-                                                </a>
-                                            @endif
-                                        @endif
-                                        
-                                        @if($event && !$isCertificateReady)
-                                            <span 
-                                                class="px-4 py-2 rounded-lg font-semibold text-sm"
-                                                style="background: #f3f4f6; color: #9ca3af; cursor: not-allowed;"
-                                            >
-                                                <i class="bi bi-clock mr-2"></i>Sertifikat belum tersedia (H+3)
-                                            </span>
-                                        @endif
+                                        <a href="{{ route('events.show', $event->id) }}" class="px-4 py-2 border rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50">Detail Event</a>
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="glass-card rounded-2xl p-12 text-center">
-                        <i class="bi bi-calendar-x text-6xl mb-4" style="color: #d1d5db;"></i>
-                        <h3 class="text-xl font-bold mb-2" style="color: #111827;">Belum Ada Event</h3>
-                        <p class="text-sm mb-6" style="color: #6b7280;">Anda belum mengikuti event apapun</p>
-                        <a 
-                            href="{{ route('events.index') }}" 
-                            class="gold-accent px-6 py-3 rounded-xl text-gray-900 font-semibold inline-flex items-center space-x-2 transition-all duration-300"
-                            style="text-decoration: none;"
-                        >
-                            <i class="bi bi-calendar-plus"></i>
-                            <span>Lihat Event</span>
-                        </a>
-                    </div>
-                @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="bg-white rounded-3xl p-12 text-center border border-slate-100">
+                    <i class="bi bi-calendar-x text-6xl text-slate-200 mb-4"></i>
+                    <h3 class="text-xl font-bold text-slate-800">Tidak ada aktivitas ditemukan</h3>
+                    <p class="text-slate-500 mb-6">Mulai ikuti event menarik untuk mengembangkan skill Anda.</p>
+                    <a href="{{ route('events.index') }}" class="btn-certificate inline-block">Cari Event</a>
+                </div>
+            @endif
+        </div>
+
+        <!-- Saved Events (Integrated from Main) -->
+        <div class="bg-white border border-slate-100 rounded-3xl p-6 lg:p-8 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold" style="color:#0f172a;">
+                    <i class="bi bi-bookmark-star me-2" style="color:#f59e0b;"></i>Event Tersimpan
+                </h2>
+                <span class="text-sm font-semibold text-slate-400">{{ isset($savedEvents) ? $savedEvents->count() : 0 }} tersimpan</span>
             </div>
-        </main>
+            @if(isset($savedEvents) && $savedEvents->count() > 0)
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach($savedEvents as $sevent)
+                        <div class="p-4 border border-slate-100 rounded-2xl hover:border-indigo-100 transition-all">
+                            <h3 class="font-bold text-slate-800 mb-2 truncate">{{ $sevent->title }}</h3>
+                            <div class="text-xs text-slate-500 space-y-1 mb-4">
+                                <div class="flex items-center gap-1"><i class="bi bi-calendar3"></i> {{ $sevent->event_date }}</div>
+                                <div class="flex items-center gap-1"><i class="bi bi-geo-alt"></i> {{ $sevent->location ?? 'Online' }}</div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <a href="{{ route('events.show', $sevent->id) }}" class="text-xs font-bold text-indigo-600">Lihat Detail</a>
+                                <button class="text-xs text-slate-400 hover:text-red-500" onclick="alert('Unsave event: {{ $sevent->id }}')">Unsave</button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center py-8">
+                    <p class="text-slate-400 italic">Belum ada event yang Anda simpan.</p>
+                </div>
+            @endif
+        </div>
     </div>
+
+    <script>
+        function filterActivities(filter) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('filter', filter);
+            window.location.href = url.toString();
+        }
+
+        function unsaveEvent(btn) {
+            const eventId = btn.getAttribute('data-event-id');
+            // Assuming there's an endpoint for this, if not, this is just UI logic placeholder
+            alert('Fitur unsave event ID: ' + eventId);
+        }
+    </script>
+    
+    @include('partials.footer-after-login')
 </body>
 </html>

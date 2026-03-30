@@ -9,9 +9,13 @@ use App\Models\Enrollment;
 use App\Models\Feedback;
 use App\Models\Course;
 use App\Models\Review;
+use App\Models\Broadcast;
+use App\Mail\CRMBlastMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 
 class CRMController extends Controller
 {
@@ -26,8 +30,11 @@ class CRMController extends Controller
         }
 
         // Get statistics
-        $totalCustomers = User::where('role', '!=', 'admin')->count();
-        $activeCustomers = User::where('role', '!=', 'admin')
+        $totalCustomers = User::where('role', 'customer')->count();
+        $totalResellers = User::where('role', 'reseller')->count();
+        $totalTrainers = User::where('role', 'trainer')->count();
+        
+        $activeCustomersCount = User::where('role', '!=', 'admin')
             ->where(function($query) {
                 $query->whereHas('eventRegistrations', function($q) {
                     $q->where('status', 'active');
@@ -40,14 +47,25 @@ class CRMController extends Controller
         
         $totalRegistrations = EventRegistration::where('status', 'active')->count();
         $totalEnrollments = Enrollment::where('status', 'active')->count();
+        $newSupportMessages = \App\Models\SupportMessage::where('status', 'new')->count();
+        $totalBroadcasts = Broadcast::count();
         
         // Recent registrations (only show registrations with valid events)
         $recentRegistrations = EventRegistration::with(['user', 'event'])
-            ->whereHas('event') // Only get registrations with valid events
+            ->whereHas('event')
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(8)
             ->get();
+
+        // Top customers by activity
+        $topCustomers = User::where('role', '!=', 'admin')
+            ->withCount(['eventRegistrations', 'enrollments'])
+            ->get()
+            ->sortByDesc(function($user) {
+                return $user->event_registrations_count + $user->enrollments_count;
+            })
+            ->take(5);
 
         // Top events by registration
         $topEvents = Event::withCount(['registrations' => function($query) {
@@ -59,11 +77,16 @@ class CRMController extends Controller
 
         return view('admin.crm.dashboard', compact(
             'totalCustomers',
-            'activeCustomers',
+            'totalResellers',
+            'totalTrainers',
+            'activeCustomersCount',
             'totalRegistrations',
             'totalEnrollments',
+            'newSupportMessages',
             'recentRegistrations',
-            'topEvents'
+            'topCustomers',
+            'topEvents',
+            'totalBroadcasts'
         ));
     }
 
@@ -131,7 +154,12 @@ class CRMController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.crm.customers.show', compact('customer', 'registrations', 'enrollments'));
+        $activeTickets = \App\Models\SupportMessage::where('email', $customer->email)
+            ->whereIn('status', ['new', 'processed'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.crm.customers.show', compact('customer', 'registrations', 'enrollments', 'activeTickets'));
     }
 
     /**
@@ -260,7 +288,8 @@ class CRMController extends Controller
         $topRatedEvents = $topRatedEventsQuery->get();
 
         // Recent feedbacks (with date filter if applied)
-        $recentFeedbacksQuery = Feedback::with(['user', 'event']);
+        $recentFeedbacksQuery = Feedback::with(['user', 'event'])
+            ->whereHas('event'); // Only get feedbacks where event still exists
         if($dateFrom) {
             $recentFeedbacksQuery->whereDate('created_at', '>=', $dateFrom);
         }
@@ -427,5 +456,171 @@ class CRMController extends Controller
             'allCourses',
             'courseId'
         ));
+    }
+
+    /**
+     * Display Support Messages
+     */
+    public function supportMessages(Request $request)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $query = \App\Models\SupportMessage::query();
+
+        // Filter by type
+        if($request->has('type') && $request->type) {
+            $query->where('type', $request->type);
+        }
+
+        // Filter by status
+        if($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $messages = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('admin.crm.support.index', compact('messages'));
+    }
+
+    /**
+     * Update Support Message Status
+     */
+    public function updateSupportStatus(Request $request, \App\Models\SupportMessage $message)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'status' => 'required|in:new,processed,resolved,ignored',
+        ]);
+
+        $message->update(['status' => $request->status]);
+
+        return back()->with('success', 'Status pesan berhasil diperbarui');
+    }
+
+    /**
+     * Display Broadcast List
+     */
+    public function broadcastIndex()
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $broadcasts = Broadcast::with('sender')->orderBy('created_at', 'desc')->get();
+        return view('admin.crm.broadcast.index', compact('broadcasts'));
+    }
+
+    /**
+     * Show Create Broadcast form
+     */
+    public function broadcastCreate()
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        return view('admin.crm.broadcast.create');
+    }
+
+    /**
+     * Process Broadcast Send
+     */
+    public function broadcastSend(Request $request)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'segment' => 'required|in:all,reseller,trainer,no_event',
+            'platform' => 'required|in:email,whatsapp,both',
+        ]);
+
+        // Get target users based on segment
+        $query = User::where('role', '!=', 'admin');
+
+        if ($request->segment == 'reseller') {
+            $query->where('role', 'reseller');
+        } elseif ($request->segment == 'trainer') {
+            $query->where('role', 'trainer');
+        } elseif ($request->segment == 'no_event') {
+            $query->whereDoesntHave('eventRegistrations');
+        }
+
+        $targets = $query->get();
+        $targetCount = $targets->count();
+
+        if ($targetCount == 0) {
+            return back()->with('error', 'Tidak ada pengguna ditemukan untuk segmen ini');
+        }
+
+        // Create log entry
+        $broadcast = Broadcast::create([
+            'title' => $request->title,
+            'message' => $request->message,
+            'segment' => $request->segment,
+            'platform' => $request->platform,
+            'sender_id' => Auth::id(),
+            'target_count' => $targetCount,
+            'status' => 'sent'
+        ]);
+
+        // LOGIC SENDING
+        foreach ($targets as $user) {
+            // Send Email
+            if ($request->platform == 'email' || $request->platform == 'both') {
+                if ($user->email) {
+                    try {
+                        Mail::to($user->email)->send(new CRMBlastMail($broadcast));
+                    } catch (\Exception $e) {
+                        \Log::error('Gagal mengirim email CRM ke ' . $user->email . ': ' . $e->getMessage());
+                    }
+                }
+            }
+
+            // Send WhatsApp
+            if ($request->platform == 'whatsapp' || $request->platform == 'both') {
+                if ($user->phone) {
+                    $this->sendWhatsApp($user->phone, $broadcast->message);
+                }
+            }
+        }
+
+        return redirect()->route('admin.crm.broadcast.index')->with('success', 'Broadcast berhasil dikirim ke ' . $targetCount . ' pengguna');
+    }
+
+    /**
+     * Helper to send WhatsApp message via Fonnte API
+     */
+    private function sendWhatsApp($phone, $message)
+    {
+        $token = env('FONNTE_TOKEN'); // Masukkan token Fonnte di .env
+        if (!$token) {
+            \Log::warning('WhatsApp tidak terkirim: FONNTE_TOKEN belum diatur di .env');
+            return false;
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => $token,
+            ])->post('https://api.fonnte.com/send', [
+                'target' => $phone,
+                'message' => $message,
+            ]);
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            \Log::error('Gagal mengirim WhatsApp ke ' . $phone . ': ' . $e->getMessage());
+            return false;
+        }
     }
 }

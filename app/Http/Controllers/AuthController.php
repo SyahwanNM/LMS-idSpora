@@ -53,17 +53,18 @@ class AuthController extends Controller
         }
 
         // Langsung login tanpa OTP (OTP dipindah ke proses pendaftaran akun)
-        Auth::loginUsingId($user->id, true);
+        // Hormati pilihan "ingat saya" dari form
+        $remember = $request->boolean('remember');
+        Auth::loginUsingId($user->id, $remember);
         // Catat aktivitas login
         try { \App\Models\ActivityLog::create(['user_id' => $user->id, 'action' => 'Login', 'description' => 'Login (direct)']); } catch (\Throwable $e) {}
-        $redirect = $this->resolveSafeRedirect($request);
+        // If admin, go to admin dashboard
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
         }
-        if ($redirect) {
-            return redirect($redirect)->with('success', 'Login berhasil!');
-        }
-        return redirect()->intended('/dashboard')->with('success', 'Login berhasil!');
+
+        // For regular users, always redirect to the main dashboard after successful login
+        return redirect('/dashboard')->with('success', 'Login berhasil. Selamat datang di IdSpora Academy!');
     }
 
     public function register(Request $request)
@@ -104,6 +105,15 @@ class AuthController extends Controller
             $avatarFileName = basename($storedPath);
         }
 
+        // Check for referrer
+        $referrerId = null;
+        if ($request->filled('referrer_code')) {
+            $referrer = User::where('referral_code', $request->referrer_code)->first();
+            if ($referrer) {
+                $referrerId = $referrer->id;
+            }
+        }
+
         // Simpan payload pendaftaran di sesi
         session([
             'register_payload' => [
@@ -111,6 +121,7 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password),
                 'avatar' => $avatarFileName,
+                'referrer_id' => $referrerId,
             ],
         ]);
 
@@ -291,6 +302,7 @@ class AuthController extends Controller
                     'password' => $payload['password_hash'],
                     'role' => 'user',
                     'avatar' => $payload['avatar'] ?? null,
+                    'referrer_id' => $payload['referrer_id'] ?? null,
                     'email_verified_at' => now(),
                 ]);
             } else {

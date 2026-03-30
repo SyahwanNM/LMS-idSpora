@@ -14,9 +14,11 @@ class Event extends Model
         'image',
         'vbg_path',
         'certificate_path',
+        'attendance_path',
+        'module_path',
         'certificate_logo',
         'certificate_signature',
-        'attendance_path',
+        'certificate_template',
         'speaker',
         'materi',
         'jenis',
@@ -35,6 +37,10 @@ class Event extends Model
         'latitude',
         'longitude',
         'zoom_link',
+        // attendance QR one-time fields
+        'attendance_qr_token',
+        'attendance_qr_image',
+        'attendance_qr_generated_at',
         // legacy JSON storage (backward compatible)
         'schedule_json',
         'expenses_json',
@@ -64,7 +70,12 @@ class Event extends Model
         $count = 0;
         if(!empty($this->vbg_path)) $count++;
         if(!empty($this->certificate_path)) $count++;
-        if(!empty($this->attendance_path)) $count++;
+        if(!empty($this->module_path)) $count++;
+        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
+        $hasAttendance = !empty($this->attendance_path)
+            || !empty($this->attendance_qr_image)
+            || !empty($this->attendance_qr_token);
+        if($hasAttendance) $count++;
         return $count;
     }
 
@@ -73,8 +84,8 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 3; // virtual background, certificate, attendance
-        $done = $this->documents_completed_count; // uses accessor above
+        $total = 4; // Virtual Background, Sertifikat, Module (Trainer), Absensi (QR/File)
+        $done = max(0, min($total, (int) $this->documents_completed_count));
         return (int) floor(($done / $total) * 100);
     }
 
@@ -94,6 +105,11 @@ class Event extends Model
     }
 
     // Relationship: event has many registrations
+    public function registrationsActive()
+    {
+        return $this->hasMany(EventRegistration::class)->where('status', 'active');
+    }
+
     public function registrations()
     {
         return $this->hasMany(EventRegistration::class);
@@ -160,19 +176,19 @@ class Event extends Model
         
         // Find first existing file
         foreach ($possiblePaths as $path) {
-            $fullPath = storage_path('app/public/' . $path);
+            $fullPath = public_path('uploads/' . $path);
             if (file_exists($fullPath) && is_file($fullPath)) {
                 // File exists, return URL
-                return asset('storage/' . $path);
+                return asset('uploads/' . $path);
             }
         }
         
         // File not found, but return URL anyway (browser will show broken image or fallback)
         // This allows onerror handler in views to work
         if (str_starts_with($imagePath, 'events/')) {
-            return asset('storage/' . $imagePath);
+            return asset('uploads/' . $imagePath);
         }
-        return asset('storage/events/' . $filename);
+        return asset('uploads/events/' . $filename);
     }
 
     public function getEndAtAttribute(): ?Carbon

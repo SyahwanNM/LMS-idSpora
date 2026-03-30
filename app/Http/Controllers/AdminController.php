@@ -238,10 +238,10 @@ class AdminController extends Controller
         // Paid statuses based on Midtrans typical values
         $paidStatuses = ['settlement', 'capture', 'success'];
 
-        // Sum payment gross_amount grouped by event
-        $revenueMap = \App\Models\Payment::query()
-            ->selectRaw('event_id, SUM(gross_amount) as total')
-            ->whereIn('status', $paidStatuses)
+        // Sum revenue from manual payments (use settled manual payments)
+        $revenueMap = \App\Models\ManualPayment::query()
+            ->selectRaw('event_id, SUM(COALESCE(amount, 0)) as total')
+            ->where('status', 'settled')
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
@@ -313,6 +313,14 @@ class AdminController extends Controller
                 'has_vbg' => !empty($e->vbg_path),
                 'has_cert' => !empty($e->certificate_path),
                 'has_abs' => !empty($e->attendance_path),
+                // URLs expected by the reports view
+                'vbg_url' => !empty($e->vbg_path) ? Storage::url($e->vbg_path) : '',
+                'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
+                'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
+                // attendance QR data
+                'qr_token' => $e->attendance_qr_token,
+                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
+                'qr_image_url' => $e->attendance_qr_image ? asset('uploads/'.$e->attendance_qr_image) : null,
             ];
         });
 
@@ -341,11 +349,13 @@ class AdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:6|confirmed'
+            'password' => 'nullable|min:6|confirmed',
+            'bio' => 'nullable|string|max:1000'
         ]);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
+        $user->bio = $validated['bio'];
         if(!empty($validated['password'])){
             $user->password = Hash::make($validated['password']);
         }
