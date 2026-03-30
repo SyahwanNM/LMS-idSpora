@@ -46,6 +46,16 @@
                 <span>Feedback</span>
             </a>
         </li>
+        <li class="{{ request()->routeIs('trainer.certificates.*') ? 'active' : '' }}">
+            <a href="{{ route('trainer.certificates.index') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                    fill="#e3e3e3">
+                    <path
+                        d="M640-160H320q-33 0-56.5-23.5T240-240v-480q0-33 23.5-56.5T320-800h240l160 160v400q0 33-23.5 56.5T640-160Zm-80-440V-640H400v40h160ZM400-520h320v-40H400v40Zm0 80h320v-40H400v40Zm0 80h200v-40H400v40Zm-80 120h320v-360H520v-160H320v520Zm0 0v-520 520Z" />
+                </svg>
+                <span>Riwayat Mengajar / Sertifikat</span>
+            </a>
+        </li>
     </ul>
     <div class="profile">
         <form action="{{ route('logout') }}" method="POST">

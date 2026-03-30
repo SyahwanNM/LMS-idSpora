@@ -14,13 +14,14 @@
 </head>
 
 
-<style>
+{{-- <style>
   :root {
     --navy: #252346;
     --white: #FFFFFF;
     --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
+    
   }
 
   html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
@@ -30,7 +31,7 @@
   .course-hero {
     background: var(--navy);
     height: fit-content;
-    padding-top: 90px;
+    padding-top: 40px;
     padding-bottom: 20px;
   }
 
@@ -39,7 +40,9 @@
     width: 100%;
     margin: 0 auto;
     padding: 0 20px;
+    margin-top: 0px;
   }
+  
 
   .title-course-hero {
     color: var(--white);
@@ -103,8 +106,8 @@
   .video-container .plyr {
     width: 100%;
     max-width: 100%;
-    height: 40vw;
-    max-height: 400px;
+    height: 60vw;
+    max-height: 600px;
     min-height: 200px;
     display: block;
     border-radius: 20px;
@@ -139,7 +142,7 @@
 
   .content-description {
     background: var(--white);
-    max-width: 800px;
+    max-width: 100%;
     border-radius: 20px;
     margin: 0;
     padding: 0;
@@ -187,11 +190,10 @@
   }
 
   .comments form {
-    max-width: 800px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    /* jarak antara textarea & button */
   }
 
   .textarea {
@@ -204,7 +206,10 @@
     border-radius: 10px;
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
     flex: 1.5;
-    max-width: 400px;
+    margin-left: 0;
+    max-width: 100%;
+    width: 100%;
+
   }
 
   .price-text {
@@ -246,9 +251,9 @@
   }
 
   .info-box>div p:last-of-type {
-    margin-left: 0;
+    margin-left: auto;
     white-space: nowrap;
-    text-align: left;
+    text-align: right;
   }
 
   .info-box svg {
@@ -256,7 +261,7 @@
   }
 
   .info-box p {
-    margin: 0 0 0 10px;
+    margin: 0;
   }
 
   .time-alert {
@@ -301,7 +306,7 @@
   }
 
   .date-text {
-    margin-left: 118px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -318,7 +323,7 @@
   }
 
   .time-text {
-    margin-left: 140px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -331,7 +336,7 @@
   }
 
   .location-text {
-    margin-left: 185px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -344,7 +349,7 @@
   }
 
   .bahasa-text {
-    margin-left: 197px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -357,7 +362,7 @@
   }
 
   .sertifikat-text {
-    margin-left: 220px;
+    margin-left: auto;
     color: #6c6c6c;
   }
 
@@ -475,6 +480,9 @@
   .main-col>*+* {
     margin-top: 20px;
   }
+  .box_kiri_vid_course{
+    margin-left: 0;
+  }
 
   @media (max-width: 992px) {
     .hero-inner {
@@ -492,6 +500,10 @@
 
     .sidebar .kanan {
       position: static;
+    }
+
+    .kanan {
+      padding: 24px 18px;
     }
   }
 
@@ -600,9 +612,9 @@
     color: #333;
     line-height: 1.5;
   }
-</style>
+</style> --}}
 
-<body>
+<body class="course-detail-page">
   
   <section class="course-hero">
     <nav aria-label="breadcrumb">
@@ -667,7 +679,29 @@
   </section>
 
   <section class="course-body">
-    <div class="main-col">
+    <div class="box_kiri_vid_course main-col">
+
+      @php
+        $modulesCol = $course->modules ?? collect();
+        $totalModules = $modulesCol->count();
+        $pdfCount = $modulesCol->where('type', 'pdf')->count();
+        $videoCount = $modulesCol->where('type', 'video')->count();
+        $quizCount = $modulesCol->where('type', 'quiz')->count();
+        $missingMaterials = [];
+        if ($totalModules <= 0) { $missingMaterials[] = 'Modul'; }
+        if ($pdfCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+        if ($videoCount <= 0) { $missingMaterials[] = 'Video'; }
+        if ($quizCount <= 0) { $missingMaterials[] = 'Kuis'; }
+      @endphp
+
+      @if(!empty($missingMaterials))
+        <div class="alert alert-warning" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
+          <div style="margin-top:6px;">
+            {{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.
+          </div>
+        </div>
+      @endif
 
       @php
         $previewMedia = $course->media ?? null;
@@ -755,7 +789,7 @@
         $progressPercent = $progressTotal > 0 ? round(($progressCompleted / $progressTotal) * 100) : 0;
       @endphp
 
-      <div class="course-progress-card" style="margin:16px 0;">
+      <div class="course-progress-card" style="margin:16px 0; width:100%;">
         <div style="background:#fff;border:1px solid #E4E4E6;padding:14px;border-radius:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <div style="font-weight:600;color:#111827;">Course Progress</div>
@@ -830,16 +864,7 @@
         </div>
       </div>
 
-      <div class="comments">
-        <h6>Leave a Comment</h6>
-        <form action="#" method="POST">
-          <div class="form-group">
-            <textarea id="comment" name="comment" rows="4" class="form-control" placeholder="Comment"
-              required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Post Comment</button>
-        </form>
-      </div>
+      
     </div>
 
     <aside class="sidebar">

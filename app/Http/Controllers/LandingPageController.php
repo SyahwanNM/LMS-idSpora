@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+
 use App\Models\Course;
 use App\Models\Event;
 use App\Models\Carousel;
@@ -13,6 +15,7 @@ class LandingPageController extends Controller
     {
         // Get 4 latest courses or best rated courses
         $featuredCourses = Course::with(['category', 'modules'])
+            ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->limit(4)
             ->get();
@@ -37,6 +40,6 @@ class LandingPageController extends Controller
             ->get();
 
         // View membutuhkan variabel $upcomingEvents untuk menampilkan daftar event.
-        return view('landing-page', compact('featuredCourses', 'upcomingEvents', 'carouselEvents', 'landingCarousels'));
+        return view('public.landing-page', compact('featuredCourses', 'upcomingEvents', 'carouselEvents', 'landingCarousels'));
     }
 }

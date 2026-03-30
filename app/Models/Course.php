@@ -34,7 +34,14 @@ class Course extends Model
         'rejected_at' => 'datetime',
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
+        'expenses_json',
     ];
+
+    // protected $casts = [
+    //     'expenses_json' => 'array',
+    //     'discount_start' => 'date',
+    //     'discount_end' => 'date',
+    // ];
 
     public function category()
     {
