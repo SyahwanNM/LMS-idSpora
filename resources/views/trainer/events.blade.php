@@ -111,7 +111,7 @@
                   <p>1 UNIT</p>
                 </div>
               </div>
-              <button class="btn-detail-course">
+              <button class="btn-detail-course" title="Detail">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                   class="bi bi-arrow-right-short" viewBox="0 0 16 16">
                   <path fill-rule="evenodd"

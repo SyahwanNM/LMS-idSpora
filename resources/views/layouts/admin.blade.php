@@ -27,9 +27,9 @@
 
     @unless($isSpecialPage)
     <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
-        <div class="container">
+        <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:28px;">
+                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:22px;">
                 <span class="fw-semibold">Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -136,7 +136,7 @@
     {{-- Quick actions bar removed per request: New Course/Event/User, All Courses/Events/Users, Reports --}}
     @yield('navbar')
 
-    <div class="@if($isSpecialPage) container-fluid p-0 @else container @endif">
+    <div class="@if($isSpecialPage) container-fluid p-0 @else container-fluid px-4 @endif">
         @yield('content')
     </div>
 
@@ -307,12 +307,14 @@
     .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
     /* Ensure navbar always sits above any page overlays */
     .navbar { z-index: 10000; pointer-events:auto; overflow: visible !important; }
-    .navbar .container { overflow: visible !important; }
+    .navbar .container, .navbar .container-fluid { overflow: visible !important; }
+    .navbar { padding-top: .35rem; padding-bottom: .35rem; }
     .navbar .nav-link {color: rgba(255,255,255,.9);} 
     .navbar .nav-link:hover {color: #fff;}
+    .navbar .nav-link { padding-top: .35rem; padding-bottom: .35rem; font-size: .95rem; }
     .navbar .nav-link.active {color:#fff;position:relative;}
     .navbar .nav-link.active::after {content:"";position:absolute;left:.5rem;right:.5rem;bottom:-.4rem;height:2px;background:#fff;border-radius:2px;opacity:.9;}
-    .avatar-circle {width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #EBBC01;background:#6b7280;display:inline-flex;align-items:center;justify-content:center;}
+    .avatar-circle {width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid #EBBC01;background:#6b7280;display:inline-flex;align-items:center;justify-content:center;}
     .avatar-circle img {width:100%;height:100%;object-fit:cover;display:block;}
     /* Subtle dropdown animation + visible background */
     .profile-dropdown {
@@ -360,8 +362,8 @@
     .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
-    body { padding-top: 78px; }
-    @media (max-width: 991.98px){ body { padding-top: 66px; } }
+    body { padding-top: 64px; }
+    @media (max-width: 991.98px){ body { padding-top: 58px; } }
     /* Logout modal (modern look) */
     .logout-modal .modal-content{ border-radius: 18px; overflow:hidden; }
     .logout-modal .modal-header{ padding: 1.1rem 1.1rem .75rem; }

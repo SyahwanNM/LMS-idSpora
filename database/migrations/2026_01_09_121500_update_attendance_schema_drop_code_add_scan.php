@@ -2,12 +2,22 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void
     {
         if (Schema::hasTable('event_registrations')) {
+            // SQLite can fail dropping a column when an index still references it.
+            if (Schema::hasColumn('event_registrations', 'attendance_code')) {
+                $driver = Schema::getConnection()->getDriverName();
+
+                if ($driver === 'sqlite') {
+                    DB::statement('DROP INDEX IF EXISTS event_registrations_attendance_code_index');
+                }
+            }
+
             Schema::table('event_registrations', function (Blueprint $table) {
                 if (Schema::hasColumn('event_registrations', 'attendance_code_used_at')) {
                     $table->dropColumn('attendance_code_used_at');

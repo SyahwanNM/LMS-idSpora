@@ -1,26 +1,29 @@
 <?php
 // Payment page for course
-Route::get('/courses/{course}/payment', [App\Http\Controllers\CourseController::class, 'payment'])->name('course.payment');
+Route::get('/courses/{course}/payment', [App\Http\Controllers\Admin\CourseController::class, 'payment'])->name('course.payment');
 
 // Learn course modules (requires purchase/enrollment)
-Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\CourseController::class, 'learn'])->name('course.learn');
+Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\Admin\CourseController::class, 'learn'])->name('course.learn');
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\PublicEventController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\CourseController;
-use App\Http\Controllers\ModuleController;
-use App\Http\Controllers\UserModuleController;
-use App\Http\Controllers\QuizController;
-use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\User\DashboardController;
+use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Public\PublicEventController;
+use App\Http\Controllers\Public\AuthController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\ModuleController;
+use App\Http\Controllers\User\UserModuleController;
+use App\Http\Controllers\Admin\QuizController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Public\SocialAuthController;
+use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
-use App\Http\Controllers\NotificationsController;
-use App\Http\Controllers\PublicPagesController;
+use App\Http\Controllers\User\NotificationsController;
+use App\Http\Controllers\Public\PublicPagesController;
 use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
@@ -67,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
 });
 
+
+
 Route::get('/bandingin', function () {
     return view('reseller.bandingin');
 });
@@ -78,23 +83,18 @@ Route::middleware(['auth', 'admin'])->get('/admin/add-event', [EventController::
 Route::middleware(['auth', 'admin'])->get('/admin/events/history', [EventController::class, 'history'])->name('admin.events.history');
 
 // Detail event (registered) view should receive Event from DB
-Route::middleware('auth')->get('/detail-event-registered/{event}', function (Event $event) {
-    // Load feedbacks for display on the event detail page
-    $feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
-    return view('detail-event-registered', compact('event', 'feedbacks'));
-})->name('events.registered.detail');
 
-// punya dini
+// PUNYA DINI
 Route::get('/modul-course', function () {
-    return view('modul-course');
+    return view('course.modul-course');
 })->name('modul-course');
 
 Route::get('/aturan-kuis', function () {
-    return view('aturan-kuis');
+    return view('course.aturan-kuis');
 })->name('aturan-kuis');
 
 Route::get('/payment-course', function () {
-    return view('payment-course');
+    return view('course.payment-course');
 })->name('payment-course');
 
 Route::get('/quiz1-course', function () {
@@ -102,8 +102,9 @@ Route::get('/quiz1-course', function () {
 })->name('quiz1-course');
 
 Route::get('/quiz-course', function () {
-    return view('quiz-course');
+    return view('course.quiz-course');
 })->name('quiz-course');
+
 Route::get('/hasil-course', function () {
     return view('hasil-course');
 })->name('hasil-course');
@@ -128,11 +129,20 @@ Route::get('/admin/preview-pendapatan', function () {
     return redirect()->route('admin.view-pendapatan', request()->query());
 })->middleware(['auth', 'admin'])->name('preview-pendapatan');
 
+Route::get('/rating-course', function () {
+    return view('course.rating-course');
+})->name('rating-course');
+
+Route::get('/sertifikat-course', function () {
+    return view('course.sertifikat-course');
+})->name('sertifikat-course');
+
 // Serve storage files (fix 403 error on Windows/PHP built-in server)
 // This route serves files from storage when symlink doesn't work properly
 Route::get('/storage/{path}', function ($path) {
     // Decode URL-encoded path
     $path = urldecode($path);
+
 
     // Security: prevent directory traversal
     if (str_contains($path, "\0")) {
@@ -141,6 +151,7 @@ Route::get('/storage/{path}', function ($path) {
 
     // Normalize separators then ensure no path traversal segments exist
     $pathNormalized = str_replace('\\', '/', $path);
+    $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
     $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
     foreach ($segments as $seg) {
         if ($seg === '.' || $seg === '..') {
@@ -151,13 +162,16 @@ Route::get('/storage/{path}', function ($path) {
     // Use normalized path for filesystem lookup
     $path = implode('/', $segments);
 
+
     // Get file path in uploads
     $filePath = public_path('uploads/' . $path);
+
 
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
         abort(404, 'File not found: ' . $path);
     }
+
 
     // Get MIME type
     $mimeType = mime_content_type($filePath);
@@ -175,6 +189,7 @@ Route::get('/storage/{path}', function ($path) {
         $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
     }
 
+
     return response()->file($filePath, [
         'Content-Type' => $mimeType,
         'Cache-Control' => 'public, max-age=31536000',
@@ -184,8 +199,9 @@ Route::get('/storage/{path}', function ($path) {
 
 // Landing page: jika sudah login arahkan ke dashboard
 Route::get('/auth', function () {
-    return view('/auth');
+    return view('auth.auth');
 });
+
 Route::get('/', function () {
     if (Auth::check()) {
         $role = strtolower(trim((string) (Auth::user()->role ?? '')));
@@ -200,6 +216,7 @@ Route::get('/', function () {
 
         return redirect()->route('dashboard');
     }
+    
     return app(\App\Http\Controllers\LandingPageController::class)->index();
 })->name('landing-page');
 
@@ -356,6 +373,8 @@ Route::middleware('auth')->group(function () {
 });
 Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
 
+Route::get('/courses', [\App\Http\Controllers\Public\PublicCourseController::class, 'index'])->name('courses.index');
+
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
     Route::get('/sign-in', [AuthController::class, 'showLogin'])->name('login');
@@ -385,6 +404,7 @@ Route::get('/verifikasi', [AuthController::class, 'showVerification'])->name('ve
 Route::post('/verifikasi', [AuthController::class, 'verifyCode'])->name('verifikasi.verify');
 Route::get('/new-password', [AuthController::class, 'showNewPassword'])->name('new-password');
 Route::post('/new-password', [AuthController::class, 'resetPassword'])->name('new-password.reset');
+
 
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
@@ -601,6 +621,13 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
     Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
     Route::post('/events/{id}/studio/quiz', [TrainerController::class, 'saveEventQuiz'])->name('events.studio.quiz');
+
+    // --- SERTIFIKAT TRAINER (riwayat & download) ---
+    Route::get('/certificates', [TrainerController::class, 'certificatesIndex'])->name('certificates.index');
+    Route::get('/certificates/events/{event}', [TrainerController::class, 'certificateEventShow'])->name('certificates.events.show');
+    Route::get('/certificates/events/{event}/download', [TrainerController::class, 'certificateEventDownload'])->name('certificates.events.download');
+    Route::get('/certificates/courses/{course}', [TrainerController::class, 'certificateCourseShow'])->name('certificates.courses.show');
+    Route::get('/certificates/courses/{course}/download', [TrainerController::class, 'certificateCourseDownload'])->name('certificates.courses.download');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -611,6 +638,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
+    Route::post('/admin/trainer/{trainer}/certificates', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
+    Route::delete('/admin/trainer/certificates/{trainerCertificate}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
 
     // Material Approval Routes
     Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.material.approvals');

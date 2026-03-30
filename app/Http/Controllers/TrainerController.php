@@ -9,6 +9,10 @@ use App\Models\TrainerNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Event;
+use App\Models\TrainerCertificate;
+use Dompdf\Dompdf;
+use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
@@ -78,7 +82,18 @@ class TrainerController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(9);
 
-        return view('trainer.courses', compact('courses'));
+        $certifiedCourseIds = \App\Models\TrainerCertificate::query()
+            ->where('trainer_id', $user->id)
+            ->where('status', 'sent')
+            ->where('certifiable_type', \App\Models\Course::class)
+            ->whereNotNull('file_path')
+            ->pluck('certifiable_id')
+            ->map(fn($id) => (int) $id)
+            ->all();
+
+        $certifiedCourseIdSet = array_fill_keys($certifiedCourseIds, true);
+
+        return view('trainer.courses', compact('courses', 'certifiedCourseIdSet'));
     }
 
     public function courseDetail($id)
@@ -159,7 +174,18 @@ class TrainerController extends Controller
             ->where('event_date', '>=', now())
             ->count();
 
-        return view('trainer.events', compact('events', 'upcomingCount', 'search'));
+        $certifiedEventIds = \App\Models\TrainerCertificate::query()
+            ->where('trainer_id', $user->id)
+            ->where('status', 'sent')
+            ->where('certifiable_type', \App\Models\Event::class)
+            ->whereNotNull('file_path')
+            ->pluck('certifiable_id')
+            ->map(fn($id) => (int) $id)
+            ->all();
+
+        $certifiedEventIdSet = array_fill_keys($certifiedEventIds, true);
+
+        return view('trainer.events', compact('events', 'upcomingCount', 'search', 'certifiedEventIdSet'));
     }
 
     public function eventDetail($id)
@@ -766,6 +792,164 @@ class TrainerController extends Controller
         return response()->file($filePath, $headers);
     }
 
+    public function certificatesIndex()
+    {
+        $trainer = Auth::user();
+
+        $context = (string) request()->query('context', '');
+        $targetId = (int) request()->query('id', 0);
+
+        $finishedEvents = Event::query()
+            ->where('trainer_id', $trainer->id)
+            ->whereNotNull('event_date')
+            ->whereDate('event_date', '<', now()->toDateString())
+            ->orderByDesc('event_date')
+            ->get(['id', 'title', 'jenis', 'event_date']);
+
+        $finishedCourses = Course::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->where('approved_at', '<', now())
+            ->orderByDesc('approved_at')
+            ->get(['id', 'name', 'approved_at', 'status']);
+
+        $certificates = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->get(['certifiable_type', 'certifiable_id', 'certificate_number', 'issued_at', 'file_path', 'type_code']);
+
+        $certMap = [];
+        foreach ($certificates as $cert) {
+            $key = $cert->certifiable_type . ':' . (int) $cert->certifiable_id;
+            $certMap[$key] = $cert;
+        }
+
+        $historyItems = collect();
+
+        foreach ($finishedEvents as $event) {
+            $key = Event::class . ':' . (int) $event->id;
+            $cert = $certMap[$key] ?? null;
+            $historyItems->push([
+                'type' => 'event',
+                'id' => (int) $event->id,
+                'title' => $event->title,
+                'date' => $event->event_date,
+                'statusLabel' => 'Selesai',
+                'certificate' => $cert,
+                'downloadUrl' => $cert ? route('trainer.certificates.events.download', $event) : null,
+                'highlight' => $context === 'event' && $targetId === (int) $event->id,
+            ]);
+        }
+
+        foreach ($finishedCourses as $course) {
+            $key = Course::class . ':' . (int) $course->id;
+            $cert = $certMap[$key] ?? null;
+            $historyItems->push([
+                'type' => 'course',
+                'id' => (int) $course->id,
+                'title' => $course->name,
+                'date' => $course->approved_at,
+                'statusLabel' => 'Selesai',
+                'certificate' => $cert,
+                'downloadUrl' => $cert ? route('trainer.certificates.courses.download', $course) : null,
+                'highlight' => $context === 'course' && $targetId === (int) $course->id,
+            ]);
+        }
+
+        $historyItems = $historyItems->sortByDesc(fn ($item) => $item['date'] ?? now());
+
+        return view('trainer.certificates.index', [
+            'historyItems' => $historyItems,
+        ]);
+    }
+
+    public function certificateEventShow(Request $request, Event $event)
+    {
+        $trainer = Auth::user();
+        $trainerCert = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->where('certifiable_type', Event::class)
+            ->where('certifiable_id', $event->id)
+            ->latest('issued_at')
+            ->firstOrFail();
+
+        $issuedAt = $trainerCert->issued_at ?? now();
+        $data = $this->buildTrainerCertificateDataFromEvent($request, $event, $trainer, $issuedAt);
+        $data['certificateNumber'] = $trainerCert->certificate_number;
+        $data['roleLabel'] = $this->certificateTypeLabel((string) $trainerCert->type_code);
+
+        return view('trainer.certificates.show', $data);
+    }
+
+    public function certificateEventDownload(Request $request, Event $event)
+    {
+        $trainer = Auth::user();
+        $trainerCert = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->where('certifiable_type', Event::class)
+            ->where('certifiable_id', $event->id)
+            ->latest('issued_at')
+            ->firstOrFail();
+
+        if (!empty($trainerCert->file_path)) {
+            $absolutePath = storage_path('app/' . $trainerCert->file_path);
+            if (is_file($absolutePath)) {
+                $filename = 'Sertifikat_Trainer_' . Str::slug($event->title) . '_' . Str::slug($trainer->name) . '.pdf';
+                return response()->download($absolutePath, $filename, [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            }
+        }
+
+        abort(404, 'File sertifikat belum tersedia.');
+    }
+
+    public function certificateCourseShow(Request $request, Course $course)
+    {
+        $trainer = Auth::user();
+        $trainerCert = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->where('certifiable_type', Course::class)
+            ->where('certifiable_id', $course->id)
+            ->latest('issued_at')
+            ->firstOrFail();
+
+        $issuedAt = $trainerCert->issued_at ?? now();
+        $data = $this->buildTrainerCertificateDataFromCourse($request, $course, $trainer, $issuedAt);
+        $data['certificateNumber'] = $trainerCert->certificate_number;
+        $data['roleLabel'] = $this->certificateTypeLabel((string) $trainerCert->type_code);
+
+        return view('trainer.certificates.show', $data);
+    }
+
+    public function certificateCourseDownload(Request $request, Course $course)
+    {
+        $trainer = Auth::user();
+        $trainerCert = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->where('certifiable_type', Course::class)
+            ->where('certifiable_id', $course->id)
+            ->latest('issued_at')
+            ->firstOrFail();
+
+        if (!empty($trainerCert->file_path)) {
+            $absolutePath = storage_path('app/' . $trainerCert->file_path);
+            if (is_file($absolutePath)) {
+                $filename = 'Sertifikat_Trainer_' . Str::slug($course->name) . '_' . Str::slug($trainer->name) . '.pdf';
+                return response()->download($absolutePath, $filename, [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            }
+        }
+
+        abort(404, 'File sertifikat belum tersedia.');
+    }
+
     private function getModuleType($extension)
     {
         return match (strtolower($extension)) {
@@ -776,6 +960,121 @@ class TrainerController extends Controller
             'jpg', 'jpeg', 'png' => 'image',
             default => 'file',
         };
+    }
+
+    private function buildIdsporaCertificateNumber(string $activityCode, string $typeCode, string $sequence, \Carbon\CarbonInterface $issuedAt): string
+    {
+        $romanMonths = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
+        ];
+
+        $monthRoman = $romanMonths[(int) $issuedAt->format('n')] ?? '';
+        $year = $issuedAt->format('Y');
+        $seqDigits = preg_replace('/\D+/', '', $sequence) ?: '1';
+        $seq = str_pad(substr($seqDigits, -3), 3, '0', STR_PAD_LEFT);
+
+        $activity = strtoupper(trim($activityCode ?: 'WBN'));
+        $type = strtoupper(trim($typeCode ?: 'TRN'));
+
+        return "IDSP/{$activity}/{$type}/{$seq}/{$monthRoman}/{$year}";
+    }
+
+    private function extractEventAssetsBase64(Event $event): array
+    {
+        $logos = [];
+        foreach (is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
+            $path = str_replace('storage/', '', (string) $l);
+            if ($path !== '' && Storage::disk('public')->exists($path)) {
+                $absolutePath = Storage::disk('public')->path($path);
+                $mime = (is_string($absolutePath) && is_file($absolutePath)) ? (mime_content_type($absolutePath) ?: 'application/octet-stream') : 'application/octet-stream';
+                $logos[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+            }
+        }
+
+        $sigs = [];
+        foreach (is_array($event->certificate_signature) ? $event->certificate_signature : [] as $s) {
+            $path = str_replace('storage/', '', (string) $s);
+            if ($path !== '' && Storage::disk('public')->exists($path)) {
+                $absolutePath = Storage::disk('public')->path($path);
+                $mime = (is_string($absolutePath) && is_file($absolutePath)) ? (mime_content_type($absolutePath) ?: 'application/octet-stream') : 'application/octet-stream';
+                $sigs[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+            }
+        }
+
+        return [$logos, $sigs];
+    }
+
+    private function buildTrainerCertificateDataFromEvent(Request $request, Event $event, $trainer, \Carbon\CarbonInterface $issuedAt): array
+    {
+        [$logosBase64, $signaturesBase64] = $this->extractEventAssetsBase64($event);
+
+        $activityCodeMap = [
+            'webinar' => 'WBN',
+            'seminar' => 'SMN',
+            'workshop' => 'WRT',
+            'training' => 'WRT',
+            'video' => 'VDP',
+            'e-learning' => 'ELR',
+            'elearning' => 'ELR',
+        ];
+        $jenis = strtolower((string) ($event->jenis ?? ''));
+        $defaultActivityCode = $activityCodeMap[$jenis] ?? 'WBN';
+
+        $activityCode = (string) $request->query('activity', $defaultActivityCode);
+        $typeCode = (string) $request->query('type', 'TRN');
+        $sequence = (string) $request->query('seq', '001');
+
+        $certificateNumber = $this->buildIdsporaCertificateNumber($activityCode, $typeCode, $sequence, $issuedAt);
+
+        return [
+            'context' => 'event',
+            'event' => $event,
+            'course' => null,
+            'user' => $trainer,
+            'issuedAt' => $issuedAt,
+            'certificateNumber' => $certificateNumber,
+            'logosBase64' => $logosBase64,
+            'signaturesBase64' => $signaturesBase64,
+            'roleLabel' => $this->certificateTypeLabel($typeCode),
+        ];
+    }
+
+    private function buildTrainerCertificateDataFromCourse(Request $request, Course $course, $trainer, \Carbon\CarbonInterface $issuedAt): array
+    {
+        $activityCode = (string) $request->query('activity', 'ELR');
+        $typeCode = (string) $request->query('type', 'TRN');
+        $sequence = (string) $request->query('seq', '001');
+
+        $certificateNumber = $this->buildIdsporaCertificateNumber($activityCode, $typeCode, $sequence, $issuedAt);
+
+        return [
+            'context' => 'course',
+            'event' => null,
+            'course' => $course,
+            'user' => $trainer,
+            'issuedAt' => $issuedAt,
+            'certificateNumber' => $certificateNumber,
+            'logosBase64' => [],
+            'signaturesBase64' => [],
+            'roleLabel' => $this->certificateTypeLabel($typeCode),
+        ];
+    }
+
+    private function certificateTypeLabel(string $typeCode): string
+    {
+        $map = [
+            'SRT' => 'Peserta',
+            'MC' => 'MC',
+            'TRN' => 'Narasumber',
+            'PNT' => 'Panitia',
+            'CLB' => 'Kolaborator',
+            'MOD' => 'Moderator',
+            'GRD' => 'Kelulusan',
+            'SPV' => 'Supervisor/penilai',
+        ];
+        $key = strtoupper(trim($typeCode));
+        return $map[$key] ?? $key;
     }
 
     public function storeFeedbackReply(Request $request)

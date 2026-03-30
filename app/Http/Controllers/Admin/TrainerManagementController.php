@@ -8,6 +8,13 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\Course;
+use App\Models\Event;
+use App\Models\TrainerCertificate;
+use App\Models\TrainerNotification;
+use Illuminate\Support\Facades\Auth;
+use Dompdf\Dompdf;
+use Illuminate\Support\Str;
 
 class TrainerManagementController extends Controller
 {
@@ -99,8 +106,202 @@ class TrainerManagementController extends Controller
     {
         if ($trainer->role !== 'trainer')
             abort(404);
+
         $trainer->loadCount(['coursesAsTrainer', 'eventsAsTrainer']);
-        return view('admin.trainer.show', compact('trainer'));
+
+        $trainerCourses = Course::query()
+            ->where('trainer_id', $trainer->id)
+            ->orderByDesc('approved_at')
+            ->orderByDesc('created_at')
+            ->get(['id', 'name', 'status', 'approved_at', 'created_at']);
+
+        $trainerEvents = Event::query()
+            ->where('trainer_id', $trainer->id)
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get(['id', 'title', 'jenis', 'event_date', 'created_at', 'certificate_template']);
+
+        $trainerCertificates = TrainerCertificate::query()
+            ->with(['issuer:id,name', 'certifiable'])
+            ->where('trainer_id', $trainer->id)
+            ->latest('issued_at')
+            ->latest('created_at')
+            ->get();
+
+        return view('admin.trainer.show', compact('trainer', 'trainerCourses', 'trainerEvents', 'trainerCertificates'));
+    }
+
+    public function issueCertificate(Request $request, User $trainer)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'context' => ['required', 'in:event,course'],
+            'context_id' => ['required', 'integer'],
+            'activity_code' => ['required', 'string', 'size:3'],
+            'type_code' => ['required', 'string', 'min:2', 'max:3'],
+            'sequence' => ['required', 'string', 'max:10'],
+            'issued_at' => ['nullable', 'date'],
+        ]);
+
+        $issuedAt = $request->filled('issued_at')
+            ? \Carbon\Carbon::parse($data['issued_at'])
+            : now();
+
+        $certifiableType = $data['context'] === 'event' ? Event::class : Course::class;
+        $certifiable = ($data['context'] === 'event')
+            ? Event::where('id', $data['context_id'])->where('trainer_id', $trainer->id)->firstOrFail()
+            : Course::where('id', $data['context_id'])->where('trainer_id', $trainer->id)->firstOrFail();
+
+        $certificateNumber = $this->buildIdsporaCertificateNumber(
+            $data['activity_code'],
+            $data['type_code'],
+            $data['sequence'],
+            $issuedAt
+        );
+
+        $exists = TrainerCertificate::where('certificate_number', $certificateNumber)->exists();
+        if ($exists) {
+            return back()->with('error', "Nomor sertifikat sudah dipakai: {$certificateNumber}");
+        }
+
+        $trainerCertificate = TrainerCertificate::create([
+            'trainer_id' => $trainer->id,
+            'certifiable_type' => $certifiableType,
+            'certifiable_id' => $certifiable->id,
+            'activity_code' => strtoupper($data['activity_code']),
+            'type_code' => strtoupper($data['type_code']),
+            'sequence' => $data['sequence'],
+            'certificate_number' => $certificateNumber,
+            'issued_at' => $issuedAt,
+            'issued_by' => Auth::id(),
+            'status' => 'sent',
+        ]);
+
+        // Generate & store PDF so trainer download can fetch from file_path
+        $roleLabelMap = [
+            'SRT' => 'Peserta',
+            'MC' => 'MC',
+            'TRN' => 'Narasumber',
+            'PNT' => 'Panitia',
+            'CLB' => 'Kolaborator',
+            'MOD' => 'Moderator',
+            'GRD' => 'Kelulusan',
+            'SPV' => 'Supervisor/penilai',
+        ];
+        $roleLabel = $roleLabelMap[strtoupper((string) $data['type_code'])] ?? strtoupper((string) $data['type_code']);
+
+        $logosBase64 = [];
+        $signaturesBase64 = [];
+        if ($data['context'] === 'event') {
+            $event = $certifiable;
+            foreach (is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
+                $path = str_replace('storage/', '', (string) $l);
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    $absolutePath = Storage::disk('public')->path($path);
+                    $mime = (is_string($absolutePath) && is_file($absolutePath)) ? (mime_content_type($absolutePath) ?: 'application/octet-stream') : 'application/octet-stream';
+                    $logosBase64[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+                }
+            }
+            foreach (is_array($event->certificate_signature) ? $event->certificate_signature : [] as $s) {
+                $path = str_replace('storage/', '', (string) $s);
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    $absolutePath = Storage::disk('public')->path($path);
+                    $mime = (is_string($absolutePath) && is_file($absolutePath)) ? (mime_content_type($absolutePath) ?: 'application/octet-stream') : 'application/octet-stream';
+                    $signaturesBase64[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+                }
+            }
+        }
+
+        $pdfData = [
+            'context' => $data['context'],
+            'event' => $data['context'] === 'event' ? $certifiable : null,
+            'course' => $data['context'] === 'course' ? $certifiable : null,
+            'user' => $trainer,
+            'issuedAt' => $issuedAt,
+            'certificateNumber' => $certificateNumber,
+            'logosBase64' => $logosBase64,
+            'signaturesBase64' => $signaturesBase64,
+            'roleLabel' => $roleLabel,
+        ];
+
+        $dompdf = new Dompdf();
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+
+        $html = view('trainer.certificates.certificate-pdf', $pdfData)->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $relativeDir = 'trainer_certificates/' . $trainer->id . '/' . $data['context'] . '/' . $certifiable->id;
+        $filename = Str::slug($certificateNumber, '_') . '.pdf';
+        $relativePath = $relativeDir . '/' . $filename;
+        $absolutePath = storage_path('app/' . $relativePath);
+
+        if (!is_dir(dirname($absolutePath))) {
+            mkdir(dirname($absolutePath), 0755, true);
+        }
+        file_put_contents($absolutePath, $dompdf->output());
+
+        $trainerCertificate->update(['file_path' => $relativePath]);
+
+        $contextLabel = $data['context'] === 'event' ? 'event' : 'course';
+        $contextTitle = $data['context'] === 'event'
+            ? (string) ($certifiable->title ?? '')
+            : (string) ($certifiable->name ?? '');
+        $trainerUrl = route('trainer.certificates.index') . '?context=' . $data['context'] . '&id=' . (int) $certifiable->id;
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'certificate_issued',
+            'title' => 'Sertifikat telah diterbitkan',
+            'message' => 'Sertifikat untuk ' . $contextLabel . ($contextTitle !== '' ? ' "' . $contextTitle . '"' : '') . ' sudah tersedia. No: ' . $certificateNumber,
+            'data' => [
+                'entity_type' => $data['context'],
+                'entity_id' => (int) $certifiable->id,
+                'certificate_number' => $certificateNumber,
+                'url' => $trainerUrl,
+            ],
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        return back()->with('success', "Sertifikat trainer diterbitkan: {$certificateNumber}");
+    }
+
+    public function revokeCertificate(TrainerCertificate $trainerCertificate)
+    {
+        if (!empty($trainerCertificate->file_path)) {
+            $absolute = storage_path('app/' . $trainerCertificate->file_path);
+            if (is_file($absolute)) {
+                @unlink($absolute);
+            }
+        }
+
+        $trainerCertificate->update(['status' => 'revoked']);
+        return back()->with('success', 'Sertifikat trainer berhasil dicabut.');
+    }
+
+    private function buildIdsporaCertificateNumber(string $activityCode, string $typeCode, string $sequence, \Carbon\CarbonInterface $issuedAt): string
+    {
+        $romanMonths = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
+        ];
+
+        $monthRoman = $romanMonths[(int) $issuedAt->format('n')] ?? '';
+        $year = $issuedAt->format('Y');
+        $seqDigits = preg_replace('/\D+/', '', $sequence) ?: '1';
+        $seq = str_pad(substr($seqDigits, -3), 3, '0', STR_PAD_LEFT);
+
+        $activity = strtoupper(trim($activityCode ?: 'WBN'));
+        $type = strtoupper(trim($typeCode ?: 'TRN'));
+
+        return "IDSP/{$activity}/{$type}/{$seq}/{$monthRoman}/{$year}";
     }
 
     public function edit(User $trainer)

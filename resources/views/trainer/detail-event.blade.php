@@ -267,7 +267,6 @@
           </li>
         </ul>
       </section>
-    </section>
 
     <aside class="hub-card">
       <p class="hub-title">INSTRUCTOR HUB</p>

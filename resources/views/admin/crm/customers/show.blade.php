@@ -231,9 +231,9 @@
                                 <div class="timeline-item">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <div class="fw-800 text-navy">{{ $registration->event->title }}</div>
+                                            <div class="fw-800 text-navy">{{ $registration->event?->title ?? 'Program N/A' }}</div>
                                             <div class="text-muted smaller mb-2">
-                                                <i class="bi bi-calendar-event me-1"></i> {{ $registration->event->event_date ? \Carbon\Carbon::parse($registration->event->event_date)->format('d M Y') : 'Online/Flexible' }}
+                                                <i class="bi bi-calendar-event me-1"></i> {{ $registration->event?->event_date ? \Carbon\Carbon::parse($registration->event?->event_date)->format('d M Y') : 'Online/Flexible' }}
                                             </div>
                                             <span class="badge {{ $registration->status === 'active' ? 'bg-success bg-opacity-10 text-success' : 'bg-light text-muted' }} fw-700 rounded-pill px-3" style="font-size: 0.65rem;">
                                                 STATUS: {{ strtoupper($registration->status) }}

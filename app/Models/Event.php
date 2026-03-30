@@ -16,6 +16,7 @@ class Event extends Model
         'vbg_path',
         'certificate_path',
         'attendance_path',
+        'module_path',
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
@@ -72,6 +73,9 @@ class Event extends Model
             $count++;
         if (!empty($this->certificate_path))
             $count++;
+        if(!empty($this->vbg_path)) $count++;
+        if(!empty($this->certificate_path)) $count++;
+        if(!empty($this->module_path)) $count++;
         // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
@@ -86,8 +90,8 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 3; // Virtual Background, Sertifikat, Absensi (QR/File)
-        $done = max(0, min(3, (int) $this->documents_completed_count));
+        $total = 4; // Virtual Background, Sertifikat, Module (Trainer), Absensi (QR/File)
+        $done = max(0, min($total, (int) $this->documents_completed_count));
         return (int) floor(($done / $total) * 100);
     }
 
