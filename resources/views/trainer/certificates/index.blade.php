@@ -64,7 +64,11 @@
                   $dateText = $item['date'] ? \Carbon\Carbon::parse($item['date'])->format('d M Y') : '-';
                 @endphp
                 <tr style="{{ $rowHighlight ? 'background: #fffbe6;' : '' }}">
-                  <td style="font-weight: 600;">{{ strtoupper($item['type'] ?? '-') }}</td>
+                  @php
+                    $typeText = strtoupper($item['type'] ?? '-');
+                    $typeWeight = ($item['type'] ?? '') === 'course' ? 500 : 600;
+                  @endphp
+                  <td style="font-weight: {{ $typeWeight }};">{{ $typeText }}</td>
                   <td style="font-weight: 400;">{{ $dateText }}</td>
                   <td style="font-weight: 400;">
                     {{ $item['title'] ?? '-' }}

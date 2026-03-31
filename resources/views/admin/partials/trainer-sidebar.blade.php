@@ -34,13 +34,8 @@
         </a>
     </div>
 
-    @if(isset($trainer))
-        @php
-            $certRoute = route('admin.trainer.certificates.send.form', $trainer);
-        @endphp
-        <a href="{{ $certRoute }}"
-            class="sidebar-link {{ request()->routeIs('admin.trainer.certificates.*') ? 'active' : '' }}">
-            <i class="bi bi-award-fill"></i> Kirim Sertifikat
-        </a>
-    @endif
+    <a href="{{ route('admin.trainer.certificates.queue') }}"
+        class="sidebar-link {{ request()->routeIs('admin.trainer.certificates.*') ? 'active' : '' }}">
+        <i class="bi bi-award-fill"></i> Sertifikat
+    </a>
 </aside>
