@@ -274,40 +274,7 @@
 @section('content')
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation -->
-        <aside class="trainer-sidebar d-none d-lg-block">
-            <span class="nav-menu-label">TRAINER MANAGEMENT</span>
-            <a href="{{ route('admin.trainer.index') }}" class="sidebar-link">
-                <i class="bi bi-people"></i> All Trainers
-            </a>
-            <a href="{{ route('admin.trainer.create') }}" class="sidebar-link">
-                <i class="bi bi-person-plus"></i> Add New Trainer
-            </a>
-
-            <span class="nav-menu-label">QUICK ACCESS</span>
-            <a href="#materialApprovalMenu"
-                class="sidebar-link sidebar-parent {{ request()->routeIs('admin.material.*') ? 'active' : '' }}"
-                data-bs-toggle="collapse" role="button"
-                aria-expanded="{{ request()->routeIs('admin.material.*') ? 'true' : 'false' }}"
-                aria-controls="materialApprovalMenu">
-                <span><i class="bi bi-clipboard-check"></i> Material Approval</span>
-                <i class="bi bi-chevron-down sidebar-chevron"></i>
-            </a>
-            <div class="collapse sidebar-submenu {{ request()->routeIs('admin.material.*') ? 'show' : '' }}"
-                id="materialApprovalMenu">
-                <a href="{{ route('admin.material.approvals') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.material.approvals') ? 'active' : '' }}">
-                    <i class="bi bi-hourglass-split"></i> Pending Review
-                </a>
-                <a href="{{ route('admin.material.approved') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.material.approved') ? 'active' : '' }}">
-                    <i class="bi bi-check-circle"></i> Approved
-                </a>
-                <a href="{{ route('admin.material.rejected') }}"
-                    class="sidebar-link {{ request()->routeIs('admin.material.rejected') ? 'active' : '' }}">
-                    <i class="bi bi-x-circle"></i> Rejected
-                </a>
-            </div>
-        </aside>
+        @include('admin.partials.trainer-sidebar')
 
         <main class="trainer-main">
             <!-- Hero Header with Trainer Info -->
@@ -336,6 +303,10 @@
                         @endif
                     </div>
                     <div class="d-flex flex-column gap-2">
+                        <a href="{{ route('admin.trainer.certificates.send.form', $trainer) }}"
+                            class="btn btn-primary btn-action-large mb-2">
+                            <i class="bi bi-award-fill me-2"></i>Kirim Sertifikat
+                        </a>
                         <a href="{{ route('admin.trainer.edit', $trainer) }}" class="btn btn-light btn-action-large">
                             <i class="bi bi-pencil-square me-2"></i>Edit Data
                         </a>
@@ -543,16 +514,21 @@
                                     <select name="context_id" class="form-select form-select-sm" required>
                                         <optgroup label="Event">
                                             @foreach(($trainerEvents ?? collect()) as $e)
-                                                <option value="{{ $e->id }}">[EVENT] {{ $e->title }}{{ $e->event_date ? ' • '.$e->event_date->format('d M Y') : '' }}</option>
+                                                <option value="{{ $e->id }}">[EVENT]
+                                                    {{ $e->title }}{{ $e->event_date ? ' • ' . $e->event_date->format('d M Y') : '' }}
+                                                </option>
                                             @endforeach
                                         </optgroup>
                                         <optgroup label="Course">
                                             @foreach(($trainerCourses ?? collect()) as $c)
-                                                <option value="{{ $c->id }}">[COURSE] {{ $c->name }}{{ $c->approved_at ? ' • '.$c->approved_at->format('d M Y') : '' }}</option>
+                                                <option value="{{ $c->id }}">[COURSE]
+                                                    {{ $c->name }}{{ $c->approved_at ? ' • ' . $c->approved_at->format('d M Y') : '' }}
+                                                </option>
                                             @endforeach
                                         </optgroup>
                                     </select>
-                                    <small class="text-muted">Catatan: pastikan pilih sesuai “Konteks” di sebelah kiri.</small>
+                                    <small class="text-muted">Catatan: pastikan pilih sesuai “Konteks” di sebelah
+                                        kiri.</small>
                                 </div>
 
                                 <div class="col-md-3">
@@ -609,27 +585,31 @@
                                 <tbody>
                                     @forelse(($trainerCertificates ?? collect()) as $cert)
                                         <tr>
-                                            <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">
+                                            <td
+                                                style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">
                                                 {{ $cert->certificate_number }}
                                             </td>
                                             <td>
                                                 @php
                                                     $label = $cert->certifiable instanceof \App\Models\Event
-                                                        ? ('Event: ' . ($cert->certifiable->title ?? '#'.$cert->certifiable_id))
-                                                        : ('Course: ' . ($cert->certifiable->name ?? '#'.$cert->certifiable_id));
+                                                        ? ('Event: ' . ($cert->certifiable->title ?? '#' . $cert->certifiable_id))
+                                                        : ('Course: ' . ($cert->certifiable->name ?? '#' . $cert->certifiable_id));
                                                 @endphp
                                                 <div class="small fw-semibold">{{ $label }}</div>
-                                                <div class="text-muted small">Diterbitkan oleh: {{ $cert->issuer->name ?? '-' }}</div>
+                                                <div class="text-muted small">Diterbitkan oleh: {{ $cert->issuer->name ?? '-' }}
+                                                </div>
                                             </td>
                                             <td>
-                                                <span class="badge {{ ($cert->status ?? '') === 'revoked' ? 'bg-danger' : 'bg-success' }}">
+                                                <span
+                                                    class="badge {{ ($cert->status ?? '') === 'revoked' ? 'bg-danger' : 'bg-success' }}">
                                                     {{ strtoupper($cert->status ?? 'sent') }}
                                                 </span>
                                             </td>
                                             <td class="small text-muted">{{ $cert->issued_at?->format('d M Y') ?? '-' }}</td>
                                             <td class="text-end">
                                                 @if(($cert->status ?? '') !== 'revoked')
-                                                    <form action="{{ route('admin.trainer.certificates.revoke', $cert) }}" method="POST"
+                                                    <form action="{{ route('admin.trainer.certificates.revoke', $cert) }}"
+                                                        method="POST"
                                                         onsubmit="return confirm('Cabut sertifikat ini? Trainer tidak akan melihatnya lagi.');"
                                                         style="display:inline-block;">
                                                         @csrf
@@ -645,7 +625,8 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-3">Belum ada sertifikat yang diterbitkan.</td>
+                                            <td colspan="5" class="text-center text-muted py-3">Belum ada sertifikat yang
+                                                diterbitkan.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

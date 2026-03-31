@@ -273,6 +273,63 @@ class TrainerManagementController extends Controller
         return back()->with('success', "Sertifikat trainer diterbitkan: {$certificateNumber}");
     }
 
+    /**
+     * Admin uploads a ready-made certificate PDF for a trainer (manual send).
+     */
+    public function sendCertificate(Request $request, User $trainer)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'recipient' => ['required', 'string', 'max:255'],
+            'certificate_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        $file = $request->file('certificate_file');
+        $filename = time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
+        $relativeDir = 'trainer_certificates/' . $trainer->id . '/manual';
+        $relativePath = $file->storeAs($relativeDir, $filename);
+
+        $certificateNumber = 'MANUAL-' . time() . '-' . Str::upper(Str::random(6));
+
+        $trainerCertificate = TrainerCertificate::create([
+            'trainer_id' => $trainer->id,
+            'file_path' => $relativePath,
+            'status' => 'sent',
+            'issued_at' => now(),
+            'issued_by' => Auth::id(),
+            'certificate_number' => $certificateNumber,
+        ]);
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'certificate_issued',
+            'title' => 'Sertifikat telah diterbitkan (manual)',
+            'message' => 'Sertifikat manual telah diunggah: ' . $certificateNumber,
+            'data' => [
+                'certificate_number' => $certificateNumber,
+                'url' => route('trainer.certificates.index')
+            ],
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        return back()->with('success', 'Sertifikat manual berhasil diunggah dan disimpan.');
+    }
+
+    /**
+     * Show admin form to upload/send a certificate for the given trainer.
+     */
+    public function showSendCertificateForm(User $trainer)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        return view('admin.trainer.send_certificate', compact('trainer'));
+    }
+
     public function revokeCertificate(TrainerCertificate $trainerCertificate)
     {
         if (!empty($trainerCertificate->file_path)) {
@@ -289,8 +346,18 @@ class TrainerManagementController extends Controller
     private function buildIdsporaCertificateNumber(string $activityCode, string $typeCode, string $sequence, \Carbon\CarbonInterface $issuedAt): string
     {
         $romanMonths = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
+            1 => 'I',
+            2 => 'II',
+            3 => 'III',
+            4 => 'IV',
+            5 => 'V',
+            6 => 'VI',
+            7 => 'VII',
+            8 => 'VIII',
+            9 => 'IX',
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII',
         ];
 
         $monthRoman = $romanMonths[(int) $issuedAt->format('n')] ?? '';
