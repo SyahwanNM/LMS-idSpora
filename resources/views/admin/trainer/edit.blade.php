@@ -342,7 +342,8 @@
 
 @section('content')
     <div class="trainer-wrapper">
-        @include('admin.partials.trainer-sidebar')
+        @include('admin.trainer._sidebar')
+        @include('admin.trainer._top-text-color')
 
         <main class="trainer-main">
             <!-- Hero Section -->

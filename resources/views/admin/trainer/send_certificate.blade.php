@@ -154,18 +154,19 @@
         }
 
         .send-table thead th {
-            font-size: 12px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: .04em;
             color: #334155;
             background: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
-            padding: 12px 10px;
+            padding: 14px 16px;
             white-space: nowrap;
+            text-align: center;
         }
 
         .send-table tbody td {
-            padding: 10px;
+            padding: 14px 16px;
             vertical-align: middle;
             border-color: #eef2f7;
         }
@@ -202,11 +203,12 @@
             font-size: 12px;
         }
     </style>
+    @include('admin.trainer._top-text-color')
 @endsection
 
 @section('content')
     <div class="trainer-wrapper">
-        @include('admin.partials.trainer-sidebar')
+        @include('admin.trainer._sidebar')
 
         <main class="trainer-main">
             <div class="send-hero">
@@ -228,6 +230,11 @@
             @if(session('error'))
                 <div class="alert alert-danger border-0 shadow-sm">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="alert alert-info border-0 shadow-sm">
+                    <i class="bi bi-info-circle-fill me-2"></i>{{ session('info') }}
                 </div>
             @endif
 
@@ -292,30 +299,33 @@
                                                 </td>
                                                 <td><span class="badge bg-success-subtle text-success">Selesai</span></td>
                                                 <td class="text-end">
-                                                    <button type="button"
-                                                        class="icon-btn me-1 preview-btn"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        title="Preview Data"
-                                                        data-title="{{ $item['title'] }}"
-                                                        data-context="{{ strtoupper($item['context']) }}">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    <form method="POST" action="{{ route('admin.trainer.certificates.issue', $trainer) }}" class="d-inline cert-send-form">
-                                                        @csrf
-                                                        <input type="hidden" name="context" value="{{ $item['context'] }}">
-                                                        <input type="hidden" name="context_id" value="{{ $item['context_id'] }}">
-                                                        <input type="hidden" name="activity_code" value="{{ $item['activity_code'] }}" class="hidden-activity">
-                                                        <input type="hidden" name="type_code" value="TRN" class="hidden-type">
-                                                        <input type="hidden" name="sequence" value="{{ $seq }}" class="hidden-seq">
-                                                        <input type="hidden" name="issued_at" value="{{ $issuedAt }}" class="hidden-issued">
-                                                        <button id="{{ $rowId }}" class="icon-btn send-btn"
+                                                    <div class="d-inline-flex align-items-center">
+                                                        <button type="button"
+                                                            class="icon-btn me-2 preview-btn"
                                                             data-bs-toggle="tooltip"
                                                             data-bs-placement="top"
-                                                            title="Kirim Sertifikat">
-                                                            <i class="bi bi-send-check"></i>
+                                                            title="Preview Data"
+                                                            data-title="{{ $item['title'] }}"
+                                                            data-context="{{ strtoupper($item['context']) }}">
+                                                            <i class="bi bi-eye"></i>
                                                         </button>
-                                                    </form>
+
+                                                        <form method="POST" action="{{ route('admin.trainer.certificates.issue', $trainer) }}" class="d-inline cert-send-form">
+                                                            @csrf
+                                                            <input type="hidden" name="context" value="{{ $item['context'] }}">
+                                                            <input type="hidden" name="context_id" value="{{ $item['context_id'] }}">
+                                                            <input type="hidden" name="activity_code" value="{{ $item['activity_code'] }}" class="hidden-activity">
+                                                            <input type="hidden" name="type_code" value="TRN" class="hidden-type">
+                                                            <input type="hidden" name="sequence" value="{{ $seq }}" class="hidden-seq">
+                                                            <input type="hidden" name="issued_at" value="{{ $issuedAt }}" class="hidden-issued">
+                                                            <button id="{{ $rowId }}" type="submit" class="icon-btn send-btn" disabled
+                                                                data-bs-toggle="tooltip"
+                                                                data-bs-placement="top"
+                                                                title="Kirim Sertifikat">
+                                                                <i class="bi bi-send-check"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @empty
@@ -398,76 +408,86 @@
 
 @section('scripts')
 <script>
-(() => {
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  [...tooltipTriggerList].forEach(el => new bootstrap.Tooltip(el));
+(function () {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    [...tooltipTriggerList].forEach(el => new bootstrap.Tooltip(el));
 
-  const modalEl = document.getElementById('previewDataModal');
-  const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    const modalEl = document.getElementById('previewDataModal');
+    const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    const modalBody = modalEl ? modalEl.querySelector('.modal-body') : null;
 
-  const toRoman = (month) => {
-    const map = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
-    return map[Math.max(0, Math.min(11, month - 1))];
-  };
+    const previewUrl = '{{ route('admin.trainer.certificates.preview') }}';
+    const trainerId = '{{ $trainer->id }}';
 
-  const padSeq = (value) => String(value || '').replace(/\D/g, '').slice(-3).padStart(3, '0');
+    const padSeq = (value) => String(value || '').replace(/\D/g, '').slice(-3).padStart(3, '0');
 
-  const syncHiddenFields = (row) => {
-    const activity = row.querySelector('.cert-activity')?.value || '';
-    const type = row.querySelector('.cert-type')?.value || '';
-    const seq = padSeq(row.querySelector('.cert-seq')?.value || '');
-    const issued = row.querySelector('.cert-issued')?.value || '';
+    const syncHiddenFields = (row) => {
+        const activity = row.querySelector('.cert-activity')?.value || '';
+        const type = row.querySelector('.cert-type')?.value || '';
+        const seq = padSeq(row.querySelector('.cert-seq')?.value || '');
+        const issued = row.querySelector('.cert-issued')?.value || '';
 
-    const hiddenActivity = row.querySelector('.hidden-activity');
-    const hiddenType = row.querySelector('.hidden-type');
-    const hiddenSeq = row.querySelector('.hidden-seq');
-    const hiddenIssued = row.querySelector('.hidden-issued');
+        const hiddenActivity = row.querySelector('.hidden-activity');
+        const hiddenType = row.querySelector('.hidden-type');
+        const hiddenSeq = row.querySelector('.hidden-seq');
+        const hiddenIssued = row.querySelector('.hidden-issued');
 
-    if (hiddenActivity) hiddenActivity.value = activity;
-    if (hiddenType) hiddenType.value = type;
-    if (hiddenSeq) hiddenSeq.value = seq;
-    if (hiddenIssued) hiddenIssued.value = issued;
-  };
+        if (hiddenActivity) hiddenActivity.value = activity;
+        if (hiddenType) hiddenType.value = type;
+        if (hiddenSeq) hiddenSeq.value = seq;
+        if (hiddenIssued) hiddenIssued.value = issued;
+    };
 
-  document.querySelectorAll('.cert-row').forEach((row) => {
-    const previewBtn = row.querySelector('.preview-btn');
-    if (!previewBtn) return;
+    document.querySelectorAll('.cert-row').forEach((row) => {
+        const previewBtn = row.querySelector('.preview-btn');
+        if (!previewBtn) return;
 
-    previewBtn.addEventListener('click', () => {
-      syncHiddenFields(row);
-      const context = previewBtn.getAttribute('data-context') || '';
-      const title = previewBtn.getAttribute('data-title') || '';
-      const activity = row.querySelector('.cert-activity')?.value || '';
-      const type = row.querySelector('.cert-type')?.value || '';
-      const seq = padSeq(row.querySelector('.cert-seq')?.value || '');
-      const issued = row.querySelector('.cert-issued')?.value || '';
+        previewBtn.addEventListener('click', async () => {
+            syncHiddenFields(row);
+            const activity = row.querySelector('.cert-activity')?.value || '';
+            const type = row.querySelector('.cert-type')?.value || '';
+            const seq = padSeq(row.querySelector('.cert-seq')?.value || '');
+            const issued = row.querySelector('.cert-issued')?.value || '';
+            const context = row.querySelector('input[name="context"]')?.value || previewBtn.getAttribute('data-context')?.toLowerCase();
+            const contextId = row.querySelector('input[name="context_id"]')?.value || '';
 
-      const issuedDate = issued ? new Date(issued) : new Date();
-      const certNumber = `IDSP/${activity}/${type}/${seq}/${toRoman((issuedDate.getMonth() + 1))}/${issuedDate.getFullYear()}`;
+            const form = new FormData();
+            form.append('_token', '{{ csrf_token() }}');
+            form.append('trainer_id', trainerId);
+            form.append('context', context || 'event');
+            form.append('context_id', contextId || '0');
+            form.append('activity_code', activity || 'WBN');
+            form.append('type_code', type || 'TRN');
+            form.append('sequence', seq || '001');
+            form.append('issued_at', issued || '');
 
-      document.getElementById('pvContext').textContent = (context || '').toUpperCase();
-      document.getElementById('pvTitle').textContent = title;
-      document.getElementById('pvActivity').textContent = activity;
-      document.getElementById('pvType').textContent = type;
-      document.getElementById('pvSeq').textContent = seq;
-      document.getElementById('pvIssued').textContent = issued || '-';
-      document.getElementById('pvNumber').textContent = certNumber;
+            try {
+                const res = await fetch(previewUrl, { method: 'POST', body: form, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!res.ok) throw new Error('Preview gagal');
+                const html = await res.text();
+                if (modalBody) modalBody.innerHTML = html;
+                modal?.show();
 
-      modal?.show();
+                // enable send button after preview
+                const sendBtn = row.querySelector('.send-btn');
+                if (sendBtn) sendBtn.disabled = false;
+            } catch (err) {
+                alert('Gagal memuat preview sertifikat.');
+            }
+        });
+
+        row.querySelectorAll('.cert-activity, .cert-type, .cert-seq, .cert-issued').forEach((field) => {
+            field.addEventListener('change', () => syncHiddenFields(row));
+            field.addEventListener('input', () => syncHiddenFields(row));
+        });
+
+        const sendForm = row.querySelector('.cert-send-form');
+        if (sendForm) {
+            sendForm.addEventListener('submit', () => syncHiddenFields(row));
+        }
+
+        syncHiddenFields(row);
     });
-
-    row.querySelectorAll('.cert-activity, .cert-type, .cert-seq, .cert-issued').forEach((field) => {
-      field.addEventListener('change', () => syncHiddenFields(row));
-      field.addEventListener('input', () => syncHiddenFields(row));
-    });
-
-    const sendForm = row.querySelector('.cert-send-form');
-    if (sendForm) {
-      sendForm.addEventListener('submit', () => syncHiddenFields(row));
-    }
-
-    syncHiddenFields(row);
-  });
 })();
 </script>
 
