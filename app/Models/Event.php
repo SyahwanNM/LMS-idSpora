@@ -10,6 +10,7 @@ class Event extends Model
 {
     use SoftDeletes;
     protected $fillable = [
+        'trainer_id',
         'title',
         'image',
         'vbg_path',
@@ -68,6 +69,10 @@ class Event extends Model
     public function getDocumentsCompletedCountAttribute(): int
     {
         $count = 0;
+        if (!empty($this->vbg_path))
+            $count++;
+        if (!empty($this->certificate_path))
+            $count++;
         if(!empty($this->vbg_path)) $count++;
         if(!empty($this->certificate_path)) $count++;
         if(!empty($this->module_path)) $count++;
@@ -75,7 +80,8 @@ class Event extends Model
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
             || !empty($this->attendance_qr_token);
-        if($hasAttendance) $count++;
+        if ($hasAttendance)
+            $count++;
         return $count;
     }
 
@@ -110,6 +116,11 @@ class Event extends Model
         return $this->hasMany(EventRegistration::class)->where('status', 'active');
     }
 
+    public function trainer()
+    {
+        return $this->belongsTo(User::class, 'trainer_id');
+    }
+
     public function registrations()
     {
         return $this->hasMany(EventRegistration::class);
@@ -132,13 +143,18 @@ class Event extends Model
 
     public function getStartAtAttribute(): ?Carbon
     {
-        if(empty($this->event_date)) return null;
+        if (empty($this->event_date))
+            return null;
         $dateStr = $this->event_date instanceof Carbon ? $this->event_date->format('Y-m-d') : (string) $this->event_date;
         $timeStr = '00:00:00';
-        if(!empty($this->event_time)){
+        if (!empty($this->event_time)) {
             $timeStr = $this->event_time instanceof Carbon ? $this->event_time->format('H:i:s') : (is_string($this->event_time) ? $this->event_time : '00:00:00');
         }
-        try { return Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (\Throwable $ex) { return null; }
+        try {
+            return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+        } catch (\Throwable $ex) {
+            return null;
+        }
     }
 
     /**
@@ -152,28 +168,28 @@ class Event extends Model
         if ($image === '') {
             return null;
         }
-        
+
         // External URL (e.g., from external source)
         if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://')) {
             return $image;
         }
-        
+
         // Normalize path - remove 'storage/' prefix if exists
         $imagePath = ltrim(str_replace('storage/', '', $image), '/');
-        
+
         // Extract filename from path
         $filename = basename($imagePath);
-        
+
         // Check if file exists in events folder (try multiple possible paths)
         $possiblePaths = [
             'events/' . $filename,  // events/filename.png
             $imagePath,              // events/filename.png (if already has events/)
             'events/' . $imagePath, // events/events/filename.png (if path already has events/)
         ];
-        
+
         // Remove duplicates
         $possiblePaths = array_unique($possiblePaths);
-        
+
         // Find first existing file
         foreach ($possiblePaths as $path) {
             $fullPath = public_path('uploads/' . $path);
@@ -182,7 +198,7 @@ class Event extends Model
                 return asset('uploads/' . $path);
             }
         }
-        
+
         // File not found, but return URL anyway (browser will show broken image or fallback)
         // This allows onerror handler in views to work
         if (str_starts_with($imagePath, 'events/')) {
@@ -194,14 +210,19 @@ class Event extends Model
     public function getEndAtAttribute(): ?Carbon
     {
         $start = $this->start_at;
-        if(!$start) return null;
+        if (!$start)
+            return null;
         $timeStr = null;
-        if(!empty($this->event_time_end)){
+        if (!empty($this->event_time_end)) {
             $timeStr = $this->event_time_end instanceof Carbon ? $this->event_time_end->format('H:i:s') : (is_string($this->event_time_end) ? $this->event_time_end : null);
         }
-        if($timeStr){
+        if ($timeStr) {
             $dateStr = $start->format('Y-m-d');
-            try { return Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (\Throwable $ex) { return (clone $start)->endOfDay(); }
+            try {
+                return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+            } catch (\Throwable $ex) {
+                return (clone $start)->endOfDay();
+            }
         }
         return (clone $start)->endOfDay();
     }
@@ -221,9 +242,9 @@ class Event extends Model
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
-        return $query->where(function($q) use ($now){
+        return $query->where(function ($q) use ($now) {
             $q->whereNull('event_date')
-              ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
+                ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
         });
     }
 
@@ -234,7 +255,7 @@ class Event extends Model
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
         return $query->whereNotNull('event_date')
-                     ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
+            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
     }
 
     /**
@@ -242,7 +263,8 @@ class Event extends Model
      */
     public function getScheduleCountAttribute(): int
     {
-        if($this->relationLoaded('scheduleItems')) return $this->scheduleItems->count();
+        if ($this->relationLoaded('scheduleItems'))
+            return $this->scheduleItems->count();
         // fallback to JSON
         return is_array($this->schedule_json) ? count($this->schedule_json) : $this->scheduleItems()->count();
     }
@@ -252,8 +274,9 @@ class Event extends Model
      */
     public function getExpensesTotalAttribute(): float
     {
-        if($this->relationLoaded('expenses')) return (float) $this->expenses->sum('total');
-        if(is_array($this->expenses_json)){
+        if ($this->relationLoaded('expenses'))
+            return (float) $this->expenses->sum('total');
+        if (is_array($this->expenses_json)) {
             return (float) array_sum(array_map(fn($row) => (float) ($row['total'] ?? 0), $this->expenses_json));
         }
         return (float) $this->expenses()->sum('total');

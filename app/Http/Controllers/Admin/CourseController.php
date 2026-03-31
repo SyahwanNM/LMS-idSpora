@@ -17,23 +17,14 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Str;
 use App\Models\Category;
+use App\Models\TrainerNotification;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
-    private function ensureCoursePublishedForPublic(?\Illuminate\Contracts\Auth\Authenticatable $user, Course $course): void
-    {
-        $isAdmin = $user && (($user->role ?? null) === 'admin');
-        if ($isAdmin) {
-            return;
-        }
-
-        if (((string) ($course->status ?? '')) !== 'active') {
-            abort(404);
-        }
-    }
-
     /**
      * Show the payment page for a course.
      */
@@ -267,10 +258,13 @@ class CourseController extends Controller
             $pathOut = @shell_exec($where);
             if ($pathOut) {
                 foreach (preg_split('/\r?\n/', trim($pathOut)) as $candidate) {
-                    if ($candidate !== '') { $bins[] = $candidate; }
+                    if ($candidate !== '') {
+                        $bins[] = $candidate;
+                    }
                 }
             }
-        } catch (\Throwable $e) { /* ignore */ }
+        } catch (\Throwable $e) { /* ignore */
+        }
         // Common installs
         $bins = array_merge($bins, [
             'ffprobe',
@@ -290,7 +284,8 @@ class CourseController extends Controller
                     $out = trim($out);
                     if ($out !== '') {
                         $seconds = (int) round((float) $out);
-                        if ($seconds > 0) return $seconds;
+                        if ($seconds > 0)
+                            return $seconds;
                     }
                 }
             } catch (\Throwable $e) {
@@ -544,6 +539,12 @@ class CourseController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -606,6 +607,7 @@ class CourseController extends Controller
         $course = Course::create([
             'name' => $request->name,
             'category_id' => $request->category_id,
+            'trainer_id' => $request->input('trainer_id') ?: null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
             'status' => $request->status,
@@ -621,17 +623,21 @@ class CourseController extends Controller
             'expenses_json' => $expensesJson,
         ]);
 
+        if (!empty($course->trainer_id)) {
+            $this->notifyTrainerCourseInvitation($course, (int) $course->trainer_id);
+        }
+
         // Create modules from payload
         $modulesPayload = json_decode($request->input('modules_payload', '[]'), true);
         if (is_array($modulesPayload) && !empty($modulesPayload)) {
             $uploaded = $request->file('module_files', []);
             foreach ($modulesPayload as $idx => $m) {
-                $title = is_string($m['title'] ?? null) ? $m['title'] : ('Module '.($idx+1));
-                $type = in_array(($m['type'] ?? 'video'), ['video','pdf','quiz']) ? $m['type'] : 'video';
-                $order = (int)($m['order'] ?? ($idx+1));
+                $title = is_string($m['title'] ?? null) ? $m['title'] : ('Module ' . ($idx + 1));
+                $type = in_array(($m['type'] ?? 'video'), ['video', 'pdf', 'quiz']) ? $m['type'] : 'video';
+                $order = (int) ($m['order'] ?? ($idx + 1));
                 $desc = is_string($m['subtitle'] ?? null) ? $m['subtitle'] : null;
-                $filename = is_string($m['filename'] ?? null) ? $m['filename'] : (Str::slug($title).'.dat');
-                $contentUrl = 'uploads/modules/'.$filename;
+                $filename = is_string($m['filename'] ?? null) ? $m['filename'] : (Str::slug($title) . '.dat');
+                $contentUrl = 'uploads/modules/' . $filename;
                 $uid = $m['uid'] ?? null;
                 $fileNameMeta = $filename;
                 $mimeMeta = null;
@@ -647,11 +653,13 @@ class CourseController extends Controller
                     $fileNameMeta = $file->getClientOriginalName() ?: $fileNameMeta;
                     $mimeMeta = $file->getMimeType();
                     $sizeMeta = (int) $file->getSize();
-                    
+
                     if ($type === 'video') {
                         $abs = Storage::disk('public')->path($storedPath);
                         $dur = $this->probeVideoDurationSeconds($abs);
-                        if (is_int($dur) && $dur > 0) { $durationSeconds = $dur; }
+                        if (is_int($dur) && $dur > 0) {
+                            $durationSeconds = $dur;
+                        }
                     }
                 }
                 $currMod = CourseModule::create([
@@ -683,11 +691,12 @@ class CourseController extends Controller
                                     'order_no' => $qIdx + 1,
                                     'points' => 10,
                                 ]);
-                                
+
                                 $options = $q['options'] ?? [];
                                 $correctIdx = $q['correctIndex'] ?? -1;
                                 foreach ($options as $oIdx => $oText) {
-                                    if(trim($oText) === '') continue;
+                                    if (trim($oText) === '')
+                                        continue;
                                     QuizAnswer::create([
                                         'quiz_question_id' => $quizQ->id,
                                         'answer_text' => $oText,
@@ -714,6 +723,8 @@ class CourseController extends Controller
 
     public function update(Request $request, Course $course)
     {
+        $previousTrainerId = (int) ($course->trainer_id ?? 0);
+
         $delIdsRaw = $request->input('modules_delete_ids');
         if (is_array($delIdsRaw)) {
             $request->merge(['modules_delete_ids' => implode(',', $delIdsRaw)]);
@@ -731,6 +742,12 @@ class CourseController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -774,36 +791,6 @@ class CourseController extends Controller
             'discount_end' => $request->discount_end,
         ];
 
-        if ($request->has('expenses')) {
-            $expensesInput = $request->input('expenses');
-            $expensesJson = null;
-            if (is_array($expensesInput)) {
-                $normalized = [];
-                foreach ($expensesInput as $row) {
-                    if (!is_array($row)) {
-                        continue;
-                    }
-                    $item = trim((string)($row['item'] ?? ''));
-                    $qty = (int)($row['quantity'] ?? 0);
-                    $unit = (int)($row['unit_price'] ?? 0);
-                    if ($item === '' && $qty === 0 && $unit === 0) {
-                        continue;
-                    }
-                    $qty = max(0, $qty);
-                    $unit = max(0, $unit);
-                    $total = max(0, $qty * $unit);
-                    $normalized[] = [
-                        'item' => $item,
-                        'quantity' => $qty,
-                        'unit_price' => $unit,
-                        'total' => $total,
-                    ];
-                }
-                $expensesJson = !empty($normalized) ? $normalized : null;
-            }
-            $data['expenses_json'] = $expensesJson;
-        }
-
         if ($request->hasFile('card_thumbnail')) {
             if ($course->card_thumbnail && Storage::disk('public')->exists($course->card_thumbnail)) {
                 Storage::disk('public')->delete($course->card_thumbnail);
@@ -825,8 +812,13 @@ class CourseController extends Controller
 
         $course->update($data);
 
+        $currentTrainerId = (int) ($course->trainer_id ?? 0);
+        if ($currentTrainerId > 0 && $currentTrainerId !== $previousTrainerId) {
+            $this->notifyTrainerCourseInvitation($course, $currentTrainerId);
+        }
+
         $deleteIdsCsv = (string) $request->input('modules_delete_ids', '');
-        $deleteIds = collect(preg_split('/[,\s]+/', trim($deleteIdsCsv)))->filter()->map(fn($v)=> (int)$v)->all();
+        $deleteIds = collect(preg_split('/[,\s]+/', trim($deleteIdsCsv)))->filter()->map(fn($v) => (int) $v)->all();
         if (!empty($deleteIds)) {
             $modulesToDelete = CourseModule::where('course_id', $course->id)->whereIn('id', $deleteIds)->get();
             foreach ($modulesToDelete as $mod) {
@@ -854,16 +846,16 @@ class CourseController extends Controller
 
         $modulesPayloadInput = $request->input('modules_payload_new', '[]');
         $modulesPayload = is_array($modulesPayloadInput) ? $modulesPayloadInput : json_decode($modulesPayloadInput, true);
-        
+
         if (is_array($modulesPayload) && !empty($modulesPayload)) {
             $uploaded = $request->file('module_files', []);
             foreach ($modulesPayload as $idx => $m) {
-                $title = is_string($m['title'] ?? null) ? $m['title'] : ('Module '.($idx+1));
-                $type = in_array(($m['type'] ?? 'video'), ['video','pdf','quiz']) ? $m['type'] : 'video';
-                $order = (int)($m['order'] ?? ($idx+1));
+                $title = is_string($m['title'] ?? null) ? $m['title'] : ('Module ' . ($idx + 1));
+                $type = in_array(($m['type'] ?? 'video'), ['video', 'pdf', 'quiz']) ? $m['type'] : 'video';
+                $order = (int) ($m['order'] ?? ($idx + 1));
                 $desc = is_string($m['subtitle'] ?? null) ? $m['subtitle'] : null;
-                $filename = is_string($m['filename'] ?? null) ? $m['filename'] : (Str::slug($title).'.dat');
-                $contentUrl = 'uploads/modules/'.$filename;
+                $filename = is_string($m['filename'] ?? null) ? $m['filename'] : (Str::slug($title) . '.dat');
+                $contentUrl = 'uploads/modules/' . $filename;
                 $uid = $m['uid'] ?? null;
                 $fileNameMeta = $filename;
                 $mimeMeta = null;
@@ -873,14 +865,18 @@ class CourseController extends Controller
                 if ($uid && is_array($uploaded) && array_key_exists($uid, $uploaded) && $uploaded[$uid]) {
                     $file = $uploaded[$uid];
                     $storedPath = $file->store("courses/{$course->id}/modules", 'public');
-                    if ($storedPath) { $contentUrl = $storedPath; }
+                    if ($storedPath) {
+                        $contentUrl = $storedPath;
+                    }
                     $fileNameMeta = $file->getClientOriginalName() ?: $fileNameMeta;
                     $mimeMeta = $file->getMimeType();
                     $sizeMeta = (int) $file->getSize();
                     if ($type === 'video') {
                         $abs = Storage::disk('public')->path($storedPath);
                         $dur = $this->probeVideoDurationSeconds($abs);
-                        if (is_int($dur) && $dur > 0) { $durationSeconds = $dur; }
+                        if (is_int($dur) && $dur > 0) {
+                            $durationSeconds = $dur;
+                        }
                     }
                 }
                 $currMod = CourseModule::create([
@@ -912,11 +908,12 @@ class CourseController extends Controller
                                     'order_no' => $qIdx + 1,
                                     'points' => 10,
                                 ]);
-                                
+
                                 $options = $q['options'] ?? [];
                                 $correctIdx = $q['correctIndex'] ?? -1;
                                 foreach ($options as $oIdx => $oText) {
-                                    if(trim($oText) === '') continue;
+                                    if (trim($oText) === '')
+                                        continue;
                                     QuizAnswer::create([
                                         'quiz_question_id' => $quizQ->id,
                                         'answer_text' => $oText,
