@@ -197,13 +197,15 @@
 
         <main class="trainer-main">
             <div class="queue-hero">
-                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3" style="position: relative; z-index: 2;">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3"
+                    style="position: relative; z-index: 2;">
                     <div>
                         <h1 class="mb-2" style="font-size: 2.2rem; font-weight: 900;">
                             <i class="bi bi-award-fill me-2"></i>Antrian Sertifikat Trainer
                         </h1>
                         <p class="mb-0" style="opacity: .88; max-width: 760px;">
-                            Daftar trainer yang punya kelas/event <b>selesai</b> tetapi sertifikatnya belum diterbitkan/dikirim.
+                            Daftar trainer yang punya kelas/event <b>selesai</b> tetapi sertifikatnya belum
+                            diterbitkan/dikirim.
                             Pilih trainer untuk lanjut ke halaman penerbitan/kirim sertifikat.
                         </p>
                     </div>
@@ -238,18 +240,19 @@
                                             <div class="small text-muted">{{ $t->email }}</div>
                                         </td>
                                         <td>
-                                            <span class="badge-pending">{{ (int) ($t->pending_events_certificates ?? 0) }}</span>
+                                            <span
+                                                class="badge-pending">{{ (int) ($t->pending_events_certificates ?? 0) }}</span>
                                         </td>
                                         <td>
-                                            <span class="badge-pending">{{ (int) ($t->pending_courses_certificates ?? 0) }}</span>
+                                            <span
+                                                class="badge-pending">{{ (int) ($t->pending_courses_certificates ?? 0) }}</span>
                                         </td>
                                         <td>
                                             <span class="badge-pending">{{ (int) ($t->pending_certificates_count ?? 0) }}</span>
                                         </td>
                                         <td class="text-end">
                                             <a href="{{ route('admin.trainer.certificates.send.form', $t) }}"
-                                                class="btn btn-primary btn-sm"
-                                                style="border-radius: 12px; font-weight: 700;">
+                                                class="btn btn-primary btn-sm" style="border-radius: 12px; font-weight: 700;">
                                                 Kirim Sertif
                                             </a>
                                         </td>
@@ -275,4 +278,3 @@
         </main>
     </div>
 @endsection
-
