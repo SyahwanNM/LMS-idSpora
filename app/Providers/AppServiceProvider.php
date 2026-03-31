@@ -12,6 +12,7 @@ use App\Models\ActivityLog;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UserNotification;
+use App\Models\TrainerNotification;
 use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,9 +35,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Relation::morphMap([
-        'course' => \App\Models\Course::class,
-        'event' => \App\Models\Event::class,
-    ]);
+            'course' => \App\Models\Course::class,
+            'event' => \App\Models\Event::class,
+        ]);
         // Register middleware to protect user pages with app-level maintenance
         try {
             $router = $this->app->make(Router::class);
@@ -54,7 +55,8 @@ class AppServiceProvider extends ServiceProvider
                         'action' => 'Login',
                         'description' => 'Login (event)'
                     ]);
-                } catch (\Throwable $e) { /* swallow */ }
+                } catch (\Throwable $e) { /* swallow */
+                }
             });
             Event::listen(Logout::class, function (Logout $event) {
                 try {
@@ -63,7 +65,8 @@ class AppServiceProvider extends ServiceProvider
                         'action' => 'Logout',
                         'description' => 'Logout (event)'
                     ]);
-                } catch (\Throwable $e) { /* swallow */ }
+                } catch (\Throwable $e) { /* swallow */
+                }
             });
         } catch (\Throwable $_e) {
             // ignore if event dispatcher not ready
@@ -84,7 +87,26 @@ class AppServiceProvider extends ServiceProvider
                 $unreadNotificationCount = 0;
             }
             $view->with('notifications', $notifications)
-                 ->with('unreadNotificationCount', $unreadNotificationCount);
+                ->with('unreadNotificationCount', $unreadNotificationCount);
+        });
+
+        View::composer('trainer.partials.navbar', function ($view) {
+            if (Auth::check()) {
+                $trainerNotifications = TrainerNotification::where('trainer_id', Auth::id())
+                    ->orderBy('created_at', 'desc')
+                    ->take(10)
+                    ->get();
+
+                $trainerUnreadNotificationCount = TrainerNotification::where('trainer_id', Auth::id())
+                    ->whereNull('read_at')
+                    ->count();
+            } else {
+                $trainerNotifications = collect();
+                $trainerUnreadNotificationCount = 0;
+            }
+
+            $view->with('trainerNotifications', $trainerNotifications)
+                ->with('trainerUnreadNotificationCount', $trainerUnreadNotificationCount);
         });
     }
 }

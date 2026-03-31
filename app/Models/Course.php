@@ -9,6 +9,7 @@ class Course extends Model
     protected $fillable = [
         'name',
         'category_id',
+        'trainer_id',
         'description',
         'level',
         'status',
@@ -21,18 +22,35 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
-        'expenses_json',
+        'user_id',
+        'rejection_reason',
+        'approved_at',
+        'rejected_at',
+        'approved_by',
     ];
 
     protected $casts = [
-        'expenses_json' => 'array',
-        'discount_start' => 'date',
-        'discount_end' => 'date',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'discount_start' => 'datetime',
+        'discount_end' => 'datetime',
+        'expenses_json',
     ];
+
+    // protected $casts = [
+    //     'expenses_json' => 'array',
+    //     'discount_start' => 'date',
+    //     'discount_end' => 'date',
+    // ];
 
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function trainer()
+    {
+        return $this->belongsTo(User::class, 'trainer_id');
     }
 
     public function modules()
@@ -69,5 +87,13 @@ class Course extends Model
     public function manualPayments()
     {
         return $this->hasMany(\App\Models\ManualPayment::class);
+    }
+
+    /**
+     * Approver relation (admin who approved/rejected)
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

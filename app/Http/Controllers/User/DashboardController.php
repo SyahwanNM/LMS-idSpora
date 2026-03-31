@@ -19,9 +19,17 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Redirect admin users to admin dashboard just in case route protection misses
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+        // Route authenticated users to their role dashboard to avoid landing mismatch.
+        if (Auth::check()) {
+            $role = strtolower(trim((string) (Auth::user()->role ?? '')));
+
+            if ($role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($role === 'trainer') {
+                return redirect()->route('trainer.dashboard');
+            }
         }
 
         // Upcoming events: tampilkan event yang baru DITAMBAHKAN (created_at terbaru) di paling kiri.
@@ -52,7 +60,7 @@ class DashboardController extends Controller
                 ->pluck('event_id')
                 ->all();
 
-            $upcomingEvents->transform(function($ev) use ($registeredIds, $savedIds) {
+            $upcomingEvents->transform(function ($ev) use ($registeredIds, $savedIds) {
                 $ev->is_registered = in_array($ev->id, $registeredIds, true);
                 $ev->is_saved = in_array($ev->id, $savedIds, true);
                 return $ev;
@@ -84,7 +92,7 @@ class DashboardController extends Controller
             ->where('user_id', Auth::id())
             ->where('status', 'active')
             ->with('event')
-            ->whereHas('event', function($q) {
+            ->whereHas('event', function ($q) {
                 $q->where('event_date', '>=', now()->startOfDay());
             })
             ->get()
@@ -150,7 +158,13 @@ class DashboardController extends Controller
                 ->get();
 
             $dayMap = [
-                1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 0 => 'Min'
+                1 => 'Sen',
+                2 => 'Sel',
+                3 => 'Rab',
+                4 => 'Kam',
+                5 => 'Jum',
+                6 => 'Sab',
+                0 => 'Min'
             ];
 
             foreach ($learningProgress as $record) {

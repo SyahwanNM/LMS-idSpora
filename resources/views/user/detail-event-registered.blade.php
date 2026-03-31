@@ -889,7 +889,7 @@
                         <p>@if(!empty($event->vbg_path) && $isRegistered) Download your event background @else Not available @endif</p>
                     </div>
                     @if(!empty($event->vbg_path) && $isRegistered)
-                        <a class="link-share" href="{{ Storage::url($event->vbg_path) }}" download>
+                        <a class="link-share" href="{{ $event->vbg_file_url }}" download>
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
                                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
                                 <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>

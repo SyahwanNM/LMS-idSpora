@@ -1,0 +1,480 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Course;
+use App\Models\CourseModule;
+use App\Models\Event;
+use App\Models\TrainerNotification;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+class MaterialApprovalController extends Controller
+{
+    private function buildDeadlineMonitoring(Collection $materials): array
+    {
+        if ($materials->isEmpty()) {
+            return [];
+        }
+
+        $trainerIds = $materials->pluck('trainer_id')->filter()->unique()->values();
+        if ($trainerIds->isEmpty()) {
+            return [];
+        }
+
+        $courseIds = $materials->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+
+        $notifications = TrainerNotification::query()
+            ->where('type', 'course_invitation')
+            ->whereIn('trainer_id', $trainerIds)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $map = [];
+        foreach ($materials as $material) {
+            $map[$material->id] = [
+                'has_deadline' => false,
+                'deadline_text' => 'Belum ditentukan',
+                'status' => 'neutral',
+                'status_text' => 'Tanpa deadline',
+            ];
+
+            if (empty($material->trainer_id)) {
+                continue;
+            }
+
+            $invite = $notifications->first(function (TrainerNotification $notification) use ($material, $courseIds) {
+                if ((int) $notification->trainer_id !== (int) $material->trainer_id) {
+                    return false;
+                }
+                $entityType = (string) data_get($notification->data, 'entity_type');
+                $entityId = (int) data_get($notification->data, 'entity_id');
+
+                return $entityType === 'course' && $entityId === (int) $material->id && in_array($entityId, $courseIds, true);
+            });
+
+            if (!$invite) {
+                continue;
+            }
+
+            $dueAtRaw = data_get($invite->data, 'due_at');
+            if (empty($dueAtRaw)) {
+                continue;
+            }
+
+            try {
+                $dueAt = Carbon::parse($dueAtRaw);
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $submittedAt = $material->updated_at ? Carbon::parse($material->updated_at) : null;
+            $isLate = $submittedAt ? $submittedAt->gt($dueAt) : Carbon::now()->gt($dueAt);
+
+            $map[$material->id] = [
+                'has_deadline' => true,
+                'deadline_text' => $dueAt->format('d M Y H:i'),
+                'status' => $isLate ? 'late' : 'on_time',
+                'status_text' => $isLate ? 'Melewati deadline' : 'Tepat waktu',
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * Display queue of materials pending review
+     */
+    public function index(Request $request)
+    {
+        $query = Course::with(['trainer', 'category', 'modules'])
+            ->where('status', 'pending_review')
+            ->withCount('modules');
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Sort functionality
+        $sort = $request->get('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            default: // newest
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $candidateMaterials = (clone $query)
+                ->get(['id', 'trainer_id', 'updated_at']);
+
+            $candidateMonitoring = $this->buildDeadlineMonitoring($candidateMaterials);
+
+            $matchedIds = $candidateMaterials
+                ->filter(function (Course $material) use ($candidateMonitoring, $deadlineFilter) {
+                    $monitor = $candidateMonitoring[$material->id] ?? null;
+                    $status = (string) ($monitor['status'] ?? 'neutral');
+
+                    return match ($deadlineFilter) {
+                        'overdue' => $status === 'late',
+                        'on_time' => $status === 'on_time',
+                        'no_deadline' => $status === 'neutral',
+                        default => true,
+                    };
+                })
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            if (empty($matchedIds)) {
+                $query->whereRaw('1=0');
+            } else {
+                $query->whereIn('id', $matchedIds);
+            }
+        }
+
+        $pendingMaterials = $query->paginate(15);
+
+        $pendingEventModulesQuery = Event::query()
+            ->with(['trainer:id,name,email,avatar'])
+            ->whereNotNull('module_submission_path')
+            ->whereNull('module_path');
+
+        if ($request->filled('search')) {
+            $search = (string) $request->search;
+            $pendingEventModulesQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $pendingEventModules = $pendingEventModulesQuery
+            ->orderByDesc('module_submitted_at')
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'trainer_id',
+                'title',
+                'jenis',
+                'event_date',
+                'module_submission_path',
+                'module_submitted_at',
+                'module_rejected_at',
+                'module_rejection_reason',
+            ]);
+
+        // Statistics
+        $totalPending = Course::where('status', 'pending_review')->count()
+            + Event::query()->whereNotNull('module_submission_path')->whereNull('module_path')->count();
+        $totalApproved = Course::where('status', 'approved')->count()
+            + Event::query()->whereNotNull('module_path')->count();
+        $totalRejected = Course::where('status', 'rejected')->count()
+            + Event::query()->whereNotNull('module_rejected_at')->whereNull('module_path')->count();
+
+        $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
+
+        return view('admin.material.approvals', compact(
+            'pendingMaterials',
+            'pendingEventModules',
+            'totalPending',
+            'totalApproved',
+            'totalRejected',
+            'deadlineMonitoring',
+            'deadlineFilter'
+        ));
+    }
+
+    /**
+     * Display specific material for review with preview
+     */
+    public function show(Course $material)
+    {
+        // Load relationships
+        $material->load([
+            'trainer',
+            'category',
+            'modules.quizQuestions',
+            'modules.quizQuestions.answers',
+            'reviews'
+        ]);
+
+        return view('admin.material.show', compact('material'));
+    }
+
+    /**
+     * Stream module file for admin review (inline) or download.
+     */
+    public function streamModule(Request $request, Course $material, CourseModule $module)
+    {
+        if ((int) $module->course_id !== (int) $material->id) {
+            abort(404, 'Modul tidak ditemukan pada materi ini.');
+        }
+
+        if ($module->isQuiz()) {
+            abort(404, 'Modul kuis tidak memiliki file untuk dipreview.');
+        }
+
+        $contentPath = trim((string) ($module->content_url ?? ''));
+        if ($contentPath === '' || $contentPath === 'quiz_submitted') {
+            abort(404, 'File modul tidak tersedia.');
+        }
+
+        if (str_starts_with($contentPath, 'storage/')) {
+            $contentPath = ltrim(substr($contentPath, 8), '/');
+        }
+
+        $contentPath = ltrim($contentPath, '/');
+
+        if (!Storage::disk('public')->exists($contentPath)) {
+            abort(404, 'File modul tidak ditemukan di storage.');
+        }
+
+        $absolutePath = Storage::disk('public')->path($contentPath);
+        $downloadName = $module->file_name ?: basename($contentPath);
+        $detectedMime = @mime_content_type($absolutePath);
+        $mime = (string) ($module->mime_type ?: $detectedMime ?: 'application/octet-stream');
+
+        if ($request->boolean('download')) {
+            return response()->download($absolutePath, $downloadName, [
+                'Content-Type' => $mime,
+            ]);
+        }
+
+        return response()->file($absolutePath, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        ]);
+    }
+
+    /**
+     * Approve material
+     */
+    public function approve(Course $material)
+    {
+        $material->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => Auth::id(),
+            'rejection_reason' => null,
+            'rejected_at' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.material.approvals')
+            ->with('success', "Materi \"{$material->name}\" berhasil disetujui dan dipublikasikan!");
+    }
+
+    /**
+     * Reject material with reason
+     */
+    public function reject(Request $request, Course $material)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000',
+        ], [
+            'rejection_reason.required' => 'Alasan penolakan wajib diisi.',
+            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.',
+            'rejection_reason.max' => 'Alasan penolakan maksimal 1000 karakter.',
+        ]);
+
+        $material->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->rejection_reason,
+            'rejected_at' => now(),
+            'approved_by' => Auth::id(), // Track who rejected it
+        ]);
+
+        return redirect()
+            ->route('admin.material.approvals')
+            ->with('success', "Materi \"{$material->name}\" ditolak dan catatan revisi telah dikirim ke trainer.");
+    }
+
+    /**
+     * Show all approved materials
+     */
+    public function approved(Request $request)
+    {
+        $query = Course::with(['trainer', 'category'])
+            ->where('status', 'approved')
+            ->withCount('modules');
+
+        $approvedEventModulesQuery = Event::query()
+            ->with(['trainer:id,name,email,avatar'])
+            ->whereNotNull('module_path');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+
+            $approvedEventModulesQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $candidateMaterials = (clone $query)
+                ->get(['id', 'trainer_id', 'updated_at']);
+
+            $candidateMonitoring = $this->buildDeadlineMonitoring($candidateMaterials);
+
+            $matchedIds = $candidateMaterials
+                ->filter(function (Course $material) use ($candidateMonitoring, $deadlineFilter) {
+                    $monitor = $candidateMonitoring[$material->id] ?? null;
+                    $status = (string) ($monitor['status'] ?? 'neutral');
+
+                    return match ($deadlineFilter) {
+                        'overdue' => $status === 'late',
+                        'on_time' => $status === 'on_time',
+                        'no_deadline' => $status === 'neutral',
+                        default => true,
+                    };
+                })
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            if (empty($matchedIds)) {
+                $query->whereRaw('1=0');
+            } else {
+                $query->whereIn('id', $matchedIds);
+            }
+        }
+
+        $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
+
+        $approvedEventModules = $approvedEventModulesQuery
+            ->orderByDesc('module_verified_at')
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'trainer_id',
+                'title',
+                'jenis',
+                'event_date',
+                'module_path',
+                'module_verified_at',
+            ]);
+
+        $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
+
+        return view('admin.material.approved', compact('approvedMaterials', 'approvedEventModules', 'deadlineMonitoring', 'deadlineFilter'));
+    }
+
+    /**
+     * Show all rejected materials
+     */
+    public function rejected(Request $request)
+    {
+        $query = Course::with(['trainer', 'category'])
+            ->where('status', 'rejected')
+            ->withCount('modules');
+
+        $rejectedEventModulesQuery = Event::query()
+            ->with(['trainer:id,name,email,avatar'])
+            ->whereNotNull('module_rejected_at')
+            ->whereNull('module_path');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+
+            $rejectedEventModulesQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $candidateMaterials = (clone $query)
+                ->get(['id', 'trainer_id', 'updated_at']);
+
+            $candidateMonitoring = $this->buildDeadlineMonitoring($candidateMaterials);
+
+            $matchedIds = $candidateMaterials
+                ->filter(function (Course $material) use ($candidateMonitoring, $deadlineFilter) {
+                    $monitor = $candidateMonitoring[$material->id] ?? null;
+                    $status = (string) ($monitor['status'] ?? 'neutral');
+
+                    return match ($deadlineFilter) {
+                        'overdue' => $status === 'late',
+                        'on_time' => $status === 'on_time',
+                        'no_deadline' => $status === 'neutral',
+                        default => true,
+                    };
+                })
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            if (empty($matchedIds)) {
+                $query->whereRaw('1=0');
+            } else {
+                $query->whereIn('id', $matchedIds);
+            }
+        }
+
+        $rejectedMaterials = $query->orderBy('rejected_at', 'desc')->paginate(15);
+
+        $rejectedEventModules = $rejectedEventModulesQuery
+            ->orderByDesc('module_rejected_at')
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'trainer_id',
+                'title',
+                'jenis',
+                'event_date',
+                'module_submission_path',
+                'module_rejected_at',
+                'module_rejection_reason',
+            ]);
+
+        $deadlineMonitoring = $this->buildDeadlineMonitoring($rejectedMaterials->getCollection());
+
+        return view('admin.material.rejected', compact('rejectedMaterials', 'rejectedEventModules', 'deadlineMonitoring', 'deadlineFilter'));
+    }
+}
+

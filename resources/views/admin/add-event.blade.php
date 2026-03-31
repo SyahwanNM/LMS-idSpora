@@ -132,7 +132,7 @@
                                             <span class="manage-action-ribbon-thumb manage-action-{{ $event->manage_action }}">{{ strtoupper($event->manage_action) }}</span>
                                         @endif
                                         @if($event->image)
-                                            <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" class="img-thumbnail" style="max-width:90px;height:60px;object-fit:cover;">
+                                            <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="img-thumbnail" style="max-width:90px;height:60px;object-fit:cover;">
                                         @else
                                             <span class="badge bg-secondary">No Image</span>
                                         @endif
@@ -199,7 +199,7 @@
                                             title="Hapus"
                                             data-url="{{ route('admin.events.destroy',$event) }}"
                                             data-title="{{ $event->title }}"
-                                            data-image="{{ $event->image ? Storage::url($event->image) : '' }}">
+                                            data-image="{{ $event->image_url ?? '' }}">
                                             <i class="bi bi-trash"></i><span class="visually-hidden">Hapus</span>
                                         </button>
                                     </div>
@@ -326,13 +326,13 @@
                                             @if($hasVbg)
                                                 @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
                                                 @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->vbg_path) }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
                                                     </a>
                                                 @elseif($vExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                 @else
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
                                                 @endif
                                             @else
                                                 <span class="text-muted">Belum ada</span>
@@ -368,7 +368,7 @@
                                         </span>
                                         <span>
                                             @if($hasModule)
-                                                <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                                <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
                                                 <span class="text-muted">Belum ada</span>
                                             @endif
@@ -393,8 +393,8 @@
                                                         <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
                                                     @endif
                                                 @elseif($hasAbsQrImg)
-                                                    <a href="{{ Storage::url($event->attendance_qr_image) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->attendance_qr_image) }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
+                                                    <a href="{{ $event->attendance_qr_image_url }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                     </a>
                                                 @else
                                                     <span class="badge bg-success">QR Absensi Aktif</span>

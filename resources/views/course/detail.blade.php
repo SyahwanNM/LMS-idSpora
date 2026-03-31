@@ -3,6 +3,7 @@
 <html lang="en">
 
 
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,8 @@
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -145,13 +148,18 @@
     max-width: 100%;
     border-radius: 20px;
     margin: 0;
+    margin: 0;
     padding: 0;
+    border: 1px solid #E4E4E6;
+    overflow: hidden;
     border: 1px solid #E4E4E6;
     overflow: hidden;
   }
 
   .content-description-title {
     display: flex;
+    background: #EAEAEA;
+    padding: 0;
     background: #EAEAEA;
     padding: 0;
     border-top-left-radius: 20px;
@@ -504,6 +512,433 @@
 
     .kanan {
       padding: 24px 18px;
+    }
+  }
+
+  .video-container img {
+    width: 100%;
+    display: block;
+    border-radius: 20px;
+  }
+
+  /* Custom styles for Syllabus dropdowns */
+  .syllabus-dropdown-item {
+    background-color: var(--white);
+    border: 1px solid #E4E4E6;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    /* Spacing between dropdowns */
+    overflow: hidden;
+  }
+
+  .syllabus-dropdown-item details {
+    padding: 15px 20px;
+  }
+
+  .syllabus-dropdown-item summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 18px;
+    cursor: pointer;
+    outline: none;
+    position: relative;
+    list-style: none;
+    /* Hide default marker */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker,
+  .syllabus-dropdown-item summary::marker {
+    display: none;
+    /* Hide default marker for webkit and standard browsers */
+  }
+
+
+  .syllabus-dropdown-item summary::after {
+    content: '\f282';
+    /* Bootstrap Icons chevron-down */
+    font-family: "bootstrap-icons" !important;
+    font-size: 1.2em;
+    transition: transform 0.3s ease;
+    color: #333;
+  }
+
+  .syllabus-dropdown-item details[open] summary::after {
+    transform: rotate(180deg);
+    /* Rotate arrow up when open */
+  }
+
+  .syllabus-dropdown-item ul {
+    list-style: none;
+    padding: 10px 0 0 0;
+    margin: 0;
+    border-top: 1px solid #EAEAEA;
+    margin-top: 15px;
+  }
+
+  .syllabus-dropdown-item ul li {
+    padding: 8px 0;
+    font-size: 16px;
+    color: #333;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .syllabus-dropdown-item ul li::before {
+    content: counter(lesson-counter);
+    counter-increment: lesson-counter;
+    font-weight: 500;
+    min-width: 20px;
+    text-align: right;
+    color: var(--secondary);
+  }
+
+  .review-card {
+    border: 1.5px solid #E4E4E6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .review-card h4 {
+    margin-top: 0;
+    margin-bottom: 4px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .star-rating {
+    color: #F4C430;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .review-card p {
+    margin-bottom: 0;
+    color: #333;
+    line-height: 1.5;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px 15px;
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+    text-align: center;
+  }
+
+  .tab-btn:not(:first-child) {
+    border-left: 1px solid #D8D8D8;
+  }
+
+  .tab-btn.active {
+    color: var(--secondary);
+    font-weight: 600;
+    background: rgba(237, 227, 199, 0.4);
+  }
+
+  .tab-content {
+    display: none;
+    padding: 20px;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .comments form {
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    /* jarak antara textarea & button */
+  }
+
+  .textarea {
+    margin-bottom: 30px;
+  }
+
+  .kanan {
+    border: solid #f4c430 2px;
+    padding: 40px 27px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+    flex: 1.5;
+    max-width: 400px;
+  }
+
+  .price-text {
+    color: #000;
+  }
+
+  .text-danger {
+    width: 100%;
+    margin: 0;
+  }
+
+  .diskon {
+    background-color: #252346;
+    color: #f4c430;
+    padding: 10px;
+  }
+
+  .info-box {
+    margin-top: 20px;
+    padding: 14px 16px;
+
+  }
+
+  .info-box>div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+  }
+
+  .info-box>div p:last-of-type {
+    margin-left: auto;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .info-box svg {
+    flex: 0 0 20px;
+  }
+
+  .info-box p {
+    margin: 0 0 0 10px;
+  }
+
+  .time-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .time-alert svg {
+    flex: 0 0 auto;
+  }
+
+  .time-alert .ikon {
+    margin-top: 0;
+  }
+
+  .time-alert p {
+    margin: 0;
+    flex: 1 1 auto;
+    white-space: nowrap;
+  }
+
+  .time-alert .diskon {
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  .box-diskon {
+    display: block;
+  }
+
+  .date {
+    display: flex;
+  }
+
+  .date-judul {
+    margin-left: 10px;
+  }
+
+  .date-text {
+    margin-left: 118px;
+    color: #6c6c6c;
+  }
+
+  .ikon {
+    margin-top: 5px;
+  }
+
+  .time {
+    display: flex;
+  }
+
+  .time-judul {
+    margin-left: 10px;
+  }
+
+  .time-text {
+    margin-left: 140px;
+    color: #6c6c6c;
+  }
+
+  .location {
+    display: flex;
+  }
+
+  .location-judul {
+    margin-left: 10px;
+  }
+
+  .location-text {
+    margin-left: 185px;
+    color: #6c6c6c;
+  }
+
+  .bahasa {
+    display: flex;
+  }
+
+  .bahasa-judul {
+    margin-left: 10px;
+  }
+
+  .bahasa-text {
+    margin-left: 197px;
+    color: #6c6c6c;
+  }
+
+  .sertifikat {
+    display: flex;
+  }
+
+  .sertifikat-judul {
+    margin-left: 10px;
+  }
+
+  .sertifikat-text {
+    margin-left: 220px;
+    color: #6c6c6c;
+  }
+
+  .enroll {
+    background-color: #f4c430;
+    border: none;
+    margin-top: 20px;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .save {
+    background-color: #252346;
+    color: white;
+    margin-top: 10px;
+    border: none;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .note {
+    color: #6c6c6c;
+    margin-top: 10px;
+    font-size: medium;
+    margin-bottom: 30px;
+  }
+
+  .box-benefit {
+    margin-top: 20px;
+    padding: 16px;
+  }
+
+  .box-benefit h4 {
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .box-benefit>div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .box-benefit svg {
+    flex: 0 0 24px;
+    height: 20px;
+    width: 20px;
+    color: var(--secondary);
+  }
+
+  .box-benefit p {
+    margin: 0;
+    color: var(--black);
+    font-size: 16px;
+  }
+
+  .share-box {
+    overflow: hidden;
+  }
+
+  .share-title {
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 20px;
+    color: #111827;
+  }
+
+  .box-copy {
+    background: #e6e7e8ff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: transparent;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #4E5566;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .copy-btn:hover {
+    background: rgba(0, 0, 0, .05);
+  }
+
+  .share-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+  }
+
+  .share-ico i,
+  .copy-btn i {
+    font-size: 22px;
+    line-height: 1;
+    color: #4E5566;
+    z-index: 1;
+  }
+
+  .share-ico:hover {
+    color: #111827;
+  }
+
+  .main-col>*+* {
+    margin-top: 20px;
+  }
+
+  @media (max-width: 992px) {
+    .course-body {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar .kanan {
+      position: static;
     }
   }
 
@@ -1078,6 +1513,7 @@
     </aside>
   </section>
 
+  <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script>
     function copyLink(url) {
