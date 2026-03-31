@@ -600,6 +600,10 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');
 
     Route::get('/events', [TrainerController::class, 'events'])->name('events');
+    // Upload module khusus event (pending verifikasi admin)
+    Route::get('/events/modules', [TrainerEventModuleController::class, 'index'])->name('events.modules');
+    Route::get('/api/event-modules', [TrainerEventModuleController::class, 'apiIndex'])->name('api.event-modules');
+    Route::post('/events/{event}/module', [TrainerEventModuleController::class, 'upload'])->name('events.module.upload');
     Route::get('/events/{id}', [TrainerController::class, 'eventDetail'])->name('events.show');
     Route::get('/feedback', [TrainerController::class, 'feedback'])->name('feedback');
     Route::post('/feedback/reply/store', [TrainerController::class, 'storeFeedbackReply'])->name('feedback.reply.store');

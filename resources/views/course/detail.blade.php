@@ -29,28 +29,13 @@
 
   html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
     font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
-<<<<<<< HEAD
-  }
-
-  :root {
-    --navy: #252346;
-    --white: #FFFFFF;
-    --primary-dark: #333333;
-    --secondary: #F4C430;
-    --black: #000000;
-=======
->>>>>>> 1e41a88903100bdd85c4bcd1f99ed539acd85a80
   }
 
   .course-hero {
     background: var(--navy);
     height: fit-content;
     padding-top: 40px;
-<<<<<<< HEAD
-    padding-bottom: 20px;;
-=======
     padding-bottom: 20px;
->>>>>>> 1e41a88903100bdd85c4bcd1f99ed539acd85a80
   }
 
   .hero-inner {
@@ -132,53 +117,6 @@
     object-fit: cover;
     background: #000;
   }
-<<<<<<< HEAD
-  .content-description,
-  .comments {
-    width: 100%;
-    margin: 0;
-  }
-
-  .course-body {
-    max-width: 1200px;
-    margin: 20px 10px 10px 60px;
-    padding: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    gap: 24px;
-    align-items: start;
-  }
-
-  .sidebar .kanan {
-    position: sticky;
-    top: 24px;
-  }
-
-  .video-container {
-    width: 100%;
-    margin: 0;
-    border-radius: 20px;
-    overflow: hidden;
-  }
-
-  .video-container video,
-  .video-container iframe,
-  .video-container .plyr {
-    width: 100%;
-    max-width: 100%;
-    height: 40vw;
-    max-height: 400px;
-    min-height: 200px;
-    display: block;
-    border-radius: 20px;
-    object-fit: cover;
-    background: #000;
-  }
-  
-  
-
-=======
->>>>>>> 1e41a88903100bdd85c4bcd1f99ed539acd85a80
   .content-description,
   .comments {
     width: 100%;

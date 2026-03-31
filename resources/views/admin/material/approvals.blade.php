@@ -663,19 +663,130 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="7">
-                                        <div class="empty-state">
-                                            <i class="bi bi-inbox"></i>
-                                            <h5 class="fw-bold text-dark">Antrean Kosong</h5>
-                                            <p class="text-muted mb-0">Hore! Tidak ada materi yang perlu di-review saat ini.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                                @if(($pendingEventModules ?? collect())->isEmpty())
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="empty-state">
+                                                <i class="bi bi-inbox"></i>
+                                                <h5 class="fw-bold text-dark">Antrean Kosong</h5>
+                                                <p class="text-muted mb-0">Hore! Tidak ada materi yang perlu di-review saat ini.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+
+                @if(!($pendingEventModules ?? collect())->isEmpty())
+                    <div class="px-3 pt-3 border-top">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <div class="fw-bold text-dark">Module Event (Trainer)</div>
+                                <div class="text-muted small">Antrean verifikasi modul event yang diupload trainer.</div>
+                            </div>
+                            <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">
+                                {{ ($pendingEventModules ?? collect())->count() }} menunggu
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Event</th>
+                                    <th>Trainer</th>
+                                    <th>Tanggal Submit</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($pendingEventModules as $event)
+                                    <tr>
+                                        <td>
+                                            <div class="course-info" style="gap:12px;">
+                                                <div>
+                                                    <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
+                                                    <div class="text-muted" style="font-size:0.75rem;">
+                                                        {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="trainer-info">
+                                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                                    class="trainer-avatar">
+                                                <div>
+                                                    <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                                    <div style="font-size: 0.75rem; color:#64748b;">{{ $event->trainer?->email }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 600; color: #334155;">
+                                                {{ $event->module_submitted_at?->format('d M Y') ?? ($event->created_at?->format('d M Y') ?? '-') }}
+                                            </div>
+                                            <div style="font-size: 0.75rem; color:#64748b;">
+                                                {{ $event->module_submitted_at?->diffForHumans() ?? '' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if(!empty($event->module_rejected_at))
+                                                <span class="badge-status badge-rejected-status">Perlu Revisi</span>
+                                                @if(!empty($event->module_rejection_reason))
+                                                    <div class="rejection-note mt-2" style="max-width: 260px;">
+                                                        <i class="bi bi-chat-text-fill me-1"></i>{{ Str::limit($event->module_rejection_reason, 60) }}
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <span class="badge-status badge-pending">Review Pending</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                                <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
+                                                    Lihat <i class="bi bi-eye"></i>
+                                                </a>
+                                                @if(!empty($event->trainer_id))
+                                                    <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn-action"
+                                                        style="color:#92400e;border-color:#fcd34d;background:#fffbeb;">
+                                                        Trainer <i class="bi bi-person"></i>
+                                                    </a>
+                                                @endif
+                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
+                                                        Approve <i class="bi bi-check2-circle"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            <div class="mt-2">
+                                                <button class="btn-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $event->id }}"
+                                                    aria-expanded="false" aria-controls="rejectEventModule-{{ $event->id }}"
+                                                    style="color:#991b1b;border-color:#fecaca;background:#fef2f2;">
+                                                    Tolak <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </div>
+                                            <div class="collapse mt-2" id="rejectEventModule-{{ $event->id }}">
+                                                <form action="{{ route('admin.events.module.reject', $event) }}" method="POST" class="d-flex flex-column gap-2">
+                                                    @csrf
+                                                    <textarea name="reason" rows="2" class="form-control" placeholder="Alasan penolakan (wajib)" required></textarea>
+                                                    <div class="d-flex justify-content-end">
+                                                        <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-send me-1"></i>Kirim Penolakan</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
 
                 @if($pendingMaterials->hasPages())
                     <div class="p-3 border-top">

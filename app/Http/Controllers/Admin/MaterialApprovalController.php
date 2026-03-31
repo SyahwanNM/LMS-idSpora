@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseModule;
+use App\Models\Event;
 use App\Models\TrainerNotification;
 use App\Models\User;
 use Carbon\Carbon;
@@ -155,15 +156,50 @@ class MaterialApprovalController extends Controller
 
         $pendingMaterials = $query->paginate(15);
 
+        $pendingEventModulesQuery = Event::query()
+            ->with(['trainer:id,name,email,avatar'])
+            ->whereNotNull('module_submission_path')
+            ->whereNull('module_path');
+
+        if ($request->filled('search')) {
+            $search = (string) $request->search;
+            $pendingEventModulesQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $pendingEventModules = $pendingEventModulesQuery
+            ->orderByDesc('module_submitted_at')
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'trainer_id',
+                'title',
+                'jenis',
+                'event_date',
+                'module_submission_path',
+                'module_submitted_at',
+                'module_rejected_at',
+                'module_rejection_reason',
+            ]);
+
         // Statistics
-        $totalPending = Course::where('status', 'pending_review')->count();
-        $totalApproved = Course::where('status', 'approved')->count();
-        $totalRejected = Course::where('status', 'rejected')->count();
+        $totalPending = Course::where('status', 'pending_review')->count()
+            + Event::query()->whereNotNull('module_submission_path')->whereNull('module_path')->count();
+        $totalApproved = Course::where('status', 'approved')->count()
+            + Event::query()->whereNotNull('module_path')->count();
+        $totalRejected = Course::where('status', 'rejected')->count()
+            + Event::query()->whereNotNull('module_rejected_at')->whereNull('module_path')->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 
         return view('admin.material.approvals', compact(
             'pendingMaterials',
+            'pendingEventModules',
             'totalPending',
             'totalApproved',
             'totalRejected',
@@ -286,10 +322,21 @@ class MaterialApprovalController extends Controller
             ->where('status', 'approved')
             ->withCount('modules');
 
+        $approvedEventModulesQuery = Event::query()
+            ->with(['trainer:id,name,email,avatar'])
+            ->whereNotNull('module_path');
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+
+            $approvedEventModulesQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
                     ->orWhereHas('trainer', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     });
@@ -328,9 +375,23 @@ class MaterialApprovalController extends Controller
 
         $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
 
+        $approvedEventModules = $approvedEventModulesQuery
+            ->orderByDesc('module_verified_at')
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'trainer_id',
+                'title',
+                'jenis',
+                'event_date',
+                'module_path',
+                'module_verified_at',
+            ]);
+
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
 
-        return view('admin.material.approved', compact('approvedMaterials', 'deadlineMonitoring', 'deadlineFilter'));
+        return view('admin.material.approved', compact('approvedMaterials', 'approvedEventModules', 'deadlineMonitoring', 'deadlineFilter'));
     }
 
     /**
@@ -342,10 +403,22 @@ class MaterialApprovalController extends Controller
             ->where('status', 'rejected')
             ->withCount('modules');
 
+        $rejectedEventModulesQuery = Event::query()
+            ->with(['trainer:id,name,email,avatar'])
+            ->whereNotNull('module_rejected_at')
+            ->whereNull('module_path');
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+
+            $rejectedEventModulesQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
                     ->orWhereHas('trainer', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     });
@@ -384,9 +457,24 @@ class MaterialApprovalController extends Controller
 
         $rejectedMaterials = $query->orderBy('rejected_at', 'desc')->paginate(15);
 
+        $rejectedEventModules = $rejectedEventModulesQuery
+            ->orderByDesc('module_rejected_at')
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'trainer_id',
+                'title',
+                'jenis',
+                'event_date',
+                'module_submission_path',
+                'module_rejected_at',
+                'module_rejection_reason',
+            ]);
+
         $deadlineMonitoring = $this->buildDeadlineMonitoring($rejectedMaterials->getCollection());
 
-        return view('admin.material.rejected', compact('rejectedMaterials', 'deadlineMonitoring', 'deadlineFilter'));
+        return view('admin.material.rejected', compact('rejectedMaterials', 'rejectedEventModules', 'deadlineMonitoring', 'deadlineFilter'));
     }
 }
 
