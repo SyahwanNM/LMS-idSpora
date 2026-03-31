@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
@@ -15,8 +16,18 @@ class RedirectIfAuthenticated
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check()) {
-            return redirect('/dashboard');
+        if (Auth::check()) {
+            $role = strtolower(trim((string) (Auth::user()->role ?? '')));
+
+            if ($role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($role === 'trainer') {
+                return redirect()->route('trainer.dashboard');
+            }
+
+            return redirect()->route('dashboard');
         }
 
         return $next($request);

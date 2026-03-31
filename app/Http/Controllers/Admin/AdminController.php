@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Event;
 use App\Models\Certificate;
 use App\Models\DashboardMetric;
+use App\Models\TrainerNotification;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,9 +35,9 @@ class AdminController extends Controller
         // Hitung hanya event aktif (belum lewat >= 6 jam sejak mulai)
         $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
         $totalEvents = Event::query()
-            ->where(function($q) use ($threshold){
+            ->where(function ($q) use ($threshold) {
                 $q->whereNull('event_date')
-                  ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
+                    ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
             })
             ->count();
         $totalCertificates = Certificate::count();
@@ -57,13 +58,15 @@ class AdminController extends Controller
             ]
         );
 
-    $todaySnapshot = DashboardMetric::where('snapshot_date', $today)->first();
-    $yesterdaySnapshot = DashboardMetric::where('snapshot_date', $yesterdayDate)->first();
+        $todaySnapshot = DashboardMetric::where('snapshot_date', $today)->first();
+        $yesterdaySnapshot = DashboardMetric::where('snapshot_date', $yesterdayDate)->first();
 
         // Helper closure to compute percent change
         $percentChange = function ($current, $previous) {
-            if ($previous === null) return null; // No data
-            if ($previous == 0) return $current > 0 ? 100 : 0; // Avoid division by zero
+            if ($previous === null)
+                return null; // No data
+            if ($previous == 0)
+                return $current > 0 ? 100 : 0; // Avoid division by zero
             return round((($current - $previous) / $previous) * 100, 1);
         };
 
@@ -92,12 +95,12 @@ class AdminController extends Controller
                     ->latest()
                     ->limit(8)
                     ->get()
-                    ->map(function($log){
+                    ->map(function ($log) {
                         return [
                             'user' => $log->user?->name ?? 'System',
                             'action' => $log->action,
                             'time' => $log->created_at?->diffForHumans(),
-                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($log->user?->name ?? 'System').'&background=6b7280&color=fff',
+                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($log->user?->name ?? 'System') . '&background=6b7280&color=fff',
                             'description' => $log->description,
                         ];
                     });
@@ -108,25 +111,84 @@ class AdminController extends Controller
             $recentActivities = collect();
         }
 
+        $overdueAssignments = TrainerNotification::query()
+            ->with('trainer:id,name')
+            ->whereIn('type', ['course_invitation', 'event_invitation'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->filter(function (TrainerNotification $notification) {
+                $data = is_array($notification->data) ? $notification->data : [];
+                $status = (string) data_get($data, 'invitation_status', 'pending');
+                if ($status !== 'pending') {
+                    return false;
+                }
+
+                $dueAt = data_get($data, 'due_at');
+                if (empty($dueAt)) {
+                    return false;
+                }
+
+                try {
+                    return Carbon::parse((string) $dueAt)->isPast();
+                } catch (\Throwable $e) {
+                    return false;
+                }
+            })
+            ->map(function (TrainerNotification $notification) {
+                $data = is_array($notification->data) ? $notification->data : [];
+                $dueAtRaw = (string) data_get($data, 'due_at', '');
+                $dueAtText = '-';
+                try {
+                    if ($dueAtRaw !== '') {
+                        $dueAtText = Carbon::parse($dueAtRaw)->format('d M Y H:i');
+                    }
+                } catch (\Throwable $e) {
+                    $dueAtText = '-';
+                }
+
+                return [
+                    'id' => $notification->id,
+                    'trainer' => $notification->trainer?->name ?? 'Trainer',
+                    'title' => (string) $notification->title,
+                    'entity_type' => (string) data_get($data, 'entity_type', 'course'),
+                    'entity_id' => (int) data_get($data, 'entity_id', 0),
+                    'due_at_text' => $dueAtText,
+                ];
+            })
+            ->values();
+
+        $overdueAssignmentsCount = $overdueAssignments->count();
+        $overdueAssignmentsPreview = $overdueAssignments->take(4);
+
+        // Materi yang sudah disetujui trainer (untuk panel dashboard)
+        $recentApprovedMaterials = Course::with(['trainer', 'category'])
+            ->where('status', 'approved')
+            ->orderByDesc('approved_at')
+            ->take(4)
+            ->get();
+
         return view('admin.dashboard', compact(
             'activeUsers',
             'totalCourses',
             'totalEvents',
             'totalCertificates',
             'totalRevenue',
+            'recentApprovedMaterials',
             'recentActivities',
             'activeUsersChangePercent',
             'totalCoursesChangePercent',
             'totalEventsChangePercent',
             'totalRevenueChangePercent',
-            'usingIntraDayBaseline'
+            'usingIntraDayBaseline',
+            'overdueAssignmentsCount',
+            'overdueAssignmentsPreview'
         ));
     }
 
     public function activeUsersCount()
     {
-    // Return total accounts count
-    $count = User::count();
+        // Return total accounts count
+        $count = User::count();
         return response()->json(['count' => $count]);
     }
 
@@ -143,12 +205,12 @@ class AdminController extends Controller
                     ->latest()
                     ->limit($limit)
                     ->get()
-                    ->map(function($log){
+                    ->map(function ($log) {
                         return [
                             'user' => $log->user?->name ?? 'System',
                             'action' => $log->action,
                             'time' => $log->created_at?->diffForHumans(),
-                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($log->user?->name ?? 'System').'&background=6b7280&color=fff',
+                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($log->user?->name ?? 'System') . '&background=6b7280&color=fff',
                             'description' => $log->description,
                         ];
                     });
@@ -191,7 +253,7 @@ class AdminController extends Controller
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'Create Course',
-            'description' => 'Course "'.$course->name.'" (#'.$course->id.') berhasil dibuat'
+            'description' => 'Course "' . $course->name . '" (#' . $course->id . ') berhasil dibuat'
         ]);
 
         return redirect()->route('admin.dashboard')->with('success', 'Course created successfully!');
@@ -228,7 +290,7 @@ class AdminController extends Controller
         ActivityLog::create([
             'user_id' => Auth::id(),
             'action' => 'Create Event',
-            'description' => 'Event "'.$event->title.'" (#'.$event->id.') berhasil dibuat'
+            'description' => 'Event "' . $event->title . '" (#' . $event->id . ') berhasil dibuat'
         ]);
 
         return redirect()->route('admin.dashboard')->with('success', 'Event created successfully!');
@@ -255,25 +317,37 @@ class AdminController extends Controller
 
         // Categorize events: upcoming, active, completed
         $now = Carbon::now();
-        $activeCount = 0; $completedCount = 0; $upcomingCount = 0; $totalEventsAll = $events->count();
+        $activeCount = 0;
+        $completedCount = 0;
+        $upcomingCount = 0;
+        $totalEventsAll = $events->count();
         foreach ($events as $e) {
-            if (empty($e->event_date)) { continue; }
+            if (empty($e->event_date)) {
+                continue;
+            }
             $start = $e->start_at; // accessor from model combines date + time safely
             $end = $e->end_at;     // accessor from model handles fallback to endOfDay
             if ($start && $end) {
-                if ($now->lt($start)) { $upcomingCount++; }
-                else if ($now->gt($end)) { $completedCount++; }
-                else { $activeCount++; }
+                if ($now->lt($start)) {
+                    $upcomingCount++;
+                } else if ($now->gt($end)) {
+                    $completedCount++;
+                } else {
+                    $activeCount++;
+                }
             } else if ($start) {
-                if ($now->lt($start)) { $upcomingCount++; }
-                else { $activeCount++; }
+                if ($now->lt($start)) {
+                    $upcomingCount++;
+                } else {
+                    $activeCount++;
+                }
             }
         }
         $percentCompleted = $totalEventsAll > 0 ? round(($completedCount / $totalEventsAll) * 100) : 0;
         $percentNotCompleted = $totalEventsAll > 0 ? round((($totalEventsAll - $completedCount) / $totalEventsAll) * 100) : 0;
 
         // Map into simple rows for the Pendapatan table
-        $eventRows = $events->map(function($e) use ($revenueMap){
+        $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
             // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
@@ -292,7 +366,7 @@ class AdminController extends Controller
         });
 
         // Build rows for Pertumbuhan table (growth metrics per event)
-        $growthRows = $events->map(function($e){
+        $growthRows = $events->map(function ($e) {
             return [
                 'id' => $e->id,
                 'name' => $e->title,
@@ -305,7 +379,7 @@ class AdminController extends Controller
         });
 
         // Build rows for Operasional table (document completeness per event)
-        $operationalRows = $events->map(function($e){
+        $operationalRows = $events->map(function ($e) {
             return [
                 'id' => $e->id,
                 'name' => $e->title,
@@ -316,13 +390,13 @@ class AdminController extends Controller
                 'has_cert' => !empty($e->certificate_path),
                 'has_abs' => !empty($e->attendance_path),
                 // URLs expected by the reports view
-                'vbg_url' => !empty($e->vbg_path) ? Storage::url($e->vbg_path) : '',
+                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
                 'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
                 'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                 // attendance QR data
                 'qr_token' => $e->attendance_qr_token,
                 'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                'qr_image_url' => $e->attendance_qr_image ? asset('uploads/'.$e->attendance_qr_image) : null,
+                'qr_image_url' => $e->attendance_qr_image_url,
             ];
         });
 
@@ -358,11 +432,11 @@ class AdminController extends Controller
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->bio = $validated['bio'];
-        if(!empty($validated['password'])){
+        if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
         $user->save();
-        return redirect()->route('admin.profile')->with('success','Profil berhasil diperbarui');
+        return redirect()->route('admin.profile')->with('success', 'Profil berhasil diperbarui');
     }
 
     // ========== Settings (Simple file-based storage) ==========
@@ -374,19 +448,21 @@ class AdminController extends Controller
     protected function loadSettings(): array
     {
         $file = $this->settingsFile();
-        if(!file_exists($file)) return [
-            'maintenance_mode' => false,
-            'primary_color' => '#f59e0b',
-            'allow_registration' => true,
-        ];
+        if (!file_exists($file))
+            return [
+                'maintenance_mode' => false,
+                'primary_color' => '#f59e0b',
+                'allow_registration' => true,
+            ];
         $json = json_decode(file_get_contents($file), true);
-        if(!is_array($json)) return [];
+        if (!is_array($json))
+            return [];
         return $json;
     }
 
     protected function saveSettings(array $data): void
     {
-        @file_put_contents($this->settingsFile(), json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
+        @file_put_contents($this->settingsFile(), json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 
     public function settings()
@@ -404,13 +480,15 @@ class AdminController extends Controller
         ]);
 
         $settings = $this->loadSettings();
-        $settings['maintenance_mode'] = (bool)$request->boolean('maintenance_mode');
+        $settings['maintenance_mode'] = (bool) $request->boolean('maintenance_mode');
         $color = $validated['primary_color'];
-        if(strpos($color,'#') !== 0){ $color = '#'.$color; }
+        if (strpos($color, '#') !== 0) {
+            $color = '#' . $color;
+        }
         $settings['primary_color'] = $color;
-        $settings['allow_registration'] = (bool)$request->boolean('allow_registration');
+        $settings['allow_registration'] = (bool) $request->boolean('allow_registration');
         $this->saveSettings($settings);
-        return redirect()->route('admin.settings')->with('success','Pengaturan tersimpan');
+        return redirect()->route('admin.settings')->with('success', 'Pengaturan tersimpan');
     }
 
     /**
@@ -419,9 +497,9 @@ class AdminController extends Controller
      */
     public function exportData(Request $request): StreamedResponse
     {
-        $fileName = 'export-idspora-'.now()->format('Ymd_His').'.xls'; // .xls so Excel opens HTML table nicely
+        $fileName = 'export-idspora-' . now()->format('Ymd_His') . '.xls'; // .xls so Excel opens HTML table nicely
 
-        $response = new StreamedResponse(function() {
+        $response = new StreamedResponse(function () {
             // Start HTML document (Excel can parse this legacy HTML table format)
             echo '<html><head><meta charset="UTF-8" />';
             echo '<style>
@@ -434,79 +512,88 @@ class AdminController extends Controller
                 caption{caption-side:top;text-align:left;font-weight:600;margin-bottom:4px;color:#374151;}
             </style>';
             echo '</head><body>';
-            echo '<h1 style="font-size:16px;margin:0 0 10px;">idSpora Data Export - '.e(now()->toDateTimeString()).'</h1>';
+            echo '<h1 style="font-size:16px;margin:0 0 10px;">idSpora Data Export - ' . e(now()->toDateTimeString()) . '</h1>';
 
             // USERS TABLE
             echo '<h2>Users</h2>';
             echo '<table><thead><tr>';
-            $userHeaders = ['ID','Name','Email','Role','Created At'];
-            foreach($userHeaders as $h){ echo '<th>'.e($h).'</th>'; }
+            $userHeaders = ['ID', 'Name', 'Email', 'Role', 'Created At'];
+            foreach ($userHeaders as $h) {
+                echo '<th>' . e($h) . '</th>';
+            }
             echo '</tr></thead><tbody>';
-            User::orderBy('id')->chunk(300, function($chunk){
-                foreach($chunk as $u){
+            User::orderBy('id')->chunk(300, function ($chunk) {
+                foreach ($chunk as $u) {
                     echo '<tr>';
-                    echo '<td>'.e($u->id).'</td>';
-                    echo '<td>'.e($u->name).'</td>';
-                    echo '<td>'.e($u->email).'</td>';
-                    echo '<td>'.e($u->role).'</td>';
-                    echo '<td>'.e(optional($u->created_at)->toDateTimeString()).'</td>';
+                    echo '<td>' . e($u->id) . '</td>';
+                    echo '<td>' . e($u->name) . '</td>';
+                    echo '<td>' . e($u->email) . '</td>';
+                    echo '<td>' . e($u->role) . '</td>';
+                    echo '<td>' . e(optional($u->created_at)->toDateTimeString()) . '</td>';
                     echo '</tr>';
                 }
-                @ob_flush(); flush();
+                @ob_flush();
+                flush();
             });
             echo '</tbody></table>';
 
             // COURSES TABLE
             echo '<h2>Courses</h2>';
             echo '<table><thead><tr>';
-            $courseHeaders = ['ID','Name','Category','Level','Price','Duration (h)','Created At'];
-            foreach($courseHeaders as $h){ echo '<th>'.e($h).'</th>'; }
+            $courseHeaders = ['ID', 'Name', 'Category', 'Level', 'Price', 'Duration (h)', 'Created At'];
+            foreach ($courseHeaders as $h) {
+                echo '<th>' . e($h) . '</th>';
+            }
             echo '</tr></thead><tbody>';
-            Course::with('category')->orderBy('id')->chunk(300, function($chunk){
-                foreach($chunk as $c){
+            Course::with('category')->orderBy('id')->chunk(300, function ($chunk) {
+                foreach ($chunk as $c) {
                     echo '<tr>';
-                    echo '<td>'.e($c->id).'</td>';
-                    echo '<td>'.e($c->name).'</td>';
-                    echo '<td>'.e(optional($c->category)->name).'</td>';
-                    echo '<td>'.e($c->level).'</td>';
-                    echo '<td>'.e($c->price).'</td>';
-                    echo '<td>'.e($c->duration).'</td>';
-                    echo '<td>'.e(optional($c->created_at)->toDateTimeString()).'</td>';
+                    echo '<td>' . e($c->id) . '</td>';
+                    echo '<td>' . e($c->name) . '</td>';
+                    echo '<td>' . e(optional($c->category)->name) . '</td>';
+                    echo '<td>' . e($c->level) . '</td>';
+                    echo '<td>' . e($c->price) . '</td>';
+                    echo '<td>' . e($c->duration) . '</td>';
+                    echo '<td>' . e(optional($c->created_at)->toDateTimeString()) . '</td>';
                     echo '</tr>';
                 }
-                @ob_flush(); flush();
+                @ob_flush();
+                flush();
             });
             echo '</tbody></table>';
 
             // EVENTS TABLE
             echo '<h2>Events</h2>';
             echo '<table><thead><tr>';
-            $eventHeaders = ['ID','Title','Speaker','Location','Price','Event Date','Event Time','Created At'];
-            foreach($eventHeaders as $h){ echo '<th>'.e($h).'</th>'; }
+            $eventHeaders = ['ID', 'Title', 'Speaker', 'Location', 'Price', 'Event Date', 'Event Time', 'Created At'];
+            foreach ($eventHeaders as $h) {
+                echo '<th>' . e($h) . '</th>';
+            }
             echo '</tr></thead><tbody>';
-            Event::orderBy('id')->chunk(300, function($chunk){
-                foreach($chunk as $e){
+            Event::orderBy('id')->chunk(300, function ($chunk) {
+                foreach ($chunk as $e) {
                     echo '<tr>';
-                    echo '<td>'.e($e->id).'</td>';
-                    echo '<td>'.e($e->title).'</td>';
-                    echo '<td>'.e($e->speaker).'</td>';
-                    echo '<td>'.e($e->location).'</td>';
-                    echo '<td>'.e($e->price).'</td>';
-                    echo '<td>'.e(optional($e->event_date)->format('Y-m-d')).'</td>';
-                    echo '<td>'.e($e->event_time).'</td>';
-                    echo '<td>'.e(optional($e->created_at)->toDateTimeString()).'</td>';
+                    echo '<td>' . e($e->id) . '</td>';
+                    echo '<td>' . e($e->title) . '</td>';
+                    echo '<td>' . e($e->speaker) . '</td>';
+                    echo '<td>' . e($e->location) . '</td>';
+                    echo '<td>' . e($e->price) . '</td>';
+                    echo '<td>' . e(optional($e->event_date)->format('Y-m-d')) . '</td>';
+                    echo '<td>' . e($e->event_time) . '</td>';
+                    echo '<td>' . e(optional($e->created_at)->toDateTimeString()) . '</td>';
                     echo '</tr>';
                 }
-                @ob_flush(); flush();
+                @ob_flush();
+                flush();
             });
             echo '</tbody></table>';
 
-            echo '<p style="font-size:11px;color:#6b7280;margin-top:24px;">Generated at '.e(now()->toDateTimeString()).' &middot; idSpora LMS</p>';
+            echo '<p style="font-size:11px;color:#6b7280;margin-top:24px;">Generated at ' . e(now()->toDateTimeString()) . ' &middot; idSpora LMS</p>';
             echo '</body></html>';
         });
 
         $response->headers->set('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
-        $response->headers->set('Content-Disposition', 'attachment; filename="'.$fileName.'"');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
         $response->headers->set('Cache-Control', 'no-store, no-cache');
         return $response;
     }
