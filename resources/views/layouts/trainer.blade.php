@@ -49,6 +49,14 @@
             animation: none;
             transform: none;
         }
+
+        .main-wrapper.full-width {
+            margin-left: 0 !important;
+            padding: 20px;
+            max-width: 1200px;
+            margin-right: auto;
+            margin-left: auto;
+        }
     </style>
     @stack('styles')
 </head>
@@ -57,10 +65,12 @@
     @include('trainer.partials.navbar')
 
     <div class="trainer-page">
-        <!-- Sidebar Trainer -->
-        @include('trainer.partials.sidebar')
+        @unless(View::hasSection('noTrainerSidebar'))
+            <!-- Sidebar Trainer -->
+            @include('trainer.partials.sidebar')
+        @endunless
 
-        <div class="main-wrapper">
+        <div class="main-wrapper {{ View::hasSection('noTrainerSidebar') ? 'full-width' : '' }}">
             <main class="dashboard-content">
                 @if(session('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -90,7 +100,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    @vite(['resources/js/trainer/sidebar.js'])
+    @unless(View::hasSection('noTrainerSidebar'))
+        @vite(['resources/js/trainer/sidebar.js'])
+    @endunless
 
     @stack('scripts')
 </body>

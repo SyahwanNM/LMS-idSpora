@@ -56,15 +56,6 @@
                 <span>Riwayat Kegiatan</span>
             </a>
         </li>
-        <li class="{{ request()->routeIs('trainer.certificates.send') ? 'active' : '' }}">
-            <a href="{{ route('trainer.certificates.send') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#e3e3e3">
-                    <path d="M12 19V5M5 12l7-7 7 7" stroke="#e3e3e3" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" fill="none" />
-                </svg>
-                <span>Kirim Sertifikat</span>
-            </a>
-        </li>
     </ul>
     <div class="profile">
         <form action="{{ route('logout') }}" method="POST">

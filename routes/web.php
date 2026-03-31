@@ -625,6 +625,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/certificates/events/{event}/download', [TrainerController::class, 'certificateEventDownload'])->name('certificates.events.download');
     Route::get('/certificates/courses/{course}', [TrainerController::class, 'certificateCourseShow'])->name('certificates.courses.show');
     Route::get('/certificates/courses/{course}/download', [TrainerController::class, 'certificateCourseDownload'])->name('certificates.courses.download');
+    // (moved) kirim sertifikat sekarang di area admin
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -636,6 +637,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
     Route::post('/admin/trainer/{trainer}/certificates', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
+    // Allow admin to upload/manual-send a certificate file to a trainer
+    Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send');
+    // Show form to upload/send certificate (GET)
+    Route::get('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'showSendCertificateForm'])->name('admin.trainer.certificates.send.form');
     Route::delete('/admin/trainer/certificates/{trainerCertificate}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
 
     // Material Approval Routes

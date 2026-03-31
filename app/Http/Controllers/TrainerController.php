@@ -857,7 +857,7 @@ class TrainerController extends Controller
             ]);
         }
 
-        $historyItems = $historyItems->sortByDesc(fn ($item) => $item['date'] ?? now());
+        $historyItems = $historyItems->sortByDesc(fn($item) => $item['date'] ?? now());
 
         return view('trainer.certificates.index', [
             'historyItems' => $historyItems,
@@ -950,6 +950,8 @@ class TrainerController extends Controller
         abort(404, 'File sertifikat belum tersedia.');
     }
 
+
+
     private function getModuleType($extension)
     {
         return match (strtolower($extension)) {
@@ -965,8 +967,18 @@ class TrainerController extends Controller
     private function buildIdsporaCertificateNumber(string $activityCode, string $typeCode, string $sequence, \Carbon\CarbonInterface $issuedAt): string
     {
         $romanMonths = [
-            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
+            1 => 'I',
+            2 => 'II',
+            3 => 'III',
+            4 => 'IV',
+            5 => 'V',
+            6 => 'VI',
+            7 => 'VII',
+            8 => 'VIII',
+            9 => 'IX',
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII',
         ];
 
         $monthRoman = $romanMonths[(int) $issuedAt->format('n')] ?? '';
