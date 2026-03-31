@@ -3321,7 +3321,7 @@ label {
 }
 
 .resource-card .share-bi {
-    margin-left: 70px;
+    margin-left: 160px;
     margin-right: 10px;
 }
 
@@ -4422,19 +4422,12 @@ input[type="time"] {
     left: 0;
     right: 0;
     height: 2px;
-<<<<<<< HEAD
-    background: linear-gradient(90deg,
-            transparent,
-            var(--primary-yellow),
-            transparent);
-=======
     background: linear-gradient(
         90deg,
         transparent,
         var(--primary-yellow),
         transparent
     );
->>>>>>> 1e41a88903100bdd85c4bcd1f99ed539acd85a80
 }
 
 .footer-section a {
@@ -7664,8 +7657,4 @@ textarea::placeholder {
     .judul_modul {
         font-size: 22px;
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 1e41a88903100bdd85c4bcd1f99ed539acd85a80

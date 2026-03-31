@@ -240,6 +240,33 @@ class CourseController extends Controller
         return trim($text ?? '');
     }
 
+    private function notifyTrainerCourseInvitation(Course $course, int $trainerId, string $source = 'trainer_id'): void
+    {
+        $trainer = User::query()
+            ->where('id', $trainerId)
+            ->where('role', 'trainer')
+            ->first();
+
+        if (!$trainer) {
+            return;
+        }
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'course_invitation',
+            'title' => 'Undangan Menjadi Trainer Course',
+            'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
+            'data' => [
+                'entity_type' => 'course',
+                'entity_id' => $course->id,
+                'url' => route('trainer.detail-course', $course->id),
+                'invitation_status' => 'pending',
+                'invitation_source' => $source,
+                'due_at' => now()->addDays(7)->toIso8601String(),
+            ],
+        ]);
+    }
+
     /**
      * Attempt to probe video duration in seconds using ffprobe (if available).
      */

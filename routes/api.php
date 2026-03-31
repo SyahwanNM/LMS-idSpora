@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Api\Admin\CoursePaymentController as AdminCoursePaymentController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Trainer\EventController as TrainerEventController;
+use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerEventModuleSubmissionController;
 
 
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
@@ -65,6 +67,17 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/courses/{course}/modules/{module}', [CourseAccessController::class, 'module'])->whereNumber('course')->whereNumber('module');
     Route::post('/courses/{course}/modules/{module}/complete', [CourseAccessController::class, 'complete'])->whereNumber('course')->whereNumber('module');
     Route::get('/courses/{course}/progress', [CourseAccessController::class, 'progress'])->whereNumber('course');
+
+    // Trainer APIs (RESTful)
+    Route::middleware(['trainer', 'throttle:100,1'])->prefix('trainer')->group(function () {
+        // Events owned by trainer
+        Route::get('events', [TrainerEventController::class, 'index']);
+        Route::get('events/{event}', [TrainerEventController::class, 'show']);
+
+        // Module submissions (upload for admin approval)
+        Route::get('event-module-submissions', [TrainerEventModuleSubmissionController::class, 'index']);
+        Route::post('events/{event}/module-submissions', [TrainerEventModuleSubmissionController::class, 'store']);
+    });
 });
 
 // Admin Manage APIs (CRUD)

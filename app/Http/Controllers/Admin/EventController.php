@@ -722,6 +722,67 @@ class EventController extends Controller
         return back()->with('success', 'Reminder terkirim ke '.$sent.' trainer.');
     }
 
+    /**
+     * Admin: approve trainer module submission for an event.
+     * Once approved, module_path will be set and document completeness will increase.
+     */
+    public function approveModule(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+        }
+
+        $submission = trim((string) ($event->module_submission_path ?? ''));
+        if ($submission === '') {
+            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+        }
+
+        $event->update([
+            'module_path' => $submission,
+            'module_submission_path' => null,
+            'module_verified_at' => now(),
+            'module_verified_by' => auth()->id(),
+            'module_rejected_at' => null,
+            'module_rejected_by' => null,
+            'module_rejection_reason' => null,
+        ]);
+
+        return back()->with('success', 'Module trainer berhasil diverifikasi.')
+            ->with('module_success', 'Module trainer berhasil diverifikasi.');
+    }
+
+    /**
+     * Admin: reject trainer module submission with a reason.
+     */
+    public function rejectModule(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+        }
+
+        $submission = trim((string) ($event->module_submission_path ?? ''));
+        if ($submission === '') {
+            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $event->update([
+            'module_rejected_at' => now(),
+            'module_rejected_by' => auth()->id(),
+            'module_rejection_reason' => $validated['reason'],
+            'module_verified_at' => null,
+            'module_verified_by' => null,
+        ]);
+
+        return back()->with('success', 'Module trainer ditolak.')
+            ->with('module_success', 'Module trainer ditolak.');
+    }
+
     // Admin: download event QR image
     public function downloadQr(Event $event)
     {

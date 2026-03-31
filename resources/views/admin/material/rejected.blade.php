@@ -595,20 +595,105 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="7">
-                                        <div class="empty-state">
-                                            <i class="bi bi-inbox"></i>
-                                            <h5 class="fw-bold text-dark">Tidak Ada Revisi</h5>
-                                            <p class="text-muted mb-0">Semua materi sudah disetujui atau sedang dalam antrean
-                                                review.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                                @if(($rejectedEventModules ?? collect())->isEmpty())
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="empty-state">
+                                                <i class="bi bi-inbox"></i>
+                                                <h5 class="fw-bold text-dark">Tidak Ada Revisi</h5>
+                                                <p class="text-muted mb-0">Semua materi sudah disetujui atau sedang dalam antrean
+                                                    review.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+
+                @if(!($rejectedEventModules ?? collect())->isEmpty())
+                    <div class="px-3 pt-3 border-top">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <div class="fw-bold text-dark">Module Event (Trainer) - Rejected</div>
+                                <div class="text-muted small">Modul event yang ditolak dan perlu revisi.</div>
+                            </div>
+                            <span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;">
+                                {{ ($rejectedEventModules ?? collect())->count() }} revisi
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Event</th>
+                                    <th>Trainer</th>
+                                    <th>Alasan Penolakan</th>
+                                    <th>Tanggal Ditolak</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($rejectedEventModules as $event)
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
+                                                <div class="text-muted" style="font-size:0.75rem;">
+                                                    {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="trainer-info">
+                                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                                    class="trainer-avatar">
+                                                <div>
+                                                    <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                                    <div style="font-size: 0.75rem; color:#64748b;">{{ $event->trainer?->email }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="max-width: 250px;">
+                                            <div class="rejection-note">
+                                                <i class="bi bi-chat-text-fill me-1"></i>
+                                                {{ Str::limit($event->module_rejection_reason, 60) }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="font-weight: 600; color: #334155;">
+                                                {{ $event->module_rejected_at?->format('d M Y') ?? '-' }}
+                                            </div>
+                                            <div style="font-size: 0.75rem; color:#64748b;">
+                                                {{ $event->module_rejected_at?->diffForHumans() ?? '' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge-status badge-rejected-status">Revisi</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                                <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
+                                                    Lihat <i class="bi bi-eye"></i>
+                                                </a>
+                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
+                                                        Approve <i class="bi bi-check2-circle"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
 
                 @if($rejectedMaterials->hasPages())
                     <div class="p-3 border-top">

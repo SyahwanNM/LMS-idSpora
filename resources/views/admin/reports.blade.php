@@ -671,14 +671,14 @@
                                                 'date' => optional($e->event_date)->format('d/m/Y'),
                                                 'type' => $e->jenis ?? 'N/A',
                                                 'documents_percent' => $e->documents_completion_percent,
-                                                'vbg_url' => !empty($e->vbg_path) ? Storage::url($e->vbg_path) : '',
+                                                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
                                                 'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
-                                                'module_url' => !empty($e->module_path) ? Storage::url($e->module_path) : '',
+                                                'module_url' => !empty($e->module_path) ? ($e->module_file_url ?? '') : '',
                                                 'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                                                 // attendance QR data
                                                 'qr_token' => $e->attendance_qr_token,
                                                 'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                                                'qr_image_url' => $e->attendance_qr_image ? asset('uploads/'.$e->attendance_qr_image) : null,
+                                                'qr_image_url' => $e->attendance_qr_image_url,
                                             ];
                                         });
                                 }
@@ -705,7 +705,7 @@
                                             $ev = isset($row['id']) ? \App\Models\Event::find($row['id']) : null;
                                             $qrToken = $ev?->attendance_qr_token ?: '';
                                             $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
-                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? asset('uploads/'.$ev->attendance_qr_image) : '';
+                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? ($ev->attendance_qr_image_url ?? '') : '';
                                         @endphp
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] ?? '' }}" data-cert="{{ $row['cert_url'] ?? '' }}" data-module="{{ $row['module_url'] ?? '' }}" data-abs="{{ $row['abs_url'] ?? '' }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
                                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />

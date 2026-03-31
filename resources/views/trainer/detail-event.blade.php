@@ -213,7 +213,7 @@
             <h3>Virtual Background</h3>
             <p class="vsa-desc">High-Res PNG • Pre-branded</p>
           </div>
-          <a href="{{ $event->vbg_path ? asset('storage/'.$event->vbg_path) : '#' }}" class="vsa-btn vsa-btn-amber" download>
+          <a href="{{ $event->vbg_path ? $event->vbg_file_url : '#' }}" class="vsa-btn vsa-btn-amber" download>
             DOWNLOAD VBG
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -244,27 +244,81 @@
       <p class="vsa-subtitle">SESSION LEDGER</p>
       <section class="rundown-list">
         <h2>Rundown Acara</h2>
+        @php
+          $items = collect();
+
+          if (isset($event)) {
+            // Prefer normalized schedule items table
+            try {
+              $items = $event->relationLoaded('scheduleItems')
+                ? ($event->scheduleItems ?? collect())
+                : $event->scheduleItems()->get();
+            } catch (\Throwable $e) {
+              $items = collect();
+            }
+
+            // Fallback to schedule_json (legacy)
+            if ($items->isEmpty()) {
+              $rawSchedule = $event->schedule_json ?? null;
+
+              $scheduleArr = null;
+              if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                $decoded = json_decode($rawSchedule, true);
+                $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+              } elseif (is_array($rawSchedule)) {
+                $scheduleArr = $rawSchedule;
+              } elseif (is_object($rawSchedule)) {
+                $scheduleArr = json_decode(json_encode($rawSchedule), true);
+              }
+
+              if (is_array($scheduleArr)) {
+                $items = collect($scheduleArr)->map(function ($row) {
+                  $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
+                  return (object) [
+                    'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                    'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                    'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                    'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                  ];
+                })->filter(function ($it) {
+                  return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                })->values();
+              }
+            }
+          }
+
+          $formatTime = function ($t) {
+            if (empty($t)) {
+              return null;
+            }
+            try {
+              return \Carbon\Carbon::parse($t)->format('H:i');
+            } catch (\Throwable $e) {
+              return is_string($t) ? $t : null;
+            }
+          };
+        @endphp
         <ul>
-          <li>
-            <span class="time-rundown">13:00 - 13:20</span>
-            <span class="activity-rundown">Registrasi peserta dan pembukaan sesi</span>
-          </li>
-          <li>
-            <span class="time-rundown">13:20 - 14:10</span>
-            <span class="activity-rundown">Materi inti: {{ $event->title }}</span>
-          </li>
-          <li>
-            <span class="time-rundown">14:10 - 14:30</span>
-            <span class="activity-rundown">Studi kasus dan diskusi kelompok</span>
-          </li>
-          <li>
-            <span class="time-rundown">14:30 - 15:00</span>
-            <span class="activity-rundown">Hands-on workshop dan review hasil</span>
-          </li>
-          <li>
-            <span class="time-rundown">15:00 - 15:20</span>
-            <span class="activity-rundown">Tanya jawab, evaluasi, dan penutupan</span>
-          </li>
+          @forelse($items as $it)
+            @php
+              $start = $formatTime($it->start ?? null);
+              $end = $formatTime($it->end ?? null);
+              $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+              $activity = trim((string) ($it->title ?? ''));
+              if ($activity === '') {
+                $activity = trim((string) ($it->description ?? ''));
+              }
+            @endphp
+            <li>
+              <span class="time-rundown">{{ $timeStr !== '' ? $timeStr : '-' }}</span>
+              <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
+            </li>
+          @empty
+            <li>
+              <span class="time-rundown">—</span>
+              <span class="activity-rundown">Schedule will be announced.</span>
+            </li>
+          @endforelse
         </ul>
       </section>
 
