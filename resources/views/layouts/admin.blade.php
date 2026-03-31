@@ -20,7 +20,9 @@
         $user = auth()->user();
         $isSpecialPage = request()->routeIs('admin.finance.*') || 
                          request()->routeIs('admin.withdrawals.*') || 
-                         request()->routeIs('admin.crm.*');
+                         request()->routeIs('admin.crm.*') || 
+                         request()->routeIs('admin.trainer.*') ||
+                         request()->routeIs('admin.material.*');
     @endphp
 
     @unless($isSpecialPage)
