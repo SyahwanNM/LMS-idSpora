@@ -131,6 +131,68 @@ class TrainerManagementController extends Controller
         return view('admin.trainer.show', compact('trainer', 'trainerCourses', 'trainerEvents', 'trainerCertificates'));
     }
 
+    public function certificatesQueue(Request $request)
+    {
+        $search = (string) $request->query('search', '');
+
+        $trainersQuery = User::query()
+            ->where('role', 'trainer')
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($qq) use ($search) {
+                    $qq->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhere('phone', 'like', '%' . $search . '%');
+                });
+            })
+            ->withCount([
+                'eventsAsTrainer as finished_events_count' => function ($q) {
+                    $q->whereNotNull('event_date')
+                        ->whereDate('event_date', '<', now()->toDateString());
+                },
+                'coursesAsTrainer as finished_courses_count' => function ($q) {
+                    $q->where('status', 'approved')
+                        ->whereNotNull('approved_at')
+                        ->where('approved_at', '<', now());
+                },
+            ])
+            ->orderByDesc('created_at');
+
+        $trainers = $trainersQuery->paginate(12)->withQueryString();
+
+        $trainerIds = $trainers->getCollection()->pluck('id')->map(fn($id) => (int) $id)->all();
+        $sentCounts = TrainerCertificate::query()
+            ->selectRaw('trainer_id, certifiable_type, COUNT(*) as cnt')
+            ->whereIn('trainer_id', $trainerIds)
+            ->where('status', 'sent')
+            ->groupBy('trainer_id', 'certifiable_type')
+            ->get();
+
+        $sentMap = [];
+        foreach ($sentCounts as $row) {
+            $sentMap[(int) $row->trainer_id][(string) $row->certifiable_type] = (int) $row->cnt;
+        }
+
+        $trainers->getCollection()->transform(function (User $t) use ($sentMap) {
+            $sentEvents = (int) data_get($sentMap, $t->id . '.' . Event::class, 0);
+            $sentCourses = (int) data_get($sentMap, $t->id . '.' . Course::class, 0);
+
+            $pendingEvents = max(0, (int) ($t->finished_events_count ?? 0) - $sentEvents);
+            $pendingCourses = max(0, (int) ($t->finished_courses_count ?? 0) - $sentCourses);
+
+            $t->pending_certificates_count = $pendingEvents + $pendingCourses;
+            $t->pending_events_certificates = $pendingEvents;
+            $t->pending_courses_certificates = $pendingCourses;
+
+            return $t;
+        });
+
+        // Filter “yang butuh dikirim” biar halaman ini fokus (tanpa mengubah pagination query)
+        $focused = $trainers->getCollection()->filter(fn($t) => (int) ($t->pending_certificates_count ?? 0) > 0)->values();
+        $trainers->setCollection($focused);
+
+        return view('admin.trainer.certificates_queue', compact('trainers', 'search'));
+    }
+
     public function issueCertificate(Request $request, User $trainer)
     {
         if ($trainer->role !== 'trainer') {
@@ -273,6 +335,105 @@ class TrainerManagementController extends Controller
         return back()->with('success', "Sertifikat trainer diterbitkan: {$certificateNumber}");
     }
 
+    public function previewCertificate(Request $request, User $trainer)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'context' => ['required', 'in:event,course'],
+            'context_id' => ['required', 'integer'],
+            'activity_code' => ['required', 'string', 'size:3'],
+            'type_code' => ['required', 'string', 'min:2', 'max:3'],
+            'sequence' => ['required', 'string', 'max:10'],
+            'issued_at' => ['nullable', 'date'],
+        ]);
+
+        $issuedAt = $request->filled('issued_at')
+            ? \Carbon\Carbon::parse($data['issued_at'])
+            : now();
+
+        $certifiable = ($data['context'] === 'event')
+            ? Event::where('id', $data['context_id'])->where('trainer_id', $trainer->id)->firstOrFail()
+            : Course::where('id', $data['context_id'])->where('trainer_id', $trainer->id)->firstOrFail();
+
+        $certificateNumber = $this->buildIdsporaCertificateNumber(
+            $data['activity_code'],
+            $data['type_code'],
+            $data['sequence'],
+            $issuedAt
+        );
+
+        $roleLabelMap = [
+            'SRT' => 'Peserta',
+            'MC' => 'MC',
+            'TRN' => 'Narasumber',
+            'PNT' => 'Panitia',
+            'CLB' => 'Kolaborator',
+            'MOD' => 'Moderator',
+            'GRD' => 'Kelulusan',
+            'SPV' => 'Supervisor/penilai',
+        ];
+        $roleLabel = $roleLabelMap[strtoupper((string) $data['type_code'])] ?? strtoupper((string) $data['type_code']);
+
+        $logosBase64 = [];
+        $signaturesBase64 = [];
+        if ($data['context'] === 'event') {
+            /** @var \App\Models\Event $event */
+            $event = $certifiable;
+            foreach (is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
+                $path = str_replace('storage/', '', (string) $l);
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    $absolutePath = Storage::disk('public')->path($path);
+                    $mime = (is_string($absolutePath) && is_file($absolutePath)) ? (mime_content_type($absolutePath) ?: 'application/octet-stream') : 'application/octet-stream';
+                    $logosBase64[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+                }
+            }
+            foreach (is_array($event->certificate_signature) ? $event->certificate_signature : [] as $s) {
+                $path = str_replace('storage/', '', (string) $s);
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    $absolutePath = Storage::disk('public')->path($path);
+                    $mime = (is_string($absolutePath) && is_file($absolutePath)) ? (mime_content_type($absolutePath) ?: 'application/octet-stream') : 'application/octet-stream';
+                    $signaturesBase64[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+                }
+            }
+        }
+
+        $pdfData = [
+            'context' => $data['context'],
+            'event' => $data['context'] === 'event' ? $certifiable : null,
+            'course' => $data['context'] === 'course' ? $certifiable : null,
+            'user' => $trainer,
+            'issuedAt' => $issuedAt,
+            'certificateNumber' => $certificateNumber,
+            'logosBase64' => $logosBase64,
+            'signaturesBase64' => $signaturesBase64,
+            'roleLabel' => $roleLabel,
+        ];
+
+        $dompdf = new Dompdf();
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+
+        $html = view('trainer.certificates.certificate-pdf', $pdfData)->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $entityLabel = $data['context'] === 'event'
+            ? (($certifiable instanceof Event) ? $certifiable->title : 'event')
+            : (($certifiable instanceof Course) ? $certifiable->name : 'course');
+
+        $filename = 'Preview_' . Str::slug((string) $entityLabel) . '_' . Str::slug($certificateNumber, '_') . '.pdf';
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
     /**
      * Admin uploads a ready-made certificate PDF for a trainer (manual send).
      */
@@ -327,7 +488,96 @@ class TrainerManagementController extends Controller
             abort(404);
         }
 
-        return view('admin.trainer.send_certificate', compact('trainer'));
+        $finishedEvents = Event::query()
+            ->where('trainer_id', $trainer->id)
+            ->whereNotNull('event_date')
+            ->whereDate('event_date', '<', now()->toDateString())
+            ->orderByDesc('event_date')
+            ->get(['id', 'title', 'jenis', 'event_date']);
+
+        $finishedCourses = Course::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->where('approved_at', '<', now())
+            ->orderByDesc('approved_at')
+            ->get(['id', 'name', 'approved_at']);
+
+        $sentCertificates = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->with('certifiable')
+            ->latest('issued_at')
+            ->get();
+
+        $sentMap = [];
+        foreach ($sentCertificates as $cert) {
+            $sentMap[$cert->certifiable_type . ':' . (int) $cert->certifiable_id] = true;
+        }
+
+        $pendingItems = collect();
+        foreach ($finishedEvents as $event) {
+            $key = Event::class . ':' . (int) $event->id;
+            if (!isset($sentMap[$key])) {
+                $pendingItems->push([
+                    'context' => 'event',
+                    'context_id' => (int) $event->id,
+                    'title' => $event->title,
+                    'date' => $event->event_date,
+                    'activity_code' => match (strtolower((string) $event->jenis)) {
+                        'seminar' => 'SMN',
+                        'workshop', 'training' => 'WRT',
+                        'video production', 'video' => 'VDP',
+                        'e-learning', 'elearning' => 'ELR',
+                        default => 'WBN',
+                    },
+                ]);
+            }
+        }
+
+        foreach ($finishedCourses as $course) {
+            $key = Course::class . ':' . (int) $course->id;
+            if (!isset($sentMap[$key])) {
+                $pendingItems->push([
+                    'context' => 'course',
+                    'context_id' => (int) $course->id,
+                    'title' => $course->name,
+                    'date' => $course->approved_at,
+                    'activity_code' => 'ELR',
+                ]);
+            }
+        }
+
+        $pendingItems = $pendingItems->sortByDesc(fn($i) => $i['date'] ?? now())->values();
+
+        return view('admin.trainer.send_certificate', compact(
+            'trainer',
+            'pendingItems',
+            'sentCertificates'
+        ));
+    }
+
+    public function viewCertificate(TrainerCertificate $trainerCertificate)
+    {
+        if (($trainerCertificate->status ?? '') !== 'sent' || empty($trainerCertificate->file_path)) {
+            abort(404, 'Sertifikat tidak tersedia.');
+        }
+
+        $absolutePath = storage_path('app/' . $trainerCertificate->file_path);
+        if (!is_file($absolutePath)) {
+            abort(404, 'File sertifikat tidak ditemukan.');
+        }
+
+        $entity = $trainerCertificate->certifiable;
+        $label = $entity instanceof Event
+            ? ($entity->title ?? 'event')
+            : ($entity instanceof Course ? ($entity->name ?? 'course') : 'certificate');
+
+        $filename = 'Sertifikat_' . Str::slug($label) . '_' . Str::slug((string) $trainerCertificate->certificate_number) . '.pdf';
+        return response()->file($absolutePath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
     public function revokeCertificate(TrainerCertificate $trainerCertificate)

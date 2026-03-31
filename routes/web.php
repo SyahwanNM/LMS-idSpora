@@ -637,10 +637,13 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
     Route::post('/admin/trainer/{trainer}/certificates', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
+    Route::get('/admin/trainer/{trainer}/certificates/preview', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'previewCertificate'])->name('admin.trainer.certificates.preview');
+    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'certificatesQueue'])->name('admin.trainer.certificates.queue');
     // Allow admin to upload/manual-send a certificate file to a trainer
     Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send');
     // Show form to upload/send certificate (GET)
     Route::get('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'showSendCertificateForm'])->name('admin.trainer.certificates.send.form');
+    Route::get('/admin/trainer/certificates/{trainerCertificate}/view', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'viewCertificate'])->name('admin.trainer.certificates.view');
     Route::delete('/admin/trainer/certificates/{trainerCertificate}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
 
     // Material Approval Routes
