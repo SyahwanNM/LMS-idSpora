@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+git log -1 --name-only@extends('layouts.admin')
 
 @section('title', 'Detail Trainer')
 
@@ -269,12 +269,13 @@
             }
         }
     </style>
+    @include('admin.trainer._top-text-color')
 @endsection
 
 @section('content')
     <div class="trainer-wrapper">
-        <!-- Sidebar Navigation -->
-        @include('admin.partials.trainer-sidebar')
+        <!-- Sidebar Navigation (local partial to avoid missing named route) -->
+        @include('admin.trainer._sidebar')
 
         <main class="trainer-main">
             <!-- Hero Header with Trainer Info -->
@@ -482,19 +483,156 @@
                 </div>
 
                 <div class="col-lg-6">
-                    <div class="detail-card" id="trainer-certificates">
+                    <div class="detail-card">
                         <h5>
                             <i class="bi bi-award-fill" style="color: #3949ab;"></i>
-                            Sertifikat Trainer
+                            Sertifikat Trainer (Diterbitkan Admin)
                         </h5>
 
-                        <p class="text-muted mb-3">
-                            Kelola pengiriman sertifikat trainer di halaman khusus agar alur kirim dan riwayat sertifikat lebih rapi.
-                        </p>
-                        <a href="{{ route('admin.trainer.certificates.send.form', $trainer) }}"
-                            class="btn btn-primary">
-                            <i class="bi bi-send-check-fill me-2"></i>Buka Halaman Kirim Sertifikat
-                        </a>
+                        @if(session('success'))
+                            <div class="alert alert-success border-0 shadow-sm">
+                                <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+                            </div>
+                        @endif
+                        @if(session('error'))
+                            <div class="alert alert-danger border-0 shadow-sm">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
+                            </div>
+                        @endif
+
+                        <form action="{{ route('admin.trainer.certificates.issue', $trainer) }}" method="POST" class="mb-4">
+                            @csrf
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold text-muted">Konteks</label>
+                                    <select name="context" class="form-select form-select-sm" required>
+                                        <option value="event">Event</option>
+                                        <option value="course">Course</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label small fw-bold text-muted">Pilih Event / Course</label>
+                                    <select name="context_id" class="form-select form-select-sm" required>
+                                        <optgroup label="Event">
+                                            @foreach(($trainerEvents ?? collect()) as $e)
+                                                <option value="{{ $e->id }}">[EVENT]
+                                                    {{ $e->title }}{{ $e->event_date ? ' • ' . $e->event_date->format('d M Y') : '' }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                        <optgroup label="Course">
+                                            @foreach(($trainerCourses ?? collect()) as $c)
+                                                <option value="{{ $c->id }}">[COURSE]
+                                                    {{ $c->name }}{{ $c->approved_at ? ' • ' . $c->approved_at->format('d M Y') : '' }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    </select>
+                                    <small class="text-muted">Catatan: pastikan pilih sesuai “Konteks” di sebelah
+                                        kiri.</small>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Kode Kegiatan</label>
+                                    <select name="activity_code" class="form-select form-select-sm" required>
+                                        <option value="WBN">WBN (Webinar)</option>
+                                        <option value="SMN">SMN (Seminar)</option>
+                                        <option value="WRT">WRT (Workshop & Training)</option>
+                                        <option value="VDP">VDP (Video Production)</option>
+                                        <option value="ELR">ELR (E-Learning)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Kode Jenis</label>
+                                    <select name="type_code" class="form-select form-select-sm" required>
+                                        <option value="TRN">TRN (Narasumber)</option>
+                                        <option value="MOD">MOD (Moderator)</option>
+                                        <option value="MC">MC</option>
+                                        <option value="PNT">PNT (Panitia)</option>
+                                        <option value="CLB">CLB (Kolaborator)</option>
+                                        <option value="SRT">SRT (Peserta)</option>
+                                        <option value="GRD">GRD (Kelulusan)</option>
+                                        <option value="SPV">SPV (Supervisor)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Nomor Urut</label>
+                                    <input name="sequence" class="form-control form-control-sm" value="001" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold text-muted">Tanggal Terbit</label>
+                                    <input name="issued_at" type="date" class="form-control form-control-sm" />
+                                </div>
+
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary btn-sm px-4">
+                                        <i class="bi bi-send-check-fill me-2"></i>Terbitkan & Kirim ke Trainer
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>No Sertifikat</th>
+                                        <th>Konteks</th>
+                                        <th>Status</th>
+                                        <th>Terbit</th>
+                                        <th class="text-end">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse(($trainerCertificates ?? collect()) as $cert)
+                                        <tr>
+                                            <td
+                                                style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">
+                                                {{ $cert->certificate_number }}
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $label = $cert->certifiable instanceof \App\Models\Event
+                                                        ? ('Event: ' . ($cert->certifiable->title ?? '#' . $cert->certifiable_id))
+                                                        : ('Course: ' . ($cert->certifiable->name ?? '#' . $cert->certifiable_id));
+                                                @endphp
+                                                <div class="small fw-semibold">{{ $label }}</div>
+                                                <div class="text-muted small">Diterbitkan oleh: {{ $cert->issuer->name ?? '-' }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="badge {{ ($cert->status ?? '') === 'revoked' ? 'bg-danger' : 'bg-success' }}">
+                                                    {{ strtoupper($cert->status ?? 'sent') }}
+                                                </span>
+                                            </td>
+                                            <td class="small text-muted">{{ $cert->issued_at?->format('d M Y') ?? '-' }}</td>
+                                            <td class="text-end">
+                                                @if(($cert->status ?? '') !== 'revoked')
+                                                    <form action="{{ route('admin.trainer.certificates.revoke', $cert) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Cabut sertifikat ini? Trainer tidak akan melihatnya lagi.');"
+                                                        style="display:inline-block;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-outline-danger btn-sm">
+                                                            <i class="bi bi-x-circle me-1"></i>Cabut
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-muted small">—</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-3">Belum ada sertifikat yang
+                                                diterbitkan.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -93,6 +93,8 @@
 </nav>
 
 <style>
+    /* (rest of navbar styles unchanged) */
+
     .text-indigo { color: #3949ab; }
     .bg-indigo { background-color: #3949ab; }
     .bg-indigo-subtle { background-color: #e8eaf6; }

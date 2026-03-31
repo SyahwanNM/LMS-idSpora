@@ -188,11 +188,12 @@
             font-size: 12px;
         }
     </style>
+    @include('admin.trainer._top-text-color')
 @endsection
 
 @section('content')
     <div class="trainer-wrapper">
-        @include('admin.partials.trainer-sidebar')
+        @include('admin.trainer._sidebar')
 
         <main class="trainer-main">
             <div class="queue-hero">
