@@ -1647,6 +1647,7 @@
                             uploadedFiles = [];
                             updateFileList();
                             showNotificationModal('Berhasil', data.message || 'Materi berhasil disubmit ke Admin!', 'success');
+                            setTimeout(() => window.location.reload(), 1200);
                             return;
                         } else {
                             const firstValidationError = data.errors
