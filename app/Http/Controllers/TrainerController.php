@@ -18,6 +18,181 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
+    private function ensureTrainerCertificatesSynced($trainer): void
+    {
+        $trainerId = (int) ($trainer->id ?? 0);
+        if ($trainerId <= 0) {
+            return;
+        }
+
+        $finishedEvents = Event::query()
+            ->where('trainer_id', $trainerId)
+            ->whereNotNull('event_date')
+            ->whereDate('event_date', '<', now()->toDateString())
+            ->get(['id', 'title', 'event_date', 'jenis', 'certificate_logo', 'certificate_signature']);
+
+        $finishedCourses = Course::query()
+            ->where('trainer_id', $trainerId)
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->where('approved_at', '<', now())
+            ->get(['id', 'name', 'approved_at']);
+
+        $existing = TrainerCertificate::query()
+            ->where('trainer_id', $trainerId)
+            ->where('status', 'sent')
+            ->where(function ($q) {
+                $q->where('certifiable_type', Event::class)
+                    ->orWhere('certifiable_type', Course::class);
+            })
+            ->get(['certifiable_type', 'certifiable_id'])
+            ->mapWithKeys(function ($cert) {
+                return [((string) $cert->certifiable_type) . ':' . (int) $cert->certifiable_id => true];
+            });
+
+        foreach ($finishedEvents as $event) {
+            $key = Event::class . ':' . (int) $event->id;
+            if (!isset($existing[$key])) {
+                $this->issueAutoTrainerCertificate($trainer, $event, 'event');
+                $existing[$key] = true;
+            }
+        }
+
+        foreach ($finishedCourses as $course) {
+            $key = Course::class . ':' . (int) $course->id;
+            if (!isset($existing[$key])) {
+                $this->issueAutoTrainerCertificate($trainer, $course, 'course');
+                $existing[$key] = true;
+            }
+        }
+    }
+
+    private function issueAutoTrainerCertificate($trainer, $certifiable, string $context): void
+    {
+        $trainerId = (int) ($trainer->id ?? 0);
+        if ($trainerId <= 0) {
+            return;
+        }
+
+        $certifiableType = $context === 'event' ? Event::class : Course::class;
+        $certifiableId = (int) ($certifiable->id ?? 0);
+        if ($certifiableId <= 0) {
+            return;
+        }
+
+        $alreadyExists = TrainerCertificate::query()
+            ->where('trainer_id', $trainerId)
+            ->where('status', 'sent')
+            ->where('certifiable_type', $certifiableType)
+            ->where('certifiable_id', $certifiableId)
+            ->exists();
+
+        if ($alreadyExists) {
+            return;
+        }
+
+        $issuedAt = now();
+        if ($context === 'event' && !empty($certifiable->event_date)) {
+            $issuedAt = Carbon::parse($certifiable->event_date)->endOfDay();
+        } elseif ($context === 'course' && !empty($certifiable->approved_at)) {
+            $issuedAt = Carbon::parse($certifiable->approved_at);
+        }
+
+        $activityCodeMap = [
+            'webinar' => 'WBN',
+            'seminar' => 'SMN',
+            'workshop' => 'WRT',
+            'training' => 'WRT',
+            'video' => 'VDP',
+            'e-learning' => 'ELR',
+            'elearning' => 'ELR',
+        ];
+
+        $activityCode = $context === 'event'
+            ? ($activityCodeMap[strtolower((string) ($certifiable->jenis ?? ''))] ?? 'WBN')
+            : 'ELR';
+        $typeCode = 'TRN';
+
+        $sequenceNum = TrainerCertificate::query()
+            ->where('trainer_id', $trainerId)
+            ->where('status', 'sent')
+            ->count() + 1;
+        $sequence = str_pad((string) $sequenceNum, 3, '0', STR_PAD_LEFT);
+
+        $certificateNumber = $this->buildIdsporaCertificateNumber($activityCode, $typeCode, $sequence, $issuedAt);
+
+        $trainerCertificate = TrainerCertificate::create([
+            'trainer_id' => $trainerId,
+            'certifiable_type' => $certifiableType,
+            'certifiable_id' => $certifiableId,
+            'activity_code' => strtoupper($activityCode),
+            'type_code' => $typeCode,
+            'sequence' => $sequence,
+            'certificate_number' => $certificateNumber,
+            'issued_at' => $issuedAt,
+            'issued_by' => null,
+            'status' => 'sent',
+        ]);
+
+        $logosBase64 = [];
+        $signaturesBase64 = [];
+        if ($context === 'event' && $certifiable instanceof Event) {
+            [$logosBase64, $signaturesBase64] = $this->extractEventAssetsBase64($certifiable);
+        }
+
+        $pdfData = [
+            'context' => $context,
+            'event' => $context === 'event' ? $certifiable : null,
+            'course' => $context === 'course' ? $certifiable : null,
+            'user' => $trainer,
+            'issuedAt' => $issuedAt,
+            'certificateNumber' => $certificateNumber,
+            'logosBase64' => $logosBase64,
+            'signaturesBase64' => $signaturesBase64,
+            'roleLabel' => $this->certificateTypeLabel($typeCode),
+        ];
+
+        $dompdf = new Dompdf();
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+        $html = view('trainer.certificates.certificate-pdf', $pdfData)->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $relativeDir = 'trainer_certificates/' . $trainerId . '/' . $context . '/' . $certifiableId;
+        $filename = Str::slug($certificateNumber, '_') . '.pdf';
+        $relativePath = $relativeDir . '/' . $filename;
+        $absolutePath = storage_path('app/' . $relativePath);
+
+        if (!is_dir(dirname($absolutePath))) {
+            mkdir(dirname($absolutePath), 0755, true);
+        }
+        file_put_contents($absolutePath, $dompdf->output());
+        $trainerCertificate->update(['file_path' => $relativePath]);
+
+        $contextLabel = $context === 'event' ? 'event' : 'course';
+        $contextTitle = $context === 'event'
+            ? (string) ($certifiable->title ?? '')
+            : (string) ($certifiable->name ?? '');
+
+        TrainerNotification::create([
+            'trainer_id' => $trainerId,
+            'type' => 'certificate_issued',
+            'title' => 'Sertifikat otomatis diterbitkan',
+            'message' => 'Sertifikat untuk ' . $contextLabel . ($contextTitle !== '' ? ' "' . $contextTitle . '"' : '') . ' sudah tersedia. No: ' . $certificateNumber,
+            'data' => [
+                'entity_type' => $context,
+                'entity_id' => $certifiableId,
+                'certificate_number' => $certificateNumber,
+                'url' => route('trainer.certificates.index') . '?context=' . $context . '&id=' . $certifiableId,
+            ],
+            'expires_at' => now()->addDays(30),
+        ]);
+    }
+
     private function mapStudioMaterialModule(int $courseId, \App\Models\CourseModule $module): array
     {
         return [
@@ -104,6 +279,7 @@ class TrainerController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
+        $this->ensureTrainerCertificatesSynced($user);
 
         $coursesQuery = $user->coursesAsTrainer();
 
@@ -1243,6 +1419,7 @@ class TrainerController extends Controller
     public function certificatesIndex()
     {
         $trainer = Auth::user();
+        $this->ensureTrainerCertificatesSynced($trainer);
 
         $context = (string) request()->query('context', '');
         $targetId = (int) request()->query('id', 0);
