@@ -32,7 +32,6 @@ class CourseController extends Controller
      */
     public function payment(Request $request, Course $course)
     {
-        $this->ensureCoursePublishedForPublic($request->user(), $course);
         // Use the custom payment-course view for payment page
         return view('course.payment-course', compact('course'));
     }
@@ -43,8 +42,6 @@ class CourseController extends Controller
     public function learn(Request $request, Course $course)
     {
         $user = $request->user();
-
-        $this->ensureCoursePublishedForPublic($user, $course);
 
         $enrollment = Enrollment::query()
             ->where('user_id', $user->id)
@@ -242,6 +239,33 @@ class CourseController extends Controller
         return trim($text ?? '');
     }
 
+    private function notifyTrainerCourseInvitation(Course $course, int $trainerId, string $source = 'trainer_id'): void
+    {
+        $trainer = User::query()
+            ->where('id', $trainerId)
+            ->where('role', 'trainer')
+            ->first();
+
+        if (!$trainer) {
+            return;
+        }
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'course_invitation',
+            'title' => 'Undangan Menjadi Trainer Course',
+            'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
+            'data' => [
+                'entity_type' => 'course',
+                'entity_id' => $course->id,
+                'url' => route('trainer.detail-course', $course->id),
+                'invitation_status' => 'pending',
+                'invitation_source' => $source,
+                'due_at' => now()->addDays(7)->toIso8601String(),
+            ],
+        ]);
+    }
+
     /**
      * Resolve template by course level.
      * If a manual template is provided but level mismatches, it is ignored.
@@ -322,31 +346,6 @@ class CourseController extends Controller
             }
         }
         return null;
-    }
-
-    private function notifyTrainerCourseInvitation(Course $course, int $trainerId): void
-    {
-        $trainer = User::query()
-            ->where('id', $trainerId)
-            ->where('role', 'trainer')
-            ->first();
-
-        if (!$trainer) {
-            return;
-        }
-
-        TrainerNotification::create([
-            'trainer_id' => $trainer->id,
-            'type' => 'course_invitation',
-            'title' => 'Undangan Menjadi Trainer Course',
-            'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
-            'data' => [
-                'entity_type' => 'course',
-                'entity_id' => $course->id,
-                'url' => route('trainer.detail-course', $course->id),
-                'invitation_status' => 'pending',
-            ],
-        ]);
     }
 
     public function index(Request $request)
@@ -558,7 +557,6 @@ class CourseController extends Controller
 
     public function show(Request $request, Course $course)
     {
-        $this->ensureCoursePublishedForPublic($request->user(), $course);
         $course->load('category', 'modules');
         // Students enrolled (use active enrollments for the count)
         $course->loadCount([
@@ -918,13 +916,14 @@ class CourseController extends Controller
         $deleteIds = collect(preg_split('/[,\s]+/', trim($deleteIdsCsv)))->filter()->map(fn($v) => (int) $v)->all();
         if (!empty($deleteIds)) {
             $hasModuleChanges = true;
-            $modulesToDelete = CourseModule::where('course_id', $course->id)->whereIn('id', $deleteIds)->get();
-            foreach ($modulesToDelete as $mod) {
+            // Delete files first, then delete modules
+            foreach (CourseModule::where('course_id', $course->id)->whereIn('id', $deleteIds)->get() as $mod) {
                 if ($mod->content_url && Storage::disk('public')->exists($mod->content_url)) {
                     Storage::disk('public')->delete($mod->content_url);
                 }
-                $mod->delete();
             }
+            // Bulk delete modules
+            CourseModule::where('course_id', $course->id)->whereIn('id', $deleteIds)->delete();
         }
 
         $orderUpdatesInput = $request->input('modules_order_updates', '{}');

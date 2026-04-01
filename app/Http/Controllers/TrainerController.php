@@ -619,6 +619,9 @@ class TrainerController extends Controller
 
         $event = \App\Models\Event::where('id', $id)
             ->where('trainer_id', $trainerId)
+            ->with(['scheduleItems' => function ($q) {
+                $q->orderBy('start', 'asc');
+            }])
             ->firstOrFail();
 
         return view('trainer.detail-event', compact('event'));
@@ -1272,6 +1275,8 @@ class TrainerController extends Controller
 
         $storedFiles = [];
         $primaryMaterialPath = null;
+        $latestImagePath = null;
+        $latestModuleDocPath = null;
 
         foreach ($request->file('files') as $file) {
             $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
@@ -1294,6 +1299,32 @@ class TrainerController extends Controller
                 'module_path' => $primaryMaterialPath,
                 'material_status' => 'pending_review',
             ]);
+            if (str_starts_with((string) $file->getMimeType(), 'image/')) {
+                $latestImagePath = $filepath;
+            } else {
+                // Treat non-image docs as a module submission (pending admin verification).
+                $ext = strtolower((string) $file->getClientOriginalExtension());
+                if (in_array($ext, ['pdf', 'ppt', 'pptx', 'doc', 'docx'], true)) {
+                    $latestModuleDocPath = $filepath;
+                }
+            }
+        }
+
+        $updates = [];
+        if ($latestImagePath) {
+            $updates['vbg_path'] = $latestImagePath;
+        }
+        if ($latestModuleDocPath) {
+            $updates['module_submission_path'] = $latestModuleDocPath;
+            $updates['module_submitted_at'] = now();
+            $updates['module_verified_at'] = null;
+            $updates['module_verified_by'] = null;
+            $updates['module_rejected_at'] = null;
+            $updates['module_rejected_by'] = null;
+            $updates['module_rejection_reason'] = null;
+        }
+        if (!empty($updates)) {
+            $event->update($updates);
         }
 
         return response()->json([
