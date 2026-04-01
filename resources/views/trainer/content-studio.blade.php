@@ -691,37 +691,84 @@
                                 ];
                             })->values();
                         @endphp
-                            <div id="existingMaterialsBlock" class="file-list" style="margin-top: 16px; display: {{ $existingMaterials->isNotEmpty() ? 'block' : 'none' }};">
-                                <h3>Materi Tersimpan Sebelumnya</h3>
-                                <ul id="existingMaterialsList" style="list-style: none; padding: 0; margin: 0;">
-                                    @foreach($existingMaterials as $material)
+                        <div id="existingMaterialsBlock" class="file-list"
+                            style="margin-top: 16px; display: {{ $existingMaterials->isNotEmpty() ? 'block' : 'none' }};">
+                            <h3>Materi Tersimpan Sebelumnya</h3>
+                            <ul id="existingMaterialsList" style="list-style: none; padding: 0; margin: 0;">
+                                @foreach($existingMaterials as $material)
+                                    <li
+                                        style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                            <i class="bi {{ $material->type === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}"
+                                                style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                            <div>
+                                                <p
+                                                    style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
+                                                    {{ $material->file_name ?: basename($material->content_url) }}
+                                                </p>
+                                                <p style="margin: 0; font-size: 12px; color: #999;">
+                                                    {{ strtoupper($material->type) }} • Slot {{ $material->order_no }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 6px;">
+                                            <button type="button" class="preview-material-btn"
+                                                data-view-url="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
+                                                data-material-type="{{ $material->type }}"
+                                                data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
+                                                title="Preview File"
+                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                            <button type="button" class="select-replace-btn"
+                                                data-module-id="{{ $material->id }}" data-module-type="{{ $material->type }}"
+                                                data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
+                                                title="Ganti File"
+                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        @if(($uploadedMaterials ?? collect())->isNotEmpty())
+                            <div class="file-list" style="margin-top: 16px; display: block;">
+                                <h3>Semua Materi Yang Sudah Diupload</h3>
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    @foreach($uploadedMaterials as $material)
                                         <li
-                                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                <i class="bi {{ $material->type === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}"
-                                                    style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                                <div>
+                                            style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #dce3ee;">
+                                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                                                <i class="bi {{ $material['type'] === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}"
+                                                    style="font-size: 18px; color: var(--main-navy-clr);"></i>
+                                                <div style="min-width: 0;">
                                                     <p
-                                                        style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
-                                                        {{ $material->file_name ?: basename($material->content_url) }}</p>
-                                                    <p style="margin: 0; font-size: 12px; color: #999;">
-                                                        {{ strtoupper($material->type) }} • Slot {{ $material->order_no }}</p>
+                                                        style="margin: 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                        {{ $material['file_name'] }}
+                                                    </p>
+                                                    <p style="margin: 0; font-size: 11px; color: #999;">
+                                                        {{ strtoupper($material['type']) }} • Bab {{ $material['unit_no'] }} • Slot
+                                                        {{ $material['order_no'] }}
+                                                    </p>
                                                 </div>
                                             </div>
-                                            <div style="display: flex; gap: 6px;">
+                                            <div style="display: inline-flex; gap: 6px;">
                                                 <button type="button" class="preview-material-btn"
-                                                    data-view-url="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
-                                                    data-material-type="{{ $material->type }}"
-                                                    data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
-                                                    title="Preview File"
-                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                    data-view-url="{{ $material['view_url'] }}"
+                                                    data-material-type="{{ $material['type'] }}"
+                                                    data-file-name="{{ $material['file_name'] }}" title="Preview File"
+                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                     <i class="bi bi-eye-fill"></i>
                                                 </button>
                                                 <button type="button" class="select-replace-btn"
-                                                    data-module-id="{{ $material->id }}" data-module-type="{{ $material->type }}"
-                                                    data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
-                                                    title="Ganti File"
+                                                    data-module-id="{{ $material['module_id'] }}"
+                                                    data-module-type="{{ $material['type'] }}"
+                                                    data-file-name="{{ $material['file_name'] }}" title="Ganti File"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                     <i class="bi bi-arrow-repeat"></i>
@@ -731,49 +778,7 @@
                                     @endforeach
                                 </ul>
                             </div>
-
-                            @if(($uploadedMaterials ?? collect())->isNotEmpty())
-                                <div class="file-list" style="margin-top: 16px; display: block;">
-                                    <h3>Semua Materi Yang Sudah Diupload</h3>
-                                    <ul style="list-style: none; padding: 0; margin: 0;">
-                                        @foreach($uploadedMaterials as $material)
-                                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #dce3ee;">
-                                                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
-                                                    <i class="bi {{ $material['type'] === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}" style="font-size: 18px; color: var(--main-navy-clr);"></i>
-                                                    <div style="min-width: 0;">
-                                                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                                            {{ $material['file_name'] }}
-                                                        </p>
-                                                        <p style="margin: 0; font-size: 11px; color: #999;">
-                                                            {{ strtoupper($material['type']) }} • Bab {{ $material['unit_no'] }} • Slot {{ $material['order_no'] }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div style="display: inline-flex; gap: 6px;">
-                                                    <button type="button" class="preview-material-btn"
-                                                        data-view-url="{{ $material['view_url'] }}"
-                                                        data-material-type="{{ $material['type'] }}"
-                                                        data-file-name="{{ $material['file_name'] }}"
-                                                        title="Preview File"
-                                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                        <i class="bi bi-eye-fill"></i>
-                                                    </button>
-                                                    <button type="button" class="select-replace-btn"
-                                                        data-module-id="{{ $material['module_id'] }}"
-                                                        data-module-type="{{ $material['type'] }}"
-                                                        data-file-name="{{ $material['file_name'] }}"
-                                                        title="Ganti File"
-                                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                        <i class="bi bi-arrow-repeat"></i>
-                                                    </button>
-                                                </div>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
+                        @endif
 
                         <div class="panel-footer">
                             <button type="submit" class="primary-btn" id="uploadSubmitBtn">
@@ -825,16 +830,20 @@
                             <h3>Quiz Tersimpan Sebelumnya</h3>
                             <ul style="list-style: none; padding: 0; margin: 0;">
                                 @foreach($existingQuizModules as $quizModule)
-                                    <li style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                    <li
+                                        style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
                                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                                             <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                <i class="bi bi-patch-check" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                <i class="bi bi-patch-check"
+                                                    style="font-size: 20px; color: var(--main-navy-clr);"></i>
                                                 <div>
-                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
+                                                    <p
+                                                        style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
                                                         {{ $quizModule->title ?: ('Quiz Unit ' . ($unitIndex + 1)) }}
                                                     </p>
                                                     <p style="margin: 0; font-size: 12px; color: #999;">
-                                                        {{ $quizModule->quiz_questions_count ?? 0 }} Soal • Slot {{ $quizModule->order_no }}
+                                                        {{ $quizModule->quiz_questions_count ?? 0 }} Soal • Slot
+                                                        {{ $quizModule->order_no }}
                                                         @if($quizModule->updated_at)
                                                             • Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
                                                         @endif
@@ -842,23 +851,20 @@
                                                 </div>
                                             </div>
                                             <div style="display: inline-flex; align-items: center; gap: 6px;">
-                                                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(27, 23, 99, 0.1); color: var(--main-navy-clr); font-size: 12px; font-weight: 600;">
+                                                <span
+                                                    style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(27, 23, 99, 0.1); color: var(--main-navy-clr); font-size: 12px; font-weight: 600;">
                                                     <i class="bi bi-clock-history"></i>
                                                     Riwayat
                                                 </span>
-                                                <button type="button"
-                                                    class="quiz-edit-btn"
-                                                    data-module-id="{{ $quizModule->id }}"
+                                                <button type="button" class="quiz-edit-btn" data-module-id="{{ $quizModule->id }}"
                                                     title="Edit Quiz"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
                                                 @if($quizModule->quizQuestions->isNotEmpty())
-                                                    <button type="button"
-                                                        class="quiz-history-toggle"
-                                                        data-target="quiz-history-{{ $quizModule->id }}"
-                                                        title="Lihat Riwayat Soal"
+                                                    <button type="button" class="quiz-history-toggle"
+                                                        data-target="quiz-history-{{ $quizModule->id }}" title="Lihat Riwayat Soal"
                                                         style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                         <i class="bi bi-eye-fill"></i>
@@ -868,24 +874,28 @@
                                         </div>
 
                                         @if($quizModule->quizQuestions->isNotEmpty())
-                                            <div id="quiz-history-{{ $quizModule->id }}" style="margin-top: 10px; display: none; flex-direction: column; gap: 8px;">
-                                                    @foreach($quizModule->quizQuestions as $questionIndex => $question)
-                                                        <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px;">
-                                                            <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr);">
-                                                                {{ $questionIndex + 1 }}. {{ $question->question }}
-                                                            </p>
-                                                            <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #64748b;">
-                                                                @foreach($question->answers as $answer)
-                                                                    <li style="margin-bottom: 4px; color: {{ $answer->is_correct ? '#0f766e' : '#64748b' }}; font-weight: {{ $answer->is_correct ? '600' : '400' }};">
-                                                                        {{ $answer->answer_text }}
-                                                                        @if($answer->is_correct)
-                                                                            <span style="margin-left: 6px; font-size: 11px;">(Jawaban benar)</span>
-                                                                        @endif
-                                                                    </li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                    @endforeach
+                                            <div id="quiz-history-{{ $quizModule->id }}"
+                                                style="margin-top: 10px; display: none; flex-direction: column; gap: 8px;">
+                                                @foreach($quizModule->quizQuestions as $questionIndex => $question)
+                                                    <div
+                                                        style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px;">
+                                                        <p
+                                                            style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr);">
+                                                            {{ $questionIndex + 1 }}. {{ $question->question }}
+                                                        </p>
+                                                        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #64748b;">
+                                                            @foreach($question->answers as $answer)
+                                                                <li
+                                                                    style="margin-bottom: 4px; color: {{ $answer->is_correct ? '#0f766e' : '#64748b' }}; font-weight: {{ $answer->is_correct ? '600' : '400' }};">
+                                                                    {{ $answer->answer_text }}
+                                                                    @if($answer->is_correct)
+                                                                        <span style="margin-left: 6px; font-size: 11px;">(Jawaban benar)</span>
+                                                                    @endif
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         @endif
                                     </li>
@@ -1070,13 +1080,18 @@
 
     <div id="materialPreviewModal"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 10001; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: #fff; border-radius: 12px; width: min(980px, 100%); max-height: 92vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
-            <div style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div
+            style="background: #fff; border-radius: 12px; width: min(980px, 100%); max-height: 92vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+            <div
+                style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <div style="min-width: 0;">
                     <h3 style="margin: 0; font-size: 16px; color: var(--main-navy-clr);">Preview Materi</h3>
-                    <p id="materialPreviewName" style="margin: 2px 0 0 0; font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                    <p id="materialPreviewName"
+                        style="margin: 2px 0 0 0; font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    </p>
                 </div>
-                <button type="button" id="materialPreviewCloseBtn" style="border: none; background: #f3f4f6; color: #334155; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;">
+                <button type="button" id="materialPreviewCloseBtn"
+                    style="border: none; background: #f3f4f6; color: #334155; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
@@ -1181,9 +1196,9 @@
             const confirmBtn = document.getElementById('replacementConfirmBtn');
             const fileInput = document.getElementById('replacementFileInput');
 
-            console.log('🔍 Elements check:', { 
-                modal: !!modal, 
-                oldFileName: !!oldFileName, 
+            console.log('🔍 Elements check:', {
+                modal: !!modal,
+                oldFileName: !!oldFileName,
                 oldFileInfo: !!oldFileInfo,
                 preview: !!preview,
                 confirmBtn: !!confirmBtn,
@@ -1316,32 +1331,32 @@
                     const moduleId = Number(material.module_id || 0);
 
                     return `
-                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                <i class="bi ${iconClass}" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                <div>
-                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                    <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
+                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                    <i class="bi ${iconClass}" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                    <div>
+                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
+                                        <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div style="display: flex; gap: 6px;">
-                                <button type="button" class="preview-material-btn"
-                                    data-view-url="${viewUrl}" data-material-type="${moduleType}" data-file-name="${fileName}"
-                                    title="Preview File"
-                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                    <i class="bi bi-eye-fill"></i>
-                                </button>
-                                <button type="button" class="select-replace-btn"
-                                    data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
-                                    title="Ganti File"
-                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                    <i class="bi bi-arrow-repeat"></i>
-                                </button>
-                            </div>
-                        </li>
-                    `;
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="preview-material-btn"
+                                        data-view-url="${viewUrl}" data-material-type="${moduleType}" data-file-name="${fileName}"
+                                        title="Preview File"
+                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                    <button type="button" class="select-replace-btn"
+                                        data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
+                                        title="Ganti File"
+                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                </div>
+                            </li>
+                        `;
                 }).join('');
             }
 
@@ -1491,7 +1506,7 @@
                             showNotificationModal('Berhasil', data.message || 'File berhasil diganti!', 'success');
                         } else {
                             let errorMsg = data.error || data.message || 'Unknown error';
-                            
+
                             // If there are available types info, add it to the error message
                             if (data.available_types && typeof data.available_types === 'object' && Object.keys(data.available_types).length > 0) {
                                 const typeInfos = Object.entries(data.available_types)
@@ -1499,7 +1514,7 @@
                                     .join(' | ');
                                 errorMsg += '\n\n📊 Slot Tersedia: ' + typeInfos;
                             }
-                            
+
                             showNotificationModal('Gagal', errorMsg, 'error');
                         }
                     })
@@ -1514,7 +1529,7 @@
             });
 
             // Define showReplacementPreview inside DOMContentLoaded
-            window.showReplacementPreview = function(file) {
+            window.showReplacementPreview = function (file) {
                 document.getElementById('replacementFileName').textContent = file.name;
                 document.getElementById('replacementFileSize').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
                 document.getElementById('replacementPreview').style.display = 'block';
@@ -1544,17 +1559,17 @@
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
                     uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                    <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                    <div>
-                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                        <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                        <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                        <div>
+                                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                            <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                            </li>
-                        `).join("");
+                                    <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                                </li>
+                            `).join("");
 
                     document.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -1574,7 +1589,14 @@
 
                 const selectedTypes = [...new Set(uploadedFiles.map(getUploadType))];
                 const availableTypesInUnit = [...new Set(activeUnitModules.map(module => module.type))];
-                const unsupportedTypes = selectedTypes.filter((type) => !availableTypesInUnit.includes(type));
+                const availableMaterialTypesInUnit = [...new Set(
+                    activeUnitModules
+                        .filter((module) => module.type !== 'quiz')
+                        .map((module) => module.type)
+                )];
+                const unsupportedTypes = selectedTypes.filter(
+                    (type) => !availableTypesInUnit.includes(type) && availableMaterialTypesInUnit.length === 0
+                );
 
                 if (unsupportedTypes.length > 0) {
                     const selectedText = selectedTypes.map((type) => String(type).toUpperCase()).join(', ');
@@ -1654,7 +1676,7 @@
                                 ? Object.values(data.errors).flat()[0]
                                 : null;
                             let errorMsg = data.error || data.message || firstValidationError || 'Unknown error';
-                            
+
                             // If there are available types info, add it to the error message
                             if (data.available_types && typeof data.available_types === 'object' && Object.keys(data.available_types).length > 0) {
                                 const typeInfos = Object.entries(data.available_types)
@@ -1662,7 +1684,7 @@
                                     .join(' | ');
                                 errorMsg += '\n\n📊 Slot Tersedia: ' + typeInfos;
                             }
-                            
+
                             showNotificationModal('Gagal', errorMsg, 'error');
                         }
                     })
@@ -1736,33 +1758,33 @@
                     const qEl = document.createElement("article");
                     qEl.className = "quiz-editor";
                     qEl.innerHTML = `
-                            <div class="q-head">
-                                <div class="q-number">${index + 1}</div>
-                                <div class="q-inputs">
-                                    <label>PERTANYAAN</label>
-                                    <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                <div class="q-head">
+                                    <div class="q-number">${index + 1}</div>
+                                    <div class="q-inputs">
+                                        <label>PERTANYAAN</label>
+                                        <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                    </div>
+                                    <div class="q-score">
+                                        <label>BOBOT</label>
+                                        <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                    </div>
+                                    <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
                                 </div>
-                                <div class="q-score">
-                                    <label>BOBOT</label>
-                                    <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                <div class="options-section">
+                                    <p class="options-label">PILIHAN JAWABAN</p>
+                                    <div class="options-grid">
+                                        ${q.options.map((opt, oIdx) => `
+                                            <div class="option-container">
+                                                <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
+                                                    <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                                    <span>Opsi ${oIdx + 1}</span>
+                                                </button>
+                                                <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                            </div>
+                                        `).join("")}
+                                    </div>
                                 </div>
-                                <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
-                            </div>
-                            <div class="options-section">
-                                <p class="options-label">PILIHAN JAWABAN</p>
-                                <div class="options-grid">
-                                    ${q.options.map((opt, oIdx) => `
-                                        <div class="option-container">
-                                            <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                                <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                                <span>Opsi ${oIdx + 1}</span>
-                                            </button>
-                                            <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
-                                        </div>
-                                    `).join("")}
-                                </div>
-                            </div>
-                        `;
+                            `;
 
                     // Event Listeners for this question
                     qEl.querySelector(".q-text").addEventListener("input", (e) => {
@@ -1851,7 +1873,7 @@
                         }
                     }
                 }
-                
+
                 if (!quizModuleId) {
                     return showNotificationModal('Perhatian', 'Modul quiz tidak ditemukan untuk bab ini.', 'error');
                 }

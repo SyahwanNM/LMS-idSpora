@@ -83,7 +83,15 @@
                             href="{{ route('admin.material.approvals') }}">
                             <div class="bg-light rounded p-1 me-2"><i
                                     class="bi bi-clipboard-check-fill text-warning"></i></div>
-                            Material Approval
+                            Material Approval (Course)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item rounded-3 py-2 d-flex align-items-center"
+                            href="{{ route('admin.event-materials.index') }}">
+                            <div class="bg-light rounded p-1 me-2"><i
+                                    class="bi bi-file-earmark-check-fill text-info"></i></div>
+                            Material Approval (Event)
                         </a>
                     </li>
                     <li>

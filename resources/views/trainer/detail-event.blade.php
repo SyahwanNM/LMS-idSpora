@@ -15,21 +15,9 @@
   <div class="hero-section">
     <div class="hero-container">
       <div class="hero-top-row">
-        <button
-          class="back-button"
-          onclick="window.location.href = '{{ route('trainer.events') }}'"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
+        <button class="back-button" onclick="window.location.href = '{{ route('trainer.events') }}'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           <span>ALL SESSIONS</span>
@@ -57,17 +45,8 @@
           <div class="event-info-cards">
             <div class="info-card">
               <div class="info-icon-shell">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                   <line x1="16" y1="2" x2="16" y2="6"></line>
                   <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -84,17 +63,8 @@
 
             <div class="info-card">
               <div class="info-icon-shell">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
@@ -112,17 +82,8 @@
 
             <div class="info-card">
               <div class="info-icon-shell">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
@@ -137,11 +98,12 @@
 
         <div class="hero-media">
           @if(Str::startsWith($event->image, ['http://', 'https://']))
-              <img src="{{ $event->image }}" alt="{{ $event->title }}" class="hero-image" />
+            <img src="{{ $event->image }}" alt="{{ $event->title }}" class="hero-image" />
           @elseif($event->image)
-              <img src="{{ asset('storage/'.$event->image) }}" alt="{{ $event->title }}" class="hero-image" />
+            <img src="{{ asset('storage/' . $event->image) }}" alt="{{ $event->title }}" class="hero-image" />
           @else
-              <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop" alt="Default Event Image" class="hero-image" />
+            <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop"
+              alt="Default Event Image" class="hero-image" />
           @endif
         </div>
       </div>
@@ -154,17 +116,9 @@
       <div class="vsa-grid">
         <article class="vsa-card">
           <div class="vsa-icon vsa-icon-blue">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd"
+                d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
             </svg>
           </div>
           <div class="vsa-meta">
@@ -174,38 +128,21 @@
           </div>
           <a href="{{ $event->zoom_link ?? '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($event->zoom_link) ? 'disabled' : '' }}>
             JOIN SESSION
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"
-              />
-              <path
-                fill-rule="evenodd"
-                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd"
+                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+              <path fill-rule="evenodd"
+                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
             </svg>
           </a>
         </article>
 
         <article class="vsa-card">
           <div class="vsa-icon vsa-icon-amber">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
               <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
               <path
-                d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z"
-              />
+                d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
             </svg>
           </div>
           <div class="vsa-meta">
@@ -213,21 +150,14 @@
             <h3>Virtual Background</h3>
             <p class="vsa-desc">High-Res PNG • Pre-branded</p>
           </div>
-          <a href="{{ $event->vbg_path ? asset('storage/'.$event->vbg_path) : '#' }}" class="vsa-btn vsa-btn-amber" download>
+          <a href="{{ $event->vbg_path ? asset('storage/' . $event->vbg_path) : '#' }}" class="vsa-btn vsa-btn-amber"
+            download>
             DOWNLOAD VBG
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path
-                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"
-              />
+                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
               <path
-                d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"
-              />
+                d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
             </svg>
           </a>
         </article>
@@ -268,111 +198,136 @@
         </ul>
       </section>
 
-    <aside class="hub-card">
-      <p class="hub-title">INSTRUCTOR HUB</p>
-      <div class="hub-section">
-        <p class="hub-section-title">ENGAGEMENT REQUIREMENTS</p>
-        <div class="hub-pill-grid">
-          <div
-            class="hub-pill"
-            data-redirect="{{ route('trainer.events.studio', $event->id) }}"
-          >
-            <p class="hub-pill-label">MATERIALS</p>
-            <p class="hub-pill-value">Upload Content</p>
+      <aside class="hub-card">
+        <p class="hub-title">INSTRUCTOR HUB</p>
+
+        {{-- Invitation Status Section --}}
+        @php
+          $invitation = \App\Models\TrainerNotification::where('trainer_id', Auth::id())
+            ->where('type', 'event_invitation')
+            ->where(function ($q) use ($event) {
+              $q->whereJsonContains('data->entity_id', $event->id)
+                ->orWhereJsonContains('data->entity_id', (string) $event->id);
+            })
+            ->first();
+          $invitationStatus = $invitation?->invitation_status ?? 'pending';
+          $invitationDueAt = data_get($invitation?->data, 'due_at');
+        @endphp
+
+        @if ($invitationStatus === 'pending')
+          <div class="hub-section"
+            style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <p class="hub-section-title" style="margin-bottom: 12px; color: #991b1b; border-bottom: none;">📋 Event
+              Invitation</p>
+            <p style="font-size: 13px; color: #7f1d1d; margin-bottom: 12px;">Anda telah diundang menjadi narasumber event
+              ini. Silakan terima atau tolak undangan.</p>
+            @if(!empty($invitationDueAt))
+              <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">Tenggat pengumpulan materi:
+                {{ \Carbon\Carbon::parse($invitationDueAt)->format('d M Y H:i') }}</p>
+            @endif
+            <div style="display: flex; gap: 8px;">
+              <form method="POST" action="{{ route('trainer.events.invitation.accept', $event->id) }}" style="flex: 1;">
+                @csrf
+                <button type="submit" class="hub-acceptance-btn"
+                  style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;">✓
+                  Accept</button>
+              </form>
+              <form method="POST" action="{{ route('trainer.events.invitation.reject', $event->id) }}" style="flex: 1;">
+                @csrf
+                <button type="submit" class="hub-acceptance-btn"
+                  style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;">✗
+                  Reject</button>
+              </form>
+            </div>
           </div>
-          <div
-            class="hub-pill"
-            data-redirect="#"
-          >
-            <p class="hub-pill-label">ASSESSMENTS</p>
-            <p class="hub-pill-value">Quizzes</p>
+        @elseif ($invitationStatus === 'accepted')
+          <div class="hub-section"
+            style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <p class="hub-section-title" style="margin-bottom: 8px; color: #166534; border-bottom: none;">✓ Invitation
+              Accepted</p>
+            <p style="font-size: 12px; color: #166534;">Terima kasih telah menerima undangan. Silakan upload materi untuk
+              event ini.</p>
+          </div>
+        @elseif ($invitationStatus === 'rejected')
+          <div class="hub-section"
+            style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <p class="hub-section-title" style="margin-bottom: 8px; color: #991b1b; border-bottom: none;">✗ Invitation
+              Rejected</p>
+            <p style="font-size: 12px; color: #991b1b;">Anda telah menolak undangan event ini.</p>
+          </div>
+        @endif
+
+        <div class="hub-section">
+          <p class="hub-section-title">ENGAGEMENT REQUIREMENTS</p>
+          <div class="hub-pill-grid">
+            <div class="hub-pill" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
+              <p class="hub-pill-label">MATERIALS</p>
+              <p class="hub-pill-value">Upload Content</p>
+            </div>
+            <div class="hub-pill" data-redirect="#">
+              <p class="hub-pill-label">ASSESSMENTS</p>
+              <p class="hub-pill-value">Quizzes</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="hub-item">
-        <div class="hub-item-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            fill="currentColor"
-            viewBox="0 0 16 16"
-          >
+        <div class="hub-item">
+          <div class="hub-item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path
+                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+              <path
+                d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+            </svg>
+          </div>
+          <div>
+            <h4>Submit Assets</h4>
+            <p>Pedagogical Materials</p>
+          </div>
+        </div>
+
+        <div class="hub-item">
+          <div class="hub-item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+              <path
+                d="M5.338 5.59a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75zm6 0a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75z" />
+            </svg>
+          </div>
+          <div>
+            <h4>Learner Ledger</h4>
+            <p>Attendance &amp; Profiles</p>
+          </div>
+        </div>
+
+        <div class="hub-alert">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
             <path
-              d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"
-            />
-            <path
-              d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"
-            />
+              d="m10.97 4.97-.02.02-3.36 3.36a.75.75 0 1 1-1.06-1.06l3.36-3.36a.75.75 0 1 1 1.06 1.06l-.02.02zm-9.47 8.47H6a.75.75 0 0 1 0 1.5H.539l-.427 2.154a.75.75 0 0 0 .921.921l2.154-.427V16a.75.75 0 0 1 1.5 0v2.039l2.154.427a.75.75 0 0 0 .921-.921l-.427-2.154H6a.75.75 0 0 1 0-1.5H1.5z" />
           </svg>
+          <p>
+            VALIDATION REQUIRED: PLEASE UPLOAD PEDAGOGICAL ASSETS AT LEAST 24H
+            PRIOR FOR AUDIT.
+          </p>
         </div>
-        <div>
-          <h4>Submit Assets</h4>
-          <p>Pedagogical Materials</p>
-        </div>
-      </div>
-
-      <div class="hub-item">
-        <div class="hub-item-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            fill="currentColor"
-            viewBox="0 0 16 16"
-          >
-            <path
-              d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
-            />
-            <path
-              d="M5.338 5.59a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75zm6 0a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75z"
-            />
-          </svg>
-        </div>
-        <div>
-          <h4>Learner Ledger</h4>
-          <p>Attendance &amp; Profiles</p>
-        </div>
-      </div>
-
-      <div class="hub-alert">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          fill="currentColor"
-          viewBox="0 0 16 16"
-        >
-          <path
-            d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"
-          />
-          <path
-            d="m10.97 4.97-.02.02-3.36 3.36a.75.75 0 1 1-1.06-1.06l3.36-3.36a.75.75 0 1 1 1.06 1.06l-.02.02zm-9.47 8.47H6a.75.75 0 0 1 0 1.5H.539l-.427 2.154a.75.75 0 0 0 .921.921l2.154-.427V16a.75.75 0 0 1 1.5 0v2.039l2.154.427a.75.75 0 0 0 .921-.921l-.427-2.154H6a.75.75 0 0 1 0-1.5H1.5z"
-          />
-        </svg>
-        <p>
-          VALIDATION REQUIRED: PLEASE UPLOAD PEDAGOGICAL ASSETS AT LEAST 24H
-          PRIOR FOR AUDIT.
-        </p>
-      </div>
-    </aside>
+      </aside>
   </div>
 @endsection
 
 @push('scripts')
-<script>
-  document.addEventListener("click", (event) => {
-    const pill = event.target.closest(".hub-pill[data-redirect]");
-    if (!pill) return;
+  <script>
+    document.addEventListener("click", (event) => {
+      const pill = event.target.closest(".hub-pill[data-redirect]");
+      if (!pill) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+      event.preventDefault();
+      event.stopPropagation();
 
-    const targetPath = pill.getAttribute("data-redirect");
-    if (targetPath && targetPath !== '#') {
-      window.location.href = targetPath;
-    }
-  });
-</script>
+      const targetPath = pill.getAttribute("data-redirect");
+      if (targetPath && targetPath !== '#') {
+        window.location.href = targetPath;
+      }
+    });
+  </script>
 @endpush

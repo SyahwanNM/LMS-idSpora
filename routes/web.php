@@ -618,6 +618,8 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
     Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
     Route::post('/events/{id}/studio/quiz', [TrainerController::class, 'saveEventQuiz'])->name('events.studio.quiz');
+    Route::post('/events/{id}/invitation/accept', [TrainerController::class, 'acceptEventInvitation'])->name('events.invitation.accept');
+    Route::post('/events/{id}/invitation/reject', [TrainerController::class, 'rejectEventInvitation'])->name('events.invitation.reject');
 
     // --- SERTIFIKAT TRAINER (riwayat & download) ---
     Route::get('/certificates', [TrainerController::class, 'certificatesIndex'])->name('certificates.index');
@@ -654,4 +656,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
+
+    // Event Material Approval Routes
+    Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');
+    Route::get('/admin/event/{event}/material', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'show'])->name('admin.event-material.show');
+    Route::post('/admin/event/{event}/material/approve', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'approve'])->name('admin.event-material.approve');
+    Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
 });

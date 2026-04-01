@@ -95,13 +95,15 @@ class EventController extends Controller
             'type' => 'event_invitation',
             'title' => 'Undangan Menjadi Narasumber Event',
             'message' => 'Anda diundang menjadi narasumber untuk event "' . $event->title . '".',
+            'invitation_status' => 'pending',
             'data' => [
                 'entity_type' => 'event',
                 'entity_id' => $event->id,
                 'url' => route('trainer.events.show', $event->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'due_at' => now()->addDays(7)->toIso8601String(),
+                'due_at' => ($event->material_deadline ?: now()->addDays(7))->toIso8601String(),
+                'material_deadline' => optional($event->material_deadline)->toIso8601String(),
             ],
         ]);
     }
@@ -167,6 +169,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -257,6 +260,7 @@ class EventController extends Controller
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
+            'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
@@ -269,6 +273,25 @@ class EventController extends Controller
         foreach ($assignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, $trainerId, $source);
+        }
+
+        // Notify about zoom link if provided
+        if (!empty($request->zoom_link)) {
+            foreach ($assignedTrainerIds as $trainerId) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $trainerId,
+                    'type' => 'event_zoom_link_shared',
+                    'title' => 'Link Zoom Event Dibagikan',
+                    'message' => 'Link Zoom untuk event "' . $event->title . '" telah disiapkan dan dibagikan kepada Anda.',
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'zoom_link' => $request->zoom_link,
+                        'url' => route('trainer.events.show', $event->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
         }
 
         // Persist relational schedule items & expenses for analytics / future queries
@@ -391,6 +414,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -426,7 +450,8 @@ class EventController extends Controller
             'discount_until',
             'event_date',
             'event_time',
-            'event_time_end'
+            'event_time_end',
+            'material_deadline'
         ]);
 
         if (array_key_exists('trainer_id', $data) && empty($data['trainer_id'])) {
@@ -508,6 +533,27 @@ class EventController extends Controller
         foreach ($newlyAssignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, (int) $trainerId, $source);
+        }
+
+        // Notify about zoom link updates
+        $previousZoomLink = (string) data_get($event->getRawOriginal(), 'zoom_link', '');
+        $currentZoomLink = (string) data_get($data, 'zoom_link', '');
+        if (!empty($currentZoomLink) && $previousZoomLink !== $currentZoomLink) {
+            foreach ($currentAssignedTrainerIds as $trainerId) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $trainerId,
+                    'type' => 'event_zoom_link_updated',
+                    'title' => 'Link Zoom Event Diperbarui',
+                    'message' => 'Link Zoom untuk event "' . $event->title . '" telah diperbarui.',
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'zoom_link' => $currentZoomLink,
+                        'url' => route('trainer.events.show', $event->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
         }
 
         // Refresh relational schedule & expenses (simple replace strategy)
@@ -658,18 +704,42 @@ class EventController extends Controller
         ]);
 
         $updates = [];
+        $notificationMessages = [];
+
         if ($request->hasFile('virtual_background')) {
             $updates['vbg_path'] = $request->file('virtual_background')->store('events/docs', 'public');
+            $notificationMessages[] = 'Virtual background (VBG)';
         }
         if ($request->hasFile('certificate')) {
             $updates['certificate_path'] = $request->file('certificate')->store('events/docs', 'public');
+            $notificationMessages[] = 'Sertifikat';
         }
         if ($request->hasFile('attendance')) {
             $updates['attendance_path'] = $request->file('attendance')->store('events/docs', 'public');
+            $notificationMessages[] = 'Absensi';
         }
 
         if (!empty($updates)) {
             $event->update($updates);
+
+            // Notify trainer(s) about uploaded documents
+            if (!empty($event->trainer_id)) {
+                $trainer = User::query()->where('id', (int) $event->trainer_id)->where('role', 'trainer')->first();
+                if ($trainer) {
+                    TrainerNotification::create([
+                        'trainer_id' => (int) $trainer->id,
+                        'type' => 'event_documents_uploaded',
+                        'title' => 'Dokumen Event Diunggah',
+                        'message' => 'Admin telah mengunggah dokumen untuk event "' . $event->title . '": ' . implode(', ', $notificationMessages),
+                        'data' => [
+                            'entity_type' => 'event',
+                            'entity_id' => (int) $event->id,
+                            'url' => route('trainer.events.show', $event->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                }
+            }
         }
 
         return back()->with('success', 'Dokumen berhasil diperbarui.');
@@ -703,23 +773,27 @@ class EventController extends Controller
             ->get();
 
         if ($trainers->isEmpty()) {
-            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: '.implode(', ', $names));
+            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: ' . implode(', ', $names));
         }
 
         $sent = 0;
         foreach ($trainers as $t) {
-            UserNotification::create([
-                'user_id' => $t->id,
-                'type' => 'trainer_module_reminder',
+            TrainerNotification::create([
+                'trainer_id' => (int) $t->id,
+                'type' => 'event_module_reminder',
                 'title' => 'Ingat Upload Module Event',
-                'message' => 'Mohon upload module/materi untuk event "'.$event->title.'".',
-                'data' => ['url' => route('trainer.events.modules')],
+                'message' => 'Mohon upload module/materi untuk event "' . $event->title . '".',
+                'data' => [
+                    'entity_type' => 'event',
+                    'entity_id' => (int) $event->id,
+                    'url' => route('trainer.events.modules'),
+                ],
                 'expires_at' => now()->addDays(14),
             ]);
             $sent++;
         }
 
-        return back()->with('success', 'Reminder terkirim ke '.$sent.' trainer.');
+        return back()->with('success', 'Reminder terkirim ke ' . $sent . ' trainer.');
     }
 
     // Admin: download event QR image
@@ -941,7 +1015,7 @@ class EventController extends Controller
             'Nominal pembayaran kurang' => 'Nominal pembayaran Anda kurang dari yang seharusnya. Silahkan lakukan pembayaran tambahan (top up) dan kirim ulang bukti pembayaran. Anda dapat melakukan registrasi lagi sekarang.',
             'Nominal pembayaran lebih' => 'Nominal pembayaran Anda lebih dari yang seharusnya. Admin akan menghubungi Anda untuk meminta nomor rekening agar selisih dapat dikembalikan. Anda dapat melakukan registrasi lagi sekarang.',
             'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang' => 'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang bukti pembayaran yang lebih jelas. Anda dapat melakukan registrasi lagi sekarang.',
-            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor '.$adminContactNumber.'. Anda dapat melakukan registrasi lagi sekarang.',
+            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor ' . $adminContactNumber . '. Anda dapat melakukan registrasi lagi sekarang.',
             default => 'Pendaftaran Anda ditolak. Anda dapat melakukan registrasi lagi sekarang.',
         };
 
@@ -969,7 +1043,7 @@ class EventController extends Controller
                 'title' => 'Pendaftaran Ditolak',
                 'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. Alasan: ' . $reason,
                 'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
-                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. ' . $userFacingMessage,
+                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. ' . $userFacingMessage,
                 'data' => ['event_id' => $event->id, 'registration_id' => $registration->id, 'reason' => $reason],
                 'expires_at' => now()->addDays(14),
             ]);
@@ -988,7 +1062,8 @@ class EventController extends Controller
                     adminContactNumber: (string) $adminContactNumber,
                 ));
             }
-        } catch (\Throwable $e) { /* ignore mail errors */ }
+        } catch (\Throwable $e) { /* ignore mail errors */
+        }
 
         return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
     }

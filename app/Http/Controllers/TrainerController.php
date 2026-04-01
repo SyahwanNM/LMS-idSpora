@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
 use App\Services\CourseTemplateCloneService;
+use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Illuminate\Support\Str;
 
@@ -49,6 +50,54 @@ class TrainerController extends Controller
             ->cloneToCourse($course, $template, replaceExisting: false);
     }
 
+    private function ensureQuizSlotPerUnit(Course $course): void
+    {
+        $modules = CourseModule::where('course_id', $course->id)
+            ->with(['quizQuestions.answers'])
+            ->orderBy('order_no', 'asc')
+            ->get();
+
+        if ($modules->isEmpty()) {
+            return;
+        }
+
+        $unitChunks = $modules->chunk(3)->values();
+
+        foreach ($unitChunks as $chunk) {
+            $chunk = $chunk->values();
+            $expectedTypes = ['pdf', 'video', 'quiz'];
+
+            foreach ($expectedTypes as $index => $expectedType) {
+                $slotModule = $chunk->get($index);
+                if (!($slotModule instanceof CourseModule)) {
+                    continue;
+                }
+
+                $currentType = (string) $slotModule->type;
+                if ($currentType === $expectedType) {
+                    continue;
+                }
+
+                $updates = ['type' => $expectedType];
+
+                if ($expectedType === 'quiz') {
+                    // Quiz slot must not keep material file payload.
+                    $updates['content_url'] = '';
+                    $updates['file_name'] = null;
+                    $updates['mime_type'] = null;
+                    $updates['file_size'] = 0;
+                }
+
+                $slotModule->update($updates);
+
+                if ($currentType === 'quiz' && $expectedType !== 'quiz') {
+                    // Old quiz slot is converted to material slot; remove stale quiz content.
+                    $slotModule->quizQuestions()->delete();
+                }
+            }
+        }
+    }
+
     /**
      * Show trainer profile with their courses
      */
@@ -56,21 +105,66 @@ class TrainerController extends Controller
     {
         $user = Auth::user();
 
-        // Get courses belonging to the trainer
-        $myCourses = $user->coursesAsTrainer()
+        $coursesQuery = $user->coursesAsTrainer();
+
+        $priorityCourses = (clone $coursesQuery)
             ->withCount([
                 'enrollments' => function ($query) {
                     $query->where('enrollments.status', 'active');
                 }
             ])
+            ->orderByRaw("CASE
+                WHEN status IN ('archive', 'archived', 'draft') THEN 0
+                WHEN status IN ('published', 'approved', 'active') THEN 1
+                ELSE 2
+            END")
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get();
+
+        $totalCourses = (clone $coursesQuery)->count();
+        $attentionCourseCount = (clone $coursesQuery)
+            ->whereIn('status', ['archive', 'archived', 'draft'])
+            ->count();
+
+        $activeCourseCount = (clone $coursesQuery)
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->count();
+
+        $activeEventsQuery = Event::query()
+            ->where('trainer_id', $user->id)
+            ->whereNotNull('event_date')
+            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+
+        $priorityEvents = (clone $activeEventsQuery)
+            ->withCount([
+                'registrations as participants_count' => function ($q) {
+                    $q->where('status', 'active');
+                }
+            ])
+            ->orderBy('event_date', 'asc')
+            ->orderBy('event_time', 'asc')
+            ->limit(4)
+            ->get();
+
+        $activeEventCount = (clone $activeEventsQuery)->count();
+
+        $todoMaterials = (clone $activeEventsQuery)
+            ->where(function ($q) {
+                $q->whereNull('module_path')
+                    ->orWhere('module_path', '');
+            })
+            ->orderBy('event_date', 'asc')
+            ->orderBy('event_time', 'asc')
+            ->limit(4)
             ->get();
 
         $students = $user->trainerEnrollments()
             ->with(['student', 'course'])
             ->orderBy('enrollments.created_at', 'desc')
-            ->paginate(10);
+            ->limit(5)
+            ->get();
 
-        $totalCourses = $myCourses->count();
         $totalStudents = $user->trainerEnrollments()
             ->where('enrollments.status', 'active')
             ->distinct('user_id')
@@ -84,17 +178,53 @@ class TrainerController extends Controller
             ->limit(5)
             ->get();
 
+        $todoConfirmations = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->whereIn('type', ['course_invitation', 'event_invitation'])
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get()
+            ->filter(function ($notification) {
+                $status = (string) data_get($notification->data, 'invitation_status', 'pending');
+                return $status === 'pending';
+            })
+            ->take(4)
+            ->values();
+
         $unreadInvitationCount = TrainerNotification::query()
             ->where('trainer_id', $user->id)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->whereNull('read_at')
             ->count();
 
+        $teachingHistory = TrainerCertificate::query()
+            ->where('trainer_id', $user->id)
+            ->where('status', 'sent')
+            ->whereNotNull('file_path')
+            ->with('certifiable')
+            ->latest('issued_at')
+            ->limit(6)
+            ->get();
+
+        $totalCertificates = (clone TrainerCertificate::query())
+            ->where('trainer_id', $user->id)
+            ->where('status', 'sent')
+            ->whereNotNull('file_path')
+            ->count();
+
         return view('trainer.dashboard', compact(
-            'myCourses',
+            'priorityCourses',
+            'priorityEvents',
+            'todoMaterials',
+            'todoConfirmations',
             'students',
             'totalCourses',
+            'attentionCourseCount',
+            'activeCourseCount',
+            'activeEventCount',
             'totalStudents',
+            'totalCertificates',
+            'teachingHistory',
             'dashboardInvitations',
             'unreadInvitationCount'
         ));
@@ -113,7 +243,7 @@ class TrainerController extends Controller
             ])
             ->withAvg('reviews', 'rating')
             ->orderBy('created_at', 'desc')
-            ->paginate(9);
+            ->get();
 
         $certifiedCourseIds = \App\Models\TrainerCertificate::query()
             ->where('trainer_id', $user->id)
@@ -126,7 +256,30 @@ class TrainerController extends Controller
 
         $certifiedCourseIdSet = array_fill_keys($certifiedCourseIds, true);
 
-        return view('trainer.courses', compact('courses', 'certifiedCourseIdSet'));
+        $finishedCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet) {
+            $status = (string) ($course->status ?? '');
+            return isset($certifiedCourseIdSet[(int) $course->id])
+                || in_array($status, ['completed', 'finished', 'archived'], true);
+        })->values();
+
+        $ongoingCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet) {
+            $status = (string) ($course->status ?? '');
+            return !isset($certifiedCourseIdSet[(int) $course->id])
+                && in_array($status, ['approved', 'published', 'active'], true);
+        })->values();
+
+        $upcomingCourses = $courses->filter(function ($course) use ($finishedCourses, $ongoingCourses) {
+            return !$finishedCourses->contains('id', $course->id)
+                && !$ongoingCourses->contains('id', $course->id);
+        })->values();
+
+        return view('trainer.courses', compact(
+            'courses',
+            'certifiedCourseIdSet',
+            'ongoingCourses',
+            'upcomingCourses',
+            'finishedCourses'
+        ));
     }
 
     public function courseDetail($id)
@@ -209,7 +362,7 @@ class TrainerController extends Controller
             $query->where('title', 'LIKE', "%{$search}%");
         }
 
-        $events = $query->orderBy('event_date', 'asc')->paginate(9);
+        $events = $query->orderBy('event_date', 'asc')->get();
 
         $upcomingCount = \App\Models\Event::where('trainer_id', $user->id)
             ->where('event_date', '>=', now())
@@ -226,7 +379,49 @@ class TrainerController extends Controller
 
         $certifiedEventIdSet = array_fill_keys($certifiedEventIds, true);
 
-        return view('trainer.events', compact('events', 'upcomingCount', 'search', 'certifiedEventIdSet'));
+        $now = now();
+        $finishedEvents = collect();
+        $ongoingEvents = collect();
+        $upcomingEvents = collect();
+
+        foreach ($events as $event) {
+            $date = $event->event_date instanceof Carbon
+                ? $event->event_date->copy()
+                : Carbon::parse((string) $event->event_date);
+
+            $timeStart = !empty($event->event_time)
+                ? Carbon::parse((string) $event->event_time)->format('H:i:s')
+                : '00:00:00';
+
+            $startAt = Carbon::parse($date->format('Y-m-d') . ' ' . $timeStart);
+
+            $timeEnd = !empty($event->event_time_end)
+                ? Carbon::parse((string) $event->event_time_end)->format('H:i:s')
+                : '23:59:59';
+
+            $endAt = Carbon::parse($date->format('Y-m-d') . ' ' . $timeEnd);
+            if ($endAt->lt($startAt)) {
+                $endAt = $startAt->copy()->endOfDay();
+            }
+
+            if ($now->gt($endAt) || isset($certifiedEventIdSet[(int) $event->id])) {
+                $finishedEvents->push($event);
+            } elseif ($now->lt($startAt)) {
+                $upcomingEvents->push($event);
+            } else {
+                $ongoingEvents->push($event);
+            }
+        }
+
+        return view('trainer.events', compact(
+            'events',
+            'upcomingCount',
+            'search',
+            'certifiedEventIdSet',
+            'ongoingEvents',
+            'upcomingEvents',
+            'finishedEvents'
+        ));
     }
 
     public function eventDetail($id)
@@ -301,6 +496,7 @@ class TrainerController extends Controller
 
         // Safety net: ensure unit slots from template exist before opening studio.
         $this->ensureTemplateStructureExists($course);
+        $this->ensureQuizSlotPerUnit($course);
 
         // 1. Ambil semua modul course, lalu pecah per Bab (chunk 3)
         $unitIndex = $request->query('unit', 0); // Default ke Bab 1 (index 0)
@@ -624,6 +820,7 @@ class TrainerController extends Controller
 
         $uploadedCount = 0;
         $autoReplacedCount = 0;
+        $adaptedSlotCount = 0;
         $rejectedFiles = [];
         $updatedModules = [];
 
@@ -717,21 +914,36 @@ class TrainerController extends Controller
                 $ext = strtolower($file->getClientOriginalExtension());
                 $type = in_array($ext, ['mp4']) ? 'video' : 'pdf';
                 $isAutoReplace = false;
+                $usedCompatibleSlot = false;
+                $stateKey = $type;
 
                 // Flow mirip event: isi slot kosong dulu, jika penuh auto-overwrite slot tipe yang sama.
-                $state = $slotStateByType[$type] ?? null;
+                $state = $slotStateByType[$stateKey] ?? null;
+
+                // Backward compatibility for legacy courses:
+                // if exact slot type does not exist in this unit, reuse other material slot (video/pdf).
+                if ((!$state || $state['modules']->isEmpty()) && in_array($type, ['pdf', 'video'], true)) {
+                    $fallbackStateKey = $type === 'pdf' ? 'video' : 'pdf';
+                    $fallbackState = $slotStateByType[$fallbackStateKey] ?? null;
+                    if ($fallbackState && !$fallbackState['modules']->isEmpty()) {
+                        $state = $fallbackState;
+                        $stateKey = $fallbackStateKey;
+                        $usedCompatibleSlot = true;
+                    }
+                }
+
                 if (!$state || $state['modules']->isEmpty()) {
                     $module = null;
                 } elseif (!empty($state['empty_queue'])) {
                     $slotIdx = array_shift($state['empty_queue']);
                     $module = $state['modules']->get($slotIdx);
-                    $slotStateByType[$type] = $state;
+                    $slotStateByType[$stateKey] = $state;
                 } else {
                     $slotCount = $state['modules']->count();
                     $slotIdx = $state['replace_cursor'] % $slotCount;
                     $module = $state['modules']->get($slotIdx);
                     $state['replace_cursor'] = $state['replace_cursor'] + 1;
-                    $slotStateByType[$type] = $state;
+                    $slotStateByType[$stateKey] = $state;
                     $isAutoReplace = true;
                 }
 
@@ -745,6 +957,7 @@ class TrainerController extends Controller
                     $filepath = $file->storeAs('courses/' . $id . '/materials', $filename, 'public');
 
                     $module->update([
+                        'type' => $type,
                         'content_url' => $filepath,
                         'file_name' => $file->getClientOriginalName(),
                         'mime_type' => $file->getMimeType(),
@@ -755,6 +968,9 @@ class TrainerController extends Controller
                     $uploadedCount++;
                     if ($isAutoReplace) {
                         $autoReplacedCount++;
+                    }
+                    if ($usedCompatibleSlot) {
+                        $adaptedSlotCount++;
                     }
                 } else {
                     $suffix = ' (tipe ' . strtoupper($type) . ' tidak punya slot di bab ini)';
@@ -770,6 +986,9 @@ class TrainerController extends Controller
             $msg = "$uploadedCount file berhasil diunggah.";
             if ($autoReplacedCount > 0) {
                 $msg .= " {$autoReplacedCount} file otomatis mengganti file lama pada slot yang sama.";
+            }
+            if ($adaptedSlotCount > 0) {
+                $msg .= " {$adaptedSlotCount} file ditempatkan ke slot materi kompatibel untuk menyesuaikan struktur course lama.";
             }
             if (count($rejectedFiles) > 0) {
                 $msg .= " File (" . implode(", ", $rejectedFiles) . ") ditolak.";
@@ -810,20 +1029,27 @@ class TrainerController extends Controller
     public function uploadEventMaterials(Request $request, $id)
     {
         $request->validate([
-            'files' => 'required|array|min:1',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
+            'files' => 'required|array|min:1|max:1',
+            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000'
         ]);
 
         $event = \App\Models\Event::where('id', $id)
             ->where('trainer_id', Auth::id())
             ->firstOrFail();
 
+        if (!empty($event->material_deadline) && now()->gt($event->material_deadline)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Batas pengumpulan materi sudah lewat. Silakan hubungi admin trainer.',
+            ], 422);
+        }
+
         if (!$request->hasFile('files')) {
             return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
         }
 
         $storedFiles = [];
-        $latestImagePath = null;
+        $primaryMaterialPath = null;
 
         foreach ($request->file('files') as $file) {
             $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
@@ -836,19 +1062,23 @@ class TrainerController extends Controller
                 'mime_type' => $file->getMimeType(),
             ];
 
-            if (str_starts_with((string) $file->getMimeType(), 'image/')) {
-                $latestImagePath = $filepath;
+            if ($primaryMaterialPath === null) {
+                $primaryMaterialPath = $filepath;
             }
         }
 
-        if ($latestImagePath) {
-            $event->update(['vbg_path' => $latestImagePath]);
+        if (!empty($primaryMaterialPath)) {
+            $event->update([
+                'module_path' => $primaryMaterialPath,
+                'material_status' => 'pending_review',
+            ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => count($storedFiles) . ' file berhasil diunggah.',
+            'message' => 'Materi event berhasil diunggah.',
             'files' => $storedFiles,
+            'module_path' => $primaryMaterialPath,
         ]);
     }
 
@@ -919,6 +1149,64 @@ class TrainerController extends Controller
                 'questions' => $savedQuestions,
             ],
         ]);
+    }
+
+    /**
+     * Accept event invitation from trainer
+     */
+    public function acceptEventInvitation(Request $request, $id)
+    {
+        $trainerId = Auth::id();
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        // Update trainer notification status
+        $notification = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($q) use ($id) {
+                $q->whereJsonContains('data->entity_id', $id)
+                    ->orWhereJsonContains('data->entity_id', (string) $id);
+            })
+            ->first();
+
+        if ($notification) {
+            $notification->update([
+                'invitation_status' => 'accepted',
+                'responded_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
+    }
+
+    /**
+     * Reject event invitation from trainer
+     */
+    public function rejectEventInvitation(Request $request, $id)
+    {
+        $trainerId = Auth::id();
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        // Update trainer notification status
+        $notification = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($q) use ($id) {
+                $q->whereJsonContains('data->entity_id', $id)
+                    ->orWhereJsonContains('data->entity_id', (string) $id);
+            })
+            ->first();
+
+        if ($notification) {
+            $notification->update([
+                'invitation_status' => 'rejected',
+                'responded_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'Undangan event berhasil ditolak.');
     }
 
     public function viewCourseMaterial($courseId, $moduleId)
