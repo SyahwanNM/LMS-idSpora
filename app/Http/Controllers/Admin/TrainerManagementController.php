@@ -351,11 +351,49 @@ class TrainerManagementController extends Controller
 
         $trainers = $query->paginate(15);
 
-        // Ensure the view attributes exist (simple defaults)
+        // Compute real pending certificates per trainer.
         $trainers->getCollection()->transform(function ($t) {
-            $t->pending_events_certificates = $t->pending_events_certificates ?? 0;
-            $t->pending_courses_certificates = $t->pending_courses_certificates ?? 0;
-            $t->pending_certificates_count = $t->pending_certificates_count ?? 0;
+            $trainerId = (int) ($t->id ?? 0);
+
+            $finishedEventIds = Event::query()
+                ->where('trainer_id', $trainerId)
+                ->whereNotNull('event_date')
+                ->whereDate('event_date', '<', now()->toDateString())
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            $finishedCourseIds = Course::query()
+                ->where('trainer_id', $trainerId)
+                ->where('status', 'approved')
+                ->whereNotNull('approved_at')
+                ->where('approved_at', '<', now())
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            $issuedEventIds = TrainerCertificate::query()
+                ->where('trainer_id', $trainerId)
+                ->where('status', 'sent')
+                ->where('certifiable_type', Event::class)
+                ->pluck('certifiable_id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            $issuedCourseIds = TrainerCertificate::query()
+                ->where('trainer_id', $trainerId)
+                ->where('status', 'sent')
+                ->where('certifiable_type', Course::class)
+                ->pluck('certifiable_id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            $pendingEvents = array_values(array_diff($finishedEventIds, $issuedEventIds));
+            $pendingCourses = array_values(array_diff($finishedCourseIds, $issuedCourseIds));
+
+            $t->pending_events_certificates = count($pendingEvents);
+            $t->pending_courses_certificates = count($pendingCourses);
+            $t->pending_certificates_count = $t->pending_events_certificates + $t->pending_courses_certificates;
             return $t;
         });
 
