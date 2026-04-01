@@ -913,9 +913,11 @@ class CourseController extends Controller
             $this->notifyTrainerCourseInvitation($course, $currentTrainerId);
         }
 
+        $hasModuleChanges = false;
         $deleteIdsCsv = (string) $request->input('modules_delete_ids', '');
         $deleteIds = collect(preg_split('/[,\s]+/', trim($deleteIdsCsv)))->filter()->map(fn($v) => (int) $v)->all();
         if (!empty($deleteIds)) {
+            $hasModuleChanges = true;
             $modulesToDelete = CourseModule::where('course_id', $course->id)->whereIn('id', $deleteIds)->get();
             foreach ($modulesToDelete as $mod) {
                 if ($mod->content_url && Storage::disk('public')->exists($mod->content_url)) {
@@ -928,6 +930,7 @@ class CourseController extends Controller
         $orderUpdatesInput = $request->input('modules_order_updates', '{}');
         $orderUpdates = is_array($orderUpdatesInput) ? $orderUpdatesInput : json_decode((string) $orderUpdatesInput, true);
         if (is_array($orderUpdates) && !empty($orderUpdates)) {
+            $hasModuleChanges = true;
             foreach ($orderUpdates as $moduleId => $orderNo) {
                 $moduleId = (int) $moduleId;
                 $orderNo = (int) $orderNo;
@@ -944,6 +947,7 @@ class CourseController extends Controller
         $modulesPayload = is_array($modulesPayloadInput) ? $modulesPayloadInput : json_decode($modulesPayloadInput, true);
 
         if (is_array($modulesPayload) && !empty($modulesPayload)) {
+            $hasModuleChanges = true;
             $uploaded = $request->file('module_files', []);
             foreach ($modulesPayload as $idx => $m) {
                 $title = is_string($m['title'] ?? null) ? $m['title'] : ('Module ' . ($idx + 1));
@@ -1027,6 +1031,7 @@ class CourseController extends Controller
         // Admin: upload multiple videos directly from Edit Course (creates new video modules)
         $adminVideosInput = $request->input('admin_videos');
         if (is_array($adminVideosInput) && !empty($adminVideosInput)) {
+            $hasModuleChanges = true;
             $usedOrders = CourseModule::where('course_id', $course->id)->pluck('order_no')->map(fn($v) => (int) $v)->all();
             $usedOrdersSet = array_fill_keys($usedOrders, true);
             $maxOrder = !empty($usedOrders) ? max($usedOrders) : 0;
@@ -1090,6 +1095,7 @@ class CourseController extends Controller
 
         // Admin: upload video directly from Edit Course (creates a new video module)
         if ($request->hasFile('admin_video_file')) {
+            $hasModuleChanges = true;
             $file = $request->file('admin_video_file');
             $storedPath = $file->store("courses/{$course->id}/modules", 'public');
             $fileNameMeta = $file->getClientOriginalName() ?: 'admin-video';
@@ -1132,8 +1138,28 @@ class CourseController extends Controller
             $existingModuleCount = (int) $course->modules()->count();
 
             if ($syncTemplateModules || $existingModuleCount === 0) {
+                $hasModuleChanges = true;
                 app(CourseTemplateCloneService::class)
                     ->cloneToCourse($course, $template, replaceExisting: $syncTemplateModules);
+            }
+        }
+
+        // Notify trainer about course module updates if there were changes
+        if ($hasModuleChanges && $currentTrainerId > 0) {
+            $trainer = User::query()->where('id', $currentTrainerId)->where('role', 'trainer')->first();
+            if ($trainer) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $trainer->id,
+                    'type' => 'course_modules_updated',
+                    'title' => 'Modul Course Diperbarui',
+                    'message' => 'Admin telah melakukan perubahan pada modul/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
+                    'data' => [
+                        'entity_type' => 'course',
+                        'entity_id' => (int) $course->id,
+                        'url' => route('trainer.courses.studio', $course->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
             }
         }
 

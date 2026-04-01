@@ -17,6 +17,10 @@ class Event extends Model
         'certificate_path',
         'attendance_path',
         'module_path',
+        'material_status',
+        'material_approved_at',
+        'material_approved_by',
+        'material_rejection_reason',
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
@@ -33,6 +37,7 @@ class Event extends Model
         'event_time',
         'event_time_end',
         'event_date',
+        'material_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -50,9 +55,11 @@ class Event extends Model
 
     protected $casts = [
         'event_date' => 'date',
+        'material_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
         'discount_until' => 'date',
+        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -73,9 +80,12 @@ class Event extends Model
             $count++;
         if (!empty($this->certificate_path))
             $count++;
-        if(!empty($this->vbg_path)) $count++;
-        if(!empty($this->certificate_path)) $count++;
-        if(!empty($this->module_path)) $count++;
+        if (!empty($this->vbg_path))
+            $count++;
+        if (!empty($this->certificate_path))
+            $count++;
+        if (!empty($this->module_path))
+            $count++;
         // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
