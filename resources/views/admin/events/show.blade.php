@@ -176,13 +176,13 @@
                                             @if(!empty($event->vbg_path))
                                                 @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
                                                 @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->vbg_path) }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
                                                     </a>
                                                 @elseif($vExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                 @else
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
                                                 @endif
                                             @else <span class="text-muted">Belum ada</span> @endif
                                         </span>
@@ -205,20 +205,35 @@
                                         </span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->module_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Module (Trainer)</span>
+                                        <span><i class="bi {{ !empty($event->module_path) ? 'bi-check-circle text-success' : (!empty($event->module_submission_path) ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger') }} me-2"></i> Module (Trainer)</span>
                                         <span>
                                             @if(!empty($event->module_path))
-                                                <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                                <a href="{{ $event->module_file_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                            @elseif(!empty($event->module_submission_path))
+                                                @if(!empty($event->trainer_id))
+                                                    <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-person-check me-1"></i>Verifikasi di Trainer
+                                                    </a>
+                                                @else
+                                                    <span class="text-warning">Menunggu verifikasi</span>
+                                                @endif
                                             @else
                                                 <span class="text-muted">Belum ada</span>
                                             @endif
                                         </span>
                                     </li>
+                                    @if(empty($event->module_path) && !empty($event->module_submission_path))
+                                        <li class="list-group-item">
+                                            <div class="mt-2 small text-warning">
+                                                <i class="bi bi-info-circle me-1"></i>Module ini belum dihitung pada kelengkapan dokumen sampai di-approve (verifikasi dipusatkan di menu Trainer).
+                                            </div>
+                                        </li>
+                                    @endif
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Absensi</span>
                                         <span class="d-flex align-items-center gap-2">
                                             @if(!empty($event->attendance_qr_image))
-                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = Storage::url($event->attendance_qr_image); @endphp
+                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = $event->attendance_qr_image_url; @endphp
                                                 <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
                                                     <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                 </a>

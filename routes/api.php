@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CourseTemplateController as AdminCourseTemplateController;
 use App\Http\Controllers\Api\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Api\Admin\CoursePaymentController as AdminCoursePaymentController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Trainer\EventController as TrainerEventController;
+use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerEventModuleSubmissionController;
 
 
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
@@ -49,7 +52,10 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/{id}', [PaymentController::class, 'show']);
     Route::post('/manual-payment', [PaymentController::class, 'store']);
+    // Legacy: update via POST (kept for backward compatibility)
     Route::post('/manual-payment/{id}', [PaymentController::class, 'update']);
+    // RESTful: update via PUT/PATCH
+    Route::match(['PUT', 'PATCH'], '/manual-payment/{id}', [PaymentController::class, 'update']);
     Route::delete('/manual-payment/{id}', [PaymentController::class, 'destroy']);
 
     // Courses - user flow
@@ -62,11 +68,26 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/courses/{course}/modules/{module}', [CourseAccessController::class, 'module'])->whereNumber('course')->whereNumber('module');
     Route::post('/courses/{course}/modules/{module}/complete', [CourseAccessController::class, 'complete'])->whereNumber('course')->whereNumber('module');
     Route::get('/courses/{course}/progress', [CourseAccessController::class, 'progress'])->whereNumber('course');
+
+    // Trainer APIs (RESTful)
+    Route::middleware(['trainer', 'throttle:100,1'])->prefix('trainer')->group(function () {
+        // Events owned by trainer
+        Route::get('events', [TrainerEventController::class, 'index']);
+        Route::get('events/{event}', [TrainerEventController::class, 'show']);
+
+        // Module submissions (upload for admin approval)
+        Route::get('event-module-submissions', [TrainerEventModuleSubmissionController::class, 'index']);
+        Route::post('events/{event}/module-submissions', [TrainerEventModuleSubmissionController::class, 'store']);
+    });
 });
 
 // Admin Manage APIs (CRUD)
 // Admin endpoints with stricter throttle (60 req/min)
 Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->group(function () {
+    // Users (read-only)
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::get('users/{user}', [AdminUserController::class, 'show']);
+
     // Events CRUD
     Route::apiResource('events', AdminEventController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 

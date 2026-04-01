@@ -390,13 +390,13 @@ class AdminController extends Controller
                 'has_cert' => !empty($e->certificate_path),
                 'has_abs' => !empty($e->attendance_path),
                 // URLs expected by the reports view
-                'vbg_url' => !empty($e->vbg_path) ? Storage::url($e->vbg_path) : '',
+                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
                 'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
                 'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                 // attendance QR data
                 'qr_token' => $e->attendance_qr_token,
                 'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                'qr_image_url' => $e->attendance_qr_image ? asset('uploads/'.$e->attendance_qr_image) : null,
+                'qr_image_url' => $e->attendance_qr_image_url,
             ];
         });
 

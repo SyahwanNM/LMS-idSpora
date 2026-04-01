@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
@@ -21,6 +22,14 @@ class Event extends Model
         'material_approved_at',
         'material_approved_by',
         'material_rejection_reason',
+        // trainer module submission (pending approval)
+        'module_submission_path',
+        'module_submitted_at',
+        'module_verified_at',
+        'module_verified_by',
+        'module_rejected_at',
+        'module_rejected_by',
+        'module_rejection_reason',
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
@@ -58,6 +67,9 @@ class Event extends Model
         'material_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
+        'module_submitted_at' => 'datetime',
+        'module_verified_at' => 'datetime',
+        'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
         'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
@@ -76,9 +88,10 @@ class Event extends Model
     public function getDocumentsCompletedCountAttribute(): int
     {
         $count = 0;
-        if (!empty($this->vbg_path))
+        if (!empty($this->vbg_path)) {
             $count++;
-        if (!empty($this->certificate_path))
+        }
+        if (!empty($this->certificate_path)) {
             $count++;
         if (!empty($this->vbg_path))
             $count++;
@@ -86,12 +99,18 @@ class Event extends Model
             $count++;
         if (!empty($this->module_path))
             $count++;
+        }
+        // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
+        if (!empty($this->module_path)) {
+            $count++;
+        }
         // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
             || !empty($this->attendance_qr_token);
-        if ($hasAttendance)
+        if ($hasAttendance) {
             $count++;
+        }
         return $count;
     }
 
@@ -103,6 +122,94 @@ class Event extends Model
         $total = 4; // Virtual Background, Sertifikat, Module (Trainer), Absensi (QR/File)
         $done = max(0, min($total, (int) $this->documents_completed_count));
         return (int) floor(($done / $total) * 100);
+    }
+
+    public function getModuleSubmissionUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->module_submission_path, true);
+    }
+
+    public function getModuleFileUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->module_path, true);
+    }
+
+    public function getVbgFileUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->vbg_path, true);
+    }
+
+    public function getAttendanceQrImageUrlAttribute(): ?string
+    {
+        $path = trim((string) ($this->attendance_qr_image ?? ''));
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+
+        // Force QR image to be served from /uploads/* (legacy public route).
+        // Do not check filesystem; just map deterministically.
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+        }
+        return asset('uploads/' . $normalized);
+    }
+
+    private function buildPublicFileUrl(?string $path, bool $forceUploads = false): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        // Common legacy prefixes that sometimes get stored in DB
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
+        }
+
+        // If already an uploads path, serve it directly
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+
+        // If a Storage::url() output was stored ("storage/...") map it to uploads.
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+            return asset('uploads/' . $normalized);
+        }
+
+        // For module links we force mapping to /uploads/* (legacy behavior) without checking the filesystem.
+        if ($forceUploads) {
+            return asset('uploads/' . $normalized);
+        }
+
+        // Default behavior for non-module usages (if any)
+        return asset($normalized);
     }
 
     // Method untuk menghitung harga setelah diskon
@@ -184,37 +291,32 @@ class Event extends Model
             return $image;
         }
 
-        // Normalize path - remove 'storage/' prefix if exists
-        $imagePath = ltrim(str_replace('storage/', '', $image), '/');
+        // Deterministic mapping (no filesystem checks)
+        $normalized = str_replace('\\', '/', trim($image));
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
 
-        // Extract filename from path
-        $filename = basename($imagePath);
-
-        // Check if file exists in events folder (try multiple possible paths)
-        $possiblePaths = [
-            'events/' . $filename,  // events/filename.png
-            $imagePath,              // events/filename.png (if already has events/)
-            'events/' . $imagePath, // events/events/filename.png (if path already has events/)
-        ];
-
-        // Remove duplicates
-        $possiblePaths = array_unique($possiblePaths);
-
-        // Find first existing file
-        foreach ($possiblePaths as $path) {
-            $fullPath = public_path('uploads/' . $path);
-            if (file_exists($fullPath) && is_file($fullPath)) {
-                // File exists, return URL
-                return asset('uploads/' . $path);
-            }
+        // Common stored prefixes
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
+        }
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
         }
 
-        // File not found, but return URL anyway (browser will show broken image or fallback)
-        // This allows onerror handler in views to work
-        if (str_starts_with($imagePath, 'events/')) {
-            return asset('uploads/' . $imagePath);
+        // If path already contains folders, serve it under /uploads/<path>
+        if (str_contains($normalized, '/')) {
+            return asset('uploads/' . $normalized);
         }
-        return asset('uploads/events/' . $filename);
+
+        // If it's just a filename, event posters conventionally live under uploads/events/
+        return asset('uploads/events/' . $normalized);
     }
 
     public function getEndAtAttribute(): ?Carbon

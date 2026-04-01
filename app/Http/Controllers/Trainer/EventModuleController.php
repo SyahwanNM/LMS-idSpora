@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class EventModuleController extends Controller
 {
@@ -41,7 +40,7 @@ class EventModuleController extends Controller
                 'event_date' => optional($event->event_date)->format('Y-m-d'),
                 'jenis' => $event->jenis,
                 'module_uploaded' => !empty($event->module_path),
-                'module_url' => !empty($event->module_path) ? Storage::url($event->module_path) : null,
+                'module_url' => !empty($event->module_path) ? $event->module_file_url : null,
             ];
         })->values();
 
@@ -65,10 +64,21 @@ class EventModuleController extends Controller
             'module' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);
 
-        $path = $request->file('module')->store('events/modules', 'public');
-        $event->update(['module_path' => $path]);
+        $file = $request->file('module');
+        $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
-        return back()->with('success', 'Module berhasil diupload.');
+        $event->update([
+            'module_submission_path' => $path,
+            'module_submitted_at' => now(),
+            'module_verified_at' => null,
+            'module_verified_by' => null,
+            'module_rejected_at' => null,
+            'module_rejected_by' => null,
+            'module_rejection_reason' => null,
+        ]);
+
+        return back()->with('success', 'Module berhasil diupload dan menunggu verifikasi admin.');
     }
 
     /**
