@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 
 use App\Models\Course;
+use App\Models\CourseTemplate;
 use App\Models\CourseModule;
 use App\Models\QuizQuestion;
 use App\Models\QuizAnswer;
@@ -19,6 +20,7 @@ use Illuminate\Support\Str;
 use App\Models\Category;
 use App\Models\TrainerNotification;
 use App\Models\User;
+use App\Services\CourseTemplateCloneService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -241,6 +243,33 @@ class CourseController extends Controller
     }
 
     /**
+     * Resolve template by course level.
+     * If a manual template is provided but level mismatches, it is ignored.
+     */
+    private function resolveTemplateForCourse(?int $templateId, string $level): ?CourseTemplate
+    {
+        if (!empty($templateId)) {
+            $selected = CourseTemplate::query()
+                ->where('status', 'active')
+                ->with('modules')
+                ->find($templateId);
+
+            if ($selected && (string) $selected->level === (string) $level) {
+                return $selected;
+            }
+        }
+
+        // Auto-pick latest active template for the chosen level.
+        return CourseTemplate::query()
+            ->where('status', 'active')
+            ->where('level', $level)
+            ->orderByDesc('version')
+            ->orderByDesc('id')
+            ->with('modules')
+            ->first();
+    }
+
+    /**
      * Attempt to probe video duration in seconds using ffprobe (if available).
      */
     private function probeVideoDurationSeconds(string $absolutePath): ?int
@@ -293,6 +322,31 @@ class CourseController extends Controller
             }
         }
         return null;
+    }
+
+    private function notifyTrainerCourseInvitation(Course $course, int $trainerId): void
+    {
+        $trainer = User::query()
+            ->where('id', $trainerId)
+            ->where('role', 'trainer')
+            ->first();
+
+        if (!$trainer) {
+            return;
+        }
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'course_invitation',
+            'title' => 'Undangan Menjadi Trainer Course',
+            'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
+            'data' => [
+                'entity_type' => 'course',
+                'entity_id' => $course->id,
+                'url' => route('trainer.detail-course', $course->id),
+                'invitation_status' => 'pending',
+            ],
+        ]);
     }
 
     public function index(Request $request)
@@ -530,8 +584,17 @@ class CourseController extends Controller
     public function create()
     {
         $categories = Category::all();
+        $trainers = User::query()
+            ->whereRaw('LOWER(role) = ?', ['trainer'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+        $templates = CourseTemplate::query()
+            ->where('status', 'active')
+            ->withCount('modules')
+            ->orderBy('name')
+            ->get();
         // Use the Tailwind-based Manage Courses create view
-        return view('admin.courses.create', compact('categories'));
+        return view('admin.courses.create', compact('categories', 'templates', 'trainers'));
     }
 
     public function store(Request $request)
@@ -539,6 +602,7 @@ class CourseController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'template_id' => 'nullable|exists:course_templates,id',
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
@@ -565,6 +629,11 @@ class CourseController extends Controller
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
 
+        $template = $this->resolveTemplateForCourse(
+            $request->filled('template_id') ? (int) $request->input('template_id') : null,
+            (string) $request->input('level')
+        );
+
         $expensesInput = $request->input('expenses');
         $expensesJson = null;
         if (is_array($expensesInput)) {
@@ -573,9 +642,9 @@ class CourseController extends Controller
                 if (!is_array($row)) {
                     continue;
                 }
-                $item = trim((string)($row['item'] ?? ''));
-                $qty = (int)($row['quantity'] ?? 0);
-                $unit = (int)($row['unit_price'] ?? 0);
+                $item = trim((string) ($row['item'] ?? ''));
+                $qty = (int) ($row['quantity'] ?? 0);
+                $unit = (int) ($row['unit_price'] ?? 0);
                 if ($item === '' && $qty === 0 && $unit === 0) {
                     continue;
                 }
@@ -607,6 +676,8 @@ class CourseController extends Controller
         $course = Course::create([
             'name' => $request->name,
             'category_id' => $request->category_id,
+            'template_id' => $template?->id,
+            'template_version' => $template?->version,
             'trainer_id' => $request->input('trainer_id') ?: null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
@@ -709,6 +780,9 @@ class CourseController extends Controller
                     }
                 }
             }
+        } elseif ($template) {
+            app(CourseTemplateCloneService::class)
+                ->cloneToCourse($course, $template, replaceExisting: false);
         }
 
         return redirect()->route('admin.courses.index')->with('success', 'Course created successfully!');
@@ -717,8 +791,17 @@ class CourseController extends Controller
     public function edit(Course $course)
     {
         $categories = Category::all();
+        $trainers = User::query()
+            ->whereRaw('LOWER(role) = ?', ['trainer'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+        $templates = CourseTemplate::query()
+            ->where('status', 'active')
+            ->withCount('modules')
+            ->orderBy('name')
+            ->get();
         $course->load('modules.quizQuestions.answers');
-        return view('admin.courses.edit', compact('course', 'categories'));
+        return view('admin.courses.edit', compact('course', 'categories', 'templates', 'trainers'));
     }
 
     public function update(Request $request, Course $course)
@@ -742,6 +825,8 @@ class CourseController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
+            'template_id' => 'nullable|exists:course_templates,id',
+            'sync_template_modules' => 'nullable|boolean',
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
@@ -777,9 +862,15 @@ class CourseController extends Controller
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
 
+        $template = $this->resolveTemplateForCourse(
+            $request->filled('template_id') ? (int) $request->input('template_id') : null,
+            (string) $request->input('level')
+        );
+
         $data = [
             'name' => $request->name,
             'category_id' => $request->category_id,
+            'trainer_id' => $request->input('trainer_id') ?: null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
             'status' => $request->status,
@@ -790,6 +881,11 @@ class CourseController extends Controller
             'discount_start' => $request->discount_start,
             'discount_end' => $request->discount_end,
         ];
+
+        if ($request->exists('template_id')) {
+            $data['template_id'] = $template?->id;
+            $data['template_version'] = $template?->version;
+        }
 
         if ($request->hasFile('card_thumbnail')) {
             if ($course->card_thumbnail && Storage::disk('public')->exists($course->card_thumbnail)) {
@@ -1029,6 +1125,16 @@ class CourseController extends Controller
                 'preview_pages' => 0,
                 'duration' => $durationSeconds,
             ]);
+        }
+
+        if ($template) {
+            $syncTemplateModules = $request->boolean('sync_template_modules', false);
+            $existingModuleCount = (int) $course->modules()->count();
+
+            if ($syncTemplateModules || $existingModuleCount === 0) {
+                app(CourseTemplateCloneService::class)
+                    ->cloneToCourse($course, $template, replaceExisting: $syncTemplateModules);
+            }
         }
 
         return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diedit!');

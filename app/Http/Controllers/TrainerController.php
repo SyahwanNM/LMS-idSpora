@@ -11,11 +11,44 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
+use App\Services\CourseTemplateCloneService;
 use Dompdf\Dompdf;
 use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
+    private function mapStudioMaterialModule(int $courseId, \App\Models\CourseModule $module): array
+    {
+        return [
+            'module_id' => (int) $module->id,
+            'order_no' => (int) $module->order_no,
+            'type' => (string) $module->type,
+            'title' => (string) ($module->title ?? ''),
+            'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
+            'view_url' => route('trainer.courses.studio.material.view', [$courseId, $module->id]),
+            'updated_at' => optional($module->updated_at)->toDateTimeString(),
+        ];
+    }
+
+    private function ensureTemplateStructureExists(Course $course): void
+    {
+        if ((int) ($course->template_id ?? 0) <= 0) {
+            return;
+        }
+
+        if ((int) $course->modules()->count() > 0) {
+            return;
+        }
+
+        $template = $course->template()->with('modules')->first();
+        if (!$template || $template->modules->isEmpty()) {
+            return;
+        }
+
+        app(CourseTemplateCloneService::class)
+            ->cloneToCourse($course, $template, replaceExisting: false);
+    }
+
     /**
      * Show trainer profile with their courses
      */
@@ -99,6 +132,14 @@ class TrainerController extends Controller
     public function courseDetail($id)
     {
         $trainerId = \Illuminate\Support\Facades\Auth::id();
+
+        $baseCourse = \App\Models\Course::query()
+            ->where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        // Safety net: if admin forgot to clone template slots, clone on-demand for trainer UI.
+        $this->ensureTemplateStructureExists($baseCourse);
 
         // 1. Ambil data course dan relasinya
         $course = \App\Models\Course::with([
@@ -258,6 +299,9 @@ class TrainerController extends Controller
     {
         $course = \App\Models\Course::where('id', $id)->where('trainer_id', Auth::id())->firstOrFail();
 
+        // Safety net: ensure unit slots from template exist before opening studio.
+        $this->ensureTemplateStructureExists($course);
+
         // 1. Ambil semua modul course, lalu pecah per Bab (chunk 3)
         $unitIndex = $request->query('unit', 0); // Default ke Bab 1 (index 0)
         $allModules = \App\Models\CourseModule::where('course_id', $id)
@@ -278,13 +322,33 @@ class TrainerController extends Controller
         // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
+        $uploadedMaterials = $allModules
+            ->filter(function ($module) {
+                return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
+            })
+            ->map(function ($module) use ($course) {
+                $unitNo = (int) floor((((int) $module->order_no) - 1) / 3) + 1;
+
+                return [
+                    'module_id' => (int) $module->id,
+                    'order_no' => (int) $module->order_no,
+                    'unit_no' => $unitNo,
+                    'type' => (string) $module->type,
+                    'title' => (string) ($module->title ?? ''),
+                    'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
+                    'view_url' => route('trainer.courses.studio.material.view', [$course->id, $module->id]),
+                    'updated_at' => optional($module->updated_at)->toDateTimeString(),
+                ];
+            })
+            ->values();
+
         if ($activeUnitModules->isEmpty()) {
             return redirect()->route('trainer.courses')->with('error', 'Silabus untuk bab ini belum tersedia.');
         }
 
         $unitTitle = "Modul " . ($unitIndex + 1);
 
-        return view('trainer.content-studio', compact('course', 'activeUnitModules', 'unitTitle', 'unitIndex'));
+        return view('trainer.content-studio', compact('course', 'activeUnitModules', 'unitTitle', 'unitIndex', 'uploadedMaterials'));
     }
 
     public function eventStudio($id)
@@ -559,7 +623,9 @@ class TrainerController extends Controller
         }
 
         $uploadedCount = 0;
+        $autoReplacedCount = 0;
         $rejectedFiles = [];
+        $updatedModules = [];
 
         if ($request->hasFile('files')) {
             $replaceModuleId = $request->input('replace_module_id');
@@ -596,14 +662,22 @@ class TrainerController extends Controller
 
                 $replaceModule->update([
                     'content_url' => $filepath,
-                    'file_name' => $filename,
+                    'file_name' => $file->getClientOriginalName(),
                     'mime_type' => $file->getMimeType(),
                     'file_size' => $file->getSize(),
                 ]);
 
+                $replaceModule->refresh();
+                $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $replaceModule);
+
                 $course->update(['status' => 'pending_review']);
 
-                return response()->json(['success' => true, 'message' => 'File berhasil diganti.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'File berhasil diganti.',
+                    'updated_modules' => $updatedModules,
+                    'rejected_files' => [],
+                ]);
             }
 
             $modulesByType = \App\Models\CourseModule::where('course_id', $id)
@@ -612,22 +686,53 @@ class TrainerController extends Controller
                 ->groupBy('type')
                 ->map(fn($group) => $group->values());
 
+            // Track available types untuk pesan error yang lebih informatif
+            $availableTypes = [];
+            foreach ($modulesByType as $slotType => $slotModules) {
+                if (in_array($slotType, ['pdf', 'video'])) {
+                    $availableTypes[$slotType] = [
+                        'count' => $slotModules->count(),
+                        'filled' => $slotModules->filter(fn($m) => !empty($m->content_url))->count(),
+                    ];
+                }
+            }
+
+            $slotStateByType = [];
+            foreach ($modulesByType as $slotType => $slotModules) {
+                $emptyQueue = [];
+                foreach ($slotModules as $idx => $slotModule) {
+                    if (empty($slotModule->content_url)) {
+                        $emptyQueue[] = $idx;
+                    }
+                }
+
+                $slotStateByType[$slotType] = [
+                    'modules' => $slotModules,
+                    'empty_queue' => $emptyQueue,
+                    'replace_cursor' => 0,
+                ];
+            }
+
             foreach ($request->file('files') as $file) {
                 $ext = strtolower($file->getClientOriginalExtension());
                 $type = in_array($ext, ['mp4']) ? 'video' : 'pdf';
+                $isAutoReplace = false;
 
-                // Ambil slot silabus kosong di DALAM BAB INI sesuai tipe
-                $typeModules = $modulesByType->get($type, collect());
-                $moduleIndex = $typeModules->search(function ($candidate) {
-                    return empty($candidate->content_url);
-                });
-
-                if ($moduleIndex !== false) {
-                    $module = $typeModules->get($moduleIndex);
-                    $typeModules->forget($moduleIndex);
-                    $modulesByType->put($type, $typeModules->values());
-                } else {
+                // Flow mirip event: isi slot kosong dulu, jika penuh auto-overwrite slot tipe yang sama.
+                $state = $slotStateByType[$type] ?? null;
+                if (!$state || $state['modules']->isEmpty()) {
                     $module = null;
+                } elseif (!empty($state['empty_queue'])) {
+                    $slotIdx = array_shift($state['empty_queue']);
+                    $module = $state['modules']->get($slotIdx);
+                    $slotStateByType[$type] = $state;
+                } else {
+                    $slotCount = $state['modules']->count();
+                    $slotIdx = $state['replace_cursor'] % $slotCount;
+                    $module = $state['modules']->get($slotIdx);
+                    $state['replace_cursor'] = $state['replace_cursor'] + 1;
+                    $slotStateByType[$type] = $state;
+                    $isAutoReplace = true;
                 }
 
                 if ($module) {
@@ -641,13 +746,18 @@ class TrainerController extends Controller
 
                     $module->update([
                         'content_url' => $filepath,
-                        'file_name' => $filename,
+                        'file_name' => $file->getClientOriginalName(),
                         'mime_type' => $file->getMimeType(),
                         'file_size' => $file->getSize(),
                     ]);
+                    $module->refresh();
+                    $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $module);
                     $uploadedCount++;
+                    if ($isAutoReplace) {
+                        $autoReplacedCount++;
+                    }
                 } else {
-                    $suffix = ' (slot ' . strtoupper($type) . ' sudah terisi, pilih file di riwayat lalu klik GANTI untuk overwrite)';
+                    $suffix = ' (tipe ' . strtoupper($type) . ' tidak punya slot di bab ini)';
                     $rejectedFiles[] = $file->getClientOriginalName() . $suffix;
                 }
             }
@@ -656,12 +766,43 @@ class TrainerController extends Controller
                 $course->update(['status' => 'pending_review']);
             }
 
+            // Build helpful error message
             $msg = "$uploadedCount file berhasil diunggah.";
+            if ($autoReplacedCount > 0) {
+                $msg .= " {$autoReplacedCount} file otomatis mengganti file lama pada slot yang sama.";
+            }
             if (count($rejectedFiles) > 0) {
-                $msg .= " File (" . implode(", ", $rejectedFiles) . ") ditolak karena tipe tidak sesuai dengan silabus Bab ini.";
+                $msg .= " File (" . implode(", ", $rejectedFiles) . ") ditolak.";
+
+                // Add info about available types
+                if (!empty($availableTypes)) {
+                    $typeInfo = [];
+                    foreach ($availableTypes as $type => $info) {
+                        $typeInfo[] = strtoupper($type) . " ({$info['filled']}/{$info['count']} terisi)";
+                    }
+                    $msg .= " Slot tersedia di bab ini: " . implode(", ", $typeInfo) . ".";
+                } else {
+                    $msg .= " Tidak ada slot File/Video di bab ini - periksa modul yang tersedia.";
+                }
             }
 
-            return response()->json(['success' => true, 'message' => $msg]);
+            if ($uploadedCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $msg,
+                    'updated_modules' => [],
+                    'available_types' => $availableTypes,
+                    'rejected_files' => $rejectedFiles,
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'updated_modules' => $updatedModules,
+                'rejected_files' => $rejectedFiles,
+                'available_types' => $availableTypes,
+            ]);
         }
         return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
     }
@@ -737,6 +878,7 @@ class TrainerController extends Controller
         $quizModule->quizQuestions()->delete();
 
         // Create new questions
+        $savedQuestions = [];
         foreach ($questionsData as $orderIndex => $questionData) {
             $quizQuestion = $quizModule->quizQuestions()->create([
                 'question' => $questionData['text'],
@@ -754,11 +896,29 @@ class TrainerController extends Controller
                     ]);
                 }
             }
+
+            $savedQuestions[] = [
+                'text' => (string) $quizQuestion->question,
+                'weight' => (int) $quizQuestion->points,
+                'options' => collect($questionData['options'] ?? [])->map(fn($opt) => (string) $opt)->values()->all(),
+                'correctAnswer' => (int) ($questionData['correctAnswer'] ?? 0),
+            ];
         }
 
         $course->update(['status' => 'pending_review']);
 
-        return response()->json(['success' => true, 'message' => 'Kuis Bab berhasil disimpan!']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Kuis Bab berhasil disimpan!',
+            'quiz_module' => [
+                'id' => (int) $quizModule->id,
+                'title' => (string) ($quizModule->title ?: ('Quiz Unit')),
+                'order_no' => (int) $quizModule->order_no,
+                'questions_count' => count($savedQuestions),
+                'updated_at' => optional($quizModule->fresh()->updated_at)->toDateTimeString(),
+                'questions' => $savedQuestions,
+            ],
+        ]);
     }
 
     public function viewCourseMaterial($courseId, $moduleId)
