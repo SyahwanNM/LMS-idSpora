@@ -21,6 +21,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'academic_title',
         'email',
         'password',
         'role',
@@ -28,12 +29,16 @@ class User extends Authenticatable
         'avatar',
         'phone',
         'website',
+        'linkedin_url',
         'bio',
         'points',
         'badge',
         'last_event_date',
         'profession',
         'institution',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_holder',
         'referral_code',
         'wallet_balance',
         'referrer_id',
@@ -141,6 +146,22 @@ class User extends Authenticatable
         $bg = '6b7280'; // slate-500
         $color = 'ffffff';
         return 'https://ui-avatars.com/api/?name=' . urlencode($name) . "&background={$bg}&color={$color}&format=png";
+    }
+
+    public function getFullNameWithTitleAttribute(): string
+    {
+        $name = trim((string) ($this->name ?? ''));
+        $title = trim((string) ($this->academic_title ?? ''));
+
+        if ($name === '') {
+            return $title;
+        }
+
+        if ($title === '') {
+            return $name;
+        }
+
+        return $name . ', ' . $title;
     }
 
     /**
