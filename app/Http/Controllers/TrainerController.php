@@ -9,6 +9,7 @@ use App\Models\TrainerNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
 use App\Services\CourseTemplateCloneService;
@@ -113,13 +114,25 @@ class TrainerController extends Controller
             : 'ELR';
         $typeCode = 'TRN';
 
-        $sequenceNum = TrainerCertificate::query()
+        // Get the maximum sequence for this period to avoid duplicates
+        $monthYear = $issuedAt->format('m-Y');
+        $maxSequence = TrainerCertificate::query()
             ->where('trainer_id', $trainerId)
-            ->where('status', 'sent')
-            ->count() + 1;
+            ->where('activity_code', strtoupper($activityCode))
+            ->where('type_code', $typeCode)
+            ->whereRaw("date_format(issued_at, '%m-%Y') = ?", [$monthYear])
+            ->max(\DB::raw("CAST(SUBSTRING(sequence, -3) AS UNSIGNED)")) ?? 0;
+        
+        $sequenceNum = $maxSequence + 1;
         $sequence = str_pad((string) $sequenceNum, 3, '0', STR_PAD_LEFT);
 
         $certificateNumber = $this->buildIdsporaCertificateNumber($activityCode, $typeCode, $sequence, $issuedAt);
+
+        // Check if certificate already exists - skip if it does
+        $existingCert = TrainerCertificate::where('certificate_number', $certificateNumber)->first();
+        if ($existingCert) {
+            return;
+        }
 
         $trainerCertificate = TrainerCertificate::create([
             'trainer_id' => $trainerId,
@@ -818,6 +831,16 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
+        $completedEventsCount = $trainer->eventsAsTrainer()
+            ->whereDate('event_date', '<', now()->toDateString())
+            ->count();
+
+        $completedCoursesCount = $trainer->coursesAsTrainer()
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->where('approved_at', '<', now())
+            ->count();
+
         $eventIds = $trainer->eventsAsTrainer()->pluck('id');
         $feedbackQuery = \App\Models\Feedback::query();
         if ($eventIds->isNotEmpty()) {
@@ -862,6 +885,20 @@ class TrainerController extends Controller
             ->take(3)
             ->get();
 
+        $trainerCertificates = TrainerCertificate::query()
+            ->with('certifiable')
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->latest('issued_at')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        $totalCertificates = TrainerCertificate::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'sent')
+            ->count();
+
         $expertiseTags = $courses
             ->pluck('category.name')
             ->filter()
@@ -895,9 +932,13 @@ class TrainerController extends Controller
             'upcomingEvents',
             'totalEarned',
             'ledgerPayments',
+            'trainerCertificates',
             'expertiseTags',
             'totalCourses',
             'totalEvents',
+            'completedEventsCount',
+            'completedCoursesCount',
+            'totalCertificates',
             'totalFeedbacks',
             'topCourses'
         ));
@@ -919,9 +960,14 @@ class TrainerController extends Controller
 
         $rules = [
             'phone' => 'nullable|string|max:30',
+            'academic_title' => 'nullable|string|max:120',
             'profession' => 'nullable|string|max:100',
             'institution' => 'nullable|string|max:255',
             'website' => 'nullable|string|max:255',
+            'linkedin_url' => 'nullable|url|max:255',
+            'bank_name' => 'nullable|string|max:120',
+            'bank_account_number' => 'nullable|string|max:60',
+            'bank_account_holder' => 'nullable|string|max:150',
             'bio' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];

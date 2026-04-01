@@ -59,13 +59,21 @@
                 </div>
 
                 <div style="display:grid;gap:6px;">
-                    <label for="phone" style="font-size:12px;font-weight:600;color:#334155;">Telepon</label>
-                    <input id="phone" name="phone" type="text" value="{{ old('phone', $trainer->phone) }}"
+                    <label for="academic_title" style="font-size:12px;font-weight:600;color:#334155;">Gelar Akademik</label>
+                    <input id="academic_title" name="academic_title" type="text"
+                        value="{{ old('academic_title', $trainer->academic_title) }}" placeholder="Contoh: S.Kom., M.Kom."
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
                 </div>
 
                 <div style="display:grid;gap:6px;">
-                    <label for="profession" style="font-size:12px;font-weight:600;color:#334155;">Profesi</label>
+                    <label for="phone" style="font-size:12px;font-weight:600;color:#334155;">WhatsApp Aktif</label>
+                    <input id="phone" name="phone" type="text" value="{{ old('phone', $trainer->phone) }}"
+                        placeholder="Contoh: +6281234567890"
+                        style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                </div>
+
+                <div style="display:grid;gap:6px;">
+                    <label for="profession" style="font-size:12px;font-weight:600;color:#334155;">Jabatan / Profesi</label>
                     <input id="profession" name="profession" type="text"
                         value="{{ old('profession', $trainer->profession) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
@@ -84,6 +92,38 @@
                 <input id="website" name="website" type="text" value="{{ old('website', $trainer->website) }}"
                     placeholder="contoh: https://example.com"
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+            </div>
+
+            <div style="display:grid;gap:6px;">
+                <label for="linkedin_url" style="font-size:12px;font-weight:600;color:#334155;">LinkedIn</label>
+                <input id="linkedin_url" name="linkedin_url" type="url"
+                    value="{{ old('linkedin_url', $trainer->linkedin_url) }}" placeholder="https://www.linkedin.com/in/..."
+                    style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
+                <div style="display:grid;gap:6px;">
+                    <label for="bank_name" style="font-size:12px;font-weight:600;color:#334155;">Nama Bank</label>
+                    <input id="bank_name" name="bank_name" type="text" value="{{ old('bank_name', $trainer->bank_name) }}"
+                        placeholder="BCA / Mandiri / BNI / dll"
+                        style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                </div>
+
+                <div style="display:grid;gap:6px;">
+                    <label for="bank_account_number" style="font-size:12px;font-weight:600;color:#334155;">Nomor
+                        Rekening</label>
+                    <input id="bank_account_number" name="bank_account_number" type="text"
+                        value="{{ old('bank_account_number', $trainer->bank_account_number) }}"
+                        style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                </div>
+
+                <div style="display:grid;gap:6px;">
+                    <label for="bank_account_holder" style="font-size:12px;font-weight:600;color:#334155;">Nama Pemilik
+                        Rekening</label>
+                    <input id="bank_account_holder" name="bank_account_holder" type="text"
+                        value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}"
+                        style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                </div>
             </div>
 
             <div style="display:grid;gap:6px;">
