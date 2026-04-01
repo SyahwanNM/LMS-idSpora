@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CoursePaymentController;
 use App\Http\Controllers\Api\CourseAccessController;
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Api\Admin\CourseTemplateController as AdminCourseTemplateController;
 use App\Http\Controllers\Api\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Api\Admin\CoursePaymentController as AdminCoursePaymentController;
 
@@ -18,7 +19,7 @@ use App\Http\Controllers\Api\Admin\CoursePaymentController as AdminCoursePayment
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 // Public events listing throttled to avoid scraping (120 req/min)
-Route::get ('/events', [EventController::class, 'index'])->middleware('throttle:120,1');
+Route::get('/events', [EventController::class, 'index'])->middleware('throttle:120,1');
 Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+')->middleware('throttle:120,1');
 
 // Public courses listing throttled to avoid scraping (120 req/min)
@@ -27,7 +28,7 @@ Route::get('/courses/{course}', [CourseController::class, 'show'])->whereNumber(
 
 // Authenticated user actions with moderate throttle (100 req/min)
 Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
-    
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -35,7 +36,7 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    
+
     Route::post('/events/{id}/register', [EventController::class, 'register']);
 
     // tambahan endpoint untuk alur event
@@ -71,6 +72,10 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
 
     // Courses CRUD
     Route::apiResource('courses', AdminCourseController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+
+    // Course templates CRUD (versioned blueprint for courses)
+    Route::apiResource('course-templates', AdminCourseTemplateController::class)
+        ->only(['index', 'show', 'store', 'update', 'destroy']);
 
     // Course payments (approve/reject manual payments for courses)
     Route::get('course-payments', [AdminCoursePaymentController::class, 'index']);

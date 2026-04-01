@@ -678,11 +678,22 @@
                             $existingMaterials = $activeUnitModules->filter(function ($module) {
                                 return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
                             });
+
+                            $existingMaterialsPayload = $existingMaterials->map(function ($material) use ($course) {
+                                return [
+                                    'module_id' => (int) $material->id,
+                                    'order_no' => (int) $material->order_no,
+                                    'type' => (string) $material->type,
+                                    'title' => (string) ($material->title ?? ''),
+                                    'file_name' => (string) ($material->file_name ?: basename($material->content_url)),
+                                    'view_url' => route('trainer.courses.studio.material.view', [$course->id, $material->id]),
+                                    'updated_at' => optional($material->updated_at)->toDateTimeString(),
+                                ];
+                            })->values();
                         @endphp
-                        @if($existingMaterials->isNotEmpty())
-                            <div class="file-list" style="margin-top: 16px; display: block;">
+                            <div id="existingMaterialsBlock" class="file-list" style="margin-top: 16px; display: {{ $existingMaterials->isNotEmpty() ? 'block' : 'none' }};">
                                 <h3>Materi Tersimpan Sebelumnya</h3>
-                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                <ul id="existingMaterialsList" style="list-style: none; padding: 0; margin: 0;">
                                     @foreach($existingMaterials as $material)
                                         <li
                                             style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
@@ -698,12 +709,15 @@
                                                 </div>
                                             </div>
                                             <div style="display: flex; gap: 6px;">
-                                                <a href="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
-                                                    target="_blank" title="Lihat File"
+                                                <button type="button" class="preview-material-btn"
+                                                    data-view-url="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
+                                                    data-material-type="{{ $material->type }}"
+                                                    data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
+                                                    title="Preview File"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                     <i class="bi bi-eye-fill"></i>
-                                                </a>
+                                                </button>
                                                 <button type="button" class="select-replace-btn"
                                                     data-module-id="{{ $material->id }}" data-module-type="{{ $material->type }}"
                                                     data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
@@ -717,7 +731,49 @@
                                     @endforeach
                                 </ul>
                             </div>
-                        @endif
+
+                            @if(($uploadedMaterials ?? collect())->isNotEmpty())
+                                <div class="file-list" style="margin-top: 16px; display: block;">
+                                    <h3>Semua Materi Yang Sudah Diupload</h3>
+                                    <ul style="list-style: none; padding: 0; margin: 0;">
+                                        @foreach($uploadedMaterials as $material)
+                                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #dce3ee;">
+                                                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                                                    <i class="bi {{ $material['type'] === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}" style="font-size: 18px; color: var(--main-navy-clr);"></i>
+                                                    <div style="min-width: 0;">
+                                                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                            {{ $material['file_name'] }}
+                                                        </p>
+                                                        <p style="margin: 0; font-size: 11px; color: #999;">
+                                                            {{ strtoupper($material['type']) }} • Bab {{ $material['unit_no'] }} • Slot {{ $material['order_no'] }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div style="display: inline-flex; gap: 6px;">
+                                                    <button type="button" class="preview-material-btn"
+                                                        data-view-url="{{ $material['view_url'] }}"
+                                                        data-material-type="{{ $material['type'] }}"
+                                                        data-file-name="{{ $material['file_name'] }}"
+                                                        title="Preview File"
+                                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                        <i class="bi bi-eye-fill"></i>
+                                                    </button>
+                                                    <button type="button" class="select-replace-btn"
+                                                        data-module-id="{{ $material['module_id'] }}"
+                                                        data-module-type="{{ $material['type'] }}"
+                                                        data-file-name="{{ $material['file_name'] }}"
+                                                        title="Ganti File"
+                                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
 
                         <div class="panel-footer">
                             <button type="submit" class="primary-btn" id="uploadSubmitBtn">
@@ -734,6 +790,33 @@
                                 !empty($module->content_url) ||
                                 (($module->quiz_questions_count ?? 0) > 0)
                             );
+                        });
+
+                        $existingQuizPayloads = $existingQuizModules->mapWithKeys(function ($module) {
+                            $questions = $module->quizQuestions
+                                ->sortBy('order_no')
+                                ->values()
+                                ->map(function ($question) {
+                                    $answers = $question->answers->sortBy('order_no')->values();
+                                    $correctIdx = $answers->search(function ($answer) {
+                                        return (bool) $answer->is_correct;
+                                    });
+                                    if ($correctIdx === false) {
+                                        $correctIdx = 0;
+                                    }
+
+                                    return [
+                                        'text' => (string) $question->question,
+                                        'weight' => (int) ($question->points ?? 10),
+                                        'options' => $answers->pluck('answer_text')->values()->toArray(),
+                                        'correctAnswer' => (int) $correctIdx,
+                                    ];
+                                })
+                                ->toArray();
+
+                            return [
+                                (int) $module->id => $questions,
+                            ];
                         });
                     @endphp
 
@@ -763,6 +846,14 @@
                                                     <i class="bi bi-clock-history"></i>
                                                     Riwayat
                                                 </span>
+                                                <button type="button"
+                                                    class="quiz-edit-btn"
+                                                    data-module-id="{{ $quizModule->id }}"
+                                                    title="Edit Quiz"
+                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
                                                 @if($quizModule->quizQuestions->isNotEmpty())
                                                     <button type="button"
                                                         class="quiz-history-toggle"
@@ -977,6 +1068,22 @@
         </div>
     </div>
 
+    <div id="materialPreviewModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 10001; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #fff; border-radius: 12px; width: min(980px, 100%); max-height: 92vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+            <div style="padding: 14px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <div style="min-width: 0;">
+                    <h3 style="margin: 0; font-size: 16px; color: var(--main-navy-clr);">Preview Materi</h3>
+                    <p id="materialPreviewName" style="margin: 2px 0 0 0; font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+                </div>
+                <button type="button" id="materialPreviewCloseBtn" style="border: none; background: #f3f4f6; color: #334155; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div id="materialPreviewBody" style="padding: 0; height: min(74vh, 760px); background: #f8fafc;"></div>
+        </div>
+    </div>
+
     <style>
         @keyframes slideUp {
             from {
@@ -1027,6 +1134,39 @@
 
         function closeNotificationModal() {
             document.getElementById('notificationModal').style.display = 'none';
+        }
+
+        function openMaterialPreview(viewUrl, fileName, materialType) {
+            const modal = document.getElementById('materialPreviewModal');
+            const nameEl = document.getElementById('materialPreviewName');
+            const body = document.getElementById('materialPreviewBody');
+
+            if (!modal || !nameEl || !body) {
+                return;
+            }
+
+            nameEl.textContent = fileName || 'Materi';
+
+            if (String(materialType || '').toLowerCase() === 'video') {
+                body.innerHTML = `<video controls style="width:100%; height:100%; background:#000;"><source src="${viewUrl}"></video>`;
+            } else {
+                body.innerHTML = `<iframe src="${viewUrl}" style="width:100%; height:100%; border:none;" title="Preview Materi"></iframe>`;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeMaterialPreview() {
+            const modal = document.getElementById('materialPreviewModal');
+            const body = document.getElementById('materialPreviewBody');
+
+            if (body) {
+                body.innerHTML = '';
+            }
+
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
         function openReplacementModal(moduleId, fileName, fileType) {
@@ -1095,6 +1235,10 @@
         document.getElementById('replacementModal').addEventListener('click', (e) => {
             if (e.target.id === 'replacementModal') closeReplacementModal();
         });
+        document.getElementById('materialPreviewCloseBtn').addEventListener('click', closeMaterialPreview);
+        document.getElementById('materialPreviewModal').addEventListener('click', (e) => {
+            if (e.target.id === 'materialPreviewModal') closeMaterialPreview();
+        });
 
         document.addEventListener("DOMContentLoaded", function () {
             // --- TAB SWITCHING ---
@@ -1123,32 +1267,134 @@
 
             // --- UPLOAD LOGIC ---
             let uploadedFiles = [];
-            const activeUnitModules = @json($activeUnitModules->map(fn($module) => ['id' => $module->id, 'type' => $module->type])->values());
+            let persistedMaterials = @json($existingMaterialsPayload);
+            const activeUnitModules = @json($activeUnitModules->map(function ($module) {
+                return ['id' => $module->id, 'type' => $module->type];
+            })->values());
+            const existingQuizPayloads = @json($existingQuizPayloads);
             const dropzone = document.getElementById("dropzone");
             const fileInput = document.getElementById("fileInput");
             const fileList = document.getElementById("fileList");
             const uploadedFilesList = document.getElementById("uploadedFiles");
+            const existingMaterialsBlock = document.getElementById('existingMaterialsBlock');
+            const existingMaterialsList = document.getElementById('existingMaterialsList');
             const moduleForm = document.getElementById("moduleForm");
             const uploadBtn = document.getElementById("uploadSubmitBtn");
             const targetModulesInput = moduleForm.querySelector('input[name="target_modules"]');
 
-            // Attach replace button listeners
-            const replaceButtons = document.querySelectorAll('.select-replace-btn');
-            console.log('🔴 Replace buttons found:', replaceButtons.length);
-            
-            replaceButtons.forEach((button) => {
-                button.addEventListener('click', function () {
-                    console.log('🟡 GANTI button CLICKED! Data:', {
-                        moduleId: this.dataset.moduleId,
-                        fileName: this.dataset.fileName,
-                        moduleType: this.dataset.moduleType
-                    });
+            function escapeHtml(raw) {
+                return String(raw ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function renderExistingMaterials() {
+                const items = Array.isArray(persistedMaterials) ? [...persistedMaterials] : [];
+                items.sort((a, b) => (a.order_no || 0) - (b.order_no || 0));
+
+                if (!existingMaterialsBlock || !existingMaterialsList) {
+                    return;
+                }
+
+                if (items.length === 0) {
+                    existingMaterialsBlock.style.display = 'none';
+                    existingMaterialsList.innerHTML = '';
+                    return;
+                }
+
+                existingMaterialsBlock.style.display = 'block';
+                existingMaterialsList.innerHTML = items.map((material) => {
+                    const iconClass = material.type === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf';
+                    const slot = material.order_no ?? '-';
+                    const fileName = escapeHtml(material.file_name || 'file');
+                    const type = escapeHtml(String(material.type || '').toUpperCase());
+                    const moduleType = escapeHtml(material.type || 'pdf');
+                    const viewUrl = escapeHtml(material.view_url || '#');
+                    const moduleId = Number(material.module_id || 0);
+
+                    return `
+                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                <i class="bi ${iconClass}" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                <div>
+                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
+                                    <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="preview-material-btn"
+                                    data-view-url="${viewUrl}" data-material-type="${moduleType}" data-file-name="${fileName}"
+                                    title="Preview File"
+                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                                <button type="button" class="select-replace-btn"
+                                    data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
+                                    title="Ganti File"
+                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+            }
+
+            renderExistingMaterials();
+
+            document.addEventListener('click', function (event) {
+                const replaceBtn = event.target.closest('.select-replace-btn');
+                if (replaceBtn) {
                     openReplacementModal(
-                        parseInt(this.dataset.moduleId, 10),
-                        this.dataset.fileName || 'file',
-                        this.dataset.moduleType
+                        parseInt(replaceBtn.dataset.moduleId, 10),
+                        replaceBtn.dataset.fileName || 'file',
+                        replaceBtn.dataset.moduleType
                     );
-                });
+                    return;
+                }
+
+                const previewBtn = event.target.closest('.preview-material-btn');
+                if (previewBtn) {
+                    openMaterialPreview(
+                        previewBtn.dataset.viewUrl || '#',
+                        previewBtn.dataset.fileName || 'Materi',
+                        previewBtn.dataset.materialType || 'pdf'
+                    );
+                    return;
+                }
+
+                const editQuizBtn = event.target.closest('.quiz-edit-btn');
+                if (editQuizBtn) {
+                    const moduleId = Number(editQuizBtn.dataset.moduleId || 0);
+                    const key = String(moduleId);
+                    const quizPayload = (existingQuizPayloads && Object.prototype.hasOwnProperty.call(existingQuizPayloads, key))
+                        ? existingQuizPayloads[key]
+                        : [];
+
+                    if (!Array.isArray(quizPayload) || quizPayload.length === 0) {
+                        showNotificationModal('Info', 'Data quiz belum tersedia untuk diedit.', 'error');
+                        return;
+                    }
+
+                    quizQuestions = quizPayload.map((q) => ({
+                        id: questionCounter++,
+                        text: q.text || '',
+                        weight: Number(q.weight || 10),
+                        options: Array.isArray(q.options) && q.options.length ? q.options : ['', '', '', ''],
+                        correctAnswer: Number(q.correctAnswer || 0),
+                    }));
+
+                    document.getElementById('quizModuleId').value = String(moduleId);
+                    renderAllQuestions();
+                    saveQuizDraft();
+                    setTab('quiz');
+                    showNotificationModal('Siap Diedit', 'Quiz tersimpan dimuat ke editor. Kamu bisa ubah lalu simpan ulang.', 'success');
+                }
             });
 
             const quizHistoryToggleButtons = document.querySelectorAll('.quiz-history-toggle');
@@ -1232,10 +1478,28 @@
                     .then(data => {
                         closeReplacementModal();
                         if (data.success) {
-                            showNotificationModal('Berhasil', 'File berhasil diganti!', 'success');
-                            setTimeout(() => window.location.reload(), 1500);
+                            const updates = Array.isArray(data.updated_modules) ? data.updated_modules : [];
+                            updates.forEach((row) => {
+                                const idx = persistedMaterials.findIndex((m) => Number(m.module_id) === Number(row.module_id));
+                                if (idx >= 0) {
+                                    persistedMaterials[idx] = row;
+                                } else {
+                                    persistedMaterials.push(row);
+                                }
+                            });
+                            renderExistingMaterials();
+                            showNotificationModal('Berhasil', data.message || 'File berhasil diganti!', 'success');
                         } else {
-                            const errorMsg = data.error || data.message || 'Unknown error';
+                            let errorMsg = data.error || data.message || 'Unknown error';
+                            
+                            // If there are available types info, add it to the error message
+                            if (data.available_types && typeof data.available_types === 'object' && Object.keys(data.available_types).length > 0) {
+                                const typeInfos = Object.entries(data.available_types)
+                                    .map(([type, info]) => `${type.toUpperCase()}: ${info.filled}/${info.count} terisi`)
+                                    .join(' | ');
+                                errorMsg += '\n\n📊 Slot Tersedia: ' + typeInfos;
+                            }
+                            
                             showNotificationModal('Gagal', errorMsg, 'error');
                         }
                     })
@@ -1308,6 +1572,23 @@
                 e.preventDefault();
                 if (uploadedFiles.length === 0) return showNotificationModal('Perhatian', 'Silakan pilih minimal 1 file untuk diupload.', 'error');
 
+                const selectedTypes = [...new Set(uploadedFiles.map(getUploadType))];
+                const availableTypesInUnit = [...new Set(activeUnitModules.map(module => module.type))];
+                const unsupportedTypes = selectedTypes.filter((type) => !availableTypesInUnit.includes(type));
+
+                if (unsupportedTypes.length > 0) {
+                    const selectedText = selectedTypes.map((type) => String(type).toUpperCase()).join(', ');
+                    const availableText = availableTypesInUnit.length > 0
+                        ? availableTypesInUnit.map((type) => String(type).toUpperCase()).join(', ')
+                        : '-';
+                    showNotificationModal(
+                        'Tipe Materi Tidak Sesuai Bab',
+                        `File yang kamu pilih: ${selectedText}. Slot di bab ini: ${availableText}. Untuk upload ulang file lama, gunakan tombol Ganti File di daftar Semuanya Materi Yang Sudah Diupload.`,
+                        'error'
+                    );
+                    return;
+                }
+
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> UPLOADING...';
 
@@ -1315,7 +1596,6 @@
                 formData.delete('files[]');
                 formData.set('replace_module_id', '');
 
-                const selectedTypes = [...new Set(uploadedFiles.map(getUploadType))];
                 const filteredModuleIds = activeUnitModules
                     .filter(module => selectedTypes.includes(module.type))
                     .map(module => module.id);
@@ -1354,14 +1634,34 @@
                     })
                     .then(data => {
                         if (data.success) {
-                            showNotificationModal('Berhasil', 'Materi berhasil disubmit ke Admin!', 'success');
-                            setTimeout(() => window.location.reload(), 1500);
+                            const updates = Array.isArray(data.updated_modules) ? data.updated_modules : [];
+                            updates.forEach((row) => {
+                                const idx = persistedMaterials.findIndex((m) => Number(m.module_id) === Number(row.module_id));
+                                if (idx >= 0) {
+                                    persistedMaterials[idx] = row;
+                                } else {
+                                    persistedMaterials.push(row);
+                                }
+                            });
+                            renderExistingMaterials();
+                            uploadedFiles = [];
+                            updateFileList();
+                            showNotificationModal('Berhasil', data.message || 'Materi berhasil disubmit ke Admin!', 'success');
                             return;
                         } else {
                             const firstValidationError = data.errors
                                 ? Object.values(data.errors).flat()[0]
                                 : null;
-                            const errorMsg = data.error || data.message || firstValidationError || 'Unknown error';
+                            let errorMsg = data.error || data.message || firstValidationError || 'Unknown error';
+                            
+                            // If there are available types info, add it to the error message
+                            if (data.available_types && typeof data.available_types === 'object' && Object.keys(data.available_types).length > 0) {
+                                const typeInfos = Object.entries(data.available_types)
+                                    .map(([type, info]) => `${type.toUpperCase()}: ${info.filled}/${info.count} terisi`)
+                                    .join(' | ');
+                                errorMsg += '\n\n📊 Slot Tersedia: ' + typeInfos;
+                            }
+                            
                             showNotificationModal('Gagal', errorMsg, 'error');
                         }
                     })
@@ -1539,11 +1839,15 @@
                 if (isInvalid) return showNotificationModal('Perhatian', 'Semua pertanyaan dan opsi jawaban wajib diisi!', 'error');
 
                 // Dapatkan quiz_module_id dari activeUnitModules
-                let quizModuleId = null;
-                for (const module of activeUnitModules) {
-                    if (module.type === 'quiz') {
-                        quizModuleId = module.id;
-                        break;
+                const explicitQuizModuleId = Number(document.getElementById('quizModuleId').value || 0);
+                let quizModuleId = explicitQuizModuleId > 0 ? explicitQuizModuleId : null;
+
+                if (!quizModuleId) {
+                    for (const module of activeUnitModules) {
+                        if (module.type === 'quiz') {
+                            quizModuleId = module.id;
+                            break;
+                        }
                     }
                 }
                 
@@ -1582,6 +1886,7 @@
                         if (data.success) {
                             localStorage.removeItem(quizDraftStorageKey);
                             showNotificationModal('Berhasil', 'Kuis berhasil disimpan! ' + data.message, 'success');
+                            setTimeout(() => window.location.reload(), 1200);
                         } else {
                             showNotificationModal('Gagal', data.message || 'Pastikan data terisi dengan benar.', 'error');
                         }
