@@ -197,8 +197,7 @@ class MaterialApprovalController extends Controller
 
         $pendingEventModulesQuery = Event::query()
             ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_submission_path')
-            ->whereNull('module_path');
+            ->whereNotNull('module_path');
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
@@ -211,28 +210,25 @@ class MaterialApprovalController extends Controller
         }
 
         $pendingEventModules = $pendingEventModulesQuery
-            ->orderByDesc('module_submitted_at')
-            ->orderByDesc('event_date')
             ->orderByDesc('created_at')
+            ->orderByDesc('event_date')
             ->get([
                 'id',
                 'trainer_id',
                 'title',
                 'jenis',
                 'event_date',
-                'module_submission_path',
-                'module_submitted_at',
-                'module_rejected_at',
-                'module_rejection_reason',
+                'module_path',
+                'created_at as module_submitted_at',
             ]);
 
         // Statistics
         $totalPending = Course::where('status', 'pending_review')->count()
-            + Event::query()->whereNotNull('module_submission_path')->whereNull('module_path')->count();
-        $totalApproved = Course::where('status', 'approved')->count()
             + Event::query()->whereNotNull('module_path')->count();
+        $totalApproved = Course::where('status', 'approved')->count()
+            + Event::query()->whereRaw('1=0')->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + Event::query()->whereNotNull('module_rejected_at')->whereNull('module_path')->count();
+            + Event::query()->whereRaw('1=0')->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 
@@ -316,12 +312,12 @@ class MaterialApprovalController extends Controller
      */
     public function approve(Course $material)
     {
-        $material->loadMissing(['trainer']);
-        $structureCompleteness = $this->assessStructureCompleteness($material);
-        if (!$structureCompleteness['is_complete']) {
+        $material->loadMissing(['trainer', 'modules']);
+
+        if ($material->modules->isEmpty()) {
             return redirect()
                 ->route('admin.material.show', $material)
-                ->with('error', 'Material course belum lengkap sesuai struktur. Lengkapi semua slot sebelum approve.');
+                ->with('error', 'Belum ada materi yang diupload trainer. Approval hanya bisa dilakukan untuk materi yang sudah ada.');
         }
 
         $material->update([
@@ -349,7 +345,7 @@ class MaterialApprovalController extends Controller
 
         return redirect()
             ->route('admin.material.approvals')
-            ->with('success', "Materi \"{$material->name}\" berhasil disetujui dan dipublikasikan!");
+            ->with('success', "Materi yang sudah diupload pada \"{$material->name}\" berhasil disetujui!");
     }
 
     /**
@@ -407,7 +403,8 @@ class MaterialApprovalController extends Controller
 
         $approvedEventModulesQuery = Event::query()
             ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path');
+            ->whereNotNull('module_path')
+            ->where('material_status', 'approved');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -459,7 +456,7 @@ class MaterialApprovalController extends Controller
         $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
 
         $approvedEventModules = $approvedEventModulesQuery
-            ->orderByDesc('module_verified_at')
+            ->orderByDesc('material_approved_at')
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->get([
@@ -469,7 +466,7 @@ class MaterialApprovalController extends Controller
                 'jenis',
                 'event_date',
                 'module_path',
-                'module_verified_at',
+                'material_approved_at as module_verified_at',
             ]);
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
@@ -488,8 +485,8 @@ class MaterialApprovalController extends Controller
 
         $rejectedEventModulesQuery = Event::query()
             ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_rejected_at')
-            ->whereNull('module_path');
+            ->whereNotNull('module_path')
+            ->where('material_status', 'rejected');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -541,7 +538,7 @@ class MaterialApprovalController extends Controller
         $rejectedMaterials = $query->orderBy('rejected_at', 'desc')->paginate(15);
 
         $rejectedEventModules = $rejectedEventModulesQuery
-            ->orderByDesc('module_rejected_at')
+            ->orderByDesc('updated_at')
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->get([
@@ -550,9 +547,9 @@ class MaterialApprovalController extends Controller
                 'title',
                 'jenis',
                 'event_date',
-                'module_submission_path',
-                'module_rejected_at',
-                'module_rejection_reason',
+                'module_path',
+                'updated_at as module_rejected_at',
+                'material_rejection_reason as module_rejection_reason',
             ]);
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($rejectedMaterials->getCollection());

@@ -724,17 +724,16 @@
                     <div class="action-box">
                         @if(isset($structureCompleteness))
                             <div class="card-custom side-card mb-3" style="padding: 20px;">
-                                <h6 class="side-card-title">Kelengkapan Struktur</h6>
+                                <h6 class="side-card-title">Status Upload Materi</h6>
                                 @if(($structureCompleteness['is_complete'] ?? false) === true)
                                     <div class="alert alert-success mb-0 py-2 px-3" style="font-size: 0.88rem;">
                                         <i class="bi bi-check-circle-fill me-1"></i>
-                                        Lengkap. Semua slot modul sesuai struktur sudah terisi.
+                                        Semua slot modul sudah terisi.
                                     </div>
                                 @else
                                     <div class="alert alert-warning mb-2 py-2 px-3" style="font-size: 0.88rem;">
                                         <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                        Belum lengkap: {{ (int) ($structureCompleteness['missing_count'] ?? 0) }} slot perlu
-                                        dilengkapi.
+                                        Baru {{ $material->modules->count() }} modul diupload trainer.
                                     </div>
                                     @if(!empty($structureCompleteness['missing_items']))
                                         <ul style="margin: 0; padding-left: 18px; font-size: 0.82rem; color: #7c2d12;">
@@ -743,6 +742,9 @@
                                             @endforeach
                                         </ul>
                                     @endif
+                                    <div class="mt-2 small text-muted">
+                                        Admin dapat menyetujui materi yang sudah diupload tanpa menunggu semua slot penuh.
+                                    </div>
                                 @endif
                             </div>
                         @endif
@@ -764,9 +766,9 @@
                                     Keputusan Admin:</h6>
                                 <form action="{{ route('admin.material.approve', $material) }}" method="POST" class="mb-3">
                                     @csrf
-                                    <button type="submit" class="btn-approve" {{ isset($structureCompleteness) && !($structureCompleteness['is_complete'] ?? false) ? 'disabled' : '' }}
-                                        onclick="return confirm('Yakin ingin menyetujui kelas ini?')">
-                                        <i class="bi bi-check-circle-fill me-2"></i> Setujui (Approve)
+                                    <button type="submit" class="btn-approve"
+                                        onclick="return confirm('Yakin ingin menyetujui materi yang sudah diupload trainer?')">
+                                        <i class="bi bi-check-circle-fill me-2"></i> Setujui Materi yang Diupload
                                     </button>
                                 </form>
                                 <button type="button" class="btn-reject" data-bs-toggle="modal" data-bs-target="#rejectModal">
@@ -866,11 +868,11 @@
                     }).join('');
 
                     return `
-                                    <div class="quiz-preview-item">
-                                        <p class="quiz-preview-q">${idx + 1}. ${q.question || 'Tanpa pertanyaan'} ${q.points ? `(${q.points} poin)` : ''}</p>
-                                        <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi jawaban</div>'}</div>
-                                    </div>
-                                `;
+                                        <div class="quiz-preview-item">
+                                            <p class="quiz-preview-q">${idx + 1}. ${q.question || 'Tanpa pertanyaan'} ${q.points ? `(${q.points} poin)` : ''}</p>
+                                            <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi jawaban</div>'}</div>
+                                        </div>
+                                    `;
                 }).join('');
 
                 viewer.innerHTML = `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;

@@ -22,8 +22,6 @@ class Event extends Model
         'material_approved_at',
         'material_approved_by',
         'material_rejection_reason',
-        // trainer module submission (pending approval)
-        'module_submission_path',
         'module_submitted_at',
         'module_verified_at',
         'module_verified_by',
@@ -93,12 +91,12 @@ class Event extends Model
         }
         if (!empty($this->certificate_path)) {
             $count++;
-        if (!empty($this->vbg_path))
-            $count++;
-        if (!empty($this->certificate_path))
-            $count++;
-        if (!empty($this->module_path))
-            $count++;
+            if (!empty($this->vbg_path))
+                $count++;
+            if (!empty($this->certificate_path))
+                $count++;
+            if (!empty($this->module_path))
+                $count++;
         }
         // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
         if (!empty($this->module_path)) {
@@ -126,7 +124,7 @@ class Event extends Model
 
     public function getModuleSubmissionUrlAttribute(): ?string
     {
-        return $this->buildPublicFileUrl($this->module_submission_path, true);
+        return $this->buildPublicFileUrl($this->module_path, true);
     }
 
     public function getModuleFileUrlAttribute(): ?string

@@ -36,7 +36,7 @@ class EventModuleSubmissionController extends Controller
                 'jenis' => $event->jenis,
                 'module_uploaded' => !empty($event->module_path),
                 'module_url' => !empty($event->module_path) ? $event->module_file_url : null,
-                'module_submission_url' => !empty($event->module_submission_path) ? $event->module_submission_url : null,
+                'module_submission_url' => !empty($event->module_path) ? $event->module_file_url : null,
                 'module_submitted_at' => $event->module_submitted_at,
                 'module_verified_at' => $event->module_verified_at,
                 'module_rejected_at' => $event->module_rejected_at,
@@ -69,22 +69,16 @@ class EventModuleSubmissionController extends Controller
         $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
         $event->update([
-            'module_submission_path' => $path,
-            'module_submitted_at' => now(),
-            'module_verified_at' => null,
-            'module_verified_by' => null,
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
+            'module_path' => $path,
         ]);
 
         return response()->json([
             'message' => 'Module berhasil diupload dan menunggu verifikasi admin.',
             'data' => [
                 'event_id' => $event->id,
-                'module_submission_path' => $event->module_submission_path,
-                'module_submission_url' => $event->module_submission_url,
-                'module_submitted_at' => $event->module_submitted_at,
+                'module_submission_path' => $event->module_path,
+                'module_submission_url' => $event->module_file_url,
+                'module_submitted_at' => $event->created_at,
             ],
         ], 201);
     }

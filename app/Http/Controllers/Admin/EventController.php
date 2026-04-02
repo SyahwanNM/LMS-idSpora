@@ -806,20 +806,17 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $submission = trim((string) ($event->module_submission_path ?? ''));
-        if ($submission === '') {
+        $modulePath = trim((string) ($event->module_path ?? ''));
+        if ($modulePath === '') {
             return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
                 ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
         }
 
         $event->update([
-            'module_path' => $submission,
-            'module_submission_path' => null,
-            'module_verified_at' => now(),
-            'module_verified_by' => auth()->id(),
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
+            'material_status' => 'approved',
+            'material_approved_at' => now(),
+            'material_approved_by' => auth()->id(),
+            'material_rejection_reason' => null,
         ]);
 
         return back()->with('success', 'Module trainer berhasil diverifikasi.')
@@ -835,8 +832,8 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $submission = trim((string) ($event->module_submission_path ?? ''));
-        if ($submission === '') {
+        $modulePath = trim((string) ($event->module_path ?? ''));
+        if ($modulePath === '') {
             return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
                 ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
         }
@@ -846,11 +843,10 @@ class EventController extends Controller
         ]);
 
         $event->update([
-            'module_rejected_at' => now(),
-            'module_rejected_by' => auth()->id(),
-            'module_rejection_reason' => $validated['reason'],
-            'module_verified_at' => null,
-            'module_verified_by' => null,
+            'material_status' => 'rejected',
+            'material_approved_at' => null,
+            'material_approved_by' => null,
+            'material_rejection_reason' => $validated['reason'],
         ]);
 
         return back()->with('success', 'Module trainer ditolak.')
