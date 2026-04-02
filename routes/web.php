@@ -40,6 +40,11 @@ Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('
 
 // Canonical course detail route (alias used in views)
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+
+// Reminder: allow authenticated users to notify the assigned trainer when course content is incomplete.
+Route::middleware(['auth'])->post('/courses/{course}/remind-trainer', [CourseController::class, 'remindTrainer'])
+    ->whereNumber('course')
+    ->name('courses.remind-trainer');
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
     Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');

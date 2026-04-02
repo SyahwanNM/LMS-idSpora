@@ -12,6 +12,8 @@
 
     $courseModules = $course->modules ?? collect();
     $moduleChunks = $courseModules->values()->chunk(3);
+
+    $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
 @endphp
 
 @push('styles')
@@ -112,7 +114,14 @@
                                 <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
                                 </div>
                                 <div class="unit-title">
-                                    <h3>Academic Unit: Module {{ $idx + 1 }}</h3>
+                                    @php
+                                        $unitNo = (int) ($idx + 1);
+                                        $unitTitle = (string) optional($unitTitlesByNo->get($unitNo))->title;
+                                        if (trim($unitTitle) === '') {
+                                            $unitTitle = 'Academic Unit: Module ' . $unitNo;
+                                        }
+                                    @endphp
+                                    <h3>{{ $unitTitle }}</h3>
                                     <div class="unit-meta">
                                         <span><i class="bi bi-folder"></i> {{ $chunk->count() }} OPERATIONAL ASSETS</span>
                                         <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
@@ -127,13 +136,43 @@
                                         $icon = $module->type === 'video' ? 'bi-film' : ($module->type === 'quiz' ? 'bi-check-circle' : 'bi-file-earmark-pdf');
                                         $label = $module->type === 'video' ? 'Video Asset' : ($module->type === 'quiz' ? 'Quiz Engine' : 'PDF Material');
                                         $assetTab = $module->type === 'quiz' ? 'quiz' : 'module';
+
+                                        $courseStatus = (string) ($course->status ?? '');
+                                        $isApproved = $courseStatus === 'approved';
+                                        $isPending = $courseStatus === 'pending_review';
+                                        $isRejected = $courseStatus === 'rejected';
+
+                                        $hasFile = $module->type !== 'quiz' && !empty($module->content_url) && $module->content_url !== 'quiz_submitted';
+                                        $quizReady = $module->type === 'quiz' && ($module->quizQuestions?->count() ?? 0) > 0;
+
+                                        $primaryTitle = (string) ($module->title ?? $label);
+                                        if ($module->type !== 'quiz' && $hasFile) {
+                                            $primaryTitle = (string) ($module->file_name ?: basename((string) $module->content_url));
+                                        }
+
+                                        $statusText = 'Belum diupload';
+                                        if ($module->type === 'quiz') {
+                                            $statusText = $quizReady ? 'Quiz tersimpan' : 'Quiz belum dibuat';
+                                        } else {
+                                            $statusText = $hasFile ? 'File terupload' : 'Belum diupload';
+                                        }
+
+                                        if (($hasFile || $quizReady) && $isPending) {
+                                            $statusText = 'Menunggu approval admin';
+                                        }
+                                        if (($hasFile || $quizReady) && $isApproved) {
+                                            $statusText = 'Approved';
+                                        }
+                                        if (($hasFile || $quizReady) && $isRejected) {
+                                            $statusText = 'Perlu revisi (ditolak admin)';
+                                        }
                                       @endphp
                                     <div class="asset-mini"
                                         data-redirect="{{ route('trainer.courses.studio', $course->id) }}?unit={{ $idx }}&tab={{ $assetTab }}">
                                         <i class="bi {{ $icon }}"></i>
                                         <div>
-                                            <h4>{{ Str::limit($module->title, 25) }}</h4>
-                                            <p>{{ $label }}</p>
+                                            <h4>{{ Str::limit($primaryTitle, 32) }}</h4>
+                                            <p>{{ $statusText }}</p>
                                         </div>
                                     </div>
                                 @endforeach

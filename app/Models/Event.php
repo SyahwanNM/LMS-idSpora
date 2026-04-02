@@ -58,6 +58,10 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
+
+        // publishing
+        'is_published',
+        'published_at',
     ];
 
     protected $casts = [
@@ -78,6 +82,9 @@ class Event extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+
+        'is_published' => 'boolean',
+        'published_at' => 'datetime',
     ];
 
     /**

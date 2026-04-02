@@ -32,8 +32,8 @@ class CourseController extends Controller
             });
         }
 
-        $level = trim((string) $request->query('level', ''));
-        if ($level !== '') {
+        $level = strtolower(trim((string) $request->query('level', '')));
+        if (in_array($level, ['beginner', 'intermediate', 'advanced'], true)) {
             $query->where('level', $level);
         }
 
@@ -51,12 +51,18 @@ class CourseController extends Controller
             $query->latest();
         }
 
-        $courses = $query->paginate($perPage);
+        $courses = $query->paginate($perPage)->appends($request->query());
 
         return response()->json([
             'status' => 'success',
             'message' => 'List course',
             'data' => CourseResource::collection($courses),
+            'pagination' => [
+                'current_page' => $courses->currentPage(),
+                'per_page' => $courses->perPage(),
+                'total' => $courses->total(),
+                'last_page' => $courses->lastPage(),
+            ],
         ]);
     }
 
