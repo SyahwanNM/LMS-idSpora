@@ -16,6 +16,45 @@ use Illuminate\Support\Facades\Storage;
 
 class MaterialApprovalController extends Controller
 {
+    private function assessStructureCompleteness(Course $course): array
+    {
+        $modules = $course->modules()->withCount('quizQuestions')->orderBy('order_no')->get();
+
+        if ($modules->isEmpty()) {
+            return [
+                'is_complete' => false,
+                'missing_items' => ['Struktur modul belum tersedia untuk course ini.'],
+                'missing_count' => 1,
+                'total_modules' => 0,
+            ];
+        }
+
+        $missingItems = [];
+        foreach ($modules as $module) {
+            $title = trim((string) ($module->title ?? 'Untitled'));
+            $slotLabel = '#' . (int) ($module->order_no ?? 0) . ' - ' . $title;
+
+            if ($module->isQuiz()) {
+                if ((int) ($module->quiz_questions_count ?? 0) <= 0) {
+                    $missingItems[] = $slotLabel . ' (quiz belum diisi)';
+                }
+                continue;
+            }
+
+            $content = trim((string) ($module->content_url ?? ''));
+            if ($content === '' || $content === 'quiz_submitted') {
+                $missingItems[] = $slotLabel . ' (file belum diupload)';
+            }
+        }
+
+        return [
+            'is_complete' => count($missingItems) === 0,
+            'missing_items' => $missingItems,
+            'missing_count' => count($missingItems),
+            'total_modules' => (int) $modules->count(),
+        ];
+    }
+
     private function buildDeadlineMonitoring(Collection $materials): array
     {
         if ($materials->isEmpty()) {
@@ -222,7 +261,9 @@ class MaterialApprovalController extends Controller
             'reviews'
         ]);
 
-        return view('admin.material.show', compact('material'));
+        $structureCompleteness = $this->assessStructureCompleteness($material);
+
+        return view('admin.material.show', compact('material', 'structureCompleteness'));
     }
 
     /**
@@ -275,6 +316,14 @@ class MaterialApprovalController extends Controller
      */
     public function approve(Course $material)
     {
+        $material->loadMissing(['trainer']);
+        $structureCompleteness = $this->assessStructureCompleteness($material);
+        if (!$structureCompleteness['is_complete']) {
+            return redirect()
+                ->route('admin.material.show', $material)
+                ->with('error', 'Material course belum lengkap sesuai struktur. Lengkapi semua slot sebelum approve.');
+        }
+
         $material->update([
             'status' => 'approved',
             'approved_at' => now(),
@@ -282,6 +331,21 @@ class MaterialApprovalController extends Controller
             'rejection_reason' => null,
             'rejected_at' => null,
         ]);
+
+        if (!empty($material->trainer_id)) {
+            TrainerNotification::create([
+                'trainer_id' => (int) $material->trainer_id,
+                'type' => 'course_material_approved',
+                'title' => 'Materi Course Diterima',
+                'message' => 'Materi course "' . $material->name . '" telah disetujui oleh admin.',
+                'data' => [
+                    'entity_type' => 'course',
+                    'entity_id' => (int) $material->id,
+                    'url' => route('trainer.detail-course', $material->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
 
         return redirect()
             ->route('admin.material.approvals')
@@ -301,12 +365,31 @@ class MaterialApprovalController extends Controller
             'rejection_reason.max' => 'Alasan penolakan maksimal 1000 karakter.',
         ]);
 
+        $material->loadMissing(['trainer']);
+        $rejectionReason = (string) $request->rejection_reason;
+
         $material->update([
             'status' => 'rejected',
-            'rejection_reason' => $request->rejection_reason,
+            'rejection_reason' => $rejectionReason,
             'rejected_at' => now(),
             'approved_by' => Auth::id(), // Track who rejected it
         ]);
+
+        if (!empty($material->trainer_id)) {
+            TrainerNotification::create([
+                'trainer_id' => (int) $material->trainer_id,
+                'type' => 'course_material_rejected',
+                'title' => 'Materi Course Perlu Revisi',
+                'message' => 'Materi course "' . $material->name . '" perlu revisi. Catatan admin: ' . $rejectionReason,
+                'data' => [
+                    'entity_type' => 'course',
+                    'entity_id' => (int) $material->id,
+                    'rejection_reason' => $rejectionReason,
+                    'url' => route('trainer.courses.studio', $material->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
 
         return redirect()
             ->route('admin.material.approvals')

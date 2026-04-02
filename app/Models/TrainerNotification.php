@@ -13,6 +13,8 @@ class TrainerNotification extends Model
         'title',
         'message',
         'data',
+        'invitation_status',
+        'responded_at',
         'read_at',
         'expires_at',
     ];
@@ -20,6 +22,7 @@ class TrainerNotification extends Model
     protected $casts = [
         'data' => 'array',
         'read_at' => 'datetime',
+        'responded_at' => 'datetime',
         'expires_at' => 'datetime',
     ];
 
