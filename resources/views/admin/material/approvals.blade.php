@@ -393,19 +393,20 @@
         }
 
         .badge-status {
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            line-height: 1.1;
         }
 
         .badge-status::before {
             content: '';
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
         }
 
@@ -440,6 +441,31 @@
             border-color: var(--admin-secondary);
             color: var(--admin-secondary);
             background: #f8fafc;
+        }
+
+        .btn-icon-action {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            justify-content: center;
+        }
+
+        .btn-icon-action i {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .event-action-group {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .event-action-group form {
+            margin: 0;
         }
 
         .empty-state {
@@ -560,33 +586,24 @@
                                     value="{{ request('search') }}">
                             </div>
                             <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                                <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
-                                    Deadline
-                                </option>
-                                <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                                    Overdue
-                                </option>
-                                <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
-                                    Waktu</option>
-                                <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                                    Tanpa Deadline</option>
+                                <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline</option>
+                                <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Overdue</option>
+                                <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat Waktu</option>
+                                <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>Tanpa Deadline</option>
                             </select>
                         </form>
                     </div>
 
                     <div class="toolbar-right">
                         @if($hasActiveFilter)
-                            <span class="btn-action"
-                                style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
-                                Filter:
-                                {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
+                            <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
+                                Filter: {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
                             </span>
                             <a href="{{ route('admin.material.approvals') }}" class="btn-action">
                                 <i class="bi bi-x-circle"></i> Reset
                             </a>
                         @endif
-                        <a href="{{ route('admin.material.approved') }}" class="btn-action"
-                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
+                        <a href="{{ route('admin.material.approved') }}" class="btn-action" style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
                             Lihat Disetujui <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
@@ -610,54 +627,39 @@
                                 <tr>
                                     <td>
                                         <div class="course-info">
-                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
-                                                class="course-thumb" alt="Cover">
+                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}" class="course-thumb" alt="Cover">
                                             <div>
                                                 <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
-                                                <span class="badge-cat"><i
-                                                        class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
+                                                <span class="badge-cat"><i class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="trainer-info">
-                                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
-                                                class="trainer-avatar">
+                                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}" class="trainer-avatar">
                                             <div>
                                                 <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
-                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}
-                                                </div>
+                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis
-                                        </div>
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis</div>
                                     </td>
                                     <td>
-                                        <div style="font-weight: 600; color: #334155;">
-                                            {{ $material->created_at->format('d M Y') }}
-                                        </div>
-                                        <div style="font-size: 0.75rem; color:#64748b;">
-                                            {{ $material->created_at->diffForHumans() }}
-                                        </div>
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->created_at->format('d M Y') }}</div>
+                                        <div style="font-size: 0.75rem; color:#64748b;">{{ $material->created_at->diffForHumans() }}</div>
                                     </td>
                                     <td>
                                         <span class="badge-status badge-pending">Review Pending</span>
                                     </td>
                                     <td>
                                         @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
-                                        <div style="font-weight: 600; color: #334155;">
-                                            {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
-                                        </div>
-                                        <div
-                                            style="font-size: 0.75rem; color: {{ ($monitor['status'] ?? '') === 'late' ? '#b91c1c' : '#64748b' }};">
-                                            {{ $monitor['status_text'] ?? 'Tanpa deadline' }}
-                                        </div>
+                                        <div style="font-weight: 600; color: #334155;">{{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}</div>
+                                        <div style="font-size: 0.75rem; color: {{ ($monitor['status'] ?? '') === 'late' ? '#b91c1c' : '#64748b' }};">{{ $monitor['status_text'] ?? 'Tanpa deadline' }}</div>
                                     </td>
                                     <td class="text-end">
-                                        <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action"
-                                            style="background: var(--admin-primary); color:white; border:none;">
+                                        <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action" style="background: var(--admin-primary); color:white; border:none;">
                                             Mulai Review <i class="bi bi-play-fill"></i>
                                         </a>
                                     </td>
@@ -679,14 +681,22 @@
                     </table>
                 </div>
 
-                @if(!($pendingEventModules ?? collect())->isEmpty())
-                    <div class="px-3 pt-3 border-top">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                @if($pendingMaterials->hasPages())
+                    <div class="p-3 border-top">
+                        {{ $pendingMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+                    </div>
+                @endif
+            </div>
+
+            @if(!($pendingEventModules ?? collect())->isEmpty())
+                <div class="content-card mt-4">
+                    <div class="px-3 pt-3">
+                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 pb-3 border-bottom">
                             <div>
-                                <div class="fw-bold text-dark">Module Event (Trainer)</div>
+                                <div class="fw-bold text-dark fs-5">Module Event (Trainer)</div>
                                 <div class="text-muted small">Antrean verifikasi modul event yang diupload trainer.</div>
                             </div>
-                            <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">
+                            <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;height:fit-content;">
                                 {{ ($pendingEventModules ?? collect())->count() }} menunggu
                             </span>
                         </div>
@@ -718,8 +728,7 @@
                                         </td>
                                         <td>
                                             <div class="trainer-info">
-                                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
-                                                    class="trainer-avatar">
+                                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}" class="trainer-avatar">
                                                 <div>
                                                     <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
                                                     <div style="font-size: 0.75rem; color:#64748b;">{{ $event->trainer?->email }}</div>
@@ -727,48 +736,25 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div style="font-weight: 600; color: #334155;">
-                                                {{ $event->module_submitted_at?->format('d M Y') ?? ($event->created_at?->format('d M Y') ?? '-') }}
-                                            </div>
-                                            <div style="font-size: 0.75rem; color:#64748b;">
-                                                {{ $event->module_submitted_at?->diffForHumans() ?? '' }}
-                                            </div>
+                                            <div style="font-weight: 600; color: #334155;">{{ $event->module_submitted_at?->format('d M Y') ?? ($event->created_at?->format('d M Y') ?? '-') }}</div>
+                                            <div style="font-size: 0.75rem; color:#64748b;">{{ $event->module_submitted_at?->diffForHumans() ?? '' }}</div>
                                         </td>
                                         <td>
-                                            @if(!empty($event->module_rejected_at))
-                                                <span class="badge-status badge-rejected-status">Perlu Revisi</span>
-                                                @if(!empty($event->module_rejection_reason))
-                                                    <div class="rejection-note mt-2" style="max-width: 260px;">
-                                                        <i class="bi bi-chat-text-fill me-1"></i>{{ Str::limit($event->module_rejection_reason, 60) }}
-                                                    </div>
-                                                @endif
-                                            @else
-                                                <span class="badge-status badge-pending">Review Pending</span>
-                                            @endif
+                                            <span class="badge-status badge-pending">Review Pending</span>
                                         </td>
                                         <td class="text-end">
-                                            <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                                <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
-                                                    Lihat <i class="bi bi-eye"></i>
+                                            <div class="event-action-group">
+                                                <a href="{{ $event->module_file_url }}" target="_blank" class="btn-action btn-icon-action" title="Lihat modul" aria-label="Lihat modul">
+                                                    <i class="bi bi-eye"></i>
                                                 </a>
-                                                @if(!empty($event->trainer_id))
-                                                    <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn-action"
-                                                        style="color:#92400e;border-color:#fcd34d;background:#fffbeb;">
-                                                        Trainer <i class="bi bi-person"></i>
-                                                    </a>
-                                                @endif
-                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST" class="d-inline">
+                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST">
                                                     @csrf
-                                                    <button type="submit" class="btn-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                                        Approve <i class="bi bi-check2-circle"></i>
+                                                    <button type="submit" class="btn-action btn-icon-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
+                                                        <i class="bi bi-check2-circle"></i>
                                                     </button>
                                                 </form>
-                                            </div>
-                                            <div class="mt-2">
-                                                <button class="btn-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $event->id }}"
-                                                    aria-expanded="false" aria-controls="rejectEventModule-{{ $event->id }}"
-                                                    style="color:#991b1b;border-color:#fecaca;background:#fef2f2;">
-                                                    Tolak <i class="bi bi-x-circle"></i>
+                                                <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $event->id }}" aria-expanded="false" aria-controls="rejectEventModule-{{ $event->id }}" style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak" aria-label="Tolak">
+                                                    <i class="bi bi-x-circle"></i>
                                                 </button>
                                             </div>
                                             <div class="collapse mt-2" id="rejectEventModule-{{ $event->id }}">
@@ -786,14 +772,8 @@
                             </tbody>
                         </table>
                     </div>
-                @endif
-
-                @if($pendingMaterials->hasPages())
-                    <div class="p-3 border-top">
-                        {{ $pendingMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
-                    </div>
-                @endif
-            </div>
+                </div>
+            @endif
         </main>
     </div>
 @endsection

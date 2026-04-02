@@ -122,7 +122,7 @@ class TrainerController extends Controller
             ->where('type_code', $typeCode)
             ->whereRaw("date_format(issued_at, '%m-%Y') = ?", [$monthYear])
             ->max(\DB::raw("CAST(SUBSTRING(sequence, -3) AS UNSIGNED)")) ?? 0;
-        
+
         $sequenceNum = $maxSequence + 1;
         $sequence = str_pad((string) $sequenceNum, 3, '0', STR_PAD_LEFT);
 
@@ -619,9 +619,11 @@ class TrainerController extends Controller
 
         $event = \App\Models\Event::where('id', $id)
             ->where('trainer_id', $trainerId)
-            ->with(['scheduleItems' => function ($q) {
-                $q->orderBy('start', 'asc');
-            }])
+            ->with([
+                'scheduleItems' => function ($q) {
+                    $q->orderBy('start', 'asc');
+                }
+            ])
             ->firstOrFail();
 
         return view('trainer.detail-event', compact('event'));
@@ -1315,13 +1317,7 @@ class TrainerController extends Controller
             $updates['vbg_path'] = $latestImagePath;
         }
         if ($latestModuleDocPath) {
-            $updates['module_submission_path'] = $latestModuleDocPath;
-            $updates['module_submitted_at'] = now();
-            $updates['module_verified_at'] = null;
-            $updates['module_verified_by'] = null;
-            $updates['module_rejected_at'] = null;
-            $updates['module_rejected_by'] = null;
-            $updates['module_rejection_reason'] = null;
+            $updates['module_path'] = $latestModuleDocPath;
         }
         if (!empty($updates)) {
             $event->update($updates);
