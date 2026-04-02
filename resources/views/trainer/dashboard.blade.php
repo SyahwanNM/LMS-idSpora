@@ -61,15 +61,15 @@
       {{-- METRICS SECTION --}}
       <div class="metrics-section">
         <div class="metric-card">
-          <p class="metric-label">Total Pelajar</p>
+          <p class="metric-label">Sertifikat Terkumpul</p>
           <div class="metric-value-row">
-            <h2 class="metric-value">{{ number_format($totalStudents) }}</h2>
+            <h2 class="metric-value">{{ number_format($totalCertificates) }}</h2>
             <span class="metric-change">
               <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 9V3M6 3L3 6M6 3L9 6" />
               </svg>
-              Aktif
+              idSpora
             </span>
           </div>
         </div>
@@ -86,7 +86,7 @@
           <p class="metric-label">Reputasi</p>
           <div class="metric-value-row">
             <h2 class="metric-value">4.8</h2>
-            <span class="metric-change" style="background:#d1fae5; color:#059669;">
+            <span class="metric-change is-positive">
               <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 9V3M6 3L3 6M6 3L9 6" />
@@ -97,67 +97,111 @@
         </div>
       </div>
 
-      {{-- DAFTAR KELAS --}}
+      {{-- AKSI DIBUTUHKAN --}}
       <div class="studio-pipeline">
         <div class="section-header">
           <h3 class="section-title">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path
-                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-              </path>
-              <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
-              <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
-              <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
-            </svg>
-            Kelas Anda (Assigned Courses)
+            Aksi Dibutuhkan
           </h3>
-          <a href="{{ route('trainer.courses') }}" class="section-link">
-            Lihat Semua
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 3L11 8L6 13" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </a>
+          <a href="{{ route('trainer.events') }}" class="section-link">Kelola Jadwal</a>
         </div>
 
-        <div class="content-status-list">
-          @forelse($myCourses as $course)
-            @php
-              $statusClass = 'published'; // Default hijau
-              $iconClass = 'green';
-              if ($course->status == 'draft') {
-                $statusClass = 'academic-audit';
-                $iconClass = 'yellow';
-              }
-              if ($course->status == 'archive') {
-                $statusClass = 'requires-attention';
-                $iconClass = 'red';
-              }
-            @endphp
+        <p class="section-summary">
+          Fokus tindakan admin: konfirmasi penugasan dan lengkapi materi event yang masih menunggu.
+        </p>
 
-            <div class="status-item {{ $statusClass }}">
-              <div class="status-icon {{ $iconClass }}">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                </svg>
+        <div class="todo-board">
+          <div class="todo-column">
+            <div class="todo-column-head">
+              <h4>Menunggu Konfirmasi</h4>
+              <span>{{ $todoConfirmations->count() }}</span>
+            </div>
+            @forelse($todoConfirmations as $notification)
+              <div class="todo-row">
+                <div class="todo-row-content">
+                  <h5>{{ Str::limit($notification->title, 42) }}</h5>
+                  <p>{{ Str::limit($notification->message, 62) }}</p>
+                </div>
+                <div class="todo-actions-inline">
+                  <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
+                    class="js-invitation-response-form">
+                    @csrf
+                    <input type="hidden" name="decision" value="accept">
+                    <button type="submit" class="todo-btn accept">Terima</button>
+                  </form>
+                  <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
+                    class="js-invitation-response-form" data-confirm="Yakin ingin menolak undangan ini?">
+                    @csrf
+                    <input type="hidden" name="decision" value="reject">
+                    <button type="submit" class="todo-btn reject">Tolak</button>
+                  </form>
+                </div>
               </div>
-              <div class="status-content">
-                <h4 class="status-title">{{ Str::limit($course->name, 40) }}</h4>
-                <p class="status-subtitle">{{ $course->enrollments_count ?? 0 }} Siswa Aktif</p>
+            @empty
+              <div class="focus-empty">Tidak ada undangan yang menunggu konfirmasi.</div>
+            @endforelse
+          </div>
+
+          <div class="todo-column">
+            <div class="todo-column-head">
+              <h4>Menunggu Materi</h4>
+              <span>{{ $todoMaterials->count() }}</span>
+            </div>
+            @forelse($todoMaterials as $event)
+              <div class="todo-row">
+                <div class="todo-row-content">
+                  <h5>{{ Str::limit($event->title, 44) }}</h5>
+                  <p>{{ optional($event->event_date)->format('d M Y') }} • Materi presentasi belum diunggah</p>
+                </div>
+                <a href="{{ route('trainer.events.studio', $event->id) }}" class="todo-upload-link">Upload</a>
               </div>
-              <a href="{{ route('trainer.detail-course', $course->id) }}" class="status-action"
-                style="text-decoration:none; background: var(--main-navy-clr);">DETAIL</a>
+            @empty
+              <div class="focus-empty">Semua event aktif sudah memiliki materi.</div>
+            @endforelse
+          </div>
+        </div>
+      </div>
+
+      <div class="teaching-history-card">
+        <div class="section-header teaching-history-header">
+          <h3 class="section-title">
+            Riwayat Mengajar & E-Sertifikat
+          </h3>
+          <a href="{{ route('trainer.certificates.index') }}" class="section-link">Lihat Semua</a>
+        </div>
+
+        <div class="teaching-history-list">
+          @forelse($teachingHistory as $history)
+            @php
+              $isCourseCert = $history->certifiable_type === \App\Models\Course::class;
+              $certifiable = $history->certifiable;
+              $activityTitle = $isCourseCert
+                ? (optional($certifiable)->name ?? 'Kelas')
+                : (optional($certifiable)->title ?? 'Event');
+            @endphp
+            <div class="teaching-history-item">
+              <div class="teaching-history-content">
+                <h4 class="teaching-history-title">{{ Str::limit($activityTitle, 52) }}</h4>
+                <p class="teaching-history-meta">
+                  {{ $isCourseCert ? 'Course Selesai' : 'Event Selesai' }}
+                  • Sertifikat terbit {{ optional($history->issued_at)->format('d M Y') ?? '-' }}
+                </p>
+              </div>
+
+              @if(!empty($history->file_path) && $certifiable)
+                    <a href="{{ $isCourseCert
+                ? route('trainer.certificates.courses.download', $certifiable)
+                : route('trainer.certificates.events.download', $certifiable) }}" class="history-download-btn">
+                      Download Sertifikat
+                    </a>
+              @endif
             </div>
           @empty
-            <div class="status-item academic-audit">
-              <div class="status-content">
-                <h4 class="status-title">Belum ada kelas</h4>
-                <p class="status-subtitle">Anda belum ditugaskan di kelas manapun.</p>
-              </div>
-            </div>
+            <div class="focus-empty">Belum ada riwayat sertifikat mengajar yang diterbitkan.</div>
           @endforelse
         </div>
       </div>
+
     </div>
 
     {{-- KOLOM KANAN --}}
@@ -167,9 +211,9 @@
       <div class="invitation-card">
         <div class="invitation-header">
           <div class="invitation-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
-              <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" fill="#d97706" />
+              <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" fill="currentColor" />
             </svg>
           </div>
           <div>
@@ -242,61 +286,6 @@
         </div>
       </div>
 
-      {{-- RECENT ACTIVITY (Siswa Terbaru) --}}
-      <div class="recent-activity-card">
-        <div class="section-header">
-          <h3 class="section-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FDB913" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-            Siswa Terbaru
-          </h3>
-        </div>
-
-        <div class="activity-content">
-          @forelse($students->take(5) as $enrollment)
-            <div class="activity-item">
-              <div class="activity-thumbnail">
-                {{-- Fallback ke default avatar jika user terhapus/kosong --}}
-                <img
-                  src="{{ $enrollment->student->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->student->name ?? 'User') }}"
-                  alt="Avatar" />
-              </div>
-              <div class="activity-info">
-                <h4 class="activity-name">{{ $enrollment->student->name ?? 'Anonim' }}</h4>
-                <p class="activity-date">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="#FDB913">
-                    <path
-                      d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z" />
-                  </svg>
-                  {{ $enrollment->created_at->format('d M') }} • {{ Str::limit($enrollment->course->name ?? 'Course', 15) }}
-                </p>
-              </div>
-            </div>
-          @empty
-            <div class="activity-item">
-              <p class="text-muted small" style="margin:0;">Belum ada siswa yang mendaftar di kelas Anda.</p>
-            </div>
-          @endforelse
-        </div>
-      </div>
-
-      <div class="pro-insight-card">
-        <div class="pro-insight-badge">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FDB913" stroke-width="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#FDB913" />
-            <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          Pro Insight
-        </div>
-        <p class="pro-insight-text">
-          Kuis interaktif meningkatkan retensi siswa sebesar
-          <strong>24%</strong>. Jangan lupa menambahkan soal pre-test di modul Anda!
-        </p>
-      </div>
     </div>
   </div>
 

@@ -154,7 +154,9 @@ class PublicEventController extends Controller
 		}
 
 		// Prefer exact (case-insensitive) match first
-		$exact = Event::whereRaw('LOWER(title) = ?', [mb_strtolower($search)])->first();
+		$exact = Event::query()
+			->whereRaw('LOWER(title) = ?', [mb_strtolower($search)])
+			->first();
 		if ($exact) {
 			return redirect()->route('events.show', $exact);
 		}

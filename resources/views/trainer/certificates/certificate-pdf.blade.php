@@ -1,17 +1,25 @@
 @if(!isset($is_preview) || !$is_preview)
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Sertifikat Trainer</title>
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>Sertifikat Trainer</title>
 @endif
     <style>
         @if(!isset($is_preview) || !$is_preview)
-            @page { size: A4 landscape; margin: 0; }
-            body { margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; }
-        @endif
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
 
-        .certificate-page {
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Helvetica', 'Arial', sans-serif;
+            }
+
+        @endif .certificate-page {
             width: 29.7cm;
             height: 21cm;
             position: relative;
@@ -33,12 +41,17 @@
             padding: 60px;
             box-sizing: border-box;
         }
+
         .template_1 .inner-border {
             position: absolute;
-            top: 15px; left: 15px; right: 15px; bottom: 15px;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
             border: 4px double #fbbf24;
             pointer-events: none;
         }
+
         .template_1 .corner-element {
             position: absolute;
             width: 100px;
@@ -46,11 +59,31 @@
             border: 2px solid #fbbf24;
             border-radius: 50%;
         }
-        .template_1 .corner-tl { top: -50px; left: -50px; }
-        .template_1 .corner-tr { top: -50px; right: -50px; }
-        .template_1 .corner-bl { bottom: -50px; left: -50px; }
-        .template_1 .corner-br { bottom: -50px; right: -50px; }
-        .template_1 .header { text-align: center; }
+
+        .template_1 .corner-tl {
+            top: -50px;
+            left: -50px;
+        }
+
+        .template_1 .corner-tr {
+            top: -50px;
+            right: -50px;
+        }
+
+        .template_1 .corner-bl {
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .template_1 .corner-br {
+            bottom: -50px;
+            right: -50px;
+        }
+
+        .template_1 .header {
+            text-align: center;
+        }
+
         .template_1 h1 {
             font-family: 'Georgia', serif;
             font-size: 48pt;
@@ -59,6 +92,7 @@
             text-transform: uppercase;
             letter-spacing: 4px;
         }
+
         .template_1 .recipient-name {
             font-size: 42pt;
             font-weight: bold;
@@ -69,7 +103,10 @@
             margin: 20px 0;
             font-family: 'Times New Roman', serif;
         }
-        .template_1 .content { text-align: center; }
+
+        .template_1 .content {
+            text-align: center;
+        }
 
         /* Template 2: Modern */
         .template_2 {
@@ -80,22 +117,30 @@
             background: #ffffff;
             border: 1px solid #e2e8f0;
         }
+
         .template_2 .sidebar {
             position: absolute;
-            left: 0; top: 0; bottom: 0;
+            left: 0;
+            top: 0;
+            bottom: 0;
             width: 80px;
             background: #1e1b4b;
         }
+
         .template_2 .gold-accent {
             position: absolute;
-            left: 80px; top: 0; bottom: 0;
+            left: 80px;
+            top: 0;
+            bottom: 0;
             width: 8px;
             background: #fbbf24;
         }
+
         .template_2 .content-wrap {
             margin-left: 120px;
             padding: 80px 80px 80px 60px;
         }
+
         .template_2 h1 {
             font-size: 56pt;
             font-weight: 800;
@@ -103,6 +148,7 @@
             margin: 0;
             letter-spacing: -2px;
         }
+
         .template_2 .sub-title {
             font-size: 18pt;
             color: #fbbf24;
@@ -111,6 +157,7 @@
             letter-spacing: 4px;
             margin-bottom: 40px;
         }
+
         .template_2 .recipient-name {
             font-size: 48pt;
             font-weight: 900;
@@ -119,10 +166,13 @@
             border-left: 10px solid #fbbf24;
             padding-left: 30px;
         }
+
         .template_2 .watermark {
             position: absolute;
-            right: -50px; bottom: -50px;
-            width: 400px; height: 400px;
+            right: -50px;
+            bottom: -50px;
+            width: 400px;
+            height: 400px;
             opacity: 0.03;
             pointer-events: none;
         }
@@ -136,6 +186,7 @@
             border: 20px solid #ffffff;
             box-shadow: inset 0 0 100px rgba(30, 27, 75, 0.03);
         }
+
         .template_3 .header-bg {
             height: 150px;
             background: #1e1b4b;
@@ -143,22 +194,28 @@
             color: white;
             position: relative;
         }
+
         .template_3 .header-bg::after {
             content: '';
             position: absolute;
-            bottom: -20px; right: 80px;
-            width: 150px; height: 10px;
+            bottom: -20px;
+            right: 80px;
+            width: 150px;
+            height: 10px;
             background: #fbbf24;
         }
+
         .template_3 h1 {
             font-size: 44pt;
             font-weight: 800;
             margin: 0;
             text-transform: uppercase;
         }
+
         .template_3 .main-content {
             padding: 60px 80px;
         }
+
         .template_3 .recipient-name {
             font-size: 52pt;
             font-weight: bold;
@@ -168,6 +225,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
         .template_3 .award-line {
             width: 120px;
             height: 4px;
@@ -176,19 +234,64 @@
         }
 
         /* Shared */
-        .logo-row { margin-bottom: 10px; }
-        .logo-item { height: 60px; margin: 0 15px; vertical-align: middle; }
-        .cert-footer { position: absolute; bottom: 80px; width: 100%; left: 0; padding: 0 80px; box-sizing: border-box; }
-        .sig-box { float: right; text-align: center; margin-left: 40px; }
-        .sig-line { width: 180px; border-bottom: 1px solid #1e1b4b; margin: 10px auto; }
-        .cert-id { position: absolute; bottom: 30px; right: 40px; font-size: 9pt; color: #94a3b8; }
-        .verification-tag { position: absolute; bottom: 30px; left: 40px; font-size: 8pt; color: #94a3b8; font-family: monospace; letter-spacing: 1px; }
-        .template_2 .verification-tag { left: 120px; }
+        .logo-row {
+            margin-bottom: 10px;
+        }
+
+        .logo-item {
+            height: 60px;
+            margin: 0 15px;
+            vertical-align: middle;
+        }
+
+        .cert-footer {
+            position: absolute;
+            bottom: 80px;
+            width: 100%;
+            left: 0;
+            padding: 0 80px;
+            box-sizing: border-box;
+        }
+
+        .sig-box {
+            float: right;
+            text-align: center;
+            margin-left: 40px;
+        }
+
+        .sig-line {
+            width: 180px;
+            border-bottom: 1px solid #1e1b4b;
+            margin: 10px auto;
+        }
+
+        .cert-id {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 9pt;
+            color: #94a3b8;
+        }
+
+        .verification-tag {
+            position: absolute;
+            bottom: 30px;
+            left: 40px;
+            font-size: 8pt;
+            color: #94a3b8;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        .template_2 .verification-tag {
+            left: 120px;
+        }
     </style>
-@if(!isset($is_preview) || !$is_preview)
-</head>
-<body>
-@endif
+    @if(!isset($is_preview) || !$is_preview)
+        </head>
+
+        <body>
+    @endif
 
     @php
         $template = ($context === 'event' ? ($event->certificate_template ?? 'template_1') : 'template_1');
@@ -225,7 +328,7 @@
             </div>
             <div class="main-content">
                 <p style="font-size: 14pt; color: #64748b; margin: 0;">This certificate is proudly presented to</p>
-                <div class="recipient-name">{{ strtoupper($user->name ?? 'TRAINER') }}</div>
+                <div class="recipient-name">{{ strtoupper($user->full_name_with_title ?? $user->name ?? 'TRAINER') }}</div>
                 <div class="award-line"></div>
                 <p style="font-size: 15pt; color: #1e293b; margin-top: 20px;">
                     for contribution as <strong>{{ $roleLabel ?? 'Narasumber' }}</strong>
@@ -234,13 +337,16 @@
                 <p style="font-size: 11pt; color: #64748b; margin-top: 20px;">Issued by idSpora on {{ $issuedDateText }}</p>
             </div>
         @else
-            <div class="header" style="{{ $template == 'template_2' ? 'padding: 80px 80px 0 120px; text-align: left;' : '' }}">
+            <div class="header"
+                style="{{ $template == 'template_2' ? 'padding: 80px 80px 0 120px; text-align: left;' : '' }}">
                 <div class="logo-row" style="{{ $template == 'template_2' ? 'margin-bottom: 20px;' : '' }}">
                     @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
                     @if(file_exists($mainLogoPath))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item" style="height: {{ $template == 'template_2' ? '50px' : '60px' }};">
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item"
+                            style="height: {{ $template == 'template_2' ? '50px' : '60px' }};">
                     @else
-                        <img src="{{ asset('aset/logo-idspora.png') }}" class="logo-item" style="height: {{ $template == 'template_2' ? '50px' : '60px' }};">
+                        <img src="{{ asset('aset/logo-idspora.png') }}" class="logo-item"
+                            style="height: {{ $template == 'template_2' ? '50px' : '60px' }};">
                     @endif
 
                     @foreach(($logosBase64 ?? []) as $logo)
@@ -249,7 +355,8 @@
                 </div>
 
                 <h1 style="{{ $template == 'template_2' ? 'font-size: 56pt;' : '' }}">Certificate</h1>
-                <p style="color: #fbbf24; font-weight: bold; letter-spacing: 5px; font-size: 16pt; margin: 0; text-transform: uppercase;">
+                <p
+                    style="color: #fbbf24; font-weight: bold; letter-spacing: 5px; font-size: 16pt; margin: 0; text-transform: uppercase;">
                     {{ $subtitle }}
                 </p>
                 @if($template == 'template_1')
@@ -259,11 +366,12 @@
                 @endif
             </div>
 
-            <div class="content" style="{{ $template == 'template_2' ? 'padding: 0 80px 0 120px; text-align: left;' : '' }}">
+            <div class="content"
+                style="{{ $template == 'template_2' ? 'padding: 0 80px 0 120px; text-align: left;' : '' }}">
                 <p style="font-size: 16pt; color: #64748b; margin: 30px 0 10px;">
                     This certificate is presented to
                 </p>
-                <div class="recipient-name">{{ strtoupper($user->name ?? 'TRAINER') }}</div>
+                <div class="recipient-name">{{ strtoupper($user->full_name_with_title ?? $user->name ?? 'TRAINER') }}</div>
                 <p style="font-size: 15pt; color: #1e293b; margin-top: 10px;">
                     for contribution as <strong>{{ $roleLabel ?? 'Narasumber' }}</strong> in
                 </p>
@@ -289,8 +397,8 @@
         <div class="cert-id">{{ $certificateNumber ?? '' }}</div>
     </div>
 
-@if(!isset($is_preview) || !$is_preview)
-</body>
-</html>
-@endif
+    @if(!isset($is_preview) || !$is_preview)
+        </body>
 
+        </html>
+    @endif

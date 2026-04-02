@@ -12,9 +12,9 @@
         .trainer-hero {
             background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
             border-radius: 24px;
-            padding: 40px;
+            padding: 32px 36px;
             color: #fff;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -36,15 +36,27 @@
         .hero-header {
             position: relative;
             z-index: 2;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: nowrap;
         }
 
         .hero-title {
-            font-size: 2.5rem;
+            font-size: 2.15rem;
             font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.8px;
+            margin-bottom: 6px;
+            letter-spacing: -0.6px;
             display: flex;
             align-items: center;
+            line-height: 1.1;
+        }
+
+        .hero-title i {
+            font-size: 1.6rem;
+            line-height: 1;
+            flex-shrink: 0;
         }
 
         .hero-subtitle {
@@ -423,8 +435,13 @@
                 padding: 32px 24px;
             }
 
+            .hero-header {
+                align-items: stretch;
+                flex-wrap: wrap;
+            }
+
             .hero-title {
-                font-size: 1.8rem;
+                font-size: 1.75rem;
             }
 
             .hero-subtitle {
@@ -456,7 +473,7 @@
         <main class="trainer-main">
             <!-- Hero Section -->
             <div class="trainer-hero mb-5">
-                <div class="hero-header d-flex justify-content-between align-items-start">
+                <div class="hero-header">
                     <div>
                         <h1 class="hero-title">
                             <i class="bi bi-person-badge-fill me-3"></i>Trainer Management
@@ -464,10 +481,6 @@
                         <p class="hero-subtitle">Kelola akun instruktur, monitor penugasan kelas, dan track performa trainer
                             secara real-time.</p>
                     </div>
-                    <a href="{{ route('admin.trainer.create') }}" class="btn btn-light rounded-3 shadow-sm"
-                        style="font-weight: 600; padding: 10px 20px;">
-                        <i class="bi bi-plus-lg me-2"></i>Tambah Trainer
-                    </a>
                 </div>
             </div>
 

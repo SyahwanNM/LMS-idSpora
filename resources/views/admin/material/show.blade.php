@@ -486,6 +486,12 @@
             background: #1e1b4b;
         }
 
+        .btn-approve:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
         .btn-reject {
             width: 100%;
             background: #fff;
@@ -527,6 +533,20 @@
         @include('admin.partials.trainer-sidebar')
 
         <main class="material-main">
+            @if(session('error'))
+                <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+                    <div>{{ session('error') }}</div>
+                </div>
+            @endif
+
+            @if(session('success'))
+                <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                    <div>{{ session('success') }}</div>
+                </div>
+            @endif
+
             <div class="page-header">
                 <a href="{{ route('admin.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
                     class="btn-back"><i class="bi bi-arrow-left me-2"></i>Kembali</a>
@@ -702,6 +722,33 @@
 
                 <div class="col-xl-4">
                     <div class="action-box">
+                        @if(isset($structureCompleteness))
+                            <div class="card-custom side-card mb-3" style="padding: 20px;">
+                                <h6 class="side-card-title">Status Upload Materi</h6>
+                                @if(($structureCompleteness['is_complete'] ?? false) === true)
+                                    <div class="alert alert-success mb-0 py-2 px-3" style="font-size: 0.88rem;">
+                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                        Semua slot modul sudah terisi.
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning mb-2 py-2 px-3" style="font-size: 0.88rem;">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        Baru {{ $material->modules->count() }} modul diupload trainer.
+                                    </div>
+                                    @if(!empty($structureCompleteness['missing_items']))
+                                        <ul style="margin: 0; padding-left: 18px; font-size: 0.82rem; color: #7c2d12;">
+                                            @foreach($structureCompleteness['missing_items'] as $missingItem)
+                                                <li>{{ $missingItem }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                    <div class="mt-2 small text-muted">
+                                        Admin dapat menyetujui materi yang sudah diupload tanpa menunggu semua slot penuh.
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
                         <div class="card-custom side-card mb-3" style="padding: 20px;">
                             <h6 class="side-card-title">Dibuat Oleh:</h6>
                             <div class="trainer-box m-0">
@@ -720,8 +767,8 @@
                                 <form action="{{ route('admin.material.approve', $material) }}" method="POST" class="mb-3">
                                     @csrf
                                     <button type="submit" class="btn-approve"
-                                        onclick="return confirm('Yakin ingin menyetujui kelas ini?')">
-                                        <i class="bi bi-check-circle-fill me-2"></i> Setujui (Approve)
+                                        onclick="return confirm('Yakin ingin menyetujui materi yang sudah diupload trainer?')">
+                                        <i class="bi bi-check-circle-fill me-2"></i> Setujui Materi yang Diupload
                                     </button>
                                 </form>
                                 <button type="button" class="btn-reject" data-bs-toggle="modal" data-bs-target="#rejectModal">
@@ -821,11 +868,11 @@
                     }).join('');
 
                     return `
-                                <div class="quiz-preview-item">
-                                    <p class="quiz-preview-q">${idx + 1}. ${q.question || 'Tanpa pertanyaan'} ${q.points ? `(${q.points} poin)` : ''}</p>
-                                    <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi jawaban</div>'}</div>
-                                </div>
-                            `;
+                                        <div class="quiz-preview-item">
+                                            <p class="quiz-preview-q">${idx + 1}. ${q.question || 'Tanpa pertanyaan'} ${q.points ? `(${q.points} poin)` : ''}</p>
+                                            <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi jawaban</div>'}</div>
+                                        </div>
+                                    `;
                 }).join('');
 
                 viewer.innerHTML = `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;

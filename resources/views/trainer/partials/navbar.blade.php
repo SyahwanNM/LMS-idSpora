@@ -55,6 +55,8 @@
                                 $notificationUrl = data_get($notification->data, 'url');
                                 $notificationStatus = data_get($notification->data, 'invitation_status');
                                 $isInvitation = in_array($notification->type, ['course_invitation', 'event_invitation'], true);
+                                $isMaterialApproved = in_array($notification->type, ['course_material_approved', 'event_material_approved'], true);
+                                $isMaterialRejected = in_array($notification->type, ['course_material_rejected', 'event_material_rejected'], true);
                                 $notificationDueDate = null;
                                 $notificationIsOverdue = false;
                                 $notificationDueAt = data_get($notification->data, 'due_at');
@@ -74,6 +76,10 @@
                                         <span class="trainer-notification-pill accepted">Diterima</span>
                                     @elseif($isInvitation && $notificationStatus === 'rejected')
                                         <span class="trainer-notification-pill rejected">Ditolak</span>
+                                    @elseif($isMaterialApproved)
+                                        <span class="trainer-notification-pill accepted">Materi Diterima</span>
+                                    @elseif($isMaterialRejected)
+                                        <span class="trainer-notification-pill rejected">Perlu Revisi</span>
                                     @endif
                                 </div>
                                 @if(!empty($notification->message))

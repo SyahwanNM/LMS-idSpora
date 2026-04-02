@@ -18,8 +18,10 @@ class Event extends Model
         'certificate_path',
         'attendance_path',
         'module_path',
-        // trainer module submission (pending approval)
-        'module_submission_path',
+        'material_status',
+        'material_approved_at',
+        'material_approved_by',
+        'material_rejection_reason',
         'module_submitted_at',
         'module_verified_at',
         'module_verified_by',
@@ -42,6 +44,7 @@ class Event extends Model
         'event_time',
         'event_time_end',
         'event_date',
+        'material_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -55,16 +58,22 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
+
+        // publishing
+        'is_published',
+        'published_at',
     ];
 
     protected $casts = [
         'event_date' => 'date',
+        'material_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
         'module_submitted_at' => 'datetime',
         'module_verified_at' => 'datetime',
         'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
+        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -73,6 +82,9 @@ class Event extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+
+        'is_published' => 'boolean',
+        'published_at' => 'datetime',
     ];
 
     /**
@@ -86,6 +98,12 @@ class Event extends Model
         }
         if (!empty($this->certificate_path)) {
             $count++;
+            if (!empty($this->vbg_path))
+                $count++;
+            if (!empty($this->certificate_path))
+                $count++;
+            if (!empty($this->module_path))
+                $count++;
         }
         // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
         if (!empty($this->module_path)) {
@@ -113,7 +131,7 @@ class Event extends Model
 
     public function getModuleSubmissionUrlAttribute(): ?string
     {
-        return $this->buildPublicFileUrl($this->module_submission_path, true);
+        return $this->buildPublicFileUrl($this->module_path, true);
     }
 
     public function getModuleFileUrlAttribute(): ?string

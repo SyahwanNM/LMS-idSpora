@@ -9,6 +9,8 @@ class Course extends Model
     protected $fillable = [
         'name',
         'category_id',
+        'template_id',
+        'template_version',
         'trainer_id',
         'description',
         'level',
@@ -53,9 +55,19 @@ class Course extends Model
         return $this->belongsTo(User::class, 'trainer_id');
     }
 
+    public function template()
+    {
+        return $this->belongsTo(CourseTemplate::class, 'template_id');
+    }
+
     public function modules()
     {
         return $this->hasMany(CourseModule::class)->orderBy('order_no');
+    }
+
+    public function units()
+    {
+        return $this->hasMany(CourseUnit::class)->orderBy('unit_no');
     }
 
     public function certificates()
