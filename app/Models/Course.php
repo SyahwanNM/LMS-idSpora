@@ -65,6 +65,11 @@ class Course extends Model
         return $this->hasMany(CourseModule::class)->orderBy('order_no');
     }
 
+    public function units()
+    {
+        return $this->hasMany(CourseUnit::class)->orderBy('unit_no');
+    }
+
     public function certificates()
     {
         return $this->hasMany(Certificate::class);

@@ -27,6 +27,11 @@ use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
+    private const AUTO_TEMPLATE_UNITS_BY_LEVEL = [
+        'beginner' => 3,
+        'intermediate' => 6,
+        'advanced' => 12,
+    ];
     /**
      * Show the payment page for a course.
      */
@@ -267,10 +272,12 @@ class CourseController extends Controller
     }
 
     /**
-     * Resolve template by course level.
-     * If a manual template is provided but level mismatches, it is ignored.
+     * Resolve a template for a course.
+     * - If a template is explicitly selected, always honor it (no silent ignore).
+     * - If not selected, auto-pick the latest active template matching level,
+     *   preferring the same category when available.
      */
-    private function resolveTemplateForCourse(?int $templateId, string $level): ?CourseTemplate
+    private function resolveTemplateForCourse(?int $templateId, string $level, ?int $categoryId = null): ?CourseTemplate
     {
         if (!empty($templateId)) {
             $selected = CourseTemplate::query()
@@ -278,19 +285,122 @@ class CourseController extends Controller
                 ->with('modules')
                 ->find($templateId);
 
-            if ($selected && (string) $selected->level === (string) $level) {
-                return $selected;
+            if ($selected) {
+                $this->ensureAutoTemplateHasMinimumUnits($selected, $this->autoTemplateMinUnitsForLevel((string) ($selected->level ?? $level)));
+                $selected->load('modules');
             }
+
+            return $selected ?: null;
         }
 
-        // Auto-pick latest active template for the chosen level.
-        return CourseTemplate::query()
+        $query = CourseTemplate::query()
             ->where('status', 'active')
             ->where('level', $level)
+            ->with('modules');
+
+        if (!empty($categoryId)) {
+            // Prefer same category, but allow generic templates (NULL category).
+            $query->where(function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId)->orWhereNull('category_id');
+            });
+            $query->orderByRaw('CASE WHEN category_id = ? THEN 0 WHEN category_id IS NULL THEN 1 ELSE 2 END', [$categoryId]);
+        }
+
+        $resolved = $query
             ->orderByDesc('version')
             ->orderByDesc('id')
-            ->with('modules')
             ->first();
+
+        if ($resolved) {
+            $this->ensureAutoTemplateHasMinimumUnits($resolved, $this->autoTemplateMinUnitsForLevel((string) ($resolved->level ?? $level)));
+            $resolved->load('modules');
+            return $resolved;
+        }
+
+        // No template exists yet: create a minimal default template for this level.
+        if (!in_array($level, ['beginner', 'intermediate', 'advanced'], true)) {
+            return null;
+        }
+
+        $baseName = 'Auto Template - ' . ucfirst($level);
+        $existingVersion = (int) CourseTemplate::query()
+            ->where('name', $baseName)
+            ->max('version');
+        $nextVersion = max(1, $existingVersion + 1);
+
+        $newTemplate = CourseTemplate::create([
+            'name' => $baseName,
+            'category_id' => null,
+            'level' => $level,
+            'version' => $nextVersion,
+            'status' => 'active',
+            'created_by' => auth()->id(),
+            'description' => 'Auto-generated default template for level ' . $level,
+        ]);
+
+        $this->ensureAutoTemplateHasMinimumUnits($newTemplate, $this->autoTemplateMinUnitsForLevel($level));
+
+        return $newTemplate->load('modules');
+    }
+
+    private function ensureAutoTemplateHasMinimumUnits(CourseTemplate $template, int $minUnits): void
+    {
+        $name = (string) ($template->name ?? '');
+        if (!str_starts_with($name, 'Auto Template - ')) {
+            return;
+        }
+
+        $minUnits = max(1, $minUnits);
+        $targetSlots = $minUnits * 3;
+
+        $existingSlots = (int) $template->modules()->count();
+        if ($existingSlots >= $targetSlots) {
+            return;
+        }
+
+        $maxOrderNo = (int) $template->modules()->max('order_no');
+        $nextOrderNo = max(0, $maxOrderNo) + 1;
+
+        $startUnit = (int) floor($existingSlots / 3) + 1;
+        $rows = [];
+
+        for ($unit = $startUnit; $unit <= $minUnits; $unit++) {
+            $rows[] = [
+                'order_no' => $nextOrderNo++,
+                'title' => 'Module ' . $unit . ' - PDF Material',
+                'description' => null,
+                'type' => 'pdf',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $nextOrderNo++,
+                'title' => 'Module ' . $unit . ' - Video Lesson',
+                'description' => null,
+                'type' => 'video',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $nextOrderNo++,
+                'title' => 'Module ' . $unit . ' - Quiz',
+                'description' => null,
+                'type' => 'quiz',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+        }
+
+        if (!empty($rows)) {
+            $template->modules()->createMany($rows);
+        }
+    }
+
+    private function autoTemplateMinUnitsForLevel(string $level): int
+    {
+        $lvl = strtolower(trim($level));
+        $units = (int) (self::AUTO_TEMPLATE_UNITS_BY_LEVEL[$lvl] ?? 3);
+        return max(1, $units);
     }
 
     /**
@@ -557,7 +667,12 @@ class CourseController extends Controller
 
     public function show(Request $request, Course $course)
     {
-        $course->load('category', 'modules');
+        $course->load([
+            'category',
+            'modules' => function ($q) {
+                $q->orderBy('order_no')->withCount('quizQuestions');
+            },
+        ]);
         // Students enrolled (use active enrollments for the count)
         $course->loadCount([
             'enrollments as students_count' => function ($q) {
@@ -577,6 +692,116 @@ class CourseController extends Controller
         $certificateLabel = 'Include';
 
         return view('course.detail', compact('course', 'levelLabel', 'courseLanguage', 'certificateLabel'));
+    }
+
+    /**
+     * Create a trainer notification reminding them to complete course materials.
+     */
+    public function remindTrainer(Request $request, Course $course)
+    {
+        $actor = $request->user();
+
+        $focus = strtolower(trim((string) $request->input('focus', '')));
+        if (!in_array($focus, ['', 'all', 'pdf', 'video', 'quiz'], true)) {
+            $focus = '';
+        }
+
+        $trainerId = (int) ($course->trainer_id ?? 0);
+        if ($trainerId <= 0) {
+            return back()->with('error', 'Trainer untuk course ini belum ditentukan.');
+        }
+
+        $course->load([
+            'modules' => function ($q) {
+                $q->orderBy('order_no')->withCount('quizQuestions');
+            },
+        ]);
+
+        $modules = $course->modules ?? collect();
+
+        $missing = [];
+        if ($modules->count() <= 0) {
+            $missing[] = 'Struktur modul';
+        }
+
+        $pdfSlots = $modules->where('type', 'pdf');
+        $videoSlots = $modules->where('type', 'video');
+        $quizSlots = $modules->where('type', 'quiz');
+
+        $shouldCheckPdf = ($focus === '' || $focus === 'all' || $focus === 'pdf');
+        $shouldCheckVideo = ($focus === '' || $focus === 'all' || $focus === 'video');
+        $shouldCheckQuiz = ($focus === '' || $focus === 'all' || $focus === 'quiz');
+
+        if ($shouldCheckPdf) {
+            if ($pdfSlots->count() <= 0) {
+                $missing[] = 'Modul (PDF)';
+            } else {
+                $missingPdf = $pdfSlots->filter(fn($m) => empty($m->content_url))->count();
+                if ($missingPdf > 0) {
+                    $missing[] = 'Modul (PDF)';
+                }
+            }
+        }
+
+        if ($shouldCheckVideo) {
+            if ($videoSlots->count() <= 0) {
+                $missing[] = 'Video';
+            } else {
+                $missingVideo = $videoSlots->filter(fn($m) => empty($m->content_url))->count();
+                if ($missingVideo > 0) {
+                    $missing[] = 'Video';
+                }
+            }
+        }
+
+        if ($shouldCheckQuiz) {
+            if ($quizSlots->count() <= 0) {
+                $missing[] = 'Kuis';
+            } else {
+                $missingQuiz = $quizSlots->filter(fn($m) => ((int) ($m->quiz_questions_count ?? 0)) <= 0)->count();
+                if ($missingQuiz > 0) {
+                    $missing[] = 'Kuis';
+                }
+            }
+        }
+
+        if (empty($missing)) {
+            return back()->with('success', 'Materi course sudah lengkap.');
+        }
+
+        // Simple de-duplication: avoid spamming the trainer with the same reminder.
+        $recentExists = TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'course_content_reminder')
+            ->where('created_at', '>=', now()->subHours(12))
+            ->where('data->course_id', (int) $course->id)
+            ->exists();
+
+        if ($recentExists) {
+            return back()->with('success', 'Pengingat sudah dikirim sebelumnya.');
+        }
+
+        $actorName = (string) ($actor?->name ?? ('User #' . (int) ($actor?->id ?? 0)));
+
+        TrainerNotification::create([
+            'trainer_id' => $trainerId,
+            'type' => 'course_content_reminder',
+            'title' => 'Reminder: Lengkapi materi course',
+            'message' => 'Course "' . (string) $course->name . '" masih belum lengkap: ' . implode(', ', $missing) . '. Pengingat dari ' . $actorName . '.',
+            'data' => [
+                'entity_type' => 'course',
+                'entity_id' => (int) $course->id,
+                'course_id' => (int) $course->id,
+                'missing' => $missing,
+                'focus' => ($focus === '' ? 'all' : $focus),
+                'requested_by_user_id' => (int) ($actor?->id ?? 0),
+                'requested_by_name' => $actorName,
+                'url' => route('trainer.detail-course', $course->id),
+            ],
+            'expires_at' => now()->addDays(14),
+        ]);
+
+        return back()->with('success', 'Pengingat terkirim ke trainer.');
     }
 
     public function create()
@@ -625,11 +850,15 @@ class CourseController extends Controller
             'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
+            ,
+            'unit_titles' => 'nullable|array',
+            'unit_titles.*' => 'nullable|string|max:255',
         ]);
 
         $template = $this->resolveTemplateForCourse(
             $request->filled('template_id') ? (int) $request->input('template_id') : null,
-            (string) $request->input('level')
+            (string) $request->input('level'),
+            $request->filled('category_id') ? (int) $request->input('category_id') : null
         );
 
         $expensesInput = $request->input('expenses');
@@ -798,7 +1027,7 @@ class CourseController extends Controller
             ->withCount('modules')
             ->orderBy('name')
             ->get();
-        $course->load('modules.quizQuestions.answers');
+        $course->load('modules.quizQuestions.answers', 'units');
         return view('admin.courses.edit', compact('course', 'categories', 'templates', 'trainers'));
     }
 
@@ -862,7 +1091,8 @@ class CourseController extends Controller
 
         $template = $this->resolveTemplateForCourse(
             $request->filled('template_id') ? (int) $request->input('template_id') : null,
-            (string) $request->input('level')
+            (string) $request->input('level'),
+            $request->filled('category_id') ? (int) $request->input('category_id') : null
         );
 
         $data = [
@@ -1159,6 +1389,32 @@ class CourseController extends Controller
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
+            }
+        }
+
+        // Save Academic Unit header titles (admin-managed)
+        $unitTitles = $request->input('unit_titles');
+        if (is_array($unitTitles)) {
+            $unitCount = (int) ceil(max(0, (int) $course->modules()->count()) / 3);
+            foreach ($unitTitles as $unitNoRaw => $titleRaw) {
+                $unitNo = (int) $unitNoRaw;
+                if ($unitNo <= 0 || ($unitCount > 0 && $unitNo > $unitCount)) {
+                    continue;
+                }
+                $title = trim((string) $titleRaw);
+
+                if ($title === '') {
+                    \App\Models\CourseUnit::query()
+                        ->where('course_id', $course->id)
+                        ->where('unit_no', $unitNo)
+                        ->delete();
+                    continue;
+                }
+
+                \App\Models\CourseUnit::query()->updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => $unitNo],
+                    ['title' => $title]
+                );
             }
         }
 

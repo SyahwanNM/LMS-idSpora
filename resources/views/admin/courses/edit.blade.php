@@ -203,6 +203,40 @@
                 <div class="mb-10">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Course Modules</h2>
 
+                    @php
+                        $courseModules = $course->modules ?? collect();
+                        $unitCount = (int) ceil(max(0, $courseModules->count()) / 3);
+                        $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
+                    @endphp
+
+                    <div class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <div class="flex items-center justify-between gap-4 mb-3">
+                            <h3 class="font-bold text-gray-900 m-0">Judul Academic Unit (Header)</h3>
+                            <div class="text-xs text-gray-500">Diambil dari struktur modul (1 unit = 3 slot: PDF, Video, Quiz).</div>
+                        </div>
+
+                        @if($unitCount > 0)
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                @for($u = 1; $u <= $unitCount; $u++)
+                                    @php
+                                        $existingTitle = (string) optional($unitTitlesByNo->get($u))->title;
+                                        $defaultTitle = 'Academic Unit: Module ' . $u;
+                                    @endphp
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit {{ $u }}</label>
+                                        <input type="text"
+                                            name="unit_titles[{{ $u }}]"
+                                            value="{{ old('unit_titles.' . $u, $existingTitle !== '' ? $existingTitle : $defaultTitle) }}"
+                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                            maxlength="255">
+                                    </div>
+                                @endfor
+                            </div>
+                        @else
+                            <div class="text-sm text-gray-400 italic">Struktur modul belum tersedia, jadi Academic Unit belum terbentuk.</div>
+                        @endif
+                    </div>
+
                     <div id="existing-modules-list" class="space-y-8">
                         <!-- PDF Document -->
                         <div>
