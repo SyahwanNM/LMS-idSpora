@@ -25,7 +25,7 @@ class EventModuleController extends Controller
         // Narrow down by LIKE first, then confirm via exact-name match in parsed speaker list.
         $candidates = Event::query()
             ->whereNotNull('speaker')
-            ->where('speaker', 'like', '%'.$trainerName.'%')
+            ->where('speaker', 'like', '%' . $trainerName . '%')
             ->orderByDesc('event_date')
             ->limit(200)
             ->get();
@@ -69,13 +69,7 @@ class EventModuleController extends Controller
         $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
         $event->update([
-            'module_submission_path' => $path,
-            'module_submitted_at' => now(),
-            'module_verified_at' => null,
-            'module_verified_by' => null,
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
+            'module_path' => $path,
         ]);
 
         return back()->with('success', 'Module berhasil diupload dan menunggu verifikasi admin.');
@@ -87,13 +81,15 @@ class EventModuleController extends Controller
     private function parseSpeakerNames(string $speaker): array
     {
         $speaker = trim($speaker);
-        if ($speaker === '') return [];
+        if ($speaker === '')
+            return [];
 
         $parts = preg_split('/\s*[,;]+\s*/', $speaker) ?: [];
         $names = [];
         foreach ($parts as $p) {
             $p = trim($p);
-            if ($p !== '') $names[] = mb_strtolower($p);
+            if ($p !== '')
+                $names[] = mb_strtolower($p);
         }
         return array_values(array_unique($names));
     }

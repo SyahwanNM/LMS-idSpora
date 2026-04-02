@@ -36,9 +36,11 @@ class EventController extends Controller
             abort(403, 'Event ini bukan milik Anda.');
         }
 
-        $event->load(['scheduleItems' => function ($q) {
-            $q->orderBy('start', 'asc');
-        }]);
+        $event->load([
+            'scheduleItems' => function ($q) {
+                $q->orderBy('start', 'asc');
+            }
+        ]);
 
         return response()->json([
             'data' => [
@@ -55,7 +57,8 @@ class EventController extends Controller
                 'documents_completion_percent' => $event->documents_completion_percent ?? null,
                 'module_uploaded' => !empty($event->module_path),
                 'module_url' => !empty($event->module_path) ? $event->module_file_url : null,
-                'module_submission_url' => !empty($event->module_submission_path) ? $event->module_submission_url : null,
+                'module_submission_url' => !empty($event->module_path) ? $event->module_file_url : null,
+                'module_submitted_at' => $event->created_at,
                 'schedule_items' => ($event->scheduleItems ?? collect())->map(function ($it) {
                     return [
                         'id' => $it->id,
