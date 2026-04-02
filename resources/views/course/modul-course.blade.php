@@ -341,6 +341,8 @@
             <button class="next_kanan_modul" type="button"
                 @if(isset($course) && $nextModule && !$lockNext)
                     data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]) }}"
+                @elseif(isset($course) && !$nextModule && !$lockNext)
+                    data-next-url="{{ route('course.rating', ['course' => $course->id]) }}"
                 @else
                     disabled style="opacity:.6; cursor:not-allowed;"
                 @endif
@@ -348,6 +350,8 @@
                 <p>
                     @if($lockNext)
                         Terkunci
+                    @elseif(!$nextModule)
+                        Selesai & Beri Ulasan
                     @else
                         Next
                     @endif
