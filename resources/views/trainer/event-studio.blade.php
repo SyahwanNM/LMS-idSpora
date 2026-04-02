@@ -713,6 +713,61 @@
             </div>
         </header>
 
+        @php
+            $deadline = $event->material_deadline;
+            $deadlinePassed = $deadline ? now()->gt($deadline) : false;
+        @endphp
+
+        @if ($deadline)
+            <div
+                style="background: {{ $deadlinePassed ? '#fee2e2' : '#eff6ff' }}; border: 1px solid {{ $deadlinePassed ? '#fca5a5' : '#bfdbfe' }}; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
+                <span style="font-size: 20px;">{{ $deadlinePassed ? '⚠️' : '📅' }}</span>
+                <div>
+                    <p style="font-weight: 600; color: {{ $deadlinePassed ? '#991b1b' : '#1e40af' }}; margin: 0 0 4px 0;">
+                        Tenggat Pengumpulan Materi: {{ optional($deadline)->format('d M Y H:i') }}
+                    </p>
+                    <p style="color: {{ $deadlinePassed ? '#991b1b' : '#1d4ed8' }}; margin: 0; font-size: 13px;">
+                        {{ $deadlinePassed ? 'Batas pengumpulan sudah terlewati. Upload materi dinonaktifkan.' : 'Pastikan materi sudah diunggah sebelum tenggat agar bisa direview admin.' }}
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        {{-- Material Status Display --}}
+        @if ($event->material_status === 'pending_review')
+            <div
+                style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
+                <span style="font-size: 20px;">⏳</span>
+                <div>
+                    <p style="font-weight: 600; color: #92400e; margin: 0 0 4px 0;">Material Dalam Review</p>
+                    <p style="color: #b45309; margin: 0; font-size: 13px;">Admin sedang mereview materi yang Anda upload. Anda
+                        akan mendapatkan notifikasi setelah admin selesai melakukan review.</p>
+                </div>
+            </div>
+        @elseif ($event->material_status === 'approved')
+            <div
+                style="background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
+                <span style="font-size: 20px;">✓</span>
+                <div>
+                    <p style="font-weight: 600; color: #166534; margin: 0 0 4px 0;">Material Diterima</p>
+                    <p style="color: #166534; margin: 0; font-size: 13px;">Materi Anda telah diterima dan disetujui oleh admin
+                        pada {{ optional($event->material_approved_at)->format('d M Y H:i') }}.</p>
+                </div>
+            </div>
+        @elseif ($event->material_status === 'rejected')
+            <div
+                style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
+                <span style="font-size: 20px;">✗</span>
+                <div>
+                    <p style="font-weight: 600; color: #991b1b; margin: 0 0 4px 0;">Material Ditolak</p>
+                    <p style="color: #991b1b; margin: 0 0 8px 0; font-size: 13px;">Alasan:
+                        {{ $event->material_rejection_reason ?? 'Tidak ada keterangan' }}</p>
+                    <p style="color: #991b1b; margin: 0; font-size: 13px;">Silakan upload ulang dengan revisi yang diperlukan.
+                    </p>
+                </div>
+            </div>
+        @endif
+
         <section class="studio-layout">
             <div class="studio-left">
                 <section class="panel panel-module active" data-panel="module">
@@ -724,14 +779,13 @@
                         <input type="hidden" name="eventId" value="{{ $event->id }}">
 
                         <div class="dropzone" id="dropzone">
-                            <input type="file" id="fileInput" multiple
-                                accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" name="files[]"
-                                style="display: none" />
+                            <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
+                                style="display: none" {{ !empty($deadlinePassed) && $deadlinePassed ? 'disabled' : '' }} />
                             <i class="bi bi-cloud-arrow-up"></i>
                             <h2>Drop Event Assets Here</h2>
-                            <p>SUPPORT: PDF, MP4, PPTX</p>
+                            <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
                             <p style="font-size: 12px; color: #999; margin-top: 8px">
-                                atau klik untuk memilih file
+                                atau klik untuk memilih 1 file materi
                             </p>
                         </div>
 
@@ -741,7 +795,7 @@
                         </div>
 
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="submitBtn">
+                            <button type="submit" class="primary-btn" id="submitBtn" {{ !empty($deadlinePassed) && $deadlinePassed ? 'disabled' : '' }}>
                                 SUBMIT FOR AUDIT <i class="bi bi-send"></i>
                             </button>
                         </div>
@@ -874,11 +928,13 @@
             fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
 
             function handleFiles(files) {
-                Array.from(files).forEach((file) => {
-                    if (!uploadedFiles.some(f => f.name === file.name)) {
-                        uploadedFiles.push(file);
-                    }
-                });
+                const picked = Array.from(files);
+                if (picked.length === 0) {
+                    return;
+                }
+
+                // Event material supports single-file upload per submit.
+                uploadedFiles = [picked[0]];
                 updateFileList();
                 fileInput.value = '';
             }
@@ -887,17 +943,17 @@
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
                     uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                    <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                    <div>
-                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                        <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024).toFixed(2)} KB</p>
+                                <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                        <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                        <div>
+                                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                            <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024).toFixed(2)} KB</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                            </li>
-                        `).join("");
+                                    <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                                </li>
+                            `).join("");
 
                     uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -915,6 +971,18 @@
                 e.preventDefault();
                 if (uploadedFiles.length === 0) {
                     alert("Silakan upload minimal 1 file sebelum submit.");
+                    return;
+                }
+
+                const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                const invalidFiles = uploadedFiles.filter((file) => {
+                    const ext = (file.name.split('.').pop() || '').toLowerCase();
+                    return !allowedExt.includes(ext);
+                });
+
+                if (invalidFiles.length > 0) {
+                    const names = invalidFiles.map((f) => f.name).join(', ');
+                    alert('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
                     return;
                 }
 
@@ -977,32 +1045,32 @@
                 questionEl.className = "quiz-editor";
                 questionEl.setAttribute("data-question-id", question.id);
                 questionEl.innerHTML = `
-                        <div class="q-head">
-                            <div class="q-number">${index + 1}</div>
-                            <div class="q-inputs">
-                                <label>PERTANYAAN</label>
-                                <input type="text" class="question-input" data-index="${index}" placeholder="Masukkan pertanyaan..." value="${question.text}" />
+                            <div class="q-head">
+                                <div class="q-number">${index + 1}</div>
+                                <div class="q-inputs">
+                                    <label>PERTANYAAN</label>
+                                    <input type="text" class="question-input" data-index="${index}" placeholder="Masukkan pertanyaan..." value="${question.text}" />
+                                </div>
+                                <div class="q-score">
+                                    <label>BOBOT</label>
+                                    <input type="number" class="weight-input" data-index="${index}" value="${question.weight}" min="1" />
+                                </div>
+                                <button type="button" class="delete-question" data-index="${index}"><i class="bi bi-trash"></i> HAPUS</button>
                             </div>
-                            <div class="q-score">
-                                <label>BOBOT</label>
-                                <input type="number" class="weight-input" data-index="${index}" value="${question.weight}" min="1" />
-                            </div>
-                            <button type="button" class="delete-question" data-index="${index}"><i class="bi bi-trash"></i> HAPUS</button>
-                        </div>
-                        <div class="options-section">
-                            <p class="options-label">PILIHAN JAWABAN</p>
-                            <div class="options-grid">
-                                ${question.options.map((opt, i) => `
-                                    <div class="option-container">
-                                        <button type="button" class="option-btn ${question.correctAnswer === i ? "is-correct" : ""}" data-q="${index}" data-opt="${i}">
-                                            <i class="bi ${question.correctAnswer === i ? "bi-check-circle-fill" : "bi-circle"}"></i>
-                                            <span>Opsi ${i + 1}</span>
-                                        </button>
-                                        <input type="text" class="option-input" data-q="${index}" data-opt="${i}" placeholder="Jawaban..." value="${opt}" />
-                                    </div>
-                                `).join("")}
-                            </div>
-                        </div>`;
+                            <div class="options-section">
+                                <p class="options-label">PILIHAN JAWABAN</p>
+                                <div class="options-grid">
+                                    ${question.options.map((opt, i) => `
+                                        <div class="option-container">
+                                            <button type="button" class="option-btn ${question.correctAnswer === i ? "is-correct" : ""}" data-q="${index}" data-opt="${i}">
+                                                <i class="bi ${question.correctAnswer === i ? "bi-check-circle-fill" : "bi-circle"}"></i>
+                                                <span>Opsi ${i + 1}</span>
+                                            </button>
+                                            <input type="text" class="option-input" data-q="${index}" data-opt="${i}" placeholder="Jawaban..." value="${opt}" />
+                                        </div>
+                                    `).join("")}
+                                </div>
+                            </div>`;
 
                 const existing = questionsContainer.querySelector(`[data-question-id="${question.id}"]`);
                 if (existing) existing.replaceWith(questionEl);

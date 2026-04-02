@@ -18,6 +18,10 @@ class Event extends Model
         'certificate_path',
         'attendance_path',
         'module_path',
+        'material_status',
+        'material_approved_at',
+        'material_approved_by',
+        'material_rejection_reason',
         // trainer module submission (pending approval)
         'module_submission_path',
         'module_submitted_at',
@@ -42,6 +46,7 @@ class Event extends Model
         'event_time',
         'event_time_end',
         'event_date',
+        'material_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -59,12 +64,14 @@ class Event extends Model
 
     protected $casts = [
         'event_date' => 'date',
+        'material_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
         'module_submitted_at' => 'datetime',
         'module_verified_at' => 'datetime',
         'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
+        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -85,6 +92,12 @@ class Event extends Model
             $count++;
         }
         if (!empty($this->certificate_path)) {
+            $count++;
+        if (!empty($this->vbg_path))
+            $count++;
+        if (!empty($this->certificate_path))
+            $count++;
+        if (!empty($this->module_path))
             $count++;
         }
         // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
