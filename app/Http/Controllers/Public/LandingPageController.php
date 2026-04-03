@@ -23,12 +23,14 @@ class LandingPageController extends Controller
         // Ambil 4 event aktif (belum selesai). Tetap urutkan berdasarkan terbaru dibuat.
         // Menggunakan scope active agar event yang sudah selesai otomatis tidak tampil.
         $upcomingEvents = Event::active()
+            ->where('is_published', true)
             ->orderByDesc('created_at')
             ->limit(4)
             ->get();
 
         // Ambil sampai 3 event untuk hero carousel (gambar poster event) - fallback jika tidak ada carousel
         $carouselEvents = Event::active()
+            ->where('is_published', true)
             ->orderByDesc('created_at')
             ->limit(3)
             ->get();

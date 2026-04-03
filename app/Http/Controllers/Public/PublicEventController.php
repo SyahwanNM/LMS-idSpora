@@ -13,6 +13,8 @@ class PublicEventController extends Controller
 {
 	public function index(Request $request)
 	{
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+
 		$query = Event::query()
 			->withCount([
 				'registrations as registrations_count' => function($q){
@@ -20,6 +22,11 @@ class PublicEventController extends Controller
 					  ->where('status','active');
 				}
 			]);
+
+		// User-facing pages: only show published events
+		if (!$isAdmin) {
+			$query->where('is_published', true);
+		}
 
 		// Server-side status filter: upcoming | ongoing | finished | all (Semua Status)
 		$now = now()->format('Y-m-d H:i:s');
@@ -117,7 +124,11 @@ class PublicEventController extends Controller
 		}
 
 		$events = $query->paginate(12)->withQueryString();
-		$locations = Event::select('location')->whereNotNull('location')->distinct()->orderBy('location')->pluck('location');
+		$locationsQuery = Event::select('location')->whereNotNull('location');
+		if (!$isAdmin) {
+			$locationsQuery->where('is_published', true);
+		}
+		$locations = $locationsQuery->distinct()->orderBy('location')->pluck('location');
 
 		// Tandai event yang sudah diregistrasi user login
 		if($request->user()){
@@ -153,8 +164,14 @@ class PublicEventController extends Controller
 			return redirect()->route('events.index');
 		}
 
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+
 		// Prefer exact (case-insensitive) match first
-		$exact = Event::query()
+		$exactQuery = Event::query();
+		if (!$isAdmin) {
+			$exactQuery->where('is_published', true);
+		}
+		$exact = $exactQuery
 			->whereRaw('LOWER(title) = ?', [mb_strtolower($search)])
 			->first();
 		if ($exact) {
@@ -164,7 +181,11 @@ class PublicEventController extends Controller
 		// Then try best partial match, prioritize prefix matches
 		$likeTerm = "%{$search}%";
 		$prefixTerm = "{$search}%";
-		$best = Event::query()
+		$bestQuery = Event::query();
+		if (!$isAdmin) {
+			$bestQuery->where('is_published', true);
+		}
+		$best = $bestQuery
 			->orderByRaw('CASE WHEN title LIKE ? THEN 0 WHEN title LIKE ? THEN 1 ELSE 2 END', [$prefixTerm, $likeTerm])
 			->orderByDesc('created_at')
 			->where(function($q) use ($likeTerm){
@@ -183,6 +204,11 @@ class PublicEventController extends Controller
 
 	public function show(Event $event, Request $request)
 	{
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+		if (!$isAdmin && !(bool) $event->is_published) {
+			abort(404);
+		}
+
 		// Tandai sudah terdaftar (reuse logic ringkas)
 		$isRegistered = false;
 		if($request->user()){
@@ -200,6 +226,11 @@ class PublicEventController extends Controller
 
 	public function ticket(Event $event, Request $request)
 	{
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+		if (!$isAdmin && !(bool) $event->is_published) {
+			abort(404);
+		}
+
 		$user = $request->user();
 		if(!$user){
 			return redirect()->route('login', ['redirect'=>request()->fullUrl()]);

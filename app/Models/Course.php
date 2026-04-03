@@ -24,6 +24,7 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
+        'expenses_json',
         'user_id',
         'rejection_reason',
         'approved_at',
@@ -36,7 +37,7 @@ class Course extends Model
         'rejected_at' => 'datetime',
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
-        'expenses_json',
+        'expenses_json' => 'array',
     ];
 
     // protected $casts = [

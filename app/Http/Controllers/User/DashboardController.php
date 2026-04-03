@@ -37,6 +37,7 @@ class DashboardController extends Controller
         // Event aktif: gunakan scope active agar yang sudah selesai (end_at < now) otomatis terhapus dari daftar.
         // Tetap ambil yang paling baru dibuat terlebih dahulu.
         $upcomingEvents = Event::active()
+            ->where('is_published', true)
             ->withCount(['registrationsActive as registrations_count'])
             ->orderByDesc('created_at')
             ->limit(8)
@@ -78,8 +79,8 @@ class DashboardController extends Controller
             ->get();
 
         // Distinct materi & jenis from events for dynamic listing
-        $materiList = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisList = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $materiList = Event::query()->where('is_published', true)->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
+        $jenisList = Event::query()->where('is_published', true)->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
 
         // Get carousel images for dashboard
         $dashboardCarousels = Carousel::active()

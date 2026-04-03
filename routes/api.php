@@ -83,7 +83,7 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
 
 // Admin Manage APIs (CRUD)
 // Admin endpoints with stricter throttle (60 req/min)
-Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->as('api.admin.')->group(function () {
     // Users (read-only)
     Route::get('users', [AdminUserController::class, 'index']);
     Route::get('users/{user}', [AdminUserController::class, 'show']);
