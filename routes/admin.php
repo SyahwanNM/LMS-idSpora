@@ -157,6 +157,8 @@ Route::middleware(['admin'])->group(function () {
 
     // Event document uploads (admin)
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+    // Publish event (show on user pages)
+    Route::post('/admin/events/{event}/publish', [EventController::class, 'publish'])->name('admin.events.publish');
     // Admin: remind trainer to upload module
     Route::post('/admin/events/{event}/module/remind', [EventController::class, 'remindModuleUpload'])->name('admin.events.module.remind');
     // Event QR actions (admin)

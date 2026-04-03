@@ -18,6 +18,11 @@ class EventController extends Controller
 
         $query = Event::query()->with(['scheduleItems']);
 
+        $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+        if (!$isAdmin) {
+            $query->where('is_published', true);
+        }
+
         $status = strtolower(trim((string) $request->query('status', 'active')));
         $now = now()->format('Y-m-d H:i:s');
         $startExpr = "TIMESTAMP(event_date, COALESCE(event_time,'00:00:00'))";
@@ -102,6 +107,11 @@ class EventController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
         }
 
+        $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
+            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Detail Event',
@@ -117,6 +127,11 @@ class EventController extends Controller
         // 1. Validasi Event
         if (!$event) {
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        $isAdmin = $user && strtolower(trim((string) ($user->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
+            return response()->json(['status' => 'error', 'message' => 'Event belum diterbitkan'], 404);
         }
 
         // 1b. Cek apakah event sudah selesai

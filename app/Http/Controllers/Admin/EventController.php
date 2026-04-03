@@ -589,10 +589,36 @@ class EventController extends Controller
         return redirect($route)->with('success', 'Event berhasil dihapus!');
     }
 
+    /**
+     * Admin: publish event so it becomes visible on user-facing pages.
+     */
+    public function publish(Request $request, Event $event)
+    {
+        if ((bool) $event->is_published) {
+            return back()->with('success', 'Event sudah diterbitkan.');
+        }
+
+        $event->forceFill([
+            'is_published' => true,
+            'published_at' => now(),
+        ])->save();
+
+        return back()->with('success', 'Event berhasil diterbitkan!');
+    }
+
     // Public registration (AJAX)
     public function register(Request $request, Event $event)
     {
         $request->validate([]); // no fields yet, just user context
+
+        // Block registrations for unpublished events
+        if (!(bool) $event->is_published) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event belum diterbitkan.',
+            ], 404);
+        }
+
         $user = $request->user();
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
