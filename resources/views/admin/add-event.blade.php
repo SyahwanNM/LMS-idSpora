@@ -188,6 +188,18 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
+                                        @if(!(bool)($event->is_published ?? false))
+                                            <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-outline-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan" onclick="return confirm('Terbitkan event ini agar muncul di halaman user?');">
+                                                    <i class="bi bi-megaphone"></i><span class="visually-hidden">Terbitkan</span>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <button type="button" class="btn btn-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Sudah Terbit" disabled>
+                                                <i class="bi bi-check2-circle"></i><span class="visually-hidden">Sudah Terbit</span>
+                                            </button>
+                                        @endif
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
@@ -475,6 +487,9 @@
                 <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
                     <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data" id="eventForm">@csrf
+                        <div class="text-danger small mb-3">
+                            <strong>*</strong> Wajib diisi.
+                        </div>
                         <div class="row g-3">
                             <div class="col-lg-8">
                                 <div class="mb-3">
@@ -578,9 +593,10 @@
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan Materi</label>
+                                    <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan Materi <span class="text-danger">*</span></label>
                                     <input type="datetime-local" name="material_deadline" id="material_deadline" class="form-control" value="{{ old('material_deadline') }}">
-                                    <small class="text-muted d-block mt-1">Opsional. Harus sebelum hari-H event.</small>
+                                    <small class="text-muted d-block mt-1">Opsional. Jika diisi, harus sebelum hari-H event.</small>
+                                    <small id="materialDeadlineHelp" class="text-danger d-none mt-1">Tenggat pengumpulan materi harus sebelum hari-H event.</small>
                                 </div>
                                 <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>
@@ -697,8 +713,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <div class="me-auto small text-muted" id="submitHint" style="display:none;">
-                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan.
+                    <div class="me-auto small text-danger fw-semibold" id="submitHint" style="display:none;" aria-live="polite">
+                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan. Tenggat pengumpulan materi (jika diisi) harus sebelum hari-H event.
                     </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn" disabled>
@@ -1363,6 +1379,67 @@
         }
         const eventDateEl = document.getElementById('tanggal');
         if(eventDateEl){ ['change','input'].forEach(ev=>eventDateEl.addEventListener(ev, updateDiscountUntilBounds)); }
+
+        // Tenggat Pengumpulan Materi: jika diisi, harus sebelum hari-H event
+        const materialDeadlineEl = document.getElementById('material_deadline');
+        const materialDeadlineHelp = document.getElementById('materialDeadlineHelp');
+        function updateMaterialDeadlineBounds(){
+            if(!materialDeadlineEl) return;
+            const eventDateStr = document.getElementById('tanggal')?.value;
+            if(!eventDateStr){
+                materialDeadlineEl.removeAttribute('max');
+                return;
+            }
+            const eventDate = new Date(eventDateStr + 'T00:00:00');
+            if(isNaN(eventDate.getTime())) return;
+            // Max: H-1 pukul 23:59
+            const prev = new Date(eventDate.getTime() - 24*60*60*1000);
+            const y = prev.getFullYear();
+            const m = String(prev.getMonth() + 1).padStart(2, '0');
+            const d = String(prev.getDate()).padStart(2, '0');
+            materialDeadlineEl.max = `${y}-${m}-${d}T23:59`;
+        }
+        function validateMaterialDeadline(){
+            if(!materialDeadlineEl) return true;
+            const val = (materialDeadlineEl.value || '').trim();
+            const eventDateStr = document.getElementById('tanggal')?.value;
+
+            // empty is OK (optional)
+            if(!val || !eventDateStr){
+                materialDeadlineEl.classList.remove('border-danger');
+                if(materialDeadlineHelp) materialDeadlineHelp.classList.add('d-none');
+                return true;
+            }
+
+            const deadline = new Date(val);
+            const eventDayStart = new Date(eventDateStr + 'T00:00:00');
+            const ok = !isNaN(deadline.getTime()) && !isNaN(eventDayStart.getTime()) && (deadline < eventDayStart);
+            if(!ok){
+                materialDeadlineEl.classList.add('border-danger');
+                if(materialDeadlineHelp) materialDeadlineHelp.classList.remove('d-none');
+            } else {
+                materialDeadlineEl.classList.remove('border-danger');
+                if(materialDeadlineHelp) materialDeadlineHelp.classList.add('d-none');
+            }
+            return ok;
+        }
+        if(eventDateEl){
+            ['change','input'].forEach(ev => eventDateEl.addEventListener(ev, () => {
+                updateMaterialDeadlineBounds();
+                validateMaterialDeadline();
+            }));
+        }
+        if(materialDeadlineEl){
+            ['change','input','blur'].forEach(ev => materialDeadlineEl.addEventListener(ev, () => {
+                updateMaterialDeadlineBounds();
+                validateMaterialDeadline();
+                if(typeof window.updateSubmitState === 'function') window.updateSubmitState();
+            }));
+        }
+        // Init for old() values
+        updateMaterialDeadlineBounds();
+        validateMaterialDeadline();
+
         if (diskonInput && discountUntilInput) {
             const toggleDiscountUntil = () => {
                 const perc = parseInt(diskonInput.value || '0', 10);
@@ -1546,6 +1623,9 @@
                     if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; }
                     else { f.classList.remove('border-danger'); }
                 });
+                // Validate material deadline (optional, but must be before event day when filled)
+                const materialOk = (typeof validateMaterialDeadline === 'function') ? validateMaterialDeadline() : true;
+                if(!materialOk){ ok = false; }
                 // Validate short description max 40 words
                 const shortDescEl = document.getElementById('short_desc');
                 if(shortDescEl){
@@ -1579,7 +1659,10 @@
                     };
                     const missingList = requiredSet.filter(f => !(f.value || '').trim()).map(fieldFriendlyName);
                     ev.preventDefault();
-                    alert('Lengkapi semua field wajib.\nYang belum: ' + missingList.join(', '));
+                    let msg = 'Lengkapi semua field wajib.';
+                    if(missingList.length){ msg += '\nYang belum: ' + missingList.join(', '); }
+                    if(!materialOk){ msg += '\nTenggat pengumpulan materi harus sebelum hari-H event.'; }
+                    alert(msg);
                 }
                 // ensure expense totals up-to-date before submit
                 expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
@@ -1620,11 +1703,15 @@
                 const sdEl = document.getElementById('short_desc');
                 const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                 const overLimit = sdEl ? sdWords > 40 : false;
-                if(submitBtn){ submitBtn.disabled = (!filled || overLimit); }
+                const materialOk = (typeof validateMaterialDeadline === 'function') ? validateMaterialDeadline() : true;
+                if(submitBtn){ submitBtn.disabled = (!filled || overLimit || !materialOk); }
                 if(submitHint){
                     if(!filled){
                         const missingList = missingRequired().map(fieldFriendlyName);
-                        submitHint.textContent = 'Lengkapi: ' + missingList.join(', ');
+                        submitHint.textContent = 'Lengkapi: ' + missingList.join(', ') + '. Tenggat pengumpulan materi (jika diisi) harus sebelum hari-H event.';
+                        submitHint.style.display = 'block';
+                    } else if(!materialOk){
+                        submitHint.textContent = 'Tenggat pengumpulan materi harus sebelum hari-H event.';
                         submitHint.style.display = 'block';
                     } else if(overLimit){
                         submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';
