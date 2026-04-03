@@ -40,6 +40,43 @@ class Course extends Model
         'expenses_json' => 'array',
     ];
 
+    public function getCardThumbnailUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->card_thumbnail);
+    }
+
+    private function buildPublicFileUrl(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
+        }
+
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+        }
+
+        return asset('uploads/' . $normalized);
+    }
+
     // protected $casts = [
     //     'expenses_json' => 'array',
     //     'discount_start' => 'date',

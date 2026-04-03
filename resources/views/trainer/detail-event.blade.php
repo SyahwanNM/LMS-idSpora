@@ -258,57 +258,35 @@
 
         {{-- Invitation Status Section --}}
         @php
-          $invitation = \App\Models\TrainerNotification::where('trainer_id', Auth::id())
+          $invitations = \App\Models\TrainerNotification::where('trainer_id', Auth::id())
             ->where('type', 'event_invitation')
             ->where(function ($q) use ($event) {
               $q->whereJsonContains('data->entity_id', $event->id)
                 ->orWhereJsonContains('data->entity_id', (string) $event->id);
             })
-            ->first();
-          $invitationStatus = $invitation?->invitation_status ?? 'pending';
-          $invitationDueAt = data_get($invitation?->data, 'due_at');
+            ->orderByDesc('created_at')
+            ->get();
+
+          $latestInvitation = $invitations->first();
+          $invitationDueAt = data_get($latestInvitation?->data, 'due_at');
+
+          $statuses = $invitations->map(function ($n) {
+            return (string) ($n?->invitation_status ?? data_get($n?->data, 'invitation_status', 'pending'));
+          })->map(fn($s) => strtolower(trim($s)))->filter()->values();
+
+          $hasPendingInvitation = $invitations->isNotEmpty() && !$statuses->contains('accepted') && !$statuses->contains('rejected');
         @endphp
 
-        @if ($invitationStatus === 'pending')
+        @if ($hasPendingInvitation)
           <div class="hub-section"
             style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
             <p class="hub-section-title" style="margin-bottom: 12px; color: #991b1b; border-bottom: none;">📋 Event
               Invitation</p>
-            <p style="font-size: 13px; color: #7f1d1d; margin-bottom: 12px;">Anda telah diundang menjadi narasumber event
-              ini. Silakan terima atau tolak undangan.</p>
+            <p style="font-size: 13px; color: #7f1d1d; margin-bottom: 12px;">Anda telah diundang menjadi narasumber event ini.</p>
             @if(!empty($invitationDueAt))
               <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">Tenggat pengumpulan materi:
                 {{ \Carbon\Carbon::parse($invitationDueAt)->format('d M Y H:i') }}</p>
             @endif
-            <div style="display: flex; gap: 8px;">
-              <form method="POST" action="{{ route('trainer.events.invitation.accept', $event->id) }}" style="flex: 1;">
-                @csrf
-                <button type="submit" class="hub-acceptance-btn"
-                  style="background: #10b981; color: white; border: none; padding: 10px 16px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;">✓
-                  Accept</button>
-              </form>
-              <form method="POST" action="{{ route('trainer.events.invitation.reject', $event->id) }}" style="flex: 1;">
-                @csrf
-                <button type="submit" class="hub-acceptance-btn"
-                  style="background: #ef4444; color: white; border: none; padding: 10px 16px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;">✗
-                  Reject</button>
-              </form>
-            </div>
-          </div>
-        @elseif ($invitationStatus === 'accepted')
-          <div class="hub-section"
-            style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <p class="hub-section-title" style="margin-bottom: 8px; color: #166534; border-bottom: none;">✓ Invitation
-              Accepted</p>
-            <p style="font-size: 12px; color: #166534;">Terima kasih telah menerima undangan. Silakan upload materi untuk
-              event ini.</p>
-          </div>
-        @elseif ($invitationStatus === 'rejected')
-          <div class="hub-section"
-            style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <p class="hub-section-title" style="margin-bottom: 8px; color: #991b1b; border-bottom: none;">✗ Invitation
-              Rejected</p>
-            <p style="font-size: 12px; color: #991b1b;">Anda telah menolak undangan event ini.</p>
           </div>
         @endif
 

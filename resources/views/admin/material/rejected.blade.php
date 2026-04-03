@@ -541,7 +541,7 @@
                                 <tr>
                                     <td>
                                         <div class="course-info">
-                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
+                                            <img src="{{ $material->card_thumbnail_url ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
                                                 class="course-thumb" alt="Cover">
                                             <div>
                                                 <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>

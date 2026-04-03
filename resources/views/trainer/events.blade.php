@@ -88,10 +88,9 @@
                 <div class="card-media">
                   <p class="badge-online">{{ strtoupper($event->type ?? 'ONLINE SESSION') }}</p>
 
-                  @if(Str::startsWith($event->image, ['http://', 'https://']))
-                    <img src="{{ $event->image }}" alt="{{ $event->title }}" class="card-image" />
-                  @elseif($event->image)
-                    <img src="{{ asset('storage/' . $event->image) }}" alt="{{ $event->title }}" class="card-image" />
+                  @php $posterUrl = $event->image_url; @endphp
+                  @if(!empty($posterUrl))
+                    <img src="{{ $posterUrl }}" alt="{{ $event->title }}" class="card-image" />
                   @else
                     <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
                       alt="Default Image" class="card-image" />
