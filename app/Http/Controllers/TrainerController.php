@@ -1631,21 +1631,14 @@ class TrainerController extends Controller
             ->where('trainer_id', $trainerId)
             ->firstOrFail();
 
-        // Update trainer notification status
-        $notification = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
+        // Remove event invitation notifications so the banner no longer appears.
+        $notificationsQuery = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
             ->where('type', 'event_invitation')
             ->where(function ($q) use ($id) {
                 $q->whereJsonContains('data->entity_id', $id)
                     ->orWhereJsonContains('data->entity_id', (string) $id);
             })
-            ->first();
-
-        if ($notification) {
-            $notification->update([
-                'invitation_status' => 'accepted',
-                'responded_at' => now(),
-            ]);
-        }
+            ->delete();
 
         return back()->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
     }
@@ -1660,21 +1653,14 @@ class TrainerController extends Controller
             ->where('trainer_id', $trainerId)
             ->firstOrFail();
 
-        // Update trainer notification status
-        $notification = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
+        // Remove event invitation notifications so the banner no longer appears.
+        $notificationsQuery = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
             ->where('type', 'event_invitation')
             ->where(function ($q) use ($id) {
                 $q->whereJsonContains('data->entity_id', $id)
                     ->orWhereJsonContains('data->entity_id', (string) $id);
             })
-            ->first();
-
-        if ($notification) {
-            $notification->update([
-                'invitation_status' => 'rejected',
-                'responded_at' => now(),
-            ]);
-        }
+            ->delete();
 
         return back()->with('success', 'Undangan event berhasil ditolak.');
     }

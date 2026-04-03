@@ -205,24 +205,37 @@
                                         </span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->module_verified_at) ? 'bi-check-circle text-success' : (!empty($event->module_rejected_at) ? 'bi-x-circle text-danger' : (!empty($event->module_path) ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger')) }} me-2"></i> Module (Trainer)</span>
+                                        @php
+                                            $hasModuleFile = !empty($event->module_path);
+                                            $moduleApproved = !empty($event->module_verified_at)
+                                                || (((string) ($event->material_status ?? '')) === 'approved' && !empty($event->material_approved_at));
+                                            $moduleRejected = !empty($event->module_rejected_at)
+                                                || (((string) ($event->material_status ?? '')) === 'rejected');
+                                            $modulePending = $hasModuleFile && !$moduleApproved && !$moduleRejected;
+                                            $moduleIcon = $moduleApproved
+                                                ? 'bi-check-circle text-success'
+                                                : ($moduleRejected
+                                                    ? 'bi-x-circle text-danger'
+                                                    : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
+                                        @endphp
+                                        <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
                                         <span>
-                                            @if(!empty($event->module_verified_at) && !empty($event->module_path))
+                                            @if($moduleApproved && $hasModuleFile)
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
-                                            @elseif(!empty($event->module_path))
+                                            @elseif($hasModuleFile)
                                                 @if(!empty($event->trainer_id))
                                                     <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn btn-sm btn-outline-warning">
                                                         <i class="bi bi-person-check me-1"></i>Verifikasi di Trainer
                                                     </a>
                                                 @else
-                                                    <span class="text-warning">{{ !empty($event->module_rejected_at) ? 'Perlu revisi' : 'Menunggu verifikasi' }}</span>
+                                                    <span class="text-warning">{{ $moduleRejected ? 'Perlu revisi' : 'Menunggu verifikasi' }}</span>
                                                 @endif
                                             @else
                                                 <span class="text-muted">Belum ada</span>
                                             @endif
                                         </span>
                                     </li>
-                                    @if(empty($event->module_verified_at) && !empty($event->module_path))
+                                    @if($modulePending)
                                         <li class="list-group-item">
                                             <div class="mt-2 small text-warning">
                                                 <i class="bi bi-info-circle me-1"></i>Module ini belum dihitung pada kelengkapan dokumen sampai di-approve (verifikasi dipusatkan di menu Trainer).

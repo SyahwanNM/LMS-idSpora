@@ -95,9 +95,9 @@
                                             <p>{{ number_format($course->reviews_avg_rating ?? 0, 1) }}</p>
                                         </div>
 
-                                        @if($course->card_thumbnail)
-                                            <img class="card-image" src="{{ asset('storage/' . $course->card_thumbnail) }}"
-                                                alt="{{ $course->name }}">
+                                        @php $thumbUrl = $course->card_thumbnail_url; @endphp
+                                        @if(!empty($thumbUrl))
+                                            <img class="card-image" src="{{ $thumbUrl }}" alt="{{ $course->name }}">
                                         @else
                                             <div class="no-image-placeholder" aria-hidden="true">
                                                 <i class="bi bi-image"></i>

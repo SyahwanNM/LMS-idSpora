@@ -261,7 +261,7 @@
                   <a href="{{ route('trainer.notifications.open', $invite->id) }}" class="invitation-item-link">Buka</a>
                 @endif
               </div>
-              @if($inviteStatus === 'pending')
+              @if($inviteStatus === 'pending' && $invite->type !== 'event_invitation')
                 <div class="invitation-actions">
                   <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
                     class="js-invitation-response-form">
