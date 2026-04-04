@@ -219,6 +219,7 @@ class TrainerController extends Controller
             'order_no' => (int) $module->order_no,
             'type' => (string) $module->type,
             'title' => (string) ($module->title ?? ''),
+            'description' => (string) ($module->description ?? ''),
             'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
             'view_url' => route('trainer.courses.studio.material.view', [$courseId, $module->id]),
             'updated_at' => optional($module->updated_at)->toDateTimeString(),
@@ -946,6 +947,7 @@ class TrainerController extends Controller
                     'unit_no' => $unitNo,
                     'type' => (string) $module->type,
                     'title' => (string) ($module->title ?? ''),
+                    'description' => (string) ($module->description ?? ''),
                     'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
                     'view_url' => route('trainer.courses.studio.material.view', [$course->id, $module->id]),
                     'updated_at' => optional($module->updated_at)->toDateTimeString(),
@@ -1246,6 +1248,9 @@ class TrainerController extends Controller
         $request->validate([
             'target_modules' => 'required|string', // Kumpulan ID modul di Bab ini
             'replace_module_id' => 'nullable|integer',
+            'description' => 'nullable|string|max:2000',
+            'descriptions' => 'nullable|array',
+            'descriptions.*' => 'nullable|string|max:2000',
             'files' => 'required|array',
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
         ]);
@@ -1274,6 +1279,7 @@ class TrainerController extends Controller
 
         if ($request->hasFile('files')) {
             $replaceModuleId = $request->input('replace_module_id');
+            $descriptions = $request->input('descriptions', []);
 
             if (!empty($replaceModuleId)) {
                 $replaceModule = \App\Models\CourseModule::where('course_id', $id)
@@ -1310,6 +1316,7 @@ class TrainerController extends Controller
                     'file_name' => $file->getClientOriginalName(),
                     'mime_type' => $file->getMimeType(),
                     'file_size' => $file->getSize(),
+                    'description' => (string) ($request->input('description') ?? $replaceModule->description ?? ''),
                 ]);
 
                 $replaceModule->refresh();
@@ -1358,12 +1365,17 @@ class TrainerController extends Controller
                 ];
             }
 
-            foreach ($request->file('files') as $file) {
+            foreach ($request->file('files') as $index => $file) {
                 $ext = strtolower($file->getClientOriginalExtension());
                 $type = in_array($ext, ['mp4']) ? 'video' : 'pdf';
                 $isAutoReplace = false;
                 $usedCompatibleSlot = false;
                 $stateKey = $type;
+
+                $descriptionForFile = '';
+                if (is_array($descriptions) && array_key_exists($index, $descriptions)) {
+                    $descriptionForFile = (string) ($descriptions[$index] ?? '');
+                }
 
                 // Flow mirip event: isi slot kosong dulu, jika penuh auto-overwrite slot tipe yang sama.
                 $state = $slotStateByType[$stateKey] ?? null;
@@ -1404,13 +1416,19 @@ class TrainerController extends Controller
 
                     $filepath = $file->storeAs('courses/' . $id . '/materials', $filename, 'public');
 
-                    $module->update([
+                    $updatePayload = [
                         'type' => $type,
                         'content_url' => $filepath,
                         'file_name' => $file->getClientOriginalName(),
                         'mime_type' => $file->getMimeType(),
                         'file_size' => $file->getSize(),
-                    ]);
+                    ];
+
+                    if (trim((string) $descriptionForFile) !== '') {
+                        $updatePayload['description'] = (string) $descriptionForFile;
+                    }
+
+                    $module->update($updatePayload);
                     $module->refresh();
                     $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $module);
                     $uploadedCount++;

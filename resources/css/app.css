@@ -6927,6 +6927,18 @@ textarea::placeholder {
     display: flex;
     gap: 24px;
     align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+
+/* Quiz preview (admin) alignment: count left, passing right */
+.detail-kuis .info-item {
+    align-items: flex-start;
+}
+
+.detail-kuis .info-item.passing-score {
+    align-items: flex-end;
+    text-align: right;
 }
 
 .info-item {

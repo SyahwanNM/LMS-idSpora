@@ -493,6 +493,52 @@ class CourseController extends Controller
         return view('admin.courses.index', compact('courses'));
     }
 
+    private function missingMaterialLabelsFromModules($modules): array
+    {
+        $modules = $modules ?? collect();
+        if (!($modules instanceof \Illuminate\Support\Collection)) {
+            $modules = collect($modules);
+        }
+
+        $missing = [];
+
+        if ($modules->count() <= 0) {
+            $missing[] = 'Modul';
+        }
+
+        $pdfSlots = $modules->where('type', 'pdf');
+        if ($pdfSlots->count() <= 0 || $pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0) {
+            $missing[] = 'Modul (PDF)';
+        }
+
+        $videoSlots = $modules->where('type', 'video');
+        if ($videoSlots->count() <= 0 || $videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0) {
+            $missing[] = 'Video';
+        }
+
+        $quizSlots = $modules->where('type', 'quiz');
+        if ($quizSlots->count() <= 0) {
+            $missing[] = 'Kuis';
+        } else {
+            $missingQuiz = $quizSlots->filter(function ($m) {
+                $count = null;
+                if (isset($m->quiz_questions_count)) {
+                    $count = (int) $m->quiz_questions_count;
+                } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                    $count = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                }
+                $count = (int) ($count ?? 0);
+                return $count <= 0;
+            })->count();
+
+            if ($missingQuiz > 0) {
+                $missing[] = 'Kuis';
+            }
+        }
+
+        return array_values(array_unique(array_filter($missing)));
+    }
+
     public function export(Request $request)
     {
         $format = (string) $request->get('format', 'pdf');
@@ -500,7 +546,12 @@ class CourseController extends Controller
         $month = trim((string) $request->get('month', '')); // YYYY-MM
 
         $coursesQuery = Course::query()
-            ->with(['category', 'modules'])
+            ->with([
+                'category',
+                'modules' => function ($q) {
+                    $q->withCount('quizQuestions');
+                },
+            ])
             ->orderByDesc('created_at');
 
         if ($q !== '') {
@@ -639,9 +690,9 @@ class CourseController extends Controller
                 $quizCount = $modules->where('type', 'quiz')->count();
                 $totalModules = $modules->count();
 
-                $hasModules = $totalModules > 0;
                 $isPublished = ((string) $course->status) === 'active';
-                $kelengkapan = $isPublished ? 'Complete' : ($hasModules ? 'In Progress' : 'Missing Material');
+                $missing = $this->missingMaterialLabelsFromModules($modules);
+                $kelengkapan = $isPublished ? 'Complete' : (!empty($missing) ? 'Missing Material' : 'In Progress');
 
                 fputcsv($file, [
                     $course->id,
@@ -827,7 +878,8 @@ class CourseController extends Controller
             'category_id' => 'required|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'trainer_id' => [
-                'nullable',
+                'required',
+                'integer',
                 Rule::exists('users', 'id')->where(function ($query) {
                     $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
@@ -838,10 +890,15 @@ class CourseController extends Controller
             'price' => 'required|integer|min:0',
             'duration' => 'required|integer|min:0',
             'image' => 'required|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
-            'card_thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
-            'discount_percent' => 'nullable|integer|min:1|max:100',
-            'discount_start' => 'nullable|date',
-            'discount_end' => 'nullable|date|after_or_equal:discount_start',
+            'card_thumbnail' => 'required|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'discount_start' => 'nullable|date|after_or_equal:today',
+            'discount_end' => [
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                Rule::when($request->filled('discount_start'), 'after_or_equal:discount_start'),
+            ],
             'free_access_mode' => 'nullable|in:all,limit_2',
             'expenses' => 'nullable|array',
             'expenses.*.item' => 'nullable|string|max:255',
@@ -854,6 +911,28 @@ class CourseController extends Controller
             'unit_titles' => 'nullable|array',
             'unit_titles.*' => 'nullable|string|max:255',
         ]);
+
+        // Normalize discount fields: if discount is not set (null/0), ignore dates.
+        // If discount is set (>0) and dates are empty, default to today.
+        $priceValue = $request->filled('price') ? (int) $request->input('price') : 0;
+        $discountPercent = $request->filled('discount_percent') ? (int) $request->input('discount_percent') : null;
+        if ($priceValue <= 0 || empty($discountPercent)) {
+            $request->merge([
+                'discount_percent' => $discountPercent,
+                'discount_start' => null,
+                'discount_end' => null,
+            ]);
+        } else {
+            $start = $request->filled('discount_start') ? (string) $request->input('discount_start') : now()->toDateString();
+            $end = $request->filled('discount_end') ? (string) $request->input('discount_end') : $start;
+            if ($end < $start) {
+                $end = $start;
+            }
+            $request->merge([
+                'discount_start' => $start,
+                'discount_end' => $end,
+            ]);
+        }
 
         $template = $this->resolveTemplateForCourse(
             $request->filled('template_id') ? (int) $request->input('template_id') : null,
@@ -1066,6 +1145,15 @@ class CourseController extends Controller
             'price' => 'required|integer|min:0',
             'duration' => 'required|integer|min:0',
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
+            'card_thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'discount_start' => 'nullable|date|after_or_equal:today',
+            'discount_end' => [
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                Rule::when($request->filled('discount_start'), 'after_or_equal:discount_start'),
+            ],
             // Legacy single-upload (kept for backward compatibility)
             'admin_video_file' => 'nullable|file|mimes:mp4,webm,ogg|max:204800',
             'admin_video_title' => 'nullable|string|max:255',
@@ -1088,6 +1176,28 @@ class CourseController extends Controller
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
+
+        // Normalize discount fields: if discount is not set (null/0), ignore dates.
+        // If discount is set (>0) and dates are empty, default to today.
+        $priceValue = $request->filled('price') ? (int) $request->input('price') : 0;
+        $discountPercent = $request->filled('discount_percent') ? (int) $request->input('discount_percent') : null;
+        if ($priceValue <= 0 || empty($discountPercent)) {
+            $request->merge([
+                'discount_percent' => $discountPercent,
+                'discount_start' => null,
+                'discount_end' => null,
+            ]);
+        } else {
+            $start = $request->filled('discount_start') ? (string) $request->input('discount_start') : now()->toDateString();
+            $end = $request->filled('discount_end') ? (string) $request->input('discount_end') : $start;
+            if ($end < $start) {
+                $end = $start;
+            }
+            $request->merge([
+                'discount_start' => $start,
+                'discount_end' => $end,
+            ]);
+        }
 
         $template = $this->resolveTemplateForCourse(
             $request->filled('template_id') ? (int) $request->input('template_id') : null,
