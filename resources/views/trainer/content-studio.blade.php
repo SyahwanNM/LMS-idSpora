@@ -685,6 +685,7 @@
                                     'order_no' => (int) $material->order_no,
                                     'type' => (string) $material->type,
                                     'title' => (string) ($material->title ?? ''),
+                                    'description' => (string) ($material->description ?? ''),
                                     'file_name' => (string) ($material->file_name ?: basename($material->content_url)),
                                     'view_url' => route('trainer.courses.studio.material.view', [$course->id, $material->id]),
                                     'updated_at' => optional($material->updated_at)->toDateTimeString(),
@@ -709,6 +710,11 @@
                                                 <p style="margin: 0; font-size: 12px; color: #999;">
                                                     {{ strtoupper($material->type) }} • Slot {{ $material->order_no }}
                                                 </p>
+                                                @if(!empty($material->description))
+                                                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #999; white-space: normal;">
+                                                        {{ $material->description }}
+                                                    </p>
+                                                @endif
                                             </div>
                                         </div>
                                         <div style="display: flex; gap: 6px;">
@@ -724,6 +730,7 @@
                                             <button type="button" class="select-replace-btn"
                                                 data-module-id="{{ $material->id }}" data-module-type="{{ $material->type }}"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
+                                                data-description="{{ $material->description ?? '' }}"
                                                 title="Ganti File"
                                                 style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                 onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
@@ -754,6 +761,11 @@
                                                         {{ strtoupper($material['type']) }} • Bab {{ $material['unit_no'] }} • Slot
                                                         {{ $material['order_no'] }}
                                                     </p>
+                                                    @if(!empty($material['description']))
+                                                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #999; white-space: normal;">
+                                                            {{ $material['description'] }}
+                                                        </p>
+                                                    @endif
                                                 </div>
                                             </div>
                                             <div style="display: inline-flex; gap: 6px;">
@@ -769,6 +781,7 @@
                                                     data-module-id="{{ $material['module_id'] }}"
                                                     data-module-type="{{ $material['type'] }}"
                                                     data-file-name="{{ $material['file_name'] }}" title="Ganti File"
+                                                    data-description="{{ $material['description'] ?? '' }}"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                     <i class="bi bi-arrow-repeat"></i>
@@ -1022,6 +1035,15 @@
                     </div>
                 </div>
 
+                <div>
+                    <p
+                        style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase;">
+                        Deskripsi Materi (Opsional)</p>
+                    <textarea id="replacementDescription" rows="3"
+                        style="width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 13px; color: #334155; resize: vertical;"
+                        placeholder="Ringkasan materi, poin penting, atau tujuan pembelajaran..."></textarea>
+                </div>
+
                 <!-- Preview File Baru -->
                 <div id="replacementPreview" style="display: none;">
                     <p
@@ -1184,8 +1206,8 @@
             }
         }
 
-        function openReplacementModal(moduleId, fileName, fileType) {
-            console.log('🔵 openReplacementModal CALLED with:', { moduleId, fileName, fileType });
+        function openReplacementModal(moduleId, fileName, fileType, description = '') {
+            console.log('🔵 openReplacementModal CALLED with:', { moduleId, fileName, fileType, description });
 
             replacementState = { moduleId, fileName, fileType, selectedFile: null };
 
@@ -1195,6 +1217,7 @@
             const preview = document.getElementById('replacementPreview');
             const confirmBtn = document.getElementById('replacementConfirmBtn');
             const fileInput = document.getElementById('replacementFileInput');
+            const descInput = document.getElementById('replacementDescription');
 
             console.log('🔍 Elements check:', {
                 modal: !!modal,
@@ -1216,6 +1239,9 @@
             confirmBtn.disabled = true;
             confirmBtn.style.opacity = '0.5';
             fileInput.value = '';
+            if (descInput) {
+                descInput.value = String(description || '');
+            }
 
             modal.style.display = 'flex';
             console.log('✅ Modal displayed successfully!');
@@ -1282,6 +1308,7 @@
 
             // --- UPLOAD LOGIC ---
             let uploadedFiles = [];
+            let uploadedDescriptions = [];
             let persistedMaterials = @json($existingMaterialsPayload);
             const activeUnitModules = @json($activeUnitModules->map(function ($module) {
                 return ['id' => $module->id, 'type' => $module->type];
@@ -1329,6 +1356,10 @@
                     const moduleType = escapeHtml(material.type || 'pdf');
                     const viewUrl = escapeHtml(material.view_url || '#');
                     const moduleId = Number(material.module_id || 0);
+                    const description = escapeHtml(material.description || '');
+                    const descHtml = description
+                        ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #999; white-space: normal;">${description}</p>`
+                        : '';
 
                     return `
                             <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
@@ -1337,6 +1368,7 @@
                                     <div>
                                         <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
                                         <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
+                                        ${descHtml}
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 6px;">
@@ -1348,7 +1380,7 @@
                                         <i class="bi bi-eye-fill"></i>
                                     </button>
                                     <button type="button" class="select-replace-btn"
-                                        data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
+                                        data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}" data-description="${description}"
                                         title="Ganti File"
                                         style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                         onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
@@ -1368,7 +1400,8 @@
                     openReplacementModal(
                         parseInt(replaceBtn.dataset.moduleId, 10),
                         replaceBtn.dataset.fileName || 'file',
-                        replaceBtn.dataset.moduleType
+                        replaceBtn.dataset.moduleType,
+                        replaceBtn.dataset.description || ''
                     );
                     return;
                 }
@@ -1468,6 +1501,7 @@
                 formData.append('_token', document.querySelector('input[name="_token"]').value);
                 formData.append('target_modules', String(replacementState.moduleId));
                 formData.append('replace_module_id', String(replacementState.moduleId));
+                formData.append('description', String(document.getElementById('replacementDescription')?.value || ''));
                 formData.append('files[]', replacementState.selectedFile);
 
                 fetch(moduleForm.action, {
@@ -1545,7 +1579,10 @@
             fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
 
             function handleFiles(files) {
-                Array.from(files).forEach(file => uploadedFiles.push(file)); // Simpan file objek asli
+                Array.from(files).forEach(file => {
+                    uploadedFiles.push(file);
+                    uploadedDescriptions.push('');
+                });
                 updateFileList();
                 fileInput.value = "";
             }
@@ -1558,22 +1595,45 @@
             function updateFileList() {
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
-                    uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
+                    uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => {
+                        const descValue = escapeHtml(uploadedDescriptions[index] || '');
+                        return `
                                 <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
                                     <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                                         <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
                                         <div>
                                             <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
                                             <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            <div style="margin-top: 8px;">
+                                                <label style="display: block; margin: 0 0 4px 0; font-size: 12px; font-weight: 600; color: #6b7280;">Deskripsi materi (opsional)</label>
+                                                <textarea class="file-desc-input" data-index="${index}" name="descriptions[${index}]" rows="2"
+                                                    style="width: min(520px, 100%); padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #334155; resize: vertical;"
+                                                    placeholder="Contoh: Ringkasan materi, poin penting, atau tujuan pembelajaran...">${descValue}</textarea>
+                                            </div>
                                         </div>
                                     </div>
                                     <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
                                 </li>
-                            `).join("");
+                            `;
+                    }).join("");
+
+                    document.querySelectorAll('.file-desc-input').forEach((el) => {
+                        el.addEventListener('input', (e) => {
+                            const idx = parseInt(e.target.dataset.index, 10);
+                            if (!Number.isNaN(idx) && idx >= 0) {
+                                uploadedDescriptions[idx] = e.target.value;
+                            }
+                        });
+                    });
 
                     document.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
-                            uploadedFiles.splice(parseInt(e.target.dataset.index), 1);
+                            const idx = parseInt(e.target.dataset.index, 10);
+                            if (Number.isNaN(idx) || idx < 0) {
+                                return;
+                            }
+                            uploadedFiles.splice(idx, 1);
+                            uploadedDescriptions.splice(idx, 1);
                             updateFileList();
                         });
                     });

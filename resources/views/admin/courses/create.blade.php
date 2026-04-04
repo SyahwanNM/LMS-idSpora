@@ -26,7 +26,7 @@
 
         <!-- Main Content -->
         <main class="max-w-4xl mx-auto">
-            <form action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
+            <form id="admin-course-create-form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
 
                 <!-- Formulir Pengaturan Course -->
@@ -46,16 +46,17 @@
                     <div class="space-y-6">
                         <!-- Judul Course -->
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Judul Course</label>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Judul Course <span class="text-red-600">*</span></label>
                             <input type="text" name="name" id="name" required
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="{{ old('name') }}" placeholder="Masukkan Judul Course">
+                            <p id="name_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
                         <!-- Level & Status -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level Course</label>
+                                <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level Course <span class="text-red-600">*</span></label>
                                 <select name="level" id="level" required
                                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
                                     <option value="">Select Level</option>
@@ -66,9 +67,10 @@
                                     <option value="advanced" {{ old('level') == 'advanced' ? 'selected' : '' }}>Advanced
                                     </option>
                                 </select>
+                                <p id="level_error" class="mt-1 text-xs text-red-600 hidden"></p>
                             </div>
                             <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status <span class="text-red-600">*</span></label>
                                 <select name="status" id="status" required
                                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
                                     <option value="">Select Status</option>
@@ -76,6 +78,7 @@
                                     <option value="archive" {{ old('status') == 'archive' ? 'selected' : '' }}>Archive
                                     </option>
                                 </select>
+                                <p id="status_error" class="mt-1 text-xs text-red-600 hidden"></p>
                             </div>
                         </div>
 
@@ -83,7 +86,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="category_id"
-                                    class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                                    class="block text-sm font-medium text-gray-700 mb-2">Kategori <span class="text-red-600">*</span></label>
                                 <select name="category_id" id="category_id" required
                                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
                                     <option value="">Pilih Kategori</option>
@@ -91,6 +94,7 @@
                                         <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                     @endforeach
                                 </select>
+                                <p id="category_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
                             </div>
 
                             <div>
@@ -112,8 +116,8 @@
 
                         <!-- Trainer Assignment -->
                         <div>
-                            <label for="trainer_id" class="block text-sm font-medium text-gray-700 mb-2">Trainer</label>
-                            <select name="trainer_id" id="trainer_id"
+                            <label for="trainer_id" class="block text-sm font-medium text-gray-700 mb-2">Trainer <span class="text-red-600">*</span></label>
+                            <select name="trainer_id" id="trainer_id" required
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
                                 <option value="">-- Pilih Trainer --</option>
                                 @foreach($trainers as $trainer)
@@ -124,15 +128,17 @@
                             </select>
                             <p class="mt-1 text-xs text-gray-500">Course hanya muncul di dashboard trainer jika trainer
                                 dipilih.</p>
+                            <p id="trainer_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
                         <!-- Harga -->
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Harga</label>
-                            <input type="text" name="price" id="price" required
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Harga <span class="text-red-600">*</span></label>
+                            <input type="text" name="price" id="price" required inputmode="numeric"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="{{ old('price', 0) }}" placeholder="0">
                             <p class="mt-1 text-xs text-gray-500">Masukkan 0 untuk course gratis</p>
+                            <p id="price_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
                         <!-- Akses Course Gratis -->
@@ -159,18 +165,20 @@
 
                         <!-- Intro Media -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Intro Media (Video/Image)</label>
-                            <input type="file" name="image" accept="image/*,video/mp4,video/webm,video/ogg" required
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Intro Media (Video/Image) <span class="text-red-600">*</span></label>
+                            <input type="file" name="image" id="image" accept="image/*,video/mp4,video/webm,video/ogg" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
                             <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, MP4. Digunakan untuk intro course.</p>
+                            <p id="image_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
                         <!-- Thumbnail -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Course</label>
-                            <input type="file" name="card_thumbnail" accept="image/*"
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Course <span class="text-red-600">*</span></label>
+                            <input type="file" name="card_thumbnail" id="card_thumbnail" accept="image/*" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
                             <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, WebP</p>
+                            <p id="card_thumbnail_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
                         <!-- Hidden inputs for other required fields -->
@@ -189,4 +197,167 @@
             </form>
         </main>
     </div>
+
+    <script>
+        (function() {
+            const form = document.getElementById('admin-course-create-form');
+            if (!form) return;
+
+            const allowedIntroMimes = new Set([
+                'image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp',
+                'video/mp4', 'video/webm', 'video/ogg'
+            ]);
+
+            const allowedCardThumbMimes = new Set([
+                'image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'
+            ]);
+
+            function getEl(id) {
+                return document.getElementById(id);
+            }
+
+            function setError(fieldId, message) {
+                const input = getEl(fieldId);
+                const errorEl = getEl(fieldId + '_error');
+
+                if (errorEl) {
+                    if (message) {
+                        errorEl.textContent = message;
+                        errorEl.classList.remove('hidden');
+                    } else {
+                        errorEl.textContent = '';
+                        errorEl.classList.add('hidden');
+                    }
+                }
+
+                if (input) {
+                    if (message) {
+                        input.classList.add('border-red-500');
+                    } else {
+                        input.classList.remove('border-red-500');
+                    }
+                }
+            }
+
+            function normalizeDigits(value) {
+                return String(value || '').replace(/[^0-9]/g, '');
+            }
+
+            function validate() {
+                let firstInvalid = null;
+
+                const name = getEl('name');
+                const level = getEl('level');
+                const status = getEl('status');
+                const categoryId = getEl('category_id');
+                const trainerId = getEl('trainer_id');
+                const price = getEl('price');
+                const image = getEl('image');
+                const cardThumb = getEl('card_thumbnail');
+
+                const nameVal = (name?.value || '').trim();
+                if (nameVal.length === 0) {
+                    setError('name', 'Judul course wajib diisi.');
+                    firstInvalid ||= name;
+                } else {
+                    setError('name', '');
+                }
+
+                const levelVal = (level?.value || '').trim();
+                if (!['beginner', 'intermediate', 'advanced'].includes(levelVal)) {
+                    setError('level', 'Level course wajib dipilih.');
+                    firstInvalid ||= level;
+                } else {
+                    setError('level', '');
+                }
+
+                const statusVal = (status?.value || '').trim();
+                if (!['active', 'archive'].includes(statusVal)) {
+                    setError('status', 'Status wajib dipilih.');
+                    firstInvalid ||= status;
+                } else {
+                    setError('status', '');
+                }
+
+                const catVal = (categoryId?.value || '').trim();
+                if (catVal.length === 0) {
+                    setError('category_id', 'Kategori wajib dipilih.');
+                    firstInvalid ||= categoryId;
+                } else {
+                    setError('category_id', '');
+                }
+
+                const trainerVal = (trainerId?.value || '').trim();
+                if (trainerVal.length === 0) {
+                    setError('trainer_id', 'Trainer wajib dipilih.');
+                    firstInvalid ||= trainerId;
+                } else {
+                    setError('trainer_id', '');
+                }
+
+                const rawPrice = (price?.value || '').trim();
+                const digits = normalizeDigits(rawPrice);
+                if (digits.length === 0) {
+                    setError('price', 'Harga wajib diisi.');
+                    firstInvalid ||= price;
+                } else {
+                    const val = parseInt(digits, 10);
+                    if (Number.isNaN(val) || val < 0) {
+                        setError('price', 'Harga harus angka >= 0.');
+                        firstInvalid ||= price;
+                    } else {
+                        setError('price', '');
+                    }
+                }
+
+                const introFile = image?.files && image.files[0];
+                if (!introFile) {
+                    setError('image', 'Intro media wajib dipilih.');
+                    firstInvalid ||= image;
+                } else if (!allowedIntroMimes.has(introFile.type)) {
+                    setError('image', 'Format intro media tidak didukung.');
+                    firstInvalid ||= image;
+                } else {
+                    setError('image', '');
+                }
+
+                const cardFile = cardThumb?.files && cardThumb.files[0];
+                if (!cardFile) {
+                    setError('card_thumbnail', 'Thumbnail card course wajib diupload.');
+                    firstInvalid ||= cardThumb;
+                } else if (!allowedCardThumbMimes.has(cardFile.type)) {
+                    setError('card_thumbnail', 'Format thumbnail harus gambar (jpg/png/webp/gif).');
+                    firstInvalid ||= cardThumb;
+                } else {
+                    setError('card_thumbnail', '');
+                }
+
+                return firstInvalid;
+            }
+
+            // Live validation (lightweight)
+            getEl('name')?.addEventListener('input', validate);
+            getEl('level')?.addEventListener('change', validate);
+            getEl('status')?.addEventListener('change', validate);
+            getEl('category_id')?.addEventListener('change', validate);
+            getEl('trainer_id')?.addEventListener('change', validate);
+            getEl('price')?.addEventListener('input', validate);
+            getEl('image')?.addEventListener('change', validate);
+            getEl('card_thumbnail')?.addEventListener('change', validate);
+
+            form.addEventListener('submit', function(e) {
+                const firstInvalid = validate();
+                if (firstInvalid) {
+                    e.preventDefault();
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstInvalid.focus?.();
+                    return;
+                }
+
+                // normalize price so backend integer validation is consistent
+                const price = getEl('price');
+                if (price) price.value = normalizeDigits(price.value);
+            });
+        })();
+    </script>
 @endsection

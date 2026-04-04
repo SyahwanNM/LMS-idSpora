@@ -17,6 +17,7 @@ use Carbon\Carbon;
 
 class AuthController extends Controller
 {
+    private const VERIFICATION_CODE_EXPIRES_MINUTES = 15;
     public function showLogin()
     {
         return view('auth.sign-in');
@@ -139,6 +140,7 @@ class AuthController extends Controller
 
         // Kirim kode verifikasi menggunakan PasswordResetToken + PasswordResetMail
         try {
+            $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $token = Str::random(64);
             PasswordResetToken::where('email', $request->email)->delete();
@@ -146,10 +148,10 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'token' => $token,
                 'verification_code' => $verificationCode,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => now()->addMinutes($expiresMinutes),
                 'is_used' => false,
             ]);
-            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, 15));
+            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, $expiresMinutes));
         } catch (\Throwable $e) {
             \Log::error('Send registration verification failed: ' . $e->getMessage());
         }
@@ -206,7 +208,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'token' => $token,
             'verification_code' => $verificationCode,
-            'expires_at' => Carbon::now()->addMinutes(15), // 15 menit
+            'expires_at' => now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_MINUTES), // 15 menit
         ]);
 
         // Kirim email
@@ -240,8 +242,6 @@ class AuthController extends Controller
             $request->session()->keep('register_verify_email');
         } catch (\Throwable $e) {
         }
-        return view('verifikasi');
-        try { $request->session()->keep('register_verify_email'); } catch (\Throwable $e) {}
         return view('auth.verifikasi');
     }
 
@@ -261,6 +261,7 @@ class AuthController extends Controller
             return redirect()->route('register')->withErrors(['email' => 'Sesi verifikasi tidak ditemukan. Silakan daftar ulang.']);
         }
         try {
+            $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $token = Str::random(64);
             PasswordResetToken::where('email', $email)->delete();
@@ -268,11 +269,11 @@ class AuthController extends Controller
                 'email' => $email,
                 'token' => $token,
                 'verification_code' => $code,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => now()->addMinutes($expiresMinutes),
                 'is_used' => false,
             ]);
             $name = ($request->session()->get('register_payload')['name'] ?? 'Pengguna');
-            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, 15));
+            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, $expiresMinutes));
             // Set cooldown start
             $request->session()->put('register_otp_last_resend_at', now());
             return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
@@ -284,6 +285,10 @@ class AuthController extends Controller
 
     public function verifyCode(Request $request)
     {
+        // Normalize (e.g., pasted with spaces): keep digits only
+        $normalizedCode = preg_replace('/\D+/', '', (string) $request->input('verification_code'));
+        $request->merge(['verification_code' => $normalizedCode]);
+
         $validator = Validator::make($request->all(), [
             'verification_code' => 'required|string|size:6',
         ], [

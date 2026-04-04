@@ -1656,13 +1656,7 @@
                     <div class="course-grid">
                         @forelse($activeCourses as $course)
                             @php
-                                $thumbnail = $course->card_thumbnail;
-                                $thumbnailUrl = null;
-                                if (!empty($thumbnail)) {
-                                    $thumbnailUrl = \Illuminate\Support\Str::startsWith($thumbnail, ['http://', 'https://'])
-                                        ? $thumbnail
-                                        : asset('storage/' . ltrim($thumbnail, '/'));
-                                }
+                                $thumbnailUrl = $course->card_thumbnail_url;
                                 $displayCourseImage = $thumbnailUrl ?: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=900';
                                 $rating = number_format((float) ($course->reviews_avg_rating ?? 0), 1);
                               @endphp
