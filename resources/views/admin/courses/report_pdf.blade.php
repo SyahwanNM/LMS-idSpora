@@ -73,11 +73,43 @@
                 @php
                     $modules = $course->modules ?? collect();
                     $totalModules = $modules->count();
-                    $hasModules = $totalModules > 0;
                     $isPublished = ((string) $course->status) === 'active';
-                    $kelengkapan = $isPublished ? 'Complete' : ($hasModules ? 'In Progress' : 'Missing Material');
+
+                    $pdfSlots = $modules->where('type', 'pdf');
+                    $videoSlots = $modules->where('type', 'video');
+                    $quizSlots = $modules->where('type', 'quiz');
+
+                    $hasMissing = false;
+                    if ($totalModules <= 0) {
+                        $hasMissing = true;
+                    }
+                    if ($pdfSlots->count() <= 0 || $pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0) {
+                        $hasMissing = true;
+                    }
+                    if ($videoSlots->count() <= 0 || $videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0) {
+                        $hasMissing = true;
+                    }
+                    if ($quizSlots->count() <= 0) {
+                        $hasMissing = true;
+                    } else {
+                        $missingQuiz = $quizSlots->filter(function ($m) {
+                            $cnt = null;
+                            if (isset($m->quiz_questions_count)) {
+                                $cnt = (int) $m->quiz_questions_count;
+                            } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                                $cnt = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                            }
+                            $cnt = (int) ($cnt ?? 0);
+                            return $cnt <= 0;
+                        })->count();
+                        if ($missingQuiz > 0) {
+                            $hasMissing = true;
+                        }
+                    }
+
+                    $kelengkapan = $isPublished ? 'Complete' : ($hasMissing ? 'Missing Material' : 'In Progress');
                     $statusBadge = $isPublished ? 'badge-active' : 'badge-archive';
-                    $kelBadge = $isPublished ? 'badge-complete' : ($hasModules ? 'badge-progress' : 'badge-missing');
+                    $kelBadge = $isPublished ? 'badge-complete' : ($hasMissing ? 'badge-missing' : 'badge-progress');
                 @endphp
                 <tr>
                     <td>{{ $course->id }}</td>

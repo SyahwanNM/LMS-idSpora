@@ -178,14 +178,39 @@
 
                     $modulesCol = $course->modules ?? collect();
                     $totalModules = $modulesCol->count();
-                    $pdfCount = $modulesCol->where('type', 'pdf')->count();
-                    $videoCount = $modulesCol->where('type', 'video')->count();
-                    $quizCount = $modulesCol->where('type', 'quiz')->count();
+                    $pdfSlots = $modulesCol->where('type', 'pdf');
+                    $videoSlots = $modulesCol->where('type', 'video');
+                    $quizSlots = $modulesCol->where('type', 'quiz');
+
+                    $pdfCount = $pdfSlots->count();
+                    $videoCount = $videoSlots->count();
+                    $quizCount = $quizSlots->count();
+
+                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingVideo = ($videoCount <= 0) || ($videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingQuiz = false;
+                    if ($quizCount <= 0) {
+                        $hasMissingQuiz = true;
+                    } else {
+                        $hasMissingQuiz = $quizSlots->filter(function ($m) {
+                            $cnt = null;
+                            if (isset($m->quiz_questions_count)) {
+                                $cnt = (int) $m->quiz_questions_count;
+                            } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                                $cnt = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                            }
+                            $cnt = (int) ($cnt ?? 0);
+                            return $cnt <= 0;
+                        })->count() > 0;
+                    }
+
                     $missingForPublish = [];
                     if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
-                    if ($pdfCount <= 0) { $missingForPublish[] = 'Modul (PDF)'; }
-                    if ($videoCount <= 0) { $missingForPublish[] = 'Video'; }
-                    if ($quizCount <= 0) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
+                    if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
+                    if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+
+                    $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
                     <tr>
                         <td>{{ $course->name }}</td>
@@ -194,7 +219,7 @@
                         <td>
                             @if($isPublished)
                             <button class="status_kelengkapan_complete">Complete</button>
-                            @elseif(!$hasModules)
+                            @elseif($hasMissingMaterial)
                             <button class="status_kelengkapan_miss">Missing Material</button>
                             @else
                             <button class="status_kelengkapan_inprogress">In Progress</button>
