@@ -12,22 +12,103 @@ use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::active()->latest()->paginate(10);
+        $perPage = max(1, min((int) $request->query('per_page', 10), 100));
+
+        $query = Event::query()->with(['scheduleItems']);
+
+        $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+        if (!$isAdmin) {
+            $query->where('is_published', true);
+        }
+
+        $status = strtolower(trim((string) $request->query('status', 'active')));
+        $now = now()->format('Y-m-d H:i:s');
+        $startExpr = "TIMESTAMP(event_date, COALESCE(event_time,'00:00:00'))";
+        $endExpr = "TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59')))";
+
+        if ($status === 'finished') {
+            $query->finished();
+        } elseif ($status === 'ongoing') {
+            $query->whereNotNull('event_date')->whereRaw("$startExpr <= ? AND $endExpr >= ?", [$now, $now]);
+        } elseif ($status === 'upcoming') {
+            $query->whereNotNull('event_date')->whereRaw("$startExpr > ?", [$now]);
+        } elseif ($status === 'all') {
+            // no constraint
+        } else {
+            // default behavior: only active events
+            $query->active();
+        }
+
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('speaker', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('materi', 'like', "%{$search}%")
+                    ->orWhere('jenis', 'like', "%{$search}%");
+            });
+        }
+
+        $location = trim((string) $request->query('location', ''));
+        if ($location !== '') {
+            $query->where('location', $location);
+        }
+
+        // category maps to `jenis`
+        $category = trim((string) $request->query('category', ''));
+        if ($category !== '') {
+            $query->whereRaw('LOWER(jenis) = ?', [mb_strtolower($category)]);
+        }
+
+        if ($request->has('free')) {
+            $isFree = filter_var($request->query('free'), FILTER_VALIDATE_BOOL);
+            if ($isFree) {
+                $query->where(function ($q) {
+                    $q->where('price', 0)
+                        ->orWhere(function ($qq) {
+                            $qq->where('discount_percentage', 100)->where('price', '>', 0);
+                        });
+                });
+            }
+        }
+
+        $priceSort = strtolower(trim((string) $request->query('price', '')));
+        if (in_array($priceSort, ['asc', 'desc'], true)) {
+            $query->orderBy('price', $priceSort);
+        } else {
+            $query->latest();
+        }
+
+        $events = $query->paginate($perPage)->appends($request->query());
 
         return response()->json([
             'status' => 'success',
-            'message' => 'List Event Terbaru',
-            'data' => EventResource::collection($events), 
+            'message' => 'List event',
+            'data' => EventResource::collection($events),
+            'pagination' => [
+                'current_page' => $events->currentPage(),
+                'per_page' => $events->perPage(),
+                'total' => $events->total(),
+                'last_page' => $events->lastPage(),
+            ],
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request, int $id)
     {
-        $event = Event::find($id);
+        $event = Event::query()
+            ->with(['scheduleItems'])
+            ->find($id);
 
         if (!$event) {
+            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
         }
 
@@ -46,6 +127,11 @@ class EventController extends Controller
         // 1. Validasi Event
         if (!$event) {
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        $isAdmin = $user && strtolower(trim((string) ($user->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
+            return response()->json(['status' => 'error', 'message' => 'Event belum diterbitkan'], 404);
         }
 
         // 1b. Cek apakah event sudah selesai

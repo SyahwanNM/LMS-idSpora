@@ -28,63 +28,95 @@
                     Cetak Sertifikat
                 </div>
             </div>
-        <div class="box_dalam_penilaian">
-            <div>
-                <h4>Berikan Penilaian Anda</h4>
-                <p>Sebelum cetak sertifikat, berikan penilaian terlebih dahulu</p>
-            </div>
-            <div class="pertanyaan_penilaian">
-                <h4>Bagaimana kurikulum dan proses belajar di kelas ini?</h4>
-                <div style="display:flex; align-items:center;">
-                    <div class="stars">
-                        <i class="star" data-value="1">☆</i>
-                        <i class="star" data-value="2">☆</i>
-                        <i class="star" data-value="3">☆</i>
-                        <i class="star" data-value="4">☆</i>
-                        <i class="star" data-value="5">☆</i>
+        <form action="{{ route('course.rating.store', $course->id) }}" method="POST" id="ratingForm">
+            @csrf
+            <input type="hidden" name="rating" id="ratingInput" required>
+            
+            <div class="box_dalam_penilaian">
+                <div>
+                    <h4>Berikan Penilaian Anda</h4>
+                    <p>Sebelum cetak sertifikat, berikan penilaian terlebih dahulu</p>
+                </div>
+                <!-- Menampilkan Error Validasi -->
+                @if($errors->any())
+                    <div class="alert alert-danger" style="margin-top: 10px;">
+                        <ul style="margin:0; padding-left: 20px;">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                     </div>
-                    <button class="submit-rating">
-                        ✓
-                    </button>
+                @endif
+                <div class="pertanyaan_penilaian">
+                    <h4>Bagaimana kurikulum dan keseluruhan proses belajar di kelas ini?</h4>
+                    <div style="display:flex; align-items:center;">
+                        <div class="stars" id="course_stars">
+                            <i class="star" data-value="1" style="cursor: pointer;">☆</i>
+                            <i class="star" data-value="2" style="cursor: pointer;">☆</i>
+                            <i class="star" data-value="3" style="cursor: pointer;">☆</i>
+                            <i class="star" data-value="4" style="cursor: pointer;">☆</i>
+                            <i class="star" data-value="5" style="cursor: pointer;">☆</i>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="pertanyaan_penilaian">
-                <h4>Bagaimana Trainer mengajar dalam proses belajar di kelas ini?</h4>
-                <div style="display:flex; align-items:center;">
-                    <div class="stars_trainer">
-                        <i class="star" data-value="1">☆</i>
-                        <i class="star" data-value="2">☆</i>
-                        <i class="star" data-value="3">☆</i>
-                        <i class="star" data-value="4">☆</i>
-                        <i class="star" data-value="5">☆</i>
-                    </div>
-                    <button class="submit-rating">
-                        ✓
-                    </button>
+            
+            <div class="box_feedback">
+                <h4>Feedback</h4>
+                <div class="comment-box">
+                    <textarea name="comment"
+                        placeholder="Ceritakan pengalaman mengesankan Anda selama mempelajari kelas ini. Beri tahu siswa lain mengenai kualitas materi yang diajarkan..."
+                        rows="5"></textarea>
+                </div>
+                <div class="tata_cara_feedback" style="margin-top: 20px;">
+                    <h4>Bingung cara memberikan feedback?</h4>
+                    <p style="font-size: 14px; color: #666;">
+                        Tuliskan lah feedback secara spesifik. Jika Anda memberikan rating 1-4,
+                        maka beritahu kami apa yang harus kami tingkatkan lagi pada kelas ini.
+                        Jika Anda memberikan rating 5, Anda bisa ceritakan pengalaman
+                        mengesankan selama belajar di kelas ini.
+                    </p>
                 </div>
             </div>
-        </div>
-        <div class="box_feedback">
-            <h4>Feedback</h4>
-            <div class="comment-box">
-                <textarea name="comment"
-                    placeholder="Ceritakan pengalaman mengesankan Anda selama mempelajari kelas ini. Beri tahu siswa lain mengenai kualitas materi yang diajarkan..."
-                    rows="5"></textarea>
+
+            <div class="tombol_next_sertifikat" style="margin-top: 30px;">
+                <button type="submit" class="next_halaman_sertif" style="border:none; padding: 12px 30px; background: #2563eb; color: #fff; border-radius: 8px; font-weight: 600;">Kirim Penilaian</button>
             </div>
-            <div class="tata_cara_feedback">
-                <h4>Bingung cara memberikan feedback?</h4>
-                <p>
-                    Tuliskan lah feedback secara spesifik. Jika Anda memberikan rating 1-4,
-                    maka beritahu kami apa yang harus kami tingkatkan lagi pada kelas ini.
-                    Jika Anda memberikan rating 5, Anda bisa ceritakan pengalaman
-                    mengesankan selama belajar di kelas ini.
-                </p>
-            </div>
-        </div>
+        </form>
     </div>
-    <div class="tombol_next_sertifikat">
-        <button class="next_halaman_sertif">Next</button>
-    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('#course_stars .star');
+            const ratingInput = document.getElementById('ratingInput');
+            const form = document.getElementById('ratingForm');
+
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const ratingValue = this.getAttribute('data-value');
+                    ratingInput.value = ratingValue;
+                    
+                    // Update star UI
+                    stars.forEach(s => {
+                        if (s.getAttribute('data-value') <= ratingValue) {
+                            s.innerHTML = '★';
+                            s.style.color = '#fbbf24'; // Yellow
+                        } else {
+                            s.innerHTML = '☆';
+                            s.style.color = '#d1d5db'; // Gray
+                        }
+                    });
+                });
+            });
+
+            form.addEventListener('submit', function(e) {
+                if (!ratingInput.value) {
+                    e.preventDefault();
+                    alert('Silakan pilih rating (bintang) terlebih dahulu!');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

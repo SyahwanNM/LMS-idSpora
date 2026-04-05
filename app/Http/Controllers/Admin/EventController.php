@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\TrainerNotification;
 use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Http\Request;
@@ -17,8 +18,106 @@ use GuzzleHttp\Client;
 
 class EventController extends Controller
 {
+    private function parseSpeakerNames(?string $speaker): array
+    {
+        if (!is_string($speaker) || trim($speaker) === '') {
+            return [];
+        }
+
+        $rawNames = preg_split('/[,;\n\r]+/', $speaker) ?: [];
+
+        return collect($rawNames)
+            ->map(fn($name) => trim((string) $name))
+            ->filter()
+            ->unique(fn($name) => mb_strtolower($name))
+            ->values()
+            ->all();
+    }
+
+    private function resolveTrainerIdsFromSpeakers(?string $speaker): array
+    {
+        $names = $this->parseSpeakerNames($speaker);
+        if (empty($names)) {
+            return [];
+        }
+
+        $lowerNames = collect($names)
+            ->map(fn($name) => mb_strtolower($name))
+            ->values()
+            ->all();
+
+        return User::query()
+            ->where('role', 'trainer')
+            ->whereIn('id', function ($query) use ($lowerNames) {
+                $query->select('id')
+                    ->from('users')
+                    ->whereIn(\DB::raw('LOWER(name)'), $lowerNames);
+            })
+            ->pluck('id')
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function resolveAssignedTrainerIds(?int $trainerId, ?string $speaker): array
+    {
+        $ids = [];
+
+        if (!empty($trainerId)) {
+            $ids[] = (int) $trainerId;
+        }
+
+        $ids = array_merge($ids, $this->resolveTrainerIdsFromSpeakers($speaker));
+
+        return collect($ids)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function notifyTrainerEventInvitation(Event $event, int $trainerId, string $source = 'trainer_id'): void
+    {
+        $trainer = User::query()
+            ->where('id', $trainerId)
+            ->where('role', 'trainer')
+            ->first();
+
+        if (!$trainer) {
+            return;
+        }
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'event_invitation',
+            'title' => 'Undangan Menjadi Narasumber Event',
+            'message' => 'Anda diundang menjadi narasumber untuk event "' . $event->title . '".',
+            'invitation_status' => 'pending',
+            'data' => [
+                'entity_type' => 'event',
+                'entity_id' => $event->id,
+                'url' => route('trainer.events.show', $event->id),
+                'invitation_status' => 'pending',
+                'invitation_source' => $source,
+                'due_at' => ($event->material_deadline ?: now()->addDays(7))->toIso8601String(),
+                'material_deadline' => optional($event->material_deadline)->toIso8601String(),
+            ],
+        ]);
+    }
+
     public function index()
     {
+        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
+        $events = Event::query()
+            ->where(function ($q) use ($threshold) {
+                $q->whereNull('event_date')
+                    ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
+            })
+            ->latest()
+            ->paginate(10);
         $events = Event::query()->latest()->paginate(10);
         return view('admin.events.index', compact('events'));
     }
@@ -29,7 +128,7 @@ class EventController extends Controller
         $events = Event::query()->latest()->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
-        return view('admin.add-event', compact('events','materiOptions','jenisOptions'));
+        return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
     }
 
     /**
@@ -45,6 +144,12 @@ class EventController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'speaker' => 'required|string|max:255',
             'manage_action' => 'required|in:manage,create',
             // Relax validation so new dynamic materi/jenis values allowed
@@ -64,6 +169,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -85,7 +191,7 @@ class EventController extends Controller
         // Method store() returns path like 'events/filename.png' (relative to public disk)
         // We ensure it's stored as 'events/filename.png' in database
         $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
-        
+
         // Ensure path starts with 'events/' for consistency
         if (!str_starts_with($imagePath, 'events/')) {
             $imagePath = 'events/' . basename($imagePath);
@@ -94,8 +200,9 @@ class EventController extends Controller
         // Normalisasi schedule
         $rawSchedule = $request->input('schedule', []);
         $scheduleRows = [];
-        foreach ((array)$rawSchedule as $row) {
-            if (!is_array($row)) continue;
+        foreach ((array) $rawSchedule as $row) {
+            if (!is_array($row))
+                continue;
             $start = trim($row['start'] ?? '');
             $end = trim($row['end'] ?? '');
             $title = trim($row['title'] ?? '');
@@ -113,24 +220,26 @@ class EventController extends Controller
         // Normalisasi expenses
         $rawExpenses = $request->input('expenses', []);
         $expenseRows = [];
-        foreach ((array)$rawExpenses as $row) {
-            if (!is_array($row)) continue;
+        foreach ((array) $rawExpenses as $row) {
+            if (!is_array($row))
+                continue;
             $item = trim($row['item'] ?? '');
-            $qty = (float)($row['quantity'] ?? 0);
-            $unit = (float)($row['unit_price'] ?? 0);
+            $qty = (float) ($row['quantity'] ?? 0);
+            $unit = (float) ($row['unit_price'] ?? 0);
             if ($item) {
                 $total = max(0, $qty) * max(0, $unit);
                 $expenseRows[] = [
                     'item' => $item,
-                    'quantity' => (int)$qty,
-                    'unit_price' => (int)$unit,
-                    'total' => (int)$total,
+                    'quantity' => (int) $qty,
+                    'unit_price' => (int) $unit,
+                    'total' => (int) $total,
                 ];
             }
         }
 
         // Simpan data ke database
         $event = Event::create([
+            'trainer_id' => $request->input('trainer_id') ?: null,
             'title' => $request->title,
             'speaker' => $request->speaker,
             'manage_action' => $request->manage_action,
@@ -151,14 +260,43 @@ class EventController extends Controller
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
+            'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
         ]);
 
+        $assignedTrainerIds = $this->resolveAssignedTrainerIds(
+            !empty($event->trainer_id) ? (int) $event->trainer_id : null,
+            $event->speaker
+        );
+        foreach ($assignedTrainerIds as $trainerId) {
+            $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
+            $this->notifyTrainerEventInvitation($event, $trainerId, $source);
+        }
+
+        // Notify about zoom link if provided
+        if (!empty($request->zoom_link)) {
+            foreach ($assignedTrainerIds as $trainerId) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $trainerId,
+                    'type' => 'event_zoom_link_shared',
+                    'title' => 'Link Zoom Event Dibagikan',
+                    'message' => 'Link Zoom untuk event "' . $event->title . '" telah disiapkan dan dibagikan kepada Anda.',
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'zoom_link' => $request->zoom_link,
+                        'url' => route('trainer.events.show', $event->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
+        }
+
         // Persist relational schedule items & expenses for analytics / future queries
-        if(!empty($scheduleRows)){
-            foreach($scheduleRows as $row){
+        if (!empty($scheduleRows)) {
+            foreach ($scheduleRows as $row) {
                 $event->scheduleItems()->create([
                     'start' => $row['start'] ?: null,
                     'end' => $row['end'] ?: null,
@@ -167,8 +305,8 @@ class EventController extends Controller
                 ]);
             }
         }
-        if(!empty($expenseRows)){
-            foreach($expenseRows as $row){
+        if (!empty($expenseRows)) {
+            foreach ($expenseRows as $row) {
                 $event->expenses()->create([
                     'item' => $row['item'],
                     'quantity' => $row['quantity'],
@@ -182,16 +320,20 @@ class EventController extends Controller
         try {
             if (empty($event->attendance_qr_token) && empty($event->attendance_qr_image)) {
                 $token = bin2hex(random_bytes(16));
-                $content = url('/events/'.$event->id.'?t='.$token);
+                $content = url('/events/' . $event->id . '?t=' . $token);
                 // Try PNG first; if GD not available, fallback to SVG
-                $png = null; $svg = null; $filename = null;
+                $png = null;
+                $svg = null;
+                $filename = null;
                 try {
                     if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
                         $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
                     }
-                } catch (\Throwable $e) { $png = null; }
+                } catch (\Throwable $e) {
+                    $png = null;
+                }
                 if ($png) {
-                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    $filename = 'events/qr/event-' . $event->id . '-qr.png';
                     \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
                 } else {
                     // Attempt SVG generation as a reliable fallback
@@ -199,13 +341,15 @@ class EventController extends Controller
                         if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
                             $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
                         }
-                    } catch (\Throwable $e) { $svg = null; }
+                    } catch (\Throwable $e) {
+                        $svg = null;
+                    }
                     if ($svg) {
-                        $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                        $filename = 'events/qr/event-' . $event->id . '-qr.svg';
                         \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
                     } else {
                         // Final minimal PNG to avoid errors
-                        $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                        $filename = 'events/qr/event-' . $event->id . '-qr.png';
                         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
                         \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
                     }
@@ -215,7 +359,8 @@ class EventController extends Controller
                 $event->attendance_qr_generated_at = now();
                 $event->save();
             }
-        } catch (\Throwable $e) { /* ignore QR errors */ }
+        } catch (\Throwable $e) { /* ignore QR errors */
+        }
 
         // If the newly created event is already finished based on end time, pre-select the Finished filter
         $statusFilter = $event->isFinished() ? 'finished' : null;
@@ -238,8 +383,19 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
+        $previousAssignedTrainerIds = $this->resolveAssignedTrainerIds(
+            !empty($event->trainer_id) ? (int) $event->trainer_id : null,
+            $event->speaker
+        );
+
         $request->validate([
             'title' => 'required|string|max:255',
+            'trainer_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                }),
+            ],
             'speaker' => 'required|string|max:255',
             'manage_action' => 'required|in:manage,create',
             'materi' => 'nullable|string|max:255',
@@ -258,6 +414,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -273,16 +430,40 @@ class EventController extends Controller
         ]);
 
         $data = $request->only([
-            'title', 'speaker', 'manage_action', 'materi', 'jenis', 'short_description', 'description', 'benefit', 'terms_and_conditions',
-            'location', 'maps_url', 'latitude', 'longitude', 'zoom_link', 'price', 'discount_percentage', 'discount_until',
-            'event_date', 'event_time', 'event_time_end'
+            'title',
+            'trainer_id',
+            'speaker',
+            'manage_action',
+            'materi',
+            'jenis',
+            'short_description',
+            'description',
+            'benefit',
+            'terms_and_conditions',
+            'location',
+            'maps_url',
+            'latitude',
+            'longitude',
+            'zoom_link',
+            'price',
+            'discount_percentage',
+            'discount_until',
+            'event_date',
+            'event_time',
+            'event_time_end',
+            'material_deadline'
         ]);
+
+        if (array_key_exists('trainer_id', $data) && empty($data['trainer_id'])) {
+            $data['trainer_id'] = null;
+        }
 
         // Normalisasi schedule (update)
         $rawSchedule = $request->input('schedule', []);
         $scheduleRows = [];
-        foreach ((array)$rawSchedule as $row) {
-            if (!is_array($row)) continue;
+        foreach ((array) $rawSchedule as $row) {
+            if (!is_array($row))
+                continue;
             $start = trim($row['start'] ?? '');
             $end = trim($row['end'] ?? '');
             $title = trim($row['title'] ?? '');
@@ -300,18 +481,19 @@ class EventController extends Controller
         // Normalisasi expenses (update)
         $rawExpenses = $request->input('expenses', []);
         $expenseRows = [];
-        foreach ((array)$rawExpenses as $row) {
-            if (!is_array($row)) continue;
+        foreach ((array) $rawExpenses as $row) {
+            if (!is_array($row))
+                continue;
             $item = trim($row['item'] ?? '');
-            $qty = (float)($row['quantity'] ?? 0);
-            $unit = (float)($row['unit_price'] ?? 0);
+            $qty = (float) ($row['quantity'] ?? 0);
+            $unit = (float) ($row['unit_price'] ?? 0);
             if ($item) {
                 $total = max(0, $qty) * max(0, $unit);
                 $expenseRows[] = [
                     'item' => $item,
-                    'quantity' => (int)$qty,
-                    'unit_price' => (int)$unit,
-                    'total' => (int)$total,
+                    'quantity' => (int) $qty,
+                    'unit_price' => (int) $unit,
+                    'total' => (int) $total,
                 ];
             }
         }
@@ -324,18 +506,18 @@ class EventController extends Controller
             // Method store() returns path like 'events/filename.png' (relative to public disk)
             // We ensure it's stored as 'events/filename.png' in database
             $imagePath = ltrim(str_replace('storage/', '', $imagePath), '/');
-            
+
             // Ensure path starts with 'events/' for consistency
             if (!str_starts_with($imagePath, 'events/')) {
                 $imagePath = 'events/' . basename($imagePath);
             }
-            
+
             $data['image'] = $imagePath;
-            
+
             // Delete old image if exists
-            if($event->image && !str_starts_with($event->image, 'http')) {
+            if ($event->image && !str_starts_with($event->image, 'http')) {
                 $oldPath = str_replace('storage/', '', $event->image);
-                if(\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
                 }
             }
@@ -343,9 +525,40 @@ class EventController extends Controller
 
         $event->update($data);
 
+        $currentAssignedTrainerIds = $this->resolveAssignedTrainerIds(
+            !empty($event->trainer_id) ? (int) $event->trainer_id : null,
+            $event->speaker
+        );
+        $newlyAssignedTrainerIds = array_values(array_diff($currentAssignedTrainerIds, $previousAssignedTrainerIds));
+        foreach ($newlyAssignedTrainerIds as $trainerId) {
+            $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
+            $this->notifyTrainerEventInvitation($event, (int) $trainerId, $source);
+        }
+
+        // Notify about zoom link updates
+        $previousZoomLink = (string) data_get($event->getRawOriginal(), 'zoom_link', '');
+        $currentZoomLink = (string) data_get($data, 'zoom_link', '');
+        if (!empty($currentZoomLink) && $previousZoomLink !== $currentZoomLink) {
+            foreach ($currentAssignedTrainerIds as $trainerId) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $trainerId,
+                    'type' => 'event_zoom_link_updated',
+                    'title' => 'Link Zoom Event Diperbarui',
+                    'message' => 'Link Zoom untuk event "' . $event->title . '" telah diperbarui.',
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'zoom_link' => $currentZoomLink,
+                        'url' => route('trainer.events.show', $event->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
+        }
+
         // Refresh relational schedule & expenses (simple replace strategy)
         $event->scheduleItems()->delete();
-        foreach($scheduleRows as $row){
+        foreach ($scheduleRows as $row) {
             $event->scheduleItems()->create([
                 'start' => $row['start'] ?: null,
                 'end' => $row['end'] ?: null,
@@ -354,7 +567,7 @@ class EventController extends Controller
             ]);
         }
         $event->expenses()->delete();
-        foreach($expenseRows as $row){
+        foreach ($expenseRows as $row) {
             $event->expenses()->create([
                 'item' => $row['item'],
                 'quantity' => $row['quantity'],
@@ -376,17 +589,43 @@ class EventController extends Controller
         return redirect($route)->with('success', 'Event berhasil dihapus!');
     }
 
+    /**
+     * Admin: publish event so it becomes visible on user-facing pages.
+     */
+    public function publish(Request $request, Event $event)
+    {
+        if ((bool) $event->is_published) {
+            return back()->with('success', 'Event sudah diterbitkan.');
+        }
+
+        $event->forceFill([
+            'is_published' => true,
+            'published_at' => now(),
+        ])->save();
+
+        return back()->with('success', 'Event berhasil diterbitkan!');
+    }
+
     // Public registration (AJAX)
     public function register(Request $request, Event $event)
     {
         $request->validate([]); // no fields yet, just user context
+
+        // Block registrations for unpublished events
+        if (!(bool) $event->is_published) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event belum diterbitkan.',
+            ], 404);
+        }
+
         $user = $request->user();
-        if(!$user){
+        if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
-        $existing = EventRegistration::where('user_id',$user->id)->where('event_id',$event->id)->first();
-        if($existing){
-            if($existing->status === 'rejected'){
+        $existing = EventRegistration::where('user_id', $user->id)->where('event_id', $event->id)->first();
+        if ($existing) {
+            if ($existing->status === 'rejected') {
                 // Allow re-registration: delete old rejected record
                 $existing->delete();
             } else {
@@ -400,9 +639,9 @@ class EventController extends Controller
         }
         // Hitung final price (sesudah diskon bila ada)
         $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
-        $isFree = (int)$finalPrice === 0;
+        $isFree = (int) $finalPrice === 0;
 
-        if(!$isFree){
+        if (!$isFree) {
             // Event berbayar: jangan langsung daftar; arahkan ke payment
             return response()->json([
                 'status' => 'payment_required',
@@ -412,12 +651,12 @@ class EventController extends Controller
         }
 
         // Event gratis: langsung daftarkan
-        if($isFree){
+        if ($isFree) {
             $reg = EventRegistration::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'status' => 'active',
-                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => 0.00,
             ]);
 
@@ -439,37 +678,39 @@ class EventController extends Controller
                 'user_id' => $user->id,
                 'event_id' => $event->id,
                 'status' => 'pending',
-                'registration_code' => 'EVT-'.strtoupper(uniqid()),
+                'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => $event->discounted_price ?? $event->price,
             ];
             // handle proof upload if present (this API used by web/mobile)
-            if($request->hasFile('payment_proof')){
+            if ($request->hasFile('payment_proof')) {
                 $file = $request->file('payment_proof');
-                if($file->isValid()){
+                if ($file->isValid()) {
                     $path = $file->store('payments', 'public');
                     $regData['payment_proof'] = $path;
                 }
             }
             $reg = EventRegistration::create($regData);
         }
-        
+
         // Add points for event registration
         try {
             $pointsService = app(\App\Services\UserPointsService::class);
             $pointsService->addEventPoints($user, $event, $reg);
-        } catch (\Throwable $e) { /* ignore */ }
+        } catch (\Throwable $e) { /* ignore */
+        }
 
         // Create notification (expires in 14 days)
-        try{
+        try {
             UserNotification::create([
                 'user_id' => $user->id,
                 'type' => 'event_registration',
                 'title' => 'Pendaftaran Dikonfirmasi',
-                'message' => 'Pendaftaran untuk "'.$event->title.'" telah dikonfirmasi.',
+                'message' => 'Pendaftaran untuk "' . $event->title . '" telah dikonfirmasi.',
                 'data' => ['url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
-        }catch(\Throwable $e){ /* ignore */ }
+        } catch (\Throwable $e) { /* ignore */
+        }
         return response()->json([
             'status' => 'ok',
             'message' => 'Berhasil daftar event (GRATIS)',
@@ -489,18 +730,42 @@ class EventController extends Controller
         ]);
 
         $updates = [];
+        $notificationMessages = [];
+
         if ($request->hasFile('virtual_background')) {
             $updates['vbg_path'] = $request->file('virtual_background')->store('events/docs', 'public');
+            $notificationMessages[] = 'Virtual background (VBG)';
         }
         if ($request->hasFile('certificate')) {
             $updates['certificate_path'] = $request->file('certificate')->store('events/docs', 'public');
+            $notificationMessages[] = 'Sertifikat';
         }
         if ($request->hasFile('attendance')) {
             $updates['attendance_path'] = $request->file('attendance')->store('events/docs', 'public');
+            $notificationMessages[] = 'Absensi';
         }
 
         if (!empty($updates)) {
             $event->update($updates);
+
+            // Notify trainer(s) about uploaded documents
+            if (!empty($event->trainer_id)) {
+                $trainer = User::query()->where('id', (int) $event->trainer_id)->where('role', 'trainer')->first();
+                if ($trainer) {
+                    TrainerNotification::create([
+                        'trainer_id' => (int) $trainer->id,
+                        'type' => 'event_documents_uploaded',
+                        'title' => 'Dokumen Event Diunggah',
+                        'message' => 'Admin telah mengunggah dokumen untuk event "' . $event->title . '": ' . implode(', ', $notificationMessages),
+                        'data' => [
+                            'entity_type' => 'event',
+                            'entity_id' => (int) $event->id,
+                            'url' => route('trainer.events.show', $event->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                }
+            }
         }
 
         return back()->with('success', 'Dokumen berhasil diperbarui.');
@@ -534,42 +799,105 @@ class EventController extends Controller
             ->get();
 
         if ($trainers->isEmpty()) {
-            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: '.implode(', ', $names));
+            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: ' . implode(', ', $names));
         }
 
         $sent = 0;
         foreach ($trainers as $t) {
-            UserNotification::create([
-                'user_id' => $t->id,
-                'type' => 'trainer_module_reminder',
+            TrainerNotification::create([
+                'trainer_id' => (int) $t->id,
+                'type' => 'event_module_reminder',
                 'title' => 'Ingat Upload Module Event',
-                'message' => 'Mohon upload module/materi untuk event "'.$event->title.'".',
-                'data' => ['url' => route('trainer.events.modules')],
+                'message' => 'Mohon upload module/materi untuk event "' . $event->title . '".',
+                'data' => [
+                    'entity_type' => 'event',
+                    'entity_id' => (int) $event->id,
+                    'url' => route('trainer.events.modules'),
+                ],
                 'expires_at' => now()->addDays(14),
             ]);
             $sent++;
         }
 
-        return back()->with('success', 'Reminder terkirim ke '.$sent.' trainer.');
+        return back()->with('success', 'Reminder terkirim ke ' . $sent . ' trainer.');
+    }
+
+    /**
+     * Admin: approve trainer module submission for an event.
+     * Once approved, module_path will be set and document completeness will increase.
+     */
+    public function approveModule(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+        }
+
+        $modulePath = trim((string) ($event->module_path ?? ''));
+        if ($modulePath === '') {
+            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+        }
+
+        $event->update([
+            'material_status' => 'approved',
+            'material_approved_at' => now(),
+            'material_approved_by' => auth()->id(),
+            'material_rejection_reason' => null,
+        ]);
+
+        return back()->with('success', 'Module trainer berhasil diverifikasi.')
+            ->with('module_success', 'Module trainer berhasil diverifikasi.');
+    }
+
+    /**
+     * Admin: reject trainer module submission with a reason.
+     */
+    public function rejectModule(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+        }
+
+        $modulePath = trim((string) ($event->module_path ?? ''));
+        if ($modulePath === '') {
+            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $event->update([
+            'material_status' => 'rejected',
+            'material_approved_at' => null,
+            'material_approved_by' => null,
+            'material_rejection_reason' => $validated['reason'],
+        ]);
+
+        return back()->with('success', 'Module trainer ditolak.')
+            ->with('module_success', 'Module trainer ditolak.');
     }
 
     // Admin: download event QR image
     public function downloadQr(Event $event)
     {
         $path = (string) $event->attendance_qr_image;
-        if (!$path) abort(404, 'QR image not available');
+        if (!$path)
+            abort(404, 'QR image not available');
         $disk = \Illuminate\Support\Facades\Storage::disk('public');
         if (!$disk->exists($path)) {
             // Fallback: try public/storage
-            $alt = public_path('storage/'.ltrim($path,'/'));
-            if (!is_file($alt)) abort(404, 'QR image file missing');
+            $alt = public_path('storage/' . ltrim($path, '/'));
+            if (!is_file($alt))
+                abort(404, 'QR image file missing');
             $ext = strtolower(pathinfo($alt, PATHINFO_EXTENSION));
-            $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+            $downloadName = 'event-' . $event->id . '-qr.' . ($ext ?: 'png');
             return response()->download($alt, $downloadName);
         }
         $full = $disk->path($path);
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        $downloadName = 'event-'.$event->id.'-qr.'.($ext ?: 'png');
+        $downloadName = 'event-' . $event->id . '-qr.' . ($ext ?: 'png');
         return response()->download($full, $downloadName);
     }
 
@@ -579,27 +907,33 @@ class EventController extends Controller
         try {
             // Generate new token and QR image (PNG preferred, SVG fallback)
             $token = bin2hex(random_bytes(16));
-            $content = url('/events/'.$event->id.'?t='.$token);
-            $png = null; $svg = null; $filename = null;
+            $content = url('/events/' . $event->id . '?t=' . $token);
+            $png = null;
+            $svg = null;
+            $filename = null;
             try {
                 if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
                     $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
                 }
-            } catch (\Throwable $e) { $png = null; }
+            } catch (\Throwable $e) {
+                $png = null;
+            }
             if ($png) {
-                $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                $filename = 'events/qr/event-' . $event->id . '-qr.png';
                 \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
             } else {
                 try {
                     if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
                         $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
                     }
-                } catch (\Throwable $e) { $svg = null; }
+                } catch (\Throwable $e) {
+                    $svg = null;
+                }
                 if ($svg) {
-                    $filename = 'events/qr/event-'.$event->id.'-qr.svg';
+                    $filename = 'events/qr/event-' . $event->id . '-qr.svg';
                     \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
                 } else {
-                    $filename = 'events/qr/event-'.$event->id.'-qr.png';
+                    $filename = 'events/qr/event-' . $event->id . '-qr.png';
                     $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
                     \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
                 }
@@ -623,7 +957,7 @@ class EventController extends Controller
         $url = $request->input('url');
         // Basic allow-list for domains
         $host = parse_url($url, PHP_URL_HOST) ?: '';
-        if(!preg_match('/(^|\.)((maps\.app\.goo\.gl)|(goo\.gl)|(google\.com))$/i', $host)){
+        if (!preg_match('/(^|\.)((maps\.app\.goo\.gl)|(goo\.gl)|(google\.com))$/i', $host)) {
             return response()->json(['message' => 'Domain tidak didukung. Gunakan link Google Maps.'], 422);
         }
 
@@ -632,7 +966,7 @@ class EventController extends Controller
             $client = new Client(['allow_redirects' => ['track_redirects' => true, 'max' => 5], 'http_errors' => false, 'timeout' => 8]);
             $res = $client->request('GET', $url);
             $history = $res->getHeader('X-Guzzle-Redirect-History');
-            $finalUrl = empty($history) ? (string)$res->getUri() : end($history);
+            $finalUrl = empty($history) ? (string) $res->getUri() : end($history);
             $decoded = urldecode($finalUrl);
             // Parse coords with extended patterns
             $patterns = [
@@ -642,27 +976,27 @@ class EventController extends Controller
                 '/[?&]center=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/',
                 '/\/place\/\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/',
             ];
-            foreach($patterns as $re){
-                if(preg_match($re, $decoded, $m)){
-                    $lat = (float)$m[1];
-                    $lng = (float)$m[2];
+            foreach ($patterns as $re) {
+                if (preg_match($re, $decoded, $m)) {
+                    $lat = (float) $m[1];
+                    $lng = (float) $m[2];
                     return response()->json(['lat' => $lat, 'lng' => $lng]);
                 }
             }
             // !3dLAT!4dLNG pattern
-            if(preg_match('/!3d(-?\d+\.\d+)/', $decoded, $m3d) && preg_match('/!4d(-?\d+\.\d+)/', $decoded, $m4d)){
-                return response()->json(['lat' => (float)$m3d[1], 'lng' => (float)$m4d[1]]);
+            if (preg_match('/!3d(-?\d+\.\d+)/', $decoded, $m3d) && preg_match('/!4d(-?\d+\.\d+)/', $decoded, $m4d)) {
+                return response()->json(['lat' => (float) $m3d[1], 'lng' => (float) $m4d[1]]);
             }
             // Fallback: try to extract from body if any embeds
-            $body = (string)$res->getBody();
-            if(preg_match('/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/', $body, $m)){
-                return response()->json(['lat' => (float)$m[1], 'lng' => (float)$m[2]]);
+            $body = (string) $res->getBody();
+            if (preg_match('/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/', $body, $m)) {
+                return response()->json(['lat' => (float) $m[1], 'lng' => (float) $m[2]]);
             }
             // Generic fallback: first suitable lat/lng pair in body
-            if(preg_match_all('/-?\d+\.\d+/', $body, $nums) && count($nums[0]) >= 2){
-                $lat = (float)$nums[0][0];
-                $lng = (float)$nums[0][1];
-                if(abs($lat) <= 90 && abs($lng) <= 180){
+            if (preg_match_all('/-?\d+\.\d+/', $body, $nums) && count($nums[0]) >= 2) {
+                $lat = (float) $nums[0][0];
+                $lng = (float) $nums[0][1];
+                if (abs($lat) <= 90 && abs($lng) <= 180) {
                     return response()->json(['lat' => $lat, 'lng' => $lng]);
                 }
             }
@@ -677,7 +1011,7 @@ class EventController extends Controller
      */
     public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
     {
-        if($registration->event_id !== $event->id){
+        if ($registration->event_id !== $event->id) {
             return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
         }
         $registration->status = 'active';
@@ -698,7 +1032,7 @@ class EventController extends Controller
                         $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
                         if ($referrer && $referrer->id !== $m->user_id) {
                             $commissionAmount = $m->amount * 0.10; // 10% commission
-                            
+
                             $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
                                 ->where('referred_user_id', $m->user_id)
                                 ->where('description', 'Komisi Event: ' . $event->title)
@@ -719,18 +1053,20 @@ class EventController extends Controller
                     }
                 }
             }
-        } catch (\Throwable $e) { /* ignore */ }
+        } catch (\Throwable $e) { /* ignore */
+        }
 
-        try{
+        try {
             UserNotification::create([
                 'user_id' => $registration->user_id,
                 'type' => 'event_registration_verified',
                 'title' => 'Pembayaran Diterima',
-                'message' => 'Pembayaran Anda untuk event "'.$event->title.'" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
+                'message' => 'Pembayaran Anda untuk event "' . $event->title . '" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
                 'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch(\Throwable $e) { /* ignore notification errors */ }
+        } catch (\Throwable $e) { /* ignore notification errors */
+        }
 
         return back()->with('success', 'Pendaftaran berhasil diverifikasi dan diaktifkan.');
     }
@@ -740,7 +1076,7 @@ class EventController extends Controller
      */
     public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
     {
-        if($registration->event_id !== $event->id){
+        if ($registration->event_id !== $event->id) {
             return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
         }
 
@@ -762,7 +1098,7 @@ class EventController extends Controller
             'Nominal pembayaran kurang' => 'Nominal pembayaran Anda kurang dari yang seharusnya. Silahkan lakukan pembayaran tambahan (top up) dan kirim ulang bukti pembayaran. Anda dapat melakukan registrasi lagi sekarang.',
             'Nominal pembayaran lebih' => 'Nominal pembayaran Anda lebih dari yang seharusnya. Admin akan menghubungi Anda untuk meminta nomor rekening agar selisih dapat dikembalikan. Anda dapat melakukan registrasi lagi sekarang.',
             'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang' => 'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang bukti pembayaran yang lebih jelas. Anda dapat melakukan registrasi lagi sekarang.',
-            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor '.$adminContactNumber.'. Anda dapat melakukan registrasi lagi sekarang.',
+            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor ' . $adminContactNumber . '. Anda dapat melakukan registrasi lagi sekarang.',
             default => 'Pendaftaran Anda ditolak. Anda dapat melakukan registrasi lagi sekarang.',
         };
 
@@ -780,18 +1116,22 @@ class EventController extends Controller
                 $m->note = $reason; // Save reason to manual payment note as well if applicable
                 $m->save();
             }
-        } catch (\Throwable $e) { /* ignore */ }
+        } catch (\Throwable $e) { /* ignore */
+        }
 
-        try{
+        try {
             UserNotification::create([
                 'user_id' => $registration->user_id,
                 'type' => 'event_registration_rejected',
                 'title' => 'Pendaftaran Ditolak',
-                'message' => 'Pendaftaran Anda untuk event "'.$event->title.'" ditolak. ' . $userFacingMessage,
+                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. Alasan: ' . $reason,
+                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. ' . $userFacingMessage,
                 'data' => ['event_id' => $event->id, 'registration_id' => $registration->id, 'reason' => $reason],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch(\Throwable $e) { /* ignore notification errors */ }
+        } catch (\Throwable $e) { /* ignore notification errors */
+        }
 
         // Send email to user (best-effort)
         try {
@@ -805,7 +1145,8 @@ class EventController extends Controller
                     adminContactNumber: (string) $adminContactNumber,
                 ));
             }
-        } catch (\Throwable $e) { /* ignore mail errors */ }
+        } catch (\Throwable $e) { /* ignore mail errors */
+        }
 
         return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
     }

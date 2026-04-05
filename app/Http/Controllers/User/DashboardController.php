@@ -19,9 +19,17 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Redirect admin users to admin dashboard just in case route protection misses
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+        // Route authenticated users to their role dashboard to avoid landing mismatch.
+        if (Auth::check()) {
+            $role = strtolower(trim((string) (Auth::user()->role ?? '')));
+
+            if ($role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            if ($role === 'trainer') {
+                return redirect()->route('trainer.dashboard');
+            }
         }
 
         // Upcoming events: tampilkan event yang baru DITAMBAHKAN (created_at terbaru) di paling kiri.
@@ -29,6 +37,7 @@ class DashboardController extends Controller
         // Event aktif: gunakan scope active agar yang sudah selesai (end_at < now) otomatis terhapus dari daftar.
         // Tetap ambil yang paling baru dibuat terlebih dahulu.
         $upcomingEvents = Event::active()
+            ->where('is_published', true)
             ->withCount(['registrationsActive as registrations_count'])
             ->orderByDesc('created_at')
             ->limit(8)
@@ -52,7 +61,7 @@ class DashboardController extends Controller
                 ->pluck('event_id')
                 ->all();
 
-            $upcomingEvents->transform(function($ev) use ($registeredIds, $savedIds) {
+            $upcomingEvents->transform(function ($ev) use ($registeredIds, $savedIds) {
                 $ev->is_registered = in_array($ev->id, $registeredIds, true);
                 $ev->is_saved = in_array($ev->id, $savedIds, true);
                 return $ev;
@@ -70,8 +79,8 @@ class DashboardController extends Controller
             ->get();
 
         // Distinct materi & jenis from events for dynamic listing
-        $materiList = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisList = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $materiList = Event::query()->where('is_published', true)->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
+        $jenisList = Event::query()->where('is_published', true)->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
 
         // Get carousel images for dashboard
         $dashboardCarousels = Carousel::active()
@@ -84,7 +93,7 @@ class DashboardController extends Controller
             ->where('user_id', Auth::id())
             ->where('status', 'active')
             ->with('event')
-            ->whereHas('event', function($q) {
+            ->whereHas('event', function ($q) {
                 $q->where('event_date', '>=', now()->startOfDay());
             })
             ->get()
@@ -150,7 +159,13 @@ class DashboardController extends Controller
                 ->get();
 
             $dayMap = [
-                1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab', 0 => 'Min'
+                1 => 'Sen',
+                2 => 'Sel',
+                3 => 'Rab',
+                4 => 'Kam',
+                5 => 'Jum',
+                6 => 'Sab',
+                0 => 'Min'
             ];
 
             foreach ($learningProgress as $record) {

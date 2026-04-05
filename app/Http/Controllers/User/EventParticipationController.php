@@ -21,6 +21,11 @@ class EventParticipationController extends Controller
         if(!$user){
             return redirect()->back()->with('error','Login dahulu untuk mendaftar.');
         }
+
+        if (!(bool) ($event->is_published ?? false)) {
+            return redirect()->back()->with('error', 'Event belum diterbitkan.');
+        }
+
         // Cek apakah sudah terdaftar
         $registration = EventRegistration::where('event_id',$event->id)->where('user_id',$user->id)->first();
         if($registration && $registration->status === 'active'){

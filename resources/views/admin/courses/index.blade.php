@@ -178,14 +178,39 @@
 
                     $modulesCol = $course->modules ?? collect();
                     $totalModules = $modulesCol->count();
-                    $pdfCount = $modulesCol->where('type', 'pdf')->count();
-                    $videoCount = $modulesCol->where('type', 'video')->count();
-                    $quizCount = $modulesCol->where('type', 'quiz')->count();
+                    $pdfSlots = $modulesCol->where('type', 'pdf');
+                    $videoSlots = $modulesCol->where('type', 'video');
+                    $quizSlots = $modulesCol->where('type', 'quiz');
+
+                    $pdfCount = $pdfSlots->count();
+                    $videoCount = $videoSlots->count();
+                    $quizCount = $quizSlots->count();
+
+                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingVideo = ($videoCount <= 0) || ($videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingQuiz = false;
+                    if ($quizCount <= 0) {
+                        $hasMissingQuiz = true;
+                    } else {
+                        $hasMissingQuiz = $quizSlots->filter(function ($m) {
+                            $cnt = null;
+                            if (isset($m->quiz_questions_count)) {
+                                $cnt = (int) $m->quiz_questions_count;
+                            } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                                $cnt = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                            }
+                            $cnt = (int) ($cnt ?? 0);
+                            return $cnt <= 0;
+                        })->count() > 0;
+                    }
+
                     $missingForPublish = [];
                     if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
-                    if ($pdfCount <= 0) { $missingForPublish[] = 'Modul (PDF)'; }
-                    if ($videoCount <= 0) { $missingForPublish[] = 'Video'; }
-                    if ($quizCount <= 0) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
+                    if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
+                    if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+
+                    $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
                     <tr>
                         <td>{{ $course->name }}</td>
@@ -194,7 +219,7 @@
                         <td>
                             @if($isPublished)
                             <button class="status_kelengkapan_complete">Complete</button>
-                            @elseif(!$hasModules)
+                            @elseif($hasMissingMaterial)
                             <button class="status_kelengkapan_miss">Missing Material</button>
                             @else
                             <button class="status_kelengkapan_inprogress">In Progress</button>
@@ -321,6 +346,7 @@
                                 'description' => trim($course->description),
                                 'enroll_count' => (int)($course->enrollments_count ?? 0),
                                 'edit_url' => route('admin.courses.edit', $course),
+                                'has_trainer' => !empty($course->trainer_id),
                                 'modules' => $course->modules->map(function($m) {
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
@@ -329,6 +355,10 @@
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
+                                // Content completeness marker for preview
+                                'has_content' => $m->type === 'quiz'
+                                    ? (($m->quizQuestions->count() ?? 0) > 0)
+                                    : !empty($m->content_url),
                                 ];
                                 })->values()->toArray(),
                                 'published' => $isPublished ? '1' : '0',
@@ -403,6 +433,10 @@
 
                     </div>
                     <div class="modal-body">
+                        <form id="coursePreviewRemindForm" method="POST" style="display:none;">
+                            @csrf
+                            <input type="hidden" name="focus" id="coursePreviewRemindFocus" value="">
+                        </form>
                         <div id="tab-ringkasan" class="tab-content active">
                             <h3 id="modal-course-name">Nama Course</h3>
                             <p id="modal-course-desc">Deskripsi singkat course akan muncul di sini.</p>
@@ -741,6 +775,44 @@
                     .replace(/'/g, '&#039;');
             }
 
+            // --- 3b. Reminder helpers (submit to /courses/{id}/remind-trainer) ---
+            var remindBaseUrl = @json(url('/courses'));
+            function renderRemindButton(courseId, focus) {
+                if (!courseId) return '';
+                return (
+                    '<div class="text-center my-3">' +
+                        '<button type="button" class="btn btn-warning btn-sm js-remind-trainer" data-course-id="' + String(courseId) + '" data-focus="' + String(focus || '') + '" style="font-weight:600;">' +
+                            'Ingatkan Trainer' +
+                        '</button>' +
+                    '</div>'
+                );
+            }
+
+            function moduleHasContent(m) {
+                if (!m) return false;
+                if (typeof m.has_content !== 'undefined') return !!m.has_content;
+                if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
+                return !!(m.content_url || '');
+            }
+
+            document.addEventListener('click', function(ev) {
+                var rbtn = ev.target.closest('.js-remind-trainer');
+                if (!rbtn) return;
+                ev.preventDefault();
+
+                var courseId = rbtn.getAttribute('data-course-id') || '';
+                var focus = rbtn.getAttribute('data-focus') || '';
+                if (!courseId) return;
+
+                var form = document.getElementById('coursePreviewRemindForm');
+                var focusInput = document.getElementById('coursePreviewRemindFocus');
+                if (!form || !focusInput) return;
+
+                form.setAttribute('action', remindBaseUrl + '/' + String(courseId) + '/remind-trainer');
+                focusInput.value = focus;
+                try { form.submit(); } catch (e) {}
+            });
+
             // --- 4. Event Delegation for Preview Click ---
             document.addEventListener('click', function(ev) {
                 var btn = ev.target.closest('.preview-course');
@@ -879,10 +951,14 @@
                 var pdfContainer = document.getElementById('list-pdf-container');
                 if (pdfContainer) {
                     var pdfs = modules.filter(m => m.type === 'pdf');
+                    var missingPdfCount = pdfs.filter(m => !moduleHasContent(m)).length;
+                    var pdfRemind = (data.has_trainer && (pdfs.length === 0 || missingPdfCount > 0))
+                        ? renderRemindButton(data.id, 'pdf')
+                        : '';
                     if (pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload modul.</p> <button>Ingatkan Trainer</button>';
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF.</p>' + pdfRemind;
                     } else {
-                        pdfContainer.innerHTML = pdfs.map(m => `
+                        pdfContainer.innerHTML = (missingPdfCount > 0 ? pdfRemind : '') + pdfs.map(m => `
                              <div class="list-pdf">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
@@ -900,10 +976,14 @@
                 var vidContainer = document.getElementById('list-video-container');
                 if (vidContainer) {
                     var vids = modules.filter(m => m.type === 'video');
+                    var missingVideoCount = vids.filter(m => !moduleHasContent(m)).length;
+                    var videoRemind = (data.has_trainer && (vids.length === 0 || missingVideoCount > 0))
+                        ? renderRemindButton(data.id, 'video')
+                        : '';
                     if (vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload video.</p> <button>Ingatkan Trainer</button>';
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video.</p>' + videoRemind;
                     } else {
-                        vidContainer.innerHTML = vids.map(m => `
+                        vidContainer.innerHTML = (missingVideoCount > 0 ? videoRemind : '') + vids.map(m => `
                             <div class="list-video">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
                                     <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
@@ -921,10 +1001,14 @@
                 var quizContainer = document.getElementById('list-kuis-container');
                 if (quizContainer) {
                     var quizzes = modules.filter(m => m.type === 'quiz');
+                    var missingQuizCount = quizzes.filter(m => Number(m.question_count || 0) <= 0).length;
+                    var quizRemind = (data.has_trainer && (quizzes.length === 0 || missingQuizCount > 0))
+                        ? renderRemindButton(data.id, 'quiz')
+                        : '';
                     if (quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload kuis.</p> <button>Ingatkan Trainer</button>';
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis.</p>' + quizRemind;
                     } else {
-                        quizContainer.innerHTML = quizzes.map(m => `
+                        quizContainer.innerHTML = (missingQuizCount > 0 ? quizRemind : '') + quizzes.map(m => `
                              <div class="list-kuis">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />

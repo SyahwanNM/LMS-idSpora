@@ -132,7 +132,7 @@
                                             <span class="manage-action-ribbon-thumb manage-action-{{ $event->manage_action }}">{{ strtoupper($event->manage_action) }}</span>
                                         @endif
                                         @if($event->image)
-                                            <img src="{{ Storage::url($event->image) }}" alt="{{ $event->title }}" class="img-thumbnail" style="max-width:90px;height:60px;object-fit:cover;">
+                                            <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="img-thumbnail" style="max-width:90px;height:60px;object-fit:cover;">
                                         @else
                                             <span class="badge bg-secondary">No Image</span>
                                         @endif
@@ -188,6 +188,18 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
+                                        @if(!(bool)($event->is_published ?? false))
+                                            <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-outline-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan" onclick="return confirm('Terbitkan event ini agar muncul di halaman user?');">
+                                                    <i class="bi bi-megaphone"></i><span class="visually-hidden">Terbitkan</span>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <button type="button" class="btn btn-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Sudah Terbit" disabled>
+                                                <i class="bi bi-check2-circle"></i><span class="visually-hidden">Sudah Terbit</span>
+                                            </button>
+                                        @endif
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
@@ -199,7 +211,7 @@
                                             title="Hapus"
                                             data-url="{{ route('admin.events.destroy',$event) }}"
                                             data-title="{{ $event->title }}"
-                                            data-image="{{ $event->image ? Storage::url($event->image) : '' }}">
+                                            data-image="{{ $event->image_url ?? '' }}">
                                             <i class="bi bi-trash"></i><span class="visually-hidden">Hapus</span>
                                         </button>
                                     </div>
@@ -326,13 +338,13 @@
                                             @if($hasVbg)
                                                 @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
                                                 @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->vbg_path) }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
                                                     </a>
                                                 @elseif($vExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                 @else
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
                                                 @endif
                                             @else
                                                 <span class="text-muted">Belum ada</span>
@@ -368,7 +380,7 @@
                                         </span>
                                         <span>
                                             @if($hasModule)
-                                                <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                                <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
                                                 <span class="text-muted">Belum ada</span>
                                             @endif
@@ -393,8 +405,8 @@
                                                         <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
                                                     @endif
                                                 @elseif($hasAbsQrImg)
-                                                    <a href="{{ Storage::url($event->attendance_qr_image) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->attendance_qr_image) }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
+                                                    <a href="{{ $event->attendance_qr_image_url }}" target="_blank" class="d-inline-block">
+                                                        <img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                     </a>
                                                 @else
                                                     <span class="badge bg-success">QR Absensi Aktif</span>
@@ -475,6 +487,9 @@
                 <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
                     <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data" id="eventForm">@csrf
+                        <div class="text-danger small mb-3">
+                            <strong>*</strong> Wajib diisi.
+                        </div>
                         <div class="row g-3">
                             <div class="col-lg-8">
                                 <div class="mb-3">
@@ -576,6 +591,12 @@
                                         <span>s/d</span>
                                         <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}">
                                     </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan Materi <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" name="material_deadline" id="material_deadline" class="form-control" value="{{ old('material_deadline') }}">
+                                    <small class="text-muted d-block mt-1">Opsional. Jika diisi, harus sebelum hari-H event.</small>
+                                    <small id="materialDeadlineHelp" class="text-danger d-none mt-1">Tenggat pengumpulan materi harus sebelum hari-H event.</small>
                                 </div>
                                 <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>
@@ -692,8 +713,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <div class="me-auto small text-muted" id="submitHint" style="display:none;">
-                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan.
+                    <div class="me-auto small text-danger fw-semibold" id="submitHint" style="display:none;" aria-live="polite">
+                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan. Tenggat pengumpulan materi (jika diisi) harus sebelum hari-H event.
                     </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn" disabled>
@@ -1358,6 +1379,67 @@
         }
         const eventDateEl = document.getElementById('tanggal');
         if(eventDateEl){ ['change','input'].forEach(ev=>eventDateEl.addEventListener(ev, updateDiscountUntilBounds)); }
+
+        // Tenggat Pengumpulan Materi: jika diisi, harus sebelum hari-H event
+        const materialDeadlineEl = document.getElementById('material_deadline');
+        const materialDeadlineHelp = document.getElementById('materialDeadlineHelp');
+        function updateMaterialDeadlineBounds(){
+            if(!materialDeadlineEl) return;
+            const eventDateStr = document.getElementById('tanggal')?.value;
+            if(!eventDateStr){
+                materialDeadlineEl.removeAttribute('max');
+                return;
+            }
+            const eventDate = new Date(eventDateStr + 'T00:00:00');
+            if(isNaN(eventDate.getTime())) return;
+            // Max: H-1 pukul 23:59
+            const prev = new Date(eventDate.getTime() - 24*60*60*1000);
+            const y = prev.getFullYear();
+            const m = String(prev.getMonth() + 1).padStart(2, '0');
+            const d = String(prev.getDate()).padStart(2, '0');
+            materialDeadlineEl.max = `${y}-${m}-${d}T23:59`;
+        }
+        function validateMaterialDeadline(){
+            if(!materialDeadlineEl) return true;
+            const val = (materialDeadlineEl.value || '').trim();
+            const eventDateStr = document.getElementById('tanggal')?.value;
+
+            // empty is OK (optional)
+            if(!val || !eventDateStr){
+                materialDeadlineEl.classList.remove('border-danger');
+                if(materialDeadlineHelp) materialDeadlineHelp.classList.add('d-none');
+                return true;
+            }
+
+            const deadline = new Date(val);
+            const eventDayStart = new Date(eventDateStr + 'T00:00:00');
+            const ok = !isNaN(deadline.getTime()) && !isNaN(eventDayStart.getTime()) && (deadline < eventDayStart);
+            if(!ok){
+                materialDeadlineEl.classList.add('border-danger');
+                if(materialDeadlineHelp) materialDeadlineHelp.classList.remove('d-none');
+            } else {
+                materialDeadlineEl.classList.remove('border-danger');
+                if(materialDeadlineHelp) materialDeadlineHelp.classList.add('d-none');
+            }
+            return ok;
+        }
+        if(eventDateEl){
+            ['change','input'].forEach(ev => eventDateEl.addEventListener(ev, () => {
+                updateMaterialDeadlineBounds();
+                validateMaterialDeadline();
+            }));
+        }
+        if(materialDeadlineEl){
+            ['change','input','blur'].forEach(ev => materialDeadlineEl.addEventListener(ev, () => {
+                updateMaterialDeadlineBounds();
+                validateMaterialDeadline();
+                if(typeof window.updateSubmitState === 'function') window.updateSubmitState();
+            }));
+        }
+        // Init for old() values
+        updateMaterialDeadlineBounds();
+        validateMaterialDeadline();
+
         if (diskonInput && discountUntilInput) {
             const toggleDiscountUntil = () => {
                 const perc = parseInt(diskonInput.value || '0', 10);
@@ -1521,6 +1603,65 @@
         // Sync editors + basic required validation
         const form = document.getElementById('eventForm');
         if (form) {
+            const inlineErrorClass = 'js-inline-error';
+
+            function fieldKey(el){
+                if(!el) return '';
+                return String(el.id || el.name || '').trim();
+            }
+
+            function getFieldBlock(el){
+                if(!el) return null;
+                if((el.name || '') === 'speakers[]'){
+                    const container = document.getElementById('speakersContainer');
+                    return container?.closest('.mb-3') || el.closest('.mb-3') || el.parentElement;
+                }
+                return el.closest('.mb-3') || el.closest('.input-group') || el.parentElement;
+            }
+
+            function getInlineErrorEl(block, key){
+                if(!block || !key) return null;
+                const existing = Array.from(block.querySelectorAll('.' + inlineErrorClass))
+                    .find((node) => (node.dataset.for || '') === key);
+                if(existing) return existing;
+                const el = document.createElement('small');
+                el.className = 'text-danger d-block mt-1 ' + inlineErrorClass;
+                el.dataset.for = key;
+                el.style.display = 'none';
+                block.appendChild(el);
+                return el;
+            }
+
+            function setInlineError(targetEl, message){
+                const key = fieldKey(targetEl);
+                const block = getFieldBlock(targetEl);
+                if(!block || !key) return;
+                const errEl = getInlineErrorEl(block, key);
+                if(!errEl) return;
+                const msg = String(message || '').trim();
+                errEl.textContent = msg;
+                errEl.style.display = msg ? 'block' : 'none';
+            }
+
+            function clearInlineError(targetEl){
+                const key = fieldKey(targetEl);
+                const block = getFieldBlock(targetEl);
+                if(!block || !key) return;
+                const errEl = Array.from(block.querySelectorAll('.' + inlineErrorClass))
+                    .find((node) => (node.dataset.for || '') === key);
+                if(errEl){
+                    errEl.textContent = '';
+                    errEl.style.display = 'none';
+                }
+            }
+
+            function clearAllInlineErrors(){
+                form.querySelectorAll('.' + inlineErrorClass).forEach((el) => {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                });
+            }
+
             form.addEventListener('submit', function(ev) {
                 if (window.editorDeskripsi) document.getElementById('deskripsi').value = window.editorDeskripsi.getData();
                 if (window.editorTerms) document.getElementById('terms').value = window.editorTerms.getData();
@@ -1538,9 +1679,16 @@
                 }
                 let ok = true;
                 form.querySelectorAll('[required]').forEach(f => {
-                    if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; }
-                    else { f.classList.remove('border-danger'); }
+                    if (!String(f.value || '').trim()) {
+                        f.classList.add('border-danger');
+                        ok = false;
+                    } else {
+                        f.classList.remove('border-danger');
+                    }
                 });
+                // Validate material deadline (optional, but must be before event day when filled)
+                const materialOk = (typeof validateMaterialDeadline === 'function') ? validateMaterialDeadline() : true;
+                if(!materialOk){ ok = false; }
                 // Validate short description max 40 words
                 const shortDescEl = document.getElementById('short_desc');
                 if(shortDescEl){
@@ -1554,27 +1702,16 @@
                     }
                 }
                 if (!ok) {
-                    // Build list of missing required fields for clearer feedback
-                    const requiredSet = Array.from(form.querySelectorAll('[required]'));
-                    const fieldFriendlyName = (el) => {
-                        if(!el) return 'Field';
-                        const id = el.id || '';
-                        const name = el.name || '';
-                        if(id === 'gambar' || name === 'image') return 'Gambar Event';
-                        if(id === 'nama' || name === 'title') return 'Nama Event';
-                        if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
-                        if(id === 'level' || name === 'level') return 'Level';
-                        if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
-                        if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
-                        if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
-                        if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
-                        if(id === 'lokasi' || name === 'location') return 'Lokasi';
-                        if(id === 'harga' || name === 'price') return 'Harga';
-                        return id || name || 'Field';
-                    };
-                    const missingList = requiredSet.filter(f => !(f.value || '').trim()).map(fieldFriendlyName);
                     ev.preventDefault();
-                    alert('Lengkapi semua field wajib.\nYang belum: ' + missingList.join(', '));
+
+                    // Render inline errors and focus first invalid field
+                    if (typeof window.updateSubmitState === 'function') {
+                        window.updateSubmitState();
+                    }
+                    const firstInvalid = form.querySelector('.border-danger');
+                    if (firstInvalid && typeof firstInvalid.focus === 'function') {
+                        firstInvalid.focus();
+                    }
                 }
                 // ensure expense totals up-to-date before submit
                 expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
@@ -1599,7 +1736,7 @@
                 if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
                 if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
                 if(id === 'lokasi' || name === 'location') return 'Lokasi';
-                if(id === 'harga' || name === 'price') return 'Harga';
+                if(id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
                 return id || name || 'Field';
             };
             function missingRequired(){
@@ -1610,22 +1747,55 @@
             }
             // expose globally so CKEditor init can call it even if defined later
             window.updateSubmitState = function updateSubmitState(){
+                clearAllInlineErrors();
+
                 const filled = allRequiredFilled();
                 // Extra rule: short description must be <= 40 words
                 const sdEl = document.getElementById('short_desc');
                 const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                 const overLimit = sdEl ? sdWords > 40 : false;
-                if(submitBtn){ submitBtn.disabled = (!filled || overLimit); }
+                const materialOk = (typeof validateMaterialDeadline === 'function') ? validateMaterialDeadline() : true;
+                if(submitBtn){ submitBtn.disabled = (!filled || overLimit || !materialOk); }
+
+                // Do not show large summary block; show per-field inline messages instead.
                 if(submitHint){
-                    if(!filled){
-                        const missingList = missingRequired().map(fieldFriendlyName);
-                        submitHint.textContent = 'Lengkapi: ' + missingList.join(', ');
-                        submitHint.style.display = 'block';
-                    } else if(overLimit){
-                        submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';
-                        submitHint.style.display = 'block';
+                    submitHint.style.display = 'none';
+                }
+
+                // Required fields: show inline error under each missing field
+                missingRequired().forEach((fieldEl) => {
+                    fieldEl.classList.add('border-danger');
+                    setInlineError(fieldEl, fieldFriendlyName(fieldEl) + ' wajib diisi.');
+                });
+
+                // Clear errors for currently filled required fields
+                requiredFields
+                    .filter((fieldEl) => String(fieldEl.value || '').trim())
+                    .forEach((fieldEl) => {
+                        fieldEl.classList.remove('border-danger');
+                        clearInlineError(fieldEl);
+                    });
+
+                // Short description max 40 words
+                if(sdEl){
+                    if(overLimit){
+                        sdEl.classList.add('border-danger');
+                        setInlineError(sdEl, 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).');
                     } else {
-                        submitHint.style.display = 'none';
+                        clearInlineError(sdEl);
+                    }
+                }
+
+                // Material deadline validation (optional)
+                const materialDeadlineEl = document.getElementById('material_deadline');
+                const materialDeadlineHelp = document.getElementById('materialDeadlineHelp');
+                if(materialDeadlineEl && materialDeadlineHelp){
+                    if(!materialOk){
+                        materialDeadlineEl.classList.add('border-danger');
+                        materialDeadlineHelp.classList.remove('d-none');
+                    } else {
+                        materialDeadlineEl.classList.remove('border-danger');
+                        materialDeadlineHelp.classList.add('d-none');
                     }
                 }
             }

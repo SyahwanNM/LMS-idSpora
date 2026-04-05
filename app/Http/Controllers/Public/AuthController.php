@@ -17,6 +17,7 @@ use Carbon\Carbon;
 
 class AuthController extends Controller
 {
+    private const VERIFICATION_CODE_EXPIRES_MINUTES = 15;
     public function showLogin()
     {
         return view('auth.sign-in');
@@ -59,14 +60,21 @@ class AuthController extends Controller
         $remember = $request->boolean('remember');
         Auth::loginUsingId($user->id, $remember);
         // Catat aktivitas login
-        try { \App\Models\ActivityLog::create(['user_id' => $user->id, 'action' => 'Login', 'description' => 'Login (direct)']); } catch (\Throwable $e) {}
+        try {
+            \App\Models\ActivityLog::create(['user_id' => $user->id, 'action' => 'Login', 'description' => 'Login (direct)']);
+        } catch (\Throwable $e) {
+        }
         // If admin, go to admin dashboard
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+            return redirect('/admin/dashboard');
         }
-
+        //trainer
+        if (strcasecmp($user->role ?? '', 'trainer') === 0) {
+            return redirect()
+                ->route('trainer.dashboard');
+        }
         // For regular users, always redirect to the main dashboard after successful login
-        return redirect('/dashboard')->with('success', 'Login berhasil. Selamat datang di IdSpora Academy!');
+        return redirect('/dashboard');
     }
 
     public function register(Request $request)
@@ -75,7 +83,10 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => [
-                'required','string','min:8','confirmed',
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
                 'regex:/[A-Z]/',        // at least one uppercase letter
                 'regex:/[0-9]/',        // at least one digit
                 'regex:/[^A-Za-z0-9]/', // at least one symbol
@@ -129,6 +140,7 @@ class AuthController extends Controller
 
         // Kirim kode verifikasi menggunakan PasswordResetToken + PasswordResetMail
         try {
+            $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $token = Str::random(64);
             PasswordResetToken::where('email', $request->email)->delete();
@@ -136,10 +148,10 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'token' => $token,
                 'verification_code' => $verificationCode,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => now()->addMinutes($expiresMinutes),
                 'is_used' => false,
             ]);
-            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, 15));
+            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, $expiresMinutes));
         } catch (\Throwable $e) {
             \Log::error('Send registration verification failed: ' . $e->getMessage());
         }
@@ -181,28 +193,28 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
-        
+
         // Generate kode verifikasi 6 digit
         $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        
+
         // Generate token unik
         $token = Str::random(64);
-        
+
         // Hapus token lama jika ada
         PasswordResetToken::where('email', $request->email)->delete();
-        
+
         // Simpan token baru
         PasswordResetToken::create([
             'email' => $request->email,
             'token' => $token,
             'verification_code' => $verificationCode,
-            'expires_at' => Carbon::now()->addMinutes(15), // 15 menit
+            'expires_at' => now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_MINUTES), // 15 menit
         ]);
 
         // Kirim email
         try {
             Mail::to($request->email)->send(new PasswordResetMail($verificationCode, $user->name));
-            
+
             return redirect()->route('verifikasi')
                 ->with('success', 'Kode verifikasi telah dikirim ke email Anda')
                 ->with('email', $request->email);
@@ -216,7 +228,7 @@ class AuthController extends Controller
                 'username' => config('mail.mailers.smtp.username'),
                 'encryption' => config('mail.mailers.smtp.encryption'),
             ]));
-            
+
             return redirect()->back()
                 ->withErrors(['email' => 'Gagal mengirim email: ' . $e->getMessage() . '. Silakan periksa konfigurasi email.'])
                 ->withInput($request->only('email'));
@@ -226,7 +238,10 @@ class AuthController extends Controller
     public function showVerification(Request $request)
     {
         // Pastikan flash data email pendaftaran tetap tersedia untuk request berikutnya (verify/resend)
-        try { $request->session()->keep('register_verify_email'); } catch (\Throwable $e) {}
+        try {
+            $request->session()->keep('register_verify_email');
+        } catch (\Throwable $e) {
+        }
         return view('auth.verifikasi');
     }
 
@@ -246,6 +261,7 @@ class AuthController extends Controller
             return redirect()->route('register')->withErrors(['email' => 'Sesi verifikasi tidak ditemukan. Silakan daftar ulang.']);
         }
         try {
+            $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $token = Str::random(64);
             PasswordResetToken::where('email', $email)->delete();
@@ -253,22 +269,26 @@ class AuthController extends Controller
                 'email' => $email,
                 'token' => $token,
                 'verification_code' => $code,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => now()->addMinutes($expiresMinutes),
                 'is_used' => false,
             ]);
             $name = ($request->session()->get('register_payload')['name'] ?? 'Pengguna');
-            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, 15));
+            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, $expiresMinutes));
             // Set cooldown start
             $request->session()->put('register_otp_last_resend_at', now());
             return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
         } catch (\Throwable $e) {
-            \Log::error('Resend registration verification failed: '.$e->getMessage());
+            \Log::error('Resend registration verification failed: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Gagal mengirim ulang kode verifikasi.']);
         }
     }
 
     public function verifyCode(Request $request)
     {
+        // Normalize (e.g., pasted with spaces): keep digits only
+        $normalizedCode = preg_replace('/\D+/', '', (string) $request->input('verification_code'));
+        $request->merge(['verification_code' => $normalizedCode]);
+
         $validator = Validator::make($request->all(), [
             'verification_code' => 'required|string|size:6',
         ], [
@@ -314,7 +334,7 @@ class AuthController extends Controller
                 }
             }
             $resetToken->update(['is_used' => true]);
-            $request->session()->forget(['register_verify_email','register_payload']);
+            $request->session()->forget(['register_verify_email', 'register_payload']);
             return redirect()->route('login')
                 ->with('success', 'Email berhasil diverifikasi! Silakan login.')
                 ->withInput(['email' => $user->email]);
@@ -343,6 +363,11 @@ class AuthController extends Controller
     public function showNewPassword(Request $request)
     {
         // Pastikan token tetap ada di sesi (jika datang via flash/redirect)
+        try {
+            $request->session()->keep('token');
+        } catch (\Throwable $e) {
+        }
+        return view('new-password');
         try { $request->session()->keep('token'); } catch (\Throwable $e) {}
         return view('auth.new-password');
     }
@@ -351,7 +376,10 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'password' => [
-                'required','string','min:8','confirmed',
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
                 'regex:/[A-Z]/',        // at least one uppercase letter
                 'regex:/[0-9]/',        // at least one digit
                 'regex:/[^A-Za-z0-9]/', // at least one symbol
@@ -380,7 +408,7 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $resetToken->email)->first();
-        
+
         if (!$user) {
             return redirect()->route('forgot-password')
                 ->withErrors(['error' => 'User tidak ditemukan']);
@@ -413,14 +441,14 @@ class AuthController extends Controller
     public function verifyLoginOtp(Request $request)
     {
         $request->validate([
-            'code' => ['required','string','size:6']
+            'code' => ['required', 'string', 'size:6']
         ], [
             'code.required' => 'Kode OTP harus diisi',
             'code.size' => 'Kode OTP harus 6 digit',
         ]);
         $email = $request->session()->get('login_otp_email');
         $userId = $request->session()->get('login_otp_user_id');
-        if(!$email || !$userId){
+        if (!$email || !$userId) {
             return redirect()->route('login')->withErrors(['email' => 'Sesi OTP tidak ditemukan.']);
         }
         $otp = \App\Models\LoginOtp::where('email', $email)
@@ -428,7 +456,7 @@ class AuthController extends Controller
             ->where('is_used', false)
             ->latest()
             ->first();
-        if(!$otp || $otp->isExpired()){
+        if (!$otp || $otp->isExpired()) {
             return back()->withErrors(['code' => 'Kode OTP tidak valid atau sudah kadaluarsa']);
         }
         $otp->update(['is_used' => true]);
@@ -441,30 +469,38 @@ class AuthController extends Controller
         // Login user
         Auth::loginUsingId($userId, true);
         // Catat aktivitas login
-        try { \App\Models\ActivityLog::create(['user_id' => $userId, 'action' => 'Login', 'description' => 'Login via OTP']); } catch (\Throwable $e) {}
+        try {
+            \App\Models\ActivityLog::create(['user_id' => $userId, 'action' => 'Login', 'description' => 'Login via OTP']);
+        } catch (\Throwable $e) {
+        }
         // Bersihkan sesi OTP
         $redirect = $request->session()->pull('login_otp_redirect');
-        $request->session()->forget(['login_otp_user_id','login_otp_email']);
+        $request->session()->forget(['login_otp_user_id', 'login_otp_email']);
 
         $user = Auth::user();
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+            return redirect('/admin/dashboard');
+        }
+        //trainer
+        if (strcasecmp($user->role ?? '', 'trainer') === 0) {
+            return redirect()
+                ->route('trainer.dashboard');
         }
         if ($redirect) {
-            return redirect($redirect)->with('success', 'Login berhasil!');
+            return redirect($redirect);
         }
-        return redirect()->intended('/dashboard')->with('success','Login berhasil!');
+        return redirect()->intended('/dashboard');
     }
 
     public function resendLoginOtp(Request $request)
     {
         $email = $request->session()->get('login_otp_email');
         $userId = $request->session()->get('login_otp_user_id');
-        if(!$email || !$userId){
+        if (!$email || !$userId) {
             return redirect()->route('login')->withErrors(['email' => 'Sesi OTP tidak ditemukan.']);
         }
         $user = User::find($userId);
-        if(!$user){
+        if (!$user) {
             return redirect()->route('login')->withErrors(['email' => 'Pengguna tidak ditemukan.']);
         }
         // Regenerate code
@@ -480,10 +516,10 @@ class AuthController extends Controller
         try {
             Mail::to($email)->send(new \App\Mail\LoginOtpMail($code, $user->name, 10));
         } catch (\Throwable $e) {
-            \Log::error('Resend OTP mail failed: '.$e->getMessage());
+            \Log::error('Resend OTP mail failed: ' . $e->getMessage());
             return back()->withErrors(['code' => 'Gagal mengirim ulang kode OTP.']);
         }
-        return back()->with('success','Kode OTP baru telah dikirim.');
+        return back()->with('success', 'Kode OTP baru telah dikirim.');
     }
 
     /**
@@ -493,13 +529,15 @@ class AuthController extends Controller
     private function resolveSafeRedirect(Request $request): ?string
     {
         $redirect = $request->input('redirect');
-        if (!$redirect) return null;
+        if (!$redirect)
+            return null;
 
         // Jika full URL, pastikan host sama
         if (filter_var($redirect, FILTER_VALIDATE_URL)) {
             $appHost = $request->getHost();
             $urlHost = parse_url($redirect, PHP_URL_HOST);
-            if ($urlHost !== $appHost) return null; // Host berbeda -> tolak
+            if ($urlHost !== $appHost)
+                return null; // Host berbeda -> tolak
             $path = parse_url($redirect, PHP_URL_PATH) ?: '/';
             $query = parse_url($redirect, PHP_URL_QUERY);
             return $path . ($query ? ('?' . $query) : '');
