@@ -121,8 +121,17 @@
                             </div>
                             <!-- Kelola Event: Manage / Create -->
                             <div class="mb-3">
-                                <label for="manage_action" class="form-label fw-semibold">Kelola Event <span
-                                        class="text-danger">*</span></label>
+                                <label for="manage_action" class="form-label fw-semibold">
+                                    Kelola Event
+                                    <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
+                                        aria-label="Info kelola event"
+                                        style="color: var(--bs-warning);"
+                                        data-bs-toggle="tooltip"
+                                        data-bs-placement="top"
+                                        data-bs-custom-class="tooltip-hint-yellow"
+                                        title="Manage: pilih jika event ini masuk kategori dikelola (operasional/lanjutan). Create: pilih jika event ini dibuat sebagai event baru dari awal."></i>
+                                    <span class="text-danger">*</span>
+                                </label>
                                 <select name="manage_action" id="manage_action" class="form-select" required>
                                     @php $currentManage = old('manage_action', $event->manage_action ?? null); @endphp
                                     <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
@@ -152,8 +161,22 @@
                             <div class="mb-3">
                                 <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan
                                     Materi</label>
+                                @php
+                                    $eventDateValue = old('event_date', $event->event_date);
+                                    $deadlineMin = now()->format('Y-m-d\T00:00');
+                                    $deadlineMax = null;
+                                    try {
+                                        if (!empty($eventDateValue)) {
+                                            $deadlineMax = \Carbon\Carbon::parse($eventDateValue)->startOfDay()->subMinute()->format('Y-m-d\TH:i');
+                                        }
+                                    } catch (\Throwable $e) {
+                                        $deadlineMax = null;
+                                    }
+                                @endphp
                                 <input type="datetime-local" name="material_deadline" id="material_deadline"
                                     class="form-control"
+                                    min="{{ $deadlineMin }}"
+                                    @if($deadlineMax) max="{{ $deadlineMax }}" @endif
                                     value="{{ old('material_deadline', $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d\\TH:i') : '') }}">
                                 <small class="form-text">Opsional. Harus sebelum hari-H event.</small>
                             </div>
@@ -356,6 +379,19 @@
         #mapsPreview {
             min-height: 240px
         }
+
+        /* Yellow hint tooltip (Bootstrap tooltip custom class) */
+        .tooltip-hint-yellow .tooltip-inner{
+            background-color: var(--bs-warning-bg-subtle);
+            color: var(--bs-warning-text-emphasis);
+            border: 1px solid var(--bs-warning-border-subtle);
+            max-width: 320px;
+            text-align: left;
+        }
+        .tooltip-hint-yellow.bs-tooltip-top .tooltip-arrow::before{ border-top-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-bottom .tooltip-arrow::before{ border-bottom-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-start .tooltip-arrow::before{ border-left-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-end .tooltip-arrow::before{ border-right-color: var(--bs-warning-bg-subtle); }
     </style>
 @endsection
 
@@ -371,6 +407,15 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Bootstrap tooltips
+            try {
+                if (window.bootstrap && typeof bootstrap.Tooltip === 'function') {
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        try { new bootstrap.Tooltip(el); } catch (_) { }
+                    });
+                }
+            } catch (_) { }
+
             // CKEditor init
             ClassicEditor.create(document.querySelector('#deskripsi'), { toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|', 'bulletedList', 'numberedList', '|', 'link', 'blockQuote', 'insertTable', '|', 'undo', 'redo', 'removeFormat'] }).then(e => { window.editorDeskripsi = e; const ta = document.getElementById('deskripsi'); if (ta) ta.value = e.getData(); e.model.document.on('change:data', () => { if (ta) ta.value = e.getData(); if (typeof window.updateSubmitState === 'function') { window.updateSubmitState(); } }); }).catch(console.error);
             ClassicEditor.create(document.querySelector('#terms'), { toolbar: ['bold', 'italic', 'underline', 'bulletedList', 'numberedList', 'link', 'undo', 'redo', 'removeFormat'] }).then(e => window.editorTerms = e).catch(console.error);
@@ -382,7 +427,7 @@
 
 
             // Maps logic
-            let leafletMap = null, leafletMarker = null; const mapsInput = document.getElementById('maps'); const mapsPreview = document.getElementById('mapsPreview'); const btnResolveMaps = document.getElementById('btnResolveMaps'); const csrfToken = '{{ csrf_token() }}'; const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
+            let leafletMap = null, leafletMarker = null; const mapsInput = document.getElementById('maps'); const mapsPreview = document.getElementById('mapsPreview'); const btnResolveMaps = document.getElementById('btnResolveMaps'); const zoomInput = document.getElementById('zoom'); const csrfToken = '{{ csrf_token() }}'; const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
             function parseLatLngFromUrl(url) {
                 if (!url) return null;
                 try {
@@ -401,7 +446,35 @@
             function ensureMap() { if (!mapsPreview) return; if (!leafletMap) { leafletMap = L.map(mapsPreview).setView([-6.200, 106.816], 12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(leafletMap); } setTimeout(() => leafletMap.invalidateSize(), 50); }
             function showMap(lat, lng) { if (!mapsPreview) return; mapsPreview.style.display = 'block'; ensureMap(); const pos = [lat, lng]; leafletMap.setView(pos, 14); if (leafletMarker) { leafletMarker.setLatLng(pos); } else { leafletMarker = L.marker(pos).addTo(leafletMap); } }
             function tryRenderMap() { const v = mapsInput?.value || ''; const p = parseLatLngFromUrl(v); if (p) showMap(p.lat, p.lng); else if (mapsPreview) mapsPreview.style.display = 'none'; }
-            mapsInput?.addEventListener('change', tryRenderMap); mapsInput?.addEventListener('blur', tryRenderMap); tryRenderMap();
+            // Mutually disable Maps vs Zoom link: choosing one disables the other
+            function syncOnlineOfflineInputs() {
+                const hasMaps = !!(mapsInput && String(mapsInput.value || '').trim());
+                const hasZoom = !!(zoomInput && String(zoomInput.value || '').trim());
+                if (hasMaps) {
+                    if (zoomInput) zoomInput.disabled = true;
+                    if (mapsInput) mapsInput.disabled = false;
+                    if (btnResolveMaps) btnResolveMaps.disabled = false;
+                } else if (hasZoom) {
+                    if (mapsInput) mapsInput.disabled = true;
+                    if (btnResolveMaps) btnResolveMaps.disabled = true;
+                    if (mapsPreview) mapsPreview.style.display = 'none';
+                    if (zoomInput) zoomInput.disabled = false;
+                } else {
+                    if (mapsInput) mapsInput.disabled = false;
+                    if (zoomInput) zoomInput.disabled = false;
+                    if (btnResolveMaps) btnResolveMaps.disabled = false;
+                }
+            }
+
+            mapsInput?.addEventListener('input', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput?.addEventListener('change', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput?.addEventListener('blur', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            zoomInput?.addEventListener('input', syncOnlineOfflineInputs);
+            zoomInput?.addEventListener('change', syncOnlineOfflineInputs);
+            zoomInput?.addEventListener('blur', syncOnlineOfflineInputs);
+
+            tryRenderMap();
+            syncOnlineOfflineInputs();
             btnResolveMaps?.addEventListener('click', async () => { const url = mapsInput?.value || ''; if (!url) { alert('Masukkan link terlebih dahulu'); return; } try { btnResolveMaps.disabled = true; const resp = await fetch(resolveMapsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ url }) }); const data = await resp.json(); if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); } else alert(data.message || 'Koordinat tidak ditemukan.'); } catch (e) { alert('Gagal mendeteksi koordinat.'); } finally { btnResolveMaps.disabled = false; } });
 
             // Speakers (from Trainer API)
@@ -503,8 +576,56 @@
             // Flatpickr init for tanggal & discount_until
             let eventDateFp = null, discountUntilFp = null;
             if (window.flatpickr) {
-                eventDateFp = flatpickr('#tanggal', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true });
+                eventDateFp = flatpickr('#tanggal', {
+                    locale: 'id',
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'l, j F Y',
+                    disableMobile: true,
+                    onChange: function () {
+                        if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
+                        if (typeof updateMaterialDeadlineBounds === 'function') updateMaterialDeadlineBounds();
+                    }
+                });
                 discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true, clickOpens: true });
+            }
+
+            const materialDeadlineEl = document.getElementById('material_deadline');
+            function pad2(n) { return String(n).padStart(2, '0'); }
+            function toLocalDateTimeValue(d) {
+                const yyyy = d.getFullYear();
+                const mm = pad2(d.getMonth() + 1);
+                const dd = pad2(d.getDate());
+                const hh = pad2(d.getHours());
+                const mi = pad2(d.getMinutes());
+                return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+            }
+            function updateMaterialDeadlineBounds() {
+                if (!eventDateEl || !materialDeadlineEl) return;
+                const dateStr = String(eventDateEl.value || '').trim();
+                if (!dateStr) {
+                    materialDeadlineEl.removeAttribute('max');
+                    materialDeadlineEl.setCustomValidity('');
+                    return;
+                }
+
+                const eventStart = new Date(dateStr + 'T00:00:00');
+                if (isNaN(eventStart.getTime())) {
+                    materialDeadlineEl.removeAttribute('max');
+                    materialDeadlineEl.setCustomValidity('');
+                    return;
+                }
+
+                const maxDate = new Date(eventStart.getTime() - 60 * 1000); // 1 minute before event day
+                const maxVal = toLocalDateTimeValue(maxDate);
+                materialDeadlineEl.max = maxVal;
+
+                const cur = String(materialDeadlineEl.value || '').trim();
+                if (cur && cur >= maxVal) {
+                    materialDeadlineEl.setCustomValidity('Tenggat harus sebelum hari-H event.');
+                } else {
+                    materialDeadlineEl.setCustomValidity('');
+                }
             }
             function updateDiscountUntilBounds() {
                 if (!discountUntilFp) return;
@@ -527,10 +648,12 @@
                 if (current) { const curDate = new Date(current + 'T00:00:00'); if (curDate >= eventDate) { discountUntilFp.clear(); discountUntilInput.value = ''; } }
             }
             const eventDateEl = document.getElementById('tanggal');
-            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, updateDiscountUntilBounds));
+            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, () => { updateDiscountUntilBounds(); updateMaterialDeadlineBounds(); }));
+            materialDeadlineEl && ['change', 'input'].forEach(ev => materialDeadlineEl.addEventListener(ev, updateMaterialDeadlineBounds));
             // Initial states
             toggleDiscountUntil();
             updateDiscountUntilBounds();
+            updateMaterialDeadlineBounds();
 
             // Schedule dynamic
             const scheduleTableBody = document.querySelector('#scheduleTable tbody'); const addScheduleBtn = document.getElementById('addScheduleRow'); let scheduleIndex = 0;

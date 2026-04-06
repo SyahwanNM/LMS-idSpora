@@ -282,7 +282,10 @@ class FinanceController extends Controller
         
         $events = \App\Models\Event::withCount(['registrations as total_registrations', 'registrations as active_registrations' => function($q){
             $q->where('status', 'active');
-        }])->latest()->paginate(10);
+        }])
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
         // Add revenue per event from ManualPayment
         foreach($events as $event) {

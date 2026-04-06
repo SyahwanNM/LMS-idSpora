@@ -1,6 +1,6 @@
 <?php
 // Payment page for course
-Route::get('/courses/{course}/payment', [App\Http\Controllers\Admin\CourseController::class, 'payment'])->name('course.payment');
+Route::middleware(['auth'])->get('/courses/{course}/payment', [App\Http\Controllers\Admin\CourseController::class, 'payment'])->name('course.payment');
 
 // Learn course modules (requires purchase/enrollment)
 Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\Admin\CourseController::class, 'learn'])->name('course.learn');
@@ -97,7 +97,7 @@ Route::get('/aturan-kuis', function () {
     return view('course.aturan-kuis');
 })->name('aturan-kuis');
 
-Route::get('/payment-course', function () {
+Route::middleware(['auth'])->get('/payment-course', function () {
     return view('course.payment-course');
 })->name('payment-course');
 
@@ -206,6 +206,23 @@ Route::get('/auth', function () {
     return view('auth.auth');
 });
 Route::get('/', function () {
+    // During maintenance, non-admin users should stay on landing page.
+    try {
+        if (\App\Support\AdminSettings::maintenanceEnabled()) {
+            if (Auth::check()) {
+                $role = strtolower(trim((string) (Auth::user()->role ?? '')));
+                if ($role === 'admin') {
+                    return redirect()->route('admin.dashboard');
+                }
+                // user/trainer stays on landing page
+                return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+            }
+            return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+        }
+    } catch (\Throwable $e) {
+        // fallback to normal behavior
+    }
+
     if (Auth::check()) {
         $role = strtolower(trim((string) (Auth::user()->role ?? '')));
 
@@ -227,6 +244,12 @@ Route::get('/', function () {
 Route::get('/kendala', [PublicPagesController::class, 'support'])->name('public.support');
 Route::post('/kendala', [PublicPagesController::class, 'storeSupport'])->name('public.support.store');
 Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide'])->name('public.guide');
+
+// Public event pages (accessible without login)
+Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+// Redirect search to the best-matching event detail (exact title match preferred)
+Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
@@ -262,14 +285,10 @@ Route::get('/payment/finish', function () {
 // Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
 Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
 
-// Event routes now require authentication to view & register
+// Event actions (register/feedback/etc.) require authentication
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
-    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
-    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-    // Redirect search to the best-matching event detail (exact title match preferred)
-    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
     Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');

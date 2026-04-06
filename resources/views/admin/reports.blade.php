@@ -29,6 +29,18 @@
     /* Export modal: keep close controls compact */
     #exportReportModal .btn-close { background-size: .75em .75em; }
     #exportReportModal .btn-export-close { width:auto !important; padding:.375rem .75rem !important; }
+
+    /* Export Preview Modal: drop slightly lower */
+    #exportReportModal .modal-dialog {
+        margin-top: clamp(24px, 6vh, 72px);
+        margin-bottom: 24px;
+    }
+
+    /* Rekap Pendaftaran modal: keep size reasonable (avoid global .modal-dialog max-width:950px) */
+    #viewPendapatanModal .modal-dialog {
+        max-width: min(560px, calc(100% - 2rem));
+        margin: 16px auto;
+    }
 </style>
 @endsection
 @section('content')
@@ -72,7 +84,7 @@
             <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2 mb-3">
                 <input type="hidden" name="tab" value="pendapatan">
                 <div>
-                    <label for="period" class="form-label mb-1">Periode Bulan</label>
+                    <label for="period" class="form-label mb-1 text-dark">Periode Bulan</label>
                     <input type="month" name="period" id="period" value="{{ sprintf('%04d-%02d',$selectedYear,$selectedMonth) }}" class="form-control" style="max-width:180px;">
                 </div>
                 <div class="d-flex gap-2 align-items-end">
@@ -297,7 +309,7 @@
                                 ->whereNotNull('event_date')
                                 ->whereYear('event_date', $selectedDate->year)
                                 ->whereMonth('event_date', $selectedDate->month)
-                                ->orderBy('event_date','asc')->get();
+                                ->orderBy('event_date','desc')->get();
                             $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
                                 $price = $e->discounted_price ?? $e->price;
                                 $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
@@ -435,30 +447,19 @@
                         <div class="pertumbuhan-acara">
                             <h5>Pertumbuhan Acara</h5>
                             <div class="pertumbuhan-box">
-                                @php
-                                    // Count events scheduled in the current month (system time)
-                                    $now = \Carbon\Carbon::now();
-                                    $eventsThisMonth = \App\Models\Event::query()
-                                        ->whereYear('event_date', $now->year)
-                                        ->whereMonth('event_date', $now->month)
-                                        ->count();
-                                @endphp
                                 <div class="pertumbuhan-box-isi">
-                                    <h4>{{ $eventsThisMonth }}</h4>
-                                    <p>Acara baru bulan ini</p>
-                                    <div class="deskripsi-kenaikan">
-                                        <svg class="naik" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="blue" class="bi bi-graph-up-arrow" viewBox="0 0 16 16">
-                                            <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0  0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5" />
-                                        </svg>
-                                        <p>12.0%</p>
-                                    </div>
+                                    <h4>{{ $totalPaidEventsSelected ?? 0 }}</h4>
+                                    <p>Total Event Berbayar</p>
+                                </div>
+                                <div class="pertumbuhan-box-isi">
+                                    <h4>{{ $totalFreeEventsSelected ?? 0 }}</h4>
+                                    <p>Total Event Free</p>
                                 </div>
                                 @php
-                                    // Total Peserta: distinct users who registered for any event this current month
-                                    $now = \Carbon\Carbon::now();
+                                    // Total Peserta: distinct users who registered in the selected month
                                     $totalParticipantsUsers = \App\Models\EventRegistration::query()
-                                        ->whereYear('created_at', $now->year)
-                                        ->whereMonth('created_at', $now->month)
+                                        ->whereYear('created_at', $selectedDate->year)
+                                        ->whereMonth('created_at', $selectedDate->month)
                                         ->where('status','active')
                                         ->distinct('user_id')
                                         ->count('user_id');
@@ -466,10 +467,6 @@
                                 <div class="pertumbuhan-box-isi">
                                     <h4>{{ number_format($totalParticipantsUsers) }}</h4>
                                     <p>Total Peserta</p>
-                                </div>
-                                <div class="pertumbuhan-box-isi">
-                                    <h4>71.4</h4>
-                                    <p>Tingkat Partisipasi Acara</p>
                                 </div>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar" viewBox="0 0 16 16">
                                     <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
@@ -575,7 +572,7 @@
                     <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
                         <input type="hidden" name="tab" value="operasional">
                         <div>
-                            <label for="period_op" class="form-label mb-1">Periode Bulan</label>
+                            <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
                             <input type="month" name="period" id="period_op" value="{{ $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
                         </div>
                         <div class="d-flex gap-2 align-items-end">
@@ -598,16 +595,12 @@
                 
                 <div class="info-operasional-box" style="display:flex; gap:12px;">
                     <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
-                        <h4>{{ $activeCount ?? 0 }}</h4>
-                        <p>Acara Aktif</p>
+                        <h4>{{ $totalCreateEventsSelected ?? 0 }}</h4>
+                        <p>Total Event Create</p>
                     </div>
                     <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
-                        <h4>{{ $completedCount ?? 0 }}</h4>
-                        <p>Acara Selesai</p>
-                    </div>
-                    <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
-                        <h4>{{ $upcomingCount ?? 0 }}</h4>
-                        <p>Acara Mendatang</p>
+                        <h4>{{ $totalManageEventsSelected ?? 0 }}</h4>
+                        <p>Total Event Manage</p>
                     </div>
                 </div>
                 <div class="proggress-box-operasional">
@@ -727,7 +720,7 @@
 
     <!-- Export Preview Modal -->
     <div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top: clamp(48px, 10vh, 120px) !important; margin-bottom: 24px;">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exportReportModalLabel">Export Preview</h5>

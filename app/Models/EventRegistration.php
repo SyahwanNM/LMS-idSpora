@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\ManualPayment;
+use App\Models\PaymentProof;
 
 class EventRegistration extends Model
 {
@@ -56,5 +57,10 @@ class EventRegistration extends Model
 
     public function event(){
         return $this->belongsTo(Event::class);
+    }
+
+    public function paymentProofs()
+    {
+        return $this->hasMany(PaymentProof::class, 'event_registration_id');
     }
 }

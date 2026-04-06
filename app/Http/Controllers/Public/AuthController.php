@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Support\AdminSettings;
 
 class AuthController extends Controller
 {
@@ -55,6 +56,12 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
+        // During maintenance, do not create a login session for non-admin users.
+        if (strcasecmp($user->role ?? '', 'admin') !== 0 && AdminSettings::maintenanceEnabled()) {
+            $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+            return redirect('/')->with('maintenance_notice', $msg);
+        }
+
         // Langsung login tanpa OTP (OTP dipindah ke proses pendaftaran akun)
         // Hormati pilihan "ingat saya" dari form
         $remember = $request->boolean('remember');
@@ -68,13 +75,21 @@ class AuthController extends Controller
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard');
         }
+
+        // (Maintenance for non-admin is handled above before login session is created.)
         //trainer
         if (strcasecmp($user->role ?? '', 'trainer') === 0) {
             return redirect()
                 ->route('trainer.dashboard');
         }
-        // For regular users, always redirect to the main dashboard after successful login
-        return redirect('/dashboard');
+
+        // For regular users, redirect back to intended URL (protected page) when available.
+        // Also honor explicit internal redirect param (used by guest-only links).
+        $redirect = trim((string) $request->input('redirect', ''));
+        if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
+            return redirect($redirect);
+        }
+        return redirect()->intended('/dashboard');
     }
 
     public function register(Request $request)
@@ -462,6 +477,12 @@ class AuthController extends Controller
         $otp->update(['is_used' => true]);
         // Mark email as verified on first successful OTP (for Google-first-login scenario)
         $userToVerify = \App\Models\User::find($userId);
+        if ($userToVerify && strcasecmp($userToVerify->role ?? '', 'admin') !== 0 && AdminSettings::maintenanceEnabled()) {
+            // Clear OTP session and block login
+            $request->session()->forget(['login_otp_user_id', 'login_otp_email', 'login_otp_redirect']);
+            $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+            return redirect('/')->with('maintenance_notice', $msg);
+        }
         if ($userToVerify && is_null($userToVerify->email_verified_at)) {
             $userToVerify->email_verified_at = now();
             $userToVerify->save();
@@ -481,6 +502,7 @@ class AuthController extends Controller
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard');
         }
+        // (Maintenance for non-admin is handled above before login session is created.)
         //trainer
         if (strcasecmp($user->role ?? '', 'trainer') === 0) {
             return redirect()

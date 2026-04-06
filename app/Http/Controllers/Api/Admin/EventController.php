@@ -204,7 +204,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
+            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
             'is_published' => 'nullable|boolean',

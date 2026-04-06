@@ -544,29 +544,47 @@
     cursor: pointer;
     outline: none;
     position: relative;
-    list-style: none;
+    list-style: none !important;
     /* Hide default marker */
   }
 
   .syllabus-dropdown-item summary::-webkit-details-marker,
   .syllabus-dropdown-item summary::marker {
-    display: none;
+    display: none !important;
     /* Hide default marker for webkit and standard browsers */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker {
+    display: none !important;
   }
 
 
   .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    /* Bootstrap Icons chevron-down */
-    font-family: "bootstrap-icons" !important;
+    content: none;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons i {
     font-size: 1.2em;
-    transition: transform 0.3s ease;
+    line-height: 1;
     color: #333;
   }
 
-  .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
-    /* Rotate arrow up when open */
+  .syllabus-dropdown-item .syllabus-summary-icons .lock-ico {
+    color: #6c757d;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .chevron-ico {
+    transition: transform 0.3s ease;
+  }
+
+  .syllabus-dropdown-item details[open] .syllabus-summary-icons .chevron-ico {
+    transform: rotate(90deg);
   }
 
   .syllabus-dropdown-item ul {
@@ -971,29 +989,47 @@
     cursor: pointer;
     outline: none;
     position: relative;
-    list-style: none;
+    list-style: none !important;
     /* Hide default marker */
   }
 
   .syllabus-dropdown-item summary::-webkit-details-marker,
   .syllabus-dropdown-item summary::marker {
-    display: none;
+    display: none !important;
     /* Hide default marker for webkit and standard browsers */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker {
+    display: none !important;
   }
 
 
   .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    /* Bootstrap Icons chevron-down */
-    font-family: "bootstrap-icons" !important;
+    content: none;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons i {
     font-size: 1.2em;
-    transition: transform 0.3s ease;
+    line-height: 1;
     color: #333;
   }
 
-  .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
-    /* Rotate arrow up when open */
+  .syllabus-dropdown-item .syllabus-summary-icons .lock-ico {
+    color: #6c757d;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .chevron-ico {
+    transition: transform 0.3s ease;
+  }
+
+  .syllabus-dropdown-item details[open] .syllabus-summary-icons .chevron-ico {
+    transform: rotate(90deg);
   }
 
   .syllabus-dropdown-item ul {
@@ -1100,15 +1136,14 @@
             class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
             <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
           </svg>
-          @php $isApprovedForPreview = ((string) ($course->status ?? '')) === 'approved'; @endphp
-          <span>{{ $isApprovedForPreview ? ($course->modules->count() ?? 0) : 0 }} Lessons</span>
+          <span>{{ $course->modules->count() ?? 0 }} Lessons</span>
         </div>
         <div class="icon-quizzez">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path fill="currentColor"
               d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
           </svg>
-          <span>{{ $isApprovedForPreview ? ($course->modules->where('type','quiz')->count() ?? 0) : 0 }} Quizzes</span>
+          <span>{{ $course->modules->where('type','quiz')->count() ?? 0 }} Quizzes</span>
         </div>
       </div>
     </div>
@@ -1124,7 +1159,54 @@
         $isRejected = $courseStatus === 'rejected';
 
         $modulesCol = $course->modules ?? collect();
-        $visibleModules = $isApproved ? $modulesCol : collect();
+
+        // Access rules (freemium + paid purchase)
+        $priceInt = (int) ($course->price ?? 0);
+        $isFreeCourse = $priceInt <= 0;
+        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+
+        $userCanAccessCourse = $isFreeCourse;
+        if (!$isFreeCourse && auth()->check()) {
+          try {
+            $enrollment = \App\Models\Enrollment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->first();
+
+            $enrolledActive = $enrollment && $enrollment->status === 'active';
+            $hasSettledPayment = \App\Models\ManualPayment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->where('status', 'settled')
+              ->exists();
+
+            $userCanAccessCourse = $enrolledActive || $hasSettledPayment;
+          } catch (\Throwable $e) {
+            $userCanAccessCourse = false;
+          }
+        }
+
+        $orderedAllModules = $modulesCol->sortBy(fn($m) => (int) ($m->order_no ?? 0))->values();
+        $accessibleModuleIds = [];
+        if ($userCanAccessCourse) {
+          if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } else {
+            $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          }
+        }
+
+        // Modules with actual content ready
+        $visibleModules = $modulesCol->filter(function ($m) {
+          $type = strtolower((string) ($m->type ?? ''));
+          if ($type === 'quiz') {
+            return ((int) ($m->quiz_questions_count ?? 0)) > 0;
+          }
+          if (in_array($type, ['pdf', 'video'], true)) {
+            return !empty($m->content_url) && (string) $m->content_url !== 'quiz_submitted';
+          }
+          return false;
+        })->values();
         $totalModules = $modulesCol->count();
 
         $pdfSlots = $modulesCol->where('type', 'pdf');
@@ -1208,10 +1290,12 @@
       </div>
 
       @php
-        $progressModules = $isApproved ? ($course->modules ?? collect()) : collect();
+        $progressModules = ($course->modules ?? collect())
+          ->filter(fn($m) => in_array((int) ($m->id ?? 0), $accessibleModuleIds, true))
+          ->values();
         $progressTotal = $progressModules->count();
         $progressCompleted = 0;
-        if($isApproved && auth()->check()) {
+        if(auth()->check() && $progressTotal > 0) {
           $moduleIds = $progressModules
             ->pluck('id')
             ->map(fn($id) => (int) $id)
@@ -1295,40 +1379,98 @@
         </div>
         <div class="tab-content" id="syllabus">
           <div class="syllabus-list">
-            @if(!$isApproved)
-              <div class="text-muted">Syllabus akan tampil setelah materi disetujui admin.</div>
-            @else
-            @forelse($visibleModules as $module)
+            @php
+              $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
+              $groupedByUnit = $modulesCol
+                ->sortBy(fn($m) => (int) ($m->order_no ?? 0))
+                ->groupBy(function ($m) {
+                  $orderNo = (int) ($m->order_no ?? 0);
+                  if ($orderNo <= 0) {
+                    return 1;
+                  }
+                  return (int) floor(($orderNo - 1) / 3) + 1;
+                });
+            @endphp
+
+            @forelse($groupedByUnit as $unitNo => $modulesInUnit)
               @php
-                $moduleTitle = $module->title ?? 'Materi';
-                if (in_array((string) ($module->type ?? ''), ['pdf', 'video'], true) && !empty($module->content_url) && $module->content_url !== 'quiz_submitted') {
-                  $moduleTitle = (string) ($module->file_name ?: basename((string) $module->content_url));
-                }
-                $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
-                $quizCount = (int) ($module->quiz_questions_count ?? 0);
+                $existingUnitTitle = (string) optional($unitTitlesByNo->get((int) $unitNo))->title;
+                $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . (int) $unitNo);
+
+                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds) {
+                  if (!$userCanAccessCourse) {
+                    return true;
+                  }
+                  if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                    return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
+                  }
+                  return false;
+                });
               @endphp
               <div class="syllabus-dropdown-item">
                 <details>
-                  <summary>{{ $moduleTitle }}</summary>
-                  <ul style="counter-reset: lesson-counter;">
-                    @if(strtolower((string) ($module->type ?? '')) === 'quiz')
-                      @if($quizCount > 0)
-                        <li>{{ $quizCount }} soal kuis tersedia.</li>
-                      @else
-                        <li class="text-muted">Kuis belum tersedia.</li>
+                  <summary>
+                    <span>{{ $unitTitle }}</span>
+                    <span class="syllabus-summary-icons" aria-hidden="true">
+                      <i class="bi bi-chevron-right chevron-ico"></i>
+                      @if($unitHasLocked)
+                        <i class="bi bi-lock-fill lock-ico"></i>
                       @endif
-                    @elseif($moduleDesc !== '')
-                      <li>{{ Str::limit($moduleDesc, 160) }}</li>
-                    @else
-                      <li class="text-muted">Deskripsi belum tersedia.</li>
-                    @endif
+                    </span>
+                  </summary>
+                  <ul style="counter-reset: lesson-counter;">
+                    @foreach($modulesInUnit as $module)
+                      @php
+                        $type = strtolower((string) ($module->type ?? ''));
+                        $moduleTitle = trim((string) ($module->title ?? ''));
+                        if ($moduleTitle === '') {
+                          $moduleTitle = 'Materi';
+                        }
+                        $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
+                        $quizCount = (int) ($module->quiz_questions_count ?? 0);
+
+                        $hasContent = false;
+                        if ($type === 'quiz') {
+                          $hasContent = $quizCount > 0;
+                        } elseif (in_array($type, ['pdf', 'video'], true)) {
+                          $hasContent = !empty($module->content_url) && (string) $module->content_url !== 'quiz_submitted';
+                        }
+
+                        $isLocked = false;
+                        if (!$userCanAccessCourse) {
+                          $isLocked = true;
+                        } elseif ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                          $isLocked = !in_array((int) ($module->id ?? 0), $accessibleModuleIds, true);
+                        }
+
+                        $typeLabel = match ($type) {
+                          'pdf' => 'PDF',
+                          'video' => 'Video',
+                          'quiz' => 'Kuis',
+                          default => 'Materi',
+                        };
+                      @endphp
+                      <li>
+                        <div style="font-weight:600;">{{ $typeLabel }}: {{ $moduleTitle }}</div>
+                        @if($isLocked)
+                          <div class="text-muted">Terkunci.</div>
+                        @elseif(!$hasContent)
+                          <div class="text-muted">Materi belum tersedia.</div>
+                        @elseif($type === 'quiz')
+                          <div class="text-muted">{{ $quizCount }} soal kuis tersedia.</div>
+                        @elseif($moduleDesc !== '')
+                          <div class="text-muted">{{ Str::limit($moduleDesc, 160) }}</div>
+                        @else
+                          <div class="text-muted">Deskripsi belum tersedia.</div>
+                        @endif
+                      </li>
+                    @endforeach
                   </ul>
                 </details>
               </div>
             @empty
               <div class="text-muted">Belum ada modul pada course ini.</div>
             @endforelse
-            @endif
           </div>
         </div>
         <div class="tab-content" id="review">
@@ -1460,6 +1602,7 @@
           <hr>
           @php
             $canLearn = false;
+            $paymentUnderReview = false;
             if (auth()->check()) {
                 $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
                     ->where('course_id', $course->id)
@@ -1471,11 +1614,19 @@
                     ->where('status', 'settled')
                     ->exists();
 
+                // Payment uploaded / waiting admin verification
+                $paymentUnderReview = \App\Models\ManualPayment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'pending')
+                    ->exists();
+
               $canLearn = $enrolledActive || $hasSettledPayment;
             }
           @endphp
           @if($canLearn)
             <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+          @elseif($paymentUnderReview)
+            <button type="button" class="enroll" disabled style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran sedang ditinjau</button>
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @endif

@@ -125,7 +125,10 @@ class EventController extends Controller
     public function create()
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
-        $events = Event::query()->latest()->paginate(10);
+        $events = Event::query()
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
@@ -169,7 +172,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
+            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -183,6 +186,20 @@ class EventController extends Controller
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
         ]);
+
+        // Normalize online/offline location inputs: keep only one of maps_url or zoom_link.
+        $mapsUrl = trim((string) $request->input('maps_url', ''));
+        $zoomLink = trim((string) $request->input('zoom_link', ''));
+        $latitude = $request->input('latitude', $event->latitude);
+        $longitude = $request->input('longitude', $event->longitude);
+
+        if ($mapsUrl !== '') {
+            $zoomLink = '';
+        } elseif ($zoomLink !== '') {
+            $mapsUrl = '';
+            $latitude = null;
+            $longitude = null;
+        }
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
@@ -250,10 +267,10 @@ class EventController extends Controller
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
             'location' => $request->location,
-            'maps_url' => $request->maps_url,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'zoom_link' => $request->zoom_link,
+            'maps_url' => $mapsUrl !== '' ? $mapsUrl : null,
+            'latitude' => $mapsUrl !== '' ? $latitude : null,
+            'longitude' => $mapsUrl !== '' ? $longitude : null,
+            'zoom_link' => $zoomLink !== '' ? $zoomLink : null,
             'price' => $request->price,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'discount_until' => $request->discount_until,
@@ -414,7 +431,7 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
+            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -453,6 +470,31 @@ class EventController extends Controller
             'event_time_end',
             'material_deadline'
         ]);
+
+        // Normalize online/offline location inputs: keep only one of maps_url or zoom_link.
+        // Important for edit form: disabled inputs are not submitted, so we must explicitly null the opposing field.
+        $mapsUrl = trim((string) $request->input('maps_url', ''));
+        $zoomLink = trim((string) $request->input('zoom_link', ''));
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+
+        if ($mapsUrl !== '') {
+            $data['maps_url'] = $mapsUrl;
+            $data['zoom_link'] = null;
+            $data['latitude'] = $latitude;
+            $data['longitude'] = $longitude;
+        } elseif ($zoomLink !== '') {
+            $data['zoom_link'] = $zoomLink;
+            $data['maps_url'] = null;
+            $data['latitude'] = null;
+            $data['longitude'] = null;
+        } else {
+            // If both cleared, persist nulls (avoid empty strings).
+            $data['maps_url'] = null;
+            $data['zoom_link'] = null;
+            $data['latitude'] = null;
+            $data['longitude'] = null;
+        }
 
         if (array_key_exists('trainer_id', $data) && empty($data['trainer_id'])) {
             $data['trainer_id'] = null;
@@ -720,12 +762,11 @@ class EventController extends Controller
         ]);
     }
 
-    // Admin: upload operational documents (VBG, certificate, attendance)
+    // Admin: upload operational documents (VBG, attendance)
     public function uploadDocuments(Request $request, Event $event)
     {
         $validated = $request->validate([
             'virtual_background' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
-            'certificate' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
             'attendance' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
         ]);
 
@@ -735,10 +776,6 @@ class EventController extends Controller
         if ($request->hasFile('virtual_background')) {
             $updates['vbg_path'] = $request->file('virtual_background')->store('events/docs', 'public');
             $notificationMessages[] = 'Virtual background (VBG)';
-        }
-        if ($request->hasFile('certificate')) {
-            $updates['certificate_path'] = $request->file('certificate')->store('events/docs', 'public');
-            $notificationMessages[] = 'Sertifikat';
         }
         if ($request->hasFile('attendance')) {
             $updates['attendance_path'] = $request->file('attendance')->store('events/docs', 'public');
@@ -843,7 +880,33 @@ class EventController extends Controller
             'material_approved_at' => now(),
             'material_approved_by' => auth()->id(),
             'material_rejection_reason' => null,
+
+            'module_verified_at' => now(),
+            'module_verified_by' => auth()->id(),
+            'module_rejected_at' => null,
+            'module_rejected_by' => null,
+            'module_rejection_reason' => null,
         ]);
+
+        // Notify trainer (if available)
+        try {
+            if (!empty($event->trainer_id)) {
+                \App\Models\TrainerNotification::create([
+                    'trainer_id' => (int) $event->trainer_id,
+                    'type' => 'event_material_approved',
+                    'title' => 'Materi Event Diterima',
+                    'message' => 'Materi event "' . $event->title . '" telah disetujui oleh admin.',
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'url' => route('trainer.events.show', $event->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // ignore notification errors
+        }
 
         return back()->with('success', 'Module trainer berhasil diverifikasi.')
             ->with('module_success', 'Module trainer berhasil diverifikasi.');
@@ -873,7 +936,34 @@ class EventController extends Controller
             'material_approved_at' => null,
             'material_approved_by' => null,
             'material_rejection_reason' => $validated['reason'],
+
+            'module_verified_at' => null,
+            'module_verified_by' => null,
+            'module_rejected_at' => now(),
+            'module_rejected_by' => auth()->id(),
+            'module_rejection_reason' => $validated['reason'],
         ]);
+
+        // Notify trainer (if available)
+        try {
+            if (!empty($event->trainer_id)) {
+                \App\Models\TrainerNotification::create([
+                    'trainer_id' => (int) $event->trainer_id,
+                    'type' => 'event_material_rejected',
+                    'title' => 'Materi Event Ditolak',
+                    'message' => 'Materi event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'url' => route('trainer.events.show', $event->id),
+                        'rejection_reason' => $validated['reason'],
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // ignore notification errors
+        }
 
         return back()->with('success', 'Module trainer ditolak.')
             ->with('module_success', 'Module trainer ditolak.');

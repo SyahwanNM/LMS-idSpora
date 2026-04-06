@@ -74,7 +74,16 @@
                     </div>
                 </div>
                 <div class="d-flex flex-column" style="max-width:220px">
-                    <small class="text-muted fw-semibold mb-1">Tipe Kelola</small>
+                    <small class="text-muted fw-semibold mb-1">
+                        Tipe Kelola
+                        <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
+                            aria-label="Info tipe kelola"
+                            style="color: var(--bs-warning);"
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                            data-bs-custom-class="tooltip-hint-yellow"
+                            title="Manage: event yang dikelola (lanjutan/operasional). Create: event baru yang dibuat dari awal. Filter ini hanya untuk menyaring daftar event."></i>
+                    </small>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
                         <select id="manageFilter" class="form-select" aria-label="Filter tipe kelola">
@@ -162,6 +171,7 @@
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
+                                        $isOffline = !empty($event->maps_url);
                                         $hasVbg = !empty($event->vbg_path);
                                         $hasCert = !empty($event->certificate_path);
                                         $hasModule = !empty($event->module_path);
@@ -171,20 +181,23 @@
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
                                         // Tooltip ringkas
-                                        $tooltip = 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
+                                        $tooltip = $isOffline
+                                            ? 'Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
+                                            : 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        // Tampilkan count UI sebagai 4 komponen (termasuk Absensi via QR)
-                                        $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $totalDisplay = $isOffline ? 3 : 4;
+                                        // Tampilkan count UI (offline: tanpa VBG)
+                                        $completedDisplay = ($isOffline ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
-                                        <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Kelengkapan Dokumen">{{ $pct }}%</span>
+                                        <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $tooltip }}">{{ $pct }}%</span>
                                         <div class="d-inline-flex align-items-center doc-info-actions gap-1">
                                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadOperasionalModal-{{ $event->id }}" title="Kelola Dokumen">
                                                 <i class="bi bi-folder2-open"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/4 selesai</small>
+                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/{{ $totalDisplay }} selesai</small>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
@@ -223,7 +236,7 @@
                 </div>
                 {{-- Modals: Kelengkapan Dokumen per Event --}}
                 @foreach($events as $event)
-                <div class="modal-upload-operasional modal fade" id="uploadOperasionalModal-{{ $event->id }}" tabindex="-1" aria-labelledby="uploadOperasionalLabel-{{ $event->id }}" aria-hidden="true">
+                <div class="modal-upload-operasional modal fade" id="uploadOperasionalModal-{{ $event->id }}" tabindex="-1" aria-labelledby="uploadOperasionalLabel-{{ $event->id }}" aria-hidden="true" data-draggable="false">
 
         <script>
         document.addEventListener('DOMContentLoaded', function(){
@@ -303,7 +316,7 @@
             });
         });
         </script>
-                    <div class="modal-dialog modal-dialog-scrollable">
+                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                         <div class="content-operasional-view modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="uploadOperasionalLabel-{{ $event->id }}">Status Dokumen Detail</h5>
@@ -312,6 +325,7 @@
                             <div class="modal-body">
                                 <p class="mb-2">Tinjau status semua dokumen terkait acara dan administrasi.</p>
                                 @php 
+                                    $isOffline = !empty($event->maps_url);
                                     $hasVbg = !empty($event->vbg_path);
                                     $hasCert = !empty($event->certificate_path);
                                     $hasModule = !empty($event->module_path);
@@ -320,37 +334,40 @@
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $completedDisplay = ($hasVbg ? 1 : 0) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $totalDisplay = $isOffline ? 3 : 4;
+                                    $completedDisplay = ($isOffline ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     $pct = $event->documents_completion_percent;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
                                     <span class="{{ $pctClass }}" title="Kelengkapan Dokumen">{{ $pct }}%</span>
-                                    <small class="text-muted">{{ $completedDisplay }}/4 selesai</small>
+                                    <small class="text-muted">{{ $completedDisplay }}/{{ $totalDisplay }} selesai</small>
                                 </div>
                                 <ul class="list-group list-group-flush mb-3 small">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>
-                                            <i class="bi {{ $hasVbg ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
-                                            Virtual Background
-                                        </span>
-                                        <span>
-                                            @if($hasVbg)
-                                                @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                    </a>
-                                                @elseif($vExt === 'pdf')
-                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                    @if(!$isOffline)
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi {{ $hasVbg ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
+                                                Virtual Background
+                                            </span>
+                                            <span>
+                                                @if($hasVbg)
+                                                    @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
+                                                    @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
+                                                            <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                        </a>
+                                                    @elseif($vExt === 'pdf')
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    @else
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
+                                                    @endif
                                                 @else
-                                                    <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
+                                                    <span class="text-muted">Belum ada</span>
                                                 @endif
-                                            @else
-                                                <span class="text-muted">Belum ada</span>
-                                            @endif
-                                        </span>
-                                    </li>
+                                            </span>
+                                        </li>
+                                    @endif
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span>
                                             <i class="bi {{ $hasCert ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
@@ -436,7 +453,7 @@
 
                                 <form action="{{ route('admin.events.documents.upload', $event) }}" method="post" enctype="multipart/form-data" id="docForm-{{ $event->id }}">
                                     @csrf
-                                    @php $adminDocsComplete = $hasVbg && $hasCert && $hasAbs; @endphp
+                                    @php $adminDocsComplete = $isOffline ? ($hasCert && $hasAbs) : ($hasVbg && $hasCert && $hasAbs); @endphp
                                     @if($adminDocsComplete)
                                         <div class="text-center mb-3">
                                             <button type="button" class="btn btn-outline-primary btn-sm" data-edit-doc-toggle="{{ $event->id }}">
@@ -444,29 +461,23 @@
                                             </button>
                                         </div>
                                         <div class="doc-edit-wrapper d-none" id="docEditWrapper-{{ $event->id }}">
+                                            @if(!$isOffline)
+                                                <div class="box-up mb-3">
+                                                    <label for="vbg-{{ $event->id }}" class="form-label">Virtual Background</label>
+                                                    <input type="file" class="form-control" id="vbg-{{ $event->id }}" name="virtual_background" accept="image/*" data-preview="#vbg-preview-{{ $event->id }}">
+                                                    <div id="vbg-preview-{{ $event->id }}" class="mt-2"></div>
+                                                </div>
+                                            @endif
+                                            <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
+                                        </div>
+                                    @else
+                                        @if(!$isOffline)
                                             <div class="box-up mb-3">
                                                 <label for="vbg-{{ $event->id }}" class="form-label">Virtual Background</label>
                                                 <input type="file" class="form-control" id="vbg-{{ $event->id }}" name="virtual_background" accept="image/*" data-preview="#vbg-preview-{{ $event->id }}">
                                                 <div id="vbg-preview-{{ $event->id }}" class="mt-2"></div>
                                             </div>
-                                            <div class="box-up mb-3">
-                                                <label for="sertif-{{ $event->id }}" class="form-label">Sertifikat</label>
-                                                <input type="file" class="form-control" id="sertif-{{ $event->id }}" name="certificate" accept="image/*,application/pdf" data-preview="#sertif-preview-{{ $event->id }}">
-                                                <div id="sertif-preview-{{ $event->id }}" class="mt-2"></div>
-                                            </div>
-                                            <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
-                                        </div>
-                                    @else
-                                        <div class="box-up mb-3">
-                                            <label for="vbg-{{ $event->id }}" class="form-label">Virtual Background</label>
-                                            <input type="file" class="form-control" id="vbg-{{ $event->id }}" name="virtual_background" accept="image/*" data-preview="#vbg-preview-{{ $event->id }}">
-                                            <div id="vbg-preview-{{ $event->id }}" class="mt-2"></div>
-                                        </div>
-                                        <div class="box-up mb-3">
-                                            <label for="sertif-{{ $event->id }}" class="form-label">Sertifikat</label>
-                                            <input type="file" class="form-control" id="sertif-{{ $event->id }}" name="certificate" accept="image/*,application/pdf" data-preview="#sertif-preview-{{ $event->id }}">
-                                            <div id="sertif-preview-{{ $event->id }}" class="mt-2"></div>
-                                        </div>
+                                        @endif
                                         <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                     @endif
                                 </form>
@@ -482,7 +493,7 @@
                 <div class="mt-3">{{ $events->links() }}</div>
             @else <div class="text-center py-5">Belum ada event.</div> @endif
         </div></div>
-        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false">
             <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
@@ -549,7 +560,17 @@
                                 </div>
                                 <!-- Kelola Event: Manage / Create -->
                                 <div class="mb-3">
-                                    <label for="manage_action" class="form-label fw-semibold">Kelola Event <span class="text-danger">*</span></label>
+                                    <label for="manage_action" class="form-label fw-semibold">
+                                        Kelola Event
+                                        <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
+                                            aria-label="Info kelola event"
+                                            style="color: var(--bs-warning);"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-custom-class="tooltip-hint-yellow"
+                                            title="Manage: pilih jika event ini masuk kategori dikelola (operasional/lanjutan). Create: pilih jika event ini dibuat sebagai event baru dari awal."></i>
+                                        <span class="text-danger">*</span>
+                                    </label>
                                     <select name="manage_action" id="manage_action" class="form-select" required>
                                         <option value="" disabled {{ old('manage_action') ? '' : 'selected' }}>Pilih aksi</option>
                                         <option value="manage" {{ old('manage_action') === 'manage' ? 'selected' : '' }}>Manage</option>
@@ -772,6 +793,19 @@
         .remove-preview-btn{position:absolute;top:-8px;right:-8px;background:#dc3545;color:#fff;border:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.25);}
         .remove-preview-btn:hover{background:#c82333;}
         .remove-preview-btn:active{background:#bd2130;}
+
+        /* Yellow hint tooltip (Bootstrap tooltip custom class) */
+        .tooltip-hint-yellow .tooltip-inner{
+            background-color: var(--bs-warning-bg-subtle);
+            color: var(--bs-warning-text-emphasis);
+            border: 1px solid var(--bs-warning-border-subtle);
+            max-width: 320px;
+            text-align: left;
+        }
+        .tooltip-hint-yellow.bs-tooltip-top .tooltip-arrow::before{ border-top-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-bottom .tooltip-arrow::before{ border-bottom-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-start .tooltip-arrow::before{ border-left-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-end .tooltip-arrow::before{ border-right-color: var(--bs-warning-bg-subtle); }
         /* Force all modal form text to black */
         #addEventModal label,
         #addEventModal .form-label,
@@ -825,6 +859,29 @@
             filter: none !important;
         }
         #addEventModal .modal-footer #submitHint { margin-right: auto; }
+
+        /* Modal footer (Upload Dokumen per Event): keep buttons compact side-by-side */
+        .modal-upload-operasional .modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .modal-upload-operasional .modal-footer .btn {
+            width: auto !important;
+            flex: 0 0 auto;
+        }
+
+        /* Slightly shift centered doc modal upward */
+        .modal-upload-operasional.show .modal-dialog {
+            transform: translate(0, -24px) !important;
+        }
+
+        /* Prevent modal from sticking to the top header/navbar */
+        #addEventModal .modal-dialog {
+            margin-top: clamp(2rem, 10vh, 120px);
+        }
             /* Draggable modal UX */
             .modal-draggable .modal-header { cursor: move; user-select: none; }
         /* Modern danger modal styling */
@@ -1067,6 +1124,8 @@
         // Make modals draggable by mouse (header drag)
         function enableDraggableModal(modalEl){
             if(!modalEl) return;
+            const draggableAttr = String(modalEl.getAttribute('data-draggable') || '').toLowerCase();
+            if(draggableAttr === 'false') return;
             const dialog = modalEl.querySelector('.modal-dialog');
             const header = modalEl.querySelector('.modal-header');
             if(!dialog || !header) return;
@@ -1112,6 +1171,8 @@
 
             // Initialize a reasonable position when shown
             modalEl.addEventListener('shown.bs.modal', () => {
+                const autoPosAttr = String(modalEl.getAttribute('data-draggable-auto-position') || '').toLowerCase();
+                if(autoPosAttr === 'false') return;
                 const rect = dialog.getBoundingClientRect();
                 dialog.style.position = 'fixed';
                 dialog.style.margin = '0';
@@ -1730,6 +1791,7 @@
                 if(id === 'gambar' || name === 'image') return 'Gambar Event';
                 if(id === 'nama' || name === 'title') return 'Nama Event';
                 if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
+                if(id === 'manage_action' || name === 'manage_action') return 'Kelola Event';
                 if(id === 'level' || name === 'level') return 'Level';
                 if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
                 if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
@@ -2000,7 +2062,7 @@
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-danger confirm-danger-btn" id="deleteConfirmBtn" form="deleteEventFormGlobal" disabled>
                     <i class="bi bi-trash me-1"></i> Hapus Permanen
                 </button>

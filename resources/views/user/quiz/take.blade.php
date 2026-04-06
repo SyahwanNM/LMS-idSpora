@@ -35,53 +35,17 @@
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
     <div class="box_luar_kuis quiz-take-v2">
-        <aside class="box_kuis_kiri quiz-modules" id="quizModulesSidebar">
-            <div class="quiz-modules-head">
-                <div class="quiz-modules-title">Modules</div>
-                <button type="button" class="quiz-modules-close" id="quizModulesClose" aria-label="Close modules">×</button>
-            </div>
-
-            <div class="accordion-box">
-                @foreach(($course->modules ?? collect()) as $m)
-                    @php
-                        $isCurrent = (int) $m->id === (int) $module->id;
-                        $typeLabel = strtoupper($m->type ?? 'materi');
-                        $learnUrl = route('course.learn', $course->id) . '?module=' . $m->id;
-                    @endphp
-
-                    <div class="accordion-item {{ $isCurrent ? 'active selected' : '' }}">
-                        <button class="accordion-header" type="button" onclick="this.parentElement.classList.toggle('active')">
-                            {{ $m->title ?? 'Modul' }}
-                            <span class="arrow">▲</span>
-                        </button>
-                        <div class="accordion-content">
-                            <p class="mb-2">Tipe: {{ $typeLabel }}</p>
-                            @if(!$isCurrent)
-                                <a class="btn" href="{{ $learnUrl }}" style="background:#252346; color:#fff; padding:8px 12px; border-radius:10px; font-weight:600; font-size:12px;">
-                                    Buka
-                                </a>
-                            @else
-                                <span class="text-muted" style="font-size:12px;">Sedang dikerjakan</span>
-                            @endif
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </aside>
-
         <div class="box_kuis_kanan">
             <div class="quiz-title-row">
                 <div class="quiz-title-left">
-                    <button type="button" class="quiz-modules-open" id="quizModulesOpen" aria-label="Open modules">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M2.5 12.5A.5.5 0 0 1 3 12h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4A.5.5 0 0 1 3 8h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4A.5.5 0 0 1 3 4h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
+                    <span class="quiz-title-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2 2.5a.5.5 0 0 1 .5-.5H14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2.5a.5.5 0 0 1-.5-.5z" opacity=".15"/>
+                            <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14H14a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM2 3.5A.5.5 0 0 1 2.5 3H14v10H2.5a.5.5 0 0 1-.5-.5z"/>
+                            <path d="M4 5.25a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 5.25m0 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 7.75m0 2.5a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4A.75.75 0 0 1 4 10.25"/>
                         </svg>
-                    </button>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                        <path d="M1.5 1a.5.5 0 0 0-.5.5V14a1 1 0 0 0 1 1H14.5a.5.5 0 0 0 0-1H2a.5.5 0 0 1-.5-.5V1.5a.5.5 0 0 0-.5-.5"/>
-                        <path d="M4 6.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 6.5m0 2a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8.5m0 2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4A.5.5 0 0 1 4 10.5"/>
-                    </svg>
-                    <h1 class="quiz-title">Kuis {{ $quizNumber }}: {{ $module->title }}</h1>
+                    </span>
+                    <h1 class="quiz-title">Kuis {{ $quizNumber }} : {{ $module->title }}</h1>
                 </div>
             </div>
 
@@ -107,7 +71,7 @@
 
                     <div class="tombol_kuis">
                         <button type="button" class="previous_question" onclick="window.location.href='{{ $prevUrl }}'">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Finish' : 'Next Question' }}</button>
+                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Send' : 'Send' }}</button>
                     </div>
                 </form>
             </div>
@@ -139,23 +103,6 @@
                 opt.classList.add('selected');
             });
         });
-
-        // Modules sidebar open/close
-        const modulesSidebar = document.getElementById('quizModulesSidebar');
-        const modulesOpen = document.getElementById('quizModulesOpen');
-        const modulesClose = document.getElementById('quizModulesClose');
-        if (modulesSidebar && modulesOpen && modulesClose) {
-            const closeSidebar = () => modulesSidebar.classList.add('closed');
-            const openSidebar = () => modulesSidebar.classList.remove('closed');
-
-            modulesOpen.addEventListener('click', openSidebar);
-            modulesClose.addEventListener('click', closeSidebar);
-
-            // Default closed on smaller screens
-            if (window.matchMedia && window.matchMedia('(max-width: 992px)').matches) {
-                closeSidebar();
-            }
-        }
 
         // Timer (module duration in seconds), based on server-provided endsAt
         const endsAtIso = @json($endsAtIso ?? null);

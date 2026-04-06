@@ -342,7 +342,7 @@
                                 $previewData = [
                                 'id' => $course->id,
                                 'title' => $course->name,
-                                'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                'image' => $course->card_thumbnail ? Storage::disk('public')->url($course->card_thumbnail) : '',
                                 'description' => trim($course->description),
                                 'enroll_count' => (int)($course->enrollments_count ?? 0),
                                 'edit_url' => route('admin.courses.edit', $course),
@@ -387,7 +387,7 @@
                                 <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
                                     @csrf
                                     <button type="submit"
-                                        class="btn_publish_course js-publish-course"
+                                        class="btn btn-sm {{ $isPublished ? 'btn-success' : 'btn-outline-success' }} btn_publish_course js-publish-course"
                                         data-published="{{ $isPublished ? '1' : '0' }}"
                                         data-missing='@json($missingForPublish)'>
                                         {{ $isPublished ? 'Published' : 'Publish' }}
@@ -795,6 +795,7 @@
                 return !!(m.content_url || '');
             }
 
+
             document.addEventListener('click', function(ev) {
                 var rbtn = ev.target.closest('.js-remind-trainer');
                 if (!rbtn) return;
@@ -868,6 +869,9 @@
 
                 // --- MODULES PARSING ---
                 var modules = data.modules || [];
+                var visibleModules = Array.isArray(modules)
+                    ? modules.filter(function(m) { return moduleHasContent(m); })
+                    : [];
 
                 // --- CONTENT DESCRIPTION ---
                 setText('cp-content-description', data.description || 'Tidak ada deskripsi.');
@@ -876,11 +880,11 @@
                 (function renderSyllabus(){
                     var ol = document.getElementById('cp-syllabus-list');
                     if (!ol) return;
-                    if (!Array.isArray(modules) || modules.length === 0) {
-                        ol.innerHTML = '<li class="text-muted">Belum ada modul.</li>';
+                    if (!Array.isArray(visibleModules) || visibleModules.length === 0) {
+                        ol.innerHTML = '<li class="text-muted">Belum ada materi yang disetujui.</li>';
                         return;
                     }
-                    ol.innerHTML = modules
+                    ol.innerHTML = visibleModules
                         .map(function(m){ return '<li>' + escapeHtml(m && m.title ? m.title : '-') + '</li>'; })
                         .join('');
                 })();
@@ -936,10 +940,10 @@
                     });
                 })();
 
-                // 1. Hitung Ringkasan
-                var countPdf = modules.filter(m => m.type === 'pdf').length;
-                var countVideo = modules.filter(m => m.type === 'video').length;
-                var countQuiz = modules.filter(m => m.type === 'quiz').length;
+                // 1. Hitung Ringkasan (hanya yang sudah ada konten/diapprove)
+                var countPdf = visibleModules.filter(m => m.type === 'pdf').length;
+                var countVideo = visibleModules.filter(m => m.type === 'video').length;
+                var countQuiz = visibleModules.filter(m => m.type === 'quiz').length;
 
                 setText('count-pdf', countPdf);
                 setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
@@ -950,13 +954,14 @@
                 // 1. PDF Tab
                 var pdfContainer = document.getElementById('list-pdf-container');
                 if (pdfContainer) {
-                    var pdfs = modules.filter(m => m.type === 'pdf');
-                    var missingPdfCount = pdfs.filter(m => !moduleHasContent(m)).length;
+                    var pdfsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'pdf') : [];
+                    var pdfs = visibleModules.filter(m => m.type === 'pdf');
+                    var missingPdfCount = pdfsAll.filter(m => !moduleHasContent(m)).length;
                     var pdfRemind = (data.has_trainer && (pdfs.length === 0 || missingPdfCount > 0))
                         ? renderRemindButton(data.id, 'pdf')
                         : '';
                     if (pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF.</p>' + pdfRemind;
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF yang disetujui.</p>' + pdfRemind;
                     } else {
                         pdfContainer.innerHTML = (missingPdfCount > 0 ? pdfRemind : '') + pdfs.map(m => `
                              <div class="list-pdf">
@@ -975,13 +980,14 @@
                 // 2. Video Tab
                 var vidContainer = document.getElementById('list-video-container');
                 if (vidContainer) {
-                    var vids = modules.filter(m => m.type === 'video');
-                    var missingVideoCount = vids.filter(m => !moduleHasContent(m)).length;
+                    var vidsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'video') : [];
+                    var vids = visibleModules.filter(m => m.type === 'video');
+                    var missingVideoCount = vidsAll.filter(m => !moduleHasContent(m)).length;
                     var videoRemind = (data.has_trainer && (vids.length === 0 || missingVideoCount > 0))
                         ? renderRemindButton(data.id, 'video')
                         : '';
                     if (vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video.</p>' + videoRemind;
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video yang disetujui.</p>' + videoRemind;
                     } else {
                         vidContainer.innerHTML = (missingVideoCount > 0 ? videoRemind : '') + vids.map(m => `
                             <div class="list-video">
@@ -1000,13 +1006,14 @@
                 // 3. Quiz Tab
                 var quizContainer = document.getElementById('list-kuis-container');
                 if (quizContainer) {
-                    var quizzes = modules.filter(m => m.type === 'quiz');
-                    var missingQuizCount = quizzes.filter(m => Number(m.question_count || 0) <= 0).length;
+                    var quizzesAll = Array.isArray(modules) ? modules.filter(m => m.type === 'quiz') : [];
+                    var quizzes = visibleModules.filter(m => m.type === 'quiz');
+                    var missingQuizCount = quizzesAll.filter(m => Number(m.question_count || 0) <= 0).length;
                     var quizRemind = (data.has_trainer && (quizzes.length === 0 || missingQuizCount > 0))
                         ? renderRemindButton(data.id, 'quiz')
                         : '';
                     if (quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis.</p>' + quizRemind;
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis yang disetujui.</p>' + quizRemind;
                     } else {
                         quizContainer.innerHTML = (missingQuizCount > 0 ? quizRemind : '') + quizzes.map(m => `
                              <div class="list-kuis">

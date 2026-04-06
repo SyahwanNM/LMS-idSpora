@@ -83,7 +83,9 @@ class CourseManualPaymentController extends Controller
             'uploaded_by' => $user->id,
         ]);
 
-        return back()->with('success', 'Bukti pembayaran berhasil diupload. Menunggu verifikasi admin.');
+        return redirect()
+            ->route('course.detail', $course->id)
+            ->with('success', 'Bukti pembayaran berhasil diupload. Menunggu verifikasi admin.');
     }
 
     public function approve(Request $request, Course $course, ManualPayment $manualPayment): RedirectResponse

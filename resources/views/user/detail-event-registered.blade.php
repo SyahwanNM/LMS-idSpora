@@ -179,6 +179,25 @@
             .resource-card.locked .img-resource svg { opacity: 0.6; }
             .resource-card.locked .resource-value { color: #6c757d; }
             .resource-card.locked .link-share { pointer-events: none; opacity: 0.6; }
+
+            /* Participant Resources: make cards more compact */
+            .resource-box { padding: 16px; }
+            .resource-box > h5 { margin-bottom: 12px; }
+            .resource-box .participant-resources { gap: 12px; align-items: start; }
+            .resource-box .participant-resources .resource-card {
+                padding: 12px 14px !important;
+                min-height: 92px !important;
+                height: auto !important;
+            }
+            .resource-box .participant-resources .resource-card .img-resource {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 34px;
+                height: 34px;
+            }
+            .resource-box .participant-resources .resource-card .resource-value h6 { margin-bottom: 4px; }
+            .resource-box .participant-resources .resource-card .resource-value p { margin-bottom: 0; line-height: 1.25; }
             /* Feedback card: do NOT blur when locked, instead show an overlay message */
             .add-rating.locked { opacity: 1 !important; filter: none !important; position: relative; }
             .add-rating.locked .locked-overlay {
@@ -332,7 +351,11 @@
     </head>
 
     <body>
-    @include("partials.navbar-after-login")
+    @auth
+        @include('partials.navbar-after-login')
+    @else
+        @include('partials.navbar-before-login')
+    @endauth
     <div class="all">
         <div class="container-ungu">
             <div class="link-box">
@@ -668,6 +691,8 @@
                             // - FREE events: allow booking until event finished (ignore started state)
                             // - PAID events: allow booking only before start time when available; else until end-of-day
                             $hasStartTime = isset($event) && !empty($event->event_time);
+                            $registrationStatus = $registration ? strtolower((string) $registration->status) : null;
+                            $paymentUnderReview = $registration && $registrationStatus === 'pending';
                                                         $canRegister = (!$isRegistered) && (
                                                                 $eventDate
                                                                         ? (
@@ -684,11 +709,17 @@
                                 } catch (\Throwable $e) { $isSaved = false; }
                             }
                         @endphp
-                        @if($canRegister)
-                            @if($isFree)
-                                <button type="button" id="bookFreeBtn" class="bookseat">Book Seat</button>
+                        @if($paymentUnderReview)
+                            <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
+                        @elseif($canRegister)
+                            @if(!auth()->check())
+                                <a class="bookseat text-white text-center" href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" style="text-decoration:none;">Book Seat</a>
                             @else
-                                <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
+                                @if($isFree)
+                                    <button type="button" id="bookFreeBtn" class="bookseat">Book Seat</button>
+                                @else
+                                    <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
+                                @endif
                             @endif
                         @else
                             @if(!$isRegistered && $eventFinished)
@@ -877,30 +908,32 @@
             <h5>Participant Resources</h5>
             <div class="participant-resources">
 
+                @php $isOffline = !empty($event->maps_url); @endphp
+
                 {{-- Virtual Background Resource --}}
-                <div class="resource-card {{ (!empty($event->vbg_path) && $isRegistered) ? '' : 'locked' }}">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-image" viewBox="0 0 16 16">
-                            <path d="M14.002 3H2c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 1v.217l-3.106 3.106a.5.5 0 0 1-.707 0L7.5 5.207l-4.5 4.5V4h11zm-12 8V9.707l3.646-3.647a.5.5 0 0 1 .708 0l2.647 2.646 3.646-3.646a.5.5 0 0 1 .708 0L15 8.293V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/>
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Virtual Background</h6>
-                        <p>@if(!empty($event->vbg_path) && $isRegistered) Download your event background @else Not available @endif</p>
-                    </div>
-                    @if(!empty($event->vbg_path) && $isRegistered)
-                        <a class="link-share" href="{{ $event->vbg_file_url }}" download>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                @if(!$isOffline)
+                    <div class="resource-card {{ (!empty($event->vbg_path) && $isRegistered) ? '' : 'locked' }}">
+                        <div class="img-resource">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-image" viewBox="0 0 16 16">
+                                <path d="M14.002 3H2c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 1v.217l-3.106 3.106a.5.5 0 0 1-.707 0L7.5 5.207l-4.5 4.5V4h11zm-12 8V9.707l3.646-3.647a.5.5 0 0 1 .708 0l2.647 2.646 3.646-3.646a.5.5 0 0 1 .708 0L15 8.293V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/>
                             </svg>
-                        </a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;">
-                            
-                        </span>
-                    @endif
-                </div>
+                        </div>
+                        <div class="resource-value">
+                            <h6>Virtual Background</h6>
+                            <p>@if(!empty($event->vbg_path) && $isRegistered) Download your event background @else Not available @endif</p>
+                        </div>
+                        @if(!empty($event->vbg_path) && $isRegistered)
+                            <a class="link-share" href="{{ $event->vbg_file_url }}" download>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                </svg>
+                            </a>
+                        @else
+                            <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                        @endif
+                    </div>
+                @endif
 
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
@@ -1062,7 +1095,7 @@
                         @endif
                     @endif
                 </div>
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}">
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}" style="position:relative;">
                 <div class="img-resource">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
                         <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
@@ -1070,15 +1103,26 @@
                 </div>
                 <div class="resource-value">
                     <h6>Feedback and Ratings</h6>
-                    <p>Please fill out your feedback for this event</p>
+                    @if(isset($hasFeedback) && $hasFeedback)
+                        <p class="text-success" style="font-weight:600;">Feedback and Ratings berhasil dilakukan</p>
+                    @else
+                        <p>Please fill out your feedback for this event</p>
+                    @endif
                 </div>
 
                 @if($isRegistered && $attendanceSubmitted)
                     <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                        </svg>
+                        @if(isset($hasFeedback) && $hasFeedback)
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Feedback berhasil">
+                                <circle cx="12" cy="12" r="9"></circle>
+                                <polyline points="8 12 11 15 16 10"></polyline>
+                            </svg>
+                        @else
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                            </svg>
+                        @endif
                     </button>
                 @else
                     <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>

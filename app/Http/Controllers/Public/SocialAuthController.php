@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\ActivityLog;
 use App\Models\LoginOtp;
 use App\Mail\LoginOtpMail;
+use App\Support\AdminSettings;
 
 class SocialAuthController extends Controller
 {
@@ -85,6 +86,10 @@ class SocialAuthController extends Controller
 
         // Only require OTP on first Google login (when email not yet verified)
         if (empty($user->email_verified_at)) {
+            if (strcasecmp($user->role ?? '', 'admin') !== 0 && AdminSettings::maintenanceEnabled()) {
+                $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+                return redirect('/')->with('maintenance_notice', $msg);
+            }
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             LoginOtp::where('email', $user->email)->where('is_used', false)->delete();
             LoginOtp::create([
@@ -112,11 +117,17 @@ class SocialAuthController extends Controller
         }
 
         // If already verified before, log in directly
+        if (strcasecmp($user->role ?? '', 'admin') !== 0 && AdminSettings::maintenanceEnabled()) {
+            $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+            return redirect('/')->with('maintenance_notice', $msg);
+        }
+
         Auth::login($user, true);
         $redirect = session()->pull('social_redirect');
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
         }
+        // (Maintenance for non-admin is handled above before login session is created.)
         if ($redirect) {
             return redirect($redirect)->with('success', 'Login berhasil!');
         }

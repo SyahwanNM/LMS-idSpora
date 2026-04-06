@@ -197,7 +197,11 @@ class MaterialApprovalController extends Controller
 
         $pendingEventModulesQuery = Event::query()
             ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path');
+            ->whereNotNull('module_path')
+            ->where(function ($q) {
+                $q->whereNull('material_status')
+                    ->orWhereIn('material_status', ['pending', 'pending_review']);
+            });
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
@@ -210,6 +214,7 @@ class MaterialApprovalController extends Controller
         }
 
         $pendingEventModules = $pendingEventModulesQuery
+            ->orderByDesc('module_submitted_at')
             ->orderByDesc('created_at')
             ->orderByDesc('event_date')
             ->get([
@@ -219,16 +224,39 @@ class MaterialApprovalController extends Controller
                 'jenis',
                 'event_date',
                 'module_path',
-                'created_at as module_submitted_at',
+                'module_submitted_at',
+                'created_at',
+                'updated_at',
             ]);
+
+        // Backward-compat display: older rows may not have module_submitted_at filled.
+        // For pending items, updated_at usually reflects the module upload time.
+        $pendingEventModules->transform(function (Event $event) {
+            if (empty($event->module_submitted_at) && !empty($event->module_path)) {
+                $event->setAttribute('module_submitted_at', $event->updated_at);
+            }
+            return $event;
+        });
 
         // Statistics
         $totalPending = Course::where('status', 'pending_review')->count()
-            + Event::query()->whereNotNull('module_path')->count();
+            + Event::query()
+                ->whereNotNull('module_path')
+                ->where(function ($q) {
+                    $q->whereNull('material_status')
+                        ->orWhereIn('material_status', ['pending', 'pending_review']);
+                })
+                ->count();
         $totalApproved = Course::where('status', 'approved')->count()
-            + Event::query()->whereRaw('1=0')->count();
+            + Event::query()
+                ->whereNotNull('module_path')
+                ->where('material_status', 'approved')
+                ->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + Event::query()->whereRaw('1=0')->count();
+            + Event::query()
+                ->whereNotNull('module_path')
+                ->where('material_status', 'rejected')
+                ->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 

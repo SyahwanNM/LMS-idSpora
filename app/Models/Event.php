@@ -92,30 +92,30 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        $count = 0;
-        if (!empty($this->vbg_path)) {
-            $count++;
-        }
-        if (!empty($this->certificate_path)) {
-            $count++;
-            if (!empty($this->vbg_path))
-                $count++;
-            if (!empty($this->certificate_path))
-                $count++;
-            if (!empty($this->module_path))
-                $count++;
-        }
-        // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
-        if (!empty($this->module_path)) {
-            $count++;
-        }
-        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
+        $isOffline = trim((string) ($this->maps_url ?? '')) !== '';
+
+        $hasVbg = !empty($this->vbg_path);
+        $hasCert = !empty($this->certificate_path);
+        $hasModule = !empty($this->module_path);
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
             || !empty($this->attendance_qr_token);
+
+        // Offline events do not require Virtual Background.
+        $count = 0;
+        if (!$isOffline && $hasVbg) {
+            $count++;
+        }
+        if ($hasCert) {
+            $count++;
+        }
+        if ($hasModule) {
+            $count++;
+        }
         if ($hasAttendance) {
             $count++;
         }
+
         return $count;
     }
 
@@ -124,9 +124,13 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 4; // Virtual Background, Sertifikat, Module (Trainer), Absensi (QR/File)
+        $isOffline = trim((string) ($this->maps_url ?? '')) !== '';
+        $total = $isOffline
+            ? 3 // Sertifikat, Module (Trainer), Absensi (QR/File)
+            : 4; // + Virtual Background
+
         $done = max(0, min($total, (int) $this->documents_completed_count));
-        return (int) floor(($done / $total) * 100);
+        return $total > 0 ? (int) floor(($done / $total) * 100) : 0;
     }
 
     public function getModuleSubmissionUrlAttribute(): ?string

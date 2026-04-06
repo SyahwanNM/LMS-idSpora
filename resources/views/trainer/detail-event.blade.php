@@ -150,17 +150,27 @@
             <h3>Virtual Background</h3>
             <p class="vsa-desc">High-Res PNG • Pre-branded</p>
           </div>
-          <a href="{{ $event->vbg_path ? $event->vbg_file_url : '#' }}" class="vsa-btn vsa-btn-amber" download>
-          <a href="{{ $event->vbg_path ? asset('storage/' . $event->vbg_path) : '#' }}" class="vsa-btn vsa-btn-amber"
-            download>
-            DOWNLOAD VBG
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path
-                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-              <path
-                d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-            </svg>
-          </a>
+          @if(!empty($event->vbg_path) && !empty($event->vbg_file_url))
+            <a href="{{ $event->vbg_file_url }}" class="vsa-btn vsa-btn-amber" download>
+              DOWNLOAD VBG
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                  d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                <path
+                  d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+              </svg>
+            </a>
+          @else
+            <a href="#" class="vsa-btn vsa-btn-amber" disabled aria-disabled="true" tabindex="-1">
+              DOWNLOAD VBG
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                  d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                <path
+                  d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+              </svg>
+            </a>
+          @endif
         </article>
       </div>
 
@@ -169,7 +179,18 @@
           <span class="context-dot"></span>
           <span>PEDAGOGICAL CONTEXT</span>
         </div>
-        <p>{{ $event->description ?? 'Deskripsi detail event belum tersedia.' }}</p>
+        @php
+          $pedagogicalDesc = isset($event) ? (string) ($event->description ?? '') : '';
+          // Some descriptions are stored as rich HTML with <p> wrappers.
+          // Remove <p> tags so they don't show up or affect layout here.
+          $pedagogicalDesc = preg_replace('#</?p[^>]*>#i', '', $pedagogicalDesc) ?? '';
+          $pedagogicalDesc = trim($pedagogicalDesc);
+        @endphp
+        @if($pedagogicalDesc !== '')
+          <div>{!! $pedagogicalDesc !!}</div>
+        @else
+          <div>Deskripsi detail event belum tersedia.</div>
+        @endif
       </div>
 
       <p class="vsa-subtitle">SESSION LEDGER</p>

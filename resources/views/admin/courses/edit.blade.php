@@ -30,6 +30,48 @@
                 @csrf
                 @method('PUT')
 
+                <input type="hidden" name="status" id="status" value="{{ ((string) ($course->status ?? '')) === 'active' ? 'active' : 'archive' }}">
+
+                @php
+                    $discountStartValue = optional($course->discount_start)->format('Y-m-d');
+                    $discountEndValue = optional($course->discount_end)->format('Y-m-d');
+
+                    $rawExpenseRows = old('expenses');
+                    if ($rawExpenseRows === null) {
+                        $rawExpenseRows = $course->expenses_json;
+                    }
+                    $rawExpenseRows = is_array($rawExpenseRows) ? array_values($rawExpenseRows) : [];
+
+                    $expenseRows = [];
+                    foreach ($rawExpenseRows as $row) {
+                        if (!is_array($row)) {
+                            continue;
+                        }
+                        $item = trim((string) ($row['item'] ?? ''));
+
+                        $qty = array_key_exists('quantity', $row) ? (int) ($row['quantity'] ?? 0) : null;
+                        $unit = array_key_exists('unit_price', $row) ? (int) ($row['unit_price'] ?? 0) : null;
+                        $total = array_key_exists('total', $row) ? (int) ($row['total'] ?? 0) : null;
+
+                        if (($qty === null || $unit === null) && $total !== null) {
+                            $qty = $qty ?? 1;
+                            $unit = $unit ?? max(0, $total);
+                        }
+
+                        $qty = (int) max(0, $qty ?? 0);
+                        $unit = (int) max(0, $unit ?? 0);
+                        $expenseRows[] = [
+                            'item' => $item,
+                            'quantity' => $qty,
+                            'unit_price' => $unit,
+                        ];
+                    }
+
+                    if (empty($expenseRows)) {
+                        $expenseRows[] = ['item' => '', 'quantity' => 0, 'unit_price' => 0];
+                    }
+                @endphp
+
                 <!-- Formulir Pengaturan Course -->
                 <div class="mb-8">
                     <h2 class="text-lg font-semibold text-gray-900 mb-6">Formulir Pengaturan Course</h2>
@@ -53,8 +95,8 @@
                                 value="{{ old('name', $course->name) }}" placeholder="Masukkan Judul Course">
                         </div>
 
-                        <!-- Level & Status (And Category for Data Integrity) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Level (Status hidden; preserved as-is) -->
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                             <div>
                                 <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level Course</label>
                                 <select name="level" id="level" required
@@ -63,16 +105,6 @@
                                     <option value="beginner" {{ old('level', $course->level) == 'beginner' ? 'selected' : '' }}>Beginner</option>
                                     <option value="intermediate" {{ old('level', $course->level) == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
                                     <option value="advanced" {{ old('level', $course->level) == 'advanced' ? 'selected' : '' }}>Advanced</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                <select name="status" id="status" required
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                    <option value="">Select Status</option>
-                                    <option value="active" {{ old('status', $course->status) == 'active' ? 'selected' : '' }}>
-                                        Active</option>
-                                    <option value="archive" {{ old('status', $course->status) == 'archive' ? 'selected' : '' }}>Archive</option>
                                 </select>
                             </div>
                         </div>
@@ -133,6 +165,81 @@
                                 value="{{ old('price', $course->price) }}" placeholder="Masukkan Harga Course">
                         </div>
 
+                        <!-- Diskon -->
+                        <div>
+                            <label for="discount_percent" class="block text-sm font-medium text-gray-700 mb-2">Diskon (%)</label>
+                            <input type="number" name="discount_percent" id="discount_percent" min="0" max="100" inputmode="numeric"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="{{ old('discount_percent', (int) ($course->discount_percent ?? 0)) }}" placeholder="0">
+                            <p class="mt-1 text-xs text-gray-500">Isi 0 untuk nonaktifkan diskon.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="discount_start" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai Diskon</label>
+                                <input type="date" name="discount_start" id="discount_start"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                    value="{{ old('discount_start', $discountStartValue) }}">
+                            </div>
+
+                            <div>
+                                <label for="discount_end" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Berakhir Diskon</label>
+                                <input type="date" name="discount_end" id="discount_end"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                    value="{{ old('discount_end', $discountEndValue) }}">
+                            </div>
+                        </div>
+
+                        <!-- Pengeluaran (Breakdown) -->
+                        <div>
+                            <div class="flex items-center justify-between gap-4 mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
+                                <button type="button" id="add-expense-row"
+                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Tambah Pengeluaran
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <div class="col-span-5">Item</div>
+                                    <div class="col-span-2">Qty</div>
+                                    <div class="col-span-3">Harga Satuan</div>
+                                    <div class="col-span-2">Aksi</div>
+                                </div>
+
+                                <div id="expense-rows" class="divide-y divide-gray-200">
+                                    @foreach($expenseRows as $i => $row)
+                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
+                                            <div class="col-span-12 md:col-span-5">
+                                                <input type="text" name="expenses[{{ $i }}][item]"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
+                                                    placeholder="Contoh: Iklan, Produksi, dll">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
+                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-3">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
+                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
+                        </div>
+
                         <!-- Akses Course Gratis -->
                         <div>
                             <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
@@ -161,10 +268,10 @@
                                 @if($course->media)
                                     <div class="shrink-0">
                                         @if($course->media_type === 'video')
-                                            <video src="{{ Storage::url($course->media) }}" controls
+                                            <video src="{{ Storage::disk('public')->url($course->media) }}" controls
                                                 class="h-32 w-48 object-cover rounded-lg border bg-black"></video>
                                         @else
-                                            <img src="{{ Storage::url($course->media) }}"
+                                            <img src="{{ Storage::disk('public')->url($course->media) }}"
                                                 class="h-32 w-48 object-cover rounded-lg border" alt="Intro Media">
                                         @endif
                                     </div>
@@ -184,7 +291,7 @@
                             <div class="flex items-center gap-4">
                                 @if($course->card_thumbnail)
                                     <div class="shrink-0">
-                                        <img src="{{ Storage::url($course->card_thumbnail) }}"
+                                        <img src="{{ Storage::disk('public')->url($course->card_thumbnail) }}"
                                             class="h-16 w-16 object-cover rounded-lg border" alt="Thumbnail">
                                     </div>
                                 @endif
@@ -195,9 +302,33 @@
 
                         <!-- Hidden inputs for other required fields not in design (Duration, etc) -->
                         <input type="hidden" name="duration" value="{{ $course->duration ?? 1 }}">
-                        <input type="hidden" name="discount_percent" value="{{ $course->discount_percent ?? 0 }}">
                     </div>
                 </div>
+
+                <template id="expense-row-template">
+                    <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="__INDEX__">
+                        <div class="col-span-12 md:col-span-5">
+                            <input type="text" name="expenses[__INDEX__][item]"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="" placeholder="Contoh: Iklan, Produksi, dll">
+                        </div>
+                        <div class="col-span-6 md:col-span-2">
+                            <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][quantity]"
+                                class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="0" placeholder="0">
+                        </div>
+                        <div class="col-span-6 md:col-span-3">
+                            <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][unit_price]"
+                                class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="0" placeholder="0">
+                        </div>
+                        <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                            <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Course Modules -->
                 <div class="mb-10">
@@ -241,7 +372,7 @@
                         <!-- PDF Document -->
                         <div>
                             <div class="space-y-3">
-                                @forelse($course->modules->where('type', 'pdf') as $m)
+                                @forelse($course->modules->where('type', 'pdf')->filter(fn($m) => !empty($m->content_url)) as $m)
                                     <div
                                         class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
                                         <div
@@ -299,7 +430,7 @@
                                 Video Before Edit
                             </h3>
                             <div class="space-y-3">
-                                @forelse($course->modules->where('type', 'video') as $m)
+                                @forelse($course->modules->where('type', 'video')->filter(fn($m) => !empty($m->content_url)) as $m)
                                     <div
                                         class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
                                         <div
@@ -319,6 +450,29 @@
                                             <p class="text-xs text-gray-500 m-0">Video • {{ $m->file_name ?? $m->content_url }}
                                             </p>
                                         </div>
+
+                                        @php
+                                            $contentPath = ltrim((string) $m->content_url, '/');
+                                            if (str_starts_with($contentPath, 'uploads/')) {
+                                                $contentPath = substr($contentPath, strlen('uploads/'));
+                                            }
+                                            $downloadUrl = $contentPath !== '' ? Storage::disk('public')->url($contentPath) : '';
+                                            $downloadName = (string) ($m->file_name ?? basename($contentPath));
+                                        @endphp
+
+                                        @if($downloadUrl !== '')
+                                            <a href="{{ $downloadUrl }}" download="{{ $downloadName }}"
+                                                class="shrink-0 p-2 border rounded-lg hover:bg-gray-50 transition"
+                                                title="Unduh video">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                                    class="bi bi-download" viewBox="0 0 16 16">
+                                                    <path
+                                                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                                                    <path
+                                                        d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                                                </svg>
+                                            </a>
+                                        @endif
                                     </div>
                                 @empty
                                     <div
@@ -385,6 +539,48 @@
             </form>
         </main>
     </div>
+
+    <script>
+        (function() {
+            const rowsWrap = document.getElementById('expense-rows');
+            const addBtn = document.getElementById('add-expense-row');
+            const tpl = document.getElementById('expense-row-template');
+
+            if (!rowsWrap || !addBtn || !tpl) return;
+
+            function nextIndex() {
+                const els = rowsWrap.querySelectorAll('.expense-row');
+                let max = -1;
+                els.forEach((el) => {
+                    const idx = parseInt(el.getAttribute('data-index') || '-1', 10);
+                    if (!Number.isNaN(idx) && idx > max) max = idx;
+                });
+                return max + 1;
+            }
+
+            function wireRow(rowEl) {
+                const removeBtn = rowEl.querySelector('.remove-expense-row');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() {
+                        rowEl.remove();
+                    });
+                }
+            }
+
+            rowsWrap.querySelectorAll('.expense-row').forEach(wireRow);
+
+            addBtn.addEventListener('click', function() {
+                const idx = nextIndex();
+                const html = tpl.innerHTML.replaceAll('__INDEX__', String(idx));
+                const temp = document.createElement('div');
+                temp.innerHTML = html.trim();
+                const rowEl = temp.firstElementChild;
+                if (!rowEl) return;
+                rowsWrap.appendChild(rowEl);
+                wireRow(rowEl);
+            });
+        })();
+    </script>
 
     </div>
 

@@ -590,15 +590,11 @@
 }
 
 .course-detail-page .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    font-family: 'bootstrap-icons' !important;
-    font-size: 1.2em;
-    transition: transform 0.3s ease;
-    color: #333;
+    content: none !important;
 }
 
 .course-detail-page .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
+    transform: none;
 }
 
 .course-detail-page .syllabus-dropdown-item ul {
@@ -4563,6 +4559,22 @@ input[type="time"] {
     gap: 12px;
 }
 
+.box_luar_kuis.quiz-take-v2 .quiz-title-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #111827;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.box_luar_kuis.quiz-take-v2 .quiz-title-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 .box_luar_kuis.quiz-take-v2 .quiz-title {
     font-size: 22px;
     font-weight: 700;
@@ -4572,11 +4584,11 @@ input[type="time"] {
 
 .box_luar_kuis.quiz-take-v2 .box_soal_kuis {
     margin-top: 0;
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    padding: 18px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    background: transparent;
+    border-radius: 0;
+    border: none;
+    padding: 0;
+    box-shadow: none;
 }
 
 .box_luar_kuis.quiz-take-v2 .pertanyaan_kuis {
@@ -4656,6 +4668,13 @@ input[type="time"] {
     width: 36px;
     height: 36px;
     font-size: 13px;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    line-height: 1;
 }
 
 .box_kuis_kiri {

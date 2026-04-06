@@ -70,6 +70,16 @@ class EventModuleSubmissionController extends Controller
 
         $event->update([
             'module_path' => $path,
+            'module_submitted_at' => now(),
+            'material_status' => 'pending_review',
+            'material_approved_at' => null,
+            'material_approved_by' => null,
+            'material_rejection_reason' => null,
+            'module_verified_at' => null,
+            'module_verified_by' => null,
+            'module_rejected_at' => null,
+            'module_rejected_by' => null,
+            'module_rejection_reason' => null,
         ]);
 
         return response()->json([
@@ -78,7 +88,7 @@ class EventModuleSubmissionController extends Controller
                 'event_id' => $event->id,
                 'module_submission_path' => $event->module_path,
                 'module_submission_url' => $event->module_file_url,
-                'module_submitted_at' => $event->created_at,
+                'module_submitted_at' => $event->module_submitted_at,
             ],
         ], 201);
     }

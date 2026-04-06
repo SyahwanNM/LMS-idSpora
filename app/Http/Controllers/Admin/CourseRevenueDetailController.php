@@ -24,7 +24,7 @@ class CourseRevenueDetailController extends Controller
         }
 
         $course = Course::query()
-            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end')
+            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end', 'expenses_json')
             ->findOrFail($courseId);
 
         [$from, $to] = $this->parseDateRange($request);

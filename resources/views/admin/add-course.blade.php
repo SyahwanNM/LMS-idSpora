@@ -32,6 +32,7 @@
 
                     <form class="box_form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="status" value="archive">
                         <h4 class="h5 mb-2">Formulir Pengaturan Course</h4>
                         <div class="mb-3">
                             <label class="form-label text-dark" for="course-title">Judul Course <span class="text-danger">*</span></label>
@@ -40,16 +41,7 @@
                         </div>
 
                         <div class="row g-3 box_select_level_status">
-                            <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-status">Status <span class="text-danger">*</span></label>
-                                <select id="course-status" name="status" class="form-select" required>
-                                    <option value="" selected disabled>Choose your Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="archive">Archive</option>
-                                </select>
-                                <div class="sanity-msg" data-for="course-status"></div>
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label text-dark" for="course-level">Level Course <span class="text-danger">*</span></label>
                                 <select id="course-level" name="level" class="form-select" required>
                                     <option value="" selected disabled>Choose your level</option>
@@ -800,7 +792,6 @@
         (function() {
             const fields = {
                 title: document.getElementById('course-title'),
-                status: document.getElementById('course-status'),
                 level: document.getElementById('course-level'),
                 category: document.getElementById('course-category'),
                 trainer: document.getElementById('course-trainer'),
@@ -810,6 +801,58 @@
                 cardThumbnail: document.getElementById('card-thumbnail'),
                 duration: document.getElementById('course-duration'),
             };
+
+            function onlyDigits(s) {
+                return (s || '').toString().replace(/[^0-9]/g, '');
+            }
+
+            function formatThousandsID(digits) {
+                let d = onlyDigits(digits);
+                // keep at least one digit if user typed zeros
+                d = d.replace(/^0+(?=\d)/, '');
+                if (d.length === 0) return '';
+                // group by thousands with '.'
+                return d.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function countDigitsBeforeCaret(value, caretPos) {
+                if (caretPos == null) return 0;
+                const before = (value || '').slice(0, Math.max(0, caretPos));
+                const m = before.match(/\d/g);
+                return m ? m.length : 0;
+            }
+
+            function caretPosForDigitIndex(formattedValue, digitIndex) {
+                if (digitIndex <= 0) return 0;
+                let seen = 0;
+                for (let i = 0; i < formattedValue.length; i++) {
+                    if (/[0-9]/.test(formattedValue[i])) {
+                        seen++;
+                        if (seen >= digitIndex) return i + 1;
+                    }
+                }
+                return formattedValue.length;
+            }
+
+            function formatPriceFieldLive(inputEl) {
+                if (!inputEl) return;
+                const raw = inputEl.value || '';
+                const caret = inputEl.selectionStart;
+                const digitIndex = countDigitsBeforeCaret(raw, caret);
+
+                const digits = onlyDigits(raw);
+                const formatted = formatThousandsID(digits);
+                if (formatted === raw) return;
+
+                inputEl.value = formatted;
+                // Restore caret so typing feels natural
+                const newCaret = caretPosForDigitIndex(formatted, digitIndex);
+                try {
+                    inputEl.setSelectionRange(newCaret, newCaret);
+                } catch (e) {
+                    // ignore (some input types / browsers)
+                }
+            }
 
             function msgEl(id) {
                 return document.querySelector('.sanity-msg[data-for="' + id + '"]');
@@ -841,6 +884,8 @@
             }
 
             function validateStatus() {
+                // Status is enforced as 'archive' for new courses; field may not exist in markup.
+                if (!fields.status) return true;
                 const v = fields.status.value;
                 const ok = (v === 'active' || v === 'archive');
                 setIndicator('course-status', ok, 'Status wajib dipilih.');
@@ -936,17 +981,29 @@
 
             // live validation (guard for optional fields)
             fields.title?.addEventListener('input', validateTitle);
-            fields.status?.addEventListener('change', validateStatus);
             fields.level?.addEventListener('change', validateLevel);
             fields.category?.addEventListener('change', validateCategory);
             fields.trainer?.addEventListener('change', validateTrainer);
-            fields.price?.addEventListener('input', validatePrice);
+            fields.price?.addEventListener('input', function() {
+                formatPriceFieldLive(fields.price);
+                validatePrice();
+            });
+            fields.price?.addEventListener('blur', function() {
+                // ensure final formatting on blur
+                formatPriceFieldLive(fields.price);
+                validatePrice();
+            });
             fields.thumbnail?.addEventListener('change', validateThumbnail);
             fields.cardThumbnail?.addEventListener('change', validateCardThumbnail);
             fields.duration?.addEventListener('input', validateDuration);
 
             // initial state
             validateAll();
+
+            // apply formatting if field has an initial value (e.g. browser autofill)
+            if (fields.price && (fields.price.value || '').trim() !== '') {
+                formatPriceFieldLive(fields.price);
+            }
 
             const formEl = document.querySelector('form.box_form');
             if (formEl) {
@@ -961,6 +1018,11 @@
                         }
                         return;
                     }
+                    // enforce archive on create
+                    const statusInputs = formEl.querySelectorAll('input[name="status"], select[name="status"]');
+                    statusInputs.forEach((el) => {
+                        if (el) el.value = 'archive';
+                    });
                     // normalize price to digits
                     const priceInput = document.getElementById('course-price');
                     if (priceInput) {

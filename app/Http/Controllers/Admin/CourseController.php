@@ -873,6 +873,17 @@ class CourseController extends Controller
 
     public function store(Request $request)
     {
+        // New courses are created as 'archive' by default.
+        // (UI does not expose status selection on create.)
+        $request->merge(['status' => 'archive']);
+
+        // Allow price inputs with thousand separators (e.g. "1.000") by normalizing to digits.
+        if ($request->has('price')) {
+            $request->merge([
+                'price' => preg_replace('/[^0-9]/', '', (string) $request->input('price')),
+            ]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -1114,6 +1125,18 @@ class CourseController extends Controller
     {
         $previousTrainerId = (int) ($course->trainer_id ?? 0);
 
+        // Status is controlled by publish flow: keep 'active' only if already published; otherwise lock to 'archive'.
+        $request->merge([
+            'status' => ((string) ($course->status ?? '')) === 'active' ? 'active' : 'archive',
+        ]);
+
+        // Allow price inputs with thousand separators (e.g. "1.000") by normalizing to digits.
+        if ($request->has('price')) {
+            $request->merge([
+                'price' => preg_replace('/[^0-9]/', '', (string) $request->input('price')),
+            ]);
+        }
+
         $delIdsRaw = $request->input('modules_delete_ids');
         if (is_array($delIdsRaw)) {
             $request->merge(['modules_delete_ids' => implode(',', $delIdsRaw)]);
@@ -1205,6 +1228,35 @@ class CourseController extends Controller
             $request->filled('category_id') ? (int) $request->input('category_id') : null
         );
 
+        $expensesJson = null;
+        if ($request->exists('expenses')) {
+            $expensesInput = $request->input('expenses');
+            if (is_array($expensesInput)) {
+                $normalized = [];
+                foreach ($expensesInput as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $item = trim((string) ($row['item'] ?? ''));
+                    $qty = (int) ($row['quantity'] ?? 0);
+                    $unit = (int) ($row['unit_price'] ?? 0);
+                    if ($item === '' && $qty === 0 && $unit === 0) {
+                        continue;
+                    }
+                    $qty = max(0, $qty);
+                    $unit = max(0, $unit);
+                    $total = max(0, $qty * $unit);
+                    $normalized[] = [
+                        'item' => $item,
+                        'quantity' => $qty,
+                        'unit_price' => $unit,
+                        'total' => $total,
+                    ];
+                }
+                $expensesJson = !empty($normalized) ? $normalized : null;
+            }
+        }
+
         $data = [
             'name' => $request->name,
             'category_id' => $request->category_id,
@@ -1219,6 +1271,10 @@ class CourseController extends Controller
             'discount_start' => $request->discount_start,
             'discount_end' => $request->discount_end,
         ];
+
+        if ($request->exists('expenses')) {
+            $data['expenses_json'] = $expensesJson;
+        }
 
         if ($request->exists('template_id')) {
             $data['template_id'] = $template?->id;
