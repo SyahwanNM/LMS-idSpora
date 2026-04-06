@@ -414,6 +414,13 @@
                                                 value="{{ old('email', $trainer->email) }}" required>
                                         </div>
                                         <div class="col-md-6">
+                                            <label class="form-label">Gelar Akademik</label>
+                                            <input type="text" name="academic_title" class="form-control"
+                                                value="{{ old('academic_title', $trainer->academic_title) }}"
+                                                placeholder="Contoh: S.Kom., M.Kom.">
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label class="form-label">Nomor WhatsApp</label>
                                             <input type="text" name="phone" class="form-control"
                                                 value="{{ old('phone', $trainer->phone) }}" placeholder="0812...">
@@ -440,6 +447,34 @@
                                             <input type="text" name="website" class="form-control"
                                                 value="{{ old('website', $trainer->website) }}"
                                                 placeholder="https://example.com">
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">LinkedIn</label>
+                                            <input type="url" name="linkedin_url" class="form-control"
+                                                value="{{ old('linkedin_url', $trainer->linkedin_url) }}"
+                                                placeholder="https://www.linkedin.com/in/username">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nama Bank</label>
+                                            <input type="text" name="bank_name" class="form-control"
+                                                value="{{ old('bank_name', $trainer->bank_name) }}"
+                                                placeholder="Contoh: BCA">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nomor Rekening</label>
+                                            <input type="text" name="bank_account_number" class="form-control"
+                                                value="{{ old('bank_account_number', $trainer->bank_account_number) }}"
+                                                placeholder="Masukkan nomor rekening">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nama Pemilik Rekening</label>
+                                            <input type="text" name="bank_account_holder" class="form-control"
+                                                value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}"
+                                                placeholder="Sesuai buku tabungan">
                                         </div>
                                     </div>
                                 </div>

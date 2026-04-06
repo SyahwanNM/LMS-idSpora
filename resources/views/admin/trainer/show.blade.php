@@ -1,4 +1,4 @@
-git log -1 --name-only@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Detail Trainer')
 
@@ -325,7 +325,7 @@ git log -1 --name-only@extends('layouts.admin')
 
             <!-- Statistics -->
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-box">
                         <div class="stat-icon">
                             <i class="bi bi-book-fill"></i>
@@ -334,7 +334,7 @@ git log -1 --name-only@extends('layouts.admin')
                         <div class="stat-label">Total Kelas</div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-box">
                         <div class="stat-icon">
                             <i class="bi bi-calendar-event-fill"></i>
@@ -343,13 +343,22 @@ git log -1 --name-only@extends('layouts.admin')
                         <div class="stat-label">Total Event</div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-box">
                         <div class="stat-icon">
-                            <i class="bi bi-calendar-check-fill"></i>
+                            <i class="bi bi-trophy-fill"></i>
                         </div>
-                        <div class="stat-number">{{ $trainer->created_at->diffInDays(now()) }}</div>
-                        <div class="stat-label">Hari Bergabung</div>
+                        <div class="stat-number">{{ $totalCompletedSessions ?? 0 }}</div>
+                        <div class="stat-label">Event/Course Selesai</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-box">
+                        <div class="stat-icon">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <div class="stat-number">{{ number_format((float) ($averageRating ?? 0), 1) }}</div>
+                        <div class="stat-label">Rata-rata Rating</div>
                     </div>
                 </div>
             </div>
@@ -364,7 +373,13 @@ git log -1 --name-only@extends('layouts.admin')
                         </h5>
                         <div class="detail-row">
                             <div class="detail-label">Nama Lengkap</div>
-                            <div class="detail-value"><strong>{{ $trainer->name }}</strong></div>
+                            <div class="detail-value">
+                                <strong>{{ $trainer->full_name_with_title ?: $trainer->name }}</strong>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Gelar Akademik</div>
+                            <div class="detail-value">{{ $trainer->academic_title ?? '—' }}</div>
                         </div>
                         <div class="detail-row">
                             <div class="detail-label">Email</div>
@@ -381,6 +396,17 @@ git log -1 --name-only@extends('layouts.admin')
                         <div class="detail-row">
                             <div class="detail-label">Institusi</div>
                             <div class="detail-value">{{ $trainer->institution ?? '—' }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">LinkedIn</div>
+                            <div class="detail-value">
+                                @if(!empty($trainer->linkedin_url))
+                                    <a href="{{ $trainer->linkedin_url }}" target="_blank"
+                                        rel="noopener noreferrer">{{ $trainer->linkedin_url }}</a>
+                                @else
+                                    —
+                                @endif
+                            </div>
                         </div>
                         <div class="detail-row">
                             <div class="detail-label">Website</div>
@@ -422,6 +448,30 @@ git log -1 --name-only@extends('layouts.admin')
                 </div>
 
                 <div class="col-lg-6">
+                    <!-- Financial Information -->
+                    <div class="detail-card">
+                        <h5>
+                            <i class="bi bi-bank2" style="color: #3949ab;"></i>
+                            Data Finansial
+                        </h5>
+                        <div class="detail-row">
+                            <div class="detail-label">Nama Bank</div>
+                            <div class="detail-value">{{ $trainer->bank_name ?? '—' }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Nomor Rekening</div>
+                            <div class="detail-value">{{ $trainer->bank_account_number ?? '—' }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Nama Pemilik</div>
+                            <div class="detail-value">{{ $trainer->bank_account_holder ?? '—' }}</div>
+                        </div>
+                        <p class="small text-muted mb-0 mt-3">
+                            Data rekening digunakan Admin Finance untuk proses transfer. Trainer tidak melakukan withdraw
+                            manual.
+                        </p>
+                    </div>
+
                     <!-- Account Information -->
                     <div class="detail-card">
                         <h5>
@@ -448,6 +498,17 @@ git log -1 --name-only@extends('layouts.admin')
                                     {!! $isActive ? '<i class="bi bi-check-circle-fill me-1"></i> Aktif' : '<i class="bi bi-x-circle-fill me-1"></i> Nonaktif' !!}
                                 </span>
                             </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Riwayat Selesai</div>
+                            <div class="detail-value">
+                                <strong>{{ $completedEventsCount ?? 0 }}</strong> event,
+                                <strong>{{ $completedCoursesCount ?? 0 }}</strong> course
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Rating Rata-rata</div>
+                            <div class="detail-value">{{ number_format((float) ($averageRating ?? 0), 1) }} / 5</div>
                         </div>
                         <div class="detail-row">
                             <div class="detail-label">Last Update</div>
