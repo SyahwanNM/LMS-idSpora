@@ -307,6 +307,22 @@
             /* Push icons down slightly to align with text (legacy) */
             .info-item svg { margin-top: 12px; }
 
+            /* Add To Calendar button: make it smaller (size only, keep theme) */
+            .add-calender button{
+                padding: 10px 18px !important;
+                min-height: 46px;
+                width: auto !important;
+            }
+            .add-calender button p{
+                margin: 0 !important;
+                font-size: 0.95rem;
+                line-height: 1.1;
+            }
+            .add-calender .ikon-calender-event{
+                width: 20px !important;
+                height: 20px !important;
+            }
+
             /* RESPONSIVENESS FIXES */
             @media (max-width: 992px) {
                 .container-ungu { padding: 40px 15px 20px !important; }
@@ -908,10 +924,14 @@
             <h5>Participant Resources</h5>
             <div class="participant-resources">
 
-                @php $isOffline = !empty($event->maps_url); @endphp
+                @php
+                    $hasMapsLink = !empty($event->maps_url);
+                    $hasZoomLink = !empty($event->zoom_link);
+                    $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                @endphp
 
                 {{-- Virtual Background Resource --}}
-                @if(!$isOffline)
+                @if(!$isOfflineOnly)
                     <div class="resource-card {{ (!empty($event->vbg_path) && $isRegistered) ? '' : 'locked' }}">
                         <div class="img-resource">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-image" viewBox="0 0 16 16">
@@ -2022,6 +2042,97 @@
                 buttons.forEach(function(b){ b.addEventListener('click', onClick); });
             })();
         </script>
+
+        <script>
+            // Lightweight flash toast (success) for this page
+            (function(){
+                const STORAGE_KEY = 'idspora_flash_success';
+
+                function ensureContainer(){
+                    let container = document.querySelector('.flash-toast-container');
+                    if(container) return container;
+                    container = document.createElement('div');
+                    container.className = 'flash-toast-container';
+                    container.setAttribute('aria-live','polite');
+                    container.setAttribute('aria-atomic','true');
+                    document.body.appendChild(container);
+                    return container;
+                }
+
+                function ensureStyles(){
+                    if(document.getElementById('flash-toast-styles')) return;
+                    const style = document.createElement('style');
+                    style.id = 'flash-toast-styles';
+                    style.textContent = `
+                        .flash-toast-container{position:fixed;top:1rem;right:1rem;display:flex;flex-direction:column;gap:.75rem;z-index:1080;max-width:340px;width:100%;}
+                        .flash-toast{--flash-bg:#fff;--flash-border:#e5e7eb;--flash-color:#111827;--flash-accent:#16a34a;--progress-width:100;position:relative;display:flex;align-items:flex-start;gap:.75rem;padding:.9rem 1rem .95rem 1rem;border:1px solid var(--flash-border);background:linear-gradient(135deg,var(--flash-bg) 0%,#f9fafb 100%);border-radius:14px;box-shadow:0 8px 24px -8px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08);transform:translateY(-8px) scale(.96);opacity:0;transition:transform .45s cubic-bezier(.16,.8,.24,1),opacity .45s ease,box-shadow .3s ease;overflow:hidden;font-size:.875rem;color:var(--flash-color);}
+                        .flash-toast.show{transform:translateY(0) scale(1);opacity:1;}
+                        .flash-toast.closing{opacity:0;transform:translateY(-6px) scale(.95);}
+                        .flash-icon{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;background:var(--flash-accent);color:#fff;box-shadow:0 4px 10px -2px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.15) inset;}
+                        .flash-body{flex:1 1 auto;min-width:0;}
+                        .flash-title{font-weight:700;line-height:1.1;margin-top:.15rem;margin-bottom:.15rem;}
+                        .flash-message{line-height:1.35;opacity:.95;word-break:break-word;}
+                        .flash-close{border:0;background:transparent;color:#6b7280;font-size:1.1rem;line-height:1;padding:.15rem .25rem;margin-left:.25rem;cursor:pointer;}
+                        .flash-close:hover{color:#111827;}
+                        .flash-progress{position:absolute;left:0;bottom:0;height:3px;width:100%;background:rgba(22,163,74,.18);}
+                        .flash-progress::after{content:'';display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(1);background:rgba(22,163,74,.85);animation:flashProgress var(--flash-time,4.5s) linear forwards;}
+                        @keyframes flashProgress{to{transform:scaleX(0);}}
+                    `;
+                    document.head.appendChild(style);
+                }
+
+                function showSuccess(message, timeoutMs){
+                    ensureStyles();
+                    const container = ensureContainer();
+                    const toast = document.createElement('div');
+                    toast.className = 'flash-toast flash-success';
+                    toast.setAttribute('role','status');
+                    const time = typeof timeoutMs === 'number' ? timeoutMs : 4500;
+                    toast.style.setProperty('--flash-time', (time/1000) + 's');
+                    toast.innerHTML = `
+                        <div class="flash-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="currentColor" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03 13 5l-1.06-1.06-4.97 4.95L4.53 7.47 3.47 8.53z"/>
+                            </svg>
+                        </div>
+                        <div class="flash-body">
+                            <div class="flash-title">Berhasil</div>
+                            <div class="flash-message"></div>
+                        </div>
+                        <button class="flash-close" type="button" aria-label="Tutup">&times;</button>
+                        <div class="flash-progress" aria-hidden="true"></div>
+                    `;
+                    toast.querySelector('.flash-message').textContent = message || 'Berhasil terdaftar';
+                    container.appendChild(toast);
+
+                    // Entrance
+                    requestAnimationFrame(() => toast.classList.add('show'));
+
+                    const dismiss = () => {
+                        if(toast.classList.contains('closing')) return;
+                        toast.classList.add('closing');
+                        toast.classList.remove('show');
+                        setTimeout(() => toast.remove(), 450);
+                    };
+                    const closeBtn = toast.querySelector('.flash-close');
+                    if(closeBtn) closeBtn.addEventListener('click', dismiss);
+                    setTimeout(dismiss, time);
+                }
+
+                // Expose helper
+                window.__idsporaFlashSuccess = function(message){
+                    try { localStorage.setItem(STORAGE_KEY, message || 'Berhasil terdaftar'); } catch(_e) {}
+                };
+
+                // Consume on load (after reload)
+                document.addEventListener('DOMContentLoaded', function(){
+                    let msg = null;
+                    try { msg = localStorage.getItem(STORAGE_KEY); localStorage.removeItem(STORAGE_KEY); } catch(_e) {}
+                    if(msg) showSuccess(msg);
+                });
+            })();
+        </script>
+
         <script>
             // Free event booking via AJAX: redirect to ticket page
                 (function(){
@@ -2079,16 +2190,23 @@
                         }
                         if (ct.includes('application/json')) {
                             const data = await r.json();
-                            if (data && data.redirect) { window.location.href = data.redirect; return; }
                             if (data && (data.status === 'ok' || data.status === 'already')) {
+                                try {
+                                    const msg = data.status === 'already' ? 'Anda sudah terdaftar' : 'Berhasil terdaftar';
+                                    if (typeof window.__idsporaFlashSuccess === 'function') window.__idsporaFlashSuccess(msg);
+                                } catch(_e) {}
+                                // Prefer server-provided redirect (toast will show after navigation)
+                                if (data && data.redirect) { window.location.href = data.redirect; return; }
+
                                 this.textContent = data.button_text || 'Seat Booked';
                                 this.disabled = true;
                                 // Trigger notification refresh immediately
                                 try { if (typeof loadNotifications === 'function') setTimeout(() => loadNotifications(), 50); } catch(_e){}
                                 // Ensure UI reflects registered state
-                                setTimeout(()=> window.location.reload(), 300);
+                                setTimeout(()=> window.location.reload(), 600);
                                 return;
                             }
+                            if (data && data.redirect) { window.location.href = data.redirect; return; }
                             // Unknown JSON shape: just reload to update state
                             window.location.reload();
                             return;

@@ -587,35 +587,15 @@
 
 
 
-    {{-- Inline Toast and Scripts --}}
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="inlineValidationToast" class="toast align-items-center border-0 text-white" role="alert"
-                aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div id="inlineValidationToastBody" class="toast-body"></div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                        aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // --- Helper for Toast ---
+        // --- Helper for Notification (new banner) ---
         window.showInlineToast = function (message, type) {
-            const el = document.getElementById('inlineValidationToast');
-            const body = document.getElementById('inlineValidationToastBody');
-            if (el && body) {
-                el.className = `toast align-items-center border-0 text-white ${type === 'danger' ? 'bg-red-500' : (type === 'warning' ? 'bg-yellow-500' : 'bg-green-500')}`;
-                body.textContent = message;
-                if (window.bootstrap && window.bootstrap.Toast) {
-                    const t = window.bootstrap.Toast.getOrCreateInstance(el);
-                    t.show();
-                }
-            } else {
-                alert(message);
+            const kind = (type === 'danger' || type === 'error' || type === 'warning') ? 'error' : 'success';
+            if (typeof window.adminNotify === 'function') {
+                window.adminNotify(kind, message, kind === 'error' ? 6000 : 3800);
+                return;
             }
+            alert(message);
         };
 
         // --- Modal Helpers ---

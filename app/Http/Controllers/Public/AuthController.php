@@ -73,7 +73,8 @@ class AuthController extends Controller
         }
         // If admin, go to admin dashboard
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard');
+            return redirect('/admin/dashboard')
+                ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
 
         // (Maintenance for non-admin is handled above before login session is created.)
@@ -500,7 +501,8 @@ class AuthController extends Controller
 
         $user = Auth::user();
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard');
+            return redirect('/admin/dashboard')
+                ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
         // (Maintenance for non-admin is handled above before login session is created.)
         //trainer

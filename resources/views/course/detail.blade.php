@@ -1245,22 +1245,6 @@
           <div style="margin-top:6px;">
             {{ implode(', ', $missingMaterials) }} belum ada.
           </div>
-
-          @if (session('success'))
-            <div style="margin-top:10px;" class="text-success">{{ session('success') }}</div>
-          @endif
-          @if (session('error'))
-            <div style="margin-top:10px;" class="text-danger">{{ session('error') }}</div>
-          @endif
-
-          @if(auth()->check() && !empty($course->trainer_id))
-            <form method="POST" action="{{ route('courses.remind-trainer', $course->id) }}" style="margin-top:10px;">
-              @csrf
-              <button type="submit" class="btn btn-warning btn-sm" style="font-weight:600;">
-                Ingatkan Trainer
-              </button>
-            </form>
-          @endif
         </div>
       @endif
 

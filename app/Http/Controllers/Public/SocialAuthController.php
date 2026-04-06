@@ -125,7 +125,7 @@ class SocialAuthController extends Controller
         Auth::login($user, true);
         $redirect = session()->pull('social_redirect');
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel.');
+            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
         // (Maintenance for non-admin is handled above before login session is created.)
         if ($redirect) {

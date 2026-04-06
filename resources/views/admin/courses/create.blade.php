@@ -158,6 +158,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Intro Media (Video/Image) <span class="text-red-600">*</span></label>
                             <input type="file" name="image" id="image" accept="image/*,video/mp4,video/webm,video/ogg" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
+                            <div id="image_preview" class="mt-2 w-20 h-20 border border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center text-xs text-gray-400">Preview</div>
                             <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, MP4. Digunakan untuk intro course.</p>
                             <p id="image_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
@@ -167,6 +168,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Course <span class="text-red-600">*</span></label>
                             <input type="file" name="card_thumbnail" id="card_thumbnail" accept="image/*" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
+                            <div id="card_thumbnail_preview" class="mt-2 w-20 h-20 border border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center text-xs text-gray-400">Preview</div>
                             <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, WebP</p>
                             <p id="card_thumbnail_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
@@ -334,6 +336,77 @@
             getEl('price')?.addEventListener('input', validate);
             getEl('image')?.addEventListener('change', validate);
             getEl('card_thumbnail')?.addEventListener('change', validate);
+
+            // File previews (small box)
+            (function(){
+                const introInput = getEl('image');
+                const introPreview = document.getElementById('image_preview');
+                const cardInput = getEl('card_thumbnail');
+                const cardPreview = document.getElementById('card_thumbnail_preview');
+
+                function setPlaceholder(previewEl){
+                    if(!previewEl) return;
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+                    previewEl.dataset.objectUrl = '';
+                    previewEl.textContent = 'Preview';
+                    previewEl.classList.add('text-gray-400');
+                }
+
+                function renderPreview(inputEl, previewEl, allowVideo){
+                    if(!inputEl || !previewEl) return;
+                    const file = inputEl.files && inputEl.files[0];
+                    if(!file){ setPlaceholder(previewEl); return; }
+
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+
+                    const url = URL.createObjectURL(file);
+                    previewEl.dataset.objectUrl = url;
+                    previewEl.innerHTML = '';
+                    previewEl.classList.remove('text-gray-400');
+
+                    const type = (file.type || '').toLowerCase();
+                    const isImage = type.startsWith('image/');
+                    const isVideo = allowVideo && type.startsWith('video/');
+
+                    if(isImage){
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Preview';
+                        img.className = 'w-full h-full object-cover';
+                        previewEl.appendChild(img);
+                        return;
+                    }
+
+                    if(isVideo){
+                        const video = document.createElement('video');
+                        video.src = url;
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.loop = true;
+                        video.autoplay = true;
+                        video.className = 'w-full h-full object-cover';
+                        previewEl.appendChild(video);
+                        return;
+                    }
+
+                    const span = document.createElement('span');
+                    span.className = 'text-xs text-gray-500 px-2 text-center break-words';
+                    span.textContent = file.name || 'File dipilih';
+                    previewEl.appendChild(span);
+                }
+
+                setPlaceholder(introPreview);
+                setPlaceholder(cardPreview);
+
+                introInput?.addEventListener('change', () => renderPreview(introInput, introPreview, true));
+                cardInput?.addEventListener('change', () => renderPreview(cardInput, cardPreview, false));
+            })();
 
             form.addEventListener('submit', function(e) {
                 const firstInvalid = validate();

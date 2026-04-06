@@ -177,17 +177,8 @@
                 });
             });
         }
-        // Auto-show any server-rendered Bootstrap toasts (flash messages)
-        try {
-            document.querySelectorAll('.toast').forEach(function(t){
-                try {
-                    if(window.bootstrap && bootstrap.Toast){
-                        var inst = bootstrap.Toast.getOrCreateInstance(t);
-                        inst.show();
-                    }
-                } catch(e) {}
-            });
-        } catch(e) {}
+        // NOTE: Legacy Bootstrap toast auto-show disabled.
+        // Admin uses the newer global notification banner (#globalNotifications).
         
         // Logout confirmation (modern modal)
         const logoutTrigger = document.getElementById('logoutTrigger');
@@ -435,6 +426,49 @@
             });
         } catch(e){}
     });
+
+    // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
+    window.adminNotify = function(type, message, timeout){
+        try {
+            const kind = (type === 'error') ? 'error' : 'success';
+            const text = (message == null) ? '' : String(message);
+            const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+            let wrap = document.getElementById('globalNotifications');
+            if(!wrap){
+                wrap = document.createElement('div');
+                wrap.id = 'globalNotifications';
+                wrap.className = 'global-notification';
+                wrap.setAttribute('aria-live', 'polite');
+                wrap.setAttribute('aria-atomic', 'true');
+                document.body.appendChild(wrap);
+            }
+
+            const n = document.createElement('div');
+            n.className = 'notification ' + kind;
+            n.setAttribute('role', 'status');
+            n.setAttribute('data-timeout', String(ms));
+
+            const msg = document.createElement('div');
+            msg.className = 'notif-message';
+            msg.textContent = text;
+
+            const close = document.createElement('button');
+            close.className = 'notif-close';
+            close.setAttribute('aria-label', 'Close');
+            close.type = 'button';
+            close.innerHTML = '&times;';
+
+            n.appendChild(msg);
+            n.appendChild(close);
+            wrap.appendChild(n);
+
+            const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+            close.addEventListener('click', hide);
+            setTimeout(function(){ n.classList.add('show'); }, 20);
+            setTimeout(hide, ms);
+        } catch(e){}
+    };
     </script>
 
     @yield('scripts')

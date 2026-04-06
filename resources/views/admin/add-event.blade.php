@@ -2,32 +2,6 @@
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
-        {{-- Success Toast Popup --}}
-        @if(session('success'))
-            <div aria-live="polite" aria-atomic="true" class="position-relative">
-                <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-                    <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <script>
-                document.addEventListener('DOMContentLoaded', function(){
-                    try{
-                        var el = document.getElementById('eventUpdatedToast');
-                        if(window.bootstrap && el){
-                            var t = new bootstrap.Toast(el);
-                            t.show();
-                        }
-                    }catch(e){}
-                });
-            </script>
-        @endif
         @if($errors->any())
             <div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
         @endif
@@ -160,10 +134,19 @@
                                 
                                 <td>{{ $event->location }}</td>
                                 <td>
-                                    @if(!empty($event->zoom_link))
-                                        <a href="{{ $event->zoom_link }}" target="\_blank" class="btn btn-sm btn-outline-primary" title="Buka Zoom"><i class="bi bi-camera-video"></i> Zoom</a>
-                                    @elseif(!empty($event->maps_url))
-                                        <a href="{{ $event->maps_url }}" target="\_blank" class="btn btn-sm btn-outline-secondary" title="Buka Maps"><i class="bi bi-geo-alt"></i> Maps</a>
+                                    @php
+                                        $hasMapsLink = !empty($event->maps_url);
+                                        $hasZoomLink = !empty($event->zoom_link);
+                                    @endphp
+                                    @if($hasMapsLink || $hasZoomLink)
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @if($hasMapsLink)
+                                                <a href="{{ $event->maps_url }}" target="\_blank" class="btn btn-sm btn-outline-secondary" title="Buka Maps"><i class="bi bi-geo-alt"></i> Maps</a>
+                                            @endif
+                                            @if($hasZoomLink)
+                                                <a href="{{ $event->zoom_link }}" target="\_blank" class="btn btn-sm btn-outline-primary" title="Buka Zoom"><i class="bi bi-camera-video"></i> Zoom</a>
+                                            @endif
+                                        </div>
                                     @else
                                         —
                                     @endif
@@ -171,7 +154,9 @@
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
-                                        $isOffline = !empty($event->maps_url);
+                                        $hasMapsLink = !empty($event->maps_url);
+                                        $hasZoomLink = !empty($event->zoom_link);
+                                        $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                         $hasVbg = !empty($event->vbg_path);
                                         $hasCert = !empty($event->certificate_path);
                                         $hasModule = !empty($event->module_path);
@@ -181,13 +166,13 @@
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
                                         // Tooltip ringkas
-                                        $tooltip = $isOffline
+                                        $tooltip = $isOfflineOnly
                                             ? 'Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
                                             : 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        $totalDisplay = $isOffline ? 3 : 4;
+                                        $totalDisplay = $isOfflineOnly ? 3 : 4;
                                         // Tampilkan count UI (offline: tanpa VBG)
-                                        $completedDisplay = ($isOffline ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $tooltip }}">{{ $pct }}%</span>
@@ -325,7 +310,10 @@
                             <div class="modal-body">
                                 <p class="mb-2">Tinjau status semua dokumen terkait acara dan administrasi.</p>
                                 @php 
-                                    $isOffline = !empty($event->maps_url);
+                                    $hasMapsLink = !empty($event->maps_url);
+                                    $hasZoomLink = !empty($event->zoom_link);
+                                    $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                                    $requiresVbg = !$isOfflineOnly;
                                     $hasVbg = !empty($event->vbg_path);
                                     $hasCert = !empty($event->certificate_path);
                                     $hasModule = !empty($event->module_path);
@@ -334,8 +322,8 @@
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $totalDisplay = $isOffline ? 3 : 4;
-                                    $completedDisplay = ($isOffline ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $totalDisplay = $isOfflineOnly ? 3 : 4;
+                                    $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     $pct = $event->documents_completion_percent;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
@@ -344,7 +332,7 @@
                                     <small class="text-muted">{{ $completedDisplay }}/{{ $totalDisplay }} selesai</small>
                                 </div>
                                 <ul class="list-group list-group-flush mb-3 small">
-                                    @if(!$isOffline)
+                                    @if($requiresVbg)
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             <span>
                                                 <i class="bi {{ $hasVbg ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
@@ -435,25 +423,9 @@
                                     </li>
                                 </ul>
 
-                                @if(!$hasModule)
-                                    <div class="alert alert-warning small mb-3">
-                                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
-                                            <div>
-                                                <strong>Reminder:</strong> Module belum diupload. Ingatkan trainer untuk mengunggah module/materi sebelum event dimulai.
-                                            </div>
-                                            <form action="{{ route('admin.events.module.remind', $event) }}" method="POST" class="m-0">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-bell me-1"></i>Ingatkan Trainer
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                @endif
-
                                 <form action="{{ route('admin.events.documents.upload', $event) }}" method="post" enctype="multipart/form-data" id="docForm-{{ $event->id }}">
                                     @csrf
-                                    @php $adminDocsComplete = $isOffline ? ($hasCert && $hasAbs) : ($hasVbg && $hasCert && $hasAbs); @endphp
+                                    @php $adminDocsComplete = $isOfflineOnly ? ($hasCert && $hasAbs) : ($hasVbg && $hasCert && $hasAbs); @endphp
                                     @if($adminDocsComplete)
                                         <div class="text-center mb-3">
                                             <button type="button" class="btn btn-outline-primary btn-sm" data-edit-doc-toggle="{{ $event->id }}">
@@ -461,7 +433,7 @@
                                             </button>
                                         </div>
                                         <div class="doc-edit-wrapper d-none" id="docEditWrapper-{{ $event->id }}">
-                                            @if(!$isOffline)
+                                            @if($requiresVbg)
                                                 <div class="box-up mb-3">
                                                     <label for="vbg-{{ $event->id }}" class="form-label">Virtual Background</label>
                                                     <input type="file" class="form-control" id="vbg-{{ $event->id }}" name="virtual_background" accept="image/*" data-preview="#vbg-preview-{{ $event->id }}">
@@ -471,7 +443,7 @@
                                             <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                         </div>
                                     @else
-                                        @if(!$isOffline)
+                                        @if($requiresVbg)
                                             <div class="box-up mb-3">
                                                 <label for="vbg-{{ $event->id }}" class="form-label">Virtual Background</label>
                                                 <input type="file" class="form-control" id="vbg-{{ $event->id }}" name="virtual_background" accept="image/*" data-preview="#vbg-preview-{{ $event->id }}">
@@ -514,6 +486,7 @@
                                 <div class="mb-3">
                                     <label for="nama" class="form-label fw-semibold">Nama Event <span class="text-danger">*</span></label>
                                     <input type="text" name="title" id="nama" class="form-control" required value="{{ old('title') }}" placeholder="Masukkan Nama Event">
+                                    <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
                                 </div>
                                 <!-- Pembicara (dynamic, minimal 1 required) -->
                                 <div class="mb-3">
@@ -546,17 +519,28 @@
                                 <!-- Materi (kategori konten) -->
                                 <div class="mb-3">
                                     <label for="materi" class="form-label fw-semibold">Materi <span class="text-danger">*</span></label>
-                                    <select name="materi" id="materi" class="form-select" required>
-                                        @php $materiOpts = [
-                                            'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
-                                            'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
-                                            'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
-                                        ]; @endphp
-                                        <option value="" disabled {{ old('materi') ? '' : 'selected' }}>Pilih materi</option>
-                                        @foreach($materiOpts as $opt)
-                                            <option value="{{ $opt }}" {{ old('materi') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="position-relative">
+                                        @php
+                                            $materiDefaults = [
+                                                'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
+                                                'Frontend Development',
+                                                'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
+                                                'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                            ];
+                                            $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                            $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
+                                                ->map(fn($v) => trim((string)$v))
+                                                ->filter()
+                                                ->unique(fn($v) => mb_strtolower($v))
+                                                ->sortBy(fn($v) => mb_strtolower($v))
+                                                ->values()
+                                                ->all();
+                                        @endphp
+                                        <input type="text" name="materi" id="materi" class="form-control" required value="{{ old('materi') }}" placeholder="Ketik minimal 2 huruf (contoh: Backend)" autocomplete="off">
+                                        <div id="materiSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                    </div>
+                                    <div class="form-text">Pilih kategori materi utama event.</div>
+                                    <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
                                 </div>
                                 <!-- Kelola Event: Manage / Create -->
                                 <div class="mb-3">
@@ -576,18 +560,22 @@
                                         <option value="manage" {{ old('manage_action') === 'manage' ? 'selected' : '' }}>Manage</option>
                                         <option value="create" {{ old('manage_action') === 'create' ? 'selected' : '' }}>Create</option>
                                     </select>
+                                    <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
                                     <small id="manageActionHelp" class="text-danger" style="display:none">Lengkapi: pilih salah satu (Manage/Create) sebelum menyimpan.</small>
                                 </div>
                                 <!-- Jenis Acara -->
                                 <div class="mb-3">
                                     <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
-                                    <select name="jenis" id="jenis" class="form-select" required>
-                                        @php $jenisOpts = ['Webinar','Seminar','Workshop']; @endphp
-                                        <option value="" disabled {{ old('jenis') ? '' : 'selected' }}>Pilih jenis acara</option>
-                                        @foreach($jenisOpts as $j)
-                                            <option value="{{ $j }}" {{ old('jenis') === $j ? 'selected' : '' }}>{{ $j }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="position-relative">
+                                        @php
+                                            $jenisDefaults = ['Webinar','Seminar','Workshop'];
+                                            $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                            $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))->map(fn($v) => trim((string)$v))->filter()->unique(fn($v) => mb_strtolower($v))->values()->all();
+                                        @endphp
+                                        <input type="text" name="jenis" id="jenis" class="form-control" required value="{{ old('jenis') }}" placeholder="Ketik minimal 2 huruf (contoh: Webinar)" autocomplete="off">
+                                        <div id="jenisSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                    </div>
+                                    <div class="form-text">Ketik minimal 2 huruf untuk melihat saran. Bisa juga isi manual.</div>
                                 </div>
                                 <!-- Level field removed per request -->
                                 <!-- Penjelasan Singkat (maks 40 kata) -->
@@ -599,6 +587,7 @@
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
                                     <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
+                                    <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="tanggal" class="form-label fw-semibold">Tanggal Event <span class="text-danger">*</span></label>
@@ -612,6 +601,7 @@
                                         <span>s/d</span>
                                         <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}">
                                     </div>
+                                    <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan Materi <span class="text-danger">*</span></label>
@@ -622,6 +612,7 @@
                                 <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>
                                     <input type="text" name="location" id="lokasi" class="form-control" required value="{{ old('location') }}" placeholder="Masukkan Lokasi">
+                                    <div class="form-text">Tulis nama tempat/kota. Jika online murni, bisa isi "Online" atau nama platform.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span class="text-danger">*</span></label>
@@ -632,6 +623,7 @@
                                 <div class="mb-3">
                                     <label for="diskon" class="form-label fw-semibold">Diskon (%)</label>
                                     <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0" max="100" step="1" value="{{ old('discount_percentage',0) }}" placeholder="0">
+                                    <div class="form-text">Isi 0 jika tidak ada diskon.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="discount_until" class="form-label fw-semibold">Jangka Waktu Diskon</label>
@@ -657,7 +649,7 @@
                                     <small class="text-muted d-block mt-1">Masukkan benefit per baris. Klik Tambah untuk menambah item.</small>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Jika Offline)</label>
+                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
                                     <div class="input-group">
                                         <input type="text" name="maps_url" id="maps" class="form-control" value="{{ old('maps_url') }}" placeholder="Tempel link Google Maps (bisa short link maps.app.goo.gl)">
                                         <button class="btn btn-outline-secondary" type="button" id="btnResolveMaps">Deteksi</button>
@@ -668,12 +660,14 @@
                                     <div class="form-text">Klik "Deteksi" untuk mencoba membaca koordinat dari short link Google Maps.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Jika Online)</label>
+                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
                                     <input type="text" name="zoom_link" id="zoom" class="form-control" value="{{ old('zoom_link') }}" placeholder="Masukkan Link Zoom">
+                                    <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                     <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{{ old('terms_and_conditions') }}</textarea>
+                                    <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Schedule <span class="text-muted small">(Opsional)</span></label>
@@ -690,6 +684,7 @@
                                         <tbody></tbody>
                                     </table>
                                     <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i class="bi bi-plus-circle me-1"></i>Tambah Baris</button>
+                                    <div class="form-text">Opsional. Tambahkan rundown/acara per sesi jika diperlukan.</div>
                                 </div>
 
                                 <!-- Pengeluaran -->
@@ -714,6 +709,7 @@
                                         <span class="me-2 fw-semibold">Total Pengeluaran:</span>
                                         <span id="expensesGrandTotal" class="fw-bold">Rp0</span>
                                     </div>
+                                    <div class="form-text">Opsional. Catat biaya untuk kebutuhan laporan/operasional.</div>
                                 </div>
                             </div>
                             <div class="col-lg-4">
@@ -726,7 +722,7 @@
                                         <span class="badge bg-secondary" id="statusHarga">Gratis</span>
                                     </li>
                                     <li class="list-group-item">Diskon akan otomatis dihitung jika persentase > 0.</li>
-                                    <li class="list-group-item">Gunakan Maps untuk event offline dan Zoom untuk event online.</li>
+                                    <li class="list-group-item">Jika event hybrid, isi Maps dan Zoom sekaligus.</li>
                                 </ul>
                                 </div>
                             </div>
@@ -936,6 +932,129 @@
             const tTriggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tTriggers.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
         }
+
+        // Jenis Acara autocomplete (show after 2 chars)
+        (function setupJenisAutocomplete(){
+            const jenisInput = document.getElementById('jenis');
+            const box = document.getElementById('jenisSuggestions');
+            if(!jenisInput || !box) return;
+
+            const options = @json($jenisMerged ?? []);
+            const norm = (s) => String(s || '').trim();
+            const lower = (s) => norm(s).toLowerCase();
+
+            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+            function show(items){
+                if(!items.length){ hide(); return; }
+                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                box.style.display = 'block';
+            }
+            function filter(q){
+                const query = lower(q);
+                if(query.length < 2) return [];
+                return options
+                    .map(norm)
+                    .filter(Boolean)
+                    .filter(v => lower(v).includes(query))
+                    .slice(0, 8);
+            }
+
+            jenisInput.addEventListener('input', () => {
+                const items = filter(jenisInput.value);
+                show(items);
+            });
+            jenisInput.addEventListener('focus', () => {
+                const items = filter(jenisInput.value);
+                show(items);
+            });
+            jenisInput.addEventListener('blur', () => setTimeout(hide, 150));
+
+            box.addEventListener('mousedown', (e) => {
+                const btn = e.target?.closest('[data-value]');
+                if(!btn) return;
+                e.preventDefault();
+                jenisInput.value = btn.getAttribute('data-value') || '';
+                hide();
+            });
+            document.addEventListener('click', (e) => {
+                if (e.target === jenisInput) return;
+                if (box.contains(e.target)) return;
+                hide();
+            });
+        })();
+
+        // Materi autocomplete (show after 2 chars)
+        (function setupMateriAutocomplete(){
+            const materiInput = document.getElementById('materi');
+            const box = document.getElementById('materiSuggestions');
+            const invalidText = document.getElementById('materiInvalidText');
+            if(!materiInput || !box) return;
+
+            const options = @json($materiMerged ?? []);
+            const norm = (s) => String(s || '').trim();
+            const lower = (s) => norm(s).toLowerCase();
+
+            function isValidSelection(value){
+                const v = lower(value);
+                if(!v) return true;
+                return options.some(opt => lower(opt) === v);
+            }
+            function applyValidity(){
+                const v = materiInput.value;
+                const ok = isValidSelection(v);
+                if(ok){
+                    materiInput.setCustomValidity('');
+                    if(invalidText) invalidText.style.display = 'none';
+                }else{
+                    materiInput.setCustomValidity('Tidak ada materi');
+                    if(invalidText) invalidText.style.display = 'block';
+                }
+            }
+
+            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+            function show(items){
+                if(!items.length){ hide(); return; }
+                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                box.style.display = 'block';
+            }
+            function filter(q){
+                const query = lower(q);
+                if(query.length < 2) return [];
+                return options
+                    .map(norm)
+                    .filter(Boolean)
+                    .filter(v => lower(v).includes(query))
+                    .slice(0, 10);
+            }
+
+            materiInput.addEventListener('input', () => {
+                const items = filter(materiInput.value);
+                show(items);
+                applyValidity();
+            });
+            materiInput.addEventListener('focus', () => {
+                const items = filter(materiInput.value);
+                show(items);
+            });
+            materiInput.addEventListener('blur', () => { applyValidity(); setTimeout(hide, 150); });
+
+            box.addEventListener('mousedown', (e) => {
+                const btn = e.target?.closest('[data-value]');
+                if(!btn) return;
+                e.preventDefault();
+                materiInput.value = btn.getAttribute('data-value') || '';
+                hide();
+                applyValidity();
+            });
+            document.addEventListener('click', (e) => {
+                if (e.target === materiInput) return;
+                if (box.contains(e.target)) return;
+                hide();
+            });
+
+            // Initial validity (old() value)
+            applyValidity();
+        })();
         // CKEditor init for deskripsi and terms
         ClassicEditor.create(document.querySelector('#deskripsi'), {
             toolbar: ['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']
@@ -1058,37 +1177,20 @@
             if(p){ showMap(p.lat, p.lng); }
             else if(mapsPreview){ mapsPreview.style.display = 'none'; }
         }
-        // Mutually disable Maps vs Zoom link: choosing one disables the other
-        function syncOnlineOfflineInputs(){
-            const hasMaps = !!(mapsInput && mapsInput.value.trim());
-            const hasZoom = !!(zoomInput && zoomInput.value.trim());
-            if (hasMaps) {
-                if (zoomInput) zoomInput.disabled = true;
-                if (mapsInput) mapsInput.disabled = false;
-                if (btnResolveMaps) btnResolveMaps.disabled = false;
-            } else if (hasZoom) {
-                if (mapsInput) mapsInput.disabled = true;
-                if (btnResolveMaps) btnResolveMaps.disabled = true;
-                if (mapsPreview) mapsPreview.style.display = 'none';
-                if (zoomInput) zoomInput.disabled = false;
-            } else {
-                if (mapsInput) mapsInput.disabled = false;
-                if (zoomInput) zoomInput.disabled = false;
-                if (btnResolveMaps) btnResolveMaps.disabled = false;
-            }
+        function syncMapsUI(){
+            const hasMaps = !!(mapsInput && String(mapsInput.value || '').trim());
+            if (btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
+            if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
         }
         if(mapsInput){
-            mapsInput.addEventListener('input', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
-            mapsInput.addEventListener('change', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
-            mapsInput.addEventListener('blur', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
+            mapsInput.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
+            mapsInput.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
+            mapsInput.addEventListener('blur', () => { tryRenderMap(); syncMapsUI(); });
             // initial (old() values)
             tryRenderMap();
         }
-        if(zoomInput){
-            ['input','change','blur'].forEach(ev => zoomInput.addEventListener(ev, syncOnlineOfflineInputs));
-        }
-        // Initial mutual-disable state
-        syncOnlineOfflineInputs();
+        // Initial state
+        syncMapsUI();
         if(btnResolveMaps){
             btnResolveMaps.addEventListener('click', async () => {
                 const url = mapsInput?.value || '';

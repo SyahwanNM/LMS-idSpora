@@ -2,33 +2,6 @@
 @section('title', 'Edit Event')
 @section('content')
     <div class="container-fluid py-4">
-        @if(session('success'))
-            <div aria-live="polite" aria-atomic="true" class="position-relative">
-                <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
-                    <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0" role="alert"
-                        aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                {{ session('success') }}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                                aria-label="Close"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    try {
-                        var el = document.getElementById('eventUpdatedToast');
-                        if (window.bootstrap && el) {
-                            var t = new bootstrap.Toast(el);
-                            t.show();
-                        }
-                    } catch (e) { }
-                });
-            </script>
-        @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
             <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>
@@ -67,6 +40,7 @@
                                         class="text-danger">*</span></label>
                                 <input type="text" name="title" id="nama" class="form-control" required
                                     value="{{ old('title', $event->title) }}" placeholder="Masukkan Nama Event">
+                                <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Pembicara <span
@@ -101,8 +75,59 @@
                                     value="{{ old('speaker', $event->speaker) }}">
                                 <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara opsional.</div>
                             </div>
+                            <!-- Materi (kategori konten) -->
                             <div class="mb-3">
-                                <!-- Level field removed per request -->
+                                <label for="materi" class="form-label fw-semibold">Materi <span class="text-danger">*</span></label>
+                                @php
+                                    $materiDefaults = [
+                                        'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
+                                        'Frontend Development',
+                                        'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
+                                        'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                    ];
+                                    $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                    $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
+                                        ->map(fn($v) => trim((string)$v))
+                                        ->filter()
+                                        ->unique(fn($v) => mb_strtolower($v))
+                                        ->values()
+                                        ->all();
+                                    $currentMateri = old('materi', $event->materi);
+                                    $materiMerged = collect($materiMerged)
+                                        ->sortBy(fn($v) => mb_strtolower((string) $v))
+                                        ->values()
+                                        ->all();
+                                @endphp
+                                <div class="position-relative">
+                                    <input type="text" name="materi" id="materi" class="form-control" required
+                                        value="{{ $currentMateri }}"
+                                        placeholder="Ketik minimal 2 huruf (contoh: Backend)" autocomplete="off">
+                                    <div id="materiSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                </div>
+                                <div class="form-text">Pilih kategori materi utama event.</div>
+                                <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
+                            </div>
+
+                            <!-- Jenis Acara (autocomplete after 2 chars) -->
+                            <div class="mb-3">
+                                <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    @php
+                                        $jenisDefaults = ['Webinar','Seminar','Workshop'];
+                                        $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                        $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))
+                                            ->map(fn($v) => trim((string)$v))
+                                            ->filter()
+                                            ->unique(fn($v) => mb_strtolower($v))
+                                            ->values()
+                                            ->all();
+                                    @endphp
+                                    <input type="text" name="jenis" id="jenis" class="form-control" required
+                                        value="{{ old('jenis', $event->jenis) }}"
+                                        placeholder="Ketik minimal 2 huruf (contoh: Webinar)" autocomplete="off">
+                                    <div id="jenisSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                </div>
+                                <div class="form-text">Ketik minimal 2 huruf untuk melihat saran. Bisa juga isi manual.</div>
                             </div>
                             <!-- Penjelasan Singkat (maks 40 kata) -->
                             <div class="mb-3">
@@ -118,6 +143,7 @@
                                         class="text-danger">*</span></label>
                                 <textarea name="description" id="deskripsi" class="form-control" rows="6"
                                     required>{{ old('description', $event->description) }}</textarea>
+                                <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                             </div>
                             <!-- Kelola Event: Manage / Create -->
                             <div class="mb-3">
@@ -146,6 +172,7 @@
                                         class="text-danger">*</span></label>
                                 <input type="date" name="event_date" id="tanggal" class="form-control" required
                                     value="{{ old('event_date', $event->event_date) }}">
+                                <div class="form-text">Pilih tanggal pelaksanaan event.</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Waktu Mulai & Selesai <span
@@ -157,6 +184,7 @@
                                     <input type="time" name="event_time_end" id="masuk2" class="form-control"
                                         value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}">
                                 </div>
+                                <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan
@@ -185,6 +213,7 @@
                                         class="text-danger">*</span></label>
                                 <input type="text" name="location" id="lokasi" class="form-control" required
                                     value="{{ old('location', $event->location) }}" placeholder="Masukkan Lokasi">
+                                <div class="form-text">Tulis nama tempat/kota. Jika online murni, bisa isi "Online" atau nama platform.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span
@@ -202,6 +231,7 @@
                                 <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0"
                                     max="100" step="1" value="{{ old('discount_percentage', $event->discount_percentage) }}"
                                     placeholder="0">
+                                <div class="form-text">Isi 0 jika tidak ada diskon.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="discount_until" class="form-label fw-semibold">Jangka Waktu Diskon</label>
@@ -221,7 +251,7 @@
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Jika Offline)</label>
+                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
                                 <div class="input-group">
                                     <input type="text" name="maps_url" id="maps" class="form-control"
                                         value="{{ old('maps_url', $event->maps_url) }}"
@@ -229,19 +259,23 @@
                                     <button class="btn btn-outline-secondary" type="button"
                                         id="btnResolveMaps">Deteksi</button>
                                 </div>
+                                <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude', $event->latitude) }}">
+                                <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude', $event->longitude) }}">
                                 <div id="mapsPreview" class="mt-2 rounded border" style="display:none;height:260px;"></div>
                                 <div class="form-text">Klik "Deteksi" untuk membaca koordinat dari short link Google Maps.
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Jika Online)</label>
+                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
                                 <input type="text" name="zoom_link" id="zoom" class="form-control"
                                     value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Masukkan Link Zoom">
+                                <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
                                     rows="6">{{ old('terms_and_conditions', $event->terms_and_conditions) }}</textarea>
+                                <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Schedule <span
@@ -281,6 +315,7 @@
                                 </table>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Baris</button>
+                                <div class="form-text">Opsional. Tambahkan rundown/acara per sesi jika diperlukan.</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Pengeluaran <span
@@ -326,6 +361,7 @@
                                         class="bi bi-plus-circle me-1"></i>Tambah Pengeluaran</button>
                                 <div class="d-flex justify-content-end mt-2"><span class="me-2 fw-semibold">Total
                                         Pengeluaran:</span><span id="expensesGrandTotal" class="fw-bold">Rp0</span></div>
+                                <div class="form-text">Opsional. Catat biaya untuk kebutuhan laporan/operasional.</div>
                             </div>
                         </div>
                         <div class="col-lg-4">
@@ -335,7 +371,7 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">Status Harga
                                     <span class="badge bg-secondary" id="statusHarga">Berbayar</span></li>
                                 <li class="list-group-item">Diskon aktif jika persentase > 0.</li>
-                                <li class="list-group-item">Gunakan Maps untuk offline dan Zoom untuk online.</li>
+                                <li class="list-group-item">Jika event hybrid, isi Maps dan Zoom sekaligus.</li>
                             </ul>
                         </div>
                     </div>
@@ -416,6 +452,129 @@
                 }
             } catch (_) { }
 
+            // Jenis Acara autocomplete (show after 2 chars)
+            (function setupJenisAutocomplete(){
+                const jenisInput = document.getElementById('jenis');
+                const box = document.getElementById('jenisSuggestions');
+                if(!jenisInput || !box) return;
+
+                const options = @json($jenisMerged ?? []);
+                const norm = (s) => String(s || '').trim();
+                const lower = (s) => norm(s).toLowerCase();
+
+                function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+                function show(items){
+                    if(!items.length){ hide(); return; }
+                    box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                    box.style.display = 'block';
+                }
+                function filter(q){
+                    const query = lower(q);
+                    if(query.length < 2) return [];
+                    return options
+                        .map(norm)
+                        .filter(Boolean)
+                        .filter(v => lower(v).includes(query))
+                        .slice(0, 8);
+                }
+
+                jenisInput.addEventListener('input', () => {
+                    const items = filter(jenisInput.value);
+                    show(items);
+                });
+                jenisInput.addEventListener('focus', () => {
+                    const items = filter(jenisInput.value);
+                    show(items);
+                });
+                jenisInput.addEventListener('blur', () => setTimeout(hide, 150));
+
+                box.addEventListener('mousedown', (e) => {
+                    const btn = e.target?.closest('[data-value]');
+                    if(!btn) return;
+                    e.preventDefault();
+                    jenisInput.value = btn.getAttribute('data-value') || '';
+                    hide();
+                });
+                document.addEventListener('click', (e) => {
+                    if (e.target === jenisInput) return;
+                    if (box.contains(e.target)) return;
+                    hide();
+                });
+            })();
+
+            // Materi autocomplete (show after 2 chars)
+            (function setupMateriAutocomplete(){
+                const materiInput = document.getElementById('materi');
+                const box = document.getElementById('materiSuggestions');
+                const invalidText = document.getElementById('materiInvalidText');
+                if(!materiInput || !box) return;
+
+                const options = @json($materiMerged ?? []);
+                const norm = (s) => String(s || '').trim();
+                const lower = (s) => norm(s).toLowerCase();
+
+                function isValidSelection(value){
+                    const v = lower(value);
+                    if(!v) return true;
+                    return options.some(opt => lower(opt) === v);
+                }
+                function applyValidity(){
+                    const v = materiInput.value;
+                    const ok = isValidSelection(v);
+                    if(ok){
+                        materiInput.setCustomValidity('');
+                        if(invalidText) invalidText.style.display = 'none';
+                    }else{
+                        materiInput.setCustomValidity('Tidak ada materi');
+                        if(invalidText) invalidText.style.display = 'block';
+                    }
+                }
+
+                function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+                function show(items){
+                    if(!items.length){ hide(); return; }
+                    box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                    box.style.display = 'block';
+                }
+                function filter(q){
+                    const query = lower(q);
+                    if(query.length < 2) return [];
+                    return options
+                        .map(norm)
+                        .filter(Boolean)
+                        .filter(v => lower(v).includes(query))
+                        .slice(0, 10);
+                }
+
+                materiInput.addEventListener('input', () => {
+                    const items = filter(materiInput.value);
+                    show(items);
+                    applyValidity();
+                });
+                materiInput.addEventListener('focus', () => {
+                    const items = filter(materiInput.value);
+                    show(items);
+                });
+                materiInput.addEventListener('blur', () => { applyValidity(); setTimeout(hide, 150); });
+
+                box.addEventListener('mousedown', (e) => {
+                    const btn = e.target?.closest('[data-value]');
+                    if(!btn) return;
+                    e.preventDefault();
+                    materiInput.value = btn.getAttribute('data-value') || '';
+                    hide();
+                    applyValidity();
+                });
+                document.addEventListener('click', (e) => {
+                    if (e.target === materiInput) return;
+                    if (box.contains(e.target)) return;
+                    hide();
+                });
+
+                // Initial validity (old/current value)
+                applyValidity();
+            })();
+
             // CKEditor init
             ClassicEditor.create(document.querySelector('#deskripsi'), { toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|', 'bulletedList', 'numberedList', '|', 'link', 'blockQuote', 'insertTable', '|', 'undo', 'redo', 'removeFormat'] }).then(e => { window.editorDeskripsi = e; const ta = document.getElementById('deskripsi'); if (ta) ta.value = e.getData(); e.model.document.on('change:data', () => { if (ta) ta.value = e.getData(); if (typeof window.updateSubmitState === 'function') { window.updateSubmitState(); } }); }).catch(console.error);
             ClassicEditor.create(document.querySelector('#terms'), { toolbar: ['bold', 'italic', 'underline', 'bulletedList', 'numberedList', 'link', 'undo', 'redo', 'removeFormat'] }).then(e => window.editorTerms = e).catch(console.error);
@@ -444,37 +603,48 @@
                 return null;
             }
             function ensureMap() { if (!mapsPreview) return; if (!leafletMap) { leafletMap = L.map(mapsPreview).setView([-6.200, 106.816], 12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(leafletMap); } setTimeout(() => leafletMap.invalidateSize(), 50); }
-            function showMap(lat, lng) { if (!mapsPreview) return; mapsPreview.style.display = 'block'; ensureMap(); const pos = [lat, lng]; leafletMap.setView(pos, 14); if (leafletMarker) { leafletMarker.setLatLng(pos); } else { leafletMarker = L.marker(pos).addTo(leafletMap); } }
-            function tryRenderMap() { const v = mapsInput?.value || ''; const p = parseLatLngFromUrl(v); if (p) showMap(p.lat, p.lng); else if (mapsPreview) mapsPreview.style.display = 'none'; }
-            // Mutually disable Maps vs Zoom link: choosing one disables the other
-            function syncOnlineOfflineInputs() {
-                const hasMaps = !!(mapsInput && String(mapsInput.value || '').trim());
-                const hasZoom = !!(zoomInput && String(zoomInput.value || '').trim());
-                if (hasMaps) {
-                    if (zoomInput) zoomInput.disabled = true;
-                    if (mapsInput) mapsInput.disabled = false;
-                    if (btnResolveMaps) btnResolveMaps.disabled = false;
-                } else if (hasZoom) {
-                    if (mapsInput) mapsInput.disabled = true;
-                    if (btnResolveMaps) btnResolveMaps.disabled = true;
-                    if (mapsPreview) mapsPreview.style.display = 'none';
-                    if (zoomInput) zoomInput.disabled = false;
-                } else {
-                    if (mapsInput) mapsInput.disabled = false;
-                    if (zoomInput) zoomInput.disabled = false;
-                    if (btnResolveMaps) btnResolveMaps.disabled = false;
+            function showMap(lat, lng) {
+                if (!mapsPreview) return;
+                mapsPreview.style.display = 'block';
+                ensureMap();
+                const pos = [lat, lng];
+                leafletMap.setView(pos, 14);
+                if (leafletMarker) { leafletMarker.setLatLng(pos); }
+                else { leafletMarker = L.marker(pos).addTo(leafletMap); }
+                const latInp = document.getElementById('latitude');
+                const lngInp = document.getElementById('longitude');
+                if (latInp) latInp.value = (+lat).toFixed(7);
+                if (lngInp) lngInp.value = (+lng).toFixed(7);
+            }
+            function tryRenderMap() {
+                const v = mapsInput?.value || '';
+                const p = parseLatLngFromUrl(v);
+                if (p) {
+                    showMap(p.lat, p.lng);
+                    return;
+                }
+                const latInp = document.getElementById('latitude');
+                const lngInp = document.getElementById('longitude');
+                const lat = latInp ? parseFloat(String(latInp.value || '')) : NaN;
+                const lng = lngInp ? parseFloat(String(lngInp.value || '')) : NaN;
+                if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                    showMap(lat, lng);
+                } else if (mapsPreview) {
+                    mapsPreview.style.display = 'none';
                 }
             }
+            function syncMapsUI(){
+                const hasMaps = !!(mapsInput && String(mapsInput.value || '').trim());
+                if (btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
+                if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
+            }
 
-            mapsInput?.addEventListener('input', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
-            mapsInput?.addEventListener('change', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
-            mapsInput?.addEventListener('blur', () => { tryRenderMap(); syncOnlineOfflineInputs(); });
-            zoomInput?.addEventListener('input', syncOnlineOfflineInputs);
-            zoomInput?.addEventListener('change', syncOnlineOfflineInputs);
-            zoomInput?.addEventListener('blur', syncOnlineOfflineInputs);
+            mapsInput?.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
+            mapsInput?.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
+            mapsInput?.addEventListener('blur', () => { tryRenderMap(); syncMapsUI(); });
 
             tryRenderMap();
-            syncOnlineOfflineInputs();
+            syncMapsUI();
             btnResolveMaps?.addEventListener('click', async () => { const url = mapsInput?.value || ''; if (!url) { alert('Masukkan link terlebih dahulu'); return; } try { btnResolveMaps.disabled = true; const resp = await fetch(resolveMapsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ url }) }); const data = await resp.json(); if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); } else alert(data.message || 'Koordinat tidak ditemukan.'); } catch (e) { alert('Gagal mendeteksi koordinat.'); } finally { btnResolveMaps.disabled = false; } });
 
             // Speakers (from Trainer API)

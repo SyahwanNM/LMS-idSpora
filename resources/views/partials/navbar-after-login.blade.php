@@ -431,8 +431,6 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     width: 380px;
     padding: 0 !important;
     overflow: hidden;
-    right: 0 !important;
-    left: auto !important;
 }
 
 .dropdown-header-premium {
@@ -713,6 +711,48 @@ function toggleNotificationDropdown() {
     
     const isVisible = dropdown.style.display === 'block';
 
+    function positionDropdownToButton(btnEl){
+        if(!btnEl) return;
+        // Use viewport-based positioning so scroll doesn't shift the dropdown
+        dropdown.style.position = 'fixed';
+        dropdown.style.right = '';
+        dropdown.style.left = '';
+        dropdown.style.top = '';
+
+        const rect = btnEl.getBoundingClientRect();
+        const gap = 10;
+        const padding = 12;
+
+        const top = rect.bottom + gap;
+        dropdown.style.top = Math.max(padding, top) + 'px';
+
+        // Ensure measurable width (works with visibility hidden)
+        const width = dropdown.offsetWidth || 380;
+        let left = rect.right - width;
+        left = Math.max(padding, Math.min(left, window.innerWidth - width - padding));
+        dropdown.style.left = left + 'px';
+        dropdown.style.zIndex = '2000';
+    }
+
+    // Keep position stable while scrolling/resizing when open on desktop
+    if(!window.__idsporaNotifDropdownBound){
+        window.__idsporaNotifDropdownBound = true;
+        let raf = 0;
+        const onViewportChange = () => {
+            const dd = document.getElementById('notificationDropdown');
+            if(!dd || dd.style.display !== 'block') return;
+            if(window.innerWidth < 992) return;
+            if(raf) return;
+            raf = requestAnimationFrame(() => {
+                raf = 0;
+                const btn = document.getElementById('notifBtn');
+                positionDropdownToButton(btn);
+            });
+        };
+        window.addEventListener('scroll', onViewportChange, { passive: true });
+        window.addEventListener('resize', onViewportChange);
+    }
+
     if (!isVisible) {
         // Hide burger if open
         const navCollapseEl = document.getElementById('navbarSupportedContent');
@@ -721,16 +761,14 @@ function toggleNotificationDropdown() {
             if (burgerToggler) burgerToggler.click();
         }
 
-        // Position fix for desktop
+        // Desktop: open as a fixed dropdown anchored to bell icon
         if (window.innerWidth >= 992) {
             const desktopBtn = document.getElementById('notifBtn');
-            if (desktopBtn) {
-                const rect = desktopBtn.getBoundingClientRect();
-                dropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-                dropdown.style.right = '40px';
-                dropdown.style.left = 'auto';
-                dropdown.style.position = 'absolute';
-            }
+            dropdown.style.display = 'block';
+            dropdown.style.visibility = 'hidden';
+            positionDropdownToButton(desktopBtn);
+            dropdown.style.visibility = '';
+            return;
         } else if (backdrop) {
             // Show backdrop on mobile
             backdrop.classList.add('show');
@@ -792,24 +830,67 @@ function toggleUserDropdown() {
     if (!dropdown) return;
     
     const isVisible = dropdown.style.display === 'block';
+
+    function positionUserMenuToButton(btnEl){
+        if(!btnEl) return;
+        dropdown.style.position = 'fixed';
+        dropdown.style.right = '';
+        dropdown.style.left = '';
+        dropdown.style.top = '';
+
+        const rect = btnEl.getBoundingClientRect();
+        const gap = 10;
+        const padding = 12;
+
+        const top = rect.bottom + gap;
+        dropdown.style.top = Math.max(padding, top) + 'px';
+
+        const width = dropdown.offsetWidth || 260;
+        let left = rect.right - width;
+        left = Math.max(padding, Math.min(left, window.innerWidth - width - padding));
+        dropdown.style.left = left + 'px';
+        dropdown.style.zIndex = '2000';
+    }
+
+    // Keep position stable while scrolling/resizing when open on desktop
+    if(!window.__idsporaUserDropdownBound){
+        window.__idsporaUserDropdownBound = true;
+        let raf = 0;
+        const onViewportChange = () => {
+            const dd = document.getElementById('userDropdownMenu');
+            if(!dd || dd.style.display !== 'block') return;
+            if(window.innerWidth < 992) return;
+            if(raf) return;
+            raf = requestAnimationFrame(() => {
+                raf = 0;
+                const btn = document.getElementById('userDropdown');
+                if(btn) {
+                    // Recompute using current layout
+                    dd.style.visibility = 'hidden';
+                    positionUserMenuToButton(btn);
+                    dd.style.visibility = '';
+                }
+            });
+        };
+        window.addEventListener('scroll', onViewportChange, { passive: true });
+        window.addEventListener('resize', onViewportChange);
+    }
     
     if (!isVisible) {
-        // Desktop positioning
+        // Desktop: fixed dropdown anchored to profile button
         if (window.innerWidth >= 992) {
             const desktopBtn = document.getElementById('userDropdown');
-            if (desktopBtn) {
-                const rect = desktopBtn.getBoundingClientRect();
-                dropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
-                dropdown.style.right = '40px';
-                dropdown.style.left = 'auto';
-                dropdown.style.position = 'absolute';
-            }
+            dropdown.style.display = 'block';
+            dropdown.style.visibility = 'hidden';
+            positionUserMenuToButton(desktopBtn);
+            dropdown.style.visibility = '';
         } else {
             // Mobile: inline accordion style
             dropdown.style.position = 'static';
             dropdown.style.top = '';
             dropdown.style.left = '';
             dropdown.style.right = '';
+            dropdown.style.zIndex = '';
         }
         dropdown.style.display = 'block';
         if (container) container.classList.add('menu-open');
@@ -843,6 +924,8 @@ document.addEventListener('click', function(e) {
     if (!e.target.closest('#userDropdown') && !e.target.closest('#userDropdownMenu')) {
         const d = document.getElementById('userDropdownMenu');
         if (d) d.style.display = 'none';
+        const c = document.querySelector('.user-dropdown-premium');
+        if (c) c.classList.remove('menu-open');
     }
 });
 </script>   

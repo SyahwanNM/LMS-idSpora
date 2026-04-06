@@ -572,7 +572,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         initActiveUsersPoll();
         animateCounters();
-        showFlashMessages();
         initExportButton();
         initRecentActivityRefresh();
     });
@@ -602,15 +601,8 @@
         });
     }
 
-    function showFlashMessages() {
-        @php($loginSuccess = session()->pull('login_success'))
-        @if(!empty($loginSuccess))
-            createToast('success', `{{ addslashes($loginSuccess) }}`);
-        @endif
-        @if($errors->any())
-            createToast('error', 'Please check the form for errors');
-        @endif
-}
+    // Flash messages are handled by the new global notification banner in layouts.admin
+    // (session('login_success'), session('success'), session('error')).
 
     function initExportButton() {
         const btn = document.getElementById('exportDataBtn');
@@ -679,17 +671,6 @@
         });
     }
 
-    function createToast(type, message) {
-        const toast = document.createElement('div');
-        toast.className = 'toast align-items-center text-white border-0 position-fixed top-0 end-0 m-3';
-        toast.setAttribute('role', 'alert');
-        toast.style.zIndex = '1080';
-        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
-        toast.classList.add(type === 'success' ? 'bg-success' : 'bg-danger');
-        document.body.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-        bsToast.show();
-        toast.addEventListener('hidden.bs.toast', () => toast.remove());
-    }
+    // Legacy createToast() removed (admin uses window.adminNotify / global notifications)
 </script>
 @endsection

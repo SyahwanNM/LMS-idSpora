@@ -170,7 +170,7 @@
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-3"><i class="bi bi-folder2-open me-2"></i>Dokumen Operasional</h6>
                                 <ul class="list-group list-group-flush small">
-                                    @if(empty($event->maps_url))
+                                    @if(!empty($event->zoom_link) || empty($event->maps_url))
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             <span><i class="bi {{ !empty($event->vbg_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Virtual Background</span>
                                             <span>
@@ -269,21 +269,6 @@
                                     </li>
                                 </ul>
 
-                                @if(empty($event->module_path))
-                                    <div class="alert alert-warning small mt-3 mb-0">
-                                        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
-                                            <div>
-                                                <strong>Reminder:</strong> Module belum diupload. Ingatkan trainer untuk mengunggah module/materi.
-                                            </div>
-                                            <form action="{{ route('admin.events.module.remind', $event) }}" method="POST" class="m-0">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-bell me-1"></i>Ingatkan Trainer
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                @endif
                             </div>
                         </div>
                     </div>

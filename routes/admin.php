@@ -159,8 +159,6 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
     // Publish event (show on user pages)
     Route::post('/admin/events/{event}/publish', [EventController::class, 'publish'])->name('admin.events.publish');
-    // Admin: remind trainer to upload module
-    Route::post('/admin/events/{event}/module/remind', [EventController::class, 'remindModuleUpload'])->name('admin.events.module.remind');
     // Event QR actions (admin)
     Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
     Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
@@ -168,8 +166,6 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
         // Event document uploads (admin)
         Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
-        // Admin: remind trainer to upload module
-        Route::post('/admin/events/{event}/module/remind', [EventController::class, 'remindModuleUpload'])->name('admin.events.module.remind');
         // Admin: verify/reject trainer event module submission
         Route::post('/admin/events/{event}/module/approve', [EventController::class, 'approveModule'])->name('admin.events.module.approve');
         Route::post('/admin/events/{event}/module/reject', [EventController::class, 'rejectModule'])->name('admin.events.module.reject');

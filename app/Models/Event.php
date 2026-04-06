@@ -92,7 +92,9 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        $isOffline = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
+        $isOfflineOnly = $hasMaps && !$hasZoom;
 
         $hasVbg = !empty($this->vbg_path);
         $hasCert = !empty($this->certificate_path);
@@ -101,9 +103,9 @@ class Event extends Model
             || !empty($this->attendance_qr_image)
             || !empty($this->attendance_qr_token);
 
-        // Offline events do not require Virtual Background.
+        // Offline-only events do not require Virtual Background.
         $count = 0;
-        if (!$isOffline && $hasVbg) {
+        if (!$isOfflineOnly && $hasVbg) {
             $count++;
         }
         if ($hasCert) {
@@ -124,8 +126,10 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $isOffline = trim((string) ($this->maps_url ?? '')) !== '';
-        $total = $isOffline
+        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
+        $isOfflineOnly = $hasMaps && !$hasZoom;
+        $total = $isOfflineOnly
             ? 3 // Sertifikat, Module (Trainer), Absensi (QR/File)
             : 4; // + Virtual Background
 

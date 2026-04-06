@@ -94,12 +94,22 @@
                         <div class="box_select_deskripsi mb-1">
                             <label class="form-label text-dark" for="course-thumbnail">Thumbnail/Intro Media <span class="text-danger">*</span></label>
                             <input id="course-thumbnail" name="image" type="file" class="form-control" accept="image/*,video/mp4,video/webm,video/ogg" required>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <div id="course-thumbnail-preview" class="border rounded bg-light overflow-hidden d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                    <small class="text-muted">Preview</small>
+                                </div>
+                            </div>
                             <div class="form-text">Bisa upload gambar <b>atau</b> video (mp4, webm, ogg)</div>
                             <div class="sanity-msg" data-for="course-thumbnail"></div>
                         </div>
                         <div class="box_select_deskripsi mb-3">
                             <label class="form-label text-dark" for="card-thumbnail">Thumbnail Card Course <span class="text-danger">*</span></label>
                             <input id="card-thumbnail" name="card_thumbnail" type="file" class="form-control" accept="image/*" required>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <div id="card-thumbnail-preview" class="border rounded bg-light overflow-hidden d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                    <small class="text-muted">Preview</small>
+                                </div>
+                            </div>
                             <div class="form-text">Upload gambar untuk thumbnail card course (jpg/png/webp)</div>
                             <div class="sanity-msg" data-for="card-thumbnail"></div>
                         </div>
@@ -1245,6 +1255,85 @@
                     trainerSelect.innerHTML = '<option value="" selected disabled>Gagal memuat trainer</option>';
                 });
         })();
+
+            // File previews (small box)
+            (function(){
+                function setPlaceholder(previewEl){
+                    if(!previewEl) return;
+                    // cleanup previous object URL
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+                    previewEl.dataset.objectUrl = '';
+                    previewEl.innerHTML = '<small class="text-muted">Preview</small>';
+                }
+
+                function renderPreview(inputEl, previewEl, allowVideo){
+                    if(!inputEl || !previewEl) return;
+                    const file = inputEl.files && inputEl.files[0];
+                    if(!file){
+                        setPlaceholder(previewEl);
+                        return;
+                    }
+
+                    // cleanup old
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+
+                    const url = URL.createObjectURL(file);
+                    previewEl.dataset.objectUrl = url;
+                    previewEl.innerHTML = '';
+
+                    const type = (file.type || '').toLowerCase();
+                    const isImage = type.startsWith('image/');
+                    const isVideo = allowVideo && type.startsWith('video/');
+
+                    if(isImage){
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Preview';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        previewEl.appendChild(img);
+                        return;
+                    }
+
+                    if(isVideo){
+                        const video = document.createElement('video');
+                        video.src = url;
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.loop = true;
+                        video.autoplay = true;
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        previewEl.appendChild(video);
+                        return;
+                    }
+
+                    // fallback
+                    const span = document.createElement('small');
+                    span.className = 'text-muted';
+                    span.textContent = file.name || 'File dipilih';
+                    previewEl.appendChild(span);
+                }
+
+                const introInput = document.getElementById('course-thumbnail');
+                const introPreview = document.getElementById('course-thumbnail-preview');
+                const cardInput = document.getElementById('card-thumbnail');
+                const cardPreview = document.getElementById('card-thumbnail-preview');
+
+                setPlaceholder(introPreview);
+                setPlaceholder(cardPreview);
+
+                introInput?.addEventListener('change', () => renderPreview(introInput, introPreview, true));
+                cardInput?.addEventListener('change', () => renderPreview(cardInput, cardPreview, false));
+            })();
     </script>
 </body>
 

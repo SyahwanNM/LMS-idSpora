@@ -187,19 +187,12 @@ class EventController extends Controller
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
         ]);
 
-        // Normalize online/offline location inputs: keep only one of maps_url or zoom_link.
+        // Allow hybrid events: maps_url and zoom_link may both be filled.
+        // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
         $mapsUrl = trim((string) $request->input('maps_url', ''));
         $zoomLink = trim((string) $request->input('zoom_link', ''));
-        $latitude = $request->input('latitude', $event->latitude);
-        $longitude = $request->input('longitude', $event->longitude);
-
-        if ($mapsUrl !== '') {
-            $zoomLink = '';
-        } elseif ($zoomLink !== '') {
-            $mapsUrl = '';
-            $latitude = null;
-            $longitude = null;
-        }
+        $latitude = $mapsUrl !== '' ? $request->input('latitude') : null;
+        $longitude = $mapsUrl !== '' ? $request->input('longitude') : null;
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
@@ -395,7 +388,9 @@ class EventController extends Controller
 
     public function edit(Event $event)
     {
-        return view('admin.events.edit', compact('event'));
+        $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
+        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
     }
 
     public function update(Request $request, Event $event)
@@ -471,30 +466,14 @@ class EventController extends Controller
             'material_deadline'
         ]);
 
-        // Normalize online/offline location inputs: keep only one of maps_url or zoom_link.
-        // Important for edit form: disabled inputs are not submitted, so we must explicitly null the opposing field.
+        // Allow hybrid events: maps_url and zoom_link may both be filled.
+        // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
         $mapsUrl = trim((string) $request->input('maps_url', ''));
         $zoomLink = trim((string) $request->input('zoom_link', ''));
-        $latitude = $request->input('latitude');
-        $longitude = $request->input('longitude');
-
-        if ($mapsUrl !== '') {
-            $data['maps_url'] = $mapsUrl;
-            $data['zoom_link'] = null;
-            $data['latitude'] = $latitude;
-            $data['longitude'] = $longitude;
-        } elseif ($zoomLink !== '') {
-            $data['zoom_link'] = $zoomLink;
-            $data['maps_url'] = null;
-            $data['latitude'] = null;
-            $data['longitude'] = null;
-        } else {
-            // If both cleared, persist nulls (avoid empty strings).
-            $data['maps_url'] = null;
-            $data['zoom_link'] = null;
-            $data['latitude'] = null;
-            $data['longitude'] = null;
-        }
+        $data['maps_url'] = $mapsUrl !== '' ? $mapsUrl : null;
+        $data['zoom_link'] = $zoomLink !== '' ? $zoomLink : null;
+        $data['latitude'] = $mapsUrl !== '' ? $request->input('latitude') : null;
+        $data['longitude'] = $mapsUrl !== '' ? $request->input('longitude') : null;
 
         if (array_key_exists('trainer_id', $data) && empty($data['trainer_id'])) {
             $data['trainer_id'] = null;
@@ -806,57 +785,6 @@ class EventController extends Controller
         }
 
         return back()->with('success', 'Dokumen berhasil diperbarui.');
-    }
-
-    // Admin: remind trainer(s) to upload event module
-    public function remindModuleUpload(Request $request, Event $event)
-    {
-        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
-            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
-        }
-
-        if (!empty($event->module_path)) {
-            return back()->with('success', 'Module sudah diupload.');
-        }
-
-        $speaker = trim((string) ($event->speaker ?? ''));
-        if ($speaker === '') {
-            return back()->with('error', 'Tidak ada pembicara yang terdaftar pada event ini.');
-        }
-
-        $parts = preg_split('/\s*[,;]+\s*/', $speaker) ?: [];
-        $names = array_values(array_unique(array_filter(array_map('trim', $parts))));
-        if (empty($names)) {
-            return back()->with('error', 'Tidak dapat membaca nama pembicara.');
-        }
-
-        $trainers = User::query()
-            ->where('role', 'trainer')
-            ->whereIn('name', $names)
-            ->get();
-
-        if ($trainers->isEmpty()) {
-            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: ' . implode(', ', $names));
-        }
-
-        $sent = 0;
-        foreach ($trainers as $t) {
-            TrainerNotification::create([
-                'trainer_id' => (int) $t->id,
-                'type' => 'event_module_reminder',
-                'title' => 'Ingat Upload Module Event',
-                'message' => 'Mohon upload module/materi untuk event "' . $event->title . '".',
-                'data' => [
-                    'entity_type' => 'event',
-                    'entity_id' => (int) $event->id,
-                    'url' => route('trainer.events.modules'),
-                ],
-                'expires_at' => now()->addDays(14),
-            ]);
-            $sent++;
-        }
-
-        return back()->with('success', 'Reminder terkirim ke ' . $sent . ' trainer.');
     }
 
     /**

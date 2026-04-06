@@ -19,37 +19,117 @@
 
 <body>
     @include('partials.navbar-admin-course')
-    @if(session('success'))
-    <div class="container mt-3">
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    @endif
-    @if(session('success'))
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="courseUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    <style>
+        /* New global notification component (replaces legacy Bootstrap toasts on this page) */
+        .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
+        .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+        .notification.show { transform: translateY(0) scale(1); opacity:1; }
+        .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
+        .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+        .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
+        .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
+    </style>
+
+    @if(session('success') || session('login_success') || session('error') || session('publish_warning') || session('already_published'))
+        <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
+            @if(session('login_success'))
+                <div class="notification success" role="status" data-timeout="4200">
+                    <div class="notif-message">{{ session('login_success') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
                 </div>
-            </div>
+            @elseif(session('success'))
+                <div class="notification success" role="status" data-timeout="3800">
+                    <div class="notif-message">{{ session('success') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
+
+            @php
+                $pw = session('publish_warning');
+                $pwList = is_array($pw) ? array_values(array_filter($pw)) : [];
+            @endphp
+            @if(!empty($pwList))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message">Oops, modul course belum lengkap: {{ implode(', ', $pwList) }} belum ada. Segera hubungi trainer.</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @elseif(session('already_published'))
+                <div class="notification error" role="status" data-timeout="5000">
+                    <div class="notif-message">Course ini sudah diterbitkan</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message">{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
         </div>
-    </div>
+    @endif
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                var el = document.getElementById('courseUpdatedToast');
-                if (window.bootstrap && el) {
-                    var t = new bootstrap.Toast(el);
-                    t.show();
-                }
-            } catch (e) {}
-        });
+        (function(){
+            function wireBanner(){
+                try {
+                    const wrap = document.getElementById('globalNotifications');
+                    if(!wrap) return;
+                    wrap.querySelectorAll('.notification').forEach(function(n){
+                        setTimeout(function(){ n.classList.add('show'); }, 20);
+                        const timeout = parseInt(n.getAttribute('data-timeout') || 4000, 10);
+                        const closeBtn = n.querySelector('.notif-close');
+                        const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                        if(closeBtn) closeBtn.addEventListener('click', hide);
+                        setTimeout(hide, timeout);
+                    });
+                } catch(e){}
+            }
+
+            document.addEventListener('DOMContentLoaded', wireBanner);
+
+            window.adminNotify = function(type, message, timeout){
+                try {
+                    const kind = (type === 'error') ? 'error' : 'success';
+                    const text = (message == null) ? '' : String(message);
+                    const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+                    let wrap = document.getElementById('globalNotifications');
+                    if(!wrap){
+                        wrap = document.createElement('div');
+                        wrap.id = 'globalNotifications';
+                        wrap.className = 'global-notification';
+                        wrap.setAttribute('aria-live', 'polite');
+                        wrap.setAttribute('aria-atomic', 'true');
+                        document.body.appendChild(wrap);
+                    }
+
+                    const n = document.createElement('div');
+                    n.className = 'notification ' + kind;
+                    n.setAttribute('role', 'status');
+                    n.setAttribute('data-timeout', String(ms));
+
+                    const msg = document.createElement('div');
+                    msg.className = 'notif-message';
+                    msg.textContent = text;
+
+                    const close = document.createElement('button');
+                    close.className = 'notif-close';
+                    close.setAttribute('aria-label', 'Close');
+                    close.type = 'button';
+                    close.innerHTML = '&times;';
+
+                    n.appendChild(msg);
+                    n.appendChild(close);
+                    wrap.appendChild(n);
+
+                    const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                    close.addEventListener('click', hide);
+                    setTimeout(function(){ n.classList.add('show'); }, 20);
+                    setTimeout(hide, ms);
+                } catch(e){}
+            };
+        })();
     </script>
 
     <!-- Publish confirmation modal (UI, no browser alert/confirm) -->
@@ -74,45 +154,6 @@
         </div>
     </div>
     @endif
-    <!-- Publish warning toast (shown when course has missing material) -->
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="publishWarningToast" class="toast align-items-center text-bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4500">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <span class="me-2" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.89 0 1.438-.99.982-1.767L8.982 1.566zM8 5.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 5.5Zm0 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-                            </svg>
-                        </span>
-                        @php
-                            $pw = session('publish_warning');
-                            $pwList = is_array($pw) ? array_values(array_filter($pw)) : [];
-                        @endphp
-                        @if(!empty($pwList))
-                            Oops, modul course belum lengkap: {{ implode(', ', $pwList) }} belum ada. Segera hubungi trainer.
-                        @else
-                            Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.
-                        @endif
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Already published toast (shown when course is already active) -->
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="alreadyPublishedToast" class="toast align-items-center text-bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        Course ini sudah diterbitkan
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="box_luar_course_builder">
         <h1 class="judul_course_builder">Daftar Course</h1>
         <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
@@ -433,10 +474,6 @@
 
                     </div>
                     <div class="modal-body">
-                        <form id="coursePreviewRemindForm" method="POST" style="display:none;">
-                            @csrf
-                            <input type="hidden" name="focus" id="coursePreviewRemindFocus" value="">
-                        </form>
                         <div id="tab-ringkasan" class="tab-content active">
                             <h3 id="modal-course-name">Nama Course</h3>
                             <p id="modal-course-desc">Deskripsi singkat course akan muncul di sini.</p>
@@ -775,44 +812,12 @@
                     .replace(/'/g, '&#039;');
             }
 
-            // --- 3b. Reminder helpers (submit to /courses/{id}/remind-trainer) ---
-            var remindBaseUrl = @json(url('/courses'));
-            function renderRemindButton(courseId, focus) {
-                if (!courseId) return '';
-                return (
-                    '<div class="text-center my-3">' +
-                        '<button type="button" class="btn btn-warning btn-sm js-remind-trainer" data-course-id="' + String(courseId) + '" data-focus="' + String(focus || '') + '" style="font-weight:600;">' +
-                            'Ingatkan Trainer' +
-                        '</button>' +
-                    '</div>'
-                );
-            }
-
             function moduleHasContent(m) {
                 if (!m) return false;
                 if (typeof m.has_content !== 'undefined') return !!m.has_content;
                 if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
                 return !!(m.content_url || '');
             }
-
-
-            document.addEventListener('click', function(ev) {
-                var rbtn = ev.target.closest('.js-remind-trainer');
-                if (!rbtn) return;
-                ev.preventDefault();
-
-                var courseId = rbtn.getAttribute('data-course-id') || '';
-                var focus = rbtn.getAttribute('data-focus') || '';
-                if (!courseId) return;
-
-                var form = document.getElementById('coursePreviewRemindForm');
-                var focusInput = document.getElementById('coursePreviewRemindFocus');
-                if (!form || !focusInput) return;
-
-                form.setAttribute('action', remindBaseUrl + '/' + String(courseId) + '/remind-trainer');
-                focusInput.value = focus;
-                try { form.submit(); } catch (e) {}
-            });
 
             // --- 4. Event Delegation for Preview Click ---
             document.addEventListener('click', function(ev) {
@@ -957,13 +962,10 @@
                     var pdfsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'pdf') : [];
                     var pdfs = visibleModules.filter(m => m.type === 'pdf');
                     var missingPdfCount = pdfsAll.filter(m => !moduleHasContent(m)).length;
-                    var pdfRemind = (data.has_trainer && (pdfs.length === 0 || missingPdfCount > 0))
-                        ? renderRemindButton(data.id, 'pdf')
-                        : '';
                     if (pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF yang disetujui.</p>' + pdfRemind;
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF yang disetujui.</p>';
                     } else {
-                        pdfContainer.innerHTML = (missingPdfCount > 0 ? pdfRemind : '') + pdfs.map(m => `
+                        pdfContainer.innerHTML = pdfs.map(m => `
                              <div class="list-pdf">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
@@ -983,13 +985,10 @@
                     var vidsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'video') : [];
                     var vids = visibleModules.filter(m => m.type === 'video');
                     var missingVideoCount = vidsAll.filter(m => !moduleHasContent(m)).length;
-                    var videoRemind = (data.has_trainer && (vids.length === 0 || missingVideoCount > 0))
-                        ? renderRemindButton(data.id, 'video')
-                        : '';
                     if (vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video yang disetujui.</p>' + videoRemind;
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video yang disetujui.</p>';
                     } else {
-                        vidContainer.innerHTML = (missingVideoCount > 0 ? videoRemind : '') + vids.map(m => `
+                        vidContainer.innerHTML = vids.map(m => `
                             <div class="list-video">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 16 16">
                                     <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
@@ -1009,13 +1008,10 @@
                     var quizzesAll = Array.isArray(modules) ? modules.filter(m => m.type === 'quiz') : [];
                     var quizzes = visibleModules.filter(m => m.type === 'quiz');
                     var missingQuizCount = quizzesAll.filter(m => Number(m.question_count || 0) <= 0).length;
-                    var quizRemind = (data.has_trainer && (quizzes.length === 0 || missingQuizCount > 0))
-                        ? renderRemindButton(data.id, 'quiz')
-                        : '';
                     if (quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis yang disetujui.</p>' + quizRemind;
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis yang disetujui.</p>';
                     } else {
-                        quizContainer.innerHTML = (missingQuizCount > 0 ? quizRemind : '') + quizzes.map(m => `
+                        quizContainer.innerHTML = quizzes.map(m => `
                              <div class="list-kuis">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-check-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
@@ -1133,25 +1129,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            function showToastById(id) {
-                try {
-                    var el = document.getElementById(id);
-                    if (!el) return;
-                    if (window.bootstrap && window.bootstrap.Toast) {
-                        new window.bootstrap.Toast(el).show();
-                        return;
-                    }
-                    // Fallback: simple show
-                    el.classList.add('show');
-                    el.style.display = 'block';
-                } catch (e) {}
+            function notifyError(message, ms) {
+                if (typeof window.adminNotify === 'function') {
+                    window.adminNotify('error', message, ms || 5000);
+                }
             }
-
-            // Auto-show toasts based on server-side session flags
-            var hasPublishWarning = @json((bool) session('publish_warning'));
-            var alreadyPublished = @json((bool) session('already_published'));
-            if (hasPublishWarning) showToastById('publishWarningToast');
-            if (alreadyPublished) showToastById('alreadyPublishedToast');
 
             // Pre-publish warning (client-side): inform admin before publishing incomplete content
             var pendingPublishForm = null;
@@ -1185,7 +1167,7 @@
                 } catch (e) {}
 
                 // If bootstrap modal is unavailable, fall back to showing warning toast only (no browser popup)
-                showToastById('publishWarningToast');
+                notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
                 pendingPublishForm = null;
             }
 
@@ -1211,7 +1193,7 @@
 
                 if ((btn.dataset.published || '') === '1') {
                     ev.preventDefault();
-                    showToastById('alreadyPublishedToast');
+                    notifyError('Course ini sudah diterbitkan', 4500);
                     return;
                 }
 
