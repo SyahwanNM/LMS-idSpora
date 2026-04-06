@@ -79,7 +79,7 @@ class CourseTemplateController extends Controller
                 'description' => $validated['description'] ?? null,
             ]);
 
-            $this->syncModules($template, $validated['modules'] ?? []);
+            $this->syncModules($template, $validated['modules'] ?? [], (string) $validated['level']);
 
             return $template->fresh(['modules']);
         });
@@ -126,7 +126,7 @@ class CourseTemplateController extends Controller
                         ];
                     })->all();
 
-                $this->syncModules($newTemplate, $modulePayload);
+                $this->syncModules($newTemplate, $modulePayload, (string) ($validated['level'] ?? $courseTemplate->level));
 
                 return [
                     'template' => $newTemplate->fresh(['modules']),
@@ -142,9 +142,20 @@ class CourseTemplateController extends Controller
                 'description' => $validated['description'] ?? $courseTemplate->description,
             ]);
 
-            if (array_key_exists('modules', $validated)) {
-                $this->syncModules($courseTemplate, (array) $validated['modules']);
-            }
+            $modulePayload = array_key_exists('modules', $validated)
+                ? (array) $validated['modules']
+                : $courseTemplate->modules()->orderBy('order_no')->get()->map(function ($module) {
+                    return [
+                        'order_no' => (int) $module->order_no,
+                        'title' => (string) $module->title,
+                        'description' => $module->description,
+                        'type' => (string) $module->type,
+                        'is_required' => (bool) $module->is_required,
+                        'duration' => (int) $module->duration,
+                    ];
+                })->all();
+
+            $this->syncModules($courseTemplate, $modulePayload, (string) ($validated['level'] ?? $courseTemplate->level));
 
             return [
                 'template' => $courseTemplate->fresh(['modules']),
@@ -192,8 +203,9 @@ class CourseTemplateController extends Controller
         ]);
     }
 
-    private function syncModules(CourseTemplate $template, array $modules): void
+    private function syncModules(CourseTemplate $template, array $modules, string $level): void
     {
+        $targetRows = $this->defaultModulesForLevel($level);
         $rows = collect($modules)
             ->values()
             ->map(function ($module, $index) {
@@ -215,10 +227,57 @@ class CourseTemplateController extends Controller
             })
             ->all();
 
+        if (count($rows) < count($targetRows)) {
+            $rows = array_values(array_merge($rows, array_slice($targetRows, count($rows))));
+        } elseif (count($rows) > count($targetRows)) {
+            $rows = array_slice($rows, 0, count($targetRows));
+        }
+
         $template->modules()->delete();
 
         if (!empty($rows)) {
             $template->modules()->createMany($rows);
         }
+    }
+
+    private function defaultModulesForLevel(string $level): array
+    {
+        $level = strtolower(trim($level));
+        $sectionCount = match ($level) {
+            'intermediate' => 7,
+            'advanced' => 6,
+            default => 5,
+        };
+
+        $rows = [];
+        $orderNo = 1;
+        for ($section = 1; $section <= $sectionCount; $section++) {
+            $rows[] = [
+                'order_no' => $orderNo++,
+                'title' => 'Bagian ' . $section . ' - Materi',
+                'description' => null,
+                'type' => 'pdf',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $orderNo++,
+                'title' => 'Bagian ' . $section . ' - Video',
+                'description' => null,
+                'type' => 'video',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $orderNo++,
+                'title' => 'Bagian ' . $section . ' - Quiz',
+                'description' => null,
+                'type' => 'quiz',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+        }
+
+        return $rows;
     }
 }

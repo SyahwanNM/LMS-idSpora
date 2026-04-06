@@ -364,8 +364,16 @@ class TrainerController extends Controller
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
             ->orderByDesc('created_at')
-            ->limit(5)
-            ->get();
+            ->limit(40)
+            ->get()
+            ->filter(function ($notification) {
+                $statusFromData = trim((string) data_get($notification->data, 'invitation_status', ''));
+                $statusFromColumn = trim((string) ($notification->invitation_status ?? ''));
+                $effectiveStatus = $statusFromData !== '' ? $statusFromData : ($statusFromColumn !== '' ? $statusFromColumn : 'pending');
+                return $effectiveStatus === 'pending';
+            })
+            ->take(5)
+            ->values();
 
         $todoConfirmations = TrainerNotification::query()
             ->where('trainer_id', $user->id)
@@ -384,6 +392,13 @@ class TrainerController extends Controller
             ->where('trainer_id', $user->id)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->whereNull('read_at')
+            ->get()
+            ->filter(function ($notification) {
+                $statusFromData = trim((string) data_get($notification->data, 'invitation_status', ''));
+                $statusFromColumn = trim((string) ($notification->invitation_status ?? ''));
+                $effectiveStatus = $statusFromData !== '' ? $statusFromData : ($statusFromColumn !== '' ? $statusFromColumn : 'pending');
+                return $effectiveStatus === 'pending';
+            })
             ->count();
 
         $teachingHistory = TrainerCertificate::query()
@@ -445,21 +460,37 @@ class TrainerController extends Controller
 
         $certifiedCourseIdSet = array_fill_keys($certifiedCourseIds, true);
 
+        $pendingInvitationCourseIds = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->where('type', 'course_invitation')
+            ->where('invitation_status', 'pending')
+            ->get(['data'])
+            ->map(function (TrainerNotification $notification) {
+                return (int) data_get($notification->data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $pendingInvitationCourseIdSet = array_fill_keys($pendingInvitationCourseIds, true);
+
         $finishedCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet) {
             $status = (string) ($course->status ?? '');
             return isset($certifiedCourseIdSet[(int) $course->id])
                 || in_array($status, ['completed', 'finished', 'archived'], true);
         })->values();
 
-        $ongoingCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet) {
+        $ongoingCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet, $pendingInvitationCourseIdSet) {
             $status = (string) ($course->status ?? '');
             return !isset($certifiedCourseIdSet[(int) $course->id])
+                && !isset($pendingInvitationCourseIdSet[(int) $course->id])
                 && in_array($status, ['approved', 'published', 'active'], true);
         })->values();
 
-        $upcomingCourses = $courses->filter(function ($course) use ($finishedCourses, $ongoingCourses) {
+        $upcomingCourses = $courses->filter(function ($course) use ($finishedCourses, $ongoingCourses, $pendingInvitationCourseIdSet) {
             return !$finishedCourses->contains('id', $course->id)
-                && !$ongoingCourses->contains('id', $course->id);
+                && (isset($pendingInvitationCourseIdSet[(int) $course->id]) || !$ongoingCourses->contains('id', $course->id));
         })->values();
 
         return view('trainer.courses', compact(
@@ -627,6 +658,134 @@ class TrainerController extends Controller
             ->firstOrFail();
 
         return view('trainer.detail-event', compact('event'));
+    }
+
+    public function downloadEventVbg($id)
+    {
+        $trainerId = \Illuminate\Support\Facades\Auth::id();
+
+        $event = \App\Models\Event::where('id', $id)
+            ->where('trainer_id', $trainerId)
+            ->firstOrFail();
+
+        $isOfflineEvent = !empty($event->maps_url)
+            || (!empty($event->latitude) && !empty($event->longitude));
+
+        // Primary source: vbg_path. Legacy fallback for old online events: image.
+        $candidateSources = [];
+        if (!empty($event->vbg_path)) {
+            $candidateSources[] = (string) $event->vbg_path;
+        }
+        if (empty($event->vbg_path) && !$isOfflineEvent && !empty($event->image)) {
+            $candidateSources[] = (string) $event->image;
+        }
+
+        if (empty($candidateSources)) {
+            abort(404, 'VBG file tidak tersedia untuk event ini.');
+        }
+
+        $filePath = null;
+        $externalUrlFallback = null;
+
+        foreach ($candidateSources as $sourcePath) {
+            $sourcePath = trim($sourcePath);
+            if ($sourcePath === '') {
+                continue;
+            }
+
+            $normalized = $sourcePath;
+            if (preg_match('#^https?://#i', $sourcePath)) {
+                $externalUrlFallback = $sourcePath;
+                $urlPath = parse_url($sourcePath, PHP_URL_PATH);
+                if (!is_string($urlPath) || trim($urlPath) === '') {
+                    continue;
+                }
+                $normalized = $urlPath;
+            }
+
+            $normalized = str_replace('\\', '/', (string) $normalized);
+            $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+            $normalized = ltrim($normalized, '/');
+
+            // Common legacy prefixes
+            if (str_starts_with($normalized, 'public/')) {
+                $normalized = ltrim(substr($normalized, 7), '/');
+            }
+            if (str_starts_with($normalized, 'storage/app/public/')) {
+                $normalized = ltrim(substr($normalized, 19), '/');
+            }
+            if (str_starts_with($normalized, 'storage/')) {
+                $normalized = ltrim(substr($normalized, 8), '/');
+            }
+
+            $possiblePaths = [
+                storage_path('app/public/' . $normalized),
+                public_path('uploads/' . $normalized),
+                public_path($normalized),
+            ];
+
+            if (str_starts_with($normalized, 'uploads/')) {
+                $possiblePaths[] = storage_path('app/public/' . ltrim(substr($normalized, 8), '/'));
+            }
+
+            $possiblePaths = array_values(array_unique($possiblePaths));
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path) && is_file($path)) {
+                    $filePath = $path;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$filePath) {
+            if ($externalUrlFallback && preg_match('#^https?://#i', $externalUrlFallback)) {
+                return redirect()->away($externalUrlFallback);
+            }
+            abort(404, 'File VBG tidak ditemukan.');
+        }
+
+        // Security check: prevent directory traversal
+        $realPath = realpath($filePath);
+        $storagePath = realpath(storage_path('app/public'));
+        $uploadsPath = realpath(public_path('uploads'));
+        $eventDocsPublicPath = realpath(public_path('events/docs'));
+
+        if (!$realPath) {
+            abort(403, 'Akses file VBG ditolak.');
+        }
+
+        // Check if file is in allowed directories
+        $isInStorage = $storagePath && str_starts_with($realPath, $storagePath);
+        $isInUploads = $uploadsPath && str_starts_with($realPath, $uploadsPath);
+        $isInPublicEventDocs = $eventDocsPublicPath && str_starts_with($realPath, $eventDocsPublicPath);
+
+        if (!($isInStorage || $isInUploads || $isInPublicEventDocs)) {
+            abort(403, 'Akses file VBG ditolak.');
+        }
+
+        // Get MIME type
+        $mimeType = mime_content_type($filePath);
+        if (!$mimeType) {
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            $mimeTypes = [
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'gif' => 'image/gif',
+                'webp' => 'image/webp',
+            ];
+            $mimeType = $mimeTypes[$ext] ?? 'application/octet-stream';
+        }
+
+        // Generate filename
+        $fileName = 'VBG_' . $event->id . '_' . \Illuminate\Support\Str::slug(substr($event->title, 0, 20)) . '.' . pathinfo($filePath, PATHINFO_EXTENSION);
+
+        return response()->download($filePath, $fileName, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
     }
 
     public function feedback(Request $request)

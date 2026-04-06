@@ -206,10 +206,23 @@ class TrainerNotificationsController extends Controller
             ]);
         }
 
-        $message = $decision === 'accept'
-            ? 'Undangan berhasil diterima.'
-            : 'Undangan berhasil ditolak.';
+        if ($decision === 'accept') {
+            $target = (string) data_get($data, 'url', '');
+            if ($target !== '') {
+                return redirect()->to($target);
+            }
 
-        return back()->with('success', $message);
+            if ($entityType === 'event' && $entityId > 0) {
+                return redirect()->route('trainer.events.show', $entityId);
+            }
+
+            if ($entityType === 'course' && $entityId > 0) {
+                return redirect()->route('trainer.detail-course', $entityId);
+            }
+
+            return redirect()->route('trainer.dashboard');
+        }
+
+        return back()->with('success', 'Undangan berhasil ditolak.');
     }
 }

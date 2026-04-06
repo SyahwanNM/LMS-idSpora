@@ -255,6 +255,7 @@ class CourseController extends Controller
             'type' => 'course_invitation',
             'title' => 'Undangan Menjadi Trainer Course',
             'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
+            'invitation_status' => 'pending',
             'data' => [
                 'entity_type' => 'course',
                 'entity_id' => $course->id,

@@ -53,9 +53,7 @@ class CourseTemplateAdminController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
-        if (!empty($validated['modules'])) {
-            $this->syncModules($template, $validated['modules']);
-        }
+        $this->syncModules($template, $validated['modules'] ?? [], (string) $validated['level']);
 
         return redirect()->route('admin.templates.show', $template)->with('success', 'Template berhasil dibuat!');
     }
@@ -116,9 +114,7 @@ class CourseTemplateAdminController extends Controller
                 'description' => $validated['description'] ?? $template->description,
             ]);
 
-            if (!empty($validated['modules'])) {
-                $this->syncModules($newTemplate, $validated['modules']);
-            }
+            $this->syncModules($newTemplate, $validated['modules'] ?? [], (string) $validated['level']);
 
             return redirect()->route('admin.templates.show', $newTemplate)
                 ->with('success', 'Template versi baru berhasil dibuat!');
@@ -132,9 +128,20 @@ class CourseTemplateAdminController extends Controller
             'description' => $validated['description'],
         ]);
 
-        if (array_key_exists('modules', $validated)) {
-            $this->syncModules($template, $validated['modules']);
-        }
+        $modulePayload = array_key_exists('modules', $validated)
+            ? (array) $validated['modules']
+            : $template->modules()->orderBy('order_no')->get()->map(function ($module) {
+                return [
+                    'order_no' => (int) $module->order_no,
+                    'title' => (string) $module->title,
+                    'description' => $module->description,
+                    'type' => (string) $module->type,
+                    'is_required' => (bool) $module->is_required,
+                    'duration' => (int) $module->duration,
+                ];
+            })->all();
+
+        $this->syncModules($template, $modulePayload, (string) $validated['level']);
 
         return redirect()->route('admin.templates.show', $template)
             ->with('success', 'Template berhasil diupdate!');
@@ -148,8 +155,9 @@ class CourseTemplateAdminController extends Controller
             ->with('success', 'Template berhasil diarsipkan!');
     }
 
-    private function syncModules(CourseTemplate $template, array $modules): void
+    private function syncModules(CourseTemplate $template, array $modules, string $level): void
     {
+        $targetRows = $this->defaultModulesForLevel($level);
         $rows = collect($modules)
             ->values()
             ->map(function ($module, $index) {
@@ -171,10 +179,57 @@ class CourseTemplateAdminController extends Controller
             })
             ->all();
 
+        if (count($rows) < count($targetRows)) {
+            $rows = array_values(array_merge($rows, array_slice($targetRows, count($rows))));
+        } elseif (count($rows) > count($targetRows)) {
+            $rows = array_slice($rows, 0, count($targetRows));
+        }
+
         $template->modules()->delete();
 
         if (!empty($rows)) {
             $template->modules()->createMany($rows);
         }
+    }
+
+    private function defaultModulesForLevel(string $level): array
+    {
+        $level = strtolower(trim($level));
+        $sectionCount = match ($level) {
+            'intermediate' => 7,
+            'advanced' => 6,
+            default => 5,
+        };
+
+        $rows = [];
+        $orderNo = 1;
+        for ($section = 1; $section <= $sectionCount; $section++) {
+            $rows[] = [
+                'order_no' => $orderNo++,
+                'title' => 'Bagian ' . $section . ' - Materi',
+                'description' => null,
+                'type' => 'pdf',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $orderNo++,
+                'title' => 'Bagian ' . $section . ' - Video',
+                'description' => null,
+                'type' => 'video',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $orderNo++,
+                'title' => 'Bagian ' . $section . ' - Quiz',
+                'description' => null,
+                'type' => 'quiz',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+        }
+
+        return $rows;
     }
 }
