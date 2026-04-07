@@ -54,7 +54,7 @@
                 <nav aria-label="breadcrumb" class="d-none d-md-block">
                     <ol class="breadcrumb mb-1">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" class="text-decoration-none">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('profile.events') }}" class="text-decoration-none">Riwayat</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('profile.history') }}" class="text-decoration-none">Riwayat</a></li>
                         <li class="breadcrumb-item active">Sertifikat</li>
                     </ol>
                 </nav>

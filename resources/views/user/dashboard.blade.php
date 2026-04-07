@@ -133,6 +133,14 @@
             transform: scale(1.1);
             color: #ef4444 !important;
         }
+        .save-btn.active svg {
+            fill: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+        
+        .save-btn {
+            transition: all 0.2s ease;
+        }
     </style>
 </head>
 
@@ -336,9 +344,15 @@
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
                                                 style="font-size: 11px;">{{ ucfirst($course->level ?? 'General') }}</span>
                                             <button
-                                                class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                                style="width: 32px; height: 32px; padding: 0;">
-                                                <i class="bi bi-bookmark"></i>
+                                                class="save-btn course-save-btn {{ !empty($course->is_saved) ? 'active' : '' }}" 
+                                                aria-label="Save course" type="button" 
+                                                data-course-id="{{ $course->id }}"
+                                                data-save-url="{{ route('courses.save', $course) }}"
+                                                onclick="event.stopPropagation(); toggleSaveCourse(this)"
+                                                style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                </svg>
                                             </button>
                                         </div>
 
@@ -837,6 +851,47 @@
                 fetchChartData(rangeSelect?.value || 'week');
             }, 30000);
         });
+
+        function toggleSaveCourse(btn) {
+            const url = btn.getAttribute('data-save-url');
+            
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '#64748b';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            });
+        }
 
         function toggleSaveEvent(btn) {
             const url = btn.getAttribute('data-save-url');

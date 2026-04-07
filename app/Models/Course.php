@@ -30,6 +30,9 @@ class Course extends Model
                 'is_reseller_course',
         'rejected_at',
         'approved_by',
+        'certificate_logo',
+        'certificate_signature',
+        'certificate_template',
     ];
 
     protected $casts = [
@@ -39,6 +42,8 @@ class Course extends Model
         'discount_end' => 'datetime',
         'is_reseller_course' => 'boolean',
         'expenses_json' => 'array',
+        'certificate_logo' => 'array',
+        'certificate_signature' => 'array',
     ];
 
     public function getCardThumbnailUrlAttribute(): ?string
