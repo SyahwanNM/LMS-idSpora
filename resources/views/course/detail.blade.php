@@ -24,10 +24,17 @@
     --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
-    
+
   }
 
-  html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
+  html,
+  body,
+  .navbar-gradient,
+  .navbar,
+  .dropdown-menu,
+  .nav-link,
+  .btn,
+  .form-control {
     font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
   }
 
@@ -45,7 +52,7 @@
     padding: 0 20px;
     margin-top: 0px;
   }
-  
+
 
   .title-course-hero {
     color: var(--white);
@@ -117,6 +124,7 @@
     object-fit: cover;
     background: #000;
   }
+
   .content-description,
   .comments {
     width: 100%;
@@ -247,6 +255,7 @@
     gap: 16px;
     align-items: flex-start;
   }
+
   .info-box>div {
     display: flex;
     align-items: center;
@@ -254,6 +263,7 @@
     padding: 0;
     justify-content: flex-start;
   }
+
   .info-box>div p {
     text-align: left !important;
   }
@@ -488,7 +498,8 @@
   .main-col>*+* {
     margin-top: 20px;
   }
-  .box_kiri_vid_course{
+
+  .box_kiri_vid_course {
     margin-left: 0;
   }
 
@@ -1050,7 +1061,7 @@
 </style> --}}
 
 <body class="course-detail-page">
-  
+
   <section class="course-hero">
     <nav aria-label="breadcrumb">
       <div class="hero-inner" style="margin-top: 0;">
@@ -1067,7 +1078,17 @@
     <div class="title-course-hero">
       <div class="sub-title">
         <h6>{{ $course->category->name ?? '-' }}</h6>
-        <p>by idSpora</p>
+        <p>
+          by
+          @if(!empty($course->trainer))
+            <a href="{{ route('trainers.public.show', $course->trainer) }}"
+              style="color:#F4C430; text-decoration:none; font-weight:600;">
+              {{ $course->trainer->full_name_with_title ?: $course->trainer->name }}
+            </a>
+          @else
+            idSpora
+          @endif
+        </p>
       </div>
       <div class="main-title">
         <h1>{{ $course->name }}</h1>
@@ -1076,29 +1097,34 @@
         <div class="icon-time">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill"
             viewBox="0 0 20 20">
-            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+            <path
+              d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
           </svg>
           <span>{{ $course->duration ?? '-' }} Jam</span>
         </div>
         <div class="icon-attendant">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
-            <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
-            <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
+            <path
+              d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
+            <path
+              d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
           </svg>
           <span>{{ $course->students_count ?? '0' }} Students</span>
         </div>
         <div class="icon-badge">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reception-4"
             viewBox="0 0 16 16">
-            <path d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
+            <path
+              d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
           </svg>
           <span>{{ $course->level ?? '-' }}</span>
         </div>
         <div class="icon-lesson">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
-            <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
+            <path
+              d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
           </svg>
           <span>{{ $course->modules->count() ?? '0' }} Lessons</span>
         </div>
@@ -1107,7 +1133,7 @@
             <path fill="currentColor"
               d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
           </svg>
-          <span>{{ $course->modules->where('type','quiz')->count() ?? '0' }} Quizzes</span>
+          <span>{{ $course->modules->where('type', 'quiz')->count() ?? '0' }} Quizzes</span>
         </div>
       </div>
     </div>
@@ -1123,10 +1149,18 @@
         $videoCount = $modulesCol->where('type', 'video')->count();
         $quizCount = $modulesCol->where('type', 'quiz')->count();
         $missingMaterials = [];
-        if ($totalModules <= 0) { $missingMaterials[] = 'Modul'; }
-        if ($pdfCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
-        if ($videoCount <= 0) { $missingMaterials[] = 'Video'; }
-        if ($quizCount <= 0) { $missingMaterials[] = 'Kuis'; }
+        if ($totalModules <= 0) {
+          $missingMaterials[] = 'Modul';
+        }
+        if ($pdfCount <= 0) {
+          $missingMaterials[] = 'Modul (PDF)';
+        }
+        if ($videoCount <= 0) {
+          $missingMaterials[] = 'Video';
+        }
+        if ($quizCount <= 0) {
+          $missingMaterials[] = 'Kuis';
+        }
       @endphp
 
       @if(!empty($missingMaterials))
@@ -1158,15 +1192,14 @@
       @endphp
 
       <div class="video-container">
-        <div id="video-wrapper"
-             data-media-url="{{ $previewMediaUrl ?? '' }}"
-             data-media-type="{{ $previewMediaType }}"></div>
+        <div id="video-wrapper" data-media-url="{{ $previewMediaUrl ?? '' }}" data-media-type="{{ $previewMediaType }}">
+        </div>
       </div>
 
       @php
         $progressTotal = $course->modules->count();
         $progressCompleted = 0;
-        if(auth()->check()) {
+        if (auth()->check()) {
           $moduleIds = $course->modules
             ->pluck('id')
             ->map(fn($id) => (int) $id)
@@ -1231,7 +1264,9 @@
             <div style="color:#6c6c6c;font-size:14px;">{{ $progressCompleted }} / {{ $progressTotal }}</div>
           </div>
           <div style="background:#f3f3f3;border-radius:8px;height:10px;overflow:hidden;">
-            <div style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;"></div>
+            <div
+              style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;">
+            </div>
           </div>
         </div>
       </div>
@@ -1244,9 +1279,9 @@
         </div>
         <div class="tab-content active" id="overview">
           <h5>Overview</h5>
-            <p>
-              {!! $course->description !!}
-            </p>
+          <p>
+            {!! $course->description !!}
+          </p>
         </div>
         <div class="tab-content" id="syllabus">
           <div class="syllabus-list">
@@ -1299,7 +1334,7 @@
         </div>
       </div>
 
-      
+
     </div>
 
     <aside class="sidebar">
@@ -1315,7 +1350,8 @@
               : $course->price;
           @endphp
           @if($hasDiscount)
-            <span class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+            <span
+              class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
             <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
           @else
             <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
@@ -1377,7 +1413,8 @@
               <p class="location-text">{{ $course->students_count ?? 0 }}</p>
             </div>
             <div class="bahasa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 20 20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3"
+                class="ikon bi bi-journal-text" viewBox="0 0 20 20">
                 <path
                   d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
                 <path
@@ -1402,23 +1439,27 @@
           @php
             $canLearn = false;
             if (auth()->check()) {
-                $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
-                    ->where('course_id', $course->id)
-                    ->where('status', 'active')
-                    ->exists();
+              $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->where('status', 'active')
+                ->exists();
 
-                $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
-                    ->where('course_id', $course->id)
-                    ->where('status', 'settled')
-                    ->exists();
+              $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->where('status', 'settled')
+                ->exists();
 
               $canLearn = $enrolledActive || $hasSettledPayment;
             }
           @endphp
           @if($canLearn)
-            <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+            <a href="{{ route('course.learn', $course->id) }}" class="enroll"
+              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar
+              Sekarang</a>
           @else
-            <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+            <a href="{{ route('course.payment', $course->id) }}" class="enroll"
+              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar
+              Sekarang</a>
           @endif
           <button class="save">Save</button>
           <p class="note">Note: all course have 30-days money-back guarantee</p>
@@ -1491,15 +1532,18 @@
               <span>Copy Link</span>
             </button>
 
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to Facebook">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener"
+              class="share-ico" aria-label="Share to Facebook">
               <i class="bi bi-facebook"></i>
             </a>
 
-            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
+            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank"
+              rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
               <i class="bi bi-twitter"></i>
             </a>
 
-            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico" aria-label="Share via Email">
+            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico"
+              aria-label="Share via Email">
               <i class="bi bi-envelope"></i>
             </a>
 
@@ -1520,7 +1564,7 @@
       const text = url || window.location.href;
       const done = () => {
         // Simple feedback without changing layout
-        try { alert('Link berhasil disalin'); } catch (e) {}
+        try { alert('Link berhasil disalin'); } catch (e) { }
       };
 
       if (navigator.clipboard && window.isSecureContext) {
@@ -1532,7 +1576,7 @@
           ta.style.top = '-9999px';
           document.body.appendChild(ta);
           ta.select();
-          try { document.execCommand('copy'); done(); } catch (e) {}
+          try { document.execCommand('copy'); done(); } catch (e) { }
           document.body.removeChild(ta);
         });
         return;
@@ -1545,7 +1589,7 @@
       ta.style.top = '-9999px';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) {}
+      try { document.execCommand('copy'); done(); } catch (e) { }
       document.body.removeChild(ta);
     }
 

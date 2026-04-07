@@ -45,6 +45,7 @@ class Event extends Model
         'event_time_end',
         'event_date',
         'material_deadline',
+        'material_revision_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -63,6 +64,7 @@ class Event extends Model
     protected $casts = [
         'event_date' => 'date',
         'material_deadline' => 'datetime',
+        'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
         'module_submitted_at' => 'datetime',

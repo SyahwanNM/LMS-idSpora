@@ -38,14 +38,14 @@ class QuizStructureService
         // Create section quizzes for each bagian
         foreach ($quizModuleCollection as $index => $quizModule) {
             $bagianNumber = (int) floor($index) + 1;
-            
+
             // Check if this is the last quiz (final quiz)
             $isFinal = ($index === count($quizModuleCollection) - 1);
 
             $quizData = [
                 'course_id' => $course->id,
                 'course_module_id' => $isFinal ? null : $quizModule->id,
-                'title' => $isFinal 
+                'title' => $isFinal
                     ? "Final Quiz - Semua Modul"
                     : "Bagian {$bagianNumber} - Kuis",
                 'description' => $isFinal
@@ -92,7 +92,7 @@ class QuizStructureService
 
         if ($bagianNumber !== null) {
             $query->where('bagian_order_no', $bagianNumber)
-                  ->where('quiz_type', 'section_quiz');
+                ->where('quiz_type', 'section_quiz');
         } else {
             $query->where('quiz_type', 'final_quiz');
         }

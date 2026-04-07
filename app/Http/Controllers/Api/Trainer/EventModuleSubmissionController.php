@@ -66,6 +66,19 @@ class EventModuleSubmissionController extends Controller
             ], 422);
         }
 
+        $materialStatus = (string) ($event->material_status ?? 'draft');
+        $effectiveDeadline = $materialStatus === 'rejected'
+            ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
+            : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7));
+
+        if (!empty($effectiveDeadline) && now()->gt($effectiveDeadline)) {
+            return response()->json([
+                'message' => $materialStatus === 'rejected'
+                    ? 'Batas revisi materi sudah lewat (H-3).'
+                    : 'Batas pengumpulan materi sudah lewat (H-7).',
+            ], 422);
+        }
+
         $request->validate([
             'module' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);

@@ -1435,10 +1435,17 @@ class TrainerController extends Controller
             ], 422);
         }
 
-        if (!empty($event->material_deadline) && now()->gt($event->material_deadline)) {
+        $materialStatus = (string) ($event->material_status ?? 'draft');
+        $effectiveDeadline = $materialStatus === 'rejected'
+            ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
+            : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7));
+
+        if (!empty($effectiveDeadline) && now()->gt($effectiveDeadline)) {
             return response()->json([
                 'success' => false,
-                'error' => 'Batas pengumpulan materi sudah lewat. Silakan hubungi admin trainer.',
+                'error' => $materialStatus === 'rejected'
+                    ? 'Batas revisi materi sudah lewat (H-3). Silakan hubungi admin trainer.'
+                    : 'Batas pengumpulan materi sudah lewat (H-7). Silakan hubungi admin trainer.',
             ], 422);
         }
 

@@ -13,9 +13,68 @@ use Illuminate\Support\Facades\Storage;
 
 class EventMaterialApprovalController extends Controller
 {
+    private function parseSpeakerNames(string $speaker): array
+    {
+        $speaker = trim($speaker);
+        if ($speaker === '') {
+            return [];
+        }
+
+        $parts = preg_split('/\s*[,;]+\s*/', $speaker) ?: [];
+        $names = [];
+        foreach ($parts as $part) {
+            $part = trim((string) $part);
+            if ($part !== '') {
+                $names[] = mb_strtolower($part);
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    private function resolveAssignedTrainerIds(Event $event): array
+    {
+        $ids = [];
+
+        if (!empty($event->trainer_id)) {
+            $ids[] = (int) $event->trainer_id;
+        }
+
+        $speakerNames = $this->parseSpeakerNames((string) $event->speaker);
+        if (!empty($speakerNames)) {
+            $speakerMatchedIds = User::query()
+                ->where('role', 'trainer')
+                ->whereIn('id', function ($query) use ($speakerNames) {
+                    $query->select('id')
+                        ->from('users')
+                        ->whereIn(\DB::raw('LOWER(name)'), $speakerNames);
+                })
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->filter(fn($id) => $id > 0)
+                ->values()
+                ->all();
+
+            $ids = array_merge($ids, $speakerMatchedIds);
+        }
+
+        return collect($ids)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function buildDeadlineMonitoring(Event $event): array
     {
-        if (empty($event->material_deadline)) {
+        $materialStatus = (string) ($event->material_status ?? 'draft');
+        $isRevisionWindow = $materialStatus === 'rejected';
+        $deadline = $isRevisionWindow
+            ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
+            : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7));
+
+        if (empty($deadline)) {
             return [
                 'label' => 'Tanpa tenggat',
                 'class' => 'neutral',
@@ -23,7 +82,7 @@ class EventMaterialApprovalController extends Controller
             ];
         }
 
-        $deadline = Carbon::parse($event->material_deadline);
+        $deadline = Carbon::parse($deadline);
         $now = now();
 
         if ($now->gt($deadline)) {
@@ -145,9 +204,10 @@ class EventMaterialApprovalController extends Controller
         ]);
 
         // Notify trainer about approval
-        if ($event->trainer_id) {
+        $assignedTrainerIds = $this->resolveAssignedTrainerIds($event);
+        foreach ($assignedTrainerIds as $trainerId) {
             TrainerNotification::create([
-                'trainer_id' => (int) $event->trainer_id,
+                'trainer_id' => (int) $trainerId,
                 'type' => 'event_material_approved',
                 'title' => 'Materi Event Diterima',
                 'message' => 'Materi event "' . $event->title . '" telah disetujui oleh admin.',
@@ -191,9 +251,10 @@ class EventMaterialApprovalController extends Controller
         ]);
 
         // Notify trainer about rejection
-        if ($event->trainer_id) {
+        $assignedTrainerIds = $this->resolveAssignedTrainerIds($event);
+        foreach ($assignedTrainerIds as $trainerId) {
             TrainerNotification::create([
-                'trainer_id' => (int) $event->trainer_id,
+                'trainer_id' => (int) $trainerId,
                 'type' => 'event_material_rejected',
                 'title' => 'Materi Event Ditolak',
                 'message' => 'Materi event "' . $event->title . '" ditolak. Alasan: ' . $rejectionReason,

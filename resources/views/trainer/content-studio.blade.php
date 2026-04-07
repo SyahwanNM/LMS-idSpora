@@ -8,6 +8,24 @@
         ['label' => 'Home', 'url' => route('trainer.dashboard')],
         ['label' => 'Content Studio']
     ];
+
+    $courseStatus = strtolower(trim((string) ($course->status ?? '')));
+    $courseRejectionReason = trim((string) ($course->rejection_reason ?? ''));
+    $moduleRejectionNotes = collect($activeUnitModules ?? [])
+        ->filter(function ($module) {
+            return strtolower(trim((string) ($module->review_status ?? ''))) === 'rejected'
+                && trim((string) ($module->review_rejection_reason ?? '')) !== '';
+        })
+        ->map(function ($module) {
+            $title = trim((string) ($module->title ?? 'Modul'));
+            $reason = trim((string) ($module->review_rejection_reason ?? ''));
+            return $title . ': ' . $reason;
+        })
+        ->values();
+
+    $showCourseRejectionNotice = $courseStatus === 'rejected'
+        || $courseRejectionReason !== ''
+        || $moduleRejectionNotes->isNotEmpty();
 @endphp
 
 @push('styles')
@@ -96,6 +114,58 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) 280px;
             gap: var(--spacing-lg);
+        }
+
+        .revision-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: var(--spacing-lg);
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+        }
+
+        .revision-alert .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: #fee2e2;
+            color: #b91c1c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .revision-alert .label {
+            margin: 0 0 4px 0;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #b91c1c;
+        }
+
+        .revision-alert .reason {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #7f1d1d;
+            white-space: pre-line;
+        }
+
+        .revision-alert ul {
+            margin: 6px 0 0 16px;
+            padding: 0;
+        }
+
+        .revision-alert li {
+            margin: 0 0 4px 0;
+            color: #7f1d1d;
+            font-size: 13px;
+            line-height: 1.45;
         }
 
         .panel {
@@ -646,6 +716,25 @@
                 </button>
             </div>
         </header>
+
+        @if($showCourseRejectionNotice)
+            <section class="revision-alert" aria-label="Alasan revisi materi course">
+                <div class="icon"><i class="bi bi-exclamation-triangle"></i></div>
+                <div>
+                    <p class="label">Alasan Revisi dari Admin</p>
+                    @if($courseRejectionReason !== '')
+                        <p class="reason">{{ $courseRejectionReason }}</p>
+                    @endif
+                    @if($moduleRejectionNotes->isNotEmpty())
+                        <ul>
+                            @foreach($moduleRejectionNotes as $note)
+                                <li>{{ $note }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </section>
+        @endif
 
         <section class="studio-layout">
             <div class="studio-left">
@@ -1335,32 +1424,32 @@
                     const moduleId = Number(material.module_id || 0);
 
                     return `
-                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                    <i class="bi ${iconClass}" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                    <div>
-                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                        <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
-                                    </div>
-                                </div>
-                                <div style="display: flex; gap: 6px;">
-                                    <button type="button" class="preview-material-btn"
-                                        data-view-url="${viewUrl}" data-material-type="${moduleType}" data-file-name="${fileName}"
-                                        title="Preview File"
-                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                        <i class="bi bi-eye-fill"></i>
-                                    </button>
-                                    <button type="button" class="select-replace-btn"
-                                        data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
-                                        title="Ganti File"
-                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                        <i class="bi bi-arrow-repeat"></i>
-                                    </button>
-                                </div>
-                            </li>
-                        `;
+                                    <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                            <i class="bi ${iconClass}" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                            <div>
+                                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
+                                                <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 6px;">
+                                            <button type="button" class="preview-material-btn"
+                                                data-view-url="${viewUrl}" data-material-type="${moduleType}" data-file-name="${fileName}"
+                                                title="Preview File"
+                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                            <button type="button" class="select-replace-btn"
+                                                data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
+                                                title="Ganti File"
+                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                `;
                 }).join('');
             }
 
@@ -1568,17 +1657,17 @@
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
                     uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                                <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                        <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                        <div>
-                                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                            <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                                </li>
-                            `).join("");
+                                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                <div>
+                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                                    <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                                        </li>
+                                    `).join("");
 
                     document.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -1778,33 +1867,33 @@
                     const qEl = document.createElement("article");
                     qEl.className = "quiz-editor";
                     qEl.innerHTML = `
-                                <div class="q-head">
-                                    <div class="q-number">${index + 1}</div>
-                                    <div class="q-inputs">
-                                        <label>PERTANYAAN</label>
-                                        <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
-                                    </div>
-                                    <div class="q-score">
-                                        <label>BOBOT</label>
-                                        <input type="number" class="q-weight" value="${q.weight}" min="1" />
-                                    </div>
-                                    <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
-                                </div>
-                                <div class="options-section">
-                                    <p class="options-label">PILIHAN JAWABAN</p>
-                                    <div class="options-grid">
-                                        ${q.options.map((opt, oIdx) => `
-                                            <div class="option-container">
-                                                <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                                    <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                                    <span>Opsi ${oIdx + 1}</span>
-                                                </button>
-                                                <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                        <div class="q-head">
+                                            <div class="q-number">${index + 1}</div>
+                                            <div class="q-inputs">
+                                                <label>PERTANYAAN</label>
+                                                <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
                                             </div>
-                                        `).join("")}
-                                    </div>
-                                </div>
-                            `;
+                                            <div class="q-score">
+                                                <label>BOBOT</label>
+                                                <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                            </div>
+                                            <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
+                                        </div>
+                                        <div class="options-section">
+                                            <p class="options-label">PILIHAN JAWABAN</p>
+                                            <div class="options-grid">
+                                                ${q.options.map((opt, oIdx) => `
+                                                    <div class="option-container">
+                                                        <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
+                                                            <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                                            <span>Opsi ${oIdx + 1}</span>
+                                                        </button>
+                                                        <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                                    </div>
+                                                `).join("")}
+                                            </div>
+                                        </div>
+                                    `;
 
                     // Event Listeners for this question
                     qEl.querySelector(".q-text").addEventListener("input", (e) => {

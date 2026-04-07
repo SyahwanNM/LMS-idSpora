@@ -578,9 +578,8 @@
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan Materi</label>
-                                    <input type="datetime-local" name="material_deadline" id="material_deadline" class="form-control" value="{{ old('material_deadline') }}">
-                                    <small class="text-muted d-block mt-1">Opsional. Harus sebelum hari-H event.</small>
+                                    <label class="form-label fw-semibold">Tenggat Pengumpulan Materi</label>
+                                    <div class="form-control bg-light">Otomatis ditetapkan sistem: H-7 dari jadwal event (revisi sampai H-3).</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>

@@ -678,7 +678,18 @@
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">
-                    <p><span class="highlite-yellow">Event</span> by idSpora</p>
+                    <p>
+                        <span class="highlite-yellow">Event</span>
+                        by
+                        @if(!empty($event->trainer))
+                            <a href="{{ route('trainers.public.show', $event->trainer) }}"
+                                style="color:#f4c430; text-decoration:none; font-weight:600;">
+                                {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
+                            </a>
+                        @else
+                            idSpora
+                        @endif
+                    </p>
                 </div>
                 <div class="add-calender">
                     @php
@@ -740,7 +751,8 @@
                         $gcalQuery = collect($gcalParams)
                             ->filter(fn($v) => !is_null($v) && $v !== '')
                             ->map(function ($v, $k) {
-                                return $k . '=' . urlencode($v); })
+                                return $k . '=' . urlencode($v);
+                            })
                             ->implode('&');
                         $gcalUrl = $gcalBase . '&' . $gcalQuery;
                         // Determine registration state for top buttons
@@ -796,7 +808,8 @@
                     $tanggalLbl = $startDate ? $startDate->format('d F Y') : null;
                 @endphp
                 <p class="small text-white mb-0">
-                    {{ isset($event) && !empty($event->short_description) ? $event->short_description : '' }}</p>
+                    {{ isset($event) && !empty($event->short_description) ? $event->short_description : '' }}
+                </p>
             </div>
         </div>
         <div class="detail-box">
@@ -1255,7 +1268,8 @@
                             </div>
                             <p class="mb-1 fw-semibold text-success">Absensi Berhasil Dilakukan</p>
                             <p class="text-muted" style="margin-bottom:16px;">
-                                {{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}</p>
+                                {{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}
+                            </p>
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
                         </div>
                         <div class="mt-3">
@@ -1629,7 +1643,8 @@
                                             @endfor
                                         </div>
                                         <p class="mb-1" style="color: #333; font-size: 0.85rem; line-height: 1.4;">
-                                            {{ $feedback->comment }}</p>
+                                            {{ $feedback->comment }}
+                                        </p>
                                         <p class="mb-0" style="color: #999; font-size: 0.8rem;">
                                             -{{ $feedback->user->name ?? 'Anonymous' }}</p>
                                     </div>

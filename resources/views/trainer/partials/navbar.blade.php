@@ -87,6 +87,12 @@
                                         {{ \Illuminate\Support\Str::limit($notification->message, 90) }}
                                     </p>
                                 @endif
+                                @if($isMaterialRejected && !empty(data_get($notification->data, 'rejection_reason')))
+                                    <p class="trainer-notification-message" style="margin-top:6px; color:#b42318;">
+                                        Alasan revisi:
+                                        {{ \Illuminate\Support\Str::limit((string) data_get($notification->data, 'rejection_reason'), 180) }}
+                                    </p>
+                                @endif
                                 @if($isInvitation && $notificationDueDate)
                                     <p class="trainer-notification-deadline {{ $notificationIsOverdue ? 'is-overdue' : '' }}">
                                         Deadline: {{ $notificationDueDate->format('d M Y H:i') }}

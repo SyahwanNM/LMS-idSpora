@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
+use Carbon\Carbon;
 
 class EventController extends Controller
 {
@@ -79,6 +80,25 @@ class EventController extends Controller
             ->all();
     }
 
+    private function buildEventMaterialDeadlines(string $eventDate, ?string $eventTime = null): array
+    {
+        $time = trim((string) $eventTime);
+        if ($time === '') {
+            $time = '00:00:00';
+        }
+
+        if (strlen($time) === 5) {
+            $time .= ':00';
+        }
+
+        $eventStartAt = Carbon::parse(trim($eventDate) . ' ' . $time);
+
+        return [
+            'submission_deadline' => $eventStartAt->copy()->subDays(7),
+            'revision_deadline' => $eventStartAt->copy()->subDays(3),
+        ];
+    }
+
     private function notifyTrainerEventInvitation(Event $event, int $trainerId, string $source = 'trainer_id'): void
     {
         $trainer = User::query()
@@ -102,8 +122,10 @@ class EventController extends Controller
                 'url' => route('trainer.events.show', $event->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'due_at' => ($event->material_deadline ?: now()->addDays(7))->toIso8601String(),
+                'due_at' => optional($event->material_deadline)->toIso8601String(),
                 'material_deadline' => optional($event->material_deadline)->toIso8601String(),
+                'revision_due_at' => optional($event->material_revision_deadline)->toIso8601String(),
+                'material_revision_deadline' => optional($event->material_revision_deadline)->toIso8601String(),
             ],
         ]);
     }
@@ -169,7 +191,6 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -238,6 +259,8 @@ class EventController extends Controller
         }
 
         // Simpan data ke database
+        $deadlines = $this->buildEventMaterialDeadlines($request->event_date, $request->event_time);
+
         $event = Event::create([
             'trainer_id' => $request->input('trainer_id') ?: null,
             'title' => $request->title,
@@ -260,7 +283,8 @@ class EventController extends Controller
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
-            'material_deadline' => $request->material_deadline,
+            'material_deadline' => $deadlines['submission_deadline'],
+            'material_revision_deadline' => $deadlines['revision_deadline'],
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
@@ -414,7 +438,6 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -450,9 +473,12 @@ class EventController extends Controller
             'discount_until',
             'event_date',
             'event_time',
-            'event_time_end',
-            'material_deadline'
+            'event_time_end'
         ]);
+
+        $deadlines = $this->buildEventMaterialDeadlines($request->event_date, $request->event_time);
+        $data['material_deadline'] = $deadlines['submission_deadline'];
+        $data['material_revision_deadline'] = $deadlines['revision_deadline'];
 
         if (array_key_exists('trainer_id', $data) && empty($data['trainer_id'])) {
             $data['trainer_id'] = null;
@@ -848,6 +874,27 @@ class EventController extends Controller
             'material_approved_by' => null,
             'material_rejection_reason' => $validated['reason'],
         ]);
+
+        $assignedTrainerIds = $this->resolveAssignedTrainerIds(
+            !empty($event->trainer_id) ? (int) $event->trainer_id : null,
+            $event->speaker
+        );
+
+        foreach ($assignedTrainerIds as $trainerId) {
+            TrainerNotification::create([
+                'trainer_id' => (int) $trainerId,
+                'type' => 'event_material_rejected',
+                'title' => 'Materi Event Perlu Revisi',
+                'message' => 'Materi event "' . $event->title . '" ditolak. Catatan admin: ' . $validated['reason'],
+                'data' => [
+                    'entity_type' => 'event',
+                    'entity_id' => (int) $event->id,
+                    'rejection_reason' => (string) $validated['reason'],
+                    'url' => route('trainer.events.studio', $event->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
 
         return back()->with('success', 'Module trainer ditolak.')
             ->with('module_success', 'Module trainer ditolak.');

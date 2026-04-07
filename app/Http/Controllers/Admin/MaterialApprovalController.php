@@ -16,6 +16,34 @@ use Illuminate\Support\Facades\Storage;
 
 class MaterialApprovalController extends Controller
 {
+    private function resolveCourseNotificationRecipientIds(Course $course): array
+    {
+        $ids = [];
+
+        if (!empty($course->trainer_id)) {
+            $ids[] = (int) $course->trainer_id;
+        }
+
+        $invitedTrainerIds = TrainerNotification::query()
+            ->where('type', 'course_invitation')
+            ->where('data->entity_type', 'course')
+            ->where('data->entity_id', (int) $course->id)
+            ->pluck('trainer_id')
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->values()
+            ->all();
+
+        $ids = array_merge($ids, $invitedTrainerIds);
+
+        return collect($ids)
+            ->map(fn($id) => (int) $id)
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     private function normalizeModuleReviewStatus(?string $status): string
     {
         $status = strtolower(trim((string) $status));
@@ -667,9 +695,10 @@ class MaterialApprovalController extends Controller
 
         $this->refreshCourseReviewStatus($material);
 
-        if (!empty($material->trainer_id)) {
+        $recipientIds = $this->resolveCourseNotificationRecipientIds($material);
+        foreach ($recipientIds as $trainerId) {
             TrainerNotification::create([
-                'trainer_id' => (int) $material->trainer_id,
+                'trainer_id' => (int) $trainerId,
                 'type' => 'course_material_rejected',
                 'title' => 'Materi Course Perlu Revisi',
                 'message' => 'Materi course "' . $material->name . '" perlu revisi. Catatan admin: ' . $rejectionReason,
@@ -730,6 +759,24 @@ class MaterialApprovalController extends Controller
             'reviewed_by' => Auth::id(),
             'review_rejection_reason' => (string) $request->rejection_reason,
         ]);
+
+        $recipientIds = $this->resolveCourseNotificationRecipientIds($material);
+        foreach ($recipientIds as $trainerId) {
+            TrainerNotification::create([
+                'trainer_id' => (int) $trainerId,
+                'type' => 'course_material_rejected',
+                'title' => 'Modul Course Perlu Revisi',
+                'message' => 'Modul "' . $module->title . '" pada course "' . $material->name . '" ditolak. Catatan admin: ' . (string) $request->rejection_reason,
+                'data' => [
+                    'entity_type' => 'course',
+                    'entity_id' => (int) $material->id,
+                    'module_id' => (int) $module->id,
+                    'rejection_reason' => (string) $request->rejection_reason,
+                    'url' => route('trainer.courses.studio', $material->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
 
         $this->refreshCourseReviewStatus($material);
 

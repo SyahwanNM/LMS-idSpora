@@ -10,12 +10,26 @@
         ['label' => 'Studio'],
     ];
 
-    $deadline = !empty($event->material_deadline)
-        ? \Carbon\Carbon::parse($event->material_deadline)
-        : null;
-    $deadlinePassed = $deadline ? now()->gt($deadline) : false;
     $materialStatus = (string) ($event->material_status ?? 'draft');
+    $isRevisionWindow = $materialStatus === 'rejected';
+    $deadline = $isRevisionWindow
+        ? (!empty($event->material_revision_deadline)
+            ? \Carbon\Carbon::parse($event->material_revision_deadline)
+            : ($event->start_at ? $event->start_at->copy()->subDays(3) : null))
+        : (!empty($event->material_deadline)
+            ? \Carbon\Carbon::parse($event->material_deadline)
+            : ($event->start_at ? $event->start_at->copy()->subDays(7) : null));
+    $deadlinePassed = $deadline ? now()->gt($deadline) : false;
+    $deadlineLabel = $isRevisionWindow ? 'Deadline Revisi (H-3)' : 'Deadline Pengumpulan (H-7)';
+    $deadlineHint = $deadlinePassed
+        ? ($isRevisionWindow ? 'Batas revisi sudah lewat' : 'Batas pengumpulan sudah lewat')
+        : ($isRevisionWindow ? 'Masa revisi masih terbuka' : 'Materi masih bisa diunggah');
     $materialStatusLabel = strtoupper(str_replace('_', ' ', $materialStatus));
+    $eventRejectionReason = trim((string) ($event->material_rejection_reason ?? ''));
+    if ($eventRejectionReason === '') {
+        $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
+    }
+    $showEventRejectionReason = $materialStatus === 'rejected' && $eventRejectionReason !== '';
     $moduleFileUrl = $event->module_file_url;
     $hasUploadedModule = !empty($event->module_path);
     $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
@@ -246,7 +260,43 @@
         }
 
         .status-banner {
-            display: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .status-banner .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: #fee2e2;
+            color: #b91c1c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .status-banner .label {
+            margin: 0 0 4px 0;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #b91c1c;
+        }
+
+        .status-banner .reason {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #7f1d1d;
+            white-space: pre-line;
         }
 
         .studio-panel {
@@ -727,13 +777,23 @@
                 </div>
             </section>
 
+            @if($showEventRejectionReason)
+                <section class="status-banner" aria-label="Alasan revisi materi event">
+                    <div class="icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div>
+                        <p class="label">Alasan Revisi dari Admin</p>
+                        <p class="reason">{{ $eventRejectionReason }}</p>
+                    </div>
+                </section>
+            @endif
+
             <section class="status-grid" aria-label="Ringkasan studio event">
                 <article class="status-card">
                     <div class="icon"><i class="bi bi-calendar-event"></i></div>
                     <div>
-                        <p class="label">Deadline</p>
+                        <p class="label">{{ $deadlineLabel }}</p>
                         <p class="value">{{ $deadline ? $deadline->format('d M Y H:i') : 'Tidak ada tenggat' }}</p>
-                        <p class="hint">{{ $deadlinePassed ? 'Tenggat sudah lewat' : 'Materi masih bisa diunggah' }}</p>
+                        <p class="hint">{{ $deadlineHint }}</p>
                     </div>
                 </article>
 

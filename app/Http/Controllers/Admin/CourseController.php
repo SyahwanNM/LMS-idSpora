@@ -262,7 +262,7 @@ class CourseController extends Controller
                 'url' => route('trainer.detail-course', $course->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'due_at' => now()->addDays(7)->toIso8601String(),
+                'due_at' => now()->addDays(25)->toIso8601String(),
             ],
         ]);
     }
@@ -558,7 +558,7 @@ class CourseController extends Controller
 
     public function show(Request $request, Course $course)
     {
-        $course->load('category', 'modules');
+        $course->load('category', 'modules', 'trainer');
         // Students enrolled (use active enrollments for the count)
         $course->loadCount([
             'enrollments as students_count' => function ($q) {

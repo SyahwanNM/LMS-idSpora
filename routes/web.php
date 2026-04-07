@@ -23,6 +23,7 @@ use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleCont
 
 use App\Http\Controllers\User\NotificationsController;
 use App\Http\Controllers\Public\PublicPagesController;
+use App\Http\Controllers\Public\PublicTrainerProfileController;
 use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
@@ -40,6 +41,7 @@ Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('
 
 // Canonical course detail route (alias used in views)
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+Route::get('/trainers/{trainer}', [PublicTrainerProfileController::class, 'show'])->name('trainers.public.show');
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
     Route::get('/admin/report/revenue', [CourseReportController::class, 'revenue'])->name('admin.report.revenue');

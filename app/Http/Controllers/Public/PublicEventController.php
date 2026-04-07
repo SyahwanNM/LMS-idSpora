@@ -15,9 +15,9 @@ class PublicEventController extends Controller
 	{
 		$query = Event::query()
 			->withCount([
-				'registrations as registrations_count' => function($q){
+				'registrations as registrations_count' => function ($q) {
 					$q->select(DB::raw('COUNT(DISTINCT user_id)'))
-					  ->where('status','active');
+						->where('status', 'active');
 				}
 			]);
 
@@ -70,9 +70,9 @@ class PublicEventController extends Controller
 		if ($type = $request->get('event_type')) {
 			if ($type === 'online') {
 				$query->whereNotNull('zoom_link')
-					->where(function($q){
+					->where(function ($q) {
 						$q->whereNull('location')
-						  ->orWhere('location', 'like', '%online%');
+							->orWhere('location', 'like', '%online%');
 					});
 			} elseif ($type === 'onsite') {
 				$query->whereNull('zoom_link')
@@ -120,17 +120,17 @@ class PublicEventController extends Controller
 		$locations = Event::select('location')->whereNotNull('location')->distinct()->orderBy('location')->pluck('location');
 
 		// Tandai event yang sudah diregistrasi user login
-		if($request->user()){
+		if ($request->user()) {
 			$userRegEventIds = $request->user()->eventRegistrations()
-                ->where('status', '!=', 'rejected')
-                ->pluck('event_id')->toArray();
-            
-            // Tandai event yang disimpan
-            $userSavedEventIds = DB::table('user_saved_events')
-                ->where('user_id', $request->user()->id)
-                ->pluck('event_id')->toArray();
+				->where('status', '!=', 'rejected')
+				->pluck('event_id')->toArray();
 
-			$events->getCollection()->transform(function($ev) use ($userRegEventIds, $userSavedEventIds){
+			// Tandai event yang disimpan
+			$userSavedEventIds = DB::table('user_saved_events')
+				->where('user_id', $request->user()->id)
+				->pluck('event_id')->toArray();
+
+			$events->getCollection()->transform(function ($ev) use ($userRegEventIds, $userSavedEventIds) {
 				$ev->is_registered = in_array($ev->id, $userRegEventIds);
 				$ev->is_saved = in_array($ev->id, $userSavedEventIds);
 				return $ev;
@@ -165,10 +165,10 @@ class PublicEventController extends Controller
 		$best = Event::query()
 			->orderByRaw('CASE WHEN title LIKE ? THEN 0 WHEN title LIKE ? THEN 1 ELSE 2 END', [$prefixTerm, $likeTerm])
 			->orderByDesc('created_at')
-			->where(function($q) use ($likeTerm){
-				$q->where('title','like',$likeTerm)
-				  ->orWhere('speaker','like',$likeTerm)
-				  ->orWhere('location','like',$likeTerm);
+			->where(function ($q) use ($likeTerm) {
+				$q->where('title', 'like', $likeTerm)
+					->orWhere('speaker', 'like', $likeTerm)
+					->orWhere('location', 'like', $likeTerm);
 			})
 			->first();
 		if ($best) {
@@ -181,13 +181,14 @@ class PublicEventController extends Controller
 
 	public function show(Event $event, Request $request)
 	{
+		$event->loadMissing('trainer');
 		// Tandai sudah terdaftar (reuse logic ringkas)
 		$isRegistered = false;
-		if($request->user()){
+		if ($request->user()) {
 			$isRegistered = $request->user()->eventRegistrations()
-                ->where('event_id',$event->id)
-                ->where('status', '!=', 'rejected')
-                ->exists();
+				->where('event_id', $event->id)
+				->where('status', '!=', 'rejected')
+				->exists();
 		}
 		$event->is_registered = $isRegistered;
 		// Load feedbacks for display on the event detail page
@@ -199,12 +200,12 @@ class PublicEventController extends Controller
 	public function ticket(Event $event, Request $request)
 	{
 		$user = $request->user();
-		if(!$user){
-			return redirect()->route('login', ['redirect'=>request()->fullUrl()]);
+		if (!$user) {
+			return redirect()->route('login', ['redirect' => request()->fullUrl()]);
 		}
-		$registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
-		if(!$registration){
-			return redirect()->route('events.show',$event)->with('warning','Anda belum terdaftar pada event ini.');
+		$registration = $user->eventRegistrations()->where('event_id', $event->id)->first();
+		if (!$registration) {
+			return redirect()->route('events.show', $event)->with('warning', 'Anda belum terdaftar pada event ini.');
 		}
 		return view('events.ticket', [
 			'event' => $event,

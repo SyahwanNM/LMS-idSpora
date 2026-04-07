@@ -150,12 +150,9 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan
-                                    Materi</label>
-                                <input type="datetime-local" name="material_deadline" id="material_deadline"
-                                    class="form-control"
-                                    value="{{ old('material_deadline', $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d\\TH:i') : '') }}">
-                                <small class="form-text">Opsional. Harus sebelum hari-H event.</small>
+                                <label class="form-label fw-semibold">Tenggat Pengumpulan Materi</label>
+                                <div class="form-control bg-light">Otomatis ditetapkan sistem: H-7 dari jadwal event (revisi
+                                    sampai H-3).</div>
                             </div>
                             <div class="mb-3">
                                 <label for="lokasi" class="form-label fw-semibold">Lokasi <span
@@ -310,7 +307,8 @@
                                 sebelum disimpan.</div>
                             <ul class="list-group mb-3 small">
                                 <li class="list-group-item d-flex justify-content-between align-items-center">Status Harga
-                                    <span class="badge bg-secondary" id="statusHarga">Berbayar</span></li>
+                                    <span class="badge bg-secondary" id="statusHarga">Berbayar</span>
+                                </li>
                                 <li class="list-group-item">Diskon aktif jika persentase > 0.</li>
                                 <li class="list-group-item">Gunakan Maps untuk offline dan Zoom untuk online.</li>
                             </ul>
