@@ -30,9 +30,16 @@ use App\Http\Controllers\User\ResellerController;
 
             // Certificate management (moved to CRM)
             Route::get('/certificates', [\App\Http\Controllers\CRM\CertificateController::class, 'index'])->name('certificates.index');
-            Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'edit'])->name('certificates.edit');
-            Route::put('/certificates/{event}', [\App\Http\Controllers\CRM\CertificateController::class, 'update'])->name('certificates.update');
+            
+            // Event Certificates
+            Route::get('/certificates/events/{event}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'edit'])->name('certificates.edit');
+            Route::put('/certificates/events/{event}', [\App\Http\Controllers\CRM\CertificateController::class, 'update'])->name('certificates.update');
             Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
+
+            // Course Certificates
+            Route::get('/certificates/courses/{course}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'editCourse'])->name('certificates.edit-course');
+            Route::put('/certificates/courses/{course}', [\App\Http\Controllers\CRM\CertificateController::class, 'updateCourse'])->name('certificates.update-course');
+            Route::get('/courses/{course}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassalCourse'])->name('certificates.generate-massal-course');
 
             // Customer management
             Route::get('/customers', [\App\Http\Controllers\CRM\CRMController::class, 'customers'])->name('customers.index');

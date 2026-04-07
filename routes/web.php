@@ -326,25 +326,25 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     // Certificate (event) - show & download (H+4 logic inside controller)
-    Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CertificateController::class, 'show'])->name('certificates.show');
-    Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CertificateController::class, 'download'])->name('certificates.download');
+    Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CRM\CertificateController::class, 'show'])->name('certificates.show');
+    Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CRM\CertificateController::class, 'download'])->name('certificates.download');
+    Route::get('/courses/{course}/certificate/{enrollment}/download', [\App\Http\Controllers\CRM\CertificateController::class, 'downloadCourse'])->name('course.certificates.download');
 
     // User profile
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
-    Route::get('/profile/events', [\App\Http\Controllers\ProfileController::class, 'events'])->name('profile.events');
-    Route::get('/profile/settings', [\App\Http\Controllers\ProfileController::class, 'settings'])->name('profile.settings');
-    Route::get('/profile/edit', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::get('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
-    Route::post('/profile/account-settings', [\App\Http\Controllers\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
+    Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
+    Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
+    Route::get('/profile/events', function() { return redirect()->route('profile.history'); }); // Redirect legacy route
+    Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
+    Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
+    Route::post('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
 
     // Profile Reminder API
-    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
-    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\User\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
 
-    // Profile Reminder API
-    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
-    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
+
 
     // Save/unsave event
     Route::post('/events/{event}/save', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
@@ -391,8 +391,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/courses/{course}/rating', [\App\Http\Controllers\User\CourseReviewController::class, 'create'])->name('course.rating');
     Route::post('/courses/{course}/rating', [\App\Http\Controllers\User\CourseReviewController::class, 'store'])->name('course.rating.store');
 });
-Route::get('/courses', [\App\Http\Controllers\PublicCourseController::class, 'index'])->name('courses.index');
-
 Route::get('/courses', [\App\Http\Controllers\Public\PublicCourseController::class, 'index'])->name('courses.index');
 
 // Authentication routes (only for guests)
@@ -433,7 +431,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
-        Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
+        Route::get('/admin/reseller', [\App\Http\Controllers\User\ResellerController::class, 'admin'])->name('admin.reseller');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');
@@ -446,7 +444,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
-        Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
+        Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
         Route::get('/admin/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
         Route::post('/admin/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
         Route::post('/admin/withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
@@ -527,8 +525,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Learning time (realtime) endpoints for authenticated users
     Route::middleware(['auth', 'throttle:120,1'])->group(function () {
-        Route::post('/learning-time/heartbeat', [\App\Http\Controllers\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
-        Route::get('/learning-time/chart', [\App\Http\Controllers\LearningTimeController::class, 'chart'])->name('learning-time.chart');
+        Route::post('/learning-time/heartbeat', [\App\Http\Controllers\User\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
+        Route::get('/learning-time/chart', [\App\Http\Controllers\User\LearningTimeController::class, 'chart'])->name('learning-time.chart');
     });
 
     // User quiz routes
@@ -554,7 +552,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['auth', 'admin'])->group(function () {
         // Remove the default create route; use /admin/add-event (named admin.add-event) instead
-        Route::resource('admin/events', \App\Http\Controllers\EventController::class, [
+        Route::resource('admin/events', \App\Http\Controllers\Admin\EventController::class, [
             'except' => ['create'],
             'names' => [
                 'index' => 'admin.events.index',
@@ -565,33 +563,37 @@ Route::middleware(['auth'])->group(function () {
                 'destroy' => 'admin.events.destroy',
             ]
         ]);
-        // CRM Routes
         Route::prefix('admin/crm')->name('admin.crm.')->group(function () {
-            Route::get('/dashboard', [\App\Http\Controllers\CRMController::class, 'dashboard'])->name('dashboard');
+            Route::get('/dashboard', [\App\Http\Controllers\CRM\CRMController::class, 'dashboard'])->name('dashboard');
 
             // Certificate management (moved to CRM)
-            Route::get('/certificates', [\App\Http\Controllers\CertificateController::class, 'index'])->name('certificates.index');
-            Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CertificateController::class, 'edit'])->name('certificates.edit');
-            Route::put('/certificates/{event}', [\App\Http\Controllers\CertificateController::class, 'update'])->name('certificates.update');
-            Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
+            Route::get('/certificates', [\App\Http\Controllers\CRM\CertificateController::class, 'index'])->name('certificates.index');
+            Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'edit'])->name('certificates.edit');
+            Route::put('/certificates/{event}', [\App\Http\Controllers\CRM\CertificateController::class, 'update'])->name('certificates.update');
+            Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
+            
+            // New routes for course certificates
+            Route::get('/courses/{course}/certificates/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'editCourse'])->name('certificates.edit-course');
+            Route::put('/courses/{course}/certificates', [\App\Http\Controllers\CRM\CertificateController::class, 'updateCourse'])->name('certificates.update-course');
+            Route::get('/courses/{course}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassalCourse'])->name('certificates.generate-massal-course');
 
             // Customer management
-            Route::get('/customers', [\App\Http\Controllers\CRMController::class, 'customers'])->name('customers.index');
-            Route::get('/customers/{customer}', [\App\Http\Controllers\CRMController::class, 'showCustomer'])->name('customers.show');
-            Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRMController::class, 'editCustomer'])->name('customers.edit');
-            Route::put('/customers/{customer}', [\App\Http\Controllers\CRMController::class, 'updateCustomer'])->name('customers.update');
+            Route::get('/customers', [\App\Http\Controllers\CRM\CRMController::class, 'customers'])->name('customers.index');
+            Route::get('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'showCustomer'])->name('customers.show');
+            Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRM\CRMController::class, 'editCustomer'])->name('customers.edit');
+            Route::put('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'updateCustomer'])->name('customers.update');
 
             // Feedback Analysis
-            Route::get('/feedback', [\App\Http\Controllers\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
+            Route::get('/feedback', [\App\Http\Controllers\CRM\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
 
             // Support Messages
-            Route::get('/support', [\App\Http\Controllers\CRMController::class, 'supportMessages'])->name('support.index');
-            Route::post('/support/{message}/status', [\App\Http\Controllers\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
+            Route::get('/support', [\App\Http\Controllers\CRM\CRMController::class, 'supportMessages'])->name('support.index');
+            Route::post('/support/{message}/status', [\App\Http\Controllers\CRM\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
 
             // Broadcast/Blast
-            Route::get('/broadcast', [\App\Http\Controllers\CRMController::class, 'broadcastIndex'])->name('broadcast.index');
-            Route::get('/broadcast/create', [\App\Http\Controllers\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
-            Route::post('/broadcast/send', [\App\Http\Controllers\CRMController::class, 'broadcastSend'])->name('broadcast.send');
+            Route::get('/broadcast', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastIndex'])->name('broadcast.index');
+            Route::get('/broadcast/create', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
+            Route::post('/broadcast/send', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastSend'])->name('broadcast.send');
         });
 
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
