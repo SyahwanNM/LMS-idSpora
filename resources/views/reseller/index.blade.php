@@ -14,6 +14,25 @@
     {{--
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .reseller-action-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 576px) {
+            .reseller-action-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -271,11 +290,75 @@
             </div>
             <!-- End of Referral Tools Section -->
 
+            <!-- List Produk Komisi Reseller -->
+            <div class="card mb-4 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-grid-fill text-warning me-2"></i>
+                            Produk Komisi Reseller
+                        </h5>
+                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle px-3 py-2">
+                            Komisi {{ number_format($commissionRate * 100, 0) }}%
+                        </span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle border-top mb-0 text-start">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th class="py-3 border-0 text-start">Program</th>
+                                    <th class="py-3 border-0 text-start">Kategori</th>
+                                    <th class="py-3 border-0 text-start">Harga</th>
+                                    <th class="py-3 border-0 text-start">Komisi</th>
+                                    <th class="py-3 border-0 text-start">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($commissionProducts as $product)
+                                <tr>
+                                    <td class="py-3 text-start">
+                                        <div class="fw-bold text-dark">{{ $product['program'] }}</div>
+                                        <small class="text-muted">{{ $product['type'] }}</small>
+                                    </td>
+                                    <td class="py-3 text-start">
+                                        <span class="badge bg-light text-dark border">{{ $product['category'] }}</span>
+                                    </td>
+                                    <td class="py-3 text-start fw-bold text-dark">
+                                        Rp {{ number_format($product['price'], 0, ',', '.') }}
+                                    </td>
+                                    <td class="py-3 text-start">
+                                        <div class="fw-bold text-success">Rp {{ number_format($product['commission_amount'], 0, ',', '.') }}</div>
+                                    </td>
+                                    <td class="py-3 text-start">
+                                        <button type="button"
+                                            class="btn btn-warning text-light fw-bold shadow-sm reseller-action-btn"
+                                            onclick="copyTextValue(this, @js($product['referral_link']))"
+                                            title="Salin link referral">
+                                            <i class="bi bi-clipboard"></i>
+                                            <span class="visually-hidden">Salin link referral</span>
+                                        </button>
+                                    </td>                                    
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted small">
+                                        <i class="bi bi-box-seam-fill fs-3 d-block mb-2"></i>
+                                        Belum ada produk aktif untuk komisi reseller.
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Recent Referrals Table-->
             <div class="row g-4 mb-4">
                 {{-- Level Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-4">
+                    <div class="card h-100 shadow-sm rounded-3">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-4">Level Anda</h5>
 
@@ -384,7 +467,7 @@
 
                 {{-- Top Resellers Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-4">
+                    <div class="card h-100 shadow-sm rounded-3">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0">Top Resellers</h5>
@@ -486,16 +569,22 @@
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-4">
+                    <div class="card h-100 shadow-sm rounded-3">
                         <div class="card-body p-4 d-flex flex-column gap-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <h5 class="fw-bold mb-0">Riwayat Referral</h5>
 
-                                <a href="{{ route('reseller.history.download') }}"
-                                    class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
-                                    title="Download Riwayat">
-                                    <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
-                                </a>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('reseller.history') }}"
+                                        class="btn btn-sm btn-outline-dark fw-bold px-3 shadow-sm" title="Lihat semua">
+                                        <i class="bi bi-clock-history me-1"></i> Lihat Semua
+                                    </a>
+                                    <a href="{{ route('reseller.history.download') }}"
+                                        class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
+                                        title="Download Riwayat">
+                                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
+                                    </a>
+                                </div>
                             </div>
 
                             @forelse($history as $item)
@@ -547,7 +636,7 @@
             </div>
 
             <!-- Withdraw History -->
-            <div class="card mb-4 shadow-sm rounded-4">
+            <div class="card mb-4 shadow-sm rounded-3">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold mb-0">
@@ -555,11 +644,17 @@
                             Riwayat Penarikan Dana
                         </h5>
 
-                        <a href="{{ route('reseller.withdraw.download') }}"
-                            class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
-                            title="Download Riwayat Penarikan">
-                            <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
-                        </a>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('reseller.withdraw.history') }}"
+                                class="btn btn-sm btn-outline-dark fw-bold px-3 shadow-sm" title="Lihat semua">
+                                <i class="bi bi-clock-history me-1"></i> Lihat Semua
+                            </a>
+                            <a href="{{ route('reseller.withdraw.download') }}"
+                                class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
+                                title="Download Riwayat Penarikan">
+                                <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
+                            </a>
+                        </div>
                     </div>
 
                     <div class="table-responsive">
@@ -569,7 +664,7 @@
                                     <th class="py-3 border-0">ID Penarikan</th>
                                     <th class="py-3 border-0">Tanggal Pengajuan</th>
                                     <th class="py-3 border-0">Total</th>
-                                    <th class="py-3 border-0 text-center">Status</th>
+                                    <th class="py-3 border-0">Status</th>
                                     <th class="py-3 border-0">Tanggal Diproses</th>
                                 </tr>
                             </thead>
@@ -589,7 +684,7 @@
                                     <td class="fw-bold text-dark">
                                         Rp {{ number_format($wd->amount, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-center">
+                                    <td>
                                         @if($wd->status == 'approved')
                                         <span class="badge bg-success bg-opacity-10 text-success px-3">
                                             <i class="bi bi-check-circle-fill me-1"></i> Approved
@@ -737,9 +832,24 @@
     @include('partials.withdraw-modal')
     @include ('partials.footer-after-login')
     <script>
+        function animateCopyIcon(button) {
+            var icon = button.querySelector('i');
+            if (!icon) return;
+
+            var originalClass = icon.dataset.originalClass || icon.className;
+            icon.dataset.originalClass = originalClass;
+            icon.className = "bi bi-check-circle-fill";
+
+            setTimeout(function () {
+                icon.className = originalClass;
+            }, 1800);
+        }
+
         function copyToClipboard(button, elementId) {
             // 1. Ambil teks dan copy
             var copyText = document.getElementById(elementId);
+            if (!copyText) return;
+
             copyText.select();
             copyText.setSelectionRange(0, 99999); // Untuk support mobile
             navigator.clipboard.writeText(copyText.value);
@@ -759,6 +869,13 @@
             setTimeout(function () {
                 icon.className = originalClass;
             }, 2000);
+        }
+
+        function copyTextValue(button, value) {
+            if (!value) return;
+
+            navigator.clipboard.writeText(value);
+            animateCopyIcon(button);
         }
     </script>
 </body>

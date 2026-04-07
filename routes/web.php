@@ -62,6 +62,9 @@ Route::middleware(['auth'])->group(function () {
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
 
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
+    Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
+
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
     Route::get('/reseller/withdraw/download', [App\Http\Controllers\ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
 

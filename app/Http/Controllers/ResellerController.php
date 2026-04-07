@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Withdrawal;
 use App\Models\Referral;
 use App\Models\User;
+use App\Models\Course;
+use App\Models\Event;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -127,6 +129,71 @@ class ResellerController extends Controller
             $nextLevelTarget = 51 - $totalReferrals;
         }
 
+        // Persentase komisi mengikuti level badge reseller.
+        $commissionRate = match ($level) {
+            'Gold' => 0.15,
+            'Silver' => 0.12,
+            default => 0.10,
+        };
+
+        $courseProducts = Course::query()
+            ->with('category:id,name')
+            ->select('id', 'name', 'category_id', 'price', 'card_thumbnail')
+            ->latest()
+            ->get()
+            ->map(function ($course) use ($commissionRate, $user) {
+                $price = (float) ($course->price ?? 0);
+                $courseThumb = (string) ($course->card_thumbnail ?? ''); // Source: courses.card_thumbnail
+                $promoImage = $courseThumb !== ''
+                    ? (str_starts_with($courseThumb, 'http://') || str_starts_with($courseThumb, 'https://')
+                        ? $courseThumb
+                        : asset('uploads/' . ltrim(str_replace('storage/', '', $courseThumb), '/')))
+                    : asset('aset/poster.png');
+
+                return [
+                    'type' => 'Course',
+                    'program' => $course->name,
+                    'category' => $course->category->name ?? 'Course',
+                    'price' => $price,
+                    'commission_rate' => $commissionRate,
+                    'commission_amount' => $price * $commissionRate,
+                    'promo_image' => $promoImage,
+                    'promo_filename' => 'promo-course-' . $course->id . '.jpg',
+                    'referral_link' => route('courses.show', $course) . '?ref=' . urlencode((string) $user->referral_code),
+                ];
+            });
+
+        $eventProducts = Event::query()
+            ->select('id', 'title', 'jenis', 'price', 'image')
+            ->latest()
+            ->get()
+            ->map(function ($event) use ($commissionRate, $user) {
+                $price = (float) ($event->price ?? 0);
+                $eventImage = (string) ($event->image ?? ''); // Source: events.image
+                $promoImage = $eventImage !== ''
+                    ? (str_starts_with($eventImage, 'http://') || str_starts_with($eventImage, 'https://')
+                        ? $eventImage
+                        : asset('uploads/' . ltrim(str_replace('storage/', '', $eventImage), '/')))
+                    : asset('aset/poster.png');
+
+                return [
+                    'type' => 'Event',
+                    'program' => $event->title,
+                    'category' => !empty($event->jenis) ? $event->jenis : 'Event',
+                    'price' => $price,
+                    'commission_rate' => $commissionRate,
+                    'commission_amount' => $price * $commissionRate,
+                    'promo_image' => $promoImage,
+                    'promo_filename' => 'promo-event-' . $event->id . '.jpg',
+                    'referral_link' => route('events.show', $event) . '?ref=' . urlencode((string) $user->referral_code),
+                ];
+            });
+
+        $commissionProducts = $courseProducts
+            ->concat($eventProducts)
+            ->sortByDesc('price')
+            ->values();
+
         // --- 4. Data Tabel Riwayat ---
         // Ngambil 5 data terakhir beserta nama user yang diajak (referredUser)
         $history = $user->referrals()
@@ -173,7 +240,9 @@ class ResellerController extends Controller
             'history',
             'topResellers',
             'userRank',
-            'registrations'
+            'registrations',
+            'commissionRate',
+            'commissionProducts'
         ));
     }
 
@@ -205,7 +274,7 @@ class ResellerController extends Controller
         $reseller = User::where('referral_code', $code)->first();
 
         // Pastikan kode valid dan user tidak pakai kodenya sendiri
-        if ($reseller && $reseller->id !== auth()->id()) {
+        if ($reseller && $reseller->getKey() !== Auth::id()) {
             return response()->json([
                 'valid' => true,
                 'discount_percentage' => 10, // Ini diskon 10% buat pembeli
@@ -284,6 +353,71 @@ class ResellerController extends Controller
 
         // Tampilkan view report
         return view('reseller.report', compact('user', 'history', 'totalKomisi', 'pendingKomisi'));
+    }
+
+    public function history()
+    {
+        $user = Auth::user();
+
+        if (empty($user->referral_code)) {
+            return redirect()->route('reseller.index');
+        }
+
+        $query = $user->referrals()->with('referredUser')->latest();
+
+        if ($search = request('search')) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->whereHas('referredUser', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
+                })->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+
+        $allReferrals = $user->referrals()->with('referredUser')->latest()->get();
+        $history = $query->paginate(12)->withQueryString();
+
+        $totalPaid = $allReferrals->where('status', 'paid')->sum('amount');
+        $totalPending = $allReferrals->where('status', 'pending')->sum('amount');
+        $totalRejected = $allReferrals->where('status', 'rejected')->sum('amount');
+
+        return view('reseller.history', compact('user', 'history', 'totalPaid', 'totalPending', 'totalRejected'));
+    }
+
+    public function withdrawHistory()
+    {
+        $user = Auth::user();
+
+        if (empty($user->referral_code)) {
+            return redirect()->route('reseller.index');
+        }
+
+        $query = $user->withdrawals()->latest();
+
+        if ($search = request('search')) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('bank_name', 'like', '%' . $search . '%')
+                    ->orWhere('account_number', 'like', '%' . $search . '%')
+                    ->orWhere('account_holder', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+
+        $allWithdrawals = $user->withdrawals()->latest()->get();
+        $withdrawals = $query->paginate(12)->withQueryString();
+
+        $totalApproved = $allWithdrawals->where('status', 'approved')->sum('amount');
+        $totalPending = $allWithdrawals->where('status', 'pending')->sum('amount');
+        $totalRejected = $allWithdrawals->where('status', 'rejected')->sum('amount');
+
+        return view('reseller.withdraw_history', compact('user', 'withdrawals', 'totalApproved', 'totalPending', 'totalRejected'));
     }
 
     public function downloadWithdrawHistory()
