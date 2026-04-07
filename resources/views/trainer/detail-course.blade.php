@@ -99,10 +99,6 @@
             <section id="curriculum-map" class="tab-content active">
                 <div class="unit-header">
                     <p>ACADEMIC UNITS (ADMIN MANAGED)</p>
-                    <a href="{{ route('trainer.courses.studio', $course->id) }}" class="btn-propose"
-                        style="text-decoration:none;">
-                        <i class="bi bi-cloud-upload"></i> UPLOAD MATERI
-                    </a>
                 </div>
 
                 @if($moduleChunks->count() > 0)
@@ -115,7 +111,6 @@
                                     <h3>Academic Unit: Module {{ $idx + 1 }}</h3>
                                     <div class="unit-meta">
                                         <span><i class="bi bi-folder"></i> {{ $chunk->count() }} OPERATIONAL ASSETS</span>
-                                        <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
                                     </div>
                                 </div>
                                 <button class="unit-toggle" type="button"><i class="bi bi-chevron-down"></i></button>
@@ -249,37 +244,6 @@
                     @endforelse
                 </div>
             </section>
-
-            <aside class="course-right">
-                <div class="grading-card">
-                    <div class="grading-head">
-                        <i class="bi bi-lightning-fill grading-icon"></i>
-                        <p>GRADING PROTOCOL</p>
-                    </div>
-                    <div class="grading-status">
-                        <p>Oversight Status</p>
-                        <h4>Active Automated</h4>
-                    </div>
-                    <ul class="grading-notes">
-                        <li>System automatically calculates percentage scores.</li>
-                        <li>Manual overrides are disabled for audit compliance.</li>
-                    </ul>
-                    <button class="grading-btn" type="button">View Audit Ledger</button>
-                </div>
-
-                <div class="instructor-card">
-                    <p class="instructor-title">INSTRUCTOR HUB</p>
-                    <a href="{{ route('trainer.courses.studio', $course->id) }}" style="text-decoration:none;">
-                        <div class="instructor-item" style="cursor:pointer;">
-                            <span class="dot"></span>
-                            <div>
-                                <h4>Submit Assets</h4>
-                                <p>Pedagogical Materials</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </aside>
         </div>
     </main>
 @endsection

@@ -92,59 +92,12 @@
                         <i class="bi bi-collection"></i> Struktur Modul
                     </h3>
                     <p style="margin: 0 0 16px 0; color: #718096; font-size: 13px;">
-                        Tentukan jumlah dan tipe modul yang akan menjadi template untuk course-course baru
+                        Struktur akan mengikuti level yang dipilih: Beginner 5 bagian, Intermediate 7 bagian, Advanced 6
+                        bagian.
                     </p>
 
                     <div id="modulesContainer" style="display: flex; flex-direction: column; gap: 16px;">
-                        <div class="module-item"
-                            style="background: #f7fafc; border: 1px solid #cbd5e0; border-radius: 6px; padding: 16px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                                <div>
-                                    <label
-                                        style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
-                                        Judul Module
-                                    </label>
-                                    <input type="text" name="modules[0][title]" placeholder="Contoh: Pengenalan Framework"
-                                        style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
-                                </div>
-                                <div>
-                                    <label
-                                        style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
-                                        Tipe
-                                    </label>
-                                    <select name="modules[0][type]"
-                                        style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
-                                        <option value="video">Video</option>
-                                        <option value="pdf">PDF</option>
-                                        <option value="quiz">Quiz</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                <div>
-                                    <label
-                                        style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
-                                        Durasi (menit)
-                                    </label>
-                                    <input type="number" name="modules[0][duration]" placeholder="30" min="0"
-                                        style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
-                                </div>
-                                <div style="display: flex; align-items: flex-end;">
-                                    <label
-                                        style="display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 13px; cursor: pointer;">
-                                        <input type="checkbox" name="modules[0][is_required]" value="1" checked
-                                            style="cursor: pointer;">
-                                        Wajib
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-
-                    <button type="button" onclick="addModule()"
-                        style="margin-top: 16px; display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; background: #edf2f7; color: #2d3748; border: 1px dashed #cbd5e0; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">
-                        <i class="bi bi-plus-lg"></i> Tambah Module
-                    </button>
                 </div>
 
                 <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -161,62 +114,76 @@
         </div>
 
         <script>
-            let moduleCount = 1;
-            function addModule() {
+            const moduleTemplates = {
+                beginner: 5,
+                intermediate: 7,
+                advanced: 6,
+            };
+
+            const moduleTypes = [
+                { title: 'Materi', type: 'pdf' },
+                { title: 'Video', type: 'video' },
+                { title: 'Kuis', type: 'quiz' },
+            ];
+
+            let moduleCount = 0;
+
+            function renderModules(level) {
                 const container = document.getElementById('modulesContainer');
-                const html = `
-                    <div class="module-item" style="background: #f7fafc; border: 1px solid #cbd5e0; border-radius: 6px; padding: 16px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div>
-                                <label style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
-                                    Judul Module
-                                </label>
-                                <input 
-                                    type="text" 
-                                    name="modules[${moduleCount}][title]" 
-                                    placeholder="Contoh: Pengenalan Framework" 
-                                    style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
-                            </div>
-                            <div>
-                                <label style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
-                                    Tipe
-                                </label>
-                                <select name="modules[${moduleCount}][type]" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
-                                    <option value="video">Video</option>
-                                    <option value="pdf">PDF</option>
-                                    <option value="quiz">Quiz</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 120px; gap: 12px;">
-                            <div>
-                                <label style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
-                                    Durasi (menit)
-                                </label>
-                                <input 
-                                    type="number" 
-                                    name="modules[${moduleCount}][duration]" 
-                                    placeholder="30" 
-                                    min="0"
-                                    style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
-                            </div>
-                            <div style="display: flex; align-items: flex-end;">
-                                <label style="display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 13px; cursor: pointer;">
-                                    <input type="checkbox" name="modules[${moduleCount}][is_required]" value="1" checked style="cursor: pointer;">
-                                    Wajib
-                                </label>
-                            </div>
-                            <div style="display: flex; align-items: flex-end;">
-                                <button type="button" onclick="this.parentElement.parentElement.remove()" style="width: 100%; padding: 8px; background: #fed7d7; color: #c53030; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
-                                    <i class="bi bi-trash"></i> Hapus
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', html);
-                moduleCount++;
+                const sectionCount = moduleTemplates[level] ?? moduleTemplates.beginner;
+                const blocks = [];
+
+                moduleCount = 0;
+
+                for (let section = 1; section <= sectionCount; section++) {
+                    moduleTypes.forEach((moduleType) => {
+                        blocks.push(`
+                                <div class="module-item" style="background: #f7fafc; border: 1px solid #cbd5e0; border-radius: 6px; padding: 16px;">
+                                    <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; align-items: center;">
+                                        <div>
+                                            <div style="display: inline-flex; align-items: center; gap: 6px; background: #edf2f7; color: #2d3748; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-bottom: 8px;">
+                                                Bagian ${section}
+                                            </div>
+                                            <label style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
+                                                Judul Module
+                                            </label>
+                                            <input type="text" name="modules[${moduleCount}][title]" value="Bagian ${section} - ${moduleType.title}"
+                                                style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                                        </div>
+                                        <input type="hidden" name="modules[${moduleCount}][type]" value="${moduleType.type}">
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 120px; gap: 12px;">
+                                        <div>
+                                            <label style="display: block; margin-bottom: 4px; color: #2d3748; font-weight: 600; font-size: 12px;">
+                                                Durasi (menit)
+                                            </label>
+                                            <input type="number" name="modules[${moduleCount}][duration]" value="0" min="0"
+                                                style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                                        </div>
+                                        <div style="display: flex; align-items: flex-end;">
+                                            <label style="display: flex; align-items: center; gap: 8px; color: #2d3748; font-size: 13px; cursor: pointer;">
+                                                <input type="checkbox" name="modules[${moduleCount}][is_required]" value="1" checked style="cursor: pointer;">
+                                                Wajib
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        moduleCount++;
+                    });
+                }
+
+                container.innerHTML = blocks.join('');
             }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const levelSelect = document.querySelector('select[name="level"]');
+                renderModules((levelSelect?.value || 'beginner').toLowerCase());
+
+                levelSelect?.addEventListener('change', function () {
+                    renderModules((this.value || 'beginner').toLowerCase());
+                });
+            });
         </script>
     </div>
 @endsection

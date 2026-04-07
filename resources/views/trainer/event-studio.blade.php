@@ -16,6 +16,10 @@
     $deadlinePassed = $deadline ? now()->gt($deadline) : false;
     $materialStatus = (string) ($event->material_status ?? 'draft');
     $materialStatusLabel = strtoupper(str_replace('_', ' ', $materialStatus));
+    $moduleFileUrl = $event->module_file_url;
+    $hasUploadedModule = !empty($event->module_path);
+    $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
+    $canUploadMaterials = $materialStatus !== 'approved';
 @endphp
 
 @push('styles')
@@ -257,10 +261,6 @@
             padding: 22px 24px;
             background: linear-gradient(135deg, rgba(35, 29, 121, 0.98), rgba(42, 36, 140, 0.95));
             color: var(--white-clr);
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: flex-start;
         }
 
         .panel-hero h2 {
@@ -275,7 +275,6 @@
             color: rgba(226, 232, 240, 0.9);
             font-size: 13px;
             line-height: 1.6;
-            max-width: 560px;
         }
 
         .panel-chip {
@@ -295,6 +294,100 @@
 
         .upload-panel {
             padding: 22px 24px 24px;
+        }
+
+        .module-preview {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 20px;
+            border-radius: 18px;
+            border: 1px solid #e5ebf5;
+            background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
+            margin-bottom: 18px;
+        }
+
+        .module-preview .meta-label {
+            margin: 0 0 6px 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            font-weight: 700;
+        }
+
+        .module-preview h3 {
+            margin: 0 0 6px 0;
+            color: var(--main-navy-clr);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .module-preview p {
+            margin: 0;
+            color: #4b5563;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .module-preview .preview-link {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: #231d79;
+            color: var(--white-clr);
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .module-preview .preview-link i {
+            color: var(--yellow-clr);
+        }
+
+        .upload-lock-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 18px 20px;
+            border-radius: 18px;
+            border: 1px solid #dbe3f0;
+            background: #f8fafc;
+        }
+
+        .upload-lock-note .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(35, 29, 121, 0.08);
+            color: var(--main-navy-clr);
+            flex-shrink: 0;
+        }
+
+        .upload-lock-note .icon i {
+            font-size: 18px;
+        }
+
+        .upload-lock-note h3 {
+            margin: 0 0 6px 0;
+            color: var(--main-navy-clr);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .upload-lock-note p {
+            margin: 0;
+            color: #4b5563;
+            font-size: 13px;
+            line-height: 1.5;
         }
 
         .upload-hints {
@@ -709,192 +802,227 @@
                     </div>
 
                     <div class="upload-panel">
-                        <div class="upload-hints">
-                            <div class="hint-card">
-                                <div class="icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
-                                <div>
-                                    <p class="meta-label">Status upload</p>
-                                    <p class="meta-text">Tarik file ke area dropzone atau klik untuk pilih dari perangkat.
+                        <div class="module-preview">
+                            <div>
+                                <p class="meta-label">Materi saat ini</p>
+                                @if($hasUploadedModule)
+                                    <h3>{{ $uploadedModuleName }}</h3>
+                                    <p>
+                                        {{ $materialStatus === 'approved' ? 'Materi ini sudah dikunci setelah disetujui admin.' : 'Materi ini masih tersimpan untuk status ' . strtolower(str_replace('_', ' ', $materialStatus)) . '.' }}
                                     </p>
-                                </div>
+                                @else
+                                    <h3>Belum ada materi yang diunggah</h3>
+                                    <p>File yang Anda kirim akan tampil di sini sebagai referensi status terakhir.</p>
+                                @endif
                             </div>
-                            <div class="hint-card">
-                                <div class="icon"><i class="bi bi-clock-history"></i></div>
-                                <div>
-                                    <p class="meta-label">Alur</p>
-                                    <p class="meta-text">File akan masuk ke daftar materi dan dikirim untuk audit admin.</p>
-                                </div>
-                            </div>
-                            <div class="hint-card">
-                                <div class="icon"><i class="bi bi-lightning-charge"></i></div>
-                                <div>
-                                    <p class="meta-label">Catatan</p>
-                                    <p class="meta-text">Pastikan nama file jelas agar mudah diverifikasi tim admin.</p>
-                                </div>
-                            </div>
+
+                            @if($hasUploadedModule && $moduleFileUrl)
+                                <a href="{{ $moduleFileUrl }}" class="preview-link" target="_blank" rel="noopener noreferrer">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                    Lihat File
+                                </a>
+                            @endif
                         </div>
 
-                        <form id="moduleForm" class="module-form"
-                            action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <input type="hidden" name="eventId" value="{{ $event->id }}">
-
-                            <div class="dropzone" id="dropzone">
-                                <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
-                                    style="display: none" {{ $deadlinePassed ? 'disabled' : '' }} />
-                                <i class="bi bi-cloud-arrow-up"></i>
-                                <h2>Drop Event Assets Here</h2>
-                                <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
-                                <p style="font-size: 12px; color: #999; margin-top: 8px">
-                                    atau klik untuk memilih 1 file materi
-                                </p>
+                        @if($canUploadMaterials)
+                            <div class="upload-hints">
+                                <div class="hint-card">
+                                    <div class="icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                                    <div>
+                                        <p class="meta-label">Status upload</p>
+                                        <p class="meta-text">Tarik file ke area dropzone atau klik untuk pilih dari perangkat.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="hint-card">
+                                    <div class="icon"><i class="bi bi-clock-history"></i></div>
+                                    <div>
+                                        <p class="meta-label">Alur</p>
+                                        <p class="meta-text">File akan masuk ke daftar materi dan dikirim untuk audit admin.</p>
+                                    </div>
+                                </div>
+                                <div class="hint-card">
+                                    <div class="icon"><i class="bi bi-lightning-charge"></i></div>
+                                    <div>
+                                        <p class="meta-label">Catatan</p>
+                                        <p class="meta-text">Pastikan nama file jelas agar mudah diverifikasi tim admin.</p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div id="fileList" class="file-list" style="display: none">
-                                <h3>Materi yang Diunggah</h3>
-                                <ul id="uploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
-                            </div>
+                            <form id="moduleForm" class="module-form"
+                                action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
+                                enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="eventId" value="{{ $event->id }}">
 
-                            <div class="panel-footer">
-                                <button type="submit" class="primary-btn" id="submitBtn" {{ $deadlinePassed ? 'disabled' : '' }}>
-                                    SUBMIT FOR AUDIT <i class="bi bi-send"></i>
-                                </button>
+                                <div class="dropzone" id="dropzone">
+                                    <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
+                                        style="display: none" {{ $deadlinePassed ? 'disabled' : '' }} />
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                    <h2>Drop Event Assets Here</h2>
+                                    <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
+                                    <p style="font-size: 12px; color: #999; margin-top: 8px">
+                                        atau klik untuk memilih 1 file materi
+                                    </p>
+                                </div>
+
+                                <div id="fileList" class="file-list" style="display: none">
+                                    <h3>Materi yang Diunggah</h3>
+                                    <ul id="uploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
+                                </div>
+
+                                <div class="panel-footer">
+                                    <button type="submit" class="primary-btn" id="submitBtn" {{ $deadlinePassed ? 'disabled' : '' }}>
+                                        SUBMIT FOR AUDIT <i class="bi bi-send"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        @else
+                            <div class="upload-lock-note">
+                                <div class="icon"><i class="bi bi-shield-lock"></i></div>
+                                <div>
+                                    <h3>Area upload dikunci</h3>
+                                    <p>Materi sudah berstatus approved, jadi file baru tidak bisa dikirim lagi. Jika perlu
+                                        revisi, hubungi admin untuk alur berikutnya.</p>
+                                </div>
                             </div>
-                        </form>
+                        @endif
                     </div>
                 </div>
             </section>
         </div>
     </main>
 
-    <script>
-        let uploadedFiles = [];
+    @if($canUploadMaterials)
+        <script>
+            let uploadedFiles = [];
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const dropzone = document.getElementById("dropzone");
-            const fileInput = document.getElementById("fileInput");
-            const fileList = document.getElementById("fileList");
-            const uploadedFilesList = document.getElementById("uploadedFiles");
-            const moduleForm = document.getElementById("moduleForm");
-            const submitBtn = document.getElementById("submitBtn");
+            document.addEventListener("DOMContentLoaded", function () {
+                const dropzone = document.getElementById("dropzone");
+                const fileInput = document.getElementById("fileInput");
+                const fileList = document.getElementById("fileList");
+                const uploadedFilesList = document.getElementById("uploadedFiles");
+                const moduleForm = document.getElementById("moduleForm");
+                const submitBtn = document.getElementById("submitBtn");
 
-            if (!dropzone || !fileInput || !moduleForm || !submitBtn) return;
+                if (!dropzone || !fileInput || !moduleForm || !submitBtn) return;
 
-            dropzone.addEventListener("click", () => {
-                if (!fileInput.disabled) fileInput.click();
-            });
+                dropzone.addEventListener("click", () => {
+                    if (!fileInput.disabled) fileInput.click();
+                });
 
-            dropzone.addEventListener("dragover", (e) => {
-                e.preventDefault();
-                dropzone.style.borderColor = "#1a237e";
-                dropzone.style.backgroundColor = "#e0e7ff";
-            });
+                dropzone.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = "#1a237e";
+                    dropzone.style.backgroundColor = "#e0e7ff";
+                });
 
-            dropzone.addEventListener("dragleave", () => {
-                dropzone.style.borderColor = "#dfe6f2";
-                dropzone.style.backgroundColor = "#f8fafc";
-            });
+                dropzone.addEventListener("dragleave", () => {
+                    dropzone.style.borderColor = "#dfe6f2";
+                    dropzone.style.backgroundColor = "#f8fafc";
+                });
 
-            dropzone.addEventListener("drop", (e) => {
-                e.preventDefault();
-                dropzone.style.borderColor = "#dfe6f2";
-                dropzone.style.backgroundColor = "#f8fafc";
-                handleFiles(e.dataTransfer.files);
-            });
+                dropzone.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = "#dfe6f2";
+                    dropzone.style.backgroundColor = "#f8fafc";
+                    handleFiles(e.dataTransfer.files);
+                });
 
-            fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+                fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
 
-            function handleFiles(files) {
-                const picked = Array.from(files);
-                if (picked.length === 0) return;
+                function handleFiles(files) {
+                    const picked = Array.from(files);
+                    if (picked.length === 0) return;
 
-                uploadedFiles = [picked[0]];
-                updateFileList();
-                fileInput.value = '';
-            }
+                    uploadedFiles = [picked[0]];
+                    updateFileList();
+                    fileInput.value = '';
+                }
 
-            function updateFileList() {
-                if (uploadedFiles.length > 0) {
-                    fileList.style.display = "block";
-                    uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                                    <li>
-                                        <div class="file-meta">
-                                            <i class="bi bi-file-earmark"></i>
-                                            <div>
-                                                <p class="file-name">${file.name}</p>
-                                                <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
-                                    </li>
-                                `).join("");
+                function updateFileList() {
+                    if (uploadedFiles.length > 0) {
+                        fileList.style.display = "block";
+                        uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
+                                            <li>
+                                                <div class="file-meta">
+                                                    <i class="bi bi-file-earmark"></i>
+                                                    <div>
+                                                        <p class="file-name">${file.name}</p>
+                                                        <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
+                                            </li>
+                                        `).join("");
 
-                    uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
-                        btn.addEventListener("click", (e) => {
-                            const index = parseInt(e.currentTarget.dataset.index, 10);
-                            uploadedFiles.splice(index, 1);
-                            updateFileList();
+                        uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
+                            btn.addEventListener("click", (e) => {
+                                const index = parseInt(e.currentTarget.dataset.index, 10);
+                                uploadedFiles.splice(index, 1);
+                                updateFileList();
+                            });
                         });
+                    } else {
+                        fileList.style.display = "none";
+                        uploadedFilesList.innerHTML = "";
+                    }
+                }
+
+                moduleForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+
+                    if (uploadedFiles.length === 0) {
+                        alert("Silakan upload minimal 1 file sebelum submit.");
+                        return;
+                    }
+
+                    const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                    const invalidFiles = uploadedFiles.filter((file) => {
+                        const ext = (file.name.split('.').pop() || '').toLowerCase();
+                        return !allowedExt.includes(ext);
                     });
-                } else {
-                    fileList.style.display = "none";
-                    uploadedFilesList.innerHTML = "";
-                }
-            }
 
-            moduleForm.addEventListener("submit", (e) => {
-                e.preventDefault();
+                    if (invalidFiles.length > 0) {
+                        const names = invalidFiles.map((f) => f.name).join(', ');
+                        alert('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
+                        return;
+                    }
 
-                if (uploadedFiles.length === 0) {
-                    alert("Silakan upload minimal 1 file sebelum submit.");
-                    return;
-                }
+                    const formData = new FormData(moduleForm);
+                    uploadedFiles.forEach(file => {
+                        formData.append('files[]', file);
+                    });
 
-                const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
-                const invalidFiles = uploadedFiles.filter((file) => {
-                    const ext = (file.name.split('.').pop() || '').toLowerCase();
-                    return !allowedExt.includes(ext);
-                });
+                    const originalBtnText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
 
-                if (invalidFiles.length > 0) {
-                    const names = invalidFiles.map((f) => f.name).join(', ');
-                    alert('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
-                    return;
-                }
-
-                const formData = new FormData(moduleForm);
-                uploadedFiles.forEach(file => {
-                    formData.append('files[]', file);
-                });
-
-                const originalBtnText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
-
-                fetch(moduleForm.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(`Success! ${data.files ? data.files.length : 'Files'} assets uploaded.`);
-                            window.location.href = "{{ route('trainer.events.show', $event->id) }}";
-                        } else {
-                            alert('Upload failed: ' + (data.error || 'Unknown error'));
+                    fetch(moduleForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(`Success! ${data.files ? data.files.length : 'Files'} assets uploaded.`);
+                                window.location.href = "{{ route('trainer.events.show', $event->id) }}";
+                            } else {
+                                alert('Upload failed: ' + (data.error || 'Unknown error'));
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = originalBtnText;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred during upload.');
                             submitBtn.disabled = false;
                             submitBtn.innerHTML = originalBtnText;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred during upload.');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalBtnText;
-                    });
+                        });
+                });
             });
-        });
-    </script>
+        </script>
+    @endif
 @endsection

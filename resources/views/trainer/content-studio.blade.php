@@ -791,11 +791,8 @@
                 <section class="panel panel-quiz" data-panel="quiz">
                     @php
                         $existingQuizModules = $activeUnitModules->filter(function ($module) {
-                            return $module->type === 'quiz' && (
-                                !empty($module->content_url) ||
-                                (($module->quiz_questions_count ?? 0) > 0)
-                            );
-                        });
+                            return $module->type === 'quiz';
+                        })->values();
 
                         $existingQuizPayloads = $existingQuizModules->mapWithKeys(function ($module) {
                             $questions = $module->quizQuestions
@@ -827,9 +824,13 @@
 
                     @if($existingQuizModules->isNotEmpty())
                         <div class="file-list" style="margin-bottom: 16px; display: block;">
-                            <h3>Quiz Tersimpan Sebelumnya</h3>
+                            <h3>Slot Quiz Unit Ini</h3>
                             <ul style="list-style: none; padding: 0; margin: 0;">
                                 @foreach($existingQuizModules as $quizModule)
+                                    @php
+                                        $questionCount = (int) ($quizModule->quiz_questions_count ?? 0);
+                                        $isFilledQuiz = $questionCount > 0;
+                                    @endphp
                                     <li
                                         style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
                                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -842,7 +843,7 @@
                                                         {{ $quizModule->title ?: ('Quiz Unit ' . ($unitIndex + 1)) }}
                                                     </p>
                                                     <p style="margin: 0; font-size: 12px; color: #999;">
-                                                        {{ $quizModule->quiz_questions_count ?? 0 }} Soal • Slot
+                                                        {{ $questionCount }} Soal • Slot
                                                         {{ $quizModule->order_no }}
                                                         @if($quizModule->updated_at)
                                                             • Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
@@ -854,13 +855,13 @@
                                                 <span
                                                     style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(27, 23, 99, 0.1); color: var(--main-navy-clr); font-size: 12px; font-weight: 600;">
                                                     <i class="bi bi-clock-history"></i>
-                                                    Riwayat
+                                                    {{ $isFilledQuiz ? 'Tersimpan' : 'Belum Diisi' }}
                                                 </span>
                                                 <button type="button" class="quiz-edit-btn" data-module-id="{{ $quizModule->id }}"
-                                                    title="Edit Quiz"
+                                                    title="{{ $isFilledQuiz ? 'Edit Quiz' : 'Buat Quiz' }}"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                    <i class="bi bi-pencil-square"></i>
+                                                    <i class="bi {{ $isFilledQuiz ? 'bi-pencil-square' : 'bi-plus-lg' }}"></i>
                                                 </button>
                                                 @if($quizModule->quizQuestions->isNotEmpty())
                                                     <button type="button" class="quiz-history-toggle"
@@ -1287,6 +1288,9 @@
                 return ['id' => $module->id, 'type' => $module->type];
             })->values());
             const existingQuizPayloads = @json($existingQuizPayloads);
+            const quizSlotModuleIds = activeUnitModules
+                .filter((module) => module.type === 'quiz')
+                .map((module) => Number(module.id));
             const dropzone = document.getElementById("dropzone");
             const fileInput = document.getElementById("fileInput");
             const fileList = document.getElementById("fileList");
@@ -1391,24 +1395,29 @@
                         ? existingQuizPayloads[key]
                         : [];
 
-                    if (!Array.isArray(quizPayload) || quizPayload.length === 0) {
-                        showNotificationModal('Info', 'Data quiz belum tersedia untuk diedit.', 'error');
-                        return;
+                    if (Array.isArray(quizPayload) && quizPayload.length > 0) {
+                        quizQuestions = quizPayload.map((q) => ({
+                            id: questionCounter++,
+                            text: q.text || '',
+                            weight: Number(q.weight || 10),
+                            options: Array.isArray(q.options) && q.options.length ? q.options : ['', '', '', ''],
+                            correctAnswer: Number(q.correctAnswer || 0),
+                        }));
+                    } else {
+                        quizQuestions = createDefaultQuestions(5);
                     }
-
-                    quizQuestions = quizPayload.map((q) => ({
-                        id: questionCounter++,
-                        text: q.text || '',
-                        weight: Number(q.weight || 10),
-                        options: Array.isArray(q.options) && q.options.length ? q.options : ['', '', '', ''],
-                        correctAnswer: Number(q.correctAnswer || 0),
-                    }));
 
                     document.getElementById('quizModuleId').value = String(moduleId);
                     renderAllQuestions();
                     saveQuizDraft();
                     setTab('quiz');
-                    showNotificationModal('Siap Diedit', 'Quiz tersimpan dimuat ke editor. Kamu bisa ubah lalu simpan ulang.', 'success');
+                    showNotificationModal(
+                        'Editor Quiz Siap',
+                        (Array.isArray(quizPayload) && quizPayload.length > 0)
+                            ? 'Quiz tersimpan dimuat ke editor. Kamu bisa ubah lalu simpan ulang.'
+                            : 'Slot quiz kosong dibuka otomatis dengan 5 soal default. Silakan isi kontennya.',
+                        'success'
+                    );
                 }
             });
 
@@ -1752,6 +1761,17 @@
                 saveQuizDraft();
             }
 
+            function createDefaultQuestions(count = 5) {
+                questionCounter = 1;
+                return Array.from({ length: count }, () => ({
+                    id: questionCounter++,
+                    text: "",
+                    weight: 10,
+                    options: ["", "", "", ""],
+                    correctAnswer: 0,
+                }));
+            }
+
             function renderAllQuestions() {
                 qContainer.innerHTML = "";
                 quizQuestions.forEach((q, index) => {
@@ -1847,9 +1867,15 @@
                 saveQuizDraft();
             });
 
-            // Initialize from draft, fallback to first empty question
+            // Initialize from draft, fallback to template default slot and default questions
             if (!loadQuizDraft()) {
-                addQuestion();
+                const firstQuizSlotId = quizSlotModuleIds.length > 0 ? quizSlotModuleIds[0] : null;
+                if (firstQuizSlotId) {
+                    document.getElementById('quizModuleId').value = String(firstQuizSlotId);
+                }
+                quizQuestions = createDefaultQuestions(5);
+                renderAllQuestions();
+                saveQuizDraft();
             }
 
             // AJAX SUBMIT QUIZ

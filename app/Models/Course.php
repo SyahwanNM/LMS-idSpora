@@ -65,6 +65,11 @@ class Course extends Model
         return $this->hasMany(CourseModule::class)->orderBy('order_no');
     }
 
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'course_id');
+    }
+
     public function certificates()
     {
         return $this->hasMany(Certificate::class);

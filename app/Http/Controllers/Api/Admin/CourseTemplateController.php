@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CourseTemplate;
+use App\Services\CourseStructureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -205,79 +206,11 @@ class CourseTemplateController extends Controller
 
     private function syncModules(CourseTemplate $template, array $modules, string $level): void
     {
-        $targetRows = $this->defaultModulesForLevel($level);
-        $rows = collect($modules)
-            ->values()
-            ->map(function ($module, $index) {
-                $orderNo = (int) ($module['order_no'] ?? ($index + 1));
-                return [
-                    'order_no' => max(1, $orderNo),
-                    'title' => (string) ($module['title'] ?? ('Module ' . ($index + 1))),
-                    'description' => $module['description'] ?? null,
-                    'type' => (string) ($module['type'] ?? 'video'),
-                    'is_required' => (bool) ($module['is_required'] ?? true),
-                    'duration' => (int) ($module['duration'] ?? 0),
-                ];
-            })
-            ->sortBy('order_no')
-            ->values()
-            ->map(function ($row, $index) {
-                $row['order_no'] = $index + 1;
-                return $row;
-            })
-            ->all();
-
-        if (count($rows) < count($targetRows)) {
-            $rows = array_values(array_merge($rows, array_slice($targetRows, count($rows))));
-        } elseif (count($rows) > count($targetRows)) {
-            $rows = array_slice($rows, 0, count($targetRows));
-        }
-
-        $template->modules()->delete();
-
-        if (!empty($rows)) {
-            $template->modules()->createMany($rows);
-        }
+        app(CourseStructureService::class)->syncTemplate($template, $modules, $level);
     }
 
     private function defaultModulesForLevel(string $level): array
     {
-        $level = strtolower(trim($level));
-        $sectionCount = match ($level) {
-            'intermediate' => 7,
-            'advanced' => 6,
-            default => 5,
-        };
-
-        $rows = [];
-        $orderNo = 1;
-        for ($section = 1; $section <= $sectionCount; $section++) {
-            $rows[] = [
-                'order_no' => $orderNo++,
-                'title' => 'Bagian ' . $section . ' - Materi',
-                'description' => null,
-                'type' => 'pdf',
-                'is_required' => true,
-                'duration' => 0,
-            ];
-            $rows[] = [
-                'order_no' => $orderNo++,
-                'title' => 'Bagian ' . $section . ' - Video',
-                'description' => null,
-                'type' => 'video',
-                'is_required' => true,
-                'duration' => 0,
-            ];
-            $rows[] = [
-                'order_no' => $orderNo++,
-                'title' => 'Bagian ' . $section . ' - Quiz',
-                'description' => null,
-                'type' => 'quiz',
-                'is_required' => true,
-                'duration' => 0,
-            ];
-        }
-
-        return $rows;
+        return app(CourseStructureService::class)->buildModulesForLevel($level);
     }
 }

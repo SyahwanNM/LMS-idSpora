@@ -11,22 +11,107 @@
         /* Trainer Hero Section */
         .trainer-hero {
             background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
-            border-radius: 24px;
-            padding: 48px;
+            border-radius: 20px;
+            padding: 24px 26px;
             color: #fff;
-            margin-bottom: 36px;
+            margin-bottom: 24px;
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 14px 30px rgba(26, 35, 126, 0.2);
+        }
+
+        .trainer-hero::after {
+            content: '';
+            position: absolute;
+            right: -80px;
+            top: -80px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
+        }
+
+        .hero-layout {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .hero-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 280px;
         }
 
         .hero-avatar {
-            width: 100px;
-            height: 100px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 0 4px;
+            letter-spacing: -0.4px;
+            line-height: 1.15;
+        }
+
+        .hero-meta {
+            margin: 0;
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .hero-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            color: #fff;
+            height: 40px;
+            padding: 0 14px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            backdrop-filter: blur(2px);
+        }
+
+        .hero-btn:hover {
+            background: rgba(255, 255, 255, 0.28);
+            color: #fff;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 700;
         }
 
         /* Detail Cards */
@@ -252,8 +337,22 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .trainer-hero {
-                padding: 32px 24px;
+            .hero-layout {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .hero-main {
+                width: 100%;
+            }
+
+            .hero-title {
+                font-size: 1.5rem;
+            }
+
+            .hero-actions {
+                width: 100%;
+                justify-content: flex-start;
             }
 
             .trainer-sidebar {
@@ -280,42 +379,33 @@
         <main class="trainer-main">
             <!-- Hero Header with Trainer Info -->
             <div class="trainer-hero">
-                <div class="d-flex align-items-center gap-4 position-relative" style="z-index: 2;">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($trainer->name) }}&background=fff&color=3949ab&bold=true&size=200"
-                        class="hero-avatar" alt="{{ $trainer->name }}">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <h1 class="mb-0" style="font-size: 40px; font-weight: 800;">{{ $trainer->name }}</h1>
+                <div class="hero-layout">
+                    <div class="hero-main">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($trainer->name) }}&background=fff&color=3949ab&bold=true&size=200"
+                            class="hero-avatar" alt="{{ $trainer->name }}">
+                        <div>
+                            <h1 class="hero-title">{{ $trainer->name }}</h1>
+                            <p class="hero-meta"><i class="bi bi-envelope-fill me-2"></i>{{ $trainer->email }}</p>
                             @php
                                 $isActive = $trainer->created_at >= now()->subDays(30);
                             @endphp
-                            <span class="badge"
-                                style="background: {{ $isActive ? '#2e7d32' : '#c62828' }}; padding: 8px 16px; font-size: 14px;">
-                                {!! $isActive ? '<i class="bi bi-check-circle-fill me-1"></i> Aktif' : '<i class="bi bi-x-circle-fill me-1"></i> Nonaktif' !!}
+                            <span class="hero-badge">
+                                {!! $isActive ? '<i class="bi bi-check-circle-fill"></i> Aktif' : '<i class="bi bi-x-circle-fill"></i> Nonaktif' !!}
                             </span>
                         </div>
-                        <p class="mb-3" style="font-size: 18px; opacity: 0.9;">
-                            <i class="bi bi-envelope-fill me-2"></i>{{ $trainer->email }}
-                        </p>
-                        @if($trainer->phone)
-                            <p class="mb-0" style="font-size: 18px; opacity: 0.9;">
-                                <i class="bi bi-telephone-fill me-2"></i>{{ $trainer->phone }}
-                            </p>
-                        @endif
                     </div>
-                    <div class="d-flex flex-column gap-2">
-                        <a href="{{ route('admin.trainer.certificates.send.form', $trainer) }}"
-                            class="btn btn-primary btn-action-large mb-2">
+                    <div class="hero-actions">
+                        <a href="{{ route('admin.trainer.certificates.send.form', $trainer) }}" class="hero-btn">
                             <i class="bi bi-award-fill me-2"></i>Kirim Sertifikat
                         </a>
-                        <a href="{{ route('admin.trainer.edit', $trainer) }}" class="btn btn-light btn-action-large">
+                        <a href="{{ route('admin.trainer.edit', $trainer) }}" class="hero-btn">
                             <i class="bi bi-pencil-square me-2"></i>Edit Data
                         </a>
                         <form action="{{ route('admin.trainer.destroy', $trainer) }}" method="POST"
                             onsubmit="return confirm('Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?\n\nData yang terhapus tidak dapat dikembalikan!')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-outline-light w-100 btn-action-large">
+                            <button type="submit" class="hero-btn">
                                 <i class="bi bi-trash-fill me-2"></i>Hapus
                             </button>
                         </form>

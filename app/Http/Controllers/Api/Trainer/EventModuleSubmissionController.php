@@ -60,6 +60,12 @@ class EventModuleSubmissionController extends Controller
             abort(403, 'Event ini bukan milik Anda.');
         }
 
+        if (($event->material_status ?? '') === 'approved') {
+            return response()->json([
+                'message' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
+            ], 422);
+        }
+
         $request->validate([
             'module' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);

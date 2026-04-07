@@ -1428,6 +1428,13 @@ class TrainerController extends Controller
             ->where('trainer_id', Auth::id())
             ->firstOrFail();
 
+        if (($event->material_status ?? '') === 'approved') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
+            ], 422);
+        }
+
         if (!empty($event->material_deadline) && now()->gt($event->material_deadline)) {
             return response()->json([
                 'success' => false,
