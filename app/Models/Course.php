@@ -27,7 +27,7 @@ class Course extends Model
         'expenses_json',
         'user_id',
         'rejection_reason',
-        'approved_at',
+                'is_reseller_course',
         'rejected_at',
         'approved_by',
     ];
@@ -37,6 +37,7 @@ class Course extends Model
         'rejected_at' => 'datetime',
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
+        'is_reseller_course' => 'boolean',
         'expenses_json' => 'array',
     ];
 

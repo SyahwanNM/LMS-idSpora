@@ -161,18 +161,18 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
-            'maps_url' => 'nullable|string|max:512',
+            'location_mode' => 'required|in:offline,online,hybrid',
+            'place_name' => 'nullable|string|max:255|required_if:location_mode,offline,hybrid',
+            'maps_url' => 'nullable|string|max:512|required_if:location_mode,offline,hybrid',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255',
+            'zoom_link' => 'nullable|url|max:255|required_if:location_mode,online,hybrid',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -187,12 +187,21 @@ class EventController extends Controller
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
         ]);
 
-        // Allow hybrid events: maps_url and zoom_link may both be filled.
+        $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $placeName = trim((string) $request->input('place_name', ''));
+
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
         $mapsUrl = trim((string) $request->input('maps_url', ''));
         $zoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($locationMode === 'online') {
+            $mapsUrl = '';
+        } elseif ($locationMode === 'offline') {
+            $zoomLink = '';
+        }
+
         $latitude = $mapsUrl !== '' ? $request->input('latitude') : null;
         $longitude = $mapsUrl !== '' ? $request->input('longitude') : null;
+        $locationValue = $locationMode === 'online' ? 'Online' : $placeName;
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
@@ -259,7 +268,7 @@ class EventController extends Controller
             'description' => $request->description,
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
-            'location' => $request->location,
+            'location' => $locationValue,
             'maps_url' => $mapsUrl !== '' ? $mapsUrl : null,
             'latitude' => $mapsUrl !== '' ? $latitude : null,
             'longitude' => $mapsUrl !== '' ? $longitude : null,
@@ -270,7 +279,6 @@ class EventController extends Controller
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
-            'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
@@ -286,7 +294,7 @@ class EventController extends Controller
         }
 
         // Notify about zoom link if provided
-        if (!empty($request->zoom_link)) {
+        if (!empty($zoomLink)) {
             foreach ($assignedTrainerIds as $trainerId) {
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainerId,
@@ -296,7 +304,7 @@ class EventController extends Controller
                     'data' => [
                         'entity_type' => 'event',
                         'entity_id' => (int) $event->id,
-                        'zoom_link' => $request->zoom_link,
+                        'zoom_link' => $zoomLink,
                         'url' => route('trainer.events.show', $event->id),
                     ],
                     'expires_at' => now()->addDays(30),
@@ -415,18 +423,18 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
-            'maps_url' => 'nullable|string|max:512',
+            'location_mode' => 'required|in:offline,online,hybrid',
+            'place_name' => 'nullable|string|max:255|required_if:location_mode,offline,hybrid',
+            'maps_url' => 'nullable|string|max:512|required_if:location_mode,offline,hybrid',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255',
+            'zoom_link' => 'nullable|url|max:255|required_if:location_mode,online,hybrid',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -452,7 +460,6 @@ class EventController extends Controller
             'description',
             'benefit',
             'terms_and_conditions',
-            'location',
             'maps_url',
             'latitude',
             'longitude',
@@ -462,14 +469,22 @@ class EventController extends Controller
             'discount_until',
             'event_date',
             'event_time',
-            'event_time_end',
-            'material_deadline'
+            'event_time_end'
         ]);
 
-        // Allow hybrid events: maps_url and zoom_link may both be filled.
+        $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $placeName = trim((string) $request->input('place_name', ''));
+
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
         $mapsUrl = trim((string) $request->input('maps_url', ''));
         $zoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($locationMode === 'online') {
+            $mapsUrl = '';
+        } elseif ($locationMode === 'offline') {
+            $zoomLink = '';
+        }
+
+        $data['location'] = $locationMode === 'online' ? 'Online' : $placeName;
         $data['maps_url'] = $mapsUrl !== '' ? $mapsUrl : null;
         $data['zoom_link'] = $zoomLink !== '' ? $zoomLink : null;
         $data['latitude'] = $mapsUrl !== '' ? $request->input('latitude') : null;

@@ -252,6 +252,17 @@
                             <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
                         </div>
 
+                        <!-- Reseller Course -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reseller Course</label>
+                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', (int) ($course->is_reseller_course ?? 0)) ? 1 : 0 }}">
+                            <div class="inline-flex w-full rounded-lg border border-gray-300 overflow-hidden">
+                                <button type="button" id="reseller-course-no" class="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Tidak</button>
+                                <button type="button" id="reseller-course-yes" class="flex-1 px-4 py-2.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition">Ya</button>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Jika Ya, course ini ditandai sebagai course reseller.</p>
+                        </div>
+
                         <!-- Deskripsi -->
                         <div>
                             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Deskripsi
@@ -333,40 +344,6 @@
                 <!-- Course Modules -->
                 <div class="mb-10">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Course Modules</h2>
-
-                    @php
-                        $courseModules = $course->modules ?? collect();
-                        $unitCount = (int) ceil(max(0, $courseModules->count()) / 3);
-                        $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
-                    @endphp
-
-                    <div class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                        <div class="flex items-center justify-between gap-4 mb-3">
-                            <h3 class="font-bold text-gray-900 m-0">Judul Academic Unit (Header)</h3>
-                            <div class="text-xs text-gray-500">Diambil dari struktur modul (1 unit = 3 slot: PDF, Video, Quiz).</div>
-                        </div>
-
-                        @if($unitCount > 0)
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                @for($u = 1; $u <= $unitCount; $u++)
-                                    @php
-                                        $existingTitle = (string) optional($unitTitlesByNo->get($u))->title;
-                                        $defaultTitle = 'Academic Unit: Module ' . $u;
-                                    @endphp
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit {{ $u }}</label>
-                                        <input type="text"
-                                            name="unit_titles[{{ $u }}]"
-                                            value="{{ old('unit_titles.' . $u, $existingTitle !== '' ? $existingTitle : $defaultTitle) }}"
-                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                            maxlength="255">
-                                    </div>
-                                @endfor
-                            </div>
-                        @else
-                            <div class="text-sm text-gray-400 italic">Struktur modul belum tersedia, jadi Academic Unit belum terbentuk.</div>
-                        @endif
-                    </div>
 
                     <div id="existing-modules-list" class="space-y-8">
                         <!-- PDF Document -->
@@ -579,6 +556,43 @@
                 rowsWrap.appendChild(rowEl);
                 wireRow(rowEl);
             });
+        })();
+    </script>
+
+    <script>
+        (function() {
+            function getEl(id) {
+                return document.getElementById(id);
+            }
+
+            // Reseller Course toggle (Yes/No)
+            const resellerInput = getEl('is_reseller_course');
+            const resellerYesBtn = getEl('reseller-course-yes');
+            const resellerNoBtn = getEl('reseller-course-no');
+
+            if (!resellerInput || (!resellerYesBtn && !resellerNoBtn)) return;
+
+            function setResellerCourse(val) {
+                const v = val ? '1' : '0';
+                resellerInput.value = v;
+
+                if (resellerYesBtn) {
+                    resellerYesBtn.classList.toggle('bg-purple-600', v === '1');
+                    resellerYesBtn.classList.toggle('text-white', v === '1');
+                    resellerYesBtn.classList.toggle('bg-white', v !== '1');
+                    resellerYesBtn.classList.toggle('text-gray-700', v !== '1');
+                }
+                if (resellerNoBtn) {
+                    resellerNoBtn.classList.toggle('bg-purple-600', v === '0');
+                    resellerNoBtn.classList.toggle('text-white', v === '0');
+                    resellerNoBtn.classList.toggle('bg-gray-100', v !== '0');
+                    resellerNoBtn.classList.toggle('text-gray-800', v !== '0');
+                }
+            }
+
+            resellerYesBtn && resellerYesBtn.addEventListener('click', () => setResellerCourse(true));
+            resellerNoBtn && resellerNoBtn.addEventListener('click', () => setResellerCourse(false));
+            setResellerCourse((resellerInput.value || '0') === '1');
         })();
     </script>
 

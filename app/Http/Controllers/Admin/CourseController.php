@@ -234,6 +234,26 @@ class CourseController extends Controller
     }
 
     /**
+     * Unpublish course: cancel publish by setting status back to 'approved'.
+     */
+    public function unpublish(Request $request, Course $course)
+    {
+        if (((string) $course->status) !== 'active') {
+            return redirect()
+                ->route('admin.courses.index')
+                ->with('error', 'Course ini belum diterbitkan');
+        }
+
+        // Return to pre-publish state so it no longer appears on public pages
+        $course->status = 'approved';
+        $course->save();
+
+        return redirect()
+            ->route('admin.courses.index')
+            ->with('success', 'Publish course berhasil dibatalkan.');
+    }
+
+    /**
      * Strip HTML tags and normalize whitespace from description input.
      */
     private function sanitizeDescription(?string $html): string
@@ -778,6 +798,7 @@ class CourseController extends Controller
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
+            'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
                 'required',
                 'integer',
@@ -891,6 +912,7 @@ class CourseController extends Controller
             'status' => $request->status,
             'price' => $request->price,
             'free_access_mode' => $request->input('free_access_mode', 'limit_2'),
+            'is_reseller_course' => $request->boolean('is_reseller_course'),
             'duration' => $request->duration,
             'media' => $mediaPath,
             'media_type' => $mediaType,
@@ -1046,6 +1068,7 @@ class CourseController extends Controller
             'category_id' => 'required|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'sync_template_modules' => 'nullable|boolean',
+            'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
@@ -1156,6 +1179,7 @@ class CourseController extends Controller
             'status' => $request->status,
             'price' => $request->price,
             'free_access_mode' => $request->input('free_access_mode', $course->free_access_mode ?? 'limit_2'),
+            'is_reseller_course' => $request->boolean('is_reseller_course'),
             'duration' => $request->duration,
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
