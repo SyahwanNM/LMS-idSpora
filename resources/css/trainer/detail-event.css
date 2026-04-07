@@ -736,6 +736,21 @@ h1 {
     line-height: 1.3;
 }
 
+.hub-actions-column {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: 0 0 340px;
+    width: 340px;
+    margin-left: auto;
+}
+
+.hub-actions-column .hub-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .hub-section-title {
     margin: 0 0 12px 0;
     font-size: 12px;
@@ -957,6 +972,12 @@ h1 {
         gap: 18px;
     }
 
+    .hub-actions-column {
+        width: 100%;
+        flex: 1 1 auto;
+        margin-left: 0;
+    }
+
     .hub-card {
         position: static;
         top: auto;
@@ -987,7 +1008,7 @@ h1 {
     }
 }
 
-@media (max-width: var(--breakpoint-lg)) {
+@media (max-width: 992px) {
     main {
         flex-direction: column;
         margin-left: var(--spacing-sm);
@@ -995,9 +1016,22 @@ h1 {
         gap: var(--spacing-lg);
     }
 
+    .hero-top-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .event-status-badges {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
     .hero-body {
         flex-direction: column;
         align-items: flex-start;
+        gap: var(--spacing-xl);
     }
 
     .hero-left {
@@ -1006,6 +1040,7 @@ h1 {
 
     .hero-media {
         width: 100%;
+        max-width: 420px;
     }
 
     .hero-image {
@@ -1013,12 +1048,18 @@ h1 {
     }
 
     .event-info-cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        gap: 12px;
         max-width: 100%;
+    }
+
+    .event-hero-title {
+        font-size: 38px;
+        margin-bottom: var(--spacing-xl);
     }
 }
 
-@media (max-width: var(--breakpoint-md)) {
+@media (max-width: 768px) {
     main {
         margin-left: 0;
         padding: var(--spacing-sm);
@@ -1033,11 +1074,36 @@ h1 {
     }
 
     .event-hero-title {
-        font-size: 34px;
+        font-size: 32px;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+
+    .back-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .status-badge {
+        font-size: 10px;
+        padding: 7px 12px;
     }
 
     .hub-pill-grid {
         grid-template-columns: 1fr;
+    }
+
+    .event-info-cards {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .info-card {
+        width: 100%;
+    }
+
+    .info-card-value {
+        white-space: normal;
     }
 
     .time-rundown {
@@ -1055,6 +1121,19 @@ h1 {
 }
 
 @media (max-width: 480px) {
+    .hero-section {
+        padding: var(--spacing-xl) var(--spacing-md);
+        border-radius: 16px;
+    }
+
+    .event-hero-title {
+        font-size: 28px;
+    }
+
+    .hero-image {
+        height: 180px;
+    }
+
     .time-rundown {
         min-width: 100px;
         font-size: var(--font-size-sm);

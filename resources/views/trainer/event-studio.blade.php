@@ -7,8 +7,15 @@
     $breadcrumbs = [
         ['label' => 'Home', 'url' => route('trainer.dashboard')],
         ['label' => 'Events', 'url' => route('trainer.events')],
-        ['label' => 'Studio']
+        ['label' => 'Studio'],
     ];
+
+    $deadline = !empty($event->material_deadline)
+        ? \Carbon\Carbon::parse($event->material_deadline)
+        : null;
+    $deadlinePassed = $deadline ? now()->gt($deadline) : false;
+    $materialStatus = (string) ($event->material_status ?? 'draft');
+    $materialStatusLabel = strtoupper(str_replace('_', ' ', $materialStatus));
 @endphp
 
 @push('styles')
@@ -16,106 +23,341 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
     <style>
         main.content-studio-main {
-            max-width: 1000px;
+            max-width: 1180px;
             margin: 0 auto;
-            padding: var(--spacing-xl);
+            padding: 0;
             flex: 1;
             width: 100%;
+            overflow-x: hidden;
         }
 
-        .studio-header {
+        .studio-page {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .studio-hero {
+            background: linear-gradient(135deg, var(--main-navy-clr) 0%, var(--navy-dark) 100%);
+            border-radius: var(--radius-2xl);
+            padding: var(--spacing-3xl);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(27, 23, 99, 0.15);
+        }
+
+        .studio-hero::before,
+        .studio-hero::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .studio-hero::before {
+            top: -80px;
+            right: -80px;
+            width: 192px;
+            height: 192px;
+            background: rgba(251, 191, 36, 0.1);
+            filter: blur(60px);
+        }
+
+        .studio-hero::after {
+            bottom: -40px;
+            left: -40px;
+            width: 128px;
+            height: 128px;
+            background: rgba(99, 102, 241, 0.1);
+            filter: blur(50px);
+        }
+
+        .studio-hero-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
             justify-content: space-between;
-            gap: var(--spacing-lg);
-            padding-bottom: var(--spacing-md);
-            border-bottom: 1px solid var(--line-clr);
-            margin-bottom: var(--spacing-lg);
+            align-items: flex-start;
+            gap: var(--spacing-2xl);
         }
 
-        .studio-title-wrap {
+        .studio-title {
             display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 780px;
+        }
+
+        .badge-top {
+            display: inline-flex;
             align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 100px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+            width: fit-content;
+        }
+
+        .badge-top i {
+            color: var(--yellow-clr);
+            font-size: 12px;
+        }
+
+        .studio-title h1 {
+            margin: 0;
+            color: var(--white-clr);
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .studio-title h5 {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.6;
+            max-width: 640px;
+        }
+
+        .studio-hero-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-end;
+            min-width: 240px;
+        }
+
+        .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            width: fit-content;
+        }
+
+        .hero-chip i {
+            color: var(--yellow-clr);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: var(--spacing-md);
         }
 
-        .back-btn {
-            width: 46px;
-            height: 46px;
-            border-radius: var(--radius-xl);
-            border: 1px solid #d8dee9;
-            color: var(--gray-second-clr);
+        .status-card {
+            background: var(--white-clr);
+            border: 1px solid rgba(227, 233, 242, 0.95);
+            border-radius: 18px;
+            padding: 16px 18px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .status-card .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(35, 29, 121, 0.08), rgba(212, 166, 47, 0.12));
+            color: var(--main-navy-clr);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            text-decoration: none;
-            background: var(--white-clr);
+            flex-shrink: 0;
         }
 
-        .kicker {
-            margin: 0 0 var(--spacing-xs) 0;
-            font-size: var(--font-size-xs);
-            color: #d4a62f;
-            letter-spacing: 0.12em;
-            font-weight: 600;
+        .status-card .icon i {
+            font-size: 18px;
         }
 
-        .studio-title-wrap h1 {
+        .status-card .label {
+            margin: 0 0 4px 0;
+            font-size: 11px;
+            font-weight: 700;
+            color: #6b7280;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-card .value {
             margin: 0;
-            font-size: var(--font-size-2xl);
             color: var(--main-navy-clr);
-            font-weight: 600;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.4;
         }
 
-        .studio-tabs {
-            background: #eef2f7;
-            border: 1px solid #dce3ee;
-            border-radius: var(--radius-2xl);
-            padding: var(--spacing-xs);
-            display: flex;
-            gap: var(--spacing-xs);
+        .status-card .hint {
+            margin: 4px 0 0 0;
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.45;
         }
 
-        .studio-tab {
-            border: none;
-            border-radius: var(--radius-xl);
-            background: transparent;
-            color: var(--gray-second-clr);
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            padding: var(--spacing-sm) var(--spacing-lg);
-            cursor: pointer;
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            width: fit-content;
+            margin-bottom: 8px;
         }
 
-        .studio-tab.active {
-            background: var(--white-clr);
-            color: var(--main-navy-clr);
-            box-shadow: var(--shadow-md);
+        .status-badge.approved {
+            background: #dcfce7;
+            color: #166534;
         }
 
-        .studio-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 280px;
-            gap: var(--spacing-lg);
+        .status-badge.rejected {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-        .panel {
-            background: var(--white-clr);
-            border: 1px solid #e3e9f2;
-            border-radius: 24px;
-            padding: var(--spacing-lg);
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-banner {
             display: none;
         }
 
-        .panel.active {
-            display: block;
+        .studio-panel {
+            background: var(--white-clr);
+            border: 1px solid rgba(227, 233, 242, 0.95);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.07);
+        }
+
+        .panel-hero {
+            padding: 22px 24px;
+            background: linear-gradient(135deg, rgba(35, 29, 121, 0.98), rgba(42, 36, 140, 0.95));
+            color: var(--white-clr);
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .panel-hero h2 {
+            margin: 0 0 6px 0;
+            font-size: 22px;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+        }
+
+        .panel-hero p {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.9);
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 560px;
+        }
+
+        .panel-chip {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .upload-panel {
+            padding: 22px 24px 24px;
+        }
+
+        .upload-hints {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .hint-card {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 14px;
+            border: 1px solid #e5ebf5;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
+        }
+
+        .hint-card .icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: rgba(35, 29, 121, 0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--main-navy-clr);
+            flex-shrink: 0;
+        }
+
+        .hint-card .icon i {
+            font-size: 16px;
+        }
+
+        .hint-card .meta-label {
+            margin: 0 0 4px 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            font-weight: 700;
+        }
+
+        .hint-card .meta-text {
+            margin: 0;
+            color: var(--main-navy-clr);
+            font-size: 13px;
+            line-height: 1.5;
+            font-weight: 600;
+        }
+
+        .module-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
         }
 
         .dropzone {
             min-height: 280px;
             border-radius: 20px;
             border: 2px dashed #dfe6f2;
-            background: #f8fafc;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -124,6 +366,7 @@
             gap: var(--spacing-sm);
             cursor: pointer;
             transition: all 0.3s ease;
+            padding: 24px;
         }
 
         .dropzone:hover {
@@ -149,6 +392,13 @@
             letter-spacing: 0.12em;
             color: var(--gray-second-clr);
             font-weight: 600;
+        }
+
+        .file-list h3 {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--main-navy-clr);
+            margin: 0 0 var(--spacing-md) 0;
         }
 
         .panel-footer {
@@ -178,10 +428,13 @@
         }
 
         .validation-card {
-            background: #231d79;
+            background: linear-gradient(180deg, #231d79 0%, #1c175f 100%);
             color: var(--white-clr);
-            border-radius: 32px;
-            padding: var(--spacing-lg);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 18px 40px rgba(35, 29, 121, 0.22);
+            position: sticky;
+            top: var(--spacing-lg);
         }
 
         .validation-card h3 {
@@ -230,348 +483,89 @@
             margin: 0;
             color: #b8bce2;
             font-size: var(--font-size-xs);
+            line-height: 1.5;
         }
 
-        .quiz-meta {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .meta-box {
-            border: 1px solid #dde5f1;
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-sm);
+        .file-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
             background: #f8fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--main-navy-clr);
         }
 
-        .meta-box {
-            cursor: default;
-            transition: all 0.2s ease;
-        }
-
-        #passingGradeBox {
-            cursor: pointer;
-        }
-
-        #passingGradeBox:hover {
-            opacity: 0.9;
-        }
-
-        .meta-box p {
-            margin: 0 0 var(--spacing-xs) 0;
-            font-size: var(--font-size-xs);
-            color: var(--gray-second-clr);
-            font-weight: 600;
-            letter-spacing: 0.08em;
-        }
-
-        .meta-value {
-            background: #eff3f8;
-            border: 1px solid #dbe3ef;
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-sm);
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .meta-value strong {
-            color: var(--main-navy-clr);
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            min-width: 50px;
-            text-align: center;
-            display: inline-block;
-        }
-
-        .meta-value span {
-            color: #b0bdd2;
-            font-size: var(--font-size-xl);
-            font-weight: 600;
-        }
-
-        .meta-value em {
-            font-style: normal;
-            color: var(--white-clr);
-            background: #2c237f;
-            border-radius: 999px;
-            padding: 2px 8px;
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            margin-left: auto;
-        }
-
-        .meta-input {
-            border: none !important;
-            background: transparent !important;
-            font-weight: 600;
-            color: var(--main-navy-clr);
-            width: 50px;
-            text-align: center;
-            display: none;
-            outline: none;
-            padding: 0;
-            margin: 0;
-            font-size: var(--font-size-lg);
-            box-shadow: none !important;
-        }
-
-        .meta-input:focus {
-            outline: none;
-            box-shadow: none;
-            border: none;
-        }
-
-        .quiz-editor {
-            border: 1px solid #e4eaf4;
-            border-radius: 24px;
-            padding: var(--spacing-lg);
-            background: var(--white-clr);
-            margin-bottom: 24px;
-        }
-
-        .q-head {
-            display: grid;
-            grid-template-columns: max-content minmax(0, 1fr) 100px auto;
-            gap: var(--spacing-md);
-            align-items: stretch;
-            margin-bottom: var(--spacing-md);
-        }
-
-        .q-number {
-            width: auto;
-            height: 100%;
-            aspect-ratio: 1 / 1;
-            min-width: 40px;
-            border-radius: 12px;
-            background: #231d79;
-            color: var(--yellow-clr);
+        .file-list li .file-meta {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: var(--font-size-xl);
-            font-weight: 600;
-            align-self: stretch;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
         }
 
-        .q-inputs label,
-        .q-score label {
-            display: block;
-            margin-bottom: var(--spacing-xs);
-            font-size: var(--font-size-xs);
-            color: var(--gray-second-clr);
-            font-weight: 600;
-            letter-spacing: 0.08em;
-        }
-
-        .q-inputs input,
-        .q-score input {
-            width: 100%;
-            border: 1px solid #d9e1ee;
-            border-radius: var(--radius-xl);
-            background: #f3f6fb;
-            padding: var(--spacing-sm);
-            font-size: var(--font-size-base);
+        .file-list li .file-meta i {
+            font-size: 20px;
             color: var(--main-navy-clr);
-            outline: none;
-        }
-
-        .q-inputs input:focus,
-        .q-score input:focus {
-            border-color: var(--main-navy-clr);
-            background: #fff;
-        }
-
-        .options-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: var(--spacing-md);
-        }
-
-        .option-container {
-            display: flex;
-            gap: var(--spacing-sm);
-            align-items: stretch;
-        }
-
-        .option-btn {
-            border: 1px solid #e1e8f3;
-            background: #f8fafc;
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-sm);
-            min-height: 48px;
-            height: 48px;
-            text-align: left;
-            font-size: var(--font-size-sm);
-            color: #b8c2d3;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            justify-content: flex-start;
-            white-space: nowrap;
             flex-shrink: 0;
         }
 
-        .option-btn:hover {
-            background: #eff3f8;
-            border-color: var(--main-navy-clr);
+        .file-list li .file-meta p {
+            margin: 0;
         }
 
-        .option-btn.is-correct {
-            border: 2px solid #14b87a;
-            background: #e8faf2;
-            color: #1da775;
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-sm);
+        .file-list li .file-name {
+            font-size: 14px;
             font-weight: 600;
+            color: var(--main-navy-clr);
+            word-break: break-word;
         }
 
-        .option-input {
-            border: 1px solid #d9e1ee;
-            border-radius: 8px;
-            padding: var(--spacing-sm);
-            min-height: 48px;
-            height: 48px;
-            font-size: 13px;
-            background: #f8fafc;
-            flex: 1;
-            min-width: 0;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        .option-input:focus {
-            border-color: var(--main-navy-clr);
-            background: #fff;
-        }
-
-        .options-section {
-            margin-top: var(--spacing-md);
-        }
-
-        .options-label {
-            margin: 0 0 var(--spacing-sm) 0;
+        .file-list li .file-size {
             font-size: 12px;
-            font-weight: 600;
-            color: var(--gray-second-clr);
-            letter-spacing: 0.08em;
+            color: #8a94a6;
         }
 
-        .delete-question {
+        .delete-file {
             background: #ff6b6b;
             color: white;
             border: none;
             padding: 6px 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 12px;
-            height: fit-content;
-            margin-top: 22px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s ease;
+            flex-shrink: 0;
         }
 
-        .delete-question:hover {
-            background: #e25555;
-        }
-
-        .module-form,
-        .quiz-form {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-lg);
-        }
-
-        .file-list h3 {
-            font-size: var(--font-size-md);
-            font-weight: 600;
-            color: var(--main-navy-clr);
-            margin: 0 0 var(--spacing-md) 0;
-        }
-
-        .quiz-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-            justify-content: flex-start;
-        }
-
-        .quiz-actions .primary-btn {
-            border-radius: 999px;
-            border: none;
-            padding: var(--spacing-md) var(--spacing-2xl);
-            font-weight: 700;
-            font-size: var(--font-size-xs);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            transition: all 0.2s ease;
-        }
-
-        .quiz-add-btn {
-            background: transparent;
-            color: #94a3b8;
-            border: 1px solid #dbe3ef;
-        }
-
-        .quiz-add-btn i {
-            color: #94a3b8;
-        }
-
-        .quiz-add-btn:hover {
-            background: #f1f5f9;
-            color: var(--main-navy-clr);
-            border-color: #cbd5e1;
-        }
-
-        .quiz-add-btn:hover i {
-            color: var(--main-navy-clr);
-        }
-
-        .quiz-save-btn {
-            background: #1f1b5a;
-            color: var(--white-clr);
-            box-shadow: 0 10px 20px rgba(31, 27, 90, 0.2);
-        }
-
-        .quiz-save-btn i {
-            color: var(--yellow-clr);
-        }
-
-        .quiz-save-btn:hover {
-            background: #19164a;
-        }
-
-
-        /* Responsive */
         @media (max-width: 1024px) {
             main.content-studio-main {
                 padding: var(--spacing-lg);
             }
 
-            .options-grid {
+            .studio-hero-inner,
+            .studio-layout {
+                grid-template-columns: 1fr;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .studio-hero-badges {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .status-grid,
+            .upload-hints {
                 grid-template-columns: 1fr;
             }
 
-            .q-head {
-                grid-template-columns: 40px minmax(0, 1fr);
-            }
-
-            .delete-question {
-                grid-column: 1 / -1;
-                margin-top: var(--spacing-sm);
-                justify-self: start;
+            .validation-card {
+                position: static;
+                top: auto;
             }
         }
 
@@ -580,111 +574,40 @@
                 padding: var(--spacing-md);
             }
 
-            .studio-tabs {
-                width: 100%;
+            .studio-hero {
+                padding: var(--spacing-2xl);
+                border-radius: 22px;
             }
 
-            .studio-tab {
-                flex: 1;
-                padding: var(--spacing-sm) var(--spacing-sm);
+            .studio-title h1 {
+                font-size: 28px;
             }
 
-            .quiz-meta,
-            .options-grid {
-                grid-template-columns: 1fr;
+            .studio-title h5 {
+                font-size: 13px;
             }
 
-            .q-head {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-sm);
+            .panel-hero {
+                padding: 18px;
+                flex-direction: column;
             }
 
-            .q-number {
-                width: 32px;
-                height: 32px;
-                font-size: var(--font-size-lg);
+            .panel-hero h2 {
+                font-size: 19px;
             }
 
-            .q-score {
-                grid-row: 2;
-                grid-column: 1;
+            .upload-panel {
+                padding: 18px;
             }
 
-            .delete-question {
-                margin-top: 0;
-            }
-        }
-
-        .file-list h3 {
-            font-size: var(--font-size-md);
-            font-weight: 600;
-            color: var(--main-navy-clr);
-            margin: 0 0 var(--spacing-md) 0;
-        }
-
-        .quiz-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-md);
-            justify-content: flex-start;
-        }
-
-        .quiz-actions .primary-btn {
-            border-radius: 999px;
-            border: none;
-            padding: var(--spacing-md) var(--spacing-2xl);
-            font-weight: 700;
-            font-size: var(--font-size-xs);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            transition: all 0.2s ease;
-        }
-
-        .quiz-add-btn {
-            background: transparent;
-            color: #94a3b8;
-            border: 1px solid #dbe3ef;
-        }
-
-        .quiz-add-btn i {
-            color: #94a3b8;
-        }
-
-        .quiz-add-btn:hover {
-            background: #f1f5f9;
-            color: var(--main-navy-clr);
-            border-color: #cbd5e1;
-        }
-
-        .quiz-add-btn:hover i {
-            color: var(--main-navy-clr);
-        }
-
-        .quiz-save-btn {
-            background: #1f1b5a;
-            color: var(--white-clr);
-            box-shadow: 0 10px 20px rgba(31, 27, 90, 0.2);
-        }
-
-        .quiz-save-btn i {
-            color: var(--yellow-clr);
-        }
-
-        .quiz-save-btn:hover {
-            background: #19164a;
-        }
-
-        @media (max-width: 720px) {
-            .quiz-actions {
-                flex-direction: column-reverse;
+            .validation-card {
+                border-radius: 22px;
+                padding: 18px;
             }
 
-            .quiz-actions .primary-btn {
-                width: 100%;
-                justify-content: center;
+            .dropzone {
+                min-height: 240px;
+                padding: 18px;
             }
         }
     </style>
@@ -692,212 +615,163 @@
 
 @section('content')
     <main class="content-studio-main">
-        <header class="studio-header">
-            <div class="studio-title-wrap">
-                <a class="back-btn" href="{{ route('trainer.events.show', $event->id) }}">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <div>
-                    <p class="kicker">EVENT STUDIO • MATERIAL MANAGEMENT</p>
-                    <h1>{{ $event->title }}</h1>
+        <div class="studio-page">
+            <section class="studio-hero">
+                <div class="studio-hero-inner">
+                    <div class="studio-title">
+                        <a class="hero-chip" href="{{ route('trainer.events.show', $event->id) }}"
+                            style="text-decoration:none;">
+                            <i class="bi bi-arrow-left"></i>
+                        </a>
+                        <span class="badge-top">
+                            <i class="bi bi-folder2-open"></i>
+                            <span>EVENT STUDIO • MATERIAL MANAGEMENT</span>
+                        </span>
+                        <h1>{{ $event->title }}</h1>
+                        <h5>Kelola materi event dalam satu ruang kerja yang rapi. Upload file, pantau status, dan pastikan
+                            admin menerima materi yang tepat.</h5>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="studio-tabs" role="tablist">
-                <button class="studio-tab active" data-tab="module" type="button">
-                    MODUL &amp; ASSETS
-                </button>
-                <button class="studio-tab" data-tab="quiz" type="button">
-                    QUIZ EVENT
-                </button>
-            </div>
-        </header>
+            <section class="status-grid" aria-label="Ringkasan studio event">
+                <article class="status-card">
+                    <div class="icon"><i class="bi bi-calendar-event"></i></div>
+                    <div>
+                        <p class="label">Deadline</p>
+                        <p class="value">{{ $deadline ? $deadline->format('d M Y H:i') : 'Tidak ada tenggat' }}</p>
+                        <p class="hint">{{ $deadlinePassed ? 'Tenggat sudah lewat' : 'Materi masih bisa diunggah' }}</p>
+                    </div>
+                </article>
 
-        @php
-            $deadline = $event->material_deadline;
-            $deadlinePassed = $deadline ? now()->gt($deadline) : false;
-        @endphp
+                <article class="status-card">
+                    <div class="icon"><i class="bi bi-file-earmark-check"></i></div>
+                    <div>
+                        <p class="label">Status</p>
+                        @if($materialStatus !== 'draft')
+                            @php
+                                $badgeClass = match ($materialStatus) {
+                                    'approved' => 'approved',
+                                    'rejected' => 'rejected',
+                                    'pending_review' => 'pending',
+                                    default => 'pending',
+                                };
+                                $statusIcon = match ($materialStatus) {
+                                    'approved' => '✓',
+                                    'rejected' => '✕',
+                                    'pending_review' => '⏳',
+                                    default => '📋',
+                                };
+                                $badgeLabel = match ($materialStatus) {
+                                    'approved' => 'Material Approved',
+                                    'rejected' => 'Revision Needed',
+                                    'pending_review' => 'In Review',
+                                    default => 'Submitted',
+                                };
+                            @endphp
+                            <span class="status-badge {{ $badgeClass }}">
+                                <span>{{ $statusIcon }}</span>
+                                <span>{{ $badgeLabel }}</span>
+                            </span>
+                        @else
+                            <p class="value">{{ $materialStatusLabel }}</p>
+                        @endif
+                        @if($materialStatus === 'draft')
+                            <p class="hint">Status review akan berubah setelah admin memeriksa file.</p>
+                        @elseif($materialStatus === 'approved')
+                            <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
+                        @elseif($materialStatus === 'rejected')
+                            <p class="hint">Silakan upload ulang dengan revisi yang diperlukan admin.</p>
+                        @elseif($materialStatus === 'pending_review')
+                            <p class="hint">Admin sedang mereview materi Anda. Harap menunggu notifikasi.</p>
+                        @endif
+                    </div>
+                </article>
 
-        @if ($deadline)
-            <div
-                style="background: {{ $deadlinePassed ? '#fee2e2' : '#eff6ff' }}; border: 1px solid {{ $deadlinePassed ? '#fca5a5' : '#bfdbfe' }}; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
-                <span style="font-size: 20px;">{{ $deadlinePassed ? '⚠️' : '📅' }}</span>
-                <div>
-                    <p style="font-weight: 600; color: {{ $deadlinePassed ? '#991b1b' : '#1e40af' }}; margin: 0 0 4px 0;">
-                        Tenggat Pengumpulan Materi: {{ optional($deadline)->format('d M Y H:i') }}
-                    </p>
-                    <p style="color: {{ $deadlinePassed ? '#991b1b' : '#1d4ed8' }}; margin: 0; font-size: 13px;">
-                        {{ $deadlinePassed ? 'Batas pengumpulan sudah terlewati. Upload materi dinonaktifkan.' : 'Pastikan materi sudah diunggah sebelum tenggat agar bisa direview admin.' }}
-                    </p>
-                </div>
-            </div>
-        @endif
+                <article class="status-card">
+                    <div class="icon"><i class="bi bi-info-circle"></i></div>
+                    <div>
+                        <p class="label">Format</p>
+                        <p class="value">PDF, MP4, PPTX, DOCX</p>
+                        <p class="hint">Gunakan format ini agar proses audit lebih cepat.</p>
+                    </div>
+                </article>
+            </section>
 
-        {{-- Material Status Display --}}
-        @if ($event->material_status === 'pending_review')
-            <div
-                style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
-                <span style="font-size: 20px;">⏳</span>
-                <div>
-                    <p style="font-weight: 600; color: #92400e; margin: 0 0 4px 0;">Material Dalam Review</p>
-                    <p style="color: #b45309; margin: 0; font-size: 13px;">Admin sedang mereview materi yang Anda upload. Anda
-                        akan mendapatkan notifikasi setelah admin selesai melakukan review.</p>
-                </div>
-            </div>
-        @elseif ($event->material_status === 'approved')
-            <div
-                style="background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
-                <span style="font-size: 20px;">✓</span>
-                <div>
-                    <p style="font-weight: 600; color: #166534; margin: 0 0 4px 0;">Material Diterima</p>
-                    <p style="color: #166534; margin: 0; font-size: 13px;">Materi Anda telah diterima dan disetujui oleh admin
-                        pada {{ optional($event->material_approved_at)->format('d M Y H:i') }}.</p>
-                </div>
-            </div>
-        @elseif ($event->material_status === 'rejected')
-            <div
-                style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
-                <span style="font-size: 20px;">✗</span>
-                <div>
-                    <p style="font-weight: 600; color: #991b1b; margin: 0 0 4px 0;">Material Ditolak</p>
-                    <p style="color: #991b1b; margin: 0 0 8px 0; font-size: 13px;">Alasan:
-                        {{ $event->material_rejection_reason ?? 'Tidak ada keterangan' }}</p>
-                    <p style="color: #991b1b; margin: 0; font-size: 13px;">Silakan upload ulang dengan revisi yang diperlukan.
-                    </p>
-                </div>
-            </div>
-        @endif
-
-        <section class="studio-layout">
-            <div class="studio-left">
-                <section class="panel panel-module active" data-panel="module">
-                    <form id="moduleForm" class="module-form"
-                        action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
-                        {{-- Menggunakan eventId --}}
-                        <input type="hidden" name="eventId" value="{{ $event->id }}">
-
-                        <div class="dropzone" id="dropzone">
-                            <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
-                                style="display: none" {{ !empty($deadlinePassed) && $deadlinePassed ? 'disabled' : '' }} />
-                            <i class="bi bi-cloud-arrow-up"></i>
-                            <h2>Drop Event Assets Here</h2>
-                            <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
-                            <p style="font-size: 12px; color: #999; margin-top: 8px">
-                                atau klik untuk memilih 1 file materi
-                            </p>
+            <section class="studio-layout">
+                <div class="studio-panel">
+                    <div class="panel-hero">
+                        <div>
+                            <h2>Upload Materi Event</h2>
+                            <p>Gunakan area ini untuk mengirim file materi final yang akan direview admin sebelum event
+                                berjalan.</p>
                         </div>
+                    </div>
 
-                        <div id="fileList" class="file-list" style="margin-top: 20px; display: none">
-                            <h3>Materi yang Diunggah</h3>
-                            <ul id="uploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
-                        </div>
-
-                        <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="submitBtn" {{ !empty($deadlinePassed) && $deadlinePassed ? 'disabled' : '' }}>
-                                SUBMIT FOR AUDIT <i class="bi bi-send"></i>
-                            </button>
-                        </div>
-                    </form>
-                </section>
-
-                <section class="panel panel-quiz" data-panel="quiz">
-                    <form id="quizForm" class="quiz-form" action="{{ route('trainer.events.studio.quiz', $event->id) }}"
-                        method="POST">
-                        @csrf
-                        {{-- Menggunakan eventId --}}
-                        <input type="hidden" name="eventId" value="{{ $event->id }}">
-
-                        <div class="quiz-meta">
-                            <div class="meta-box" id="passingGradeBox">
-                                <p>BATAS KELULUSAN (PASSING GRADE)</p>
-                                <div class="meta-value">
-                                    <input type="text" id="passingGradeInput" class="meta-input" value="70"
-                                        inputmode="numeric" pattern="[0-9]*" style="display:none;" />
-                                    <strong id="passingGrade">70</strong>
-                                    <span>%</span>
+                    <div class="upload-panel">
+                        <div class="upload-hints">
+                            <div class="hint-card">
+                                <div class="icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                                <div>
+                                    <p class="meta-label">Status upload</p>
+                                    <p class="meta-text">Tarik file ke area dropzone atau klik untuk pilih dari perangkat.
+                                    </p>
                                 </div>
                             </div>
-                            <div class="meta-box">
-                                <p>BOBOT TOTAL TERDETEKSI</p>
-                                <div class="meta-value">
-                                    <strong id="totalWeight">0</strong><span> Points</span><em
-                                        id="verifyStatus">PENDING</em>
+                            <div class="hint-card">
+                                <div class="icon"><i class="bi bi-clock-history"></i></div>
+                                <div>
+                                    <p class="meta-label">Alur</p>
+                                    <p class="meta-text">File akan masuk ke daftar materi dan dikirim untuk audit admin.</p>
+                                </div>
+                            </div>
+                            <div class="hint-card">
+                                <div class="icon"><i class="bi bi-lightning-charge"></i></div>
+                                <div>
+                                    <p class="meta-label">Catatan</p>
+                                    <p class="meta-text">Pastikan nama file jelas agar mudah diverifikasi tim admin.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="questionsContainer" style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
-                        </div>
+                        <form id="moduleForm" class="module-form"
+                            action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
+                            enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="eventId" value="{{ $event->id }}">
 
-                        <div class="quiz-actions">
-                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn">
-                                <i class="bi bi-plus-lg"></i> TAMBAH SOAL
-                            </button>
-                            <button type="submit" class="primary-btn quiz-save-btn">
-                                SIMPAN QUIZ <i class="bi bi-check-lg"></i>
-                            </button>
-                        </div>
-                    </form>
-                </section>
-            </div>
+                            <div class="dropzone" id="dropzone">
+                                <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
+                                    style="display: none" {{ $deadlinePassed ? 'disabled' : '' }} />
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                <h2>Drop Event Assets Here</h2>
+                                <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
+                                <p style="font-size: 12px; color: #999; margin-top: 8px">
+                                    atau klik untuk memilih 1 file materi
+                                </p>
+                            </div>
 
-            <aside class="studio-right">
-                <div class="validation-card">
-                    <h3>ALUR VALIDASI EVENT</h3>
-                    <ol>
-                        <li>
-                            <span>1</span>
-                            <div>
-                                <h4>ASSET SUBMISSION</h4>
-                                <p>Upload materi presentasi dan handout H-1 acara.</p>
+                            <div id="fileList" class="file-list" style="display: none">
+                                <h3>Materi yang Diunggah</h3>
+                                <ul id="uploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
                             </div>
-                        </li>
-                        <li>
-                            <span>2</span>
-                            <div>
-                                <h4>ADMIN AUDIT</h4>
-                                <p>Tim admin akan memeriksa format dan konten materi.</p>
+
+                            <div class="panel-footer">
+                                <button type="submit" class="primary-btn" id="submitBtn" {{ $deadlinePassed ? 'disabled' : '' }}>
+                                    SUBMIT FOR AUDIT <i class="bi bi-send"></i>
+                                </button>
                             </div>
-                        </li>
-                        <li>
-                            <span>3</span>
-                            <div>
-                                <h4>READY TO STREAM</h4>
-                                <p>Materi akan tersedia di dashboard peserta saat acara dimulai.</p>
-                            </div>
-                        </li>
-                    </ol>
+                        </form>
+                    </div>
                 </div>
-            </aside>
-        </section>
+            </section>
+        </div>
     </main>
 
     <script>
         let uploadedFiles = [];
-        let quizQuestions = [];
-        let questionCounter = 1;
 
         document.addEventListener("DOMContentLoaded", function () {
-            // --- Tab Logic ---
-            const tabs = document.querySelectorAll(".studio-tab");
-            const panels = document.querySelectorAll("[data-panel]");
-            const url = new URL(window.location.href);
-            const queryTab = url.searchParams.get("tab");
-            const initialTab = queryTab === "quiz" ? "quiz" : "module";
-
-            const setTab = (targetTab) => {
-                tabs.forEach(tab => tab.classList.toggle("active", tab.dataset.tab === targetTab));
-                panels.forEach(panel => panel.classList.toggle("active", panel.dataset.panel === targetTab));
-                url.searchParams.set("tab", targetTab);
-                window.history.replaceState({}, "", url);
-            };
-
-            setTab(initialTab);
-            tabs.forEach(tab => tab.addEventListener("click", () => setTab(tab.dataset.tab)));
-
-            // --- File Upload Logic ---
             const dropzone = document.getElementById("dropzone");
             const fileInput = document.getElementById("fileInput");
             const fileList = document.getElementById("fileList");
@@ -905,7 +779,11 @@
             const moduleForm = document.getElementById("moduleForm");
             const submitBtn = document.getElementById("submitBtn");
 
-            dropzone.addEventListener("click", () => fileInput.click());
+            if (!dropzone || !fileInput || !moduleForm || !submitBtn) return;
+
+            dropzone.addEventListener("click", () => {
+                if (!fileInput.disabled) fileInput.click();
+            });
 
             dropzone.addEventListener("dragover", (e) => {
                 e.preventDefault();
@@ -929,11 +807,8 @@
 
             function handleFiles(files) {
                 const picked = Array.from(files);
-                if (picked.length === 0) {
-                    return;
-                }
+                if (picked.length === 0) return;
 
-                // Event material supports single-file upload per submit.
                 uploadedFiles = [picked[0]];
                 updateFileList();
                 fileInput.value = '';
@@ -943,32 +818,34 @@
                 if (uploadedFiles.length > 0) {
                     fileList.style.display = "block";
                     uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                                <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                        <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                        <div>
-                                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                            <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024).toFixed(2)} KB</p>
+                                    <li>
+                                        <div class="file-meta">
+                                            <i class="bi bi-file-earmark"></i>
+                                            <div>
+                                                <p class="file-name">${file.name}</p>
+                                                <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                                </li>
-                            `).join("");
+                                        <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
+                                    </li>
+                                `).join("");
 
                     uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
-                            const index = parseInt(e.target.dataset.index);
+                            const index = parseInt(e.currentTarget.dataset.index, 10);
                             uploadedFiles.splice(index, 1);
                             updateFileList();
                         });
                     });
                 } else {
                     fileList.style.display = "none";
+                    uploadedFilesList.innerHTML = "";
                 }
             }
 
             moduleForm.addEventListener("submit", (e) => {
                 e.preventDefault();
+
                 if (uploadedFiles.length === 0) {
                     alert("Silakan upload minimal 1 file sebelum submit.");
                     return;
@@ -1017,103 +894,6 @@
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = originalBtnText;
                     });
-            });
-
-            // --- Quiz Logic (Exactly same as Course Studio) ---
-            const quizForm = document.getElementById("quizForm");
-            const questionsContainer = document.getElementById("questionsContainer");
-            const addQuestionBtn = document.getElementById("addQuestionBtn");
-            const passingGradeBox = document.getElementById("passingGradeBox");
-            const passingGradeInput = document.getElementById("passingGradeInput");
-            const passingGradeDisplay = document.getElementById("passingGrade");
-            const totalWeightDisplay = document.getElementById("totalWeight");
-            const verifyStatusDisplay = document.getElementById("verifyStatus");
-
-            addQuestionBtn.addEventListener("click", (e) => { e.preventDefault(); addQuestion(); });
-
-            function addQuestion() {
-                const questionIndex = quizQuestions.length;
-                const question = { id: questionCounter++, text: "", weight: 10, options: ["", "", "", ""], correctAnswer: 0 };
-                quizQuestions.push(question);
-                renderQuestion(questionIndex);
-                updateTotalWeight();
-            }
-
-            function renderQuestion(index) {
-                const question = quizQuestions[index];
-                const questionEl = document.createElement("article");
-                questionEl.className = "quiz-editor";
-                questionEl.setAttribute("data-question-id", question.id);
-                questionEl.innerHTML = `
-                            <div class="q-head">
-                                <div class="q-number">${index + 1}</div>
-                                <div class="q-inputs">
-                                    <label>PERTANYAAN</label>
-                                    <input type="text" class="question-input" data-index="${index}" placeholder="Masukkan pertanyaan..." value="${question.text}" />
-                                </div>
-                                <div class="q-score">
-                                    <label>BOBOT</label>
-                                    <input type="number" class="weight-input" data-index="${index}" value="${question.weight}" min="1" />
-                                </div>
-                                <button type="button" class="delete-question" data-index="${index}"><i class="bi bi-trash"></i> HAPUS</button>
-                            </div>
-                            <div class="options-section">
-                                <p class="options-label">PILIHAN JAWABAN</p>
-                                <div class="options-grid">
-                                    ${question.options.map((opt, i) => `
-                                        <div class="option-container">
-                                            <button type="button" class="option-btn ${question.correctAnswer === i ? "is-correct" : ""}" data-q="${index}" data-opt="${i}">
-                                                <i class="bi ${question.correctAnswer === i ? "bi-check-circle-fill" : "bi-circle"}"></i>
-                                                <span>Opsi ${i + 1}</span>
-                                            </button>
-                                            <input type="text" class="option-input" data-q="${index}" data-opt="${i}" placeholder="Jawaban..." value="${opt}" />
-                                        </div>
-                                    `).join("")}
-                                </div>
-                            </div>`;
-
-                const existing = questionsContainer.querySelector(`[data-question-id="${question.id}"]`);
-                if (existing) existing.replaceWith(questionEl);
-                else questionsContainer.appendChild(questionEl);
-
-                questionEl.querySelector(".question-input").addEventListener("input", e => quizQuestions[index].text = e.target.value);
-                questionEl.querySelector(".weight-input").addEventListener("input", e => { quizQuestions[index].weight = parseInt(e.target.value) || 0; updateTotalWeight(); });
-                questionEl.querySelector(".delete-question").addEventListener("click", () => { quizQuestions.splice(index, 1); questionsContainer.innerHTML = ""; quizQuestions.forEach((_, i) => renderQuestion(i)); updateTotalWeight(); });
-                questionEl.querySelectorAll(".option-btn").forEach(btn => btn.addEventListener("click", () => { quizQuestions[index].correctAnswer = parseInt(btn.dataset.opt); renderQuestion(index); }));
-                questionEl.querySelectorAll(".option-input").forEach(inp => inp.addEventListener("input", e => quizQuestions[index].options[parseInt(e.target.dataset.opt)] = e.target.value));
-            }
-
-            function updateTotalWeight() {
-                const total = quizQuestions.reduce((sum, q) => sum + q.weight, 0);
-                totalWeightDisplay.textContent = total;
-                verifyStatusDisplay.textContent = total > 0 ? "VERIFIED" : "PENDING";
-                verifyStatusDisplay.style.background = total > 0 ? "#2c237f" : "#ff6b6b";
-            }
-
-            passingGradeBox.addEventListener("click", () => {
-                passingGradeDisplay.style.display = "none"; passingGradeInput.style.display = "inline-block"; passingGradeInput.focus();
-            });
-            passingGradeInput.addEventListener("blur", () => {
-                passingGradeDisplay.textContent = passingGradeInput.value; passingGradeDisplay.style.display = "inline"; passingGradeInput.style.display = "none";
-            });
-
-            quizForm.addEventListener("submit", (e) => {
-                e.preventDefault();
-                if (quizQuestions.length === 0) return alert("Minimal 1 soal.");
-
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'questions';
-                hiddenInput.value = JSON.stringify(quizQuestions);
-                quizForm.appendChild(hiddenInput);
-
-                const pgInput = document.createElement('input');
-                pgInput.type = 'hidden';
-                pgInput.name = 'passingGrade';
-                pgInput.value = passingGradeInput.value;
-                quizForm.appendChild(pgInput);
-
-                quizForm.submit();
             });
         });
     </script>

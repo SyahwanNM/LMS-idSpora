@@ -575,14 +575,19 @@ class TrainerController extends Controller
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
-                }
-            ]);
+                },
+                'scheduleItems as schedule_count'
+            ])
+            ->withAvg('feedbacks', 'rating');
 
         if ($search) {
             $query->where('title', 'LIKE', "%{$search}%");
         }
 
-        $events = $query->orderBy('event_date', 'asc')->get();
+        $events = $query
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get();
 
         $upcomingCount = \App\Models\Event::where('trainer_id', $user->id)
             ->where('event_date', '>=', now())

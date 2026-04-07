@@ -12,7 +12,6 @@
 @endphp
 
 @php
-  // Detect if event is offline by checking for location data
   $mapLink = '';
   $isOfflineEvent = false;
 
@@ -51,26 +50,13 @@
           </svg>
           <span>ALL SESSIONS</span>
         </button>
-
-        <div class="event-status-badges">
-          <span
-            class="status-badge">{{ strtoupper($isOfflineEvent ? 'OFFLINE SESSION' : ($event->jenis ?? 'VIRTUAL STUDIO')) }}</span>
-          <span class="status-badge">CONFIRMED COMMITMENT</span>
-        </div>
       </div>
 
       <div class="hero-body">
         <div class="hero-left">
-          <div class="event-category-badge">
-            <span class="badge-icon"></span>
-            <span>{{ strtoupper($event->category ?? 'HYBRID MASTERCLASS') }}</span>
-            <span class="badge-sep">•</span>
-          </div>
-
           <h1 class="event-hero-title">
             {{ $event->title }}
           </h1>
-
           <div class="event-info-cards">
             <div class="info-card">
               <div class="info-icon-shell">
@@ -176,8 +162,7 @@
                 </svg>
               </div>
               <div class="vsa-meta">
-                <p class="vsa-label">MEETING PORTAL</p>
-                <h3>Session Conference</h3>
+                <h3>Virtual Meet</h3>
                 <p class="vsa-link">{{ $event->zoom_link ?? 'Link belum tersedia' }}</p>
               </div>
               <a href="{{ $event->zoom_link ?? '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($event->zoom_link) ? 'disabled' : '' }}>
@@ -201,7 +186,6 @@
                   </svg>
                 </div>
                 <div class="vsa-meta">
-                  <p class="vsa-label">BRANDING KIT</p>
                   <h3>Virtual Background</h3>
                   <p class="vsa-desc">High-Res PNG • Pre-branded</p>
                 </div>
@@ -316,39 +300,26 @@
         </section>
       </section>
 
-      <aside class="hub-card">
-        <p class="hub-title">Instructor Hub</p>
+      <div class="hub-actions-column">
+        <p class="hub-title">Materi</p>
         <div class="hub-section">
-          <p class="hub-section-title">ENGAGEMENT REQUIREMENTS</p>
-          <div class="hub-pill-grid">
-            <div class="hub-pill" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
-              <p class="hub-pill-label">MATERIALS</p>
-              <p class="hub-pill-value">Upload Content</p>
+          <div class="hub-item" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
+            <div class="hub-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path
+                  d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v9A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5z" />
+                <path d="M12 11v7" />
+                <path d="m8.8 14.2 3.2-3.2 3.2 3.2" />
+              </svg>
             </div>
-            <div class="hub-pill" data-redirect="#">
-              <p class="hub-pill-label">ASSESSMENTS</p>
-              <p class="hub-pill-value">Quizzes</p>
+            <div>
+              <h4>Kirim Materi</h4>
             </div>
           </div>
         </div>
-
-        <div class="hub-item">
-          <div class="hub-item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path
-                d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v9A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5z" />
-              <path d="M12 11v7" />
-              <path d="m8.8 14.2 3.2-3.2 3.2 3.2" />
-            </svg>
-          </div>
-          <div>
-            <h4>Submit Assets</h4>
-            <p>{{ !empty(trim((string) ($event->materi ?? ''))) ? $event->materi : 'Materi belum ditentukan admin.' }}</p>
-          </div>
-        </div>
-
-      </aside>
+      </div>
     </div>
   </div>
 @endsection
@@ -356,13 +327,13 @@
 @push('scripts')
   <script>
     document.addEventListener("click", (event) => {
-      const pill = event.target.closest(".hub-pill[data-redirect]");
-      if (!pill) return;
+      const item = event.target.closest(".hub-item[data-redirect]");
+      if (!item) return;
 
       event.preventDefault();
       event.stopPropagation();
 
-      const targetPath = pill.getAttribute("data-redirect");
+      const targetPath = item.getAttribute("data-redirect");
       if (targetPath && targetPath !== '#') {
         window.location.href = targetPath;
       }
