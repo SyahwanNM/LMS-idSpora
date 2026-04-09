@@ -49,6 +49,7 @@ class EventController extends Controller
 
         return User::query()
             ->where('role', 'trainer')
+            ->where('user_status', 'active')
             ->whereIn('id', function ($query) use ($lowerNames) {
                 $query->select('id')
                     ->from('users')
@@ -104,6 +105,7 @@ class EventController extends Controller
         $trainer = User::query()
             ->where('id', $trainerId)
             ->where('role', 'trainer')
+            ->where('user_status', 'active')
             ->first();
 
         if (!$trainer) {
@@ -122,7 +124,7 @@ class EventController extends Controller
                 'url' => route('trainer.events.show', $event->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'due_at' => optional($event->material_deadline)->toIso8601String(),
+                'due_at' => now()->addHours(24)->toIso8601String(),
                 'material_deadline' => optional($event->material_deadline)->toIso8601String(),
                 'revision_due_at' => optional($event->material_revision_deadline)->toIso8601String(),
                 'material_revision_deadline' => optional($event->material_revision_deadline)->toIso8601String(),
@@ -169,7 +171,8 @@ class EventController extends Controller
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                    $query->whereRaw('LOWER(role) = ?', ['trainer'])
+                        ->where('user_status', 'active');
                 }),
             ],
             'speaker' => 'required|string|max:255',
@@ -417,7 +420,8 @@ class EventController extends Controller
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                    $query->whereRaw('LOWER(role) = ?', ['trainer'])
+                        ->where('user_status', 'active');
                 }),
             ],
             'speaker' => 'required|string|max:255',
@@ -795,6 +799,7 @@ class EventController extends Controller
 
         $trainers = User::query()
             ->where('role', 'trainer')
+            ->where('user_status', 'active')
             ->whereIn('name', $names)
             ->get();
 

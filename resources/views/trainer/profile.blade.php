@@ -1579,24 +1579,6 @@
 
 @section('content')
     <div class="profile-wrap">
-        @if(session('success'))
-            <div
-                style="background:#ecfdf5;border:1px solid #86efac;color:#166534;padding:10px 12px;border-radius:10px;font-size:13px;">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div
-                style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:10px;font-size:13px;">
-                <ul style="margin:0;padding-left:18px;">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
         <section class="top-content">
             <div class="top-content-inner">
                 <div class="top-main-row">

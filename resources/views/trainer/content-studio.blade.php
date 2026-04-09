@@ -26,16 +26,37 @@
     $showCourseRejectionNotice = $courseStatus === 'rejected'
         || $courseRejectionReason !== ''
         || $moduleRejectionNotes->isNotEmpty();
+
+    $activeSchemeType = (int) ($activeSchemeType ?? 1);
+    $schemePermissions = $schemePermissions ?? [
+        'can_module' => true,
+        'can_video' => true,
+        'can_quiz' => true,
+    ];
+    $activeTab = (string) ($activeTab ?? 'module');
+    $moduleTargetModules = collect($activeUnitModules ?? [])->filter(function ($module) {
+        return (string) ($module->type ?? '') === 'pdf';
+    });
+    $videoTargetModules = collect($activeUnitModules ?? [])->filter(function ($module) {
+        return (string) ($module->type ?? '') === 'video';
+    });
+    $moduleTargetIds = $moduleTargetModules->isNotEmpty()
+        ? $moduleTargetModules->pluck('id')->implode(',')
+        : collect($activeUnitModules ?? [])->pluck('id')->implode(',');
+    $videoTargetIds = $videoTargetModules->isNotEmpty()
+        ? $videoTargetModules->pluck('id')->implode(',')
+        : collect($activeUnitModules ?? [])->pluck('id')->implode(',');
 @endphp
 
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
     <style>
         main.content-studio-main {
             max-width: 1000px;
             margin: 0 auto;
-            padding: var(--spacing-xl);
+            padding: 0;
             flex: 1;
             width: 100%;
         }
@@ -110,10 +131,9 @@
             box-shadow: var(--shadow-md);
         }
 
-        .studio-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 280px;
-            gap: var(--spacing-lg);
+        .studio-tab.is-locked {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .revision-alert {
@@ -180,44 +200,300 @@
             display: block;
         }
 
+        .text-upload-shell {
+            border: 1px solid #d9e3f1;
+            border-radius: 18px;
+            background: #ffffff;
+            overflow: hidden;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
+        }
+
+        .text-upload-header {
+            padding: 18px 18px 14px;
+            border-bottom: 1px solid #e7edf6;
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+        }
+
+        .text-upload-header h3 {
+            margin: 0 0 6px;
+            font-size: 18px;
+            color: var(--main-navy-clr);
+            font-weight: 700;
+        }
+
+        .text-upload-header p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #64748b;
+        }
+
+        .material-outline {
+            margin: 12px 0 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .material-outline li {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.45;
+        }
+
+        .text-editor-block {
+            padding: 16px 18px;
+            border-bottom: 1px solid #e7edf6;
+        }
+
+        .text-editor-label {
+            margin: 0 0 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .text-editor-input {
+            width: 100%;
+            min-height: 180px;
+            border: 1px solid #cdd8e8;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #1e293b;
+            background: #fcfdff;
+            resize: vertical;
+        }
+
+        .text-editor-input:focus {
+            outline: none;
+            border-color: var(--main-navy-clr);
+            box-shadow: 0 0 0 3px rgba(35, 29, 121, 0.12);
+            background: #fff;
+        }
+
+        .wysiwyg-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #d5e0ef;
+            border-radius: 10px;
+            background: #f8fafd;
+        }
+
+        .wysiwyg-btn {
+            border: 1px solid #ccd9ea;
+            background: #fff;
+            color: #334155;
+            border-radius: 8px;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .wysiwyg-btn:hover {
+            border-color: var(--main-navy-clr);
+            color: var(--main-navy-clr);
+        }
+
+        .wysiwyg-editor {
+            min-height: 260px;
+            border: 1px solid #cdd8e8;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #1e293b;
+            background: #fff;
+        }
+
+        .wysiwyg-editor:focus {
+            outline: none;
+            border-color: var(--main-navy-clr);
+            box-shadow: 0 0 0 3px rgba(35, 29, 121, 0.12);
+        }
+
+        .wysiwyg-editor h1,
+        .wysiwyg-editor h2,
+        .wysiwyg-editor h3 {
+            color: var(--main-navy-clr);
+            margin: 12px 0 6px;
+            line-height: 1.35;
+        }
+
+        .wysiwyg-editor h1 {
+            font-size: 24px;
+        }
+
+        .wysiwyg-editor h2 {
+            font-size: 20px;
+        }
+
+        .wysiwyg-editor h3 {
+            font-size: 18px;
+        }
+
+        .wysiwyg-editor ul {
+            margin: 0 0 10px 20px;
+        }
+
+        .wysiwyg-editor img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 12px 0;
+            border-radius: 12px;
+        }
+
+        .wysiwyg-editor .module-inline-image {
+            margin: 12px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .wysiwyg-editor .module-inline-image img {
+            max-width: 560px;
+            width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .wysiwyg-editor .module-inline-image[data-image-align="left"] {
+            justify-content: flex-start;
+        }
+
+        .wysiwyg-editor .module-inline-image[data-image-align="center"] {
+            justify-content: center;
+        }
+
+        .wysiwyg-editor .module-inline-image[data-image-align="right"] {
+            justify-content: flex-end;
+        }
+
+        .wysiwyg-editor .module-inline-image.is-selected img {
+            outline: 3px solid rgba(35, 29, 121, 0.22);
+            outline-offset: 3px;
+        }
+
+        .module-code-block {
+            border: 1px solid #d7deea;
+            border-radius: 10px;
+            background: #f8fafc;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .module-code-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #d7deea;
+            background: #eef2f7;
+        }
+
+        .module-code-lang {
+            border: 1px solid #c7d1e2;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #334155;
+            background: #fff;
+        }
+
+        .module-code-copy {
+            border: 1px solid #c7d1e2;
+            border-radius: 6px;
+            background: #fff;
+            color: #334155;
+            font-size: 12px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        .module-code-copy:hover {
+            border-color: var(--main-navy-clr);
+            color: var(--main-navy-clr);
+        }
+
+        .module-code-block pre {
+            margin: 0;
+            padding: 12px 14px;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow-x: auto;
+            font-family: Consolas, Monaco, 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .module-code-block code[contenteditable="true"] {
+            display: block;
+            min-height: 36px;
+            white-space: pre;
+            outline: none;
+        }
+
+        .text-editor-note {
+            margin: 8px 0 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+
         .dropzone {
-            min-height: 280px;
-            border-radius: 20px;
-            border: 2px dashed #dfe6f2;
+            margin: 16px 18px 18px;
+            min-height: 124px;
+            border-radius: 14px;
+            border: 2px dashed #cfd9e8;
             background: #f8fafc;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            gap: var(--spacing-sm);
+            gap: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
+            padding: 18px;
         }
 
         .dropzone:hover {
             border-color: var(--main-navy-clr);
-            background: #f0f5fc;
+            background: #f3f7fd;
         }
 
         .dropzone i {
-            font-size: 40px;
-            color: #c8d0de;
+            font-size: 28px;
+            color: var(--main-navy-clr);
         }
 
         .dropzone h2 {
             margin: 0;
-            font-size: var(--font-size-xl);
+            font-size: 16px;
             color: var(--main-navy-clr);
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .dropzone p {
             margin: 0;
-            font-size: var(--font-size-xs);
-            letter-spacing: 0.12em;
-            color: var(--gray-second-clr);
-            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.02em;
+            color: #64748b;
+            font-weight: 500;
         }
 
         .panel-footer {
@@ -244,6 +520,26 @@
 
         .primary-btn i {
             color: var(--yellow-clr);
+        }
+
+        .secondary-btn {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #334155;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: 12px;
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .secondary-btn:hover {
+            border-color: var(--main-navy-clr);
+            color: var(--main-navy-clr);
+            background: #f8fafc;
         }
 
         .validation-card {
@@ -708,14 +1004,38 @@
             </div>
 
             <div class="studio-tabs" role="tablist">
-                <button class="studio-tab active" data-tab="module" type="button">
-                    MODUL &amp; VIDEO
+                <button
+                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ !$schemePermissions['can_module'] ? 'is-locked' : '' }}"
+                    data-tab="module" type="button" {{ !$schemePermissions['can_module'] ? 'data-locked="1"' : '' }}>
+                    MODUL
                 </button>
-                <button class="studio-tab" data-tab="quiz" type="button">
+                <button
+                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ !$schemePermissions['can_video'] ? 'is-locked' : '' }}"
+                    data-tab="video" type="button" {{ !$schemePermissions['can_video'] ? 'data-locked="1"' : '' }}>
+                    VIDEO
+                </button>
+                <button
+                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ !$schemePermissions['can_quiz'] ? 'is-locked' : '' }}"
+                    data-tab="quiz" type="button" {{ !$schemePermissions['can_quiz'] ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
                 </button>
             </div>
         </header>
+
+        @if(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
+            <section
+                style="margin-bottom:16px; padding: 12px 14px; border:1px dashed #cbd5e1; border-radius: 12px; background:#f8fafc; color:#475569; font-size:13px;">
+                @if(!$schemePermissions['can_module'])
+                    Tab modul dikunci oleh skema aktif.
+                @endif
+                @if(!$schemePermissions['can_video'])
+                    Tab video dikunci oleh skema aktif.
+                @endif
+                @if(!$schemePermissions['can_quiz'])
+                    Tab quiz dikunci oleh skema aktif.
+                @endif
+            </section>
+        @endif
 
         @if($showCourseRejectionNotice)
             <section class="revision-alert" aria-label="Alasan revisi materi course">
@@ -738,72 +1058,140 @@
 
         <section class="studio-layout">
             <div class="studio-left">
-                <section class="panel panel-module active" data-panel="module">
+                <section class="panel panel-module {{ $activeTab === 'module' ? 'active' : '' }}" data-panel="module">
                     <form id="moduleForm" class="module-form"
                         action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="courseId" value="{{ $course->id }}">
-                        <input type="hidden" name="target_modules"
-                            value="{{ $activeUnitModules->pluck('id')->implode(',') }}">
+                        <input type="hidden" name="target_modules" value="{{ $moduleTargetIds }}">
                         <input type="hidden" name="replace_module_id" value="">
+                        <input type="hidden" name="module_content_html" id="moduleContentHtml" value="">
 
-                        <div class="dropzone" id="dropzone">
-                            <input type="file" id="fileInput" multiple
-                                accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" name="files[]"
-                                style="display: none" />
-                            <i class="bi bi-file-earmark-arrow-up"></i>
-                            <h2>Drop Pedagogical Assets</h2>
-                            <p>SUPPORT: PDF, MP4, PPTX</p>
-                            <p style="font-size: 12px; color: #999; margin-top: 8px">atau klik untuk memilih file</p>
+                        <div class="text-upload-shell">
+                            <div class="text-upload-header">
+                                <h3>Tulis Materi Seperti Modul Teks</h3>
+                                <p>Susun penjelasan materi dalam bentuk teks, lalu sisipkan gambar jika perlu supaya materi
+                                    lebih mudah dipahami admin dan peserta.</p>
+                                <ul class="material-outline">
+                                    <li>Awali dengan konteks pembelajaran atau studi kasus singkat.</li>
+                                    <li>Tuliskan langkah-langkah atau poin pembahasan secara terstruktur.</li>
+                                    <li>Tutup dengan rangkuman, lalu tambahkan gambar pendukung jika dibutuhkan.</li>
+                                </ul>
+                            </div>
+
+                            <div class="text-editor-block">
+                                <p class="text-editor-label mb-2">Editor Materi</p>
+                                <div class="wysiwyg-toolbar" id="wysiwygToolbar">
+                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold"><i
+                                            class="bi bi-type-bold"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic"><i
+                                            class="bi bi-type-italic"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1">H1</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2">H2</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3">H3</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List"><i
+                                            class="bi bi-list-ul"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image"><i
+                                            class="bi bi-image"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri"><i
+                                            class="bi bi-text-left"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-center"
+                                        title="Rata Tengah"><i class="bi bi-text-center"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-right"
+                                        title="Rata Kanan"><i class="bi bi-text-right"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="code"
+                                        title="Insert Code Block"><i class="bi bi-code-square"></i></button>
+                                </div>
+                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" />
+                                <div id="moduleWysiwygEditor" class="wysiwyg-editor" contenteditable="true"
+                                    spellcheck="true">
+                                    <p>Tulis pengantar materi di sini...</p>
+                                </div>
+                                <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
+                                    di dalam teks, atau tombol <strong>Code Block</strong> untuk potongan kode.</p>
+                            </div>
                         </div>
 
-                        <div id="fileList" class="file-list" style="margin-top: 20px; display: none">
-                            <h3>Materi yang Diunggah</h3>
-                            <ul id="uploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
+                        <div class="panel-footer">
+                            <button type="button" class="secondary-btn" id="previewModuleBtn">
+                                <i class="bi bi-eye"></i> PREVIEW MODUL
+                            </button>
+                            <button type="submit" class="primary-btn" id="uploadSubmitBtn">
+                                <i class="bi bi-send"></i> SUBMIT FOR REVIEW
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="panel panel-video {{ $activeTab === 'video' ? 'active' : '' }}" data-panel="video">
+                    <form id="videoForm" class="module-form"
+                        action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST"
+                        enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="courseId" value="{{ $course->id }}">
+                        <input type="hidden" name="target_modules" value="{{ $videoTargetIds }}">
+                        <input type="hidden" name="replace_module_id" value="">
+                        <input type="hidden" name="module_content_html" value="">
+
+                        <div class="text-upload-shell">
+                            <div class="text-upload-header">
+                                <h3>Unggah Video Pembelajaran</h3>
+                                <p>Tab ini khusus untuk video. File lain tidak akan diproses di sini, sehingga alur upload
+                                    lebih jelas dan cepat.</p>
+                                <ul class="material-outline">
+                                    <li>Gunakan video dengan penjelasan singkat dan jelas.</li>
+                                    <li>Pastikan durasi dan resolusi sesuai kebutuhan kelas.</li>
+                                    <li>Tambahkan judul file yang mudah dikenali admin.</li>
+                                </ul>
+                            </div>
+
+                            <div class="dropzone" id="videoDropzone">
+                                <input type="file" id="videoFileInput" multiple accept=".mp4" name="files[]"
+                                    style="display: none" />
+                                <i class="bi bi-camera-video"></i>
+                                <h2>Lampiran Video</h2>
+                                <p>Format: MP4</p>
+                                <p style="font-size: 12px; color: #64748b; margin-top: 2px">Klik atau drag-and-drop file
+                                    video ke area ini</p>
+                            </div>
+                        </div>
+
+                        <div id="videoFileList" class="file-list" style="margin-top: 20px; display: none">
+                            <h3>Video yang Diunggah</h3>
+                            <ul id="videoUploadedFiles" style="list-style: none; padding: 0; margin: 0"></ul>
                         </div>
 
                         @php
-                            $existingMaterials = $activeUnitModules->filter(function ($module) {
-                                return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
+                            $existingVideoMaterials = $activeUnitModules->filter(function ($module) {
+                                return (string) ($module->type ?? '') === 'video' && !empty($module->content_url);
                             });
-
-                            $existingMaterialsPayload = $existingMaterials->map(function ($material) use ($course) {
-                                return [
-                                    'module_id' => (int) $material->id,
-                                    'order_no' => (int) $material->order_no,
-                                    'type' => (string) $material->type,
-                                    'title' => (string) ($material->title ?? ''),
-                                    'file_name' => (string) ($material->file_name ?: basename($material->content_url)),
-                                    'view_url' => route('trainer.courses.studio.material.view', [$course->id, $material->id]),
-                                    'updated_at' => optional($material->updated_at)->toDateTimeString(),
-                                ];
-                            })->values();
                         @endphp
-                        <div id="existingMaterialsBlock" class="file-list"
-                            style="margin-top: 16px; display: {{ $existingMaterials->isNotEmpty() ? 'block' : 'none' }};">
-                            <h3>Materi Tersimpan Sebelumnya</h3>
-                            <ul id="existingMaterialsList" style="list-style: none; padding: 0; margin: 0;">
-                                @foreach($existingMaterials as $material)
+
+                        <div id="existingVideoMaterialsBlock" class="file-list"
+                            style="margin-top: 16px; display: {{ $existingVideoMaterials->isNotEmpty() ? 'block' : 'none' }};">
+                            <h3>Video Tersimpan Sebelumnya</h3>
+                            <ul id="existingVideoMaterialsList" style="list-style: none; padding: 0; margin: 0;">
+                                @foreach($existingVideoMaterials as $material)
                                     <li
                                         style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
                                         <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                            <i class="bi {{ $material->type === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}"
+                                            <i class="bi bi-camera-video"
                                                 style="font-size: 20px; color: var(--main-navy-clr);"></i>
                                             <div>
                                                 <p
                                                     style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
                                                     {{ $material->file_name ?: basename($material->content_url) }}
                                                 </p>
-                                                <p style="margin: 0; font-size: 12px; color: #999;">
-                                                    {{ strtoupper($material->type) }} • Slot {{ $material->order_no }}
+                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot
+                                                    {{ $material->order_no }}
                                                 </p>
                                             </div>
                                         </div>
                                         <div style="display: flex; gap: 6px;">
                                             <button type="button" class="preview-material-btn"
                                                 data-view-url="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
-                                                data-material-type="{{ $material->type }}"
+                                                data-material-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Preview File"
                                                 style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
@@ -811,7 +1199,7 @@
                                                 <i class="bi bi-eye-fill"></i>
                                             </button>
                                             <button type="button" class="select-replace-btn"
-                                                data-module-id="{{ $material->id }}" data-module-type="{{ $material->type }}"
+                                                data-module-id="{{ $material->id }}" data-module-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Ganti File"
                                                 style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
@@ -824,60 +1212,15 @@
                             </ul>
                         </div>
 
-                        @if(($uploadedMaterials ?? collect())->isNotEmpty())
-                            <div class="file-list" style="margin-top: 16px; display: block;">
-                                <h3>Semua Materi Yang Sudah Diupload</h3>
-                                <ul style="list-style: none; padding: 0; margin: 0;">
-                                    @foreach($uploadedMaterials as $material)
-                                        <li
-                                            style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #dce3ee;">
-                                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
-                                                <i class="bi {{ $material['type'] === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf' }}"
-                                                    style="font-size: 18px; color: var(--main-navy-clr);"></i>
-                                                <div style="min-width: 0;">
-                                                    <p
-                                                        style="margin: 0; font-size: 13px; font-weight: 600; color: var(--main-navy-clr); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                                        {{ $material['file_name'] }}
-                                                    </p>
-                                                    <p style="margin: 0; font-size: 11px; color: #999;">
-                                                        {{ strtoupper($material['type']) }} • Bab {{ $material['unit_no'] }} • Slot
-                                                        {{ $material['order_no'] }}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div style="display: inline-flex; gap: 6px;">
-                                                <button type="button" class="preview-material-btn"
-                                                    data-view-url="{{ $material['view_url'] }}"
-                                                    data-material-type="{{ $material['type'] }}"
-                                                    data-file-name="{{ $material['file_name'] }}" title="Preview File"
-                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="select-replace-btn"
-                                                    data-module-id="{{ $material['module_id'] }}"
-                                                    data-module-type="{{ $material['type'] }}"
-                                                    data-file-name="{{ $material['file_name'] }}" title="Ganti File"
-                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                    <i class="bi bi-arrow-repeat"></i>
-                                                </button>
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="uploadSubmitBtn">
-                                <i class="bi bi-send"></i> SUBMIT FOR REVIEW
+                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn">
+                                <i class="bi bi-send"></i> SUBMIT VIDEO
                             </button>
                         </div>
                     </form>
                 </section>
 
-                <section class="panel panel-quiz" data-panel="quiz">
+                <section class="panel panel-quiz {{ $activeTab === 'quiz' ? 'active' : '' }}" data-panel="quiz">
                     @php
                         $existingQuizModules = $activeUnitModules->filter(function ($module) {
                             return $module->type === 'quiz';
@@ -1033,37 +1376,27 @@
                     </form>
                 </section>
             </div>
-
-            <aside class="studio-right">
-                <div class="validation-card">
-                    <h3>ALUR VALIDASI MATERI</h3>
-                    <ol>
-                        <li>
-                            <span>1</span>
-                            <div>
-                                <h4>DRAFTING & UPLOAD</h4>
-                                <p>Pastikan nama file dan konten sesuai dengan standar platform.</p>
-                            </div>
-                        </li>
-                        <li>
-                            <span>2</span>
-                            <div>
-                                <h4>AUDIT ADMIN</h4>
-                                <p>Tim Admin akan mereview kualitas video/PDF dan logika soal kuis Anda.</p>
-                            </div>
-                        </li>
-                        <li>
-                            <span>3</span>
-                            <div>
-                                <h4>STATUS: APPROVED</h4>
-                                <p>Materi yang lolos akan langsung bisa diakses oleh seluruh siswa terdaftar.</p>
-                            </div>
-                        </li>
-                    </ol>
-                </div>
-            </aside>
         </section>
     </main>
+
+    <div id="modulePreviewModal"
+        style="display:none; position:fixed; inset:0; z-index:10020; background:rgba(2,6,23,.62); align-items:center; justify-content:center; padding:20px;">
+        <div
+            style="background:#fff; border-radius:14px; width:min(980px, 96vw); max-height:90vh; overflow:hidden; box-shadow:0 24px 60px rgba(15,23,42,.3); display:flex; flex-direction:column;">
+            <div
+                style="padding:14px 16px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <div>
+                    <h3 style="margin:0; font-size:16px; color:var(--main-navy-clr);">Preview Modul</h3>
+                    <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Tampilan yang akan dilihat peserta LMS</p>
+                </div>
+                <button type="button" id="modulePreviewCloseBtn"
+                    style="width:34px; height:34px; border:1px solid #d1d5db; border-radius:10px; background:#fff; color:#334155; cursor:pointer;">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div id="modulePreviewBody" style="padding:18px; overflow:auto; background:#f8fafc;"></div>
+        </div>
+    </div>
 
     <!-- REPLACEMENT CONFIRMATION MODAL -->
     <div id="replacementModal"
@@ -1203,6 +1536,7 @@
         }
     </style>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
         let replacementState = {
             moduleId: null,
@@ -1228,6 +1562,10 @@
                 icon.className = 'bi bi-exclamation-circle-fill';
                 icon.style.color = '#ef4444';
                 titleEl.style.color = '#ef4444';
+            } else if (type === 'warning') {
+                icon.className = 'bi bi-exclamation-triangle-fill';
+                icon.style.color = '#f59e0b';
+                titleEl.style.color = '#b45309';
             } else {
                 icon.className = 'bi bi-info-circle-fill';
                 icon.style.color = 'var(--main-navy-clr)';
@@ -1349,6 +1687,8 @@
             // --- TAB SWITCHING ---
             const tabs = document.querySelectorAll(".studio-tab");
             const panels = document.querySelectorAll("[data-panel]");
+            const schemePermissions = @json($schemePermissions);
+            const activeSchemeType = @json($activeSchemeType);
 
             const setTab = (targetTab, updateUrl = true) => {
                 tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === targetTab));
@@ -1362,17 +1702,46 @@
             };
 
             tabs.forEach((tab) => {
-                tab.addEventListener("click", () => setTab(tab.dataset.tab));
+                tab.addEventListener("click", () => {
+                    if (tab.dataset.locked === '1') {
+                        showNotificationModal('Fitur Dikunci Skema', `Tab ${String(tab.dataset.tab || '').toUpperCase()} tidak tersedia pada skema aktif.`, 'warning');
+                        return;
+                    }
+                    setTab(tab.dataset.tab);
+                });
             });
 
             const requestedTab = new URLSearchParams(window.location.search).get('tab');
-            if (requestedTab === 'module' || requestedTab === 'quiz') {
-                setTab(requestedTab, false);
+            const serverActiveTab = @json($activeTab);
+            if (requestedTab === 'module' || requestedTab === 'video' || requestedTab === 'quiz') {
+                if (requestedTab === 'module' && !schemePermissions.can_module) {
+                    setTab(schemePermissions.can_video ? 'video' : 'quiz', false);
+                } else if (requestedTab === 'video' && !schemePermissions.can_video) {
+                    setTab(schemePermissions.can_module ? 'module' : 'quiz', false);
+                } else if (requestedTab === 'quiz' && !schemePermissions.can_quiz) {
+                    setTab(schemePermissions.can_module ? 'module' : 'video', false);
+                } else {
+                    setTab(requestedTab, false);
+                }
+            } else {
+                if (serverActiveTab === 'module' && schemePermissions.can_module) {
+                    setTab('module', false);
+                } else if (serverActiveTab === 'video' && schemePermissions.can_video) {
+                    setTab('video', false);
+                } else if (serverActiveTab === 'quiz' && schemePermissions.can_quiz) {
+                    setTab('quiz', false);
+                } else if (schemePermissions.can_module) {
+                    setTab('module', false);
+                } else if (schemePermissions.can_video) {
+                    setTab('video', false);
+                } else {
+                    setTab('quiz', false);
+                }
             }
 
             // --- UPLOAD LOGIC ---
-            let uploadedFiles = [];
-            let persistedMaterials = @json($existingMaterialsPayload);
+            let videoUploadedFiles = [];
+            let persistedMaterials = @json($uploadedMaterials);
             const activeUnitModules = @json($activeUnitModules->map(function ($module) {
                 return ['id' => $module->id, 'type' => $module->type];
             })->values());
@@ -1380,15 +1749,281 @@
             const quizSlotModuleIds = activeUnitModules
                 .filter((module) => module.type === 'quiz')
                 .map((module) => Number(module.id));
-            const dropzone = document.getElementById("dropzone");
-            const fileInput = document.getElementById("fileInput");
-            const fileList = document.getElementById("fileList");
-            const uploadedFilesList = document.getElementById("uploadedFiles");
-            const existingMaterialsBlock = document.getElementById('existingMaterialsBlock');
-            const existingMaterialsList = document.getElementById('existingMaterialsList');
+            const videoForm = document.getElementById('videoForm');
+            const videoDropzone = document.getElementById('videoDropzone');
+            const videoFileInput = document.getElementById('videoFileInput');
+            const videoFileList = document.getElementById('videoFileList');
+            const videoUploadedFilesList = document.getElementById('videoUploadedFiles');
+            const existingVideoMaterialsBlock = document.getElementById('existingVideoMaterialsBlock');
+            const existingVideoMaterialsList = document.getElementById('existingVideoMaterialsList');
+            const videoUploadBtn = document.getElementById('videoUploadSubmitBtn');
             const moduleForm = document.getElementById("moduleForm");
             const uploadBtn = document.getElementById("uploadSubmitBtn");
             const targetModulesInput = moduleForm.querySelector('input[name="target_modules"]');
+            const materialDraftInput = document.getElementById('materialDraftInput');
+            const materialDraftStorageKey = `trainer-course-draft-${{ (int) $course->id }}`;
+            const moduleEditor = document.getElementById('moduleWysiwygEditor');
+            const moduleContentInput = document.getElementById('moduleContentHtml');
+            const moduleImageInput = document.getElementById('moduleImageInput');
+            const editorImageUploadUrl = @json(route('trainer.courses.studio.editor-image', $course->id));
+            const previewModuleBtn = document.getElementById('previewModuleBtn');
+            const modulePreviewModal = document.getElementById('modulePreviewModal');
+            const modulePreviewBody = document.getElementById('modulePreviewBody');
+            const modulePreviewCloseBtn = document.getElementById('modulePreviewCloseBtn');
+            const toolbar = document.getElementById('wysiwygToolbar');
+            let selectedModuleImage = null;
+
+            const codeLangOptions = `
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="php">PHP</option>
+                        `;
+
+            function escapeCode(raw) {
+                return String(raw ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
+            function insertCodeBlock() {
+                const codeBlockHtml = `
+                                <div class="module-code-block" contenteditable="false">
+                                    <div class="module-code-top">
+                                        <select class="module-code-lang">${codeLangOptions}</select>
+                                        <button type="button" class="module-code-copy">Copy Code</button>
+                                    </div>
+                                    <pre><code class="language-html" contenteditable="true" spellcheck="false"></code></pre>
+                                </div>
+                                <p><br></p>
+                            `;
+                document.execCommand('insertHTML', false, codeBlockHtml);
+            }
+
+            async function insertImageFromFile(file) {
+                if (!file || !file.type || !file.type.startsWith('image/')) {
+                    showNotificationModal('Tipe File Tidak Sesuai', 'Silakan pilih file gambar yang valid.', 'error');
+                    return;
+                }
+
+                const selection = window.getSelection();
+                const savedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('input[name="_token"]').value);
+                formData.append('image', file);
+
+                try {
+                    const response = await fetch(editorImageUploadUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data.success || !data.url) {
+                        throw new Error(data.error || data.message || 'Gagal mengunggah gambar.');
+                    }
+
+                    if (savedRange && selection) {
+                        selection.removeAllRanges();
+                        selection.addRange(savedRange);
+                    }
+
+                    const imageHtml = `
+                                    <figure class="module-inline-image" data-image-align="center">
+                                        <img src="${String(data.url || '')}" alt="Gambar materi" data-image-width="560" style="width:560px; max-width:100%;" />
+                                    </figure>
+                                `;
+                    document.execCommand('insertHTML', false, imageHtml);
+                    syncEditorContentToInput();
+                } catch (error) {
+                    showNotificationModal('Gagal', error.message || 'Gagal mengunggah gambar.', 'error');
+                }
+            }
+
+            function setSelectedImageAlignment(alignment) {
+                if (!selectedModuleImage) {
+                    showNotificationModal('Pilih Gambar', 'Klik gambar terlebih dahulu, lalu pilih perataan yang diinginkan.', 'warning');
+                    return;
+                }
+
+                const targetFigure = selectedModuleImage.classList?.contains('module-inline-image')
+                    ? selectedModuleImage
+                    : selectedModuleImage.closest('.module-inline-image');
+
+                if (!targetFigure) return;
+
+                targetFigure.dataset.imageAlign = alignment;
+                syncEditorContentToInput();
+            }
+
+            function syncEditorContentToInput() {
+                if (!moduleEditor || !moduleContentInput) return;
+                moduleContentInput.value = moduleEditor.innerHTML.trim();
+                try {
+                    localStorage.setItem(materialDraftStorageKey, moduleContentInput.value);
+                } catch (_) {
+                }
+            }
+
+            if (moduleEditor && moduleContentInput) {
+                try {
+                    const savedRichDraft = localStorage.getItem(materialDraftStorageKey);
+                    if (
+                        savedRichDraft &&
+                        savedRichDraft.trim() !== '' &&
+                        !savedRichDraft.includes('data:image/') &&
+                        savedRichDraft.length <= 60000
+                    ) {
+                        moduleEditor.innerHTML = savedRichDraft;
+                    } else if (savedRichDraft && (savedRichDraft.includes('data:image/') || savedRichDraft.length > 60000)) {
+                        localStorage.removeItem(materialDraftStorageKey);
+                    }
+                } catch (_) {
+                }
+
+                moduleEditor.addEventListener('input', syncEditorContentToInput);
+                moduleEditor.addEventListener('change', syncEditorContentToInput);
+            }
+
+            if (toolbar) {
+                toolbar.addEventListener('click', function (event) {
+                    const btn = event.target.closest('.wysiwyg-btn');
+                    if (!btn) return;
+                    const action = btn.dataset.action;
+
+                    if (action === 'bold') document.execCommand('bold');
+                    if (action === 'italic') document.execCommand('italic');
+                    if (action === 'ul') document.execCommand('insertUnorderedList');
+                    if (action === 'h1') document.execCommand('formatBlock', false, 'h1');
+                    if (action === 'h2') document.execCommand('formatBlock', false, 'h2');
+                    if (action === 'h3') document.execCommand('formatBlock', false, 'h3');
+                    if (action === 'image' && moduleImageInput) moduleImageInput.click();
+                    if (action === 'align-left') setSelectedImageAlignment('left');
+                    if (action === 'align-center') setSelectedImageAlignment('center');
+                    if (action === 'align-right') setSelectedImageAlignment('right');
+                    if (action === 'code') insertCodeBlock();
+
+                    syncEditorContentToInput();
+                });
+            }
+
+            if (moduleImageInput) {
+                moduleImageInput.addEventListener('change', function (event) {
+                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    if (file) {
+                        insertImageFromFile(file);
+                    }
+                    moduleImageInput.value = '';
+                });
+            }
+
+            if (moduleEditor) {
+                moduleEditor.addEventListener('click', function (event) {
+                    const clickedImage = event.target.closest('.module-inline-image, .module-inline-image img');
+                    if (clickedImage) {
+                        selectedModuleImage = clickedImage.classList.contains('module-inline-image')
+                            ? clickedImage
+                            : clickedImage.closest('.module-inline-image');
+
+                        moduleEditor.querySelectorAll('.module-inline-image').forEach((figure) => {
+                            figure.classList.toggle('is-selected', figure === selectedModuleImage);
+                        });
+                    }
+
+                    const copyBtn = event.target.closest('.module-code-copy');
+                    if (!copyBtn) return;
+                    const codeEl = copyBtn.closest('.module-code-block')?.querySelector('code');
+                    const text = codeEl ? codeEl.textContent || '' : '';
+                    navigator.clipboard.writeText(text).then(() => {
+                        const old = copyBtn.textContent;
+                        copyBtn.textContent = 'Copied';
+                        setTimeout(() => copyBtn.textContent = old, 1000);
+                    }).catch(() => {
+                    });
+                });
+
+                moduleEditor.addEventListener('change', function (event) {
+                    const langSelect = event.target.closest('.module-code-lang');
+                    if (!langSelect) return;
+                    const codeEl = langSelect.closest('.module-code-block')?.querySelector('code');
+                    if (codeEl) {
+                        codeEl.className = `language-${langSelect.value}`;
+                    }
+                    syncEditorContentToInput();
+                }, true);
+            }
+
+            function openModulePreview() {
+                if (!moduleEditor || !modulePreviewModal || !modulePreviewBody) return;
+                syncEditorContentToInput();
+                const rawHtml = moduleContentInput.value || '';
+                if (rawHtml.trim() === '') {
+                    showNotificationModal('Preview Kosong', 'Silakan isi materi terlebih dahulu sebelum preview.', 'warning');
+                    return;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'module-preview-article';
+                wrapper.innerHTML = rawHtml;
+
+                wrapper.querySelectorAll('.module-code-block').forEach((block) => {
+                    const lang = block.querySelector('.module-code-lang')?.value || 'plaintext';
+                    const codeText = block.querySelector('code')?.textContent || '';
+                    const pre = document.createElement('pre');
+                    const code = document.createElement('code');
+                    code.className = `language-${lang}`;
+                    code.textContent = codeText;
+                    pre.appendChild(code);
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.type = 'button';
+                    copyBtn.className = 'module-code-copy';
+                    copyBtn.textContent = 'Copy Code';
+                    copyBtn.style.margin = '8px 0 0';
+                    copyBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(codeText);
+                    });
+
+                    const holder = document.createElement('div');
+                    holder.className = 'module-code-block';
+                    holder.appendChild(pre);
+                    holder.appendChild(copyBtn);
+
+                    block.replaceWith(holder);
+                });
+
+                modulePreviewBody.innerHTML = '';
+                modulePreviewBody.appendChild(wrapper);
+
+                modulePreviewBody.querySelectorAll('pre code').forEach((el) => {
+                    if (window.hljs) {
+                        window.hljs.highlightElement(el);
+                    }
+                });
+
+                modulePreviewModal.style.display = 'flex';
+            }
+
+            if (previewModuleBtn) {
+                previewModuleBtn.addEventListener('click', openModulePreview);
+            }
+
+            if (modulePreviewCloseBtn) {
+                modulePreviewCloseBtn.addEventListener('click', () => {
+                    modulePreviewModal.style.display = 'none';
+                });
+            }
+
+            if (modulePreviewModal) {
+                modulePreviewModal.addEventListener('click', (e) => {
+                    if (e.target === modulePreviewModal) {
+                        modulePreviewModal.style.display = 'none';
+                    }
+                });
+            }
 
             function escapeHtml(raw) {
                 return String(raw ?? '')
@@ -1399,61 +2034,60 @@
                     .replace(/'/g, '&#039;');
             }
 
-            function renderExistingMaterials() {
-                const items = Array.isArray(persistedMaterials) ? [...persistedMaterials] : [];
+            function renderVideoMaterials() {
+                const items = Array.isArray(persistedMaterials)
+                    ? [...persistedMaterials].filter((material) => String(material.type || '') === 'video')
+                    : [];
                 items.sort((a, b) => (a.order_no || 0) - (b.order_no || 0));
 
-                if (!existingMaterialsBlock || !existingMaterialsList) {
+                if (!existingVideoMaterialsBlock || !existingVideoMaterialsList) {
                     return;
                 }
 
                 if (items.length === 0) {
-                    existingMaterialsBlock.style.display = 'none';
-                    existingMaterialsList.innerHTML = '';
+                    existingVideoMaterialsBlock.style.display = 'none';
+                    existingVideoMaterialsList.innerHTML = '';
                     return;
                 }
 
-                existingMaterialsBlock.style.display = 'block';
-                existingMaterialsList.innerHTML = items.map((material) => {
-                    const iconClass = material.type === 'video' ? 'bi-camera-video' : 'bi-file-earmark-pdf';
+                existingVideoMaterialsBlock.style.display = 'block';
+                existingVideoMaterialsList.innerHTML = items.map((material) => {
                     const slot = material.order_no ?? '-';
                     const fileName = escapeHtml(material.file_name || 'file');
-                    const type = escapeHtml(String(material.type || '').toUpperCase());
-                    const moduleType = escapeHtml(material.type || 'pdf');
                     const viewUrl = escapeHtml(material.view_url || '#');
                     const moduleId = Number(material.module_id || 0);
 
                     return `
-                                    <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                            <i class="bi ${iconClass}" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                            <div>
-                                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                                <p style="margin: 0; font-size: 12px; color: #999;">${type} • Slot ${slot}</p>
-                                            </div>
-                                        </div>
-                                        <div style="display: flex; gap: 6px;">
-                                            <button type="button" class="preview-material-btn"
-                                                data-view-url="${viewUrl}" data-material-type="${moduleType}" data-file-name="${fileName}"
-                                                title="Preview File"
-                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                <i class="bi bi-eye-fill"></i>
-                                            </button>
-                                            <button type="button" class="select-replace-btn"
-                                                data-module-id="${moduleId}" data-module-type="${moduleType}" data-file-name="${fileName}"
-                                                title="Ganti File"
-                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                <i class="bi bi-arrow-repeat"></i>
-                                            </button>
-                                        </div>
-                                    </li>
-                                `;
+                                                <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                        <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                        <div>
+                                                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
+                                                            <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div style="display: flex; gap: 6px;">
+                                                        <button type="button" class="preview-material-btn"
+                                                            data-view-url="${viewUrl}" data-material-type="video" data-file-name="${fileName}"
+                                                            title="Preview File"
+                                                            style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                            <i class="bi bi-eye-fill"></i>
+                                                        </button>
+                                                        <button type="button" class="select-replace-btn"
+                                                            data-module-id="${moduleId}" data-module-type="video" data-file-name="${fileName}"
+                                                            title="Ganti File"
+                                                            style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                            <i class="bi bi-arrow-repeat"></i>
+                                                        </button>
+                                                    </div>
+                                                </li>
+                                            `;
                 }).join('');
             }
 
-            renderExistingMaterials();
+            renderVideoMaterials();
 
             document.addEventListener('click', function (event) {
                 const replaceBtn = event.target.closest('.select-replace-btn');
@@ -1600,7 +2234,7 @@
                                     persistedMaterials.push(row);
                                 }
                             });
-                            renderExistingMaterials();
+                            renderVideoMaterials();
                             showNotificationModal('Berhasil', data.message || 'File berhasil diganti!', 'success');
                         } else {
                             let errorMsg = data.error || data.message || 'Unknown error';
@@ -1636,16 +2270,40 @@
                 replacementConfirmBtn.style.cursor = 'pointer';
             };
 
-            dropzone.addEventListener("click", () => fileInput.click());
-            dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.style.borderColor = "#1a237e"; dropzone.style.background = "#f0f5fc"; });
-            dropzone.addEventListener("dragleave", () => { dropzone.style.borderColor = "#dfe6f2"; dropzone.style.background = "#f8fafc"; });
-            dropzone.addEventListener("drop", (e) => { e.preventDefault(); dropzone.style.borderColor = "#dfe6f2"; dropzone.style.background = "#f8fafc"; handleFiles(e.dataTransfer.files); });
-            fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+            if (videoDropzone && videoFileInput) {
+                videoDropzone.addEventListener("click", () => videoFileInput.click());
+                videoDropzone.addEventListener("dragover", (e) => { e.preventDefault(); videoDropzone.style.borderColor = "#1a237e"; videoDropzone.style.background = "#f0f5fc"; });
+                videoDropzone.addEventListener("dragleave", () => { videoDropzone.style.borderColor = "#dfe6f2"; videoDropzone.style.background = "#f8fafc"; });
+                videoDropzone.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    videoDropzone.style.borderColor = "#dfe6f2";
+                    videoDropzone.style.background = "#f8fafc";
+                    handleVideoFiles(e.dataTransfer.files);
+                });
+                videoFileInput.addEventListener("change", (e) => handleVideoFiles(e.target.files));
+            }
 
-            function handleFiles(files) {
-                Array.from(files).forEach(file => uploadedFiles.push(file)); // Simpan file objek asli
-                updateFileList();
-                fileInput.value = "";
+            function handleVideoFiles(files) {
+                if (!schemePermissions.can_video) {
+                    showNotificationModal('Fitur Dikunci Skema', 'Skema aktif tidak mengizinkan upload video.', 'warning');
+                    return;
+                }
+
+                Array.from(files).forEach((file) => {
+                    if (getUploadType(file) !== 'video') {
+                        return;
+                    }
+                    videoUploadedFiles.push(file);
+                });
+
+                if (Array.from(files).length > 0 && videoUploadedFiles.length === 0) {
+                    showNotificationModal('Tidak Sesuai Skema', 'Hanya file MP4 yang bisa diupload di tab video.', 'warning');
+                }
+
+                updateVideoFileList();
+                if (videoFileInput) {
+                    videoFileInput.value = '';
+                }
             }
 
             function getUploadType(file) {
@@ -1653,82 +2311,131 @@
                 return ext === 'mp4' ? 'video' : 'pdf';
             }
 
-            function updateFileList() {
-                if (uploadedFiles.length > 0) {
-                    fileList.style.display = "block";
-                    uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                <i class="bi bi-file-earmark" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                                <div>
-                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                                    <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                                </div>
-                                            </div>
-                                            <button type="button" class="delete-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                                        </li>
-                                    `).join("");
+            function updateVideoFileList() {
+                if (videoUploadedFiles.length > 0) {
+                    videoFileList.style.display = "block";
+                    videoUploadedFilesList.innerHTML = videoUploadedFiles.map((file, index) => `
+                                                    <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                            <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                            <div>
+                                                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                                                <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" class="delete-video-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                                                    </li>
+                                                `).join("");
 
-                    document.querySelectorAll(".delete-file").forEach(btn => {
+                    document.querySelectorAll(".delete-video-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
-                            uploadedFiles.splice(parseInt(e.target.dataset.index), 1);
-                            updateFileList();
+                            videoUploadedFiles.splice(parseInt(e.target.dataset.index), 1);
+                            updateVideoFileList();
                         });
                     });
                 } else {
-                    fileList.style.display = "none";
+                    videoFileList.style.display = "none";
                 }
+            }
+
+            if (videoForm) {
+                videoForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+
+                    if (videoUploadedFiles.length === 0) {
+                        showNotificationModal('Perhatian', 'Silakan pilih minimal 1 file video untuk diupload.', 'error');
+                        return;
+                    }
+
+                    const selectedTypes = [...new Set(videoUploadedFiles.map(getUploadType))];
+                    if (selectedTypes.some((type) => type !== 'video')) {
+                        showNotificationModal('Tipe Materi Tidak Sesuai', 'Tab video hanya menerima file MP4.', 'error');
+                        return;
+                    }
+
+                    videoUploadBtn.disabled = true;
+                    videoUploadBtn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> UPLOADING...';
+
+                    const formData = new FormData(videoForm);
+                    formData.delete('files[]');
+                    formData.set('replace_module_id', '');
+                    formData.set('module_content_html', '');
+
+                    const filteredVideoIds = activeUnitModules
+                        .filter(module => module.type === 'video')
+                        .map(module => module.id);
+
+                    if (filteredVideoIds.length > 0) {
+                        const dynamicTargetModules = filteredVideoIds.join(',');
+                        formData.set('target_modules', dynamicTargetModules);
+                    }
+
+                    videoUploadedFiles.forEach(file => formData.append('files[]', file));
+
+                    fetch(videoForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(async (res) => {
+                            let data = {};
+                            try {
+                                data = await res.json();
+                            } catch (_) {
+                                data = {};
+                            }
+
+                            if (!res.ok) {
+                                const firstValidationError = data.errors ? Object.values(data.errors).flat()[0] : null;
+                                throw new Error(data.error || data.message || firstValidationError || "Unknown error");
+                            }
+
+                            return data;
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                const updates = Array.isArray(data.updated_modules) ? data.updated_modules : [];
+                                updates.forEach((row) => {
+                                    const idx = persistedMaterials.findIndex((m) => Number(m.module_id) === Number(row.module_id));
+                                    if (idx >= 0) {
+                                        persistedMaterials[idx] = row;
+                                    } else {
+                                        persistedMaterials.push(row);
+                                    }
+                                });
+                                renderVideoMaterials();
+                                videoUploadedFiles = [];
+                                updateVideoFileList();
+                                showNotificationModal('Berhasil', data.message || 'Video berhasil disubmit ke Admin!', 'success');
+                                return;
+                            }
+
+                            showNotificationModal('Gagal', data.error || data.message || 'Unknown error', 'error');
+                        })
+                        .catch(err => {
+                            showNotificationModal('Gagal', err.message || 'Terjadi kesalahan koneksi.', 'error');
+                        })
+                        .finally(() => {
+                            videoUploadBtn.disabled = false;
+                            videoUploadBtn.innerHTML = '<i class="bi bi-send"></i> SUBMIT VIDEO';
+                        });
+                });
             }
 
             // AJAX SUBMIT UPLOAD
             moduleForm.addEventListener("submit", (e) => {
                 e.preventDefault();
-                if (uploadedFiles.length === 0) return showNotificationModal('Perhatian', 'Silakan pilih minimal 1 file untuk diupload.', 'error');
-
-                const selectedTypes = [...new Set(uploadedFiles.map(getUploadType))];
-                const availableTypesInUnit = [...new Set(activeUnitModules.map(module => module.type))];
-                const availableMaterialTypesInUnit = [...new Set(
-                    activeUnitModules
-                        .filter((module) => module.type !== 'quiz')
-                        .map((module) => module.type)
-                )];
-                const unsupportedTypes = selectedTypes.filter(
-                    (type) => !availableTypesInUnit.includes(type) && availableMaterialTypesInUnit.length === 0
-                );
-
-                if (unsupportedTypes.length > 0) {
-                    const selectedText = selectedTypes.map((type) => String(type).toUpperCase()).join(', ');
-                    const availableText = availableTypesInUnit.length > 0
-                        ? availableTypesInUnit.map((type) => String(type).toUpperCase()).join(', ')
-                        : '-';
-                    showNotificationModal(
-                        'Tipe Materi Tidak Sesuai Bab',
-                        `File yang kamu pilih: ${selectedText}. Slot di bab ini: ${availableText}. Untuk upload ulang file lama, gunakan tombol Ganti File di daftar Semuanya Materi Yang Sudah Diupload.`,
-                        'error'
-                    );
-                    return;
+                syncEditorContentToInput();
+                const hasEditorContent = !!(moduleContentInput && moduleContentInput.value.trim() !== '');
+                if (!hasEditorContent) {
+                    return showNotificationModal('Perhatian', 'Silakan isi materi di editor terlebih dahulu.', 'error');
                 }
 
                 uploadBtn.disabled = true;
                 uploadBtn.innerHTML = '<i class="spinner-border spinner-border-sm"></i> UPLOADING...';
 
                 const formData = new FormData(moduleForm);
-                formData.delete('files[]');
                 formData.set('replace_module_id', '');
-
-                const filteredModuleIds = activeUnitModules
-                    .filter(module => selectedTypes.includes(module.type))
-                    .map(module => module.id);
-
-                if (filteredModuleIds.length > 0) {
-                    const dynamicTargetModules = filteredModuleIds.join(',');
-                    formData.set('target_modules', dynamicTargetModules);
-                    if (targetModulesInput) {
-                        targetModulesInput.value = dynamicTargetModules;
-                    }
-                }
-
-                uploadedFiles.forEach(file => formData.append('files[]', file));
 
                 fetch(moduleForm.action, {
                     method: 'POST',
@@ -1763,11 +2470,13 @@
                                     persistedMaterials.push(row);
                                 }
                             });
-                            renderExistingMaterials();
-                            uploadedFiles = [];
-                            updateFileList();
+                            if (moduleEditor) {
+                                moduleEditor.innerHTML = '<p>Tulis pengantar materi di sini...</p>';
+                            }
+                            if (moduleContentInput) {
+                                moduleContentInput.value = '';
+                            }
                             showNotificationModal('Berhasil', data.message || 'Materi berhasil disubmit ke Admin!', 'success');
-                            setTimeout(() => window.location.reload(), 1200);
                             return;
                         } else {
                             const firstValidationError = data.errors
@@ -1867,33 +2576,33 @@
                     const qEl = document.createElement("article");
                     qEl.className = "quiz-editor";
                     qEl.innerHTML = `
-                                        <div class="q-head">
-                                            <div class="q-number">${index + 1}</div>
-                                            <div class="q-inputs">
-                                                <label>PERTANYAAN</label>
-                                                <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
-                                            </div>
-                                            <div class="q-score">
-                                                <label>BOBOT</label>
-                                                <input type="number" class="q-weight" value="${q.weight}" min="1" />
-                                            </div>
-                                            <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
-                                        </div>
-                                        <div class="options-section">
-                                            <p class="options-label">PILIHAN JAWABAN</p>
-                                            <div class="options-grid">
-                                                ${q.options.map((opt, oIdx) => `
-                                                    <div class="option-container">
-                                                        <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                                            <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                                            <span>Opsi ${oIdx + 1}</span>
-                                                        </button>
-                                                        <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                                    <div class="q-head">
+                                                        <div class="q-number">${index + 1}</div>
+                                                        <div class="q-inputs">
+                                                            <label>PERTANYAAN</label>
+                                                            <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                                        </div>
+                                                        <div class="q-score">
+                                                            <label>BOBOT</label>
+                                                            <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                                        </div>
+                                                        <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
                                                     </div>
-                                                `).join("")}
-                                            </div>
-                                        </div>
-                                    `;
+                                                    <div class="options-section">
+                                                        <p class="options-label">PILIHAN JAWABAN</p>
+                                                        <div class="options-grid">
+                                                            ${q.options.map((opt, oIdx) => `
+                                                                <div class="option-container">
+                                                                    <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
+                                                                        <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                                                        <span>Opsi ${oIdx + 1}</span>
+                                                                    </button>
+                                                                    <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                                                </div>
+                                                            `).join("")}
+                                                        </div>
+                                                    </div>
+                                                `;
 
                     // Event Listeners for this question
                     qEl.querySelector(".q-text").addEventListener("input", (e) => {

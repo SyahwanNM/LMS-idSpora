@@ -121,7 +121,7 @@
                                     @php
                                         $icon = $module->type === 'video' ? 'bi-film' : ($module->type === 'quiz' ? 'bi-check-circle' : 'bi-file-earmark-pdf');
                                         $label = $module->type === 'video' ? 'Video Asset' : ($module->type === 'quiz' ? 'Quiz Engine' : 'PDF Material');
-                                        $assetTab = $module->type === 'quiz' ? 'quiz' : 'module';
+                                        $assetTab = $module->type === 'quiz' ? 'quiz' : ($module->type === 'video' ? 'video' : 'module');
                                       @endphp
                                     <div class="asset-mini"
                                         data-redirect="{{ route('trainer.courses.studio', $course->id) }}?unit={{ $idx }}&tab={{ $assetTab }}">
@@ -169,8 +169,7 @@
                 <div class="grading-registry">
                     <div class="registry-header">
                         <h3>AUTOMATIC GRADING REGISTRY</h3>
-                        <button class="export-btn" type="button" onclick="alert('Exporting Ledger to CSV...')"><i
-                                class="bi bi-download"></i> EXPORT LEDGER</button>
+                        <button class="export-btn" type="button"><i class="bi bi-download"></i> EXPORT LEDGER</button>
                     </div>
                     <div class="registry-table">
                         <div class="table-header">

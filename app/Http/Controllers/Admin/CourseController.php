@@ -244,6 +244,7 @@ class CourseController extends Controller
         $trainer = User::query()
             ->where('id', $trainerId)
             ->where('role', 'trainer')
+            ->where('user_status', 'active')
             ->first();
 
         if (!$trainer) {
@@ -262,7 +263,7 @@ class CourseController extends Controller
                 'url' => route('trainer.detail-course', $course->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'due_at' => now()->addDays(25)->toIso8601String(),
+                'due_at' => now()->addHours(24)->toIso8601String(),
             ],
         ]);
     }
@@ -585,6 +586,7 @@ class CourseController extends Controller
         $categories = Category::all();
         $trainers = User::query()
             ->whereRaw('LOWER(role) = ?', ['trainer'])
+            ->where('user_status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
         $templates = CourseTemplate::query()
@@ -605,7 +607,8 @@ class CourseController extends Controller
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                    $query->whereRaw('LOWER(role) = ?', ['trainer'])
+                        ->where('user_status', 'active');
                 }),
             ],
             'description' => 'nullable|string',
@@ -792,6 +795,7 @@ class CourseController extends Controller
         $categories = Category::all();
         $trainers = User::query()
             ->whereRaw('LOWER(role) = ?', ['trainer'])
+            ->where('user_status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
         $templates = CourseTemplate::query()
@@ -829,7 +833,8 @@ class CourseController extends Controller
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
+                    $query->whereRaw('LOWER(role) = ?', ['trainer'])
+                        ->where('user_status', 'active');
                 }),
             ],
             'description' => 'nullable|string',

@@ -221,6 +221,20 @@
           </div>
         </div>
 
+        <p class="vsa-title" id="e-agreement">E-Agreement Penugasan</p>
+        <div class="detail-box detail-box-context">
+          <div class="vsa-context">
+            @php
+              $agreementHtml = trim((string) ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')));
+            @endphp
+            <div class="vsa-context-body">
+              {!! $agreementHtml !== ''
+    ? $agreementHtml
+    : '<p>Dokumen E-Agreement belum tersedia. Silakan hubungi admin untuk melengkapi terms event ini.</p>' !!}
+            </div>
+          </div>
+        </div>
+
         <section class="rundown-list">
           <h2>Rundown Acara</h2>
           @php

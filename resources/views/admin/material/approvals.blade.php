@@ -714,8 +714,8 @@
                                         <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis</div>
                                     </td>
                                     <td>
-                                        <div style="font-weight: 600; color: #334155;">{{ $material->created_at->format('d M Y') }}</div>
-                                        <div style="font-size: 0.75rem; color:#64748b;">{{ $material->created_at->diffForHumans() }}</div>
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}</div>
+                                        <div style="font-size: 0.75rem; color:#64748b;">{{ $material->updated_at?->diffForHumans() ?? $material->created_at->diffForHumans() }}</div>
                                     </td>
                                     <td>
                                         <span class="badge-status badge-pending">Review Pending</span>

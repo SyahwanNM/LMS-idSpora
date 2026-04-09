@@ -19,24 +19,6 @@
                 style="text-decoration:none;color:#1b1763;font-weight:600;font-size:13px;">← Kembali ke Profile</a>
         </div>
 
-        @if(session('success'))
-            <div
-                style="background:#ecfdf5;border:1px solid #86efac;color:#166534;padding:10px 12px;border-radius:10px;font-size:13px;">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div
-                style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:10px;font-size:13px;">
-                <ul style="margin:0;padding-left:18px;">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
         <form action="{{ route('trainer.profile.update') }}" method="POST" enctype="multipart/form-data"
             style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;display:grid;gap:14px;">
             @csrf

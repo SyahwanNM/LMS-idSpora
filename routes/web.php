@@ -614,10 +614,13 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::post('/notifications/mark-all-read', [TrainerNotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::get('/notifications/{notification}/open', [TrainerNotificationsController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/{notification}/respond', [TrainerNotificationsController::class, 'respond'])->name('notifications.respond');
+    Route::post('/notifications/{notification}/accept-with-scheme', [TrainerNotificationsController::class, 'acceptEventWithScheme'])->name('notifications.acceptWithScheme');
+    Route::post('/availability/toggle', [TrainerController::class, 'toggleAvailability'])->name('availability.toggle');
 
     // --- STUDIO UNTUK COURSE ---
     Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
     Route::get('/courses/{courseId}/materials/{moduleId}/view', [TrainerController::class, 'viewCourseMaterial'])->name('courses.studio.material.view');
+    Route::post('/courses/{id}/studio/editor-image', [TrainerController::class, 'uploadCourseEditorImage'])->name('courses.studio.editor-image');
     Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
     Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
 

@@ -11,8 +11,14 @@ Artisan::command('inspire', function () {
 // Jadwalkan pembersihan event: setiap jam hapus event yang telah berjalan >= 6 jam
 Schedule::command('events:cleanup')->hourly();
 
-// Reminder deadline undangan trainer (H-2 & H-1) dijalankan otomatis setiap hari
-Schedule::command('trainer:send-invitation-deadline-reminders')->dailyAt('08:00');
+// Reminder SLA undangan trainer (12 jam & 1 jam tersisa)
+Schedule::command('trainer:send-invitation-deadline-reminders')->hourly();
 
 // Eskalasi keterlambatan deadline undangan trainer (ke trainer + admin)
-Schedule::command('trainer:send-invitation-overdue-alerts')->dailyAt('09:00');
+Schedule::command('trainer:send-invitation-overdue-alerts')->everyMinute();
+
+// Sinkronisasi status akun trainer (active/inactive/suspended)
+Schedule::command('trainer:sync-account-statuses')->dailyAt('00:15');
+
+// Pemutihan semesteran: 1 Januari & 1 Juli
+Schedule::command('trainer:reset-semester-late-uploads')->cron('5 0 1 1,7 *');

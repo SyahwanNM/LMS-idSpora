@@ -1034,7 +1034,7 @@
                     e.preventDefault();
 
                     if (uploadedFiles.length === 0) {
-                        alert("Silakan upload minimal 1 file sebelum submit.");
+                        console.warn("Silakan upload minimal 1 file sebelum submit.");
                         return;
                     }
 
@@ -1046,7 +1046,7 @@
 
                     if (invalidFiles.length > 0) {
                         const names = invalidFiles.map((f) => f.name).join(', ');
-                        alert('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
+                        console.warn('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
                         return;
                     }
 
@@ -1067,17 +1067,15 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                alert(`Success! ${data.files ? data.files.length : 'Files'} assets uploaded.`);
                                 window.location.href = "{{ route('trainer.events.show', $event->id) }}";
                             } else {
-                                alert('Upload failed: ' + (data.error || 'Unknown error'));
+                                console.error('Upload failed: ' + (data.error || 'Unknown error'));
                                 submitBtn.disabled = false;
                                 submitBtn.innerHTML = originalBtnText;
                             }
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('An error occurred during upload.');
                             submitBtn.disabled = false;
                             submitBtn.innerHTML = originalBtnText;
                         });

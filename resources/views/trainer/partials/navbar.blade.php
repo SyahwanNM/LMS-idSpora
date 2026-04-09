@@ -76,6 +76,8 @@
                                         <span class="trainer-notification-pill accepted">Diterima</span>
                                     @elseif($isInvitation && $notificationStatus === 'rejected')
                                         <span class="trainer-notification-pill rejected">Ditolak</span>
+                                    @elseif($isInvitation && $notificationStatus === 'expired')
+                                        <span class="trainer-notification-pill rejected">Expired</span>
                                     @elseif($isMaterialApproved)
                                         <span class="trainer-notification-pill accepted">Materi Diterima</span>
                                     @elseif($isMaterialRejected)
@@ -111,15 +113,46 @@
                                 </div>
                                 @if($isInvitation && ($notificationStatus === 'pending' || empty($notificationStatus)))
                                     <div class="trainer-notification-actions">
+                                        @php
+                                            $notificationEntityType = data_get($notification->data, 'entity_type');
+                                            $notificationTitle = addslashes((string) ($notification->title ?? 'Undangan Event'));
+                                        @endphp
+                                        @if($notificationEntityType === 'event')
+                                            <button type="button" class="trainer-notification-action accept"
+                                                onclick="openSchemeSelectionModal({{ $notification->id }}, '{{ $notificationTitle }}')">
+                                                Terima
+                                            </button>
+                                        @else
+                                            <form method="POST" class="js-invitation-response-form"
+                                                action="{{ route('trainer.notifications.respond', $notification->id) }}">
+                                                @csrf
+                                                <input type="hidden" name="decision" value="accept">
+                                                <select name="contribution_scheme" required
+                                                    style="width:100%; margin-bottom:8px; padding:8px 10px; border:1px solid #d1d5db; border-radius:10px; background:#fff; font-size:12px;">
+                                                    <option value="" selected disabled>Pilih skema kontribusi</option>
+                                                    @foreach(Auth::user()->available_contribution_schemes as $schemeKey => $scheme)
+                                                        <option value="{{ $schemeKey }}">{{ data_get($scheme, 'percent') }}% -
+                                                            {{ data_get($scheme, 'label') }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @if(!empty($notificationUrl))
+                                                    <a href="{{ route('trainer.notifications.open', $notification->id) }}"
+                                                        target="_blank" rel="noopener"
+                                                        style="display:inline-flex; margin-bottom:8px; font-size:11px; color:#2563eb; text-decoration:underline;">
+                                                        Buka E-Agreement
+                                                    </a>
+                                                @endif
+                                                <label
+                                                    style="display:flex; gap:8px; align-items:flex-start; font-size:11px; color:#334155; margin-bottom:8px;">
+                                                    <input type="checkbox" name="e_agreement" value="1" required
+                                                        style="margin-top:2px;">
+                                                    <span>Saya menyetujui E-Agreement.</span>
+                                                </label>
+                                                <button type="submit" class="trainer-notification-action accept"
+                                                    data-loading-text="Memproses...">Terima</button>
+                                            </form>
+                                        @endif
                                         <form method="POST" class="js-invitation-response-form"
-                                            action="{{ route('trainer.notifications.respond', $notification->id) }}">
-                                            @csrf
-                                            <input type="hidden" name="decision" value="accept">
-                                            <button type="submit" class="trainer-notification-action accept"
-                                                data-loading-text="Memproses...">Terima</button>
-                                        </form>
-                                        <form method="POST" class="js-invitation-response-form"
-                                            data-confirm="Yakin ingin menolak undangan ini?"
                                             action="{{ route('trainer.notifications.respond', $notification->id) }}">
                                             @csrf
                                             <input type="hidden" name="decision" value="reject">
@@ -172,12 +205,6 @@
     document.addEventListener('submit', function (event) {
         const form = event.target;
         if (!(form instanceof HTMLFormElement) || !form.classList.contains('js-invitation-response-form')) {
-            return;
-        }
-
-        const confirmationMessage = form.dataset.confirm;
-        if (confirmationMessage && !window.confirm(confirmationMessage)) {
-            event.preventDefault();
             return;
         }
 

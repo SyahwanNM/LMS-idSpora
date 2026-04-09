@@ -12,6 +12,9 @@ class Course extends Model
         'template_id',
         'template_version',
         'trainer_id',
+        'trainer_contribution_scheme',
+        'trainer_revenue_percent',
+        'trainer_scheme_accepted_at',
         'description',
         'level',
         'status',
@@ -36,6 +39,7 @@ class Course extends Model
         'rejected_at' => 'datetime',
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
+        'trainer_scheme_accepted_at' => 'datetime',
         'expenses_json',
     ];
 

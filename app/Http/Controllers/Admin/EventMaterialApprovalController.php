@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\TrainerNotification;
 use App\Models\User;
+use App\Services\TrainerActivityService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -206,6 +207,11 @@ class EventMaterialApprovalController extends Controller
         // Notify trainer about approval
         $assignedTrainerIds = $this->resolveAssignedTrainerIds($event);
         foreach ($assignedTrainerIds as $trainerId) {
+            $trainer = User::query()->find((int) $trainerId);
+            if ($trainer) {
+                app(TrainerActivityService::class)->refresh($trainer);
+            }
+
             TrainerNotification::create([
                 'trainer_id' => (int) $trainerId,
                 'type' => 'event_material_approved',

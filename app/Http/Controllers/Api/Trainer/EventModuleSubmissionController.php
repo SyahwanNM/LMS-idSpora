@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Trainer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\TrainerNotification;
+use App\Services\TrainerActivityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -67,9 +69,22 @@ class EventModuleSubmissionController extends Controller
         }
 
         $materialStatus = (string) ($event->material_status ?? 'draft');
-        $effectiveDeadline = $materialStatus === 'rejected'
-            ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
-            : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7));
+        $invitation = TrainerNotification::query()
+            ->where('trainer_id', (int) $user->id)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($event) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        $invitationData = is_array($invitation?->data) ? $invitation->data : [];
+        $invitationUploadDueAtRaw = (string) data_get($invitationData, 'upload_due_at', '');
+        $effectiveDeadline = $invitationUploadDueAtRaw !== ''
+            ? \Carbon\Carbon::parse($invitationUploadDueAtRaw)
+            : ($materialStatus === 'rejected'
+                ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
+                : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7)));
 
         if (!empty($effectiveDeadline) && now()->gt($effectiveDeadline)) {
             return response()->json([
@@ -90,6 +105,22 @@ class EventModuleSubmissionController extends Controller
         $event->update([
             'module_path' => $path,
         ]);
+
+        $activityService = app(TrainerActivityService::class);
+        if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
+            $activityService->resetLateUploads($user, [
+                'entity_type' => 'event',
+                'entity_id' => (int) $event->id,
+                'entity_title' => (string) $event->title,
+                'url' => route('trainer.events.show', $event->id),
+            ]);
+        }
+
+        if ($invitation) {
+            $invitationData['material_uploaded_at'] = now()->toIso8601String();
+            $invitation->data = $invitationData;
+            $invitation->save();
+        }
 
         return response()->json([
             'message' => 'Module berhasil diupload dan menunggu verifikasi admin.',

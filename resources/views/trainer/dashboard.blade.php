@@ -34,6 +34,34 @@
         <strong>{{ $totalCourses }} Kelas Aktif</strong> dengan total jaringan
         <strong>{{ number_format($totalStudents) }} pelajar</strong>.
       </p>
+      <div style="margin-top: 12px; display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+        <span
+          style="display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; background: {{ Auth::user()->user_status === 'suspended' ? '#7f1d1d' : (Auth::user()->user_status === 'inactive' ? '#92400e' : '#065f46') }}; color:#fff;">
+          Status Akun: {{ Auth::user()->user_status_label }}
+        </span>
+        @if(Auth::user()->user_status !== 'suspended')
+          <form method="POST" action="{{ route('trainer.availability.toggle') }}">
+            @csrf
+            <button type="submit" class="btn-secondary" style="padding:8px 14px; font-size:12px;">
+              {{ Auth::user()->user_status === 'active' ? 'Nonaktifkan Saya' : 'Saya Siap Mengajar' }}
+            </button>
+          </form>
+        @endif
+      </div>
+      @if((int) data_get($trainerActivity, 'late_uploads', 0) > 0)
+        <div
+          style="margin-top: 16px; padding: 14px 16px; border-radius: 16px; background: {{ (int) data_get($trainerActivity, 'late_uploads', 0) >= 3 ? '#7f1d1d' : (((int) data_get($trainerActivity, 'late_uploads', 0) === 2) ? '#92400e' : '#1d4ed8') }}; color: #fff; max-width: 760px;">
+          <strong>Perhatian:</strong>
+          @if((int) data_get($trainerActivity, 'late_uploads', 0) === 1)
+            Anda memiliki 1 keterlambatan berturut-turut (SP1 / Kartu Kuning).
+          @elseif((int) data_get($trainerActivity, 'late_uploads', 0) === 2)
+            Anda memiliki 2 keterlambatan berturut-turut (SP2 / Peringatan Keras). Satu pelanggaran lagi akun akan dibekukan.
+          @else
+            Anda memiliki {{ (int) data_get($trainerActivity, 'late_uploads', 0) }} keterlambatan berturut-turut. Akun Anda
+            berstatus suspended.
+          @endif
+        </div>
+      @endif
       <div class="hero-buttons">
         <a href="{{ route('trainer.events') }}" class="btn-primary">
           <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
@@ -61,38 +89,39 @@
       {{-- METRICS SECTION --}}
       <div class="metrics-section">
         <div class="metric-card">
-          <p class="metric-label">Sertifikat Terkumpul</p>
+          <p class="metric-label">Course/Event Selesai</p>
           <div class="metric-value-row">
-            <h2 class="metric-value">{{ number_format($totalCertificates) }}</h2>
-            <span class="metric-change">
-              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V3M6 3L3 6M6 3L9 6" />
-              </svg>
-              idSpora
+            <h2 class="metric-value">{{ number_format((int) data_get($trainerActivity, 'total_courses_completed', 0)) }}
+            </h2>
+            <span class="metric-badge">Final</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <p class="metric-label">Rata-rata Rating</p>
+          <div class="metric-value-row">
+            <h2 class="metric-value">{{ number_format((float) data_get($trainerActivity, 'average_rating', 0), 1) }}</h2>
+            <span class="metric-badge">Bintang</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <p class="metric-label">Pelanggaran Telat</p>
+          <div class="metric-value-row">
+            <h2 class="metric-value">{{ number_format((int) data_get($trainerActivity, 'late_uploads', 0)) }}</h2>
+            <span
+              class="metric-change {{ (int) data_get($trainerActivity, 'late_uploads', 0) > 0 ? 'is-negative' : 'is-positive' }}">
+              {{ (int) data_get($trainerActivity, 'late_uploads', 0) > 0 ? 'Strike' : 'Aman' }}
             </span>
           </div>
         </div>
 
         <div class="metric-card">
-          <p class="metric-label">Kelas Diampu</p>
+          <p class="metric-label">Tier Saat Ini</p>
           <div class="metric-value-row">
-            <h2 class="metric-value">{{ $totalCourses }}</h2>
-            <span class="metric-badge">Trainer</span>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <p class="metric-label">Reputasi</p>
-          <div class="metric-value-row">
-            <h2 class="metric-value">4.8</h2>
-            <span class="metric-change is-positive">
-              <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9V3M6 3L3 6M6 3L9 6" />
-              </svg>
-              Excellent
-            </span>
+            <h2 class="metric-value" style="font-size: 20px;">{{ Auth::user()->trainer_tier_label }}</h2>
+            <span
+              class="metric-badge">{{ strtoupper((string) data_get($trainerActivity, 'trainer_tier', 'associate')) }}</span>
           </div>
         </div>
       </div>
@@ -123,14 +152,43 @@
                   <p>{{ Str::limit($notification->message, 62) }}</p>
                 </div>
                 <div class="todo-actions-inline">
+                  @php $notificationEntityType = data_get($notification->data, 'entity_type'); @endphp
+                  @php $notificationAgreementUrl = data_get($notification->data, 'url'); @endphp
+                  @if($notificationEntityType === 'event')
+                    <button type="button" class="todo-btn accept"
+                      onclick="openSchemeSelectionModal({{ $notification->id }}, '{{ addslashes((string) ($notification->title ?? 'Undangan Event')) }}')">
+                      Terima
+                    </button>
+                  @else
+                    <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
+                      class="js-invitation-response-form">
+                      @csrf
+                      <input type="hidden" name="decision" value="accept">
+                      <select name="contribution_scheme" required
+                        style="margin: 0 0 8px; width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:10px; background:#fff; font-size:13px;">
+                        <option value="" selected disabled>Skema kontribusi</option>
+                        @foreach(Auth::user()->available_contribution_schemes as $schemeKey => $scheme)
+                          <option value="{{ $schemeKey }}">{{ data_get($scheme, 'percent') }}% -
+                            {{ data_get($scheme, 'label') }}
+                          </option>
+                        @endforeach
+                      </select>
+                      @if(!empty($notificationAgreementUrl))
+                        <a href="{{ route('trainer.notifications.open', $notification->id) }}" target="_blank" rel="noopener"
+                          style="display:inline-flex; margin-bottom:8px; font-size:12px; color:#2563eb; text-decoration:underline;">
+                          Buka E-Agreement
+                        </a>
+                      @endif
+                      <label
+                        style="display:flex; gap:8px; align-items:flex-start; font-size:12px; color:#334155; margin-bottom:8px;">
+                        <input type="checkbox" name="e_agreement" value="1" required style="margin-top:2px;">
+                        <span>Saya menyetujui E-Agreement penugasan ini.</span>
+                      </label>
+                      <button type="submit" class="todo-btn accept">Terima</button>
+                    </form>
+                  @endif
                   <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
                     class="js-invitation-response-form">
-                    @csrf
-                    <input type="hidden" name="decision" value="accept">
-                    <button type="submit" class="todo-btn accept">Terima</button>
-                  </form>
-                  <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
-                    class="js-invitation-response-form" data-confirm="Yakin ingin menolak undangan ini?">
                     @csrf
                     <input type="hidden" name="decision" value="reject">
                     <button type="submit" class="todo-btn reject">Tolak</button>
@@ -242,6 +300,8 @@
                   <span class="invitation-pill is-accepted">Diterima</span>
                 @elseif($inviteStatus === 'rejected')
                   <span class="invitation-pill is-rejected">Ditolak</span>
+                @elseif($inviteStatus === 'expired')
+                  <span class="invitation-pill is-rejected">Expired</span>
                 @elseif(is_null($invite->read_at))
                   <span class="invitation-pill">Baru</span>
                 @endif
@@ -263,18 +323,53 @@
               </div>
               @if($inviteStatus === 'pending')
                 <div class="invitation-actions">
-                  <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
-                    class="js-invitation-response-form">
-                    @csrf
-                    <input type="hidden" name="decision" value="accept">
-                    <button type="submit" class="invitation-btn accept" data-loading-text="Memproses...">Terima</button>
-                  </form>
-                  <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
-                    class="js-invitation-response-form" data-confirm="Yakin ingin menolak undangan ini?">
-                    @csrf
-                    <input type="hidden" name="decision" value="reject">
-                    <button type="submit" class="invitation-btn reject" data-loading-text="Memproses...">Tolak</button>
-                  </form>
+                  @php $inviteEntityType = data_get($invite->data, 'entity_type'); @endphp
+                  @if($inviteEntityType === 'event')
+                    {{-- EVENT INVITATION: Show Modal Trigger --}}
+                    <button type="button" class="invitation-btn accept"
+                      onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}')">
+                      Terima
+                    </button>
+                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                      class="js-invitation-response-form">
+                      @csrf
+                      <input type="hidden" name="decision" value="reject">
+                      <button type="submit" class="invitation-btn reject">Tolak</button>
+                    </form>
+                  @else
+                    {{-- COURSE INVITATION: Keep Original Form --}}
+                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                      class="js-invitation-response-form">
+                      @csrf
+                      <input type="hidden" name="decision" value="accept">
+                      <select name="contribution_scheme" required
+                        style="margin: 0 0 8px; width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:10px; background:#fff; font-size:13px;">
+                        <option value="" selected disabled>Skema kontribusi</option>
+                        @foreach(Auth::user()->available_contribution_schemes as $schemeKey => $scheme)
+                          <option value="{{ $schemeKey }}">{{ data_get($scheme, 'percent') }}% - {{ data_get($scheme, 'label') }}
+                          </option>
+                        @endforeach
+                      </select>
+                      @if(!empty($inviteUrl))
+                        <a href="{{ route('trainer.notifications.open', $invite->id) }}" target="_blank" rel="noopener"
+                          style="display:inline-flex; margin-bottom:8px; font-size:12px; color:#2563eb; text-decoration:underline;">
+                          Buka E-Agreement
+                        </a>
+                      @endif
+                      <label
+                        style="display:flex; gap:8px; align-items:flex-start; font-size:12px; color:#334155; margin-bottom:8px;">
+                        <input type="checkbox" name="e_agreement" value="1" required style="margin-top:2px;">
+                        <span>Saya menyetujui E-Agreement penugasan ini.</span>
+                      </label>
+                      <button type="submit" class="invitation-btn accept" data-loading-text="Memproses...">Terima</button>
+                    </form>
+                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                      class="js-invitation-response-form">
+                      @csrf
+                      <input type="hidden" name="decision" value="reject">
+                      <button type="submit" class="invitation-btn reject">Tolak</button>
+                    </form>
+                  @endif
                 </div>
               @endif
             </div>

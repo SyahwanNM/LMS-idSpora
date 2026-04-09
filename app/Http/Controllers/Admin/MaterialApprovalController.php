@@ -8,6 +8,7 @@ use App\Models\CourseModule;
 use App\Models\Event;
 use App\Models\TrainerNotification;
 use App\Models\User;
+use App\Services\TrainerActivityService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -135,7 +136,17 @@ class MaterialApprovalController extends Controller
         }
 
         $content = trim((string) ($module->content_url ?? ''));
-        return $content !== '' && $content !== 'quiz_submitted';
+        if ($content !== '' && $content !== 'quiz_submitted') {
+            return true;
+        }
+
+        // Text-first module authoring stores content in description HTML.
+        if ($module->isPdf()) {
+            $description = trim((string) ($module->description ?? ''));
+            return $description !== '';
+        }
+
+        return false;
     }
 
     private function normalizePublicPath(?string $path): string
@@ -263,8 +274,10 @@ class MaterialApprovalController extends Controller
             }
 
             $content = trim((string) ($module->content_url ?? ''));
-            if ($content === '' || $content === 'quiz_submitted') {
-                $missingItems[] = $slotLabel . ' (file belum diupload)';
+            $description = trim((string) ($module->description ?? ''));
+            $hasTextContent = $module->isPdf() && $description !== '';
+            if (($content === '' || $content === 'quiz_submitted') && !$hasTextContent) {
+                $missingItems[] = $slotLabel . ' (file atau konten teks belum diupload)';
             }
         }
 
@@ -480,9 +493,15 @@ class MaterialApprovalController extends Controller
                 })
                 ->count();
         $totalApproved = Course::where('status', 'approved')->count()
-            + Event::query()->whereRaw('1=0')->count();
+            + Event::query()
+                ->whereNotNull('module_path')
+                ->where('material_status', 'approved')
+                ->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + Event::query()->whereRaw('1=0')->count();
+            + Event::query()
+                ->whereNotNull('module_path')
+                ->where('material_status', 'rejected')
+                ->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 
@@ -556,6 +575,22 @@ class MaterialApprovalController extends Controller
 
         $absolutePath = $this->resolveModuleFilePath($module);
         if (!$absolutePath) {
+            $textHtml = trim((string) ($module->description ?? ''));
+            if ($module->isPdf() && $textHtml !== '') {
+                $sanitizedHtml = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $textHtml) ?? $textHtml;
+
+                $document = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                    . '<title>Preview Materi</title>'
+                    . '<style>body{font-family:Arial,sans-serif;line-height:1.65;color:#1e293b;padding:24px;max-width:900px;margin:0 auto}img{max-width:100%;height:auto;border-radius:10px}pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto}code{font-family:Consolas,Monaco,monospace}</style>'
+                    . '</head><body>' . $sanitizedHtml . '</body></html>';
+
+                return response($document, 200, [
+                    'Content-Type' => 'text/html; charset=UTF-8',
+                    'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                    'X-Frame-Options' => 'SAMEORIGIN',
+                ]);
+            }
+
             abort(404, 'File modul tidak tersedia.');
         }
 
@@ -644,6 +679,11 @@ class MaterialApprovalController extends Controller
         $this->refreshCourseReviewStatus($material);
 
         if (!empty($material->trainer_id)) {
+            $trainer = User::query()->find((int) $material->trainer_id);
+            if ($trainer) {
+                app(TrainerActivityService::class)->refresh($trainer);
+            }
+
             TrainerNotification::create([
                 'trainer_id' => (int) $material->trainer_id,
                 'type' => 'course_material_approved',
@@ -789,7 +829,26 @@ class MaterialApprovalController extends Controller
     public function approved(Request $request)
     {
         $query = Course::with(['trainer', 'category'])
-            ->where('status', 'approved')
+            ->where(function ($q) {
+                $q->where('status', 'approved')
+                    ->orWhereHas('modules', function ($moduleQuery) {
+                        $moduleQuery->where('review_status', 'approved')
+                            ->where(function ($uploadedQuery) {
+                                $uploadedQuery->where(function ($contentQuery) {
+                                    $contentQuery->whereNotNull('content_url')
+                                        ->where('content_url', '!=', '')
+                                        ->where('content_url', '!=', 'quiz_submitted');
+                                })->orWhere(function ($textQuery) {
+                                    $textQuery->where('type', 'pdf')
+                                        ->whereNotNull('description')
+                                        ->where('description', '!=', '');
+                                })->orWhere(function ($quizQuery) {
+                                    $quizQuery->where('type', 'quiz')
+                                        ->whereHas('quizQuestions');
+                                });
+                            });
+                    });
+            })
             ->withCount('modules');
 
         $approvedEventModulesQuery = Event::query()
@@ -844,7 +903,9 @@ class MaterialApprovalController extends Controller
             }
         }
 
-        $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
+        $approvedMaterials = $query
+            ->orderByRaw('COALESCE(approved_at, updated_at) DESC')
+            ->paginate(15);
 
         $approvedEventModules = $approvedEventModulesQuery
             ->orderByDesc('material_approved_at')
