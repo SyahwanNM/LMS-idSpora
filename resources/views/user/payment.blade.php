@@ -287,6 +287,27 @@
         </div>
     </form>
 
+    <!-- Midtrans Success Modal (Checklist hijau) -->
+    <div class="modal fade" id="midtransSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
+                <div class="modal-body p-4 text-center">
+                    <div class="d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px; background: rgba(22, 163, 74, 0.12); border-radius: 50%;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#16A34A" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/>
+                        </svg>
+                    </div>
+                    <h5 class="mb-2" style="font-weight: 700;">Berhasil!</h5>
+                    <div id="midtransSuccessModalText" class="text-muted" style="font-size: 14px;"></div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px 18px; font-weight: 600;">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', function(){
         const form = document.getElementById('paymentForm');
@@ -453,7 +474,21 @@
         const snapTokenUrl = @json(isset($event) ? route('payment.snap-token', $event->id) : '');
         const pendingOrderUrl = @json(isset($event) ? route('payment.pending-order', $event->id) : '');
         const finalizeUrl = @json(isset($event) ? route('payment.finalize', $event->id) : '');
+        const eventTitle = @json(isset($event) ? ($event->title ?? 'Event') : 'Event');
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        function showMidtransSuccessModal(){
+            const text = document.getElementById('midtransSuccessModalText');
+            if (text) {
+                text.textContent = 'Anda berhasil terdaftar di event "' + eventTitle + '".';
+            }
+
+            const modalEl = document.getElementById('midtransSuccessModal');
+            if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                const m = window.bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static', keyboard: false });
+                m.show();
+            }
+        }
 
         let cachedPending = null;
 
@@ -606,7 +641,11 @@
                         try {
                             await postFinalize(data.order_id);
                         } catch(_e) {}
-                        window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                        showMidtransSuccessModal();
+                        // Give user a moment to see success modal before redirect
+                        setTimeout(function(){
+                            window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                        }, 1400);
                     },
                     onPending: async function(){
                         // keep as pending; user can retry later

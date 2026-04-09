@@ -13,6 +13,7 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\Referral;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,41 @@ class PaymentController extends Controller
 {
     private const REFERRAL_DISCOUNT_RATE = 0.10;
     private const MIDTRANS_METHOD = 'midtrans';
+
+    private function notifyEventMidtransRegistrationSuccess(Event $event, ManualPayment $payment): void
+    {
+        try {
+            $exists = UserNotification::query()
+                ->where('user_id', $payment->user_id)
+                ->where('type', 'event_registration_midtrans_success')
+                ->where('data->order_id', $payment->order_id)
+                ->exists();
+
+            if ($exists) {
+                return;
+            }
+
+            UserNotification::create([
+                'user_id' => $payment->user_id,
+                'type' => 'event_registration_midtrans_success',
+                'title' => 'Pendaftaran Dikonfirmasi',
+                'message' => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
+                'data' => [
+                    'event_id' => $event->id,
+                    'order_id' => $payment->order_id,
+                    'url' => route('events.registered.detail', $event),
+                ],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch (\Throwable $e) {
+            // Do not block payment flow on notification errors.
+            Log::warning('Failed to create midtrans event success notification', [
+                'order_id' => $payment->order_id,
+                'user_id' => $payment->user_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 
     /**
      * List user's manual payments.
@@ -1036,6 +1072,7 @@ class PaymentController extends Controller
                     $event = $payment->event_id ? Event::find($payment->event_id) : null;
                     if ($event) {
                         $this->processEventReferralCommission($event, $payment);
+                        $this->notifyEventMidtransRegistrationSuccess($event, $payment);
                     }
                 }
 
@@ -1112,6 +1149,7 @@ class PaymentController extends Controller
                     $registration->save();
                 }
                 $this->processEventReferralCommission($event, $payment);
+                $this->notifyEventMidtransRegistrationSuccess($event, $payment);
             }
             DB::commit();
 

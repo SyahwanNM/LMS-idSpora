@@ -74,33 +74,89 @@ class CoursePaymentController extends Controller
 
         $user = $request->user();
 
-        $isFree = (int) ($course->price ?? 0) <= 0;
+        // If user already has access, do not create new purchases/payments.
+        $existingActiveEnrollment = Enrollment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->where('status', 'active')
+            ->exists();
 
-        if ($isFree) {
-            $enrollment = Enrollment::updateOrCreate(
-                ['user_id' => $user->id, 'course_id' => $course->id],
-                ['status' => 'active']
-            );
+        $existingSettledPayment = ManualPayment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->where('status', 'settled')
+            ->exists();
 
-            ManualPayment::create([
-                'course_id' => $course->id,
-                'enrollment_id' => $enrollment->id,
-                'user_id' => $user->id,
-                'order_id' => 'FREE-CRS-' . strtoupper(uniqid()),
-                'amount' => 0,
-                'currency' => 'IDR',
-                'method' => 'free',
-                'status' => 'settled',
-                'metadata' => ['source' => 'course', 'type' => 'free'],
-            ]);
+        if ($existingActiveEnrollment || $existingSettledPayment) {
+            $enrollment = Enrollment::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->latest('id')
+                ->first();
+
+            if ($enrollment && $enrollment->status !== 'active') {
+                $enrollment->status = 'active';
+                $enrollment->save();
+            }
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Enroll course gratis berhasil',
+                'message' => 'Anda sudah memiliki akses course ini.',
                 'data' => [
-                    'enrollment' => $enrollment->fresh(),
+                    'enrollment' => $enrollment,
+                    'can_learn' => true,
                 ],
-            ], 201);
+            ], 200);
+        }
+
+        $isFree = (int) ($course->price ?? 0) <= 0;
+
+        if ($isFree) {
+            DB::beginTransaction();
+            try {
+                $enrollment = Enrollment::updateOrCreate(
+                    ['user_id' => $user->id, 'course_id' => $course->id],
+                    ['status' => 'active']
+                );
+
+                // Idempotency: do not create duplicate settled payments for free courses.
+                $existingFreePayment = ManualPayment::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->where('status', 'settled')
+                    ->where('method', 'free')
+                    ->exists();
+
+                if (!$existingFreePayment) {
+                    ManualPayment::create([
+                        'course_id' => $course->id,
+                        'enrollment_id' => $enrollment->id,
+                        'user_id' => $user->id,
+                        'order_id' => 'FREE-CRS-' . strtoupper(uniqid()),
+                        'amount' => 0,
+                        'currency' => 'IDR',
+                        'method' => 'free',
+                        'status' => 'settled',
+                        'metadata' => ['source' => 'course', 'type' => 'free'],
+                    ]);
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Enroll course gratis berhasil',
+                    'data' => [
+                        'enrollment' => $enrollment->fresh(),
+                    ],
+                ], 201);
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal enroll course gratis: ' . $e->getMessage(),
+                ], 500);
+            }
         }
 
         $validated = $request->validate([
@@ -129,7 +185,8 @@ class CoursePaymentController extends Controller
                 ['status' => 'pending']
             );
 
-            if ($enrollment->status !== 'pending') {
+            // Do not downgrade active enrollments. Only set to pending when not active.
+            if ($enrollment->status !== 'active' && $enrollment->status !== 'pending') {
                 $enrollment->status = 'pending';
                 $enrollment->save();
             }
