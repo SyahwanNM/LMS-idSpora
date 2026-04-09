@@ -185,6 +185,8 @@ class EventController extends Controller
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
+
+            'is_reseller_event' => 'nullable|boolean',
         ]);
 
         $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
@@ -262,6 +264,7 @@ class EventController extends Controller
             'title' => $request->title,
             'speaker' => $request->speaker,
             'manage_action' => $request->manage_action,
+            'is_reseller_event' => $request->boolean('is_reseller_event'),
             'materi' => $request->materi,
             'jenis' => $request->jenis,
             'short_description' => $request->short_description,
@@ -447,6 +450,8 @@ class EventController extends Controller
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
+
+            'is_reseller_event' => 'nullable|boolean',
         ]);
 
         $data = $request->only([
@@ -471,6 +476,8 @@ class EventController extends Controller
             'event_time',
             'event_time_end'
         ]);
+
+        $data['is_reseller_event'] = $request->boolean('is_reseller_event');
 
         $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
         $placeName = trim((string) $request->input('place_name', ''));
@@ -1060,8 +1067,8 @@ class EventController extends Controller
                     $m->status = 'settled';
                     $m->save();
 
-                    // Process Referral Commission (10%)
-                    if (!empty($m->referral_code)) {
+                    // Process Referral Commission (10%) only for reseller-enabled events
+                    if ((bool) ($event->is_reseller_event ?? false) && !empty($m->referral_code)) {
                         $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
                         if ($referrer && $referrer->id !== $m->user_id) {
                             $commissionAmount = $m->amount * 0.10; // 10% commission

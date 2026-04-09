@@ -90,6 +90,7 @@
                                 <th>Tanggal</th>
                                 <th>Lokasi</th>
                                 <th>Link</th>
+                                <th>Reseller</th>
                                 <th>Kelengkapan Dokumen</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
@@ -151,6 +152,13 @@
                                         </div>
                                     @else
                                         —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if((bool) ($event->is_reseller_event ?? false))
+                                        <span class="badge bg-success">Ya</span>
+                                    @else
+                                        <span class="badge bg-secondary">Tidak</span>
                                     @endif
                                 </td>
                                 <td>
@@ -546,6 +554,17 @@
                                     <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
                                     <small id="manageActionHelp" class="text-danger" style="display:none">Lengkapi: pilih salah satu (Manage/Create) sebelum menyimpan.</small>
                                 </div>
+
+                                <!-- Reseller Event -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Reseller Event</label>
+                                    <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', 0) ? 1 : 0 }}">
+                                    <div class="btn-group w-100" role="group" aria-label="Reseller Event">
+                                        <button type="button" id="reseller-event-no" class="btn btn-outline-secondary">Tidak</button>
+                                        <button type="button" id="reseller-event-yes" class="btn btn-outline-secondary">Ya</button>
+                                    </div>
+                                    <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                                </div>
                                 <!-- Jenis Acara -->
                                 <div class="mb-3">
                                     <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
@@ -646,12 +665,12 @@
                                     <small class="text-muted d-block mt-1">Masukkan benefit per baris. Klik Tambah untuk menambah item.</small>
                                 </div>
                                 <div class="mb-3 d-none" id="placeNameGroup">
-                                    <label for="place_name" class="form-label fw-semibold">Nama Tempat</label>
+                                    <label for="place_name" class="form-label fw-semibold">Nama Tempat <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
                                     <input type="text" name="place_name" id="place_name" class="form-control" value="{{ old('place_name') }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
                                     <div class="form-text">Muncul setelah klik "Deteksi" untuk offline/hybrid.</div>
                                 </div>
                                 <div class="mb-3" id="mapsGroup">
-                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
+                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
                                     <div class="input-group">
                                         <input type="text" name="maps_url" id="maps" class="form-control" value="{{ old('maps_url') }}" placeholder="Tempel link Google Maps (bisa short link maps.app.goo.gl)">
                                         <button class="btn btn-outline-secondary" type="button" id="btnResolveMaps">Deteksi</button>
@@ -662,7 +681,7 @@
                                     <div class="form-text">Klik "Deteksi" untuk mencoba membaca koordinat dari short link Google Maps.</div>
                                 </div>
                                 <div class="mb-3" id="zoomGroup">
-                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
+                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
                                     <input type="text" name="zoom_link" id="zoom" class="form-control" value="{{ old('zoom_link') }}" placeholder="Masukkan Link Zoom">
                                     <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
                                 </div>
@@ -736,7 +755,7 @@
                         Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan.
                     </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn" disabled>
+                    <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn">
                         <i class="bi bi-check-circle me-1"></i> Simpan Event
                     </button>
                 </div>
@@ -1056,26 +1075,38 @@
             applyValidity();
         })();
         // CKEditor init for deskripsi and terms
-        ClassicEditor.create(document.querySelector('#deskripsi'), {
-            toolbar: ['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']
-        }).then(e => {
-            // store globally and ensure textarea value stays in sync for required checks
-            window.editorDeskripsi = e;
-            const ta = document.getElementById('deskripsi');
-            if (ta) {
-                ta.value = e.getData();
+        // IMPORTANT: guard ClassicEditor so a missing asset doesn't break the whole page (incl. submit enable/disable).
+        if (typeof ClassicEditor !== 'undefined') {
+            const deskripsiEl = document.querySelector('#deskripsi');
+            if (deskripsiEl) {
+                ClassicEditor.create(deskripsiEl, {
+                    toolbar: ['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']
+                }).then(e => {
+                    // store globally and ensure textarea value stays in sync for required checks
+                    window.editorDeskripsi = e;
+                    const ta = document.getElementById('deskripsi');
+                    if (ta) {
+                        ta.value = e.getData();
+                    }
+                    // if updateSubmitState is available later, this listener will keep the button state correct
+                    e.model.document.on('change:data', () => {
+                        if (ta) { ta.value = e.getData(); }
+                        if (typeof window.updateSubmitState === 'function') {
+                            window.updateSubmitState();
+                        }
+                    });
+                }).catch(console.error);
             }
-            // if updateSubmitState is available later, this listener will keep the button state correct
-            e.model.document.on('change:data', () => {
-                if (ta) { ta.value = e.getData(); }
-                if (typeof window.updateSubmitState === 'function') {
-                    window.updateSubmitState();
-                }
-            });
-        }).catch(console.error);
-        ClassicEditor.create(document.querySelector('#terms'), {
-            toolbar: ['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']
-        }).then(e => window.editorTerms = e).catch(console.error);
+
+            const termsEl = document.querySelector('#terms');
+            if (termsEl) {
+                ClassicEditor.create(termsEl, {
+                    toolbar: ['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']
+                }).then(e => window.editorTerms = e).catch(console.error);
+            }
+        } else {
+            console.warn('[EventForm] ClassicEditor is not available; skipping rich text init.');
+        }
 
         // Image preview & size display (max 5MB)
         const imgInp = document.getElementById('gambar');
@@ -1114,6 +1145,9 @@
         const mapsInput = document.getElementById('maps');
         const mapsPreview = document.getElementById('mapsPreview');
         const zoomInput = document.getElementById('zoom');
+        const mapsRequiredStar = document.getElementById('mapsRequiredStar');
+        const zoomRequiredStar = document.getElementById('zoomRequiredStar');
+        const placeNameRequiredStar = document.getElementById('placeNameRequiredStar');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
     const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
@@ -1211,6 +1245,7 @@
             const shouldShow = isOfflineHybrid && (forceShow || hasValue);
             placeNameGroup.classList.toggle('d-none', !shouldShow);
             placeNameInput.required = shouldShow;
+            if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
         }
 
         function syncLocationModeUI(){
@@ -1224,6 +1259,10 @@
 
             if(mapsInput) mapsInput.required = (isOffline || isHybrid);
             if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+
+            // Visual '*' must match the required logic.
+            if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+            if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
 
             // Hide place name by default; shown after Deteksi or if already filled
             showPlaceNameIfNeeded(false);
@@ -1298,6 +1337,7 @@
         if(addEventModalEl){
             addEventModalEl.addEventListener('shown.bs.modal', () => {
                 if(leafletMap) setTimeout(() => leafletMap.invalidateSize(), 50);
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
             });
         }
 
@@ -1373,6 +1413,33 @@
         if(addEventModalEl){ enableDraggableModal(addEventModalEl); }
         // Apply to all per-event document modals
         document.querySelectorAll('.modal-upload-operasional').forEach(m => enableDraggableModal(m));
+
+        // Reseller Event toggle (Yes/No)
+        (function(){
+            const input = document.getElementById('is_reseller_event');
+            const btnYes = document.getElementById('reseller-event-yes');
+            const btnNo = document.getElementById('reseller-event-no');
+
+            if (!input || (!btnYes && !btnNo)) return;
+
+            function setReseller(val){
+                const v = val ? '1' : '0';
+                input.value = v;
+
+                if (btnYes) {
+                    btnYes.classList.toggle('btn-primary', v === '1');
+                    btnYes.classList.toggle('btn-outline-secondary', v !== '1');
+                }
+                if (btnNo) {
+                    btnNo.classList.toggle('btn-primary', v === '0');
+                    btnNo.classList.toggle('btn-outline-secondary', v !== '0');
+                }
+            }
+
+            btnYes && btnYes.addEventListener('click', () => setReseller(true));
+            btnNo && btnNo.addEventListener('click', () => setReseller(false));
+            setReseller((input.value || '0') === '1');
+        })();
 
         // Speakers (dynamic) - sourced from Trainer API; first required, others optional
         const speakersContainer = document.getElementById('speakersContainer');
@@ -1899,8 +1966,26 @@
             // Live enable/disable submit button based on required fields
             const submitBtn = document.getElementById('submitBtn');
             const submitHint = document.getElementById('submitHint');
+            const isElementVisible = (el) => {
+                if (!el) return false;
+                if (el.closest('.d-none')) return false;
+                // More reliable than offsetParent (offsetParent can be null for some positioned elements)
+                return !!(el.getClientRects && el.getClientRects().length);
+            };
             const getRequiredFields = () => Array.from(form.querySelectorAll('[required]'))
-                .filter(el => !el.disabled && el.offsetParent !== null);
+                .filter(el => !el.disabled && isElementVisible(el));
+
+            const isRequiredFieldEmpty = (fieldEl) => {
+                if (!fieldEl) return true;
+                const type = String(fieldEl.type || '').toLowerCase();
+                if (type === 'file') {
+                    return !(fieldEl.files && fieldEl.files.length > 0);
+                }
+                if (type === 'checkbox' || type === 'radio') {
+                    return !fieldEl.checked;
+                }
+                return !String(fieldEl.value || '').trim();
+            };
             // Friendly name helper (shared with submit alert logic above)
             const fieldFriendlyName = (el) => {
                 if(!el) return 'Field';
@@ -1917,11 +2002,13 @@
                 if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
                 if(id === 'lokasi' || name === 'location_mode') return 'Lokasi';
                 if(id === 'place_name' || name === 'place_name') return 'Nama Tempat';
+                if(id === 'maps' || name === 'maps_url') return 'Link Google Maps';
+                if(id === 'zoom' || name === 'zoom_link') return 'Link Zoom';
                 if(id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
                 return id || name || 'Field';
             };
             function missingRequired(){
-                return getRequiredFields().filter(f => !(f.value || '').trim());
+                return getRequiredFields().filter(isRequiredFieldEmpty);
             }
             function allRequiredFilled(){
                 return missingRequired().length === 0;
@@ -1935,11 +2022,30 @@
                 const sdEl = document.getElementById('short_desc');
                 const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                 const overLimit = sdEl ? sdWords > 40 : false;
-                if(submitBtn){ submitBtn.disabled = (!filled || overLimit); }
+                const shouldDisable = (!filled || overLimit);
+                if(submitBtn){
+                    submitBtn.disabled = shouldDisable;
+                    if (shouldDisable) {
+                        submitBtn.setAttribute('disabled', 'disabled');
+                        submitBtn.setAttribute('aria-disabled', 'true');
+                    } else {
+                        submitBtn.removeAttribute('disabled');
+                        submitBtn.setAttribute('aria-disabled', 'false');
+                    }
+                }
 
-                // Do not show large summary block; show per-field inline messages instead.
+                // Show a compact hint near the button so users know what's missing.
                 if(submitHint){
-                    submitHint.style.display = 'none';
+                    if(!filled){
+                        const missingNames = missingRequired().map(fieldFriendlyName);
+                        submitHint.textContent = 'Lengkapi: ' + missingNames.join(', ') + '.';
+                        submitHint.style.display = 'block';
+                    } else if(overLimit){
+                        submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).';
+                        submitHint.style.display = 'block';
+                    } else {
+                        submitHint.style.display = 'none';
+                    }
                 }
 
                 // Required fields: show inline error under each missing field
@@ -1994,7 +2100,16 @@
                     shortDescCountEl.classList.remove('text-danger');
                 }
             }
+            // Direct listeners (keep) + delegated fallback for robustness.
             ['input','change','blur'].forEach(evName => shortDescEl?.addEventListener(evName, () => { updateShortDescCount(); updateSubmitState(); }));
+            document.addEventListener('input', function(e){
+                const t = e.target;
+                if(!(t instanceof HTMLElement)) return;
+                if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                    updateShortDescCount();
+                    if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                }
+            }, true);
             updateShortDescCount();
         } else {
             console.warn('[EventForm] Form element not found.');
@@ -2136,6 +2251,39 @@
             tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
         }
     });
+    </script>
+
+    <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
     </script>
     @endsection
 

@@ -7,16 +7,26 @@ use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\ManualPayment;
 use App\Models\PaymentProof;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CoursePaymentController extends Controller
 {
+    private const REFERRAL_DISCOUNT_RATE = 0.10;
+
     /**
      * Purchase/enroll status for current user.
      */
     public function status(Request $request, Course $course)
     {
+        if (((string) ($course->status ?? '')) !== 'active') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Course tidak ditemukan',
+            ], 404);
+        }
+
         $user = $request->user();
 
         $enrollment = Enrollment::query()
@@ -55,6 +65,13 @@ class CoursePaymentController extends Controller
      */
     public function enroll(Request $request, Course $course)
     {
+        if (((string) ($course->status ?? '')) !== 'active') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Course tidak ditemukan',
+            ], 404);
+        }
+
         $user = $request->user();
 
         $isFree = (int) ($course->price ?? 0) <= 0;
@@ -94,6 +111,17 @@ class CoursePaymentController extends Controller
         $whatsapp = isset($validated['whatsapp']) ? trim((string) $validated['whatsapp']) : null;
         $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;
 
+        // Referral/discount only applies for reseller-enabled courses.
+        if (!(bool) ($course->is_reseller_course ?? false)) {
+            $referralCode = null;
+        }
+
+        $referrer = $this->resolveValidReferrer($user, $referralCode);
+        $referralCode = $referrer ? $referralCode : null;
+
+        $baseAmount = (float) ($course->price ?? 0);
+        $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
+
         DB::beginTransaction();
         try {
             $enrollment = Enrollment::firstOrCreate(
@@ -120,7 +148,7 @@ class CoursePaymentController extends Controller
             $manualPayment->course_id = $course->id;
             $manualPayment->enrollment_id = $enrollment->id;
             $manualPayment->user_id = $user->id;
-            $manualPayment->amount = (float) ($course->price ?? 0);
+            $manualPayment->amount = $finalAmount;
             $manualPayment->currency = 'IDR';
             $manualPayment->method = 'qris';
             $manualPayment->status = 'pending';
@@ -132,6 +160,8 @@ class CoursePaymentController extends Controller
             }
             $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
                 'source' => 'course',
+                'base_amount' => $baseAmount,
+                'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
             ]);
             $manualPayment->save();
 
@@ -143,6 +173,12 @@ class CoursePaymentController extends Controller
                 'data' => [
                     'enrollment' => $enrollment,
                     'manual_payment' => $manualPayment,
+                    'amount_breakdown' => [
+                        'base_amount' => (float) $baseAmount,
+                        'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
+                        'final_amount' => (float) $finalAmount,
+                        'referral_applied' => $referrer !== null,
+                    ],
                 ],
             ], 201);
         } catch (\Throwable $e) {
@@ -160,6 +196,13 @@ class CoursePaymentController extends Controller
      */
     public function uploadProof(Request $request, Course $course)
     {
+        if (((string) ($course->status ?? '')) !== 'active') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Course tidak ditemukan',
+            ], 404);
+        }
+
         $user = $request->user();
 
         $validated = $request->validate([
@@ -178,6 +221,17 @@ class CoursePaymentController extends Controller
 
         $whatsapp = isset($validated['whatsapp']) ? trim((string) $validated['whatsapp']) : null;
         $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;
+
+        // Referral/discount only applies for reseller-enabled courses.
+        if (!(bool) ($course->is_reseller_course ?? false)) {
+            $referralCode = null;
+        }
+
+        $referrer = $this->resolveValidReferrer($user, $referralCode);
+        $referralCode = $referrer ? $referralCode : null;
+
+        $baseAmount = (float) ($course->price ?? 0);
+        $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
         DB::beginTransaction();
         try {
@@ -200,7 +254,7 @@ class CoursePaymentController extends Controller
             $manualPayment->course_id = $course->id;
             $manualPayment->enrollment_id = $enrollment->id;
             $manualPayment->user_id = $user->id;
-            $manualPayment->amount = (float) ($course->price ?? 0);
+            $manualPayment->amount = $finalAmount;
             $manualPayment->currency = 'IDR';
             $manualPayment->method = 'qris';
             $manualPayment->status = 'pending';
@@ -212,6 +266,8 @@ class CoursePaymentController extends Controller
             }
             $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
                 'source' => 'course',
+                'base_amount' => $baseAmount,
+                'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
             ]);
             $manualPayment->save();
 
@@ -241,6 +297,12 @@ class CoursePaymentController extends Controller
                 'data' => [
                     'enrollment' => $enrollment,
                     'manual_payment' => $manualPayment->load('proofs'),
+                    'amount_breakdown' => [
+                        'base_amount' => (float) $baseAmount,
+                        'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
+                        'final_amount' => (float) $finalAmount,
+                        'referral_applied' => $referrer !== null,
+                    ],
                 ],
             ], 201);
         } catch (\Throwable $e) {
@@ -260,5 +322,35 @@ class CoursePaymentController extends Controller
         // For free courses, allow only if active enrollment exists OR has settled trace
         // (consistent with web learn gate).
         return $enrolledActive || $settled;
+    }
+
+    private function resolveValidReferrer(?User $buyer, ?string $referralCode): ?User
+    {
+        $code = trim((string) $referralCode);
+        if ($code === '') {
+            return null;
+        }
+
+        $referrer = User::query()->where('referral_code', $code)->first();
+        if (!$referrer) {
+            return null;
+        }
+
+        if ($buyer && (int) $referrer->id === (int) $buyer->id) {
+            return null;
+        }
+
+        return $referrer;
+    }
+
+    private function applyReferralDiscountAmount(float $baseAmount, bool $hasValidReferral): float
+    {
+        $base = max(0, (float) $baseAmount);
+        if (!$hasValidReferral) {
+            return $base;
+        }
+
+        $discounted = $base * (1 - self::REFERRAL_DISCOUNT_RATE);
+        return max(0, round($discounted, 2));
     }
 }

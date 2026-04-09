@@ -88,9 +88,9 @@ class AuthController extends Controller
         // Also honor explicit internal redirect param (used by guest-only links).
         $redirect = trim((string) $request->input('redirect', ''));
         if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
-            return redirect($redirect);
+            return redirect($redirect)->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
         }
-        return redirect()->intended('/dashboard');
+        return redirect()->intended('/dashboard')->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
     }
 
     public function register(Request $request)
@@ -511,9 +511,9 @@ class AuthController extends Controller
                 ->route('trainer.dashboard');
         }
         if ($redirect) {
-            return redirect($redirect);
+            return redirect($redirect)->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
         }
-        return redirect()->intended('/dashboard');
+        return redirect()->intended('/dashboard')->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
     }
 
     public function resendLoginOtp(Request $request)

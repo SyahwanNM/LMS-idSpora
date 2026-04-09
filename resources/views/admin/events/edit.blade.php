@@ -167,6 +167,17 @@
                                 <small class="text-muted">Pilih apakah event ini dikelola (Manage) atau dibuat baru
                                     (Create).</small>
                             </div>
+
+                            <!-- Reseller Event -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reseller Event</label>
+                                <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', (int) ($event->is_reseller_event ?? 0)) ? 1 : 0 }}">
+                                <div class="btn-group w-100" role="group" aria-label="Reseller Event">
+                                    <button type="button" id="reseller-event-no" class="btn btn-outline-secondary">Tidak</button>
+                                    <button type="button" id="reseller-event-yes" class="btn btn-outline-secondary">Ya</button>
+                                </div>
+                                <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                            </div>
                             <div class="mb-3">
                                 <label for="tanggal" class="form-label fw-semibold">Tanggal <span
                                         class="text-danger">*</span></label>
@@ -451,6 +462,37 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Bootstrap tooltips
             try {
@@ -460,6 +502,33 @@
                     });
                 }
             } catch (_) { }
+
+            // Reseller Event toggle (Yes/No)
+            (function(){
+                const input = document.getElementById('is_reseller_event');
+                const btnYes = document.getElementById('reseller-event-yes');
+                const btnNo = document.getElementById('reseller-event-no');
+
+                if (!input || (!btnYes && !btnNo)) return;
+
+                function setReseller(val){
+                    const v = val ? '1' : '0';
+                    input.value = v;
+
+                    if (btnYes) {
+                        btnYes.classList.toggle('btn-primary', v === '1');
+                        btnYes.classList.toggle('btn-outline-secondary', v !== '1');
+                    }
+                    if (btnNo) {
+                        btnNo.classList.toggle('btn-primary', v === '0');
+                        btnNo.classList.toggle('btn-outline-secondary', v !== '0');
+                    }
+                }
+
+                btnYes && btnYes.addEventListener('click', () => setReseller(true));
+                btnNo && btnNo.addEventListener('click', () => setReseller(false));
+                setReseller((input.value || '0') === '1');
+            })();
 
             // Jenis Acara autocomplete (show after 2 chars)
             (function setupJenisAutocomplete(){
@@ -1014,7 +1083,16 @@
                     shortDescCountEl.textContent = words.length;
                     if (words.length > 40) { shortDescCountEl.classList.add('text-danger'); } else { shortDescCountEl.classList.remove('text-danger'); }
                 }
+                // Direct listeners (keep) + delegated fallback for robustness.
                 ['input', 'change', 'blur'].forEach(ev => shortDescEl2?.addEventListener(ev, () => { updateShortDescCount(); window.updateSubmitState(); }));
+                document.addEventListener('input', function(e){
+                    const t = e.target;
+                    if(!(t instanceof HTMLElement)) return;
+                    if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                        updateShortDescCount();
+                        if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                    }
+                }, true);
                 updateShortDescCount();
             }
             // Event listener for add benefit button

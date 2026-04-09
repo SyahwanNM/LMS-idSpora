@@ -62,6 +62,9 @@ class Event extends Model
         // publishing
         'is_published',
         'published_at',
+
+        // reseller
+        'is_reseller_event',
     ];
 
     protected $casts = [
@@ -85,6 +88,8 @@ class Event extends Model
 
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+
+        'is_reseller_event' => 'boolean',
     ];
 
     /**
