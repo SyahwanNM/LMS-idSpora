@@ -6,27 +6,109 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\EventRegistrationResource;
+use App\Models\ManualPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::active()->latest()->paginate(10);
+        $perPage = max(1, min((int) $request->query('per_page', 10), 100));
+
+        $query = Event::query()->with(['scheduleItems']);
+
+        $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+        if (!$isAdmin) {
+            $query->where('is_published', true);
+        }
+
+        $status = strtolower(trim((string) $request->query('status', 'active')));
+        $now = now()->format('Y-m-d H:i:s');
+        $startExpr = "TIMESTAMP(event_date, COALESCE(event_time,'00:00:00'))";
+        $endExpr = "TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59')))";
+
+        if ($status === 'finished') {
+            $query->finished();
+        } elseif ($status === 'ongoing') {
+            $query->whereNotNull('event_date')->whereRaw("$startExpr <= ? AND $endExpr >= ?", [$now, $now]);
+        } elseif ($status === 'upcoming') {
+            $query->whereNotNull('event_date')->whereRaw("$startExpr > ?", [$now]);
+        } elseif ($status === 'all') {
+            // no constraint
+        } else {
+            // default behavior: only active events
+            $query->active();
+        }
+
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('speaker', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('materi', 'like', "%{$search}%")
+                    ->orWhere('jenis', 'like', "%{$search}%");
+            });
+        }
+
+        $location = trim((string) $request->query('location', ''));
+        if ($location !== '') {
+            $query->where('location', $location);
+        }
+
+        // category maps to `jenis`
+        $category = trim((string) $request->query('category', ''));
+        if ($category !== '') {
+            $query->whereRaw('LOWER(jenis) = ?', [mb_strtolower($category)]);
+        }
+
+        if ($request->has('free')) {
+            $isFree = filter_var($request->query('free'), FILTER_VALIDATE_BOOL);
+            if ($isFree) {
+                $query->where(function ($q) {
+                    $q->where('price', 0)
+                        ->orWhere(function ($qq) {
+                            $qq->where('discount_percentage', 100)->where('price', '>', 0);
+                        });
+                });
+            }
+        }
+
+        $priceSort = strtolower(trim((string) $request->query('price', '')));
+        if (in_array($priceSort, ['asc', 'desc'], true)) {
+            $query->orderBy('price', $priceSort);
+        } else {
+            $query->latest();
+        }
+
+        $events = $query->paginate($perPage)->appends($request->query());
 
         return response()->json([
             'status' => 'success',
-            'message' => 'List Event Terbaru',
-            'data' => EventResource::collection($events), 
+            'message' => 'List event',
+            'data' => EventResource::collection($events),
+            'pagination' => [
+                'current_page' => $events->currentPage(),
+                'per_page' => $events->perPage(),
+                'total' => $events->total(),
+                'last_page' => $events->lastPage(),
+            ],
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request, int $id)
     {
-        $event = Event::find($id);
+        $event = Event::query()
+            ->with(['scheduleItems'])
+            ->find($id);
 
         if (!$event) {
+            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+        }
+
+        $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
         }
 
@@ -47,6 +129,11 @@ class EventController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
         }
 
+        $isAdmin = $user && strtolower(trim((string) ($user->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
+            return response()->json(['status' => 'error', 'message' => 'Event belum diterbitkan'], 404);
+        }
+
         // 1b. Cek apakah event sudah selesai
         if (method_exists($event, 'isFinished') && $event->isFinished()) {
             return response()->json([
@@ -55,10 +142,18 @@ class EventController extends Controller
             ], 422);
         }
 
-        // 2. Cek Apakah User Sudah Terdaftar
+        // 2. Hitung Harga
+        $isFree = (float) ($event->discounted_price ?? 0) <= 0;
+        $amount = $isFree ? 0 : (float) $event->discounted_price;
+
+        // Buat Nomor Order Unik (Must be unique for each registration attempt)
+        // Format: REG-{UserID}-{EventID}-{Timestamp}
+        $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
+
+        // 3. Cek Apakah User Sudah Terdaftar
         $existing = \App\Models\EventRegistration::where('user_id', $user->id)
-                    ->where('event_id', $event->id)
-                    ->first();
+            ->where('event_id', $event->id)
+            ->first();
 
         if ($existing) {
             // Kalau sudah daftar tapi belum bayar, kasih link bayar yang lama
@@ -69,21 +164,74 @@ class EventController extends Controller
                     'data' => $existing
                 ], 200);
             }
-            
+
+            // Jika sebelumnya ditolak, izinkan daftar lagi: reset jadi attempt baru
+            if ($existing->status == 'rejected') {
+                try {
+                    DB::beginTransaction();
+
+                    $existing->status = $isFree ? 'active' : 'pending';
+                    $existing->registration_code = $orderId;
+                    $existing->total_price = $amount;
+                    $existing->payment_url = null;
+                    $existing->payment_proof = null;
+                    $existing->rejection_reason = null;
+                    $existing->payment_verified_at = null;
+                    $existing->payment_verified_by = null;
+                    $existing->save();
+
+                    $manualPayment = ManualPayment::query()
+                        ->where('event_id', $event->id)
+                        ->where('event_registration_id', $existing->id)
+                        ->where('user_id', $user->id)
+                        ->latest('id')
+                        ->first();
+
+                    if (!$manualPayment) {
+                        $manualPayment = new ManualPayment();
+                    }
+
+                    $manualPayment->event_id = $event->id;
+                    $manualPayment->event_registration_id = $existing->id;
+                    $manualPayment->user_id = $user->id;
+                    $manualPayment->order_id = $orderId;
+                    $manualPayment->amount = $amount;
+                    $manualPayment->currency = 'IDR';
+                    $manualPayment->method = $isFree ? 'free' : 'manual_transfer';
+                    $manualPayment->status = $isFree ? 'settled' : 'pending';
+                    $manualPayment->note = null;
+                    $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
+                        'source' => 'event',
+                        'type' => $isFree ? 'free' : 'paid',
+                        'retry_after_reject' => true,
+                    ]);
+                    $manualPayment->save();
+
+                    DB::commit();
+
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Pendaftaran berhasil. Silakan lakukan pembayaran manual dan upload bukti bayar.',
+                        'data' => [
+                            'registration' => $existing,
+                            'payment_url' => null
+                        ]
+                    ], 201);
+                } catch (\Throwable $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Gagal memproses pendaftaran ulang: ' . $e->getMessage(),
+                    ], 500);
+                }
+            }
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Kamu sudah terdaftar di event ini!',
                 'data' => $existing
             ], 409);
         }
-
-        // 3. Hitung Harga
-        $isFree = $event->discounted_price <= 0;
-        $amount = $isFree ? 0 : $event->discounted_price;
-        
-        // Buat Nomor Order Unik (Must be unique for each registration attempt)
-        // Format: REG-{UserID}-{EventID}-{Timestamp}
-        $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
 
         try {
             DB::beginTransaction();

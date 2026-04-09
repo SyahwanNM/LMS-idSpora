@@ -170,23 +170,25 @@
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-3"><i class="bi bi-folder2-open me-2"></i>Dokumen Operasional</h6>
                                 <ul class="list-group list-group-flush small">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->vbg_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Virtual Background</span>
-                                        <span>
-                                            @if(!empty($event->vbg_path))
-                                                @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->vbg_path) }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                    </a>
-                                                @elseif($vExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                @else
-                                                    <a href="{{ Storage::url($event->vbg_path) }}" target="_blank" class="link-primary">Lihat</a>
-                                                @endif
-                                            @else <span class="text-muted">Belum ada</span> @endif
-                                        </span>
-                                    </li>
+                                    @if(!empty($event->zoom_link) || empty($event->maps_url))
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><i class="bi {{ !empty($event->vbg_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Virtual Background</span>
+                                            <span>
+                                                @if(!empty($event->vbg_path))
+                                                    @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
+                                                    @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
+                                                            <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                        </a>
+                                                    @elseif($vExt === 'pdf')
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                    @else
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
+                                                    @endif
+                                                @else <span class="text-muted">Belum ada</span> @endif
+                                            </span>
+                                        </li>
+                                    @endif
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span><i class="bi {{ !empty($event->certificate_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Sertifikat</span>
                                         <span>
@@ -205,10 +207,48 @@
                                         </span>
                                     </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        @php
+                                            $hasModuleFile = !empty($event->module_path);
+                                            $moduleApproved = !empty($event->module_verified_at)
+                                                || (((string) ($event->material_status ?? '')) === 'approved' && !empty($event->material_approved_at));
+                                            $moduleRejected = !empty($event->module_rejected_at)
+                                                || (((string) ($event->material_status ?? '')) === 'rejected');
+                                            $modulePending = $hasModuleFile && !$moduleApproved && !$moduleRejected;
+                                            $moduleIcon = $moduleApproved
+                                                ? 'bi-check-circle text-success'
+                                                : ($moduleRejected
+                                                    ? 'bi-x-circle text-danger'
+                                                    : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
+                                        @endphp
+                                        <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
+                                        <span>
+                                            @if($moduleApproved && $hasModuleFile)
+                                                <a href="{{ $event->module_file_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
+                                            @elseif($hasModuleFile)
+                                                @if(!empty($event->trainer_id))
+                                                    <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn btn-sm btn-outline-warning">
+                                                        <i class="bi bi-person-check me-1"></i>Verifikasi di Trainer
+                                                    </a>
+                                                @else
+                                                    <span class="text-warning">{{ $moduleRejected ? 'Perlu revisi' : 'Menunggu verifikasi' }}</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">Belum ada</span>
+                                            @endif
+                                        </span>
+                                    </li>
+                                    @if($modulePending)
+                                        <li class="list-group-item">
+                                            <div class="mt-2 small text-warning">
+                                                <i class="bi bi-info-circle me-1"></i>Module ini belum dihitung pada kelengkapan dokumen sampai di-approve (verifikasi dipusatkan di menu Trainer).
+                                            </div>
+                                        </li>
+                                    @endif
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Absensi</span>
                                         <span class="d-flex align-items-center gap-2">
                                             @if(!empty($event->attendance_qr_image))
-                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = Storage::url($event->attendance_qr_image); @endphp
+                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = $event->attendance_qr_image_url; @endphp
                                                 <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
                                                     <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                 </a>
@@ -228,6 +268,7 @@
                                         </span>
                                     </li>
                                 </ul>
+
                             </div>
                         </div>
                     </div>
@@ -236,7 +277,7 @@
                     @php
                         // Eager-load users for participant list
                         try {
-                            $registrations = $event->registrations()->with('user')->latest()->get();
+                            $registrations = $event->registrations()->with(['user', 'paymentProofs'])->latest()->get();
                         } catch (\Throwable $e) {
                             $registrations = collect();
                         }
@@ -280,8 +321,20 @@
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                                 <td>
-                                                    @if(!empty($reg->payment_proof))
-                                                        @php $ppExt = strtolower(pathinfo($reg->payment_proof, PATHINFO_EXTENSION)); $ppUrl = Storage::url($reg->payment_proof); @endphp
+                                                    @php
+                                                        $proofPath = (string) ($reg->payment_proof ?? '');
+                                                        if ($proofPath === '' && $reg->relationLoaded('paymentProofs')) {
+                                                            $latestProof = $reg->paymentProofs->sortByDesc('id')->first();
+                                                            $proofPath = (string) ($latestProof->file_path ?? '');
+                                                        }
+                                                        // Normalize if stored as absolute uploads path
+                                                        $proofPath = preg_replace('#^/?uploads/?#i', '', $proofPath);
+                                                    @endphp
+                                                    @if($proofPath !== '')
+                                                        @php
+                                                            $ppExt = strtolower(pathinfo($proofPath, PATHINFO_EXTENSION));
+                                                            $ppUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($proofPath);
+                                                        @endphp
                                                         <a href="{{ $ppUrl }}" target="_blank" class="d-inline-block">
                                                             @if(in_array($ppExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
                                                                 <img src="{{ $ppUrl }}" alt="Bukti" class="rounded border" style="width:80px;height:48px;object-fit:cover;">
@@ -551,6 +604,8 @@
 
 @section('styles')
 <style>
+.btn-close.btn-close-sm { background-size: .75em .75em; }
+
 .event-description {
     line-height: 1.6;
     color: #333;
@@ -636,6 +691,10 @@
 }
 .confirm-danger-btn { background: #dc2626; border-color:#dc2626; }
 .confirm-danger-btn:hover { background:#b91c1c; border-color:#b91c1c; }
+/* Registration approve/reject modal buttons: equal size */
+.registration-action-footer .btn { flex: 0 0 140px; }
+/* Reject registration modal buttons: equal size */
+.reject-registration-footer .btn { flex: 0 0 140px; width: 140px; }
 /* Manage/Create action ribbon */
 .manage-action-ribbon { position:absolute; top:12px; left:-6px; padding:6px 14px 6px 18px; background:linear-gradient(135deg,#0d6efd,#3b82f6); color:#fff; font-size:.75rem; font-weight:600; letter-spacing:.5px; text-transform:uppercase; border-radius:0 6px 6px 0; box-shadow:0 4px 12px -3px rgba(0,0,0,.25); display:flex; align-items:center; z-index:5; }
 .manage-action-ribbon:before { content:''; position:absolute; left:0; top:100%; width:0; height:0; border-left:6px solid #093d94; border-top:6px solid transparent; }
@@ -654,7 +713,7 @@
         <div class="modal-content border-0 shadow-lg image-preview-modal">
             <div class="modal-header border-0 pb-0">
                 <h6 class="modal-title small text-muted" id="imagePreviewLabel">Preview Gambar Event</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pt-2">
                 <div class="image-preview-container">
@@ -890,7 +949,7 @@ document.addEventListener('DOMContentLoaded', function(){
             if(variant === 'reject') {
                 // Open rejection modal
                 if(rejectForm) rejectForm.setAttribute('action', action);
-                if(rejectReasonHtml) rejectReasonHtml.value = ''; // clear previous text
+                if(rejectReasonHtml) rejectReasonHtml.value = ''; // clear previous selection
                 if(rejectModal) rejectModal.show();
             } else {
                 // Open standard confirmation modal
@@ -919,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function(){
                         <small class="text-muted">Tindakan ini tidak dapat dibatalkan</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p class="mb-2">Anda akan menghapus event:</p>
@@ -930,7 +989,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-danger confirm-danger-btn" id="deleteConfirmBtnShow" form="deleteEventFormShow" disabled>
                     <i class="bi bi-trash me-1"></i> Hapus Permanen
                 </button>
@@ -948,18 +1007,18 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="registrationActionLabel">Confirm</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p id="registrationActionMessage">Are you sure?</p>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <form id="registrationActionForm" method="POST" style="display:inline;">
-                        @csrf
-                        <button type="submit" class="btn btn-primary" id="registrationActionConfirmBtn">Konfirmasi</button>
-                    </form>
+                <div class="modal-footer d-flex justify-content-end gap-2 registration-action-footer">
+                    <button type="button" class="btn btn-secondary btn-sm flex-grow-0" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-0" id="registrationActionConfirmBtn" form="registrationActionForm">Konfirmasi</button>
                 </div>
+                <form id="registrationActionForm" method="POST" class="d-none">
+                    @csrf
+                </form>
             </div>
         </div>
     </div>
@@ -970,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="rejectRegistrationLabel">Tolak Pendaftaran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="rejectRegistrationForm" method="POST">
                     @csrf
@@ -978,13 +1037,21 @@ document.addEventListener('DOMContentLoaded', function(){
                         <p>Apakah Anda yakin ingin menolak pendaftaran ini?</p>
                         <div class="mb-3">
                             <label for="rejectionReason" class="form-label text-danger">Alasan Penolakan <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="rejectionReason" name="reason" rows="3" required placeholder="Contoh: Bukti transfer tidak terbaca"></textarea>
-                            <div class="form-text">Alasan ini akan dikirimkan kepada pendaftar melalui notifikasi.</div>
+                            <select class="form-select" id="rejectionReason" name="reason" required>
+                                <option value="" selected disabled>Pilih alasan penolakan</option>
+                                <option value="Nominal pembayaran kurang">Nominal pembayaran kurang</option>
+                                <option value="Nominal pembayaran lebih">Nominal pembayaran lebih</option>
+                                <option value="Gambar bukti pembayaran blur/buram. Silahkan kirim ulang">Gambar bukti pembayaran blur/buram. Silahkan kirim ulang</option>
+                                <option value="Pembayaran dinyatakan tidak valid">Pembayaran dinyatakan tidak valid</option>
+                            </select>
+                            <div class="form-text">Alasan ini akan dikirimkan kepada pendaftar melalui notifikasi dan email.</div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-danger">Tolak Pendaftaran</button>
+                        <div class="w-100 d-flex justify-content-end gap-2 reject-registration-footer">
+                            <button type="button" class="btn btn-secondary btn-sm flex-grow-0" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-danger btn-sm flex-grow-0">Tolak Pendaftaran</button>
+                        </div>
                     </div>
                 </form>
             </div>

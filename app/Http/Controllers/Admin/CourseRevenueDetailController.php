@@ -24,7 +24,7 @@ class CourseRevenueDetailController extends Controller
         }
 
         $course = Course::query()
-            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end')
+            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end', 'expenses_json')
             ->findOrFail($courseId);
 
         [$from, $to] = $this->parseDateRange($request);
@@ -49,13 +49,43 @@ class CourseRevenueDetailController extends Controller
             ? (float) round($revenueTotal / $transactionsCount)
             : (float) ($course->price ?? 0);
 
-        // Expense breakdown (currently UI uses fixed categories & percentages).
-        $expenseHonor = (float) round($revenueTotal * 0.40);
-        $expensePlatform = (float) round($revenueTotal * 0.20);
-        $expenseMarketing = (float) round($revenueTotal * 0.15);
-        $expenseInfra = (float) round($revenueTotal * 0.15);
-        $expenseSupport = (float) round($revenueTotal * 0.10);
-        $expenseTotal = $expenseHonor + $expensePlatform + $expenseMarketing + $expenseInfra + $expenseSupport;
+        // Expense breakdown: use course "Pengeluaran" column (expenses_json) as the source of truth.
+        $expenseRows = [];
+        $rawExpenses = $course->expenses_json;
+        if (is_array($rawExpenses)) {
+            foreach ($rawExpenses as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $item = trim((string) ($row['item'] ?? ''));
+
+                $total = $row['total'] ?? null;
+                if ($total === null) {
+                    $qty = (int) ($row['quantity'] ?? 0);
+                    $unit = (int) ($row['unit_price'] ?? 0);
+                    $total = max(0, $qty) * max(0, $unit);
+                }
+
+                $total = (float) $total;
+                $total = $total < 0 ? 0.0 : $total;
+
+                if ($item === '' && $total <= 0) {
+                    continue;
+                }
+
+                $expenseRows[] = [
+                    'item' => $item !== '' ? $item : 'Pengeluaran',
+                    'total' => $total,
+                ];
+            }
+        }
+
+        // Sort by total desc for nicer breakdown display.
+        usort($expenseRows, function ($a, $b) {
+            return ($b['total'] ?? 0) <=> ($a['total'] ?? 0);
+        });
+
+        $expenseTotal = (float) array_sum(array_map(fn ($r) => (float) ($r['total'] ?? 0), $expenseRows));
 
         $profit = (float) ($revenueTotal - $expenseTotal);
         $profitStatus = $profit >= 0 ? 'Menguntungkan' : 'Rugi';
@@ -77,13 +107,7 @@ class CourseRevenueDetailController extends Controller
                 'profit' => $profit,
                 'profit_status' => $profitStatus,
             ],
-            'expenses' => [
-                'honor' => $expenseHonor,
-                'platform' => $expensePlatform,
-                'marketing' => $expenseMarketing,
-                'infra' => $expenseInfra,
-                'support' => $expenseSupport,
-            ],
+            'expense_rows' => $expenseRows,
             'chart' => [
                 'revenue' => $revenueTotal,
                 'expense' => $expenseTotal,

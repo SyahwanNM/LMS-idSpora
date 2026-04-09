@@ -20,14 +20,16 @@
         $user = auth()->user();
         $isSpecialPage = request()->routeIs('admin.finance.*') || 
                          request()->routeIs('admin.withdrawals.*') || 
-                         request()->routeIs('admin.crm.*');
+                         request()->routeIs('admin.crm.*') || 
+                         request()->routeIs('admin.trainer.*') ||
+                         request()->routeIs('admin.material.*');
     @endphp
 
     @unless($isSpecialPage)
     <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
-        <div class="container">
+        <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:28px;">
+                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:22px;">
                 <span class="fw-semibold">Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +57,9 @@
                         <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
                     </li>
                     @endif
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
@@ -106,22 +111,11 @@
                     </div>
                     <div class="modal-body pt-0">
                         <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
-
-                        <div class="logout-check d-flex align-items-start gap-3 p-3 rounded-3">
-                            
-                            <div class="flex-grow-1">
-                                <div class="form-check m-0">
-                                    <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck" aria-describedby="logoutConfirmHelp">
-                                    <label class="form-check-label fw-semibold" for="logoutConfirmCheck">Saya yakin ingin logout</label>
-                                </div>
-                                <small id="logoutConfirmHelp" class="text-muted d-block mt-1">Anda akan keluar dari sesi admin dan perlu login kembali.</small>
-                            </div>
-                        </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                             <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn" disabled>
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                             </button>
@@ -134,7 +128,7 @@
     {{-- Quick actions bar removed per request: New Course/Event/User, All Courses/Events/Users, Reports --}}
     @yield('navbar')
 
-    <div class="@if($isSpecialPage) container-fluid p-0 @else container @endif">
+    <div class="@if($isSpecialPage) container-fluid p-0 @else container-fluid px-4 @endif">
         @yield('content')
     </div>
 
@@ -175,17 +169,8 @@
                 });
             });
         }
-        // Auto-show any server-rendered Bootstrap toasts (flash messages)
-        try {
-            document.querySelectorAll('.toast').forEach(function(t){
-                try {
-                    if(window.bootstrap && bootstrap.Toast){
-                        var inst = bootstrap.Toast.getOrCreateInstance(t);
-                        inst.show();
-                    }
-                } catch(e) {}
-            });
-        } catch(e) {}
+        // NOTE: Legacy Bootstrap toast auto-show disabled.
+        // Admin uses the newer global notification banner (#globalNotifications).
         
         // Logout confirmation (modern modal)
         const logoutTrigger = document.getElementById('logoutTrigger');
@@ -199,13 +184,6 @@
             const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
             const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
 
-            function setConfirmState(checked){
-                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
-                const box = modalEl.querySelector('.logout-check .check-anim');
-                if(confirmBtn) confirmBtn.disabled = !checked;
-                if(box) box.classList.toggle('active', !!checked);
-            }
-
             function resetLogoutModal(){
                 const body = modalEl.querySelector('.modal-body');
                 const footer = modalEl.querySelector('.modal-footer');
@@ -217,26 +195,18 @@
                     footer.style.display = initialFooterDisplay;
                     footer.innerHTML = initialFooterHtml;
                 }
-                const confirmCheck = modalEl.querySelector('#logoutConfirmCheck');
-                if(confirmCheck) confirmCheck.checked = false;
-                setConfirmState(false);
+                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
+                if(confirmBtn) confirmBtn.disabled = false;
             }
 
             logoutTrigger.addEventListener('click', function(ev){
                 ev.preventDefault();
                 resetLogoutModal();
                 confirmModal.show();
-                // focus checkbox for faster keyboard flow
+                // focus confirm button for keyboard flow
                 setTimeout(function(){
-                    try { modalEl.querySelector('#logoutConfirmCheck')?.focus(); } catch(e) {}
+                    try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
                 }, 150);
-            });
-
-            modalEl.addEventListener('change', function(ev){
-                const target = ev.target;
-                if(target && target.id === 'logoutConfirmCheck'){
-                    setConfirmState(!!target.checked);
-                }
             });
 
             function showLogoutSuccessState(){
@@ -262,8 +232,6 @@
                 const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
                 if(!btn) return;
                 ev.preventDefault();
-                const confirmCheck = modalEl.querySelector('#logoutConfirmCheck');
-                if(!confirmCheck || !confirmCheck.checked) return;
                 btn.disabled = true;
                 try { showLogoutSuccessState(); } catch(e){}
                 setTimeout(function(){ logoutForm.submit(); }, 900);
@@ -305,12 +273,14 @@
     .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
     /* Ensure navbar always sits above any page overlays */
     .navbar { z-index: 10000; pointer-events:auto; overflow: visible !important; }
-    .navbar .container { overflow: visible !important; }
+    .navbar .container, .navbar .container-fluid { overflow: visible !important; }
+    .navbar { padding-top: .35rem; padding-bottom: .35rem; }
     .navbar .nav-link {color: rgba(255,255,255,.9);} 
     .navbar .nav-link:hover {color: #fff;}
+    .navbar .nav-link { padding-top: .35rem; padding-bottom: .35rem; font-size: .95rem; }
     .navbar .nav-link.active {color:#fff;position:relative;}
     .navbar .nav-link.active::after {content:"";position:absolute;left:.5rem;right:.5rem;bottom:-.4rem;height:2px;background:#fff;border-radius:2px;opacity:.9;}
-    .avatar-circle {width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #EBBC01;background:#6b7280;display:inline-flex;align-items:center;justify-content:center;}
+    .avatar-circle {width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid #EBBC01;background:#6b7280;display:inline-flex;align-items:center;justify-content:center;}
     .avatar-circle img {width:100%;height:100%;object-fit:cover;display:block;}
     /* Subtle dropdown animation + visible background */
     .profile-dropdown {
@@ -358,8 +328,8 @@
     .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
-    body { padding-top: 78px; }
-    @media (max-width: 991.98px){ body { padding-top: 66px; } }
+    body { padding-top: 64px; }
+    @media (max-width: 991.98px){ body { padding-top: 58px; } }
     /* Logout modal (modern look) */
     .logout-modal .modal-content{ border-radius: 18px; overflow:hidden; }
     .logout-modal .modal-header{ padding: 1.1rem 1.1rem .75rem; }
@@ -431,6 +401,49 @@
             });
         } catch(e){}
     });
+
+    // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
+    window.adminNotify = function(type, message, timeout){
+        try {
+            const kind = (type === 'error') ? 'error' : 'success';
+            const text = (message == null) ? '' : String(message);
+            const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+            let wrap = document.getElementById('globalNotifications');
+            if(!wrap){
+                wrap = document.createElement('div');
+                wrap.id = 'globalNotifications';
+                wrap.className = 'global-notification';
+                wrap.setAttribute('aria-live', 'polite');
+                wrap.setAttribute('aria-atomic', 'true');
+                document.body.appendChild(wrap);
+            }
+
+            const n = document.createElement('div');
+            n.className = 'notification ' + kind;
+            n.setAttribute('role', 'status');
+            n.setAttribute('data-timeout', String(ms));
+
+            const msg = document.createElement('div');
+            msg.className = 'notif-message';
+            msg.textContent = text;
+
+            const close = document.createElement('button');
+            close.className = 'notif-close';
+            close.setAttribute('aria-label', 'Close');
+            close.type = 'button';
+            close.innerHTML = '&times;';
+
+            n.appendChild(msg);
+            n.appendChild(close);
+            wrap.appendChild(n);
+
+            const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+            close.addEventListener('click', hide);
+            setTimeout(function(){ n.classList.add('show'); }, 20);
+            setTimeout(hide, ms);
+        } catch(e){}
+    };
     </script>
 
     @yield('scripts')

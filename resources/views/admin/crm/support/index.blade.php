@@ -1,10 +1,6 @@
-@extends('layouts.admin')
+@extends('layouts.crm')
 
 @section('title', 'Manajemen Support')
-
-@section('navbar')
-    @include('partials.navbar-crm')
-@endsection
 
 @section('styles')
 <style>
@@ -42,69 +38,6 @@
         letter-spacing: -0.5px;
     }
 
-    /* Sidebar-like Nav */
-    .crm-wrapper {
-        display: flex;
-        min-height: calc(100vh - 72px);
-    }
-
-    .crm-sidebar-new {
-        width: 260px;
-        background: #fff;
-        padding: 24px;
-        border-right: 1px solid #eee;
-        flex-shrink: 0;
-    }
-
-    .crm-main {
-        flex-grow: 1;
-        padding: 32px;
-        background-color: #F8F9FA;
-    }
-
-    .nav-menu-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #94a3b8;
-        letter-spacing: 1px;
-        margin-bottom: 16px;
-        display: block;
-        margin-top: 24px;
-    }
-
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        color: #1e293b;
-        text-decoration: none;
-        border-radius: 12px;
-        margin-bottom: 4px;
-        font-weight: 600;
-        transition: all 0.2s;
-        gap: 12px;
-    }
-
-    .sidebar-link i {
-        font-size: 1.1rem;
-        color: #64748b;
-    }
-
-    .sidebar-link:hover {
-        background-color: #f1f5f9;
-        color: #6d28d9;
-    }
-
-    .sidebar-link.active {
-        background-color: #6d28d9;
-        color: #fff;
-    }
-
-    .sidebar-link.active i {
-        color: #fff;
-    }
-
     .status-pill {
         font-weight: 700;
         font-size: 0.65rem;
@@ -139,51 +72,26 @@
 @endsection
 
 @section('content')
-<div class="crm-wrapper">
-    <aside class="crm-sidebar-new d-none d-lg-block" style="position: sticky; top: 72px; height: calc(100vh - 72px);">
-        <span class="nav-menu-label mt-0">DASHBOARD</span>
-        <a href="{{ route('admin.crm.dashboard') }}" class="sidebar-link">
-            <i class="bi bi-speedometer2"></i> Analitik Ringkas
-        </a>
-        <a href="{{ route('admin.crm.customers.index') }}" class="sidebar-link">
-            <i class="bi bi-people"></i> Data Pelanggan
-        </a>
-
-        <span class="nav-menu-label">OPERASIONAL</span>
-        <a href="{{ route('admin.crm.feedback.index') }}" class="sidebar-link">
-            <i class="bi bi-chat-heart"></i> Analisis Feedback
-        </a>
-        <a href="{{ route('admin.crm.broadcast.index') }}" class="sidebar-link">
-            <i class="bi bi-megaphone"></i> Blast Broadcast
-        </a>
-
-        <span class="nav-menu-label">BANTUAN</span>
-        <a href="{{ route('admin.crm.support.index') }}" class="sidebar-link active">
-            <i class="bi bi-headset"></i> Tiket Support
-        </a>
-    </aside>
-
-    <main class="crm-main">
-        <div class="crm-hero d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-            <div>
-                <span class="hero-label">Support Helpdesk</span>
-                <h1 class="hero-title">Tiket Support</h1>
-                <p class="hero-subtitle mb-0">Manajemen masukan, pertanyaan, dan kendala teknis dari seluruh ekosistem IDSPora.</p>
-            </div>
-            <div class="mt-4 mt-md-0">
-                <div class="bg-white bg-opacity-10 border border-white border-opacity-10 p-3 rounded-4 backdrop-blur shadow-sm">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="bg-primary p-2 rounded-3">
-                            <i class="bi bi-headset fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="small opacity-75 fw-600">Total Tiket Aktif</div>
-                            <div class="fs-5 fw-800">{{ $messages->total() }} Laporan</div>
-                        </div>
-                    </div>
+<div class="crm-hero d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+    <div>
+        <span class="hero-label">Support Helpdesk</span>
+        <h1 class="hero-title">Tiket Support</h1>
+        <p class="hero-subtitle mb-0">Manajemen masukan, pertanyaan, dan kendala teknis dari seluruh ekosistem IDSPora.</p>
+    </div>
+    <div class="mt-4 mt-md-0">
+        <div class="bg-white bg-opacity-10 border border-white border-opacity-10 p-3 rounded-4 backdrop-blur shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary p-2 rounded-3">
+                    <i class="bi bi-headset fs-4"></i>
+                </div>
+                <div>
+                    <div class="small opacity-75 fw-600">Total Tiket Aktif</div>
+                    <div class="fs-5 fw-800">{{ $messages->total() }} Laporan</div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
 @if(session('success'))
     <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4 py-3" style="border-radius: 15px;" role="alert">

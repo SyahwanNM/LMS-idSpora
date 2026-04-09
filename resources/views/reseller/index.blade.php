@@ -400,7 +400,7 @@
                         {{-- FOTO PROFIL --}}
                         @if(!empty($reseller->profile_photo_path))
                             {{-- Jika punya foto di database --}}
-                            <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}" 
+                            <img src="{{ Storage::url($reseller->profile_photo_path) }}" 
                                  alt="{{ $reseller->name }}"
                                  class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
                                  style="width: 40px; height: 40px; object-fit: cover;">
@@ -450,7 +450,7 @@
                 
                 {{-- FOTO PROFIL USER SENDIRI --}}
                 @if(!empty($user->profile_photo_path))
-                    <img src="{{ asset('storage/' . $user->profile_photo_path) }}" 
+                    <img src="{{ Storage::url($user->profile_photo_path) }}" 
                          alt="{{ $user->name }}"
                          class="rounded-circle border border-warning me-3"
                          style="width: 40px; height: 40px; object-fit: cover;">

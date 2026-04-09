@@ -5,16 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
     use SoftDeletes;
     protected $fillable = [
+        'trainer_id',
         'title',
         'image',
         'vbg_path',
         'certificate_path',
         'attendance_path',
+        'module_path',
+        'material_status',
+        'material_approved_at',
+        'material_approved_by',
+        'material_rejection_reason',
+        'module_submitted_at',
+        'module_verified_at',
+        'module_verified_by',
+        'module_rejected_at',
+        'module_rejected_by',
+        'module_rejection_reason',
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
@@ -31,6 +44,7 @@ class Event extends Model
         'event_time',
         'event_time_end',
         'event_date',
+        'material_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -44,13 +58,22 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
+
+        // publishing
+        'is_published',
+        'published_at',
     ];
 
     protected $casts = [
         'event_date' => 'date',
+        'material_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
+        'module_submitted_at' => 'datetime',
+        'module_verified_at' => 'datetime',
+        'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
+        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -59,6 +82,9 @@ class Event extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+
+        'is_published' => 'boolean',
+        'published_at' => 'datetime',
     ];
 
     /**
@@ -66,14 +92,32 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        $count = 0;
-        if(!empty($this->vbg_path)) $count++;
-        if(!empty($this->certificate_path)) $count++;
-        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
+        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
+        $isOfflineOnly = $hasMaps && !$hasZoom;
+
+        $hasVbg = !empty($this->vbg_path);
+        $hasCert = !empty($this->certificate_path);
+        $hasModule = !empty($this->module_path);
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
             || !empty($this->attendance_qr_token);
-        if($hasAttendance) $count++;
+
+        // Offline-only events do not require Virtual Background.
+        $count = 0;
+        if (!$isOfflineOnly && $hasVbg) {
+            $count++;
+        }
+        if ($hasCert) {
+            $count++;
+        }
+        if ($hasModule) {
+            $count++;
+        }
+        if ($hasAttendance) {
+            $count++;
+        }
+
         return $count;
     }
 
@@ -82,9 +126,103 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 3; // Virtual Background, Sertifikat, Absensi (QR/File)
-        $done = max(0, min(3, (int) $this->documents_completed_count));
-        return (int) floor(($done / $total) * 100);
+        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
+        $isOfflineOnly = $hasMaps && !$hasZoom;
+        $total = $isOfflineOnly
+            ? 3 // Sertifikat, Module (Trainer), Absensi (QR/File)
+            : 4; // + Virtual Background
+
+        $done = max(0, min($total, (int) $this->documents_completed_count));
+        return $total > 0 ? (int) floor(($done / $total) * 100) : 0;
+    }
+
+    public function getModuleSubmissionUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->module_path, true);
+    }
+
+    public function getModuleFileUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->module_path, true);
+    }
+
+    public function getVbgFileUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->vbg_path, true);
+    }
+
+    public function getAttendanceQrImageUrlAttribute(): ?string
+    {
+        $path = trim((string) ($this->attendance_qr_image ?? ''));
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+
+        // Force QR image to be served from /uploads/* (legacy public route).
+        // Do not check filesystem; just map deterministically.
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+        }
+        return asset('uploads/' . $normalized);
+    }
+
+    private function buildPublicFileUrl(?string $path, bool $forceUploads = false): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        // Common legacy prefixes that sometimes get stored in DB
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
+        }
+
+        // If already an uploads path, serve it directly
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+
+        // If a Storage::url() output was stored ("storage/...") map it to uploads.
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+            return asset('uploads/' . $normalized);
+        }
+
+        // For module links we force mapping to /uploads/* (legacy behavior) without checking the filesystem.
+        if ($forceUploads) {
+            return asset('uploads/' . $normalized);
+        }
+
+        // Default behavior for non-module usages (if any)
+        return asset($normalized);
     }
 
     // Method untuk menghitung harga setelah diskon
@@ -106,6 +244,11 @@ class Event extends Model
     public function registrationsActive()
     {
         return $this->hasMany(EventRegistration::class)->where('status', 'active');
+    }
+
+    public function trainer()
+    {
+        return $this->belongsTo(User::class, 'trainer_id');
     }
 
     public function registrations()
@@ -130,13 +273,18 @@ class Event extends Model
 
     public function getStartAtAttribute(): ?Carbon
     {
-        if(empty($this->event_date)) return null;
+        if (empty($this->event_date))
+            return null;
         $dateStr = $this->event_date instanceof Carbon ? $this->event_date->format('Y-m-d') : (string) $this->event_date;
         $timeStr = '00:00:00';
-        if(!empty($this->event_time)){
+        if (!empty($this->event_time)) {
             $timeStr = $this->event_time instanceof Carbon ? $this->event_time->format('H:i:s') : (is_string($this->event_time) ? $this->event_time : '00:00:00');
         }
-        try { return Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (\Throwable $ex) { return null; }
+        try {
+            return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+        } catch (\Throwable $ex) {
+            return null;
+        }
     }
 
     /**
@@ -150,56 +298,56 @@ class Event extends Model
         if ($image === '') {
             return null;
         }
-        
+
         // External URL (e.g., from external source)
         if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://')) {
             return $image;
         }
-        
-        // Normalize path - remove 'storage/' prefix if exists
-        $imagePath = ltrim(str_replace('storage/', '', $image), '/');
-        
-        // Extract filename from path
-        $filename = basename($imagePath);
-        
-        // Check if file exists in events folder (try multiple possible paths)
-        $possiblePaths = [
-            'events/' . $filename,  // events/filename.png
-            $imagePath,              // events/filename.png (if already has events/)
-            'events/' . $imagePath, // events/events/filename.png (if path already has events/)
-        ];
-        
-        // Remove duplicates
-        $possiblePaths = array_unique($possiblePaths);
-        
-        // Find first existing file
-        foreach ($possiblePaths as $path) {
-            $fullPath = public_path('uploads/' . $path);
-            if (file_exists($fullPath) && is_file($fullPath)) {
-                // File exists, return URL
-                return asset('uploads/' . $path);
-            }
+
+        // Deterministic mapping (no filesystem checks)
+        $normalized = str_replace('\\', '/', trim($image));
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        // Common stored prefixes
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
         }
-        
-        // File not found, but return URL anyway (browser will show broken image or fallback)
-        // This allows onerror handler in views to work
-        if (str_starts_with($imagePath, 'events/')) {
-            return asset('uploads/' . $imagePath);
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
         }
-        return asset('uploads/events/' . $filename);
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+        }
+
+        // If path already contains folders, serve it under /uploads/<path>
+        if (str_contains($normalized, '/')) {
+            return asset('uploads/' . $normalized);
+        }
+
+        // If it's just a filename, event posters conventionally live under uploads/events/
+        return asset('uploads/events/' . $normalized);
     }
 
     public function getEndAtAttribute(): ?Carbon
     {
         $start = $this->start_at;
-        if(!$start) return null;
+        if (!$start)
+            return null;
         $timeStr = null;
-        if(!empty($this->event_time_end)){
+        if (!empty($this->event_time_end)) {
             $timeStr = $this->event_time_end instanceof Carbon ? $this->event_time_end->format('H:i:s') : (is_string($this->event_time_end) ? $this->event_time_end : null);
         }
-        if($timeStr){
+        if ($timeStr) {
             $dateStr = $start->format('Y-m-d');
-            try { return Carbon::parse($dateStr.' '.$timeStr, config('app.timezone')); } catch (\Throwable $ex) { return (clone $start)->endOfDay(); }
+            try {
+                return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+            } catch (\Throwable $ex) {
+                return (clone $start)->endOfDay();
+            }
         }
         return (clone $start)->endOfDay();
     }
@@ -219,9 +367,9 @@ class Event extends Model
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
-        return $query->where(function($q) use ($now){
+        return $query->where(function ($q) use ($now) {
             $q->whereNull('event_date')
-              ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
+                ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
         });
     }
 
@@ -232,7 +380,7 @@ class Event extends Model
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
         return $query->whereNotNull('event_date')
-                     ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
+            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
     }
 
     /**
@@ -240,7 +388,8 @@ class Event extends Model
      */
     public function getScheduleCountAttribute(): int
     {
-        if($this->relationLoaded('scheduleItems')) return $this->scheduleItems->count();
+        if ($this->relationLoaded('scheduleItems'))
+            return $this->scheduleItems->count();
         // fallback to JSON
         return is_array($this->schedule_json) ? count($this->schedule_json) : $this->scheduleItems()->count();
     }
@@ -250,8 +399,9 @@ class Event extends Model
      */
     public function getExpensesTotalAttribute(): float
     {
-        if($this->relationLoaded('expenses')) return (float) $this->expenses->sum('total');
-        if(is_array($this->expenses_json)){
+        if ($this->relationLoaded('expenses'))
+            return (float) $this->expenses->sum('total');
+        if (is_array($this->expenses_json)) {
             return (float) array_sum(array_map(fn($row) => (float) ($row['total'] ?? 0), $this->expenses_json));
         }
         return (float) $this->expenses()->sum('total');

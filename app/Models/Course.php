@@ -9,6 +9,9 @@ class Course extends Model
     protected $fillable = [
         'name',
         'category_id',
+        'template_id',
+        'template_version',
+        'trainer_id',
         'description',
         'level',
         'status',
@@ -21,16 +24,93 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
+        'expenses_json',
+        'user_id',
+        'rejection_reason',
+        'approved_at',
+        'rejected_at',
+        'approved_by',
+        'certificate_logo',
+        'certificate_signature',
+        'certificate_template',
     ];
+
+    protected $casts = [
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'discount_start' => 'datetime',
+        'discount_end' => 'datetime',
+        'expenses_json' => 'array',
+        'certificate_logo' => 'array',
+        'certificate_signature' => 'array',
+    ];
+
+    public function getCardThumbnailUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->card_thumbnail);
+    }
+
+    private function buildPublicFileUrl(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
+        }
+
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+        }
+
+        return asset('uploads/' . $normalized);
+    }
+
+    // protected $casts = [
+    //     'expenses_json' => 'array',
+    //     'discount_start' => 'date',
+    //     'discount_end' => 'date',
+    // ];
 
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
+    public function trainer()
+    {
+        return $this->belongsTo(User::class, 'trainer_id');
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(CourseTemplate::class, 'template_id');
+    }
+
     public function modules()
     {
         return $this->hasMany(CourseModule::class)->orderBy('order_no');
+    }
+
+    public function units()
+    {
+        return $this->hasMany(CourseUnit::class)->orderBy('unit_no');
     }
 
     public function certificates()
@@ -62,5 +142,13 @@ class Course extends Model
     public function manualPayments()
     {
         return $this->hasMany(\App\Models\ManualPayment::class);
+    }
+
+    /**
+     * Approver relation (admin who approved/rejected)
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

@@ -3,6 +3,7 @@
 <html lang="en">
 
 
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,17 +11,20 @@
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 
-<style>
+{{-- <style>
   :root {
     --navy: #252346;
     --white: #FFFFFF;
     --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
+    
   }
 
   html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
@@ -30,7 +34,7 @@
   .course-hero {
     background: var(--navy);
     height: fit-content;
-    padding-top: 90px;
+    padding-top: 40px;
     padding-bottom: 20px;
   }
 
@@ -39,7 +43,9 @@
     width: 100%;
     margin: 0 auto;
     padding: 0 20px;
+    margin-top: 0px;
   }
+  
 
   .title-course-hero {
     color: var(--white);
@@ -103,8 +109,8 @@
   .video-container .plyr {
     width: 100%;
     max-width: 100%;
-    height: 40vw;
-    max-height: 400px;
+    height: 60vw;
+    max-height: 600px;
     min-height: 200px;
     display: block;
     border-radius: 20px;
@@ -139,10 +145,13 @@
 
   .content-description {
     background: var(--white);
-    max-width: 800px;
+    max-width: 100%;
     border-radius: 20px;
     margin: 0;
+    margin: 0;
     padding: 0;
+    border: 1px solid #E4E4E6;
+    overflow: hidden;
     border: 1px solid #E4E4E6;
     overflow: hidden;
   }
@@ -151,8 +160,483 @@
     display: flex;
     background: #EAEAEA;
     padding: 0;
+    background: #EAEAEA;
+    padding: 0;
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px 15px;
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+    text-align: center;
+  }
+
+  .tab-btn:not(:first-child) {
+    border-left: 1px solid #D8D8D8;
+  }
+
+  .tab-btn.active {
+    color: var(--secondary);
+    font-weight: 600;
+    background: rgba(237, 227, 199, 0.4);
+  }
+
+  .tab-content {
+    display: none;
+    padding: 20px;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .comments form {
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .textarea {
+    margin-bottom: 30px;
+  }
+
+  .kanan {
+    border: solid #f4c430 2px;
+    padding: 40px 27px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
+    flex: 1.5;
+    margin-left: 0;
+    max-width: 100%;
+    width: 100%;
+
+  }
+
+  .price-text {
+    color: #000;
+  }
+
+  .text-danger {
+    width: 100%;
+    margin: 0;
+  }
+
+  .diskon {
+    background-color: #252346;
+    color: #f4c430;
+    padding: 10px;
+  }
+
+  .info-box {
+    margin-top: 20px;
+    padding: 14px 16px;
+
+  }
+
+  .info-box {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .info-box>div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    justify-content: flex-start;
+  }
+  .info-box>div p {
+    text-align: left !important;
+  }
+
+  .info-box>div p:last-of-type {
+    margin-left: auto;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .info-box svg {
+    flex: 0 0 20px;
+  }
+
+  .info-box p {
+    margin: 0;
+  }
+
+  .time-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .time-alert svg {
+    flex: 0 0 auto;
+  }
+
+  .time-alert .ikon {
+    margin-top: 0;
+  }
+
+  .time-alert p {
+    margin: 0;
+    flex: 1 1 auto;
+    white-space: nowrap;
+  }
+
+  .time-alert .diskon {
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  .box-diskon {
+    display: block;
+  }
+
+  .date {
+    display: flex;
+  }
+
+  .date-judul {
+    margin-left: 10px;
+  }
+
+  .date-text {
+    margin-left: auto;
+    color: #6c6c6c;
+  }
+
+  .ikon {
+    margin-top: 5px;
+  }
+
+  .time {
+    display: flex;
+  }
+
+  .time-judul {
+    margin-left: 10px;
+  }
+
+  .time-text {
+    margin-left: auto;
+    color: #6c6c6c;
+  }
+
+  .location {
+    display: flex;
+  }
+
+  .location-judul {
+    margin-left: 10px;
+  }
+
+  .location-text {
+    margin-left: auto;
+    color: #6c6c6c;
+  }
+
+  .bahasa {
+    display: flex;
+  }
+
+  .bahasa-judul {
+    margin-left: 10px;
+  }
+
+  .bahasa-text {
+    margin-left: auto;
+    color: #6c6c6c;
+  }
+
+  .sertifikat {
+    display: flex;
+  }
+
+  .sertifikat-judul {
+    margin-left: 10px;
+  }
+
+  .sertifikat-text {
+    margin-left: auto;
+    color: #6c6c6c;
+  }
+
+  .enroll {
+    background-color: #f4c430;
+    border: none;
+    margin-top: 20px;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .save {
+    background-color: #252346;
+    color: white;
+    margin-top: 10px;
+    border: none;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .note {
+    color: #6c6c6c;
+    margin-top: 10px;
+    font-size: medium;
+    margin-bottom: 30px;
+  }
+
+  .box-benefit {
+    margin-top: 20px;
+    padding: 16px;
+  }
+
+  .box-benefit h4 {
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .box-benefit>div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .box-benefit svg {
+    flex: 0 0 24px;
+    height: 20px;
+    width: 20px;
+    color: var(--secondary);
+  }
+
+  .box-benefit p {
+    margin: 0;
+    color: var(--black);
+    font-size: 16px;
+  }
+
+  .share-box {
+    overflow: hidden;
+  }
+
+  .share-title {
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 20px;
+    color: #111827;
+  }
+
+  .box-copy {
+    background: #e6e7e8ff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: transparent;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #4E5566;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .copy-btn:hover {
+    background: rgba(0, 0, 0, .05);
+  }
+
+  .share-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+  }
+
+  .share-ico i,
+  .copy-btn i {
+    font-size: 22px;
+    line-height: 1;
+    color: #4E5566;
+    z-index: 1;
+  }
+
+  .share-ico:hover {
+    color: #111827;
+  }
+
+  .main-col>*+* {
+    margin-top: 20px;
+  }
+  .box_kiri_vid_course{
+    margin-left: 0;
+  }
+
+  @media (max-width: 992px) {
+    .hero-inner {
+      padding: 0 15px;
+    }
+
+    .title-course-hero {
+      padding: 0 15px;
+    }
+
+    .course-body {
+      grid-template-columns: 1fr;
+      padding: 0 15px;
+    }
+
+    .sidebar .kanan {
+      position: static;
+    }
+
+    .kanan {
+      padding: 24px 18px;
+    }
+  }
+
+  .video-container img {
+    width: 100%;
+    display: block;
+    border-radius: 20px;
+  }
+
+  /* Custom styles for Syllabus dropdowns */
+  .syllabus-dropdown-item {
+    background-color: var(--white);
+    border: 1px solid #E4E4E6;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    /* Spacing between dropdowns */
+    overflow: hidden;
+  }
+
+  .syllabus-dropdown-item details {
+    padding: 15px 20px;
+  }
+
+  .syllabus-dropdown-item summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 18px;
+    cursor: pointer;
+    outline: none;
+    position: relative;
+    list-style: none !important;
+    /* Hide default marker */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker,
+  .syllabus-dropdown-item summary::marker {
+    display: none !important;
+    /* Hide default marker for webkit and standard browsers */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker {
+    display: none !important;
+  }
+
+
+  .syllabus-dropdown-item summary::after {
+    content: none;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons i {
+    font-size: 1.2em;
+    line-height: 1;
+    color: #333;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .lock-ico {
+    color: #6c757d;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .chevron-ico {
+    transition: transform 0.3s ease;
+  }
+
+  .syllabus-dropdown-item details[open] .syllabus-summary-icons .chevron-ico {
+    transform: rotate(90deg);
+  }
+
+  .syllabus-dropdown-item ul {
+    list-style: none;
+    padding: 10px 0 0 0;
+    margin: 0;
+    border-top: 1px solid #EAEAEA;
+    margin-top: 15px;
+  }
+
+  .syllabus-dropdown-item ul li {
+    padding: 8px 0;
+    font-size: 16px;
+    color: #333;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .syllabus-dropdown-item ul li::before {
+    content: counter(lesson-counter);
+    counter-increment: lesson-counter;
+    font-weight: 500;
+    min-width: 20px;
+    text-align: right;
+    color: var(--secondary);
+  }
+
+  .review-card {
+    border: 1.5px solid #E4E4E6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .review-card h4 {
+    margin-top: 0;
+    margin-bottom: 4px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .star-rating {
+    color: #F4C430;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .review-card p {
+    margin-bottom: 0;
+    color: #333;
+    line-height: 1.5;
   }
 
   .tab-btn {
@@ -228,27 +712,17 @@
 
   }
 
-  .info-box {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-  }
   .info-box>div {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0;
-    justify-content: flex-start;
-  }
-  .info-box>div p {
-    text-align: left !important;
+    padding: 6px 0;
   }
 
   .info-box>div p:last-of-type {
-    margin-left: 0;
+    margin-left: auto;
     white-space: nowrap;
-    text-align: left;
+    text-align: right;
   }
 
   .info-box svg {
@@ -477,17 +951,8 @@
   }
 
   @media (max-width: 992px) {
-    .hero-inner {
-      padding: 0 15px;
-    }
-
-    .title-course-hero {
-      padding: 0 15px;
-    }
-
     .course-body {
       grid-template-columns: 1fr;
-      padding: 0 15px;
     }
 
     .sidebar .kanan {
@@ -524,29 +989,47 @@
     cursor: pointer;
     outline: none;
     position: relative;
-    list-style: none;
+    list-style: none !important;
     /* Hide default marker */
   }
 
   .syllabus-dropdown-item summary::-webkit-details-marker,
   .syllabus-dropdown-item summary::marker {
-    display: none;
+    display: none !important;
     /* Hide default marker for webkit and standard browsers */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker {
+    display: none !important;
   }
 
 
   .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    /* Bootstrap Icons chevron-down */
-    font-family: "bootstrap-icons" !important;
+    content: none;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons i {
     font-size: 1.2em;
-    transition: transform 0.3s ease;
+    line-height: 1;
     color: #333;
   }
 
-  .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
-    /* Rotate arrow up when open */
+  .syllabus-dropdown-item .syllabus-summary-icons .lock-ico {
+    color: #6c757d;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .chevron-ico {
+    transition: transform 0.3s ease;
+  }
+
+  .syllabus-dropdown-item details[open] .syllabus-summary-icons .chevron-ico {
+    transform: rotate(90deg);
   }
 
   .syllabus-dropdown-item ul {
@@ -600,9 +1083,9 @@
     color: #333;
     line-height: 1.5;
   }
-</style>
+</style> --}}
 
-<body>
+<body class="course-detail-page">
   
   <section class="course-hero">
     <nav aria-label="breadcrumb">
@@ -653,21 +1136,117 @@
             class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
             <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
           </svg>
-          <span>{{ $course->modules->count() ?? '0' }} Lessons</span>
+          <span>{{ $course->modules->count() ?? 0 }} Lessons</span>
         </div>
         <div class="icon-quizzez">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path fill="currentColor"
               d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
           </svg>
-          <span>{{ $course->modules->where('type','quiz')->count() ?? '0' }} Quizzes</span>
+          <span>{{ $course->modules->where('type','quiz')->count() ?? 0 }} Quizzes</span>
         </div>
       </div>
     </div>
   </section>
 
   <section class="course-body">
-    <div class="main-col">
+    <div class="box_kiri_vid_course main-col">
+
+      @php
+        $courseStatus = (string) ($course->status ?? '');
+        $isApproved = $courseStatus === 'approved';
+        $isPending = $courseStatus === 'pending_review';
+        $isRejected = $courseStatus === 'rejected';
+
+        $modulesCol = $course->modules ?? collect();
+
+        // Access rules (freemium + paid purchase)
+        $priceInt = (int) ($course->price ?? 0);
+        $isFreeCourse = $priceInt <= 0;
+        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+
+        $userCanAccessCourse = $isFreeCourse;
+        if (!$isFreeCourse && auth()->check()) {
+          try {
+            $enrollment = \App\Models\Enrollment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->first();
+
+            $enrolledActive = $enrollment && $enrollment->status === 'active';
+            $hasSettledPayment = \App\Models\ManualPayment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->where('status', 'settled')
+              ->exists();
+
+            $userCanAccessCourse = $enrolledActive || $hasSettledPayment;
+          } catch (\Throwable $e) {
+            $userCanAccessCourse = false;
+          }
+        }
+
+        $orderedAllModules = $modulesCol->sortBy(fn($m) => (int) ($m->order_no ?? 0))->values();
+        $accessibleModuleIds = [];
+        if ($userCanAccessCourse) {
+          if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } else {
+            $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          }
+        }
+
+        // Modules with actual content ready
+        $visibleModules = $modulesCol->filter(function ($m) {
+          $type = strtolower((string) ($m->type ?? ''));
+          if ($type === 'quiz') {
+            return ((int) ($m->quiz_questions_count ?? 0)) > 0;
+          }
+          if (in_array($type, ['pdf', 'video'], true)) {
+            return !empty($m->content_url) && (string) $m->content_url !== 'quiz_submitted';
+          }
+          return false;
+        })->values();
+        $totalModules = $modulesCol->count();
+
+        $pdfSlots = $modulesCol->where('type', 'pdf');
+        $videoSlots = $modulesCol->where('type', 'video');
+        $quizSlots = $modulesCol->where('type', 'quiz');
+
+        $pdfUploadedCount = $pdfSlots->filter(fn($m) => !empty($m->content_url))->count();
+        $videoUploadedCount = $videoSlots->filter(fn($m) => !empty($m->content_url))->count();
+        $quizReadyCount = $quizSlots->filter(fn($m) => ((int) ($m->quiz_questions_count ?? 0)) > 0)->count();
+
+        $missingMaterials = [];
+        if ($totalModules <= 0) { $missingMaterials[] = 'Struktur modul'; }
+        if ($pdfSlots->count() > 0 && $pdfUploadedCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+        if ($videoSlots->count() > 0 && $videoUploadedCount <= 0) { $missingMaterials[] = 'Video'; }
+        if ($quizSlots->count() > 0 && $quizReadyCount <= 0) { $missingMaterials[] = 'Kuis'; }
+      @endphp
+
+      @if($isPending)
+        <div class="alert alert-info" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Materi sedang diproses.</div>
+          <div style="margin-top:6px;">Trainer sudah submit materi. Menunggu approval admin trainer.</div>
+        </div>
+      @elseif($isRejected)
+        <div class="alert alert-danger" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Materi course ditolak.</div>
+          <div style="margin-top:6px;">Trainer perlu melakukan revisi sebelum materi tampil di preview.</div>
+          @if(!empty($course->rejection_reason))
+            <div style="margin-top:6px;"><strong>Catatan:</strong> {{ $course->rejection_reason }}</div>
+          @endif
+        </div>
+      @endif
+
+      @if(!$isPending && !$isRejected && !empty($missingMaterials))
+        <div class="alert alert-warning" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
+          <div style="margin-top:6px;">
+            {{ implode(', ', $missingMaterials) }} belum ada.
+          </div>
+        </div>
+      @endif
 
       @php
         $previewMedia = $course->media ?? null;
@@ -695,10 +1274,13 @@
       </div>
 
       @php
-        $progressTotal = $course->modules->count();
+        $progressModules = ($course->modules ?? collect())
+          ->filter(fn($m) => in_array((int) ($m->id ?? 0), $accessibleModuleIds, true))
+          ->values();
+        $progressTotal = $progressModules->count();
         $progressCompleted = 0;
-        if(auth()->check()) {
-          $moduleIds = $course->modules
+        if(auth()->check() && $progressTotal > 0) {
+          $moduleIds = $progressModules
             ->pluck('id')
             ->map(fn($id) => (int) $id)
             ->values()
@@ -725,7 +1307,7 @@
             }
 
             $passingPercent = 75;
-            $quizModuleIds = $course->modules
+            $quizModuleIds = $progressModules
               ->filter(fn($m) => strtolower(trim((string) ($m->type ?? ''))) === 'quiz')
               ->pluck('id')
               ->map(fn($id) => (int) $id)
@@ -755,7 +1337,7 @@
         $progressPercent = $progressTotal > 0 ? round(($progressCompleted / $progressTotal) * 100) : 0;
       @endphp
 
-      <div class="course-progress-card" style="margin:16px 0;">
+      <div class="course-progress-card" style="margin:16px 0; width:100%;">
         <div style="background:#fff;border:1px solid #E4E4E6;padding:14px;border-radius:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <div style="font-weight:600;color:#111827;">Course Progress</div>
@@ -781,20 +1363,92 @@
         </div>
         <div class="tab-content" id="syllabus">
           <div class="syllabus-list">
-            @forelse($course->modules as $module)
+            @php
+              $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
+              $groupedByUnit = $modulesCol
+                ->sortBy(fn($m) => (int) ($m->order_no ?? 0))
+                ->groupBy(function ($m) {
+                  $orderNo = (int) ($m->order_no ?? 0);
+                  if ($orderNo <= 0) {
+                    return 1;
+                  }
+                  return (int) floor(($orderNo - 1) / 3) + 1;
+                });
+            @endphp
+
+            @forelse($groupedByUnit as $unitNo => $modulesInUnit)
               @php
-                $moduleTitle = $module->title ?? 'Materi';
-                $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
+                $existingUnitTitle = (string) optional($unitTitlesByNo->get((int) $unitNo))->title;
+                $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . (int) $unitNo);
+
+                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds) {
+                  if (!$userCanAccessCourse) {
+                    return true;
+                  }
+                  if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                    return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
+                  }
+                  return false;
+                });
               @endphp
               <div class="syllabus-dropdown-item">
                 <details>
-                  <summary>{{ $moduleTitle }}</summary>
+                  <summary>
+                    <span>{{ $unitTitle }}</span>
+                    <span class="syllabus-summary-icons" aria-hidden="true">
+                      <i class="bi bi-chevron-right chevron-ico"></i>
+                      @if($unitHasLocked)
+                        <i class="bi bi-lock-fill lock-ico"></i>
+                      @endif
+                    </span>
+                  </summary>
                   <ul style="counter-reset: lesson-counter;">
-                    @if($moduleDesc !== '')
-                      <li>{{ Str::limit($moduleDesc, 160) }}</li>
-                    @else
-                      <li class="text-muted">Deskripsi belum tersedia.</li>
-                    @endif
+                    @foreach($modulesInUnit as $module)
+                      @php
+                        $type = strtolower((string) ($module->type ?? ''));
+                        $moduleTitle = trim((string) ($module->title ?? ''));
+                        if ($moduleTitle === '') {
+                          $moduleTitle = 'Materi';
+                        }
+                        $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
+                        $quizCount = (int) ($module->quiz_questions_count ?? 0);
+
+                        $hasContent = false;
+                        if ($type === 'quiz') {
+                          $hasContent = $quizCount > 0;
+                        } elseif (in_array($type, ['pdf', 'video'], true)) {
+                          $hasContent = !empty($module->content_url) && (string) $module->content_url !== 'quiz_submitted';
+                        }
+
+                        $isLocked = false;
+                        if (!$userCanAccessCourse) {
+                          $isLocked = true;
+                        } elseif ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                          $isLocked = !in_array((int) ($module->id ?? 0), $accessibleModuleIds, true);
+                        }
+
+                        $typeLabel = match ($type) {
+                          'pdf' => 'PDF',
+                          'video' => 'Video',
+                          'quiz' => 'Kuis',
+                          default => 'Materi',
+                        };
+                      @endphp
+                      <li>
+                        <div style="font-weight:600;">{{ $typeLabel }}: {{ $moduleTitle }}</div>
+                        @if($isLocked)
+                          <div class="text-muted">Terkunci.</div>
+                        @elseif(!$hasContent)
+                          <div class="text-muted">Materi belum tersedia.</div>
+                        @elseif($type === 'quiz')
+                          <div class="text-muted">{{ $quizCount }} soal kuis tersedia.</div>
+                        @elseif($moduleDesc !== '')
+                          <div class="text-muted">{{ Str::limit($moduleDesc, 160) }}</div>
+                        @else
+                          <div class="text-muted">Deskripsi belum tersedia.</div>
+                        @endif
+                      </li>
+                    @endforeach
                   </ul>
                 </details>
               </div>
@@ -830,16 +1484,7 @@
         </div>
       </div>
 
-      <div class="comments">
-        <h6>Leave a Comment</h6>
-        <form action="#" method="POST">
-          <div class="form-group">
-            <textarea id="comment" name="comment" rows="4" class="form-control" placeholder="Comment"
-              required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">Post Comment</button>
-        </form>
-      </div>
+      
     </div>
 
     <aside class="sidebar">
@@ -941,6 +1586,7 @@
           <hr>
           @php
             $canLearn = false;
+            $paymentUnderReview = false;
             if (auth()->check()) {
                 $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
                     ->where('course_id', $course->id)
@@ -952,11 +1598,19 @@
                     ->where('status', 'settled')
                     ->exists();
 
+                // Payment uploaded / waiting admin verification
+                $paymentUnderReview = \App\Models\ManualPayment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'pending')
+                    ->exists();
+
               $canLearn = $enrolledActive || $hasSettledPayment;
             }
           @endphp
           @if($canLearn)
             <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+          @elseif($paymentUnderReview)
+            <button type="button" class="enroll" disabled style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran sedang ditinjau</button>
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @endif
@@ -1053,6 +1707,7 @@
     </aside>
   </section>
 
+  <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script>
     function copyLink(url) {
