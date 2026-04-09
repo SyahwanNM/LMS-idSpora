@@ -522,6 +522,8 @@
         @include('partials.navbar-before-login')
     @endif
 
+    @include('partials.flash')
+
     @if(session('maintenance_notice'))
         <div class="container" style="position: fixed; top: 92px; left: 0; right: 0; z-index: 1100;">
             <div class="d-flex align-items-start gap-2 px-3 py-2 rounded" style="background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.38); color: #ffffff;">

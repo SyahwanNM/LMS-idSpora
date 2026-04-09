@@ -134,6 +134,8 @@ Route::middleware(['admin'])->group(function () {
     // Course management routes
     // Publish course (set status active)
     Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
+    // Unpublish course (cancel publish)
+    Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
     Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
     Route::get('/admin/courses/{course}/participants', [CourseController::class, 'participants'])->name('admin.courses.participants');
     Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');

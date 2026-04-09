@@ -27,7 +27,7 @@ use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
-use App\Http\Controllers\ResellerController;
+use App\Http\Controllers\User\ResellerController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\TrainerNotificationsController;
 use App\Http\Controllers\Api\PaymentController;
@@ -64,10 +64,22 @@ Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
     Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
+     Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
 
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
+    Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
+    Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
+    Route::get('/reseller/withdraw/download', [\App\Http\Controllers\User\ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
+        // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
+    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
+
+    // Referral check (auto discount 10% if valid)
+    Route::get('/courses/{course}/check-referral', [\App\Http\Controllers\Admin\CourseManualPaymentController::class, 'checkReferral'])->name('courses.check-referral');
+    Route::get('/payment/{event}/check-referral', [\App\Http\Controllers\Admin\ManualPaymentController::class, 'checkReferral'])->name('payment.check-referral');
+
 });
+
 
 
 
@@ -253,11 +265,17 @@ Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
     if ($already) {
         return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
     }
-    return view('payment', compact('event'));
+    return view('user.payment', compact('event'));
 })->name('payment');
 
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
+
+// Midtrans Snap token endpoint for course (auth required)
+Route::middleware('auth')->get('/courses/{course}/snap-token', [PaymentController::class, 'courseSnapToken'])->name('courses.payment.snap-token');
+
+// Query current pending order for this user+course (auth required)
+Route::middleware('auth')->get('/courses/{course}/pending-order', [PaymentController::class, 'coursePendingOrder'])->name('courses.payment.pending-order');
 
 // Refresh course payment status (used by client after Snap modal success)
 Route::post('/payment/refresh-course/{orderId}', [PaymentController::class, 'refreshCoursePayment'])->name('payment.refresh-course');
@@ -481,6 +499,8 @@ Route::middleware(['auth'])->group(function () {
         // Course management routes
         // Publish course (set status active)
         Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
+        // Unpublish course (cancel publish)
+        Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');

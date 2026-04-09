@@ -167,6 +167,17 @@
                                 <small class="text-muted">Pilih apakah event ini dikelola (Manage) atau dibuat baru
                                     (Create).</small>
                             </div>
+
+                            <!-- Reseller Event -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reseller Event</label>
+                                <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', (int) ($event->is_reseller_event ?? 0)) ? 1 : 0 }}">
+                                <div class="btn-group w-100" role="group" aria-label="Reseller Event">
+                                    <button type="button" id="reseller-event-no" class="btn btn-outline-secondary">Tidak</button>
+                                    <button type="button" id="reseller-event-yes" class="btn btn-outline-secondary">Ya</button>
+                                </div>
+                                <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                            </div>
                             <div class="mb-3">
                                 <label for="tanggal" class="form-label fw-semibold">Tanggal <span
                                         class="text-danger">*</span></label>
@@ -187,33 +198,36 @@
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan
-                                    Materi</label>
-                                @php
-                                    $eventDateValue = old('event_date', $event->event_date);
-                                    $deadlineMin = now()->format('Y-m-d\T00:00');
-                                    $deadlineMax = null;
-                                    try {
-                                        if (!empty($eventDateValue)) {
-                                            $deadlineMax = \Carbon\Carbon::parse($eventDateValue)->startOfDay()->subMinute()->format('Y-m-d\TH:i');
-                                        }
-                                    } catch (\Throwable $e) {
-                                        $deadlineMax = null;
-                                    }
-                                @endphp
-                                <input type="datetime-local" name="material_deadline" id="material_deadline"
-                                    class="form-control"
-                                    min="{{ $deadlineMin }}"
-                                    @if($deadlineMax) max="{{ $deadlineMax }}" @endif
-                                    value="{{ old('material_deadline', $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d\\TH:i') : '') }}">
-                                <small class="form-text">Opsional. Harus sebelum hari-H event.</small>
-                            </div>
-                            <div class="mb-3">
                                 <label for="lokasi" class="form-label fw-semibold">Lokasi <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="location" id="lokasi" class="form-control" required
-                                    value="{{ old('location', $event->location) }}" placeholder="Masukkan Lokasi">
-                                <div class="form-text">Tulis nama tempat/kota. Jika online murni, bisa isi "Online" atau nama platform.</div>
+                                @php
+                                    $oldMode = old('location_mode');
+                                    $oldMaps = trim((string) old('maps_url', $event->maps_url));
+                                    $oldZoom = trim((string) old('zoom_link', $event->zoom_link));
+                                    $defaultMode = 'offline';
+                                    if ($oldMode) {
+                                        $defaultMode = $oldMode;
+                                    } elseif ($oldMaps !== '' && $oldZoom !== '') {
+                                        $defaultMode = 'hybrid';
+                                    } elseif ($oldZoom !== '') {
+                                        $defaultMode = 'online';
+                                    } elseif ($oldMaps !== '') {
+                                        $defaultMode = 'offline';
+                                    }
+
+                                    $defaultPlaceName = '';
+                                    if ($defaultMode === 'offline' || $defaultMode === 'hybrid') {
+                                        $defaultPlaceName = old('place_name', $event->location);
+                                    } else {
+                                        $defaultPlaceName = old('place_name', '');
+                                    }
+                                @endphp
+                                <select name="location_mode" id="lokasi" class="form-select" required>
+                                    <option value="offline" {{ $defaultMode === 'offline' ? 'selected' : '' }}>Offline</option>
+                                    <option value="online" {{ $defaultMode === 'online' ? 'selected' : '' }}>Online</option>
+                                    <option value="hybrid" {{ $defaultMode === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                                </select>
+                                <div class="form-text">Pilih tipe lokasi event. Field Maps/Zoom akan menyesuaikan.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span
@@ -250,7 +264,13 @@
                                     value="{{ old('benefit', $event->benefit) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-3 {{ trim($defaultPlaceName) !== '' ? '' : 'd-none' }}" id="placeNameGroup">
+                                <label for="place_name" class="form-label fw-semibold">Nama Tempat</label>
+                                <input type="text" name="place_name" id="place_name" class="form-control"
+                                    value="{{ $defaultPlaceName }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
+                                <div class="form-text">Muncul setelah klik "Deteksi" untuk offline/hybrid.</div>
+                            </div>
+                            <div class="mb-3" id="mapsGroup">
                                 <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
                                 <div class="input-group">
                                     <input type="text" name="maps_url" id="maps" class="form-control"
@@ -265,7 +285,7 @@
                                 <div class="form-text">Klik "Deteksi" untuk membaca koordinat dari short link Google Maps.
                                 </div>
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-3" id="zoomGroup">
                                 <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
                                 <input type="text" name="zoom_link" id="zoom" class="form-control"
                                     value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Masukkan Link Zoom">
@@ -442,6 +462,37 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Bootstrap tooltips
             try {
@@ -451,6 +502,33 @@
                     });
                 }
             } catch (_) { }
+
+            // Reseller Event toggle (Yes/No)
+            (function(){
+                const input = document.getElementById('is_reseller_event');
+                const btnYes = document.getElementById('reseller-event-yes');
+                const btnNo = document.getElementById('reseller-event-no');
+
+                if (!input || (!btnYes && !btnNo)) return;
+
+                function setReseller(val){
+                    const v = val ? '1' : '0';
+                    input.value = v;
+
+                    if (btnYes) {
+                        btnYes.classList.toggle('btn-primary', v === '1');
+                        btnYes.classList.toggle('btn-outline-secondary', v !== '1');
+                    }
+                    if (btnNo) {
+                        btnNo.classList.toggle('btn-primary', v === '0');
+                        btnNo.classList.toggle('btn-outline-secondary', v !== '0');
+                    }
+                }
+
+                btnYes && btnYes.addEventListener('click', () => setReseller(true));
+                btnNo && btnNo.addEventListener('click', () => setReseller(false));
+                setReseller((input.value || '0') === '1');
+            })();
 
             // Jenis Acara autocomplete (show after 2 chars)
             (function setupJenisAutocomplete(){
@@ -585,8 +663,20 @@
             imgInp?.addEventListener('change', ev => { const f = ev.target.files[0]; const wrap = document.getElementById('imagePreview'); const sizeInfo = document.getElementById('imageSizeInfo'); if (!f) { wrap.style.display = 'none'; if (sizeInfo) sizeInfo.textContent = ''; return; } const sizeMB = f.size / (1024 * 1024); if (sizeInfo) sizeInfo.textContent = 'Ukuran: ' + sizeMB.toFixed(2) + 'MB'; if (sizeMB > 5) { alert('Ukuran gambar melebihi 5MB. Pilih file lain.'); imgInp.value = ''; wrap.style.display = 'none'; if (sizeInfo) sizeInfo.textContent = ''; return; } const r = new FileReader(); r.onload = e => { document.getElementById('previewImg').src = e.target.result; wrap.style.display = 'block'; }; r.readAsDataURL(f); });
 
 
-            // Maps logic
-            let leafletMap = null, leafletMarker = null; const mapsInput = document.getElementById('maps'); const mapsPreview = document.getElementById('mapsPreview'); const btnResolveMaps = document.getElementById('btnResolveMaps'); const zoomInput = document.getElementById('zoom'); const csrfToken = '{{ csrf_token() }}'; const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
+            // Maps + location mode logic
+            const locationModeEl = document.getElementById('lokasi');
+            const placeNameGroup = document.getElementById('placeNameGroup');
+            const placeNameInput = document.getElementById('place_name');
+            const mapsGroup = document.getElementById('mapsGroup');
+            const zoomGroup = document.getElementById('zoomGroup');
+
+            let leafletMap = null, leafletMarker = null;
+            const mapsInput = document.getElementById('maps');
+            const mapsPreview = document.getElementById('mapsPreview');
+            const btnResolveMaps = document.getElementById('btnResolveMaps');
+            const zoomInput = document.getElementById('zoom');
+            const csrfToken = '{{ csrf_token() }}';
+            const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
             function parseLatLngFromUrl(url) {
                 if (!url) return null;
                 try {
@@ -639,13 +729,92 @@
                 if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
             }
 
+            function setResolveMapsLoading(isLoading){
+                if(!btnResolveMaps) return;
+                if(isLoading){
+                    if(!btnResolveMaps.dataset.originalHtml){
+                        btnResolveMaps.dataset.originalHtml = btnResolveMaps.innerHTML;
+                    }
+                    btnResolveMaps.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memuat...';
+                    btnResolveMaps.setAttribute('aria-busy', 'true');
+                }else{
+                    btnResolveMaps.innerHTML = btnResolveMaps.dataset.originalHtml || 'Deteksi';
+                    btnResolveMaps.removeAttribute('aria-busy');
+                }
+            }
+
+            function showPlaceNameIfNeeded(forceShow = false){
+                if(!placeNameGroup || !placeNameInput) return;
+                const mode = String(locationModeEl?.value || '').toLowerCase();
+                const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+                const hasValue = String(placeNameInput.value || '').trim() !== '';
+                const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+                placeNameGroup.classList.toggle('d-none', !shouldShow);
+                placeNameInput.required = shouldShow;
+            }
+
+            function syncLocationModeUI(){
+                const mode = String(locationModeEl?.value || '').toLowerCase();
+                const isOffline = mode === 'offline';
+                const isOnline = mode === 'online';
+                const isHybrid = mode === 'hybrid';
+
+                if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+                if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+                if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+                if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+
+                showPlaceNameIfNeeded(false);
+
+                if(isOnline){
+                    if(mapsInput) mapsInput.value = '';
+                    const latInp = document.getElementById('latitude');
+                    const lngInp = document.getElementById('longitude');
+                    if(latInp) latInp.value = '';
+                    if(lngInp) lngInp.value = '';
+                    if(mapsPreview) mapsPreview.style.display = 'none';
+                    if(btnResolveMaps) btnResolveMaps.disabled = true;
+                }
+                if(isOffline){
+                    if(zoomInput) zoomInput.value = '';
+                }
+                syncMapsUI();
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+            }
+
             mapsInput?.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
             mapsInput?.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
             mapsInput?.addEventListener('blur', () => { tryRenderMap(); syncMapsUI(); });
 
             tryRenderMap();
             syncMapsUI();
-            btnResolveMaps?.addEventListener('click', async () => { const url = mapsInput?.value || ''; if (!url) { alert('Masukkan link terlebih dahulu'); return; } try { btnResolveMaps.disabled = true; const resp = await fetch(resolveMapsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ url }) }); const data = await resp.json(); if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); } else alert(data.message || 'Koordinat tidak ditemukan.'); } catch (e) { alert('Gagal mendeteksi koordinat.'); } finally { btnResolveMaps.disabled = false; } });
+            btnResolveMaps?.addEventListener('click', async () => {
+                showPlaceNameIfNeeded(true);
+                const url = mapsInput?.value || '';
+                if (!url) { alert('Masukkan link terlebih dahulu'); return; }
+                try {
+                    setResolveMapsLoading(true);
+                    btnResolveMaps.disabled = true;
+                    const resp = await fetch(resolveMapsUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ url })
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); }
+                    else alert(data.message || 'Koordinat tidak ditemukan.');
+                } catch (e) {
+                    alert('Gagal mendeteksi koordinat.');
+                } finally {
+                    setResolveMapsLoading(false);
+                    btnResolveMaps.disabled = false;
+                    syncMapsUI();
+                }
+            });
+
+            locationModeEl?.addEventListener('change', syncLocationModeUI);
+            syncLocationModeUI();
 
             // Speakers (from Trainer API)
             const speakersContainer = document.getElementById('speakersContainer');
@@ -754,48 +923,9 @@
                     disableMobile: true,
                     onChange: function () {
                         if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
-                        if (typeof updateMaterialDeadlineBounds === 'function') updateMaterialDeadlineBounds();
                     }
                 });
                 discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true, clickOpens: true });
-            }
-
-            const materialDeadlineEl = document.getElementById('material_deadline');
-            function pad2(n) { return String(n).padStart(2, '0'); }
-            function toLocalDateTimeValue(d) {
-                const yyyy = d.getFullYear();
-                const mm = pad2(d.getMonth() + 1);
-                const dd = pad2(d.getDate());
-                const hh = pad2(d.getHours());
-                const mi = pad2(d.getMinutes());
-                return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-            }
-            function updateMaterialDeadlineBounds() {
-                if (!eventDateEl || !materialDeadlineEl) return;
-                const dateStr = String(eventDateEl.value || '').trim();
-                if (!dateStr) {
-                    materialDeadlineEl.removeAttribute('max');
-                    materialDeadlineEl.setCustomValidity('');
-                    return;
-                }
-
-                const eventStart = new Date(dateStr + 'T00:00:00');
-                if (isNaN(eventStart.getTime())) {
-                    materialDeadlineEl.removeAttribute('max');
-                    materialDeadlineEl.setCustomValidity('');
-                    return;
-                }
-
-                const maxDate = new Date(eventStart.getTime() - 60 * 1000); // 1 minute before event day
-                const maxVal = toLocalDateTimeValue(maxDate);
-                materialDeadlineEl.max = maxVal;
-
-                const cur = String(materialDeadlineEl.value || '').trim();
-                if (cur && cur >= maxVal) {
-                    materialDeadlineEl.setCustomValidity('Tenggat harus sebelum hari-H event.');
-                } else {
-                    materialDeadlineEl.setCustomValidity('');
-                }
             }
             function updateDiscountUntilBounds() {
                 if (!discountUntilFp) return;
@@ -818,12 +948,10 @@
                 if (current) { const curDate = new Date(current + 'T00:00:00'); if (curDate >= eventDate) { discountUntilFp.clear(); discountUntilInput.value = ''; } }
             }
             const eventDateEl = document.getElementById('tanggal');
-            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, () => { updateDiscountUntilBounds(); updateMaterialDeadlineBounds(); }));
-            materialDeadlineEl && ['change', 'input'].forEach(ev => materialDeadlineEl.addEventListener(ev, updateMaterialDeadlineBounds));
+            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, () => { updateDiscountUntilBounds(); }));
             // Initial states
             toggleDiscountUntil();
             updateDiscountUntilBounds();
-            updateMaterialDeadlineBounds();
 
             // Schedule dynamic
             const scheduleTableBody = document.querySelector('#scheduleTable tbody'); const addScheduleBtn = document.getElementById('addScheduleRow'); let scheduleIndex = 0;
@@ -868,9 +996,29 @@
 
             // Validation & submit state
             const form = document.getElementById('eventForm'); if (form) {
-                const submitBtn = document.getElementById('submitBtn'); const submitHint = document.getElementById('submitHint'); const requiredFields = Array.from(form.querySelectorAll('[required]'));
-                function fieldFriendlyName(el) { if (!el) return 'Field'; const id = el.id || ''; const name = el.name || ''; if (id === 'image' || name === 'image') return 'Gambar Event'; if (id === 'nama' || name === 'title') return 'Nama Event'; if (name === 'speakers[]') return 'Nama Pembicara'; if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat'; if (id === 'deskripsi' || name === 'description') return 'Deskripsi'; if (id === 'tanggal' || name === 'event_date') return 'Tanggal'; if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai'; if (id === 'lokasi' || name === 'location') return 'Lokasi'; if (id === 'harga' || name === 'price') return 'Harga'; return id || name || 'Field'; }
-                function missingRequired() { return requiredFields.filter(f => !(f.value || '').trim()); }
+                const submitBtn = document.getElementById('submitBtn');
+                const submitHint = document.getElementById('submitHint');
+                const getRequiredFields = () => Array.from(form.querySelectorAll('[required]'))
+                    .filter(el => !el.disabled && el.offsetParent !== null);
+
+                function fieldFriendlyName(el) {
+                    if (!el) return 'Field';
+                    const id = el.id || '';
+                    const name = el.name || '';
+                    if (id === 'image' || name === 'image') return 'Gambar Event';
+                    if (id === 'nama' || name === 'title') return 'Nama Event';
+                    if (name === 'speakers[]') return 'Nama Pembicara';
+                    if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
+                    if (id === 'deskripsi' || name === 'description') return 'Deskripsi';
+                    if (id === 'tanggal' || name === 'event_date') return 'Tanggal';
+                    if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
+                    if (id === 'lokasi' || name === 'location_mode') return 'Lokasi';
+                    if (id === 'place_name' || name === 'place_name') return 'Nama Tempat';
+                    if (id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
+                    return id || name || 'Field';
+                }
+
+                function missingRequired() { return getRequiredFields().filter(f => !(f.value || '').trim()); }
                 window.updateSubmitState = function () {
                     const filled = missingRequired().length === 0;
                     const sdEl = document.getElementById('short_desc');
@@ -889,7 +1037,7 @@
                         }
                     }
                 };
-                requiredFields.forEach(f => ['input', 'change', 'blur'].forEach(ev => f.addEventListener(ev, window.updateSubmitState)));
+                ['input', 'change', 'blur'].forEach(ev => form.addEventListener(ev, window.updateSubmitState));
                 window.updateSubmitState();
                 form.addEventListener('submit', ev => {
                     if (window.editorDeskripsi) document.getElementById('deskripsi').value = window.editorDeskripsi.getData(); if (window.editorTerms) document.getElementById('terms').value = window.editorTerms.getData(); updateSpeakerCombined(); // sync hidden harga
@@ -912,7 +1060,18 @@
                             shortDescEl.classList.remove('border-danger');
                         }
                     }
-                    let ok = true; requiredFields.forEach(f => { if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; } else f.classList.remove('border-danger'); }); if (!ok) { ev.preventDefault(); alert('Lengkapi semua field wajib.\nYang belum: ' + missingRequired().map(fieldFriendlyName).join(', ')); return; } expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
+                    const reqNow = getRequiredFields();
+                    let ok = true;
+                    reqNow.forEach(f => {
+                        if (!String(f.value || '').trim()) { f.classList.add('border-danger'); ok = false; }
+                        else f.classList.remove('border-danger');
+                    });
+                    if (!ok) {
+                        ev.preventDefault();
+                        alert('Lengkapi semua field wajib.\nYang belum: ' + missingRequired().map(fieldFriendlyName).join(', '));
+                        return;
+                    }
+                    expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
                 });
 
                 // Live word count update for short description
@@ -924,7 +1083,16 @@
                     shortDescCountEl.textContent = words.length;
                     if (words.length > 40) { shortDescCountEl.classList.add('text-danger'); } else { shortDescCountEl.classList.remove('text-danger'); }
                 }
+                // Direct listeners (keep) + delegated fallback for robustness.
                 ['input', 'change', 'blur'].forEach(ev => shortDescEl2?.addEventListener(ev, () => { updateShortDescCount(); window.updateSubmitState(); }));
+                document.addEventListener('input', function(e){
+                    const t = e.target;
+                    if(!(t instanceof HTMLElement)) return;
+                    if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                        updateShortDescCount();
+                        if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                    }
+                }, true);
                 updateShortDescCount();
             }
             // Event listener for add benefit button

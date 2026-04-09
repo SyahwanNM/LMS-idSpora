@@ -230,6 +230,10 @@ class CoursePaymentController extends Controller
 
     private function processReferralCommission(Course $course, ManualPayment $coursePayment): void
     {
+        if (!(bool) ($course->is_reseller_course ?? false)) {
+            return;
+        }
+
         if (empty($coursePayment->referral_code)) {
             return;
         }

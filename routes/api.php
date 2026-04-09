@@ -37,7 +37,11 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
 
     // Cek Profil Sendiri
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'OK',
+            'data' => $request->user(),
+        ]);
     });
 
     Route::post('/events/{id}/register', [EventController::class, 'register']);

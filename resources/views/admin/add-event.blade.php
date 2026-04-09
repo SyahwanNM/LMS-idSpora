@@ -7,17 +7,18 @@
         @endif
         @if(session('statusFilter'))
             <script>
-                document.addEventListener('DOMContentLoaded', function(){
-                    try{
+                document.addEventListener('DOMContentLoaded', function () {
+                    try {
                         var sel = document.getElementById('statusFilter');
-                        if(sel){
-                            sel.value = '{{ session('statusFilter') }}';
+                        if (sel) {
+                            sel.value = @json(session('statusFilter'));
                             sel.dispatchEvent(new Event('change'));
                         }
-                    }catch(e){}
+                    } catch (e) {}
                 });
             </script>
         @endif
+
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
@@ -25,6 +26,7 @@
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
+
         <div class="card shadow-sm"><div class="card-body">
             {{-- Month keys removed: using native month picker instead of precomputed list --}}
             <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
@@ -88,6 +90,7 @@
                                 <th>Tanggal</th>
                                 <th>Lokasi</th>
                                 <th>Link</th>
+                                <th>Reseller</th>
                                 <th>Kelengkapan Dokumen</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
@@ -152,13 +155,19 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @if((bool) ($event->is_reseller_event ?? false))
+                                        <span class="badge bg-success">Ya</span>
+                                    @else
+                                        <span class="badge bg-secondary">Tidak</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
                                         $hasMapsLink = !empty($event->maps_url);
                                         $hasZoomLink = !empty($event->zoom_link);
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                         $hasVbg = !empty($event->vbg_path);
-                                        $hasCert = !empty($event->certificate_path);
                                         $hasModule = !empty($event->module_path);
                                         // Absensi dianggap selesai jika ada file atau QR sudah aktif
                                         $hasAbsFile = !empty($event->attendance_path);
@@ -167,12 +176,12 @@
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
                                         // Tooltip ringkas
                                         $tooltip = $isOfflineOnly
-                                            ? 'Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
-                                            : 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
+                                            ? 'Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
+                                            : 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        $totalDisplay = $isOfflineOnly ? 3 : 4;
+                                        $totalDisplay = $isOfflineOnly ? 2 : 3;
                                         // Tampilkan count UI (offline: tanpa VBG)
-                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $tooltip }}">{{ $pct }}%</span>
@@ -301,7 +310,7 @@
             });
         });
         </script>
-                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-dialog modal-dialog-centered">
                         <div class="content-operasional-view modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="uploadOperasionalLabel-{{ $event->id }}">Status Dokumen Detail</h5>
@@ -315,15 +324,14 @@
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                     $requiresVbg = !$isOfflineOnly;
                                     $hasVbg = !empty($event->vbg_path);
-                                    $hasCert = !empty($event->certificate_path);
                                     $hasModule = !empty($event->module_path);
                                     // Absensi: selesai jika file atau QR aktif
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $totalDisplay = $isOfflineOnly ? 3 : 4;
-                                    $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $totalDisplay = $isOfflineOnly ? 2 : 3;
+                                    $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     $pct = $event->documents_completion_percent;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
@@ -356,28 +364,6 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>
-                                            <i class="bi {{ $hasCert ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
-                                            Sertifikat
-                                        </span>
-                                        <span>
-                                            @if($hasCert)
-                                                @php $cExt = strtolower(pathinfo($event->certificate_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($cExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->certificate_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->certificate_path) }}" alt="Sertifikat" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                    </a>
-                                                @elseif($cExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->certificate_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                @else
-                                                    <a href="{{ Storage::url($event->certificate_path) }}" target="_blank" class="link-primary">Lihat</a>
-                                                @endif
-                                            @else
-                                                <span class="text-muted">Belum ada</span>
-                                            @endif
-                                        </span>
-                                    </li>
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <span>
                                             <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
@@ -425,7 +411,7 @@
 
                                 <form action="{{ route('admin.events.documents.upload', $event) }}" method="post" enctype="multipart/form-data" id="docForm-{{ $event->id }}">
                                     @csrf
-                                    @php $adminDocsComplete = $isOfflineOnly ? ($hasCert && $hasAbs) : ($hasVbg && $hasCert && $hasAbs); @endphp
+                                    @php $adminDocsComplete = $isOfflineOnly ? ($hasAbs) : ($hasVbg && $hasAbs); @endphp
                                     @if($adminDocsComplete)
                                         <div class="text-center mb-3">
                                             <button type="button" class="btn btn-outline-primary btn-sm" data-edit-doc-toggle="{{ $event->id }}">
@@ -455,8 +441,13 @@
                                 </form>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary" form="docForm-{{ $event->id }}">Save changes</button>
+                                <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
+                                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary px-4" form="docForm-{{ $event->id }}">
+                                        <span class="me-1">Save changes</span>
+                                        <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -563,6 +554,17 @@
                                     <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
                                     <small id="manageActionHelp" class="text-danger" style="display:none">Lengkapi: pilih salah satu (Manage/Create) sebelum menyimpan.</small>
                                 </div>
+
+                                <!-- Reseller Event -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Reseller Event</label>
+                                    <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', 0) ? 1 : 0 }}">
+                                    <div class="btn-group w-100" role="group" aria-label="Reseller Event">
+                                        <button type="button" id="reseller-event-no" class="btn btn-outline-secondary">Tidak</button>
+                                        <button type="button" id="reseller-event-yes" class="btn btn-outline-secondary">Ya</button>
+                                    </div>
+                                    <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                                </div>
                                 <!-- Jenis Acara -->
                                 <div class="mb-3">
                                     <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
@@ -604,15 +606,29 @@
                                     <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan Materi <span class="text-danger">*</span></label>
-                                    <input type="datetime-local" name="material_deadline" id="material_deadline" class="form-control" value="{{ old('material_deadline') }}">
-                                    <small class="text-muted d-block mt-1">Opsional. Jika diisi, harus sebelum hari-H event.</small>
-                                    <small id="materialDeadlineHelp" class="text-danger d-none mt-1">Tenggat pengumpulan materi harus sebelum hari-H event.</small>
-                                </div>
-                                <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>
-                                    <input type="text" name="location" id="lokasi" class="form-control" required value="{{ old('location') }}" placeholder="Masukkan Lokasi">
-                                    <div class="form-text">Tulis nama tempat/kota. Jika online murni, bisa isi "Online" atau nama platform.</div>
+                                    @php
+                                        $oldMode = old('location_mode');
+                                        $oldMaps = trim((string) old('maps_url', ''));
+                                        $oldZoom = trim((string) old('zoom_link', ''));
+                                        $defaultMode = 'offline';
+                                        if ($oldMode) {
+                                            $defaultMode = $oldMode;
+                                        } elseif ($oldMaps !== '' && $oldZoom !== '') {
+                                            $defaultMode = 'hybrid';
+                                        } elseif ($oldZoom !== '') {
+                                            $defaultMode = 'online';
+                                        } elseif ($oldMaps !== '') {
+                                            $defaultMode = 'offline';
+                                        }
+                                    @endphp
+                                    <select name="location_mode" id="lokasi" class="form-select" required>
+                                        <option value="" disabled {{ $defaultMode ? '' : 'selected' }}>Pilih lokasi</option>
+                                        <option value="offline" {{ $defaultMode === 'offline' ? 'selected' : '' }}>Offline</option>
+                                        <option value="online" {{ $defaultMode === 'online' ? 'selected' : '' }}>Online</option>
+                                        <option value="hybrid" {{ $defaultMode === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                                    </select>
+                                    <div class="form-text">Pilih tipe lokasi event. Field Maps/Zoom akan menyesuaikan.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span class="text-danger">*</span></label>
@@ -648,8 +664,13 @@
                                     <input type="hidden" name="benefit" id="benefit" value="{{ old('benefit') }}">
                                     <small class="text-muted d-block mt-1">Masukkan benefit per baris. Klik Tambah untuk menambah item.</small>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
+                                <div class="mb-3 d-none" id="placeNameGroup">
+                                    <label for="place_name" class="form-label fw-semibold">Nama Tempat <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
+                                    <input type="text" name="place_name" id="place_name" class="form-control" value="{{ old('place_name') }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
+                                    <div class="form-text">Muncul setelah klik "Deteksi" untuk offline/hybrid.</div>
+                                </div>
+                                <div class="mb-3" id="mapsGroup">
+                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
                                     <div class="input-group">
                                         <input type="text" name="maps_url" id="maps" class="form-control" value="{{ old('maps_url') }}" placeholder="Tempel link Google Maps (bisa short link maps.app.goo.gl)">
                                         <button class="btn btn-outline-secondary" type="button" id="btnResolveMaps">Deteksi</button>
@@ -659,8 +680,8 @@
                                     <div id="mapsPreview" class="mt-2 rounded border" style="display:none;height:260px;"></div>
                                     <div class="form-text">Klik "Deteksi" untuk mencoba membaca koordinat dari short link Google Maps.</div>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
+                                <div class="mb-3" id="zoomGroup">
+                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
                                     <input type="text" name="zoom_link" id="zoom" class="form-control" value="{{ old('zoom_link') }}" placeholder="Masukkan Link Zoom">
                                     <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
                                 </div>
@@ -731,10 +752,10 @@
                 </div>
                 <div class="modal-footer">
                     <div class="me-auto small text-danger fw-semibold" id="submitHint" style="display:none;" aria-live="polite">
-                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan. Tenggat pengumpulan materi (jika diisi) harus sebelum hari-H event.
+                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan.
                     </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn" disabled>
+                    <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn">
                         <i class="bi bi-check-circle me-1"></i> Simpan Event
                     </button>
                 </div>
@@ -856,18 +877,14 @@
         }
         #addEventModal .modal-footer #submitHint { margin-right: auto; }
 
-        /* Modal footer (Upload Dokumen per Event): keep buttons compact side-by-side */
-        .modal-upload-operasional .modal-footer {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .modal-upload-operasional .modal-footer .btn {
-            width: auto !important;
-            flex: 0 0 auto;
-        }
+        /* Modal (Upload Dokumen per Event): remove scrollbar + match logout modal look */
+        .modal-upload-operasional.modal{ overflow-y: hidden; }
+        .modal-upload-operasional .modal-content{ border-radius: 18px; overflow: hidden; }
+        .modal-upload-operasional .modal-header{ padding: 1.1rem 1.1rem .75rem; }
+        .modal-upload-operasional .modal-body{ padding: 0 1.1rem 1rem; }
+        .modal-upload-operasional .modal-footer{ padding: .25rem 1.1rem 1.1rem; border-top: 0; }
+        .modal-upload-operasional .btn{ border-radius: 12px; padding-top: .6rem; padding-bottom: .6rem; }
+        .modal-upload-operasional .modal-footer .btn{ width: auto !important; flex: 0 0 auto; }
 
         /* Slightly shift centered doc modal upward */
         .modal-upload-operasional.show .modal-dialog {
@@ -915,6 +932,8 @@
         .manage-action-manage:before { border-left-color:#093d94; }
         /* Ensure delete confirmation text is black */
         #deleteEventModal .form-check-label { color: #000 !important; }
+        /* Delete modal footer buttons: keep compact like logout/doc modal */
+        #deleteEventModal .modal-footer .btn{ width: auto !important; }
     </style>
     @endsection
     @section('scripts')
@@ -1056,26 +1075,38 @@
             applyValidity();
         })();
         // CKEditor init for deskripsi and terms
-        ClassicEditor.create(document.querySelector('#deskripsi'), {
-            toolbar: ['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']
-        }).then(e => {
-            // store globally and ensure textarea value stays in sync for required checks
-            window.editorDeskripsi = e;
-            const ta = document.getElementById('deskripsi');
-            if (ta) {
-                ta.value = e.getData();
+        // IMPORTANT: guard ClassicEditor so a missing asset doesn't break the whole page (incl. submit enable/disable).
+        if (typeof ClassicEditor !== 'undefined') {
+            const deskripsiEl = document.querySelector('#deskripsi');
+            if (deskripsiEl) {
+                ClassicEditor.create(deskripsiEl, {
+                    toolbar: ['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']
+                }).then(e => {
+                    // store globally and ensure textarea value stays in sync for required checks
+                    window.editorDeskripsi = e;
+                    const ta = document.getElementById('deskripsi');
+                    if (ta) {
+                        ta.value = e.getData();
+                    }
+                    // if updateSubmitState is available later, this listener will keep the button state correct
+                    e.model.document.on('change:data', () => {
+                        if (ta) { ta.value = e.getData(); }
+                        if (typeof window.updateSubmitState === 'function') {
+                            window.updateSubmitState();
+                        }
+                    });
+                }).catch(console.error);
             }
-            // if updateSubmitState is available later, this listener will keep the button state correct
-            e.model.document.on('change:data', () => {
-                if (ta) { ta.value = e.getData(); }
-                if (typeof window.updateSubmitState === 'function') {
-                    window.updateSubmitState();
-                }
-            });
-        }).catch(console.error);
-        ClassicEditor.create(document.querySelector('#terms'), {
-            toolbar: ['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']
-        }).then(e => window.editorTerms = e).catch(console.error);
+
+            const termsEl = document.querySelector('#terms');
+            if (termsEl) {
+                ClassicEditor.create(termsEl, {
+                    toolbar: ['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']
+                }).then(e => window.editorTerms = e).catch(console.error);
+            }
+        } else {
+            console.warn('[EventForm] ClassicEditor is not available; skipping rich text init.');
+        }
 
         // Image preview & size display (max 5MB)
         const imgInp = document.getElementById('gambar');
@@ -1105,9 +1136,18 @@
 
         // Maps preview (Leaflet) from Google Maps link
     let leafletMap = null, leafletMarker = null;
+        const locationModeEl = document.getElementById('lokasi');
+        const placeNameGroup = document.getElementById('placeNameGroup');
+        const placeNameInput = document.getElementById('place_name');
+        const mapsGroup = document.getElementById('mapsGroup');
+        const zoomGroup = document.getElementById('zoomGroup');
+
         const mapsInput = document.getElementById('maps');
         const mapsPreview = document.getElementById('mapsPreview');
         const zoomInput = document.getElementById('zoom');
+        const mapsRequiredStar = document.getElementById('mapsRequiredStar');
+        const zoomRequiredStar = document.getElementById('zoomRequiredStar');
+        const placeNameRequiredStar = document.getElementById('placeNameRequiredStar');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
     const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
@@ -1182,6 +1222,68 @@
             if (btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
             if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
         }
+
+        function setResolveMapsLoading(isLoading){
+            if(!btnResolveMaps) return;
+            if(isLoading){
+                if(!btnResolveMaps.dataset.originalHtml){
+                    btnResolveMaps.dataset.originalHtml = btnResolveMaps.innerHTML;
+                }
+                btnResolveMaps.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memuat...';
+                btnResolveMaps.setAttribute('aria-busy', 'true');
+            }else{
+                btnResolveMaps.innerHTML = btnResolveMaps.dataset.originalHtml || 'Deteksi';
+                btnResolveMaps.removeAttribute('aria-busy');
+            }
+        }
+
+        function showPlaceNameIfNeeded(forceShow = false){
+            if(!placeNameGroup || !placeNameInput) return;
+            const mode = String(locationModeEl?.value || '').toLowerCase();
+            const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+            const hasValue = String(placeNameInput.value || '').trim() !== '';
+            const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+            placeNameGroup.classList.toggle('d-none', !shouldShow);
+            placeNameInput.required = shouldShow;
+            if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
+        }
+
+        function syncLocationModeUI(){
+            const mode = String(locationModeEl?.value || '').toLowerCase();
+            const isOffline = mode === 'offline';
+            const isOnline = mode === 'online';
+            const isHybrid = mode === 'hybrid';
+
+            if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+            if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+            if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+            if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+
+            // Visual '*' must match the required logic.
+            if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+            if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
+
+            // Hide place name by default; shown after Deteksi or if already filled
+            showPlaceNameIfNeeded(false);
+
+            // If switching to Online, clear maps + coords + preview
+            if(isOnline){
+                if(mapsInput) mapsInput.value = '';
+                const latInp = document.getElementById('latitude');
+                const lngInp = document.getElementById('longitude');
+                if(latInp) latInp.value = '';
+                if(lngInp) lngInp.value = '';
+                if(mapsPreview) mapsPreview.style.display = 'none';
+                if(btnResolveMaps) btnResolveMaps.disabled = true;
+            }
+            // If switching to Offline, clear zoom
+            if(isOffline){
+                if(zoomInput) zoomInput.value = '';
+            }
+            syncMapsUI();
+            if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+        }
         if(mapsInput){
             mapsInput.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
             mapsInput.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
@@ -1193,9 +1295,16 @@
         syncMapsUI();
         if(btnResolveMaps){
             btnResolveMaps.addEventListener('click', async () => {
+                // When Deteksi clicked for offline/hybrid, reveal place name field
+                showPlaceNameIfNeeded(true);
+                if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+                    placeNameInput.focus();
+                }
+
                 const url = mapsInput?.value || '';
                 if(!url){ alert('Masukkan link Google Maps terlebih dahulu.'); return; }
                 try{
+                    setResolveMapsLoading(true);
                     btnResolveMaps.disabled = true;
                     const resp = await fetch(resolveMapsUrl, {
                         method: 'POST',
@@ -1211,15 +1320,24 @@
                 }catch(err){
                     alert('Gagal mendeteksi koordinat.');
                 }finally{
+                    setResolveMapsLoading(false);
                     btnResolveMaps.disabled = false;
+                    syncMapsUI();
                 }
             });
+        }
+
+        if(locationModeEl){
+            locationModeEl.addEventListener('change', syncLocationModeUI);
+            // initial
+            syncLocationModeUI();
         }
         // fix map size when modal is shown
         const addEventModalEl = document.getElementById('addEventModal');
         if(addEventModalEl){
             addEventModalEl.addEventListener('shown.bs.modal', () => {
                 if(leafletMap) setTimeout(() => leafletMap.invalidateSize(), 50);
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
             });
         }
 
@@ -1295,6 +1413,33 @@
         if(addEventModalEl){ enableDraggableModal(addEventModalEl); }
         // Apply to all per-event document modals
         document.querySelectorAll('.modal-upload-operasional').forEach(m => enableDraggableModal(m));
+
+        // Reseller Event toggle (Yes/No)
+        (function(){
+            const input = document.getElementById('is_reseller_event');
+            const btnYes = document.getElementById('reseller-event-yes');
+            const btnNo = document.getElementById('reseller-event-no');
+
+            if (!input || (!btnYes && !btnNo)) return;
+
+            function setReseller(val){
+                const v = val ? '1' : '0';
+                input.value = v;
+
+                if (btnYes) {
+                    btnYes.classList.toggle('btn-primary', v === '1');
+                    btnYes.classList.toggle('btn-outline-secondary', v !== '1');
+                }
+                if (btnNo) {
+                    btnNo.classList.toggle('btn-primary', v === '0');
+                    btnNo.classList.toggle('btn-outline-secondary', v !== '0');
+                }
+            }
+
+            btnYes && btnYes.addEventListener('click', () => setReseller(true));
+            btnNo && btnNo.addEventListener('click', () => setReseller(false));
+            setReseller((input.value || '0') === '1');
+        })();
 
         // Speakers (dynamic) - sourced from Trainer API; first required, others optional
         const speakersContainer = document.getElementById('speakersContainer');
@@ -1543,66 +1688,6 @@
         const eventDateEl = document.getElementById('tanggal');
         if(eventDateEl){ ['change','input'].forEach(ev=>eventDateEl.addEventListener(ev, updateDiscountUntilBounds)); }
 
-        // Tenggat Pengumpulan Materi: jika diisi, harus sebelum hari-H event
-        const materialDeadlineEl = document.getElementById('material_deadline');
-        const materialDeadlineHelp = document.getElementById('materialDeadlineHelp');
-        function updateMaterialDeadlineBounds(){
-            if(!materialDeadlineEl) return;
-            const eventDateStr = document.getElementById('tanggal')?.value;
-            if(!eventDateStr){
-                materialDeadlineEl.removeAttribute('max');
-                return;
-            }
-            const eventDate = new Date(eventDateStr + 'T00:00:00');
-            if(isNaN(eventDate.getTime())) return;
-            // Max: H-1 pukul 23:59
-            const prev = new Date(eventDate.getTime() - 24*60*60*1000);
-            const y = prev.getFullYear();
-            const m = String(prev.getMonth() + 1).padStart(2, '0');
-            const d = String(prev.getDate()).padStart(2, '0');
-            materialDeadlineEl.max = `${y}-${m}-${d}T23:59`;
-        }
-        function validateMaterialDeadline(){
-            if(!materialDeadlineEl) return true;
-            const val = (materialDeadlineEl.value || '').trim();
-            const eventDateStr = document.getElementById('tanggal')?.value;
-
-            // empty is OK (optional)
-            if(!val || !eventDateStr){
-                materialDeadlineEl.classList.remove('border-danger');
-                if(materialDeadlineHelp) materialDeadlineHelp.classList.add('d-none');
-                return true;
-            }
-
-            const deadline = new Date(val);
-            const eventDayStart = new Date(eventDateStr + 'T00:00:00');
-            const ok = !isNaN(deadline.getTime()) && !isNaN(eventDayStart.getTime()) && (deadline < eventDayStart);
-            if(!ok){
-                materialDeadlineEl.classList.add('border-danger');
-                if(materialDeadlineHelp) materialDeadlineHelp.classList.remove('d-none');
-            } else {
-                materialDeadlineEl.classList.remove('border-danger');
-                if(materialDeadlineHelp) materialDeadlineHelp.classList.add('d-none');
-            }
-            return ok;
-        }
-        if(eventDateEl){
-            ['change','input'].forEach(ev => eventDateEl.addEventListener(ev, () => {
-                updateMaterialDeadlineBounds();
-                validateMaterialDeadline();
-            }));
-        }
-        if(materialDeadlineEl){
-            ['change','input','blur'].forEach(ev => materialDeadlineEl.addEventListener(ev, () => {
-                updateMaterialDeadlineBounds();
-                validateMaterialDeadline();
-                if(typeof window.updateSubmitState === 'function') window.updateSubmitState();
-            }));
-        }
-        // Init for old() values
-        updateMaterialDeadlineBounds();
-        validateMaterialDeadline();
-
         if (diskonInput && discountUntilInput) {
             const toggleDiscountUntil = () => {
                 const perc = parseInt(diskonInput.value || '0', 10);
@@ -1849,9 +1934,6 @@
                         f.classList.remove('border-danger');
                     }
                 });
-                // Validate material deadline (optional, but must be before event day when filled)
-                const materialOk = (typeof validateMaterialDeadline === 'function') ? validateMaterialDeadline() : true;
-                if(!materialOk){ ok = false; }
                 // Validate short description max 40 words
                 const shortDescEl = document.getElementById('short_desc');
                 if(shortDescEl){
@@ -1884,7 +1966,26 @@
             // Live enable/disable submit button based on required fields
             const submitBtn = document.getElementById('submitBtn');
             const submitHint = document.getElementById('submitHint');
-            const requiredFields = Array.from(form.querySelectorAll('[required]'));
+            const isElementVisible = (el) => {
+                if (!el) return false;
+                if (el.closest('.d-none')) return false;
+                // More reliable than offsetParent (offsetParent can be null for some positioned elements)
+                return !!(el.getClientRects && el.getClientRects().length);
+            };
+            const getRequiredFields = () => Array.from(form.querySelectorAll('[required]'))
+                .filter(el => !el.disabled && isElementVisible(el));
+
+            const isRequiredFieldEmpty = (fieldEl) => {
+                if (!fieldEl) return true;
+                const type = String(fieldEl.type || '').toLowerCase();
+                if (type === 'file') {
+                    return !(fieldEl.files && fieldEl.files.length > 0);
+                }
+                if (type === 'checkbox' || type === 'radio') {
+                    return !fieldEl.checked;
+                }
+                return !String(fieldEl.value || '').trim();
+            };
             // Friendly name helper (shared with submit alert logic above)
             const fieldFriendlyName = (el) => {
                 if(!el) return 'Field';
@@ -1899,12 +2000,15 @@
                 if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
                 if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
                 if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
-                if(id === 'lokasi' || name === 'location') return 'Lokasi';
+                if(id === 'lokasi' || name === 'location_mode') return 'Lokasi';
+                if(id === 'place_name' || name === 'place_name') return 'Nama Tempat';
+                if(id === 'maps' || name === 'maps_url') return 'Link Google Maps';
+                if(id === 'zoom' || name === 'zoom_link') return 'Link Zoom';
                 if(id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
                 return id || name || 'Field';
             };
             function missingRequired(){
-                return requiredFields.filter(f => !(f.value || '').trim());
+                return getRequiredFields().filter(isRequiredFieldEmpty);
             }
             function allRequiredFilled(){
                 return missingRequired().length === 0;
@@ -1918,12 +2022,30 @@
                 const sdEl = document.getElementById('short_desc');
                 const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                 const overLimit = sdEl ? sdWords > 40 : false;
-                const materialOk = (typeof validateMaterialDeadline === 'function') ? validateMaterialDeadline() : true;
-                if(submitBtn){ submitBtn.disabled = (!filled || overLimit || !materialOk); }
+                const shouldDisable = (!filled || overLimit);
+                if(submitBtn){
+                    submitBtn.disabled = shouldDisable;
+                    if (shouldDisable) {
+                        submitBtn.setAttribute('disabled', 'disabled');
+                        submitBtn.setAttribute('aria-disabled', 'true');
+                    } else {
+                        submitBtn.removeAttribute('disabled');
+                        submitBtn.setAttribute('aria-disabled', 'false');
+                    }
+                }
 
-                // Do not show large summary block; show per-field inline messages instead.
+                // Show a compact hint near the button so users know what's missing.
                 if(submitHint){
-                    submitHint.style.display = 'none';
+                    if(!filled){
+                        const missingNames = missingRequired().map(fieldFriendlyName);
+                        submitHint.textContent = 'Lengkapi: ' + missingNames.join(', ') + '.';
+                        submitHint.style.display = 'block';
+                    } else if(overLimit){
+                        submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).';
+                        submitHint.style.display = 'block';
+                    } else {
+                        submitHint.style.display = 'none';
+                    }
                 }
 
                 // Required fields: show inline error under each missing field
@@ -1933,7 +2055,7 @@
                 });
 
                 // Clear errors for currently filled required fields
-                requiredFields
+                getRequiredFields()
                     .filter((fieldEl) => String(fieldEl.value || '').trim())
                     .forEach((fieldEl) => {
                         fieldEl.classList.remove('border-danger');
@@ -1950,23 +2072,9 @@
                     }
                 }
 
-                // Material deadline validation (optional)
-                const materialDeadlineEl = document.getElementById('material_deadline');
-                const materialDeadlineHelp = document.getElementById('materialDeadlineHelp');
-                if(materialDeadlineEl && materialDeadlineHelp){
-                    if(!materialOk){
-                        materialDeadlineEl.classList.add('border-danger');
-                        materialDeadlineHelp.classList.remove('d-none');
-                    } else {
-                        materialDeadlineEl.classList.remove('border-danger');
-                        materialDeadlineHelp.classList.add('d-none');
-                    }
-                }
             }
             // Observe input/change events
-            requiredFields.forEach(f => {
-                ['input','change','blur'].forEach(evName => f.addEventListener(evName, updateSubmitState));
-            });
+            ['input','change','blur'].forEach(evName => form.addEventListener(evName, updateSubmitState));
             // If CKEditor was created earlier, bind now; otherwise it will bind in its own init then-callback
             if(window.editorDeskripsi){
                 const ta = document.getElementById('deskripsi');
@@ -1992,7 +2100,16 @@
                     shortDescCountEl.classList.remove('text-danger');
                 }
             }
+            // Direct listeners (keep) + delegated fallback for robustness.
             ['input','change','blur'].forEach(evName => shortDescEl?.addEventListener(evName, () => { updateShortDescCount(); updateSubmitState(); }));
+            document.addEventListener('input', function(e){
+                const t = e.target;
+                if(!(t instanceof HTMLElement)) return;
+                if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                    updateShortDescCount();
+                    if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                }
+            }, true);
             updateShortDescCount();
         } else {
             console.warn('[EventForm] Form element not found.');
@@ -2135,6 +2252,39 @@
         }
     });
     </script>
+
+    <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
+    </script>
     @endsection
 
 <!-- Global Delete Event Modal (modern) -->
@@ -2164,10 +2314,13 @@
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-danger confirm-danger-btn" id="deleteConfirmBtn" form="deleteEventFormGlobal" disabled>
-                    <i class="bi bi-trash me-1"></i> Hapus Permanen
-                </button>
+                <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger confirm-danger-btn px-4" id="deleteConfirmBtn" form="deleteEventFormGlobal" disabled>
+                        <span class="me-1">Hapus Permanen</span>
+                        <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

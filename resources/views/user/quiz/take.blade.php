@@ -34,17 +34,68 @@
 
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
-    <div class="box_luar_kuis quiz-take-v2">
+    <div class="box_luar_kuis quiz-take-v2" id="quizTakeRoot">
+        <div class="box_kuis_kiri quiz-modules">
+            @php
+                $modulesList = $course->modules()->orderBy('order_no')->get();
+            @endphp
+
+            <div class="quiz-modules-head">
+                <div class="quiz-modules-title">Daftar Modul</div>
+                <button type="button" class="quiz-modules-close" id="closeModulesBtn" aria-label="Tutup daftar modul">&times;</button>
+            </div>
+
+            <div class="accordion-box">
+                @foreach($modulesList as $m)
+                    @php
+                        $isActiveModule = (int) ($m->id ?? 0) === (int) ($module->id ?? 0);
+                        $typeLabel = $m->type ? strtoupper((string) $m->type) : 'MATERI';
+                        $cleanDesc = trim(strip_tags((string) ($m->description ?? '')));
+                        $desc = $cleanDesc !== '' ? $cleanDesc : 'Klik untuk membuka materi.';
+                        $desc = mb_strlen($desc) > 120 ? (mb_substr($desc, 0, 120) . '...') : $desc;
+                        $learnUrl = route('course.learn', $course->id) . '?module=' . (int) ($m->id ?? 0);
+                    @endphp
+                    <div class="accordion-item {{ $isActiveModule ? 'selected active' : '' }}">
+                        <a href="{{ $learnUrl }}" style="text-decoration:none; color: inherit;">
+                            <button class="accordion-header" type="button">
+                                <span style="display:flex; align-items:center; gap:10px; min-width:0;">
+                                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
+                                </span>
+                                <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
+                                    <span style="font-size:12px; font-weight:700; opacity:.75;">{{ $typeLabel }}</span>
+                                    <span class="arrow">▲</span>
+                                </span>
+                            </button>
+                        </a>
+                        <div class="accordion-content">
+                            <p style="margin:0;">{{ $desc }}</p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="box_kuis_kanan">
-            <div class="quiz-title-row">
+            <p class="waktu_kuis" id="quizTimer">--:--:--</p>
+            <div class="quiz-sidebar-heading" style="margin-top: 12px;">Questions</div>
+            <div class="nomor_kuis" style="margin-bottom: 16px;">
+                @foreach($questions as $idx => $q)
+                    @php
+                        $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
+                        $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
+                        $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
+                    @endphp
+                    <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
+                @endforeach
+            </div>
+
+            <div class="quiz-title-row" style="margin-top: 6px;">
                 <div class="quiz-title-left">
-                    <span class="quiz-title-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M2 2.5a.5.5 0 0 1 .5-.5H14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2.5a.5.5 0 0 1-.5-.5z" opacity=".15"/>
-                            <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14H14a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM2 3.5A.5.5 0 0 1 2.5 3H14v10H2.5a.5.5 0 0 1-.5-.5z"/>
-                            <path d="M4 5.25a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 5.25m0 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 7.75m0 2.5a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4A.75.75 0 0 1 4 10.25"/>
+                    <button type="button" class="quiz-modules-open d-none" id="openModulesBtn" aria-label="Buka daftar modul">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
                         </svg>
-                    </span>
+                    </button>
                     <h1 class="quiz-title">Kuis {{ $quizNumber }} : {{ $module->title }}</h1>
                 </div>
             </div>
@@ -76,21 +127,6 @@
                 </form>
             </div>
         </div>
-
-        <aside class="quiz-sidebar">
-            <p class="waktu_kuis" id="quizTimer">--:--:--</p>
-            <div class="quiz-sidebar-heading">Questions</div>
-            <div class="nomor_kuis">
-                @foreach($questions as $idx => $q)
-                    @php
-                        $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
-                        $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
-                        $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
-                    @endphp
-                    <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
-                @endforeach
-            </div>
-        </aside>
     </div>
 
     <script>
@@ -103,6 +139,33 @@
                 opt.classList.add('selected');
             });
         });
+
+        // Sidebar accordion
+        document.querySelectorAll('.box_kuis_kiri.quiz-modules .accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                header.closest('.accordion-item')?.classList.toggle('active');
+            });
+        });
+
+        // Sidebar open/close
+        const rootEl = document.getElementById('quizTakeRoot');
+        const modulesSidebar = document.querySelector('.box_kuis_kiri.quiz-modules');
+        const openModulesBtn = document.getElementById('openModulesBtn');
+        const closeModulesBtn = document.getElementById('closeModulesBtn');
+
+        function setModulesOpen(isOpen) {
+            if (!modulesSidebar) return;
+            modulesSidebar.classList.toggle('closed', !isOpen);
+            if (openModulesBtn) openModulesBtn.classList.toggle('d-none', isOpen);
+            if (rootEl) rootEl.classList.toggle('modules-closed', !isOpen);
+        }
+
+        if (closeModulesBtn) {
+            closeModulesBtn.addEventListener('click', () => setModulesOpen(false));
+        }
+        if (openModulesBtn) {
+            openModulesBtn.addEventListener('click', () => setModulesOpen(true));
+        }
 
         // Timer (module duration in seconds), based on server-provided endsAt
         const endsAtIso = @json($endsAtIso ?? null);

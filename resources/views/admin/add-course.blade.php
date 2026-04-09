@@ -85,6 +85,16 @@
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label text-dark">Reseller Course</label>
+                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', 0) ? 1 : 0 }}">
+                            <div class="btn-group w-100" role="group" aria-label="Reseller Course">
+                                <button type="button" id="reseller-course-no" class="btn btn-outline-secondary">Tidak</button>
+                                <button type="button" id="reseller-course-yes" class="btn btn-outline-secondary">Ya</button>
+                            </div>
+                            <div class="form-text">Jika Ya, course ini ditandai sebagai course reseller.</div>
+                        </div>
+
                         <div class="box_select_deskripsi mb-3">
                             <label class="form-label text-dark" for="course-description">Deskripsi Course</label>
                             <textarea id="course-description" name="description" class="form-control" placeholder="Deskripsikan course secara lengkap"></textarea>
@@ -169,6 +179,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        (function() {
+            const input = document.getElementById('is_reseller_course');
+            const btnYes = document.getElementById('reseller-course-yes');
+            const btnNo = document.getElementById('reseller-course-no');
+
+            if (!input || (!btnYes && !btnNo)) return;
+
+            function setReseller(val) {
+                const v = val ? '1' : '0';
+                input.value = v;
+
+                if (btnYes) {
+                    btnYes.classList.toggle('btn-primary', v === '1');
+                    btnYes.classList.toggle('btn-outline-secondary', v !== '1');
+                }
+                if (btnNo) {
+                    btnNo.classList.toggle('btn-primary', v === '0');
+                    btnNo.classList.toggle('btn-outline-secondary', v !== '0');
+                }
+            }
+
+            btnYes && btnYes.addEventListener('click', () => setReseller(true));
+            btnNo && btnNo.addEventListener('click', () => setReseller(false));
+            setReseller((input.value || '0') === '1');
+        })();
+
         (function() {
             const modules = [];
             const listEl = document.getElementById('modules-list');

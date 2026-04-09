@@ -225,6 +225,14 @@
                 border-radius: 12px;
                 overflow: hidden;
             }
+
+            /* Feedback Confirm Modal: match logout modal footer/button sizing */
+            #feedback-confirm-modal .modal-content{ border-radius: 18px; overflow: hidden; }
+            #feedback-confirm-modal .modal-header{ padding: 1.1rem 1.1rem .75rem; }
+            #feedback-confirm-modal .modal-body{ padding: 0 1.1rem 1rem; }
+            #feedback-confirm-modal .modal-footer{ padding: .25rem 1.1rem 1.1rem; border-top: 0; }
+            #feedback-confirm-modal .btn{ border-radius: 12px; padding-top: .6rem; padding-bottom: .6rem; }
+            #feedback-confirm-modal .modal-footer .btn{ width: auto !important; }
             
             #participant-ratings-list::-webkit-scrollbar {
                 width: 6px;
@@ -1131,7 +1139,7 @@
                 </div>
 
                 @if($isRegistered && $attendanceSubmitted)
-                    <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer;">
+                    <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                         @if(isset($hasFeedback) && $hasFeedback)
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Feedback berhasil">
                                 <circle cx="12" cy="12" r="9"></circle>
@@ -1190,43 +1198,49 @@
                 <!-- Right Column: Share Your Feedback -->
                 <div class="col-md-6" style="background-color: white; padding: 1rem;">
                     <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
-                    <form action="#" method="POST" id="feedback-form">
-                        @csrf
-                        
-                        <!-- Event Rating -->
-                        <div class="mb-2">
-                            <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Event</label>
-                            <div class="stars-rating-input" data-target="eventRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                    @if(isset($hasFeedback) && $hasFeedback)
+                        <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
+                            Feedback sudah dikirim dan tidak bisa dikirim ulang.
+                        </div>
+                    @else
+                        <form action="#" method="POST" id="feedback-form">
+                            @csrf
+                            
+                            <!-- Event Rating -->
+                            <div class="mb-2">
+                                <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Event</label>
+                                <div class="stars-rating-input" data-target="eventRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
+                                    <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Speaker Rating -->
-                        <div class="mb-3">
-                            <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
-                            <div class="stars-rating-input" data-target="speakerRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                            <!-- Speaker Rating -->
+                            <div class="mb-3">
+                                <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
+                                <div class="stars-rating-input" data-target="speakerRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
+                                    <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                    <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Feedback Text -->
-                        <div class="mb-3">
-                            <textarea id="feedback-text" name="feedback" class="form-control" rows="4" placeholder="Write your thoughts..." required style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
-                        </div>
+                            <!-- Feedback Text -->
+                            <div class="mb-3">
+                                <textarea id="feedback-text" name="feedback" class="form-control" rows="4" placeholder="Write your thoughts..." required style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
+                            </div>
 
-                        <!-- Submit Button -->
-                        <button type="button" id="submit-feedback-btn" class="btn w-100 fw-semibold" style="background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
-                            Submit Feedback
-                        </button>
-                    </form>
+                            <!-- Submit Button -->
+                            <button type="button" id="submit-feedback-btn" class="btn w-100 fw-semibold" style="background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                                Submit Feedback
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -1746,6 +1760,9 @@
                 // --- Feedback dynamic submit ---
                 const submitBtn = document.getElementById('submit-feedback-btn');
                 const feedbackText = document.getElementById('feedback-text');
+                if(!submitBtn || !feedbackText){
+                    // feedback form not rendered (already submitted)
+                } else {
                 
                 // Helpers to read selected ratings from the UI
                 function getRatingByTarget(targetName){
@@ -1784,8 +1801,13 @@
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                    <button type="button" class="btn btn-primary" id="confirm-submit-feedback" disabled>Kirim Feedback</button>
+                                                    <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
+                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                                                        <button type="button" class="btn btn-primary px-4" id="confirm-submit-feedback" disabled>
+                                                            <span class="me-1">Kirim Feedback</span>
+                                                            <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                         </div>
                     </div>
@@ -1922,6 +1944,7 @@
                         submitBtn.innerText = 'Submit Feedback';
                         alert('Gagal menyimpan feedback.');
                     });
+                }
                 }
             });
             // NOTE: Removed duplicate generic rating handlers.

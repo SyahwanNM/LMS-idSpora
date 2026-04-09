@@ -62,6 +62,9 @@ class Event extends Model
         // publishing
         'is_published',
         'published_at',
+
+        // reseller
+        'is_reseller_event',
     ];
 
     protected $casts = [
@@ -85,6 +88,8 @@ class Event extends Model
 
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+
+        'is_reseller_event' => 'boolean',
     ];
 
     /**
@@ -97,7 +102,6 @@ class Event extends Model
         $isOfflineOnly = $hasMaps && !$hasZoom;
 
         $hasVbg = !empty($this->vbg_path);
-        $hasCert = !empty($this->certificate_path);
         $hasModule = !empty($this->module_path);
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
@@ -106,9 +110,6 @@ class Event extends Model
         // Offline-only events do not require Virtual Background.
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
-            $count++;
-        }
-        if ($hasCert) {
             $count++;
         }
         if ($hasModule) {
@@ -122,7 +123,7 @@ class Event extends Model
     }
 
     /**
-     * Percentage (0-100) of document completeness based on 3 required docs.
+     * Percentage (0-100) of document completeness based on required docs.
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
@@ -130,8 +131,8 @@ class Event extends Model
         $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
         $isOfflineOnly = $hasMaps && !$hasZoom;
         $total = $isOfflineOnly
-            ? 3 // Sertifikat, Module (Trainer), Absensi (QR/File)
-            : 4; // + Virtual Background
+            ? 2 // Module (Trainer), Absensi (QR/File)
+            : 3; // + Virtual Background
 
         $done = max(0, min($total, (int) $this->documents_completed_count));
         return $total > 0 ? (int) floor(($done / $total) * 100) : 0;

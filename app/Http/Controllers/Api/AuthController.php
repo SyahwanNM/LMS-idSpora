@@ -34,7 +34,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Login Berhasil',
+            'message' => 'Login Berhasil! Selamat datang di LMS IdSpora',
             'data' => [
                 'user' => $user,
                 'access_token' => $token,

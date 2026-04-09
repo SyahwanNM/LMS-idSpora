@@ -153,7 +153,6 @@
             </div>
         </div>
     </div>
-    @endif
     <div class="box_luar_course_builder">
         <h1 class="judul_course_builder">Daftar Course</h1>
         <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
@@ -425,15 +424,24 @@
                                         </svg>
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
-                                    @csrf
-                                    <button type="submit"
-                                        class="btn btn-sm {{ $isPublished ? 'btn-success' : 'btn-outline-success' }} btn_publish_course js-publish-course"
-                                        data-published="{{ $isPublished ? '1' : '0' }}"
-                                        data-missing='@json($missingForPublish)'>
-                                        {{ $isPublished ? 'Published' : 'Publish' }}
-                                    </button>
-                                </form>
+                                @if($isPublished)
+                                    <form method="POST" action="{{ route('admin.courses.unpublish', $course) }}" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn_unpublish_course">
+                                            Batal Publish
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
+                                        @csrf
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-success btn_publish_course js-publish-course"
+                                            data-published="0"
+                                            data-missing='@json($missingForPublish)'>
+                                            Publish
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
