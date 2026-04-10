@@ -151,7 +151,7 @@ class ManualPaymentController extends Controller
 
         // Find existing pending or rejected manual payment
         $manual = ManualPayment::where('event_registration_id', $existing->id)
-            ->whereIn('status', ['pending', 'rejected'])
+            ->whereIn('status', ['pending', 'rejected', 'expired'])
             ->orderBy('id', 'desc')
             ->first();
 

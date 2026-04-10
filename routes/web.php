@@ -258,15 +258,7 @@ Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('eve
 // Redirect search to the best-matching event detail (exact title match preferred)
 Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
 
-// Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
-Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
-    $user = auth()->user();
-    $already = $user && $user->eventRegistrations()->where('event_id', $event->id)->exists();
-    if ($already) {
-        return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
-    }
-    return view('user.payment', compact('event'));
-})->name('payment');
+// NOTE: Payment route for events is defined in routes/user.php (auth middleware).
 
 // Midtrans Snap token endpoint (auth required)
 Route::middleware('auth')->get('/payment/{event}/snap-token', [PaymentController::class, 'snapToken'])->name('payment.snap-token');
@@ -289,11 +281,8 @@ Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController:
 // Midtrans notification webhook (no auth)
 Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('midtrans.notify');
 
-// Optional finish redirect target from Snap callbacks to avoid 404 after payment
-// Optional finish redirect target from Snap callbacks to avoid 404 after payment
-Route::get('/payment/finish', function () {
-    return redirect()->route('dashboard')->with('success', 'Pembayaran sedang diproses.');
-})->name('payment.finish');
+// Finish redirect target from Snap callbacks (Midtrans will append order_id, transaction_status, etc.)
+Route::get('/payment/finish', [PaymentController::class, 'finishRedirect'])->name('payment.finish');
 
 // Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
 Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');

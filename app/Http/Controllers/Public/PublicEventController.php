@@ -133,7 +133,7 @@ class PublicEventController extends Controller
 		// Tandai event yang sudah diregistrasi user login
 		if($request->user()){
 			$userRegEventIds = $request->user()->eventRegistrations()
-                ->where('status', '!=', 'rejected')
+				->where('status', 'active')
                 ->pluck('event_id')->toArray();
             
             // Tandai event yang disimpan
@@ -214,7 +214,7 @@ class PublicEventController extends Controller
 		if($request->user()){
 			$isRegistered = $request->user()->eventRegistrations()
                 ->where('event_id',$event->id)
-                ->where('status', '!=', 'rejected')
+                ->where('status', 'active')
                 ->exists();
 		}
 		$event->is_registered = $isRegistered;
