@@ -421,7 +421,7 @@ class EventController extends Controller
                 ->where('event_id', $event->id)
                 ->where('event_registration_id', $registration->id)
                 ->where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'rejected'])
+                    ->whereIn('status', ['pending', 'rejected', 'expired'])
                 ->latest('id')
                 ->first();
 
@@ -491,7 +491,7 @@ class EventController extends Controller
             ->where('event_id', $event->id)
             ->where('event_registration_id', $registration->id)
             ->where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'rejected'])
+            ->whereIn('status', ['pending', 'rejected', 'expired'])
             ->latest('id')
             ->limit(1)
             ->update(['status' => 'cancelled']);

@@ -51,7 +51,7 @@ class DashboardController extends Controller
             $registeredIds = EventRegistration::query()
                 ->where('user_id', $userId)
                 ->whereIn('event_id', $eventIds)
-                ->where('status', '!=', 'rejected')
+                ->where('status', 'active')
                 ->pluck('event_id')
                 ->all();
 

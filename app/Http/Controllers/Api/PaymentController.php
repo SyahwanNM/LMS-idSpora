@@ -408,7 +408,11 @@ class PaymentController extends Controller
             return 'pending';
         }
 
-        // deny/cancel/expire/failure/refund/chargeback -> treat as rejected in our enum.
+        if ($ts === 'expire') {
+            return 'expired';
+        }
+
+        // deny/cancel/failure/refund/chargeback -> treat as rejected.
         return 'rejected';
     }
 
@@ -1089,6 +1093,16 @@ class PaymentController extends Controller
                 }
             }
 
+            // Persist terminal non-success statuses to the registration as well
+            // so registrations don't remain pending forever when Midtrans expires.
+            if ($payment->event_registration_id && in_array($internalStatus, ['expired', 'rejected'], true)) {
+                $registration = EventRegistration::find($payment->event_registration_id);
+                if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
+                    $registration->status = $internalStatus;
+                    $registration->save();
+                }
+            }
+
             DB::commit();
             return response()->json(['message' => 'OK']);
         } catch (\Throwable $e) {
@@ -1096,6 +1110,143 @@ class PaymentController extends Controller
             Log::error('Midtrans notify failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);
             return response()->json(['message' => 'Error'], 500);
         }
+    }
+
+    /**
+     * User redirect landing page after Midtrans Snap.
+     * Midtrans appends query params like: order_id, transaction_status, status_code.
+     *
+     * Goal:
+     * - If expired/canceled/failed, redirect user back to payment page with force_new=1.
+     * - If pending, redirect to payment page (continue).
+     * - If settled, redirect to event/course detail.
+     */
+    public function finishRedirect(Request $request)
+    {
+        $orderId = trim((string) $request->query('order_id'));
+        if ($orderId === '') {
+            return redirect()->route('dashboard')->with('success', 'Pembayaran sedang diproses.');
+        }
+
+        $user = $request->user();
+        if (!$user) {
+            return redirect()->route('login')->with('warning', 'Silakan login untuk melihat status pembayaran.');
+        }
+
+        $payment = ManualPayment::query()
+            ->where('order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$payment) {
+            return redirect()->route('dashboard')->with('warning', 'Transaksi tidak ditemukan.');
+        }
+
+        // Prefer server-to-server status check; fallback to query param if API call fails.
+        $transactionStatus = null;
+        $fraudStatus = null;
+        $midtransStatus = null;
+        try {
+            $this->configureMidtrans();
+            $midtransStatus = (array) \Midtrans\Transaction::status($orderId);
+            $transactionStatus = isset($midtransStatus['transaction_status']) ? (string) $midtransStatus['transaction_status'] : null;
+            $fraudStatus = isset($midtransStatus['fraud_status']) ? (string) $midtransStatus['fraud_status'] : null;
+        } catch (\Throwable $e) {
+            $transactionStatus = (string) $request->query('transaction_status');
+            $fraudStatus = (string) $request->query('fraud_status');
+        }
+
+        $internalStatus = $this->mapMidtransToInternalStatus($transactionStatus, $fraudStatus);
+
+        DB::beginTransaction();
+        try {
+            $wasSettled = $payment->status === 'settled';
+
+            // Update payment status + metadata.
+            $payment->status = $internalStatus;
+            $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
+                'finish_query' => $request->query(),
+                'transaction_status' => $transactionStatus,
+                'fraud_status' => $fraudStatus,
+                'midtrans_status' => $midtransStatus,
+                'finish_redirected_at' => now()->toIso8601String(),
+            ]);
+            $payment->save();
+
+            if (!$wasSettled && $internalStatus === 'settled') {
+                // Activate related entities (mirrors notify/finalize behavior).
+                if ($payment->event_registration_id) {
+                    $registration = EventRegistration::find($payment->event_registration_id);
+                    if ($registration && $registration->status !== 'active') {
+                        $registration->status = 'active';
+                        $registration->payment_verified_at = now();
+                        $registration->payment_verified_by = null;
+                        $registration->save();
+                    }
+
+                    $event = $payment->event_id ? Event::find($payment->event_id) : null;
+                    if ($event) {
+                        $this->processEventReferralCommission($event, $payment);
+                        $this->notifyEventMidtransRegistrationSuccess($event, $payment);
+                    }
+                }
+
+                if ($payment->enrollment_id) {
+                    $enrollment = Enrollment::find($payment->enrollment_id);
+                    if ($enrollment && $enrollment->status !== 'active') {
+                        $enrollment->status = 'active';
+                        $enrollment->save();
+                    }
+                    $course = $payment->course_id ? Course::find($payment->course_id) : null;
+                    if ($course) {
+                        $this->processCourseReferralCommission($course, $payment);
+                    }
+                }
+            }
+
+            if ($payment->event_registration_id && in_array($internalStatus, ['expired', 'rejected'], true)) {
+                $registration = EventRegistration::find($payment->event_registration_id);
+                if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
+                    $registration->status = $internalStatus;
+                    $registration->save();
+                }
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Midtrans finishRedirect update failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);
+        }
+
+        // Redirect user based on entity type.
+        if ($payment->event_id) {
+            $event = Event::find($payment->event_id);
+            if ($event) {
+                if ($internalStatus === 'settled') {
+                    return redirect()->route('events.registered.detail', $event)->with('success', 'Pembayaran berhasil.');
+                }
+                if ($internalStatus === 'pending') {
+                    return redirect()->route('payment', $event)->with('info', 'Pembayaran masih pending. Silakan selesaikan di Midtrans.');
+                }
+                return redirect()->route('payment', ['event' => $event->id, 'force_new' => 1])
+                    ->with('warning', 'Transaksi sudah kadaluarsa / gagal. Silakan lakukan pembayaran ulang.');
+            }
+        }
+
+        if ($payment->course_id) {
+            $course = Course::find($payment->course_id);
+            if ($course) {
+                if ($internalStatus === 'settled') {
+                    return redirect()->route('courses.show', $course)->with('success', 'Pembayaran berhasil.');
+                }
+                if ($internalStatus === 'pending') {
+                    return redirect()->route('course.payment', $course)->with('info', 'Pembayaran masih pending. Silakan selesaikan di Midtrans.');
+                }
+                return redirect()->route('course.payment', $course)->with('warning', 'Transaksi sudah kadaluarsa / gagal. Silakan lakukan pembayaran ulang.');
+            }
+        }
+
+        return redirect()->route('dashboard')->with('info', 'Status pembayaran sudah diperbarui.');
     }
 
     /**
@@ -1150,6 +1301,14 @@ class PaymentController extends Controller
                 }
                 $this->processEventReferralCommission($event, $payment);
                 $this->notifyEventMidtransRegistrationSuccess($event, $payment);
+            }
+
+            if ($payment->event_registration_id && in_array($internalStatus, ['expired', 'rejected'], true)) {
+                $registration = EventRegistration::find($payment->event_registration_id);
+                if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
+                    $registration->status = $internalStatus;
+                    $registration->save();
+                }
             }
             DB::commit();
 

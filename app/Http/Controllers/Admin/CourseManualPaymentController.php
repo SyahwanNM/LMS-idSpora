@@ -154,7 +154,7 @@ class CourseManualPaymentController extends Controller
         $manualPayment = ManualPayment::query()
             ->where('course_id', $course->id)
             ->where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'rejected'])
+            ->whereIn('status', ['pending', 'rejected', 'expired'])
             ->latest('id')
             ->first();
 

@@ -716,7 +716,46 @@
                             // - PAID events: allow booking only before start time when available; else until end-of-day
                             $hasStartTime = isset($event) && !empty($event->event_time);
                             $registrationStatus = $registration ? strtolower((string) $registration->status) : null;
-                            $paymentUnderReview = $registration && $registrationStatus === 'pending';
+                            $latestPayment = null;
+                            $latestPaymentMethod = null;
+                            $latestPaymentStatus = null;
+                            if ($registration && $authUser) {
+                                try {
+                                    $latestPayment = \App\Models\ManualPayment::query()
+                                        ->where('event_registration_id', $registration->id)
+                                        ->where('user_id', $authUser->id)
+                                        ->latest('id')
+                                        ->first();
+                                } catch (\Throwable $e) {
+                                    $latestPayment = null;
+                                }
+                            }
+                            if ($latestPayment) {
+                                $latestPaymentMethod = strtolower(trim((string) ($latestPayment->method ?? '')));
+                                $latestPaymentStatus = strtolower(trim((string) ($latestPayment->status ?? '')));
+                            }
+
+                            $latestMidtransTransactionStatus = null;
+                            if ($latestPayment) {
+                                $latestMidtransTransactionStatus = strtolower(trim((string) (
+                                    data_get($latestPayment->metadata, 'transaction_status')
+                                    ?: data_get($latestPayment->metadata, 'midtrans.transaction_status')
+                                )));
+                                if ($latestMidtransTransactionStatus === '') {
+                                    $latestMidtransTransactionStatus = null;
+                                }
+                            }
+
+                            $isMidtransFlow = $latestPaymentMethod === 'midtrans';
+                            $midtransPending = $registration && $registrationStatus === 'pending' && $isMidtransFlow && in_array($latestPaymentStatus, ['pending'], true);
+                            $midtransExpired = $registration && in_array($registrationStatus, ['pending', 'expired', 'rejected'], true) && $isMidtransFlow
+                                && (
+                                    in_array($latestPaymentStatus, ['rejected', 'expired'], true)
+                                    || in_array($latestMidtransTransactionStatus, ['expire', 'cancel', 'deny', 'failure'], true)
+                                );
+                            // "Ditinjau" hanya untuk pembayaran manual yang sudah upload bukti bayar
+                            $paymentUnderReview = $registration && $registrationStatus === 'pending' && !$isMidtransFlow && !empty($registration->payment_proof);
+
                                                         $canRegister = (!$isRegistered) && (
                                                                 $eventDate
                                                                         ? (
@@ -733,7 +772,11 @@
                                 } catch (\Throwable $e) { $isSaved = false; }
                             }
                         @endphp
-                        @if($paymentUnderReview)
+                        @if($midtransPending)
+                            <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Lanjutkan pembayaran Midtrans</a>
+                        @elseif($midtransExpired)
+                            <a class="bookseat text-white text-center" href="{{ route('payment', ['event' => $event->id, 'force_new' => 1]) }}" style="text-decoration:none;">Bayar lagi</a>
+                        @elseif($paymentUnderReview)
                             <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
                         @elseif($canRegister)
                             @if(!auth()->check())

@@ -339,15 +339,7 @@
                     </div>
                 </div>
 
-                @if((bool) ($course->is_reseller_course ?? false))
-                <div class="input_biodata">
-                    <p>Kode Referral <span style="color:#888; font-weight:400;">(opsional)</span></p>
-                    <input class="kolom_input_biodata" type="text" id="referralCodeInput" name="referral_code" placeholder="Masukkan kode referral (jika ada)">
-                    <div id="referralFeedback" style="font-size:13px; margin-top:6px;"></div>
-                </div>
-                @endif
 
-                
             </div>
 
             <div class="box_kanan_biodata">
@@ -460,10 +452,6 @@
                                                 <form id="uploadProofForm" method="POST" action="{{ route('courses.manual-payment.upload', $course) }}" enctype="multipart/form-data">
                                                     @csrf
                                                     <input type="hidden" name="whatsapp" id="formWhatsappFullInput">
-                                                    @if((bool) ($course->is_reseller_course ?? false))
-                                                        <input type="hidden" name="referral_code" id="formReferralCodeInput">
-                                                    @endif
-
                                                     <div class="mb-2">
                                                             <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
                                                             <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required>
@@ -510,9 +498,6 @@
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
             var formWhatsappInput = document.getElementById('formWhatsappInput');
-            var referralCodeInput = document.getElementById('referralCodeInput');
-            var formReferralCodeInput = document.getElementById('formReferralCodeInput');
-            var referralFeedback = document.getElementById('referralFeedback');
             var totalAmountText = document.getElementById('totalAmountText');
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
             var showQrisBtn = document.getElementById('showQrisBtn');
@@ -546,10 +531,6 @@
                 updatePayButtonState();
             }
 
-            var baseAmount = @json((int) ($course->price ?? 0));
-            var referralState = { valid: false, code: '' };
-            var referralDebounce = null;
-
             function formatIdrNumber(amount) {
                 var n = Math.max(0, parseInt(amount || 0, 10));
                 return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -558,68 +539,6 @@
             function setTotalAmount(amount) {
                 if (!totalAmountText) return;
                 totalAmountText.textContent = 'Rp ' + formatIdrNumber(amount);
-            }
-
-            function setReferralFeedback(message, type) {
-                if (!referralFeedback) return;
-                referralFeedback.textContent = message || '';
-                if (!message) {
-                    referralFeedback.style.color = '#6B7280';
-                    return;
-                }
-                referralFeedback.style.color = type === 'success' ? '#16A34A' : '#EF4444';
-            }
-
-            function syncReferralHidden() {
-                if (!formReferralCodeInput) return;
-                formReferralCodeInput.value = referralState.valid ? (referralState.code || '') : '';
-            }
-
-            function getReferralCheckUrl(code) {
-                var base = @json(route('courses.check-referral', $course));
-                return base + '?code=' + encodeURIComponent(code || '');
-            }
-
-            async function checkReferralNow() {
-                if (!referralCodeInput) return;
-
-                var code = (referralCodeInput.value || '').trim();
-                referralState.code = code;
-
-                if (code === '') {
-                    referralState.valid = false;
-                    syncReferralHidden();
-                    setTotalAmount(baseAmount);
-                    setReferralFeedback('', '');
-                    return;
-                }
-
-                try {
-                    var res = await fetch(getReferralCheckUrl(code), {
-                        method: 'GET',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        credentials: 'same-origin'
-                    });
-                    var data = await res.json();
-
-                    if (data && data.valid) {
-                        referralState.valid = true;
-                        syncReferralHidden();
-                        setTotalAmount(data.final_amount);
-                        setReferralFeedback(data.message || 'Kode referral valid.', 'success');
-                    } else {
-                        referralState.valid = false;
-                        syncReferralHidden();
-                        setTotalAmount(baseAmount);
-                        setReferralFeedback((data && data.message) ? data.message : 'Kode referral tidak valid.', 'error');
-                    }
-                } catch (e) {
-                    // If check fails, do not apply discount
-                    referralState.valid = false;
-                    syncReferralHidden();
-                    setTotalAmount(baseAmount);
-                    setReferralFeedback('Gagal cek referral. Coba lagi.', 'error');
-                }
             }
 
             function normalizePhone(value) {
@@ -693,9 +612,6 @@
                     }
                     if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
-                    // ensure referral state is up-to-date before showing QRIS
-                    try { await checkReferralNow(); } catch(_e) {}
-                    syncReferralHidden();
                     if (formWhatsappFullInput) {
                         var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
                         var waRaw = whatsappInput ? whatsappInput.value : '';
@@ -784,13 +700,6 @@
                             }
                         }
 
-                        // Autofill referral code if available and empty
-                        if (pending.referral_code && referralCodeInput && (!referralCodeInput.value || referralCodeInput.value.trim() === '')) {
-                            referralCodeInput.value = String(pending.referral_code);
-                            try { await checkReferralNow(); } catch(_e) {}
-                            syncReferralHidden();
-                        }
-
                         // Auto select Midtrans and disable manual option while pending
                         var midtransRadio = document.querySelector('input[name="payment_method"][value="midtrans"]');
                         var manualRadio = document.querySelector('input[name="payment_method"][value="manual"]');
@@ -822,10 +731,6 @@
                     // Ensure latest hidden values
                     if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
-                    try { await checkReferralNow(); } catch(_e) {}
-                    syncReferralHidden();
-
-                    var referralCode = referralCodeInput ? (referralCodeInput.value || '').trim() : '';
                     var dialVal = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
                     var waVal = whatsappInput ? (whatsappInput.value || '').trim() : '';
 
@@ -841,7 +746,6 @@
                         }
 
                         var url = new URL(snapTokenUrl, window.location.origin);
-                        if (referralCode) url.searchParams.set('referral_code', referralCode);
                         if (dialVal) url.searchParams.set('dial_code', dialVal);
                         if (waVal) url.searchParams.set('whatsapp', waVal);
                         if (forceNew) url.searchParams.set('force_new', '1');
@@ -921,8 +825,6 @@
                     e.preventDefault();
 
                     // sync latest inputs to hidden fields
-                    try { await checkReferralNow(); } catch(_e) {}
-                    syncReferralHidden();
                     if (formWhatsappFullInput) {
                         var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
                         var waRaw = whatsappInput ? whatsappInput.value : '';
@@ -947,20 +849,6 @@
                     if (confirmProofSubmitBtn) {
                         try { confirmProofSubmitBtn.disabled = false; } catch (e) {}
                     }
-                });
-            }
-
-            // Live referral validation (debounced)
-            if (referralCodeInput) {
-                referralCodeInput.addEventListener('input', function() {
-                    clearTimeout(referralDebounce);
-                    referralDebounce = setTimeout(function() {
-                        checkReferralNow();
-                    }, 400);
-                });
-                referralCodeInput.addEventListener('blur', function() {
-                    clearTimeout(referralDebounce);
-                    checkReferralNow();
                 });
             }
 
@@ -1003,8 +891,6 @@
                         alert('Silakan pilih file bukti pembayaran terlebih dahulu.');
                         return;
                     }
-                    // ensure latest referral code value is posted
-                    if (formReferralCodeInput) formReferralCodeInput.value = referralCodeInput ? referralCodeInput.value.trim() : '';
                     payNowBtn.disabled = true;
                     payNowBtn.textContent = 'Mengirim...';
                 });
