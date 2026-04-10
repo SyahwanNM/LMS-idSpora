@@ -61,6 +61,10 @@ class CourseReviewController extends Controller
             ->where('course_id', $course->id)
             ->first();
 
+        if ($enrollment) {
+            $enrollment->setRelation('course', $course);
+        }
+
         if ($enrollment && $enrollment->isFullyCompleted()) {
             $enrollment->update([
                 'status' => 'completed',
@@ -75,6 +79,7 @@ class CourseReviewController extends Controller
             }
         }
 
-        return redirect()->route('dashboard')->with('success', 'Penilaian Anda berhasil disimpan. Terima kasih atas feedback Anda!');
+        return redirect()->route('course.certificate', $course->id)
+            ->with('success', 'Penilaian berhasil disimpan. Sertifikat Anda siap dicek.');
     }
 }

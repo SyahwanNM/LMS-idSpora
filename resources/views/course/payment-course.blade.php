@@ -361,7 +361,14 @@
                         <div class="judul_event">
                             <h4>{{ $course->name ?? '-' }}</h4>
                             <p class="penyelenggara">{{ $course->category->name ?? '-' }}</p>
-                            <p class="harga_judul_event">Rp{{ number_format($course->price ?? 0, 0, ',', '.') }}</p>
+                            @php $isFreeCourseLocal = (int) ($course->price ?? 0) <= 0; @endphp
+                            <p class="harga_judul_event">
+                                @if($isFreeCourseLocal)
+                                    GRATIS
+                                @else
+                                    Rp{{ number_format($course->price ?? 0, 0, ',', '.') }}
+                                @endif
+                            </p>
                         </div>
                     </div>
 
@@ -370,7 +377,13 @@
                     <div class="harga_teks_payment">
                         <div class="teks_payment">
                             <p>Total</p>
-                            <h4 id="totalAmountText">Rp {{ number_format($course->price ?? 0, 0, ',', '.') }}</h4>
+                            <h4 id="totalAmountText">
+                                @if($isFreeCourseLocal)
+                                    GRATIS
+                                @else
+                                    Rp {{ number_format($course->price ?? 0, 0, ',', '.') }}
+                                @endif
+                            </h4>
                         </div>
                         <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" class="bi bi-file-text icon-invoice" viewBox="0 0 16 16">
                             <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
@@ -538,7 +551,12 @@
 
             function setTotalAmount(amount) {
                 if (!totalAmountText) return;
-                totalAmountText.textContent = 'Rp ' + formatIdrNumber(amount);
+                var n = Math.max(0, parseInt(amount || 0, 10));
+                if (isFreeCourse || n === 0) {
+                    totalAmountText.textContent = 'GRATIS';
+                    return;
+                }
+                totalAmountText.textContent = 'Rp ' + formatIdrNumber(n);
             }
 
             function normalizePhone(value) {

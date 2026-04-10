@@ -1491,20 +1491,24 @@
       <div class="kanan">
         <div class="price">
           @php
+            $isFreeCourse = (int) ($course->price ?? 0) <= 0;
             $now = \Carbon\Carbon::now();
-            $hasDiscount = $course->discount_percent && $course->discount_percent > 0 &&
+            $hasDiscount = !$isFreeCourse && $course->discount_percent && $course->discount_percent > 0 &&
               ($course->discount_start == null || $now->gte(\Carbon\Carbon::parse($course->discount_start))) &&
               ($course->discount_end == null || $now->lte(\Carbon\Carbon::parse($course->discount_end)));
             $discountedPrice = $hasDiscount
               ? (int) round($course->price * (1 - $course->discount_percent / 100))
               : $course->price;
           @endphp
-          @if($hasDiscount)
+          @if($isFreeCourse)
+            <h4 class="price-text">GRATIS</h4>
+          @elseif($hasDiscount)
             <span class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
             <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
           @else
             <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
           @endif
+          @if(!$isFreeCourse)
           <div class="box-diskon">
             <div class="time-alert">
               <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
@@ -1532,6 +1536,7 @@
               @endif
             </div>
           </div>
+          @endif
           <hr>
           <div class="info-box">
             <div class="time">
