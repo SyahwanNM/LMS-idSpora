@@ -110,10 +110,10 @@
                         <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
 
                         <div class="logout-check d-flex align-items-start gap-3 p-3 rounded-3">
-
+                            
                             <div class="flex-grow-1">
                                 <div class="form-check m-0">
-                                    <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck" aria-describedby="logoutConfirmHelp">    
+                                    <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck" aria-describedby="logoutConfirmHelp">
                                     <label class="form-check-label fw-semibold" for="logoutConfirmCheck">Saya yakin ingin logout</label>
                                 </div>
                                 <small id="logoutConfirmHelp" class="text-muted d-block mt-1">Anda akan keluar dari sesi admin dan perlu login kembali.</small>
@@ -435,7 +435,6 @@
             });
         } catch(e){}
     });
-
     </script>
 
     @yield('scripts')
