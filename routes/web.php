@@ -660,6 +660,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
     Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
     Route::post('/events/{id}/studio/quiz', [TrainerController::class, 'saveEventQuiz'])->name('events.studio.quiz');
+    Route::get('/events/{id}/vbg/download', [TrainerController::class, 'downloadEventVbg'])->name('events.vbg.download');
     Route::post('/events/{id}/invitation/accept', [TrainerController::class, 'acceptEventInvitation'])->name('events.invitation.accept');
     Route::post('/events/{id}/invitation/reject', [TrainerController::class, 'rejectEventInvitation'])->name('events.invitation.reject');
 
