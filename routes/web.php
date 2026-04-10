@@ -653,6 +653,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
     Route::get('/courses/{courseId}/materials/{moduleId}/view', [TrainerController::class, 'viewCourseMaterial'])->name('courses.studio.material.view');
     Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
+    Route::post('/courses/{id}/studio/editor-image', [TrainerController::class, 'uploadCourseEditorImage'])->name('courses.studio.editor-image');
     Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
 
     // --- STUDIO UNTUK EVENT ---
