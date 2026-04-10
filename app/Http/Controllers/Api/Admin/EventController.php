@@ -11,17 +11,28 @@ class EventController extends Controller
     public function index(Request $request)
     {
         $perPage = max(1, min((int) $request->query('per_page', 10), 100));
-        $events = Event::query()->latest()->paginate($perPage);
+        $events = Event::query()
+            ->with(['scheduleItems', 'expenses'])
+            ->latest()
+            ->paginate($perPage);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Daftar event (admin)',
             'data' => $events,
+            'pagination' => [
+                'current_page' => $events->currentPage(),
+                'per_page' => $events->perPage(),
+                'total' => $events->total(),
+                'last_page' => $events->lastPage(),
+            ],
         ]);
     }
 
     public function show(Event $event)
     {
+        $event->loadMissing(['scheduleItems', 'expenses']);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Detail event',
@@ -36,6 +47,15 @@ class EventController extends Controller
         $imagePath = $this->storeEventImageIfAny($request);
 
         [$scheduleRows, $expenseRows] = $this->normalizeScheduleAndExpenses($request);
+
+        $isPublished = (bool) ($validated['is_published'] ?? false);
+        $publishedAt = $validated['published_at'] ?? null;
+        if ($isPublished && !$publishedAt) {
+            $publishedAt = now();
+        }
+        if (!$isPublished) {
+            $publishedAt = null;
+        }
 
         $event = Event::create([
             'title' => $validated['title'],
@@ -58,9 +78,12 @@ class EventController extends Controller
             'event_date' => $validated['event_date'],
             'event_time' => $validated['event_time'],
             'event_time_end' => $validated['event_time_end'] ?? null,
+            'material_deadline' => $validated['material_deadline'] ?? null,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
+            'is_published' => $isPublished,
+            'published_at' => $publishedAt,
         ]);
 
         foreach ($scheduleRows as $row) {
@@ -73,7 +96,7 @@ class EventController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Event berhasil dibuat',
-            'data' => $event->fresh(),
+            'data' => $event->fresh()->load(['scheduleItems', 'expenses']),
         ], 201);
     }
 
@@ -102,7 +125,24 @@ class EventController extends Controller
             'event_date' => $validated['event_date'],
             'event_time' => $validated['event_time'],
             'event_time_end' => $validated['event_time_end'] ?? null,
+            'material_deadline' => $validated['material_deadline'] ?? null,
         ];
+
+        if (array_key_exists('is_published', $validated)) {
+            $isPublished = (bool) $validated['is_published'];
+            $data['is_published'] = $isPublished;
+
+            if ($isPublished) {
+                $data['published_at'] = $validated['published_at'] ?? ($event->published_at ?? now());
+            } else {
+                $data['published_at'] = null;
+            }
+        } elseif (array_key_exists('published_at', $validated)) {
+            // Allow admin to adjust published_at only when already published.
+            if ((bool) $event->is_published) {
+                $data['published_at'] = $validated['published_at'];
+            }
+        }
 
         $imagePath = $this->storeEventImageIfAny($request);
         if ($imagePath) {
@@ -128,7 +168,7 @@ class EventController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Event berhasil diupdate',
-            'data' => $event->fresh(),
+            'data' => $event->fresh()->load(['scheduleItems', 'expenses']),
         ]);
     }
 
@@ -164,8 +204,11 @@ class EventController extends Controller
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
+            'is_published' => 'nullable|boolean',
+            'published_at' => 'nullable|date',
             'schedule' => 'nullable|array',
             'schedule.*.start' => 'nullable|string',
             'schedule.*.end' => 'nullable|string',

@@ -131,7 +131,7 @@
                                 <div class="flex text-sm text-gray-600">
                                     <label for="content_file" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                                         <span>Upload a new file</span>
-                                             <input id="content_file" name="content_file" type="file" accept=".mp4,.avi,.mov,.webm,.ogg,.mkv,.pdf" 
+                                        <input id="content_file" name="content_file" type="file" accept=".mp4,.avi,.mov,.pdf" 
                                                class="sr-only @error('content_file') border-red-500 @enderror">
                                     </label>
                                     <p class="pl-1">or drag and drop</p>

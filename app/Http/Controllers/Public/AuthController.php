@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Support\AdminSettings;
 
 class AuthController extends Controller
 {
+    private const VERIFICATION_CODE_EXPIRES_MINUTES = 15;
     public function showLogin()
     {
         return view('auth.sign-in');
@@ -54,6 +56,12 @@ class AuthController extends Controller
                 ->withInput($request->except('password'));
         }
 
+        // During maintenance, do not create a login session for non-admin users.
+        if (strcasecmp($user->role ?? '', 'admin') !== 0 && AdminSettings::maintenanceEnabled()) {
+            $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+            return redirect('/')->with('maintenance_notice', $msg);
+        }
+
         // Langsung login tanpa OTP (OTP dipindah ke proses pendaftaran akun)
         // Hormati pilihan "ingat saya" dari form
         $remember = $request->boolean('remember');
@@ -65,15 +73,24 @@ class AuthController extends Controller
         }
         // If admin, go to admin dashboard
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard');
+            return redirect('/admin/dashboard')
+                ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
+
+        // (Maintenance for non-admin is handled above before login session is created.)
         //trainer
         if (strcasecmp($user->role ?? '', 'trainer') === 0) {
             return redirect()
                 ->route('trainer.dashboard');
         }
-        // For regular users, always redirect to the main dashboard after successful login
-        return redirect('/dashboard');
+
+        // For regular users, redirect back to intended URL (protected page) when available.
+        // Also honor explicit internal redirect param (used by guest-only links).
+        $redirect = trim((string) $request->input('redirect', ''));
+        if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
+            return redirect($redirect)->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
+        }
+        return redirect()->intended('/dashboard')->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
     }
 
     public function register(Request $request)
@@ -139,6 +156,7 @@ class AuthController extends Controller
 
         // Kirim kode verifikasi menggunakan PasswordResetToken + PasswordResetMail
         try {
+            $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $token = Str::random(64);
             PasswordResetToken::where('email', $request->email)->delete();
@@ -146,10 +164,10 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'token' => $token,
                 'verification_code' => $verificationCode,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => now()->addMinutes($expiresMinutes),
                 'is_used' => false,
             ]);
-            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, 15));
+            Mail::to($request->email)->send(new \App\Mail\RegistrationVerificationMail($verificationCode, $request->name, $expiresMinutes));
         } catch (\Throwable $e) {
             \Log::error('Send registration verification failed: ' . $e->getMessage());
         }
@@ -206,7 +224,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'token' => $token,
             'verification_code' => $verificationCode,
-            'expires_at' => Carbon::now()->addMinutes(15), // 15 menit
+            'expires_at' => now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_MINUTES), // 15 menit
         ]);
 
         // Kirim email
@@ -240,8 +258,6 @@ class AuthController extends Controller
             $request->session()->keep('register_verify_email');
         } catch (\Throwable $e) {
         }
-        return view('verifikasi');
-        try { $request->session()->keep('register_verify_email'); } catch (\Throwable $e) {}
         return view('auth.verifikasi');
     }
 
@@ -261,6 +277,7 @@ class AuthController extends Controller
             return redirect()->route('register')->withErrors(['email' => 'Sesi verifikasi tidak ditemukan. Silakan daftar ulang.']);
         }
         try {
+            $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $token = Str::random(64);
             PasswordResetToken::where('email', $email)->delete();
@@ -268,11 +285,11 @@ class AuthController extends Controller
                 'email' => $email,
                 'token' => $token,
                 'verification_code' => $code,
-                'expires_at' => Carbon::now()->addMinutes(15),
+                'expires_at' => now()->addMinutes($expiresMinutes),
                 'is_used' => false,
             ]);
             $name = ($request->session()->get('register_payload')['name'] ?? 'Pengguna');
-            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, 15));
+            Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, $expiresMinutes));
             // Set cooldown start
             $request->session()->put('register_otp_last_resend_at', now());
             return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
@@ -284,6 +301,10 @@ class AuthController extends Controller
 
     public function verifyCode(Request $request)
     {
+        // Normalize (e.g., pasted with spaces): keep digits only
+        $normalizedCode = preg_replace('/\D+/', '', (string) $request->input('verification_code'));
+        $request->merge(['verification_code' => $normalizedCode]);
+
         $validator = Validator::make($request->all(), [
             'verification_code' => 'required|string|size:6',
         ], [
@@ -457,6 +478,12 @@ class AuthController extends Controller
         $otp->update(['is_used' => true]);
         // Mark email as verified on first successful OTP (for Google-first-login scenario)
         $userToVerify = \App\Models\User::find($userId);
+        if ($userToVerify && strcasecmp($userToVerify->role ?? '', 'admin') !== 0 && AdminSettings::maintenanceEnabled()) {
+            // Clear OTP session and block login
+            $request->session()->forget(['login_otp_user_id', 'login_otp_email', 'login_otp_redirect']);
+            $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+            return redirect('/')->with('maintenance_notice', $msg);
+        }
         if ($userToVerify && is_null($userToVerify->email_verified_at)) {
             $userToVerify->email_verified_at = now();
             $userToVerify->save();
@@ -474,17 +501,19 @@ class AuthController extends Controller
 
         $user = Auth::user();
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
-            return redirect('/admin/dashboard');
+            return redirect('/admin/dashboard')
+                ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
+        // (Maintenance for non-admin is handled above before login session is created.)
         //trainer
         if (strcasecmp($user->role ?? '', 'trainer') === 0) {
             return redirect()
                 ->route('trainer.dashboard');
         }
         if ($redirect) {
-            return redirect($redirect);
+            return redirect($redirect)->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
         }
-        return redirect()->intended('/dashboard');
+        return redirect()->intended('/dashboard')->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
     }
 
     public function resendLoginOtp(Request $request)

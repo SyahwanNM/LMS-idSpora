@@ -17,6 +17,7 @@
 
     @php
         $passingPercent = 75;
+
         $totalSoal = (int) ($attempt->total_questions ?? 0);
         if ($totalSoal <= 0) {
             $totalSoal = isset($questions) ? (int) $questions->count() : 0;
@@ -30,6 +31,7 @@
         $passed = $attempt->isPassed($passingPercent);
         $scoreValue = (int) round((float) ($attempt->percentage ?? 0));
         $scoreValue = max(0, min(100, $scoreValue));
+
         $answersArr = collect($attempt->answers ?? []);
         $backToCourseUrl = route('course.learn', $course->id) . '?module=' . $module->id;
         $letters = range('a', 'z');
@@ -38,72 +40,72 @@
     <main class="quiz-result-page">
         <div class="box_luar_hasil">
             <div class="box_kiri_hasil">
-            <h5>Tanggal Ujian : {{ $tanggalText }}</h5>
-            <div class="informasi_hasil">
-                <div class="score_hasil">
-                    <p>Total Soal</p>
-                    <h3 class="deactive">{{ $totalSoal }}</h3>
-                </div>
-                <div class="score_hasil">
-                    <p>Score</p>
-                    <h3>{{ $scoreValue }}</h3>
-                </div>
-            </div>
+                <h5>Tanggal Ujian : {{ $tanggalText }}</h5>
 
-            @if ($passed)
-                <p class="batas_minimum_nilai">Score anda sudah memenuhi batas minimum yang ditentukan pada ujian ini: {{ $passingPercent }}.</p>
-            @else
-                <p class="batas_minimum_nilai">Score anda belum memenuhi batas minimum yang ditentukan pada ujian ini: {{ $passingPercent }}.</p>
-                <p class="batas_minimum_nilai">Mohon untuk mempelajari kembali modul-modul terkait: {{ $module->title ?? $course->name }}.</p>
-            @endif
+                <div class="informasi_hasil">
+                    <div class="score_hasil">
+                        <p>Total Soal</p>
+                        <h3 class="deactive">{{ $totalSoal }}</h3>
+                    </div>
+                    <div class="score_hasil">
+                        <p>Score</p>
+                        <h3>{{ $scoreValue }}</h3>
+                    </div>
+                </div>
+
+                @if ($passed)
+                    <p class="batas_minimum_nilai">Score anda sudah memenuhi batas minimum yang ditentukan pada ujian ini: {{ $passingPercent }}.</p>
+                @else
+                    <p class="batas_minimum_nilai">Score anda belum memenuhi batas minimum yang ditentukan pada ujian ini: {{ $passingPercent }}.</p>
+                    <p class="batas_minimum_nilai">Mohon untuk mempelajari kembali modul-modul terkait: {{ $module->title ?? $course->name }}.</p>
+                @endif
             </div>
 
             <div class="box_kanan_hasil">
-            @foreach ($questions as $index => $question)
-                @php
-                    $userAnswer = $answersArr->firstWhere('question_id', $question->id);
-                    $selectedAnswerId = (int) ($userAnswer['answer_id'] ?? 0);
-                    $isCorrect = (bool) ($userAnswer['is_correct'] ?? false);
-                    $indicatorClass = $isCorrect ? 'true' : 'false';
-                    $indicatorValue = $isCorrect ? '1' : '0';
-                @endphp
+                @foreach ($questions as $index => $question)
+                    @php
+                        $userAnswer = $answersArr->firstWhere('question_id', $question->id);
+                        $selectedAnswerId = (int) ($userAnswer['answer_id'] ?? 0);
+                        $isCorrect = (bool) ($userAnswer['is_correct'] ?? false);
+                        $indicatorValue = $isCorrect ? '1' : '0';
+                    @endphp
 
-                <div class="qr-card">
-                    <div class="qr-qhead">
-                        <div class="qr-qtext">
-                            <span class="qr-qnum">{{ $index + 1 }}.</span>
-                            <span>{{ $question->question }}</span>
-                        </div>
-                        <div class="qr-indicator {{ $isCorrect ? 'ok' : 'bad' }}">{{ $indicatorValue }}</div>
-                    </div>
-
-                    <div class="qr-options">
-                        @foreach (($question->answers ?? collect()) as $aIndex => $answer)
-                            @php
-                                $isAnswerCorrect = (bool) ($answer->is_correct ?? false);
-                                $isSelected = $selectedAnswerId > 0 && ((int) $answer->id === $selectedAnswerId);
-                                $letter = $letters[$aIndex] ?? chr(97 + $aIndex);
-
-                                $optClass = 'qr-option';
-                                if ($isAnswerCorrect) {
-                                    $optClass .= ' is-correct';
-                                }
-                                if ($isSelected) {
-                                    $optClass .= ' is-selected';
-                                    if (!$isAnswerCorrect) {
-                                        $optClass .= ' is-wrong';
-                                    }
-                                }
-                            @endphp
-
-                            <div class="{{ $optClass }}">
-                                <span class="qr-radio" aria-hidden="true"></span>
-                                <span class="qr-option-text">{{ $letter }}. {{ $answer->answer_text }}</span>
+                    <div class="qr-card">
+                        <div class="qr-qhead">
+                            <div class="qr-qtext">
+                                <span class="qr-qnum">{{ $index + 1 }}.</span>
+                                <span>{{ $question->question }}</span>
                             </div>
-                        @endforeach
+                            <div class="qr-indicator {{ $isCorrect ? 'ok' : 'bad' }}">{{ $indicatorValue }}</div>
+                        </div>
+
+                        <div class="qr-options">
+                            @foreach (($question->answers ?? collect()) as $aIndex => $answer)
+                                @php
+                                    $isAnswerCorrect = (bool) ($answer->is_correct ?? false);
+                                    $isSelected = $selectedAnswerId > 0 && ((int) $answer->id === $selectedAnswerId);
+                                    $letter = $letters[$aIndex] ?? chr(97 + $aIndex);
+
+                                    $optClass = 'qr-option';
+                                    if ($isAnswerCorrect) {
+                                        $optClass .= ' is-correct';
+                                    }
+                                    if ($isSelected) {
+                                        $optClass .= ' is-selected';
+                                        if (!$isAnswerCorrect) {
+                                            $optClass .= ' is-wrong';
+                                        }
+                                    }
+                                @endphp
+
+                                <div class="{{ $optClass }}">
+                                    <span class="qr-radio" aria-hidden="true"></span>
+                                    <span class="qr-option-text">{{ $letter }}. {{ $answer->answer_text }}</span>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            @endforeach
+                @endforeach
 
                 <div class="quiz-result-actions">
                     <a class="kembali_course" href="{{ $backToCourseUrl }}" style="text-decoration:none; color:inherit;">
@@ -119,4 +121,3 @@
 </body>
 
 </html>
-

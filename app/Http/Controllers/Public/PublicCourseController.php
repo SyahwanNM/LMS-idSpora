@@ -54,18 +54,6 @@ class PublicCourseController extends Controller
         }
 
         $courses = $query->paginate(12)->withQueryString();
-        // Featured: published-only, most recently updated
-        $featuredCourses = Course::with(['category','modules'])
-            ->withCount([
-                'enrollments as enrollments_count' => function ($q) {
-                    $q->select(DB::raw('COUNT(DISTINCT user_id)'))
-                        ->where('status', 'active');
-                },
-            ])
-            ->where('status','active')
-            ->orderBy('updated_at','desc')
-            ->take(8)
-            ->get();
 
         // Get carousel images for course page
         $courseCarousels = Carousel::active()
@@ -119,6 +107,6 @@ class PublicCourseController extends Controller
                 ->values();
         }
 
-        return view('course.index', compact('courses','featuredCourses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments'));
+            return view('course.index', compact('courses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments'));
     }
 }

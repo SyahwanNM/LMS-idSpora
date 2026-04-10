@@ -30,6 +30,48 @@
                 @csrf
                 @method('PUT')
 
+                <input type="hidden" name="status" id="status" value="{{ ((string) ($course->status ?? '')) === 'active' ? 'active' : 'archive' }}">
+
+                @php
+                    $discountStartValue = optional($course->discount_start)->format('Y-m-d');
+                    $discountEndValue = optional($course->discount_end)->format('Y-m-d');
+
+                    $rawExpenseRows = old('expenses');
+                    if ($rawExpenseRows === null) {
+                        $rawExpenseRows = $course->expenses_json;
+                    }
+                    $rawExpenseRows = is_array($rawExpenseRows) ? array_values($rawExpenseRows) : [];
+
+                    $expenseRows = [];
+                    foreach ($rawExpenseRows as $row) {
+                        if (!is_array($row)) {
+                            continue;
+                        }
+                        $item = trim((string) ($row['item'] ?? ''));
+
+                        $qty = array_key_exists('quantity', $row) ? (int) ($row['quantity'] ?? 0) : null;
+                        $unit = array_key_exists('unit_price', $row) ? (int) ($row['unit_price'] ?? 0) : null;
+                        $total = array_key_exists('total', $row) ? (int) ($row['total'] ?? 0) : null;
+
+                        if (($qty === null || $unit === null) && $total !== null) {
+                            $qty = $qty ?? 1;
+                            $unit = $unit ?? max(0, $total);
+                        }
+
+                        $qty = (int) max(0, $qty ?? 0);
+                        $unit = (int) max(0, $unit ?? 0);
+                        $expenseRows[] = [
+                            'item' => $item,
+                            'quantity' => $qty,
+                            'unit_price' => $unit,
+                        ];
+                    }
+
+                    if (empty($expenseRows)) {
+                        $expenseRows[] = ['item' => '', 'quantity' => 0, 'unit_price' => 0];
+                    }
+                @endphp
+
                 <!-- Formulir Pengaturan Course -->
                 <div class="mb-8">
                     <h2 class="text-lg font-semibold text-gray-900 mb-6">Formulir Pengaturan Course</h2>
@@ -53,8 +95,8 @@
                                 value="{{ old('name', $course->name) }}" placeholder="Masukkan Judul Course">
                         </div>
 
-                        <!-- Level & Status (And Category for Data Integrity) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Level (Status hidden; preserved as-is) -->
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                             <div>
                                 <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level Course</label>
                                 <select name="level" id="level" required
@@ -65,20 +107,10 @@
                                     <option value="advanced" {{ old('level', $course->level) == 'advanced' ? 'selected' : '' }}>Advanced</option>
                                 </select>
                             </div>
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                <select name="status" id="status" required
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                    <option value="">Select Status</option>
-                                    <option value="active" {{ old('status', $course->status) == 'active' ? 'selected' : '' }}>
-                                        Active</option>
-                                    <option value="archive" {{ old('status', $course->status) == 'archive' ? 'selected' : '' }}>Archive</option>
-                                </select>
-                            </div>
                         </div>
 
                         <!-- Hidden/Visible Category to satisfy required -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                             <div>
                                 <label for="category_id"
                                     class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
@@ -90,22 +122,6 @@
                                         </option>
                                     @endforeach
                                 </select>
-                            </div>
-
-                            <div>
-                                <label for="template_id" class="block text-sm font-medium text-gray-700 mb-2">Course
-                                    Template</label>
-                                <select name="template_id" id="template_id"
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                    <option value="">-- Tanpa template --</option>
-                                    @foreach($templates as $template)
-                                        <option value="{{ $template->id }}" {{ old('template_id', $course->template_id) == $template->id ? 'selected' : '' }}>
-                                            {{ $template->name }} ({{ $template->modules_count }} modules)
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500">Pilih template untuk pre-populate struktur modul
-                                    course</p>
                             </div>
                         </div>
 
@@ -133,6 +149,81 @@
                                 value="{{ old('price', $course->price) }}" placeholder="Masukkan Harga Course">
                         </div>
 
+                        <!-- Diskon -->
+                        <div>
+                            <label for="discount_percent" class="block text-sm font-medium text-gray-700 mb-2">Diskon (%)</label>
+                            <input type="number" name="discount_percent" id="discount_percent" min="0" max="100" inputmode="numeric"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="{{ old('discount_percent', (int) ($course->discount_percent ?? 0)) }}" placeholder="0">
+                            <p class="mt-1 text-xs text-gray-500">Isi 0 untuk nonaktifkan diskon.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="discount_start" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai Diskon</label>
+                                <input type="date" name="discount_start" id="discount_start"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                    value="{{ old('discount_start', $discountStartValue) }}">
+                            </div>
+
+                            <div>
+                                <label for="discount_end" class="block text-sm font-medium text-gray-700 mb-2">Tanggal Berakhir Diskon</label>
+                                <input type="date" name="discount_end" id="discount_end"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                    value="{{ old('discount_end', $discountEndValue) }}">
+                            </div>
+                        </div>
+
+                        <!-- Pengeluaran (Breakdown) -->
+                        <div>
+                            <div class="flex items-center justify-between gap-4 mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
+                                <button type="button" id="add-expense-row"
+                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Tambah Pengeluaran
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <div class="col-span-5">Item</div>
+                                    <div class="col-span-2">Qty</div>
+                                    <div class="col-span-3">Harga Satuan</div>
+                                    <div class="col-span-2">Aksi</div>
+                                </div>
+
+                                <div id="expense-rows" class="divide-y divide-gray-200">
+                                    @foreach($expenseRows as $i => $row)
+                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
+                                            <div class="col-span-12 md:col-span-5">
+                                                <input type="text" name="expenses[{{ $i }}][item]"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
+                                                    placeholder="Contoh: Iklan, Produksi, dll">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
+                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-3">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
+                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
+                        </div>
+
                         <!-- Akses Course Gratis -->
                         <div>
                             <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
@@ -143,6 +234,17 @@
                                 <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
                             </select>
                             <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                        </div>
+
+                        <!-- Reseller Course -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reseller Course</label>
+                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', (int) ($course->is_reseller_course ?? 0)) ? 1 : 0 }}">
+                            <div class="inline-flex w-full rounded-lg border border-gray-300 overflow-hidden">
+                                <button type="button" id="reseller-course-no" class="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Tidak</button>
+                                <button type="button" id="reseller-course-yes" class="flex-1 px-4 py-2.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition">Ya</button>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Jika Ya, course ini ditandai sebagai course reseller.</p>
                         </div>
 
                         <!-- Deskripsi -->
@@ -161,10 +263,10 @@
                                 @if($course->media)
                                     <div class="shrink-0">
                                         @if($course->media_type === 'video')
-                                            <video src="{{ Storage::url($course->media) }}" controls
+                                            <video src="{{ Storage::disk('public')->url($course->media) }}" controls
                                                 class="h-32 w-48 object-cover rounded-lg border bg-black"></video>
                                         @else
-                                            <img src="{{ Storage::url($course->media) }}"
+                                            <img src="{{ Storage::disk('public')->url($course->media) }}"
                                                 class="h-32 w-48 object-cover rounded-lg border" alt="Intro Media">
                                         @endif
                                     </div>
@@ -184,7 +286,7 @@
                             <div class="flex items-center gap-4">
                                 @if($course->card_thumbnail)
                                     <div class="shrink-0">
-                                        <img src="{{ Storage::url($course->card_thumbnail) }}"
+                                        <img src="{{ Storage::disk('public')->url($course->card_thumbnail) }}"
                                             class="h-16 w-16 object-cover rounded-lg border" alt="Thumbnail">
                                     </div>
                                 @endif
@@ -195,152 +297,35 @@
 
                         <!-- Hidden inputs for other required fields not in design (Duration, etc) -->
                         <input type="hidden" name="duration" value="{{ $course->duration ?? 1 }}">
-                        <input type="hidden" name="discount_percent" value="{{ $course->discount_percent ?? 0 }}">
                     </div>
                 </div>
 
-                <!-- Course Modules -->
-                <div class="mb-10">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Course Modules</h2>
-
-                    <div id="existing-modules-list" class="space-y-8">
-                        <!-- PDF Document -->
-                        <div>
-                            <div class="space-y-3">
-                                @forelse($course->modules->where('type', 'pdf') as $m)
-                                    <div
-                                        class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
-                                        <div
-                                            class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-purple-600">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
-                                                class="bi bi-file-earmark-text-fill" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM4.5 9a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 11a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM4.5 13a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1z" />
-                                            </svg>
-                                        </div>
-                                        <div class="grow">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <h5 class="text-sm font-bold text-gray-900 m-0">{{ $m->title }}</h5>
-                                                <span
-                                                    class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
-                                            </div>
-                                            <p class="text-xs text-gray-500 m-0">PDF Document • {{ $m->file_name }}</p>
-                                        </div>
-
-                                        <button type="button" data-id="{{ $m->id }}"
-                                            class="box_button_modul btn-remove-existing">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                                class="bi bi-eye-fill" viewBox="0 0 16 16">
-                                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                                <path
-                                                    d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                                            </svg>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                                class="bi bi-download" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                                                <path
-                                                    d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                                            </svg>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                                class="bi bi-trash3" viewBox="0 0 16 16">
-                                                <path
-                                                    d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                @empty
-                                    <div
-                                        class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">
-                                        Trainer belum upload modul.</div>
-                                @endforelse
-                                <!-- New PDFs -->
-                                <div id="new-pdf-list" class="space-y-3"></div>
-                            </div>
+                <template id="expense-row-template">
+                    <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="__INDEX__">
+                        <div class="col-span-12 md:col-span-5">
+                            <input type="text" name="expenses[__INDEX__][item]"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="" placeholder="Contoh: Iklan, Produksi, dll">
                         </div>
-
-                        <!-- Video Lesson -->
-                        <div>
-                            <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                Video Before Edit
-                            </h3>
-                            <div class="space-y-3">
-                                @forelse($course->modules->where('type', 'video') as $m)
-                                    <div
-                                        class="flex items-center p-4 border border-gray-200 rounded-lg bg-white shadow-sm gap-4">
-                                        <div
-                                            class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100 text-purple-600">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor"
-                                                class="bi bi-camera-video" viewBox="0 0 16 16">
-                                                <path fill-rule="evenodd"
-                                                    d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
-                                            </svg>
-                                        </div>
-                                        <div class="grow">
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <h5 class="text-sm font-bold text-gray-900 m-0">{{ $m->title }}</h5>
-                                                <span
-                                                    class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#{{ $m->order_no }}</span>
-                                            </div>
-                                            <p class="text-xs text-gray-500 m-0">Video • {{ $m->file_name ?? $m->content_url }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <div
-                                        class="text-sm text-gray-400 italic px-4 py-2 border border-dashed rounded-lg bg-gray-50">
-                                        Trainer belum upload video.</div>
-                                @endforelse
-                            </div>
+                        <div class="col-span-6 md:col-span-2">
+                            <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][quantity]"
+                                class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="0" placeholder="0">
                         </div>
-                    </div>
-
-                    <div class="mt-10">
-                        <div class="flex items-center justify-between gap-4 mb-3">
-                            <h3 class="font-bold text-gray-900">Video After Edit (Admin)</h3>
-                            <button type="button" id="btnAddAdminVideoRow"
-                                class="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition">
-                                Tambah Video
+                        <div class="col-span-6 md:col-span-3">
+                            <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][unit_price]"
+                                class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                value="0" placeholder="0">
+                        </div>
+                        <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                            <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Hapus
                             </button>
                         </div>
-
-                        <div class="border border-gray-200 rounded-lg overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Judul</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Deskripsi
-                                            </th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600"
-                                                style="width:110px">Order</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">File Video
-                                            </th>
-                                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600"
-                                                style="width:90px">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="adminVideoRows" class="bg-white divide-y divide-gray-100">
-                                        <tr id="adminVideoEmptyState">
-                                            <td colspan="5" class="px-4 py-4 text-sm text-gray-400 italic">Belum ada video
-                                                yang ditambahkan.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <p class="mt-2 text-xs text-gray-500">Video yang diupload di sini akan disimpan sebagai beberapa
-                            modul video saat klik Save.</p>
                     </div>
+                </template>
 
-
-                </div>
-
-                <input type="hidden" id="modules-delete-ids" name="modules_delete_ids" value="">
-                <input type="hidden" name="modules_payload_new" id="modules-payload-new">
-                <input type="hidden" name="modules_order_updates" id="modules-order-updates" value="{}">
-                <div id="module-file-bucket" style="display:none"></div>
+                
                 <!-- Footer Buttons -->
                 <div class="flex justify-end gap-4 mt-12 pb-10">
                     <a href="{{ route('admin.courses.index') }}"
@@ -352,487 +337,85 @@
         </main>
     </div>
 
-    </div>
-
-
-
-
-    {{-- Inline Toast and Scripts --}}
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="inlineValidationToast" class="toast align-items-center border-0 text-white" role="alert"
-                aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div id="inlineValidationToastBody" class="toast-body"></div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                        aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // --- Helper for Toast ---
-        window.showInlineToast = function (message, type) {
-            const el = document.getElementById('inlineValidationToast');
-            const body = document.getElementById('inlineValidationToastBody');
-            if (el && body) {
-                el.className = `toast align-items-center border-0 text-white ${type === 'danger' ? 'bg-red-500' : (type === 'warning' ? 'bg-yellow-500' : 'bg-green-500')}`;
-                body.textContent = message;
-                if (window.bootstrap && window.bootstrap.Toast) {
-                    const t = window.bootstrap.Toast.getOrCreateInstance(el);
-                    t.show();
-                }
-            } else {
-                alert(message);
-            }
-        };
+        (function() {
+            const rowsWrap = document.getElementById('expense-rows');
+            const addBtn = document.getElementById('add-expense-row');
+            const tpl = document.getElementById('expense-row-template');
 
-        // --- Modal Helpers ---
-        window.openAddModal = function (type) {
-            const modalEl = document.getElementById('addGenericModuleModal');
-            const titleEl = document.getElementById('genericModalTitle');
-            const typeInput = document.getElementById('new-mod-type');
-            const fileInp = document.getElementById('new-mod-file');
-            const helpText = document.getElementById('fileHelpText');
-            const orderInp = document.getElementById('new-mod-order');
+            if (!rowsWrap || !addBtn || !tpl) return;
 
-            if (window.bootstrap && modalEl) {
-                typeInput.value = type;
-                titleEl.textContent = type === 'pdf' ? 'Add PDF Module' : 'Add Video Lesson';
-                fileInp.accept = type === 'pdf' ? 'application/pdf' : 'video/mp4,video/webm,video/ogg';
-                helpText.textContent = type === 'pdf' ? 'Supported: PDF' : 'Supported: MP4, WebM';
-
-                // Clear inputs
-                document.getElementById('new-mod-title').value = '';
-                document.getElementById('new-mod-desc').value = '';
-                fileInp.value = '';
-                if (orderInp) orderInp.value = (typeof window.getNextModuleOrder === 'function') ? window.getNextModuleOrder() : (orderInp.value || 1);
-
-                const m = new window.bootstrap.Modal(modalEl);
-                m.show();
-            }
-        };
-
-        window.openQuizModal = function () {
-            if (window.bootstrap) {
-                const m = new window.bootstrap.Modal(document.getElementById('addQuizModal'));
-                m.show();
-                if (typeof resetQuizDraft === 'function') resetQuizDraft();
-            }
-        };
-
-        // --- Module Logic (Preserved) ---
-        (function () {
-            const deleteInput = document.getElementById('modules-delete-ids');
-            const existingList = document.getElementById('existing-modules-list');
-            const queued = [];
-            const payloadInput = document.getElementById('modules-payload-new');
-            const orderUpdatesInput = document.getElementById('modules-order-updates');
-            const fileBucket = document.getElementById('module-file-bucket');
-            const listNewPdf = document.getElementById('new-pdf-list');
-            const listNewVideo = document.getElementById('new-video-list');
-            const listNewQuiz = document.getElementById('new-quiz-list');
-
-            // Count existing modules to determine next order
-            const existingCount = {{ (int) ($course->modules?->count() ?? 0) }};
-
-            // Inputs in Generic Modal
-            const btnQueue = document.getElementById('btn-queue-module');
-            const typeSel = document.getElementById('new-mod-type');
-            const titleInp = document.getElementById('new-mod-title');
-            const descInp = document.getElementById('new-mod-desc');
-            const orderInp = document.getElementById('new-mod-order');
-            let fileInp = document.getElementById('new-mod-file');
-
-            // Common Order logic
-            function getNextOrder() {
-                return existingCount + queued.length + 1;
+            function nextIndex() {
+                const els = rowsWrap.querySelectorAll('.expense-row');
+                let max = -1;
+                els.forEach((el) => {
+                    const idx = parseInt(el.getAttribute('data-index') || '-1', 10);
+                    if (!Number.isNaN(idx) && idx > max) max = idx;
+                });
+                return max + 1;
             }
 
-            // Expose for modal helpers
-            window.getNextModuleOrder = getNextOrder;
-
-            function setDeleteIds(ids) {
-                deleteInput.value = ids.join(',');
-            }
-
-            function getDeleteIds() {
-                return (deleteInput.value || '').split(/[,\s]+/).filter(Boolean).map(v => parseInt(v, 10) || 0);
-            }
-
-            function updatePayload() {
-                try {
-                    payloadInput.value = JSON.stringify(queued);
-                } catch (_) {
-                    payloadInput.value = '[]';
-                }
-            }
-
-            function renderQueued() {
-                if (listNewPdf) listNewPdf.innerHTML = '';
-                if (listNewVideo) listNewVideo.innerHTML = '';
-                if (listNewQuiz) listNewQuiz.innerHTML = '';
-
-                queued.forEach((m, i) => {
-                    const el = document.createElement('div');
-                    el.className = 'flex items-center p-4 border border-purple-200 rounded-lg bg-purple-50 gap-4';
-
-                    let icon = '';
-                    let targetList = null;
-
-                    if (m.type === 'pdf') {
-                        icon = '<i class="bi bi-file-earmark-text-fill"></i>';
-                        targetList = listNewPdf;
-                    } else if (m.type === 'video') {
-                        icon = '<i class="bi bi-play-circle-fill"></i>';
-                        targetList = listNewVideo;
-                    } else {
-                        icon = '<i class="bi bi-pencil-square"></i>';
-                        targetList = listNewQuiz;
-                    }
-
-                    el.innerHTML = `
-                        <div class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-white text-purple-600 shadow-sm text-xl">${icon}</div>
-                        <div class="grow">
-                            <div class="flex items-center gap-2 mb-1">
-                                <h5 class="text-sm font-bold text-gray-900 m-0">${m.title}</h5>
-                                <span class="bg-purple-200 text-purple-800 text-xs px-2 py-0.5 rounded font-medium">New</span>
-                                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded font-medium">#${m.order}</span>
-                            </div>
-                            <p class="text-xs text-gray-500 m-0">${m.type.toUpperCase()}</p>
-                        </div>
-                        <button type="button" class="btn-remove-queue text-red-500 hover:text-red-700 transition"><i class="bi bi-x-lg"></i></button>
-                    `;
-                    el.querySelector('.btn-remove-queue').addEventListener('click', () => {
-                        queued.splice(i, 1);
-                        renderQueued();
-                        updatePayload();
+            function wireRow(rowEl) {
+                const removeBtn = rowEl.querySelector('.remove-expense-row');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() {
+                        rowEl.remove();
                     });
-
-                    if (targetList) targetList.appendChild(el);
-                });
-            }
-
-            // Handle delete existing
-            if (existingList) {
-                existingList.querySelectorAll('.btn-remove-existing').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        if (!confirm('Delete this module?')) return;
-                        const id = parseInt(btn.dataset.id, 10) || 0;
-                        if (!id) return;
-                        const ids = getDeleteIds();
-                        if (!ids.includes(id)) ids.push(id);
-                        setDeleteIds(ids);
-                        // Visualize removal
-                        btn.closest('div.flex').classList.add('opacity-50', 'bg-red-50');
-                        btn.disabled = true;
-                    });
-                });
-
-                function updateOrderUpdatesPayload() {
-                    if (!orderUpdatesInput) return;
-                    const map = {};
-                    existingList.querySelectorAll('.input-module-order').forEach(inp => {
-                        const id = parseInt(inp.dataset.id, 10) || 0;
-                        const original = parseInt(inp.dataset.original, 10) || 0;
-                        const current = parseInt(inp.value, 10) || 0;
-                        if (id > 0 && original > 0 && current > 0 && current !== original) {
-                            map[id] = current;
-                        }
-                    });
-                    try {
-                        orderUpdatesInput.value = JSON.stringify(map);
-                    } catch (_) {
-                        orderUpdatesInput.value = '{}';
-                    }
-                }
-
-                existingList.querySelectorAll('.input-module-order').forEach(inp => {
-                    inp.addEventListener('change', () => {
-                        const v = parseInt(inp.value, 10) || 0;
-                        if (v < 1) {
-                            inp.value = inp.dataset.original || 1;
-                            showInlineToast('Order minimal 1', 'warning');
-                        }
-                        updateOrderUpdatesPayload();
-                    });
-                });
-            }
-
-            // Handle Add Generic Module
-            if (btnQueue) {
-                btnQueue.addEventListener('click', () => {
-                    const type = typeSel.value;
-                    const title = (titleInp.value || '').trim();
-                    const desc = (descInp.value || '').trim();
-                    const file = fileInp.files && fileInp.files[0];
-                    const order = parseInt((orderInp && orderInp.value) ? orderInp.value : '', 10) || getNextOrder();
-
-                    if (!title) {
-                        showInlineToast('Judul wajib diisi', 'warning');
-                        return;
-                    }
-                    if (!file) {
-                        showInlineToast('File wajib diupload', 'warning');
-                        return;
-                    }
-                    if (order < 1) {
-                        showInlineToast('Order minimal 1', 'warning');
-                        return;
-                    }
-
-                    const uid = 'm' + Date.now().toString(36);
-
-                    // Move file to bucket
-                    const originalContainer = fileInp.parentNode;
-                    fileInp.name = `module_files[${uid}]`;
-                    fileBucket.appendChild(fileInp);
-
-                    // Create replacement input
-                    const newInput = document.createElement('input');
-                    newInput.type = 'file';
-                    newInput.id = 'new-mod-file';
-                    newInput.className = fileInp.className;
-                    newInput.accept = (type === 'pdf' ? 'application/pdf' : 'video/mp4,video/webm,video/ogg');
-                    fileInp = newInput;
-                    if (originalContainer) originalContainer.appendChild(newInput);
-
-                    queued.push({
-                        type,
-                        order,
-                        title,
-                        subtitle: desc,
-                        filename: file.name,
-                        uid
-                    });
-                    renderQueued();
-                    updatePayload();
-
-                    // Hide Modal
-                    const modalEl = document.getElementById('addGenericModuleModal');
-                    const m = bootstrap.Modal.getInstance(modalEl);
-                    if (m) m.hide();
-                });
-            }
-
-            // --- QUIZ LOGIC (Simplified & Adapted) ---
-            let quizDraft = {
-                title: '',
-                desc: '',
-                questions: []
-            };
-            let quizStep = 1;
-            let editingQuestionIdx = -1;
-
-            window.resetQuizDraft = function () {
-                quizDraft = {
-                    title: '',
-                    desc: '',
-                    questions: []
-                };
-                quizStep = 1;
-                updateQuizUI();
-                document.getElementById('quiz-title').value = '';
-                document.getElementById('quiz-desc').value = '';
-                const qo = document.getElementById('quiz-order');
-                if (qo) qo.value = getNextOrder();
-            }
-
-            function updateQuizUI() {
-                ['quiz-step-overview', 'quiz-step-question', 'quiz-step-review'].forEach((id, idx) => {
-                    document.getElementById(id).classList.toggle('d-none', (idx + 1) !== quizStep);
-                });
-                document.getElementById('btn-quiz-back').style.display = (quizStep > 1) ? 'block' : 'none';
-                document.getElementById('btn-quiz-next').style.display = (quizStep < 3) ? 'block' : 'none';
-                document.getElementById('btn-quiz-save').style.display = (quizStep === 3) ? 'block' : 'none';
-                renderQuizQuestionsList();
-            }
-
-            function renderQuizQuestionsList() {
-                const list = document.getElementById('quiz-questions-list');
-                list.innerHTML = '';
-                if (quizDraft.questions.length === 0) {
-                    list.innerHTML = '<li class="text-center text-gray-400 text-sm py-4">No questions added yet.</li>';
-                    return;
-                }
-                quizDraft.questions.forEach((q, i) => {
-                    const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center bg-white border p-3 rounded-lg text-sm';
-                    li.innerHTML = `
-                        <span class="truncate pr-4"><span class="font-bold mr-2">Q${i + 1}.</span> ${q.text}</span>
-                        <div class="shrink-0 flex gap-2">
-                            <button type="button" class="text-blue-600 hover:text-blue-800 btn-edit-q" data-idx="${i}"><i class="bi bi-pencil"></i></button>
-                            <button type="button" class="text-red-600 hover:text-red-800 btn-del-q" data-idx="${i}"><i class="bi bi-trash"></i></button>
-                        </div>`;
-                    list.appendChild(li);
-                });
-                // Bind
-                list.querySelectorAll('.btn-edit-q').forEach(b => b.addEventListener('click', () => editQuestion(parseInt(b.dataset.idx))));
-                list.querySelectorAll('.btn-del-q').forEach(b => b.addEventListener('click', () => {
-                    quizDraft.questions.splice(parseInt(b.dataset.idx), 1);
-                    renderQuizQuestionsList();
-                }));
-
-                // Update Review logic similar to before...
-                if (quizStep === 3) {
-                    document.getElementById('review-title').textContent = document.getElementById('quiz-title').value || '-';
-                    document.getElementById('review-count').textContent = quizDraft.questions.length + ' Questions';
-                    const det = document.getElementById('review-questions-detail');
-                    det.innerHTML = quizDraft.questions.map((q, i) => `
-                        <div class="mb-3 border-b pb-2 last:border-0">
-                            <div class="font-bold text-gray-800 mb-1">Q${i + 1}: ${q.text}</div>
-                            <ul class="pl-4 list-disc text-gray-500">
-                               ${q.options.map((o, idx) => `<li class="${idx == q.correctIndex ? 'text-green-600 font-bold' : ''}">${o}</li>`).join('')}
-                            </ul>
-                        </div>
-                     `).join('');
                 }
             }
 
-            function editQuestion(idx) {
-                editingQuestionIdx = idx;
-                const q = (idx === -1) ? {
-                    text: '',
-                    options: ['', '', '', ''],
-                    correctIndex: 0
-                } : quizDraft.questions[idx];
-                document.getElementById('q-text').value = q.text;
-                const inputs = document.querySelectorAll('#q-options-container input[type=text]');
-                inputs.forEach((inp, i) => inp.value = q.options[i] || '');
-                const radios = document.querySelectorAll('input[name="q-correct"]');
-                radios.forEach((r, i) => r.checked = (i === parseInt(q.correctIndex)));
+            rowsWrap.querySelectorAll('.expense-row').forEach(wireRow);
 
-                document.getElementById('question-form-title').textContent = (idx === -1 ? 'Add Question' : 'Edit Question');
-                quizStep = 2;
-                updateQuizUI();
-            }
-
-            document.getElementById('btn-add-question-step').addEventListener('click', () => editQuestion(-1));
-            document.getElementById('btn-cancel-question').addEventListener('click', () => {
-                quizStep = 1;
-                updateQuizUI();
+            addBtn.addEventListener('click', function() {
+                const idx = nextIndex();
+                const html = tpl.innerHTML.replaceAll('__INDEX__', String(idx));
+                const temp = document.createElement('div');
+                temp.innerHTML = html.trim();
+                const rowEl = temp.firstElementChild;
+                if (!rowEl) return;
+                rowsWrap.appendChild(rowEl);
+                wireRow(rowEl);
             });
-            document.getElementById('btn-save-question').addEventListener('click', () => {
-                // Save question logic
-                const text = document.getElementById('q-text').value.trim();
-                if (!text) {
-                    alert('Question required');
-                    return;
-                }
-                const opts = [];
-                document.querySelectorAll('#q-options-container input[type=text]').forEach(i => opts.push(i.value.trim()));
-                if (opts.some(o => !o)) {
-                    alert('Options required');
-                    return;
-                }
-                const correct = parseInt(document.querySelector('input[name="q-correct"]:checked').value);
-
-                const q = {
-                    text,
-                    options: opts,
-                    correctIndex: correct,
-                    points: 10
-                };
-                if (editingQuestionIdx === -1) quizDraft.questions.push(q);
-                else quizDraft.questions[editingQuestionIdx] = q;
-                quizStep = 1;
-                updateQuizUI();
-            });
-
-            document.getElementById('btn-quiz-next').addEventListener('click', () => {
-                if (quizDraft.questions.length === 0) {
-                    alert('Add at least one question');
-                    return;
-                }
-                quizStep = 3;
-                updateQuizUI();
-            });
-            document.getElementById('btn-quiz-back').addEventListener('click', () => {
-                if (quizStep > 1) quizStep--;
-                updateQuizUI();
-            });
-
-            document.getElementById('btn-quiz-save').addEventListener('click', () => {
-                const title = document.getElementById('quiz-title').value.trim() || 'Untitled Quiz';
-                const desc = document.getElementById('quiz-desc').value.trim();
-                const order = parseInt((document.getElementById('quiz-order') || {}).value, 10) || getNextOrder();
-                if (order < 1) {
-                    showInlineToast('Order minimal 1', 'warning');
-                    return;
-                }
-
-                quizDraft.title = title;
-                quizDraft.desc = desc;
-
-                queued.push({
-                    type: 'quiz',
-                    order: order,
-                    title: title,
-                    subtitle: desc,
-                    filename: quizDraft.questions.length + ' Questions',
-                    uid: 'q' + Date.now(),
-                    data: JSON.parse(JSON.stringify(quizDraft))
-                });
-                renderQueued();
-                updatePayload();
-
-                const m = bootstrap.Modal.getInstance(document.getElementById('addQuizModal'));
-                if (m) m.hide();
-            });
-
         })();
     </script>
 
     <script>
-        // Admin Video After Edit - multi upload list
-        (function () {
-            const addBtn = document.getElementById('btnAddAdminVideoRow');
-            const tbody = document.getElementById('adminVideoRows');
-            const empty = document.getElementById('adminVideoEmptyState');
-            if (!addBtn || !tbody) return;
-
-            let idx = 0;
-
-            function showEmptyIfNeeded() {
-                const hasRows = tbody.querySelectorAll('tr[data-admin-video-row]').length > 0;
-                if (empty) empty.style.display = hasRows ? 'none' : '';
+        (function() {
+            function getEl(id) {
+                return document.getElementById(id);
             }
 
-            function addRow() {
-                const rowIndex = idx++;
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-admin-video-row', '1');
-                tr.innerHTML = `
-                    <td class="px-4 py-3 align-top">
-                        <input type="text" name="admin_videos[${rowIndex}][title]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500" placeholder="Judul (opsional)">
-                    </td>
-                    <td class="px-4 py-3 align-top">
-                        <input type="text" name="admin_videos[${rowIndex}][description]" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500" placeholder="Deskripsi (opsional)">
-                    </td>
-                    <td class="px-4 py-3 align-top">
-                        <input type="number" min="1" name="admin_videos[${rowIndex}][order_no]" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500" placeholder="#">
-                    </td>
-                    <td class="px-4 py-3 align-top">
-                        <input type="file" name="admin_videos[${rowIndex}][file]" accept="video/mp4,video/webm,video/ogg" class="block w-full text-sm text-gray-500 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer">
-                    </td>
-                    <td class="px-4 py-3 text-center align-top">
-                        <button type="button" class="px-3 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50" data-action="remove-admin-video">Hapus</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-                showEmptyIfNeeded();
+            // Reseller Course toggle (Yes/No)
+            const resellerInput = getEl('is_reseller_course');
+            const resellerYesBtn = getEl('reseller-course-yes');
+            const resellerNoBtn = getEl('reseller-course-no');
+
+            if (!resellerInput || (!resellerYesBtn && !resellerNoBtn)) return;
+
+            function setResellerCourse(val) {
+                const v = val ? '1' : '0';
+                resellerInput.value = v;
+
+                if (resellerYesBtn) {
+                    resellerYesBtn.classList.toggle('bg-purple-600', v === '1');
+                    resellerYesBtn.classList.toggle('text-white', v === '1');
+                    resellerYesBtn.classList.toggle('bg-white', v !== '1');
+                    resellerYesBtn.classList.toggle('text-gray-700', v !== '1');
+                }
+                if (resellerNoBtn) {
+                    resellerNoBtn.classList.toggle('bg-purple-600', v === '0');
+                    resellerNoBtn.classList.toggle('text-white', v === '0');
+                    resellerNoBtn.classList.toggle('bg-gray-100', v !== '0');
+                    resellerNoBtn.classList.toggle('text-gray-800', v !== '0');
+                }
             }
 
-            tbody.addEventListener('click', (e) => {
-                const btn = e.target.closest('button[data-action="remove-admin-video"]');
-                if (!btn) return;
-                btn.closest('tr')?.remove();
-                showEmptyIfNeeded();
-            });
-
-            addBtn.addEventListener('click', addRow);
-            showEmptyIfNeeded();
+            resellerYesBtn && resellerYesBtn.addEventListener('click', () => setResellerCourse(true));
+            resellerNoBtn && resellerNoBtn.addEventListener('click', () => setResellerCourse(false));
+            setResellerCourse((resellerInput.value || '0') === '1');
         })();
     </script>
+
+    </div>
+
 @endsection

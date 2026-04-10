@@ -19,37 +19,117 @@
 
 <body>
     @include('partials.navbar-admin-course')
-    @if(session('success'))
-    <div class="container mt-3">
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    @endif
-    @if(session('success'))
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="courseUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    <style>
+        /* New global notification component (replaces legacy Bootstrap toasts on this page) */
+        .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
+        .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+        .notification.show { transform: translateY(0) scale(1); opacity:1; }
+        .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
+        .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+        .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
+        .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
+    </style>
+
+    @if(session('success') || session('login_success') || session('error') || session('publish_warning') || session('already_published'))
+        <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
+            @if(session('login_success'))
+                <div class="notification success" role="status" data-timeout="4200">
+                    <div class="notif-message">{{ session('login_success') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
                 </div>
-            </div>
+            @elseif(session('success'))
+                <div class="notification success" role="status" data-timeout="3800">
+                    <div class="notif-message">{{ session('success') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
+
+            @php
+                $pw = session('publish_warning');
+                $pwList = is_array($pw) ? array_values(array_filter($pw)) : [];
+            @endphp
+            @if(!empty($pwList))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message">Oops, modul course belum lengkap: {{ implode(', ', $pwList) }} belum ada. Segera hubungi trainer.</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @elseif(session('already_published'))
+                <div class="notification error" role="status" data-timeout="5000">
+                    <div class="notif-message">Course ini sudah diterbitkan</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message">{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
         </div>
-    </div>
+    @endif
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                var el = document.getElementById('courseUpdatedToast');
-                if (window.bootstrap && el) {
-                    var t = new bootstrap.Toast(el);
-                    t.show();
-                }
-            } catch (e) {}
-        });
+        (function(){
+            function wireBanner(){
+                try {
+                    const wrap = document.getElementById('globalNotifications');
+                    if(!wrap) return;
+                    wrap.querySelectorAll('.notification').forEach(function(n){
+                        setTimeout(function(){ n.classList.add('show'); }, 20);
+                        const timeout = parseInt(n.getAttribute('data-timeout') || 4000, 10);
+                        const closeBtn = n.querySelector('.notif-close');
+                        const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                        if(closeBtn) closeBtn.addEventListener('click', hide);
+                        setTimeout(hide, timeout);
+                    });
+                } catch(e){}
+            }
+
+            document.addEventListener('DOMContentLoaded', wireBanner);
+
+            window.adminNotify = function(type, message, timeout){
+                try {
+                    const kind = (type === 'error') ? 'error' : 'success';
+                    const text = (message == null) ? '' : String(message);
+                    const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+                    let wrap = document.getElementById('globalNotifications');
+                    if(!wrap){
+                        wrap = document.createElement('div');
+                        wrap.id = 'globalNotifications';
+                        wrap.className = 'global-notification';
+                        wrap.setAttribute('aria-live', 'polite');
+                        wrap.setAttribute('aria-atomic', 'true');
+                        document.body.appendChild(wrap);
+                    }
+
+                    const n = document.createElement('div');
+                    n.className = 'notification ' + kind;
+                    n.setAttribute('role', 'status');
+                    n.setAttribute('data-timeout', String(ms));
+
+                    const msg = document.createElement('div');
+                    msg.className = 'notif-message';
+                    msg.textContent = text;
+
+                    const close = document.createElement('button');
+                    close.className = 'notif-close';
+                    close.setAttribute('aria-label', 'Close');
+                    close.type = 'button';
+                    close.innerHTML = '&times;';
+
+                    n.appendChild(msg);
+                    n.appendChild(close);
+                    wrap.appendChild(n);
+
+                    const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                    close.addEventListener('click', hide);
+                    setTimeout(function(){ n.classList.add('show'); }, 20);
+                    setTimeout(hide, ms);
+                } catch(e){}
+            };
+        })();
     </script>
 
     <!-- Publish confirmation modal (UI, no browser alert/confirm) -->
@@ -69,46 +149,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Tetap Publish</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-    <!-- Publish warning toast (shown when course has missing material) -->
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="publishWarningToast" class="toast align-items-center text-bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4500">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <span class="me-2" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.89 0 1.438-.99.982-1.767L8.982 1.566zM8 5.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 5.5Zm0 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-                            </svg>
-                        </span>
-                        @php
-                            $pw = session('publish_warning');
-                            $pwList = is_array($pw) ? array_values(array_filter($pw)) : [];
-                        @endphp
-                        @if(!empty($pwList))
-                            Oops, modul course belum lengkap: {{ implode(', ', $pwList) }} belum ada. Segera hubungi trainer.
-                        @else
-                            Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.
-                        @endif
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Already published toast (shown when course is already active) -->
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="alreadyPublishedToast" class="toast align-items-center text-bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        Course ini sudah diterbitkan
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             </div>
         </div>
@@ -178,14 +218,39 @@
 
                     $modulesCol = $course->modules ?? collect();
                     $totalModules = $modulesCol->count();
-                    $pdfCount = $modulesCol->where('type', 'pdf')->count();
-                    $videoCount = $modulesCol->where('type', 'video')->count();
-                    $quizCount = $modulesCol->where('type', 'quiz')->count();
+                    $pdfSlots = $modulesCol->where('type', 'pdf');
+                    $videoSlots = $modulesCol->where('type', 'video');
+                    $quizSlots = $modulesCol->where('type', 'quiz');
+
+                    $pdfCount = $pdfSlots->count();
+                    $videoCount = $videoSlots->count();
+                    $quizCount = $quizSlots->count();
+
+                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingVideo = ($videoCount <= 0) || ($videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingQuiz = false;
+                    if ($quizCount <= 0) {
+                        $hasMissingQuiz = true;
+                    } else {
+                        $hasMissingQuiz = $quizSlots->filter(function ($m) {
+                            $cnt = null;
+                            if (isset($m->quiz_questions_count)) {
+                                $cnt = (int) $m->quiz_questions_count;
+                            } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                                $cnt = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                            }
+                            $cnt = (int) ($cnt ?? 0);
+                            return $cnt <= 0;
+                        })->count() > 0;
+                    }
+
                     $missingForPublish = [];
                     if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
-                    if ($pdfCount <= 0) { $missingForPublish[] = 'Modul (PDF)'; }
-                    if ($videoCount <= 0) { $missingForPublish[] = 'Video'; }
-                    if ($quizCount <= 0) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
+                    if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
+                    if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+
+                    $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
                     <tr>
                         <td>{{ $course->name }}</td>
@@ -194,7 +259,7 @@
                         <td>
                             @if($isPublished)
                             <button class="status_kelengkapan_complete">Complete</button>
-                            @elseif(!$hasModules)
+                            @elseif($hasMissingMaterial)
                             <button class="status_kelengkapan_miss">Missing Material</button>
                             @else
                             <button class="status_kelengkapan_inprogress">In Progress</button>
@@ -317,10 +382,11 @@
                                 $previewData = [
                                 'id' => $course->id,
                                 'title' => $course->name,
-                                'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                'image' => $course->card_thumbnail ? Storage::disk('public')->url($course->card_thumbnail) : '',
                                 'description' => trim($course->description),
                                 'enroll_count' => (int)($course->enrollments_count ?? 0),
                                 'edit_url' => route('admin.courses.edit', $course),
+                                'has_trainer' => !empty($course->trainer_id),
                                 'modules' => $course->modules->map(function($m) {
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
@@ -329,6 +395,10 @@
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
+                                // Content completeness marker for preview
+                                'has_content' => $m->type === 'quiz'
+                                    ? (($m->quizQuestions->count() ?? 0) > 0)
+                                    : !empty($m->content_url),
                                 ];
                                 })->values()->toArray(),
                                 'published' => $isPublished ? '1' : '0',
@@ -354,15 +424,24 @@
                                         </svg>
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
-                                    @csrf
-                                    <button type="submit"
-                                        class="btn_publish_course js-publish-course"
-                                        data-published="{{ $isPublished ? '1' : '0' }}"
-                                        data-missing='@json($missingForPublish)'>
-                                        {{ $isPublished ? 'Published' : 'Publish' }}
-                                    </button>
-                                </form>
+                                @if($isPublished)
+                                    <form method="POST" action="{{ route('admin.courses.unpublish', $course) }}" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn_unpublish_course">
+                                            Batal Publish
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
+                                        @csrf
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-success btn_publish_course js-publish-course"
+                                            data-published="0"
+                                            data-missing='@json($missingForPublish)'>
+                                            Publish
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -741,6 +820,13 @@
                     .replace(/'/g, '&#039;');
             }
 
+            function moduleHasContent(m) {
+                if (!m) return false;
+                if (typeof m.has_content !== 'undefined') return !!m.has_content;
+                if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
+                return !!(m.content_url || '');
+            }
+
             // --- 4. Event Delegation for Preview Click ---
             document.addEventListener('click', function(ev) {
                 var btn = ev.target.closest('.preview-course');
@@ -796,6 +882,9 @@
 
                 // --- MODULES PARSING ---
                 var modules = data.modules || [];
+                var visibleModules = Array.isArray(modules)
+                    ? modules.filter(function(m) { return moduleHasContent(m); })
+                    : [];
 
                 // --- CONTENT DESCRIPTION ---
                 setText('cp-content-description', data.description || 'Tidak ada deskripsi.');
@@ -804,11 +893,11 @@
                 (function renderSyllabus(){
                     var ol = document.getElementById('cp-syllabus-list');
                     if (!ol) return;
-                    if (!Array.isArray(modules) || modules.length === 0) {
-                        ol.innerHTML = '<li class="text-muted">Belum ada modul.</li>';
+                    if (!Array.isArray(visibleModules) || visibleModules.length === 0) {
+                        ol.innerHTML = '<li class="text-muted">Belum ada materi yang disetujui.</li>';
                         return;
                     }
-                    ol.innerHTML = modules
+                    ol.innerHTML = visibleModules
                         .map(function(m){ return '<li>' + escapeHtml(m && m.title ? m.title : '-') + '</li>'; })
                         .join('');
                 })();
@@ -864,10 +953,10 @@
                     });
                 })();
 
-                // 1. Hitung Ringkasan
-                var countPdf = modules.filter(m => m.type === 'pdf').length;
-                var countVideo = modules.filter(m => m.type === 'video').length;
-                var countQuiz = modules.filter(m => m.type === 'quiz').length;
+                // 1. Hitung Ringkasan (hanya yang sudah ada konten/diapprove)
+                var countPdf = visibleModules.filter(m => m.type === 'pdf').length;
+                var countVideo = visibleModules.filter(m => m.type === 'video').length;
+                var countQuiz = visibleModules.filter(m => m.type === 'quiz').length;
 
                 setText('count-pdf', countPdf);
                 setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
@@ -878,9 +967,11 @@
                 // 1. PDF Tab
                 var pdfContainer = document.getElementById('list-pdf-container');
                 if (pdfContainer) {
-                    var pdfs = modules.filter(m => m.type === 'pdf');
+                    var pdfsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'pdf') : [];
+                    var pdfs = visibleModules.filter(m => m.type === 'pdf');
+                    var missingPdfCount = pdfsAll.filter(m => !moduleHasContent(m)).length;
                     if (pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload modul.</p> <button>Ingatkan Trainer</button>';
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF yang disetujui.</p>';
                     } else {
                         pdfContainer.innerHTML = pdfs.map(m => `
                              <div class="list-pdf">
@@ -899,9 +990,11 @@
                 // 2. Video Tab
                 var vidContainer = document.getElementById('list-video-container');
                 if (vidContainer) {
-                    var vids = modules.filter(m => m.type === 'video');
+                    var vidsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'video') : [];
+                    var vids = visibleModules.filter(m => m.type === 'video');
+                    var missingVideoCount = vidsAll.filter(m => !moduleHasContent(m)).length;
                     if (vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload video.</p> <button>Ingatkan Trainer</button>';
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video yang disetujui.</p>';
                     } else {
                         vidContainer.innerHTML = vids.map(m => `
                             <div class="list-video">
@@ -920,9 +1013,11 @@
                 // 3. Quiz Tab
                 var quizContainer = document.getElementById('list-kuis-container');
                 if (quizContainer) {
-                    var quizzes = modules.filter(m => m.type === 'quiz');
+                    var quizzesAll = Array.isArray(modules) ? modules.filter(m => m.type === 'quiz') : [];
+                    var quizzes = visibleModules.filter(m => m.type === 'quiz');
+                    var missingQuizCount = quizzesAll.filter(m => Number(m.question_count || 0) <= 0).length;
                     if (quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload kuis.</p> <button>Ingatkan Trainer</button>';
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis yang disetujui.</p>';
                     } else {
                         quizContainer.innerHTML = quizzes.map(m => `
                              <div class="list-kuis">
@@ -1042,25 +1137,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            function showToastById(id) {
-                try {
-                    var el = document.getElementById(id);
-                    if (!el) return;
-                    if (window.bootstrap && window.bootstrap.Toast) {
-                        new window.bootstrap.Toast(el).show();
-                        return;
-                    }
-                    // Fallback: simple show
-                    el.classList.add('show');
-                    el.style.display = 'block';
-                } catch (e) {}
+            function notifyError(message, ms) {
+                if (typeof window.adminNotify === 'function') {
+                    window.adminNotify('error', message, ms || 5000);
+                }
             }
-
-            // Auto-show toasts based on server-side session flags
-            var hasPublishWarning = @json((bool) session('publish_warning'));
-            var alreadyPublished = @json((bool) session('already_published'));
-            if (hasPublishWarning) showToastById('publishWarningToast');
-            if (alreadyPublished) showToastById('alreadyPublishedToast');
 
             // Pre-publish warning (client-side): inform admin before publishing incomplete content
             var pendingPublishForm = null;
@@ -1094,7 +1175,7 @@
                 } catch (e) {}
 
                 // If bootstrap modal is unavailable, fall back to showing warning toast only (no browser popup)
-                showToastById('publishWarningToast');
+                notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
                 pendingPublishForm = null;
             }
 
@@ -1120,7 +1201,7 @@
 
                 if ((btn.dataset.published || '') === '1') {
                     ev.preventDefault();
-                    showToastById('alreadyPublishedToast');
+                    notifyError('Course ini sudah diterbitkan', 4500);
                     return;
                 }
 

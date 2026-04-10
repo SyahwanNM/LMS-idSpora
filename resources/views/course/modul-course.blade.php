@@ -21,8 +21,142 @@
             @php
                 $modulesList = $modules ?? (isset($course) ? ($course->modules ?? collect()) : collect());
                 $modulesList = $modulesList instanceof \Illuminate\Support\Collection ? $modulesList->values() : collect($modulesList)->values();
+                $modulesList = $modulesList->sortBy('order_no')->values();
                 $activeModule = $currentModule ?? $modulesList->first();
                 $passingPercent = 75;
+
+                $normalizeGroupKey = function ($title, $fallbackIndex = 1) {
+                    $t = trim((string) $title);
+                    if ($t === '') {
+                        return 'UNIT_'.$fallbackIndex;
+                    }
+
+                    if (preg_match('/^(Module\s*\d+)/i', $t, $m)) {
+                        return mb_strtoupper(trim($m[1]));
+                    }
+
+                    $t2 = preg_replace('/\s*-\s*(PDF\s*Material|Video\s*Lesson|Quiz)\s*$/i', '', $t);
+                    $t2 = trim((string) $t2);
+                    return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
+                };
+
+                $formatDisplayTitle = function (string $groupKey, string $kind) {
+                    $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
+                    $prefix = $isModuleKey ? ucwords(strtolower($groupKey)) : '';
+
+                    if ($kind === 'material') {
+                        return $isModuleKey ? ($prefix . ' - Materi') : 'Materi';
+                    }
+                    if ($kind === 'quiz') {
+                        return $isModuleKey ? ($prefix . ' - Quiz') : 'Quiz';
+                    }
+                    return $isModuleKey ? $prefix : $groupKey;
+                };
+
+                // Build display list: per group show (Materi = PDF+Video combined) + Quiz
+                $grouped = [];
+                $groupOrder = [];
+                $unitCounter = 1;
+                $currentGenericKey = null;
+                $isGenericUnitTitle = function ($title) {
+                    $t = trim((string) $title);
+                    return (bool) preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $t);
+                };
+                foreach ($modulesList as $m) {
+                    $titleStr = (string) ($m->title ?? '');
+                    $type = strtolower(trim((string) ($m->type ?? '')));
+
+                    if ($isGenericUnitTitle($titleStr)) {
+                        if (!$currentGenericKey) {
+                            $currentGenericKey = 'UNIT_'.$unitCounter;
+                            $unitCounter++;
+                        }
+                        $key = $currentGenericKey;
+                        if ($type === 'quiz') {
+                            $currentGenericKey = null;
+                        }
+                    } else {
+                        $currentGenericKey = null;
+                        $key = $normalizeGroupKey($titleStr, $unitCounter);
+                        if (\Illuminate\Support\Str::startsWith($key, 'UNIT_')) {
+                            $unitCounter++;
+                        }
+                    }
+
+                    if (!array_key_exists($key, $grouped)) {
+                        $grouped[$key] = [
+                            'key' => $key,
+                            'pdf' => null,
+                            'video' => null,
+                            'quiz' => null,
+                        ];
+                        $groupOrder[] = $key;
+                    }
+
+                    if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
+                    if ($type === 'video' && !$grouped[$key]['video']) $grouped[$key]['video'] = $m;
+                    if ($type === 'quiz' && !$grouped[$key]['quiz']) $grouped[$key]['quiz'] = $m;
+                }
+
+                $displayItems = collect();
+                foreach ($groupOrder as $key) {
+                    $g = $grouped[$key];
+
+                    if ($g['pdf'] || $g['video']) {
+                        $rep = $g['pdf'] ?: $g['video'];
+                        $displayItems->push([
+                            'kind' => 'material',
+                            'key' => $key,
+                            'title' => $formatDisplayTitle($key, 'material'),
+                            'rep' => $rep,
+                            'pdf' => $g['pdf'],
+                            'video' => $g['video'],
+                            'quiz' => $g['quiz'],
+                        ]);
+                    }
+
+                    if ($g['quiz']) {
+                        $displayItems->push([
+                            'kind' => 'quiz',
+                            'key' => $key,
+                            'title' => $formatDisplayTitle($key, 'quiz'),
+                            'rep' => $g['quiz'],
+                            'pdf' => $g['pdf'],
+                            'video' => $g['video'],
+                            'quiz' => $g['quiz'],
+                        ]);
+                    }
+                }
+
+                $activeGroupKey = null;
+                if ($activeModule) {
+                    foreach ($grouped as $gk => $g) {
+                        foreach (['pdf', 'video', 'quiz'] as $k) {
+                            if (!empty($g[$k]?->id) && (int) $g[$k]->id === (int) $activeModule->id) {
+                                $activeGroupKey = $gk;
+                                break 2;
+                            }
+                        }
+                    }
+                    $activeGroupKey = $activeGroupKey ?: $normalizeGroupKey($activeModule->title ?? '', 1);
+                }
+                $activeKind = ($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') ? 'quiz' : 'material';
+                $activeDisplay = $displayItems->first(function ($it) use ($activeGroupKey, $activeKind) {
+                    return ($it['key'] ?? null) === $activeGroupKey && ($it['kind'] ?? null) === $activeKind;
+                });
+                $activeDisplay = $activeDisplay ?: $displayItems->first();
+                $activeDisplay = $activeDisplay ?: [
+                    'kind' => null,
+                    'key' => null,
+                    'title' => null,
+                    'rep' => null,
+                    'pdf' => null,
+                    'video' => null,
+                    'quiz' => null,
+                ];
+                $activeDisplayModuleId = !empty($activeDisplay['rep']?->id)
+                    ? (int) $activeDisplay['rep']->id
+                    : ($activeModule?->id);
 
                 $freeAccessMode = $freeAccessMode ?? ((isset($course) && (int)($course->price ?? 0) <= 0) ? (string)($course->free_access_mode ?? 'limit_2') : 'all');
                 $freeAccessibleModuleIds = $freeAccessibleModuleIds ?? [];
@@ -85,31 +219,54 @@
 
             <div class="accordion-box"
                 data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
-                data-active-module-id="{{ $activeModule?->id }}"
+                data-active-module-id="{{ $activeDisplayModuleId }}"
             >
-                @forelse($modulesList as $m)
+                @forelse($displayItems as $it)
                     @php
-                        $isActive = $activeModule && ((int)$activeModule->id === (int)$m->id);
-                        $typeLabel = $m->type ? strtoupper($m->type) : 'MATERI';
-                        $prevModule = $modulesList->get($loop->index - 1);
+                        $rep = $it['rep'];
+                        $isActive = ((int) ($activeDisplayModuleId ?? 0) === (int) ($rep->id ?? 0))
+                            && (($activeDisplay['kind'] ?? '') === ($it['kind'] ?? ''));
+                        $typeLabel = ($it['kind'] ?? '') === 'quiz' ? 'QUIZ' : 'MATERI';
+                        $prevItem = $displayItems->get($loop->index - 1);
                         $isLocked = false;
                         $lockReason = '';
 
-                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
-                            $isLocked = true;
-                            $lockReason = 'free';
-                        }
-                        if (auth()->check() && $prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
-                            if (!$isLocked) {
-                                $isLocked = !in_array((int) $prevModule->id, $passedQuizModuleIds, true);
-                                if ($isLocked) {
-                                    $lockReason = 'quiz';
-                                }
+                        if ($isFreeLimited) {
+                            $candidateIds = [];
+                            if (($it['kind'] ?? '') === 'quiz') {
+                                $candidateIds[] = (int) ($rep->id ?? 0);
+                            } else {
+                                if (!empty($it['pdf']?->id)) $candidateIds[] = (int) $it['pdf']->id;
+                                if (!empty($it['video']?->id)) $candidateIds[] = (int) $it['video']->id;
+                                if (empty($candidateIds)) $candidateIds[] = (int) ($rep->id ?? 0);
+                            }
+
+                            $allowedAny = false;
+                            foreach ($candidateIds as $cid) {
+                                if ($cid > 0 && in_array($cid, $freeAccessibleModuleIds, true)) { $allowedAny = true; break; }
+                            }
+
+                            if (!$allowedAny) {
+                                $isLocked = true;
+                                $lockReason = 'free';
                             }
                         }
+
+                        if (auth()->check() && $prevItem && (($prevItem['kind'] ?? '') === 'quiz') && !$isLocked) {
+                            $prevQuizId = (int) (($prevItem['rep']->id ?? 0));
+                            $isLocked = !in_array($prevQuizId, $passedQuizModuleIds, true);
+                            if ($isLocked) {
+                                $lockReason = 'quiz';
+                            }
+                        }
+
                         $descLines = [];
-                        if (!empty($m->description)) {
-                            $cleanDesc = trim(strip_tags((string) $m->description));
+                        $descSource = ($it['kind'] ?? '') === 'quiz'
+                            ? ($it['quiz']?->description ?? '')
+                            : (($it['pdf']?->description ?? '') ?: ($it['video']?->description ?? '') ?: ($rep->description ?? ''));
+
+                        if (!empty($descSource)) {
+                            $cleanDesc = trim(strip_tags((string) $descSource));
                             if ($cleanDesc !== '') {
                                 // Split into short lines to preserve the original "list" feel
                                 $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
@@ -119,9 +276,9 @@
                     @endphp
 
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
-                        <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
+                        <button class="accordion-header" type="button" data-module-id="{{ $rep->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Materi') }}</span>
                             </span>
                             <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
                                 @if($isLocked)
@@ -160,52 +317,73 @@
         </div>
         <div class="box_modul_kanan">
             @php
-                $cm = $activeModule;
-                $content = $cm->content_url ?? null;
-                $isHttp = is_string($content) && (str_starts_with($content, 'http://') || str_starts_with($content, 'https://'));
-                $storageUrl = null;
-                if (is_string($content)) {
-                    $normalized = ltrim($content, '/');
-                    if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
-                        $normalized = substr($normalized, strlen('uploads/'));
-                    }
-                    $storageUrl = asset('uploads/' . $normalized);
-                }
-                $streamUrl = (!$isHttp && isset($course) && $cm) ? route('user.modules.stream', [$course, $cm]) : null;
-                $videoUrl = $isHttp ? $content : ($storageUrl ?: $streamUrl);
+                $activeKind = $activeDisplay['kind'] ?? (($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') ? 'quiz' : 'material');
+
+                $pdfModule = $activeDisplay['pdf'] ?? null;
+                $videoModule = $activeDisplay['video'] ?? null;
+                $quizModule = $activeDisplay['quiz'] ?? null;
+
+                $cm = $activeKind === 'quiz'
+                    ? ($quizModule ?: $activeModule)
+                    : ($activeDisplay['rep'] ?? $activeModule);
+
                 $moduleType = $cm ? strtolower(trim((string) ($cm->type ?? ''))) : '';
-                $isVideo = $cm && ($moduleType === 'video');
-                $isPdf = $cm && ($moduleType === 'pdf');
-                $isQuiz = $cm && ($moduleType === 'quiz');
+                $isQuiz = ($activeKind === 'quiz');
+
+                $resolveMediaUrl = function ($module) use ($course) {
+                    if (!$module) return [null, false, null, null];
+                    $content = $module->content_url ?? null;
+                    $isHttp = is_string($content) && (str_starts_with($content, 'http://') || str_starts_with($content, 'https://'));
+                    $storageUrl = null;
+                    if (is_string($content)) {
+                        $normalized = ltrim($content, '/');
+                        if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
+                            $normalized = substr($normalized, strlen('uploads/'));
+                        }
+                        $storageUrl = asset('uploads/' . $normalized);
+                    }
+                    $streamUrl = (!$isHttp && isset($course) && $module) ? route('user.modules.stream', [$course, $module]) : null;
+                    $url = $isHttp ? $content : ($storageUrl ?: $streamUrl);
+                    return [$url, $isHttp, $storageUrl, $streamUrl];
+                };
+
+                [$pdfUrl] = $resolveMediaUrl($pdfModule);
+                [$vidUrl, $vidIsHttp] = $resolveMediaUrl($videoModule);
             @endphp
 
-            {{-- Hapus area media kosong untuk modul kuis --}}
-            @if(!($isQuiz ?? false))
+            {{-- Materi: PDF + Video jadi satu kesatuan. Kuis: tidak menampilkan media kosong. --}}
+            @if(!$isQuiz)
                 <div class="modul_media_card">
-                    {{-- Tampilan tetap: iframe/video area di atas --}}
-                    @if($isVideo)
-                        @if($isHttp)
-                            <iframe class="video_course" width="560" height="315" src="{{ $content }}" title="YouTube video player" frameborder="0"
+                    @if($pdfModule && $pdfUrl)
+                        <iframe class="video_course" width="560" height="315" src="{{ $pdfUrl }}" title="PDF" frameborder="0"></iframe>
+                    @endif
+
+                    @if($videoModule && $vidUrl)
+                        <div style="margin-top:12px;"></div>
+                        @if($vidIsHttp)
+                            <iframe class="video_course" width="560" height="315" src="{{ $videoModule->content_url }}" title="Video" frameborder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                 referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                         @else
                             <video class="video_course" width="560" height="315" controls preload="auto" playsinline>
-                                <source src="{{ $videoUrl }}" type="{{ $cm->mime_type ?: 'video/mp4' }}">
+                                <source src="{{ $vidUrl }}" type="{{ $videoModule->mime_type ?: 'video/mp4' }}">
                             </video>
                         @endif
-                    @elseif($isPdf)
-                        <iframe class="video_course" width="560" height="315" src="{{ $isHttp ? $content : ($streamUrl ?: $storageUrl) }}" title="PDF" frameborder="0"></iframe>
-                    @else
+                    @endif
+
+                    @if((!$pdfModule || !$pdfUrl) && (!$videoModule || !$vidUrl))
                         <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
                     @endif
                 </div>
             @endif
-            <h2 class="judul_modul">{{ $cm->title ?? 'Gambaran Umum' }}</h2>
+            <h2 class="judul_modul">{{ $activeDisplay['title'] ?? ($cm->title ?? 'Gambaran Umum') }}</h2>
 
-            @if(!($isQuiz ?? false))
+            @if(!$isQuiz)
                 <div class="box_luar_deskripsi_modul">
                     <div class="box_deskripsi_modul">
-                        <p class="deskripsi_modul">{{ $cm->description ?? 'Deskripsi modul belum tersedia.' }}</p>
+                        <p class="deskripsi_modul">
+                            {{ ($pdfModule?->description ?? '') ?: ($videoModule?->description ?? '') ?: ($cm->description ?? 'Deskripsi modul belum tersedia.') }}
+                        </p>
                     </div>
                 </div>
             @else
@@ -217,7 +395,10 @@
                     $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '5 menit';
 
                     $beforeQuizTitle = null;
-                    if ($cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
+                    if ($activeDisplay && (($activeDisplay['kind'] ?? '') === 'quiz')) {
+                        $beforeQuizTitle = $formatDisplayTitle($activeDisplay['key'], 'material');
+                    }
+                    if (!$beforeQuizTitle && $cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
                         $idx = $modulesList->search(fn($x) => (int) ($x->id ?? 0) === (int) $cm->id);
                         if ($idx !== false && $idx > 0) {
                             $prev = $modulesList->get($idx - 1);
@@ -321,26 +502,53 @@
             @endif
             @php
                 $nextModule = null;
-                if ($cm && $modulesList && $modulesList->count() > 0) {
-                    $idx = $modulesList->search(function ($x) use ($cm) { return (int)$x->id === (int)$cm->id; });
-                    if ($idx !== false) {
-                        $nextModule = $modulesList->get($idx + 1);
+                if ($modulesList && $modulesList->count() > 0) {
+                    if (!$isQuiz) {
+                        // For combined Materi, skip within-group modules (pdf/video) and jump to next after the group.
+                        $candidateIds = [];
+                        if (!empty($pdfModule?->id)) $candidateIds[] = (int) $pdfModule->id;
+                        if (!empty($videoModule?->id)) $candidateIds[] = (int) $videoModule->id;
+
+                        $maxIdx = -1;
+                        foreach ($candidateIds as $cid) {
+                            $i = $modulesList->search(fn($x) => (int) ($x->id ?? 0) === (int) $cid);
+                            if ($i !== false) {
+                                $maxIdx = max($maxIdx, (int) $i);
+                            }
+                        }
+
+                        if ($maxIdx >= 0) {
+                            $nextModule = $modulesList->get($maxIdx + 1);
+                        }
+                    } else {
+                        if ($cm) {
+                            $idx = $modulesList->search(function ($x) use ($cm) { return (int)$x->id === (int)$cm->id; });
+                            if ($idx !== false) {
+                                $nextModule = $modulesList->get($idx + 1);
+                            }
+                        }
                     }
                 }
 
-                $lockNext = ($cm && ($moduleType === 'quiz') && auth()->check() && !$currentQuizPassed);
+                // If currently on Materi and group has Quiz, Next should go directly to that Quiz.
+                $nextToQuiz = (!$isQuiz && $quizModule);
+                $nextTarget = $nextToQuiz ? $quizModule : $nextModule;
+
+                $lockNext = ($isQuiz && auth()->check() && !$currentQuizPassed);
 
                 $lockNextByFree = false;
-                if (isset($course) && (int)($course->price ?? 0) <= 0 && ((string)($freeAccessMode ?? 'all') === 'limit_2') && $nextModule) {
-                    $lockNextByFree = !in_array((int) $nextModule->id, (array) $freeAccessibleModuleIds, true);
+                if (isset($course) && (int)($course->price ?? 0) <= 0 && ((string)($freeAccessMode ?? 'all') === 'limit_2') && $nextTarget) {
+                    $lockNextByFree = !in_array((int) $nextTarget->id, (array) $freeAccessibleModuleIds, true);
                 }
                 $lockNext = $lockNext || $lockNextByFree;
             @endphp
 
             {{-- Tombol Next tetap seperti sebelumnya (button), tapi arahnya dinamis --}}
             <button class="next_kanan_modul" type="button"
-                @if(isset($course) && $nextModule && !$lockNext)
-                    data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]) }}"
+                @if(isset($course) && $nextTarget && !$lockNext)
+                    data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextTarget->id]) }}"
+                @elseif(isset($course) && !$nextTarget && !$lockNext)
+                    data-next-url="{{ route('course.rating', ['course' => $course->id]) }}"
                 @else
                     disabled style="opacity:.6; cursor:not-allowed;"
                 @endif
@@ -348,6 +556,8 @@
                 <p>
                     @if($lockNext)
                         Terkunci
+                    @elseif(!$nextTarget)
+                        Selesai & Beri Ulasan
                     @else
                         Next
                     @endif
@@ -423,10 +633,9 @@
             });
         }
 
-        const videoEl = document.querySelector('.video_course');
-        if (videoEl && videoEl.tagName === 'VIDEO') {
-            videoEl.load();
-        }
+        document.querySelectorAll('video.video_course').forEach((v) => {
+            try { v.load(); } catch (e) {}
+        });
     </script>
 
     <script>

@@ -32,27 +32,19 @@
 
                     <form class="box_form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="status" value="archive">
                         <h4 class="h5 mb-2">Formulir Pengaturan Course</h4>
                         <div class="mb-3">
-                            <label class="form-label text-dark" for="course-title">Judul Course <span class="sanity-dot" data-for="course-title"></span></label>
-                            <input id="course-title" name="name" type="text" class="form-control" placeholder="Masukkan Judul Course">
+                            <label class="form-label text-dark" for="course-title">Judul Course <span class="text-danger">*</span></label>
+                            <input id="course-title" name="name" type="text" class="form-control" placeholder="Masukkan Judul Course" required>
                             <div class="sanity-msg" data-for="course-title"></div>
                         </div>
 
                         <div class="row g-3 box_select_level_status">
-                            <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-status">Status <span class="sanity-dot" data-for="course-status"></span></label>
-                                <select id="course-status" name="status" class="form-select">
-                                    <option selected disabled>Choose your Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="archive">Archive</option>
-                                </select>
-                                <div class="sanity-msg" data-for="course-status"></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-level">Level Course <span class="sanity-dot" data-for="course-level"></span></label>
-                                <select id="course-level" name="level" class="form-select">
-                                    <option selected disabled>Choose your level</option>
+                            <div class="col-md-12">
+                                <label class="form-label text-dark" for="course-level">Level Course <span class="text-danger">*</span></label>
+                                <select id="course-level" name="level" class="form-select" required>
+                                    <option value="" selected disabled>Choose your level</option>
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">Intermediate</option>
                                     <option value="advanced">Advanced</option>
@@ -63,9 +55,9 @@
 
                         @if(isset($categories) && $categories->count())
                         <div class="box_select_kategori mb-3">
-                            <label class="form-label text-dark" for="course-category">Kategori <span class="sanity-dot" data-for="course-category"></span></label>
-                            <select id="course-category" name="category_id" class="form-select">
-                                <option selected disabled>Pilih kategori</option>
+                            <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
+                            <select id="course-category" name="category_id" class="form-select" required>
+                                <option value="" selected disabled>Pilih kategori</option>
                                 @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                 @endforeach
@@ -77,57 +69,78 @@
                         @endif
 
                         <div class="box_select_trainer mb-3">
-                            <label for="course-trainer">Trainer</label>
-                            <select id="course-trainer" name="trainer_id" class="form-select">
-                                <option selected disabled>Pilih trainer</option>
+                            <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
+                            <select id="course-trainer" name="trainer_id" class="form-select" required data-selected="{{ old('trainer_id') }}">
+                                <option value="" selected disabled>Pilih trainer</option>
                             </select>
+                            <div class="sanity-msg" data-for="course-trainer"></div>
                         </div>
 
                         <input type="hidden" id="course-duration" name="duration" value="0">
 
                         <div class="box_select_harga mb-3">
-                            <label class="form-label text-dark" for="course-price">Harga <span class="sanity-dot" data-for="course-price"></span></label>
-                            <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0">
+                            <label class="form-label text-dark" for="course-price">Harga <span class="text-danger">*</span></label>
+                            <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0" required>
                             <div class="form-text">Isi 0 untuk course gratis</div>
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label text-dark">Reseller Course</label>
+                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', 0) ? 1 : 0 }}">
+                            <div class="btn-group w-100" role="group" aria-label="Reseller Course">
+                                <button type="button" id="reseller-course-no" class="btn btn-outline-secondary">Tidak</button>
+                                <button type="button" id="reseller-course-yes" class="btn btn-outline-secondary">Ya</button>
+                            </div>
+                            <div class="form-text">Jika Ya, course ini ditandai sebagai course reseller.</div>
+                        </div>
+
                         <div class="box_select_deskripsi mb-3">
-                            <label class="form-label text-dark" for="course-description">Deskripsi Course <span class="sanity-dot" data-for="course-description"></span></label>
+                            <label class="form-label text-dark" for="course-description">Deskripsi Course</label>
                             <textarea id="course-description" name="description" class="form-control" placeholder="Deskripsikan course secara lengkap"></textarea>
                             <div class="sanity-msg" data-for="course-description"></div>
                         </div>
 
                         <div class="box_select_deskripsi mb-1">
-                            <label class="form-label text-dark" for="course-thumbnail">Thumbnail/Intro Media <span class="sanity-dot" data-for="course-thumbnail"></span></label>
-                            <input id="course-thumbnail" name="image" type="file" class="form-control" accept="image/*,video/mp4,video/webm,video/ogg">
+                            <label class="form-label text-dark" for="course-thumbnail">Thumbnail/Intro Media <span class="text-danger">*</span></label>
+                            <input id="course-thumbnail" name="image" type="file" class="form-control" accept="image/*,video/mp4,video/webm,video/ogg" required>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <div id="course-thumbnail-preview" class="border rounded bg-light overflow-hidden d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                    <small class="text-muted">Preview</small>
+                                </div>
+                            </div>
                             <div class="form-text">Bisa upload gambar <b>atau</b> video (mp4, webm, ogg)</div>
                             <div class="sanity-msg" data-for="course-thumbnail"></div>
                         </div>
                         <div class="box_select_deskripsi mb-3">
-                            <label class="form-label text-dark" for="card-thumbnail">Thumbnail Card Course <span class="sanity-dot" data-for="card-thumbnail"></span></label>
-                            <input id="card-thumbnail" name="card_thumbnail" type="file" class="form-control" accept="image/*">
+                            <label class="form-label text-dark" for="card-thumbnail">Thumbnail Card Course <span class="text-danger">*</span></label>
+                            <input id="card-thumbnail" name="card_thumbnail" type="file" class="form-control" accept="image/*" required>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <div id="card-thumbnail-preview" class="border rounded bg-light overflow-hidden d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                    <small class="text-muted">Preview</small>
+                                </div>
+                            </div>
                             <div class="form-text">Upload gambar untuk thumbnail card course (jpg/png/webp)</div>
                             <div class="sanity-msg" data-for="card-thumbnail"></div>
                         </div>
                         <div class="box_select_diskon mb-3">
-                            <label class="form-label text-dark" for="discount-percent">Diskon (%) <span class="sanity-dot" data-for="discount-percent"></span></label>
-                            <input id="discount-percent" name="discount_percent" type="number" class="form-control" min="1" max="100" placeholder="Masukkan diskon (1-100)">
-                            <div class="form-text">Diskon tidak boleh 0%</div>
+                            <label class="form-label text-dark" for="discount-percent">Diskon (%)</label>
+                            <input id="discount-percent" name="discount_percent" type="number" class="form-control" min="0" max="100" placeholder="Masukkan diskon (0-100)">
+                            <div class="form-text">Boleh kosong atau 0%</div>
                             <div class="sanity-msg" data-for="discount-percent"></div>
                         </div>
                         <div class="box_select_tanggal_diskon row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label text-dark" for="discount-start">Tanggal Mulai Diskon</label>
-                                <input id="discount-start" name="discount_start" type="date" class="form-control">
+                                <input id="discount-start" name="discount_start" type="date" class="form-control" min="{{ now()->toDateString() }}" value="{{ old('discount_start', now()->toDateString()) }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-dark" for="discount-end">Tanggal Berakhir Diskon</label>
-                                <input id="discount-end" name="discount_end" type="date" class="form-control">
+                                <input id="discount-end" name="discount_end" type="date" class="form-control" min="{{ now()->toDateString() }}" value="{{ old('discount_end', now()->toDateString()) }}">
                             </div>
                         </div>
                         <div class="box_select_diskon mb-3">
-                            <label class="form-label text-dark" for="discount-percent">Pengeluaran<span class="sanity-dot" data-for="discount-percent"></span></label>
+                            <label class="form-label text-dark" for="discount-percent">Pengeluaran</label>
                             <div class="table-responsive">
                             <table class="table" id="courseExpensesTable">
                                 <thead>
@@ -166,6 +179,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        (function() {
+            const input = document.getElementById('is_reseller_course');
+            const btnYes = document.getElementById('reseller-course-yes');
+            const btnNo = document.getElementById('reseller-course-no');
+
+            if (!input || (!btnYes && !btnNo)) return;
+
+            function setReseller(val) {
+                const v = val ? '1' : '0';
+                input.value = v;
+
+                if (btnYes) {
+                    btnYes.classList.toggle('btn-primary', v === '1');
+                    btnYes.classList.toggle('btn-outline-secondary', v !== '1');
+                }
+                if (btnNo) {
+                    btnNo.classList.toggle('btn-primary', v === '0');
+                    btnNo.classList.toggle('btn-outline-secondary', v !== '0');
+                }
+            }
+
+            btnYes && btnYes.addEventListener('click', () => setReseller(true));
+            btnNo && btnNo.addEventListener('click', () => setReseller(false));
+            setReseller((input.value || '0') === '1');
+        })();
+
         (function() {
             const modules = [];
             const listEl = document.getElementById('modules-list');
@@ -329,24 +368,12 @@
             // Initial Load
             loadDraft();
 
-            // Clear draft on submit success (optional, or rely on page navigation)
+            
             const mainForm = document.querySelector('form[action]');
-            // There might be multiple forms, find the one wrapping this input
-            // Or just assume the main one. Let's try to find if there is a main form
+            
             if (mainForm) {
                 mainForm.addEventListener('submit', () => {
-                    // We don't clear immediately in case validation fails, 
-                    // but usually if it redirects, it's fine. 
-                    // If it's an AJAX submit, we clear in the success callback.
-                    // For now we keep it simple: persistence is for accidental refresh.
-                    // If user submits, and it succeeds, they go to index. 
-                    // If they come back to ADD page, maybe they want a fresh start?
-                    // Yes, usually "Add" page should start fresh.
-                    // So we clear it only if we detect a successful submission or explicitly.
-                    // Actually, if we are on "Add Course" page, we probably want to load draft only if it exists.
-                    // But if the user successfully created a course, we should clear it.
-                    // For now, let's leave it. If they come back, they see their draft. 
-                    // They can manually delete if they want.
+                
                 });
             }
 
@@ -811,16 +838,66 @@
         (function() {
             const fields = {
                 title: document.getElementById('course-title'),
-                status: document.getElementById('course-status'),
                 level: document.getElementById('course-level'),
+                category: document.getElementById('course-category'),
+                trainer: document.getElementById('course-trainer'),
                 price: document.getElementById('course-price'),
                 description: document.getElementById('course-description'),
                 thumbnail: document.getElementById('course-thumbnail'),
+                cardThumbnail: document.getElementById('card-thumbnail'),
                 duration: document.getElementById('course-duration'),
             };
 
-            function dotEl(id) {
-                return document.querySelector('.sanity-dot[data-for="' + id + '"]');
+            function onlyDigits(s) {
+                return (s || '').toString().replace(/[^0-9]/g, '');
+            }
+
+            function formatThousandsID(digits) {
+                let d = onlyDigits(digits);
+                // keep at least one digit if user typed zeros
+                d = d.replace(/^0+(?=\d)/, '');
+                if (d.length === 0) return '';
+                // group by thousands with '.'
+                return d.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function countDigitsBeforeCaret(value, caretPos) {
+                if (caretPos == null) return 0;
+                const before = (value || '').slice(0, Math.max(0, caretPos));
+                const m = before.match(/\d/g);
+                return m ? m.length : 0;
+            }
+
+            function caretPosForDigitIndex(formattedValue, digitIndex) {
+                if (digitIndex <= 0) return 0;
+                let seen = 0;
+                for (let i = 0; i < formattedValue.length; i++) {
+                    if (/[0-9]/.test(formattedValue[i])) {
+                        seen++;
+                        if (seen >= digitIndex) return i + 1;
+                    }
+                }
+                return formattedValue.length;
+            }
+
+            function formatPriceFieldLive(inputEl) {
+                if (!inputEl) return;
+                const raw = inputEl.value || '';
+                const caret = inputEl.selectionStart;
+                const digitIndex = countDigitsBeforeCaret(raw, caret);
+
+                const digits = onlyDigits(raw);
+                const formatted = formatThousandsID(digits);
+                if (formatted === raw) return;
+
+                inputEl.value = formatted;
+                // Restore caret so typing feels natural
+                const newCaret = caretPosForDigitIndex(formatted, digitIndex);
+                try {
+                    inputEl.setSelectionRange(newCaret, newCaret);
+                } catch (e) {
+                    // ignore (some input types / browsers)
+                }
             }
 
             function msgEl(id) {
@@ -828,9 +905,12 @@
             }
 
             function setIndicator(id, ok, msg) {
-                const d = dotEl(id);
+                const input = document.getElementById(id);
                 const m = msgEl(id);
-                if (d) d.classList.toggle('show', !ok);
+
+                if (input) {
+                    input.classList.toggle('is-invalid', !ok);
+                }
                 if (m) {
                     if (msg && !ok) {
                         m.textContent = msg;
@@ -844,45 +924,60 @@
 
             function validateTitle() {
                 const v = (fields.title.value || '').trim();
-                const ok = v.length >= 3;
-                setIndicator('course-title', ok, 'Minimal 3 karakter.');
+                const ok = v.length > 0;
+                setIndicator('course-title', ok, 'Judul course wajib diisi.');
                 return ok;
             }
 
             function validateStatus() {
+                // Status is enforced as 'archive' for new courses; field may not exist in markup.
+                if (!fields.status) return true;
                 const v = fields.status.value;
                 const ok = (v === 'active' || v === 'archive');
-                setIndicator('course-status', ok, 'Pilih status yang valid.');
+                setIndicator('course-status', ok, 'Status wajib dipilih.');
                 return ok;
             }
 
             function validateLevel() {
                 const v = fields.level.value;
                 const ok = (v === 'beginner' || v === 'intermediate' || v === 'advanced');
-                setIndicator('course-level', ok, 'Pilih level yang valid.');
+                setIndicator('course-level', ok, 'Level course wajib dipilih.');
+                return ok;
+            }
+
+            function validateCategory() {
+                if (!fields.category) return true;
+                const v = (fields.category.value || '').trim();
+                const ok = v.length > 0;
+                setIndicator('course-category', ok, 'Kategori wajib dipilih.');
+                return ok;
+            }
+
+            function validateTrainer() {
+                if (!fields.trainer) return true;
+                const v = (fields.trainer.value || '').trim();
+                const ok = v.length > 0;
+                setIndicator('course-trainer', ok, 'Trainer wajib dipilih.');
                 return ok;
             }
 
             function validatePrice() {
                 const raw = (fields.price.value || '').trim();
                 const digits = raw.replace(/[^0-9]/g, '');
-                const val = parseInt(digits || '0', 10);
-                    const ok = val >= 0;
-                    setIndicator('course-price', ok, 'Harga harus angka >= 0.');
-                return ok;
-            }
-
-            function validateDescription() {
-                const v = (fields.description.value || '').trim();
-                const ok = v.length >= 10;
-                setIndicator('course-description', ok, 'Minimal 10 karakter.');
+                if (digits.length === 0) {
+                    setIndicator('course-price', false, 'Harga wajib diisi.');
+                    return false;
+                }
+                const val = parseInt(digits, 10);
+                const ok = !isNaN(val) && val >= 0;
+                setIndicator('course-price', ok, 'Harga harus angka >= 0.');
                 return ok;
             }
 
             function validateThumbnail() {
                 const f = fields.thumbnail.files && fields.thumbnail.files[0];
                 if (!f) {
-                    setIndicator('course-thumbnail', false, 'Pilih gambar atau video.');
+                    setIndicator('course-thumbnail', false, 'Intro media wajib dipilih.');
                     return false;
                 }
                 const allowed = [
@@ -894,6 +989,22 @@
                     return false;
                 }
                 setIndicator('course-thumbnail', true);
+                return true;
+            }
+
+            function validateCardThumbnail() {
+                const f = fields.cardThumbnail?.files && fields.cardThumbnail.files[0];
+                if (!fields.cardThumbnail) return true;
+                if (!f) {
+                    setIndicator('card-thumbnail', false, 'Thumbnail card course wajib diupload.');
+                    return false;
+                }
+                const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
+                if (!allowed.includes(f.type)) {
+                    setIndicator('card-thumbnail', false, 'Thumbnail harus gambar (jpg/png/webp/gif).');
+                    return false;
+                }
+                setIndicator('card-thumbnail', true);
                 return true;
             }
 
@@ -910,37 +1021,54 @@
             }
 
             function validateAll() {
-                const checks = [validateTitle(), validateStatus(), validateLevel(), validatePrice(), validateDescription(), validateThumbnail(), validateDuration()];
+                const checks = [validateTitle(), validateStatus(), validateLevel(), validateCategory(), validateTrainer(), validatePrice(), validateThumbnail(), validateCardThumbnail(), validateDuration()];
                 return checks.every(Boolean);
             }
 
             // live validation (guard for optional fields)
             fields.title?.addEventListener('input', validateTitle);
-            fields.status?.addEventListener('change', validateStatus);
             fields.level?.addEventListener('change', validateLevel);
-            fields.price?.addEventListener('input', validatePrice);
-            fields.description?.addEventListener('input', validateDescription);
+            fields.category?.addEventListener('change', validateCategory);
+            fields.trainer?.addEventListener('change', validateTrainer);
+            fields.price?.addEventListener('input', function() {
+                formatPriceFieldLive(fields.price);
+                validatePrice();
+            });
+            fields.price?.addEventListener('blur', function() {
+                // ensure final formatting on blur
+                formatPriceFieldLive(fields.price);
+                validatePrice();
+            });
             fields.thumbnail?.addEventListener('change', validateThumbnail);
+            fields.cardThumbnail?.addEventListener('change', validateCardThumbnail);
             fields.duration?.addEventListener('input', validateDuration);
 
             // initial state
             validateAll();
+
+            // apply formatting if field has an initial value (e.g. browser autofill)
+            if (fields.price && (fields.price.value || '').trim() !== '') {
+                formatPriceFieldLive(fields.price);
+            }
 
             const formEl = document.querySelector('form.box_form');
             if (formEl) {
                 formEl.addEventListener('submit', function(ev) {
                     if (!validateAll()) {
                         ev.preventDefault();
-                        const firstDot = document.querySelector('.sanity-dot.show');
-                        if (firstDot) {
-                            const parent = firstDot.closest('.mb-3, .col-md-6, .mb-1') || document.body;
-                            parent.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center'
-                            });
+                        const firstInvalid = formEl.querySelector('.is-invalid');
+                        if (firstInvalid) {
+                            const parent = firstInvalid.closest('.mb-3, .col-md-6, .mb-1') || document.body;
+                            parent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            firstInvalid.focus?.();
                         }
                         return;
                     }
+                    // enforce archive on create
+                    const statusInputs = formEl.querySelectorAll('input[name="status"], select[name="status"]');
+                    statusInputs.forEach((el) => {
+                        if (el) el.value = 'archive';
+                    });
                     // normalize price to digits
                     const priceInput = document.getElementById('course-price');
                     if (priceInput) {
@@ -959,6 +1087,97 @@
                     }
                 });
             }
+        })();
+
+        // Diskon date guard: disallow past dates & ensure end >= start
+        (function() {
+            const percent = document.getElementById('discount-percent');
+            const price = document.getElementById('course-price');
+            const start = document.getElementById('discount-start');
+            const end = document.getElementById('discount-end');
+            if (!start || !end) return;
+
+            const todayStr = '{{ now()->toDateString() }}';
+
+            function clampDateInput(el, minStr) {
+                if (!el) return;
+                if (!el.value || String(el.value).trim() === '') return;
+                if (el.value < minStr) el.value = minStr;
+            }
+
+            function syncDiscountDates() {
+                const startVal = (start.value || '').trim();
+
+                // Ensure start >= today
+                if (startVal && startVal < todayStr) {
+                    start.value = todayStr;
+                }
+
+                const effectiveStart = (start.value || '').trim();
+                const minEnd = (effectiveStart && effectiveStart > todayStr) ? effectiveStart : todayStr;
+                end.min = minEnd;
+
+                // Ensure end >= minEnd
+                clampDateInput(end, minEnd);
+            }
+
+            function parsePercent() {
+                const raw = (percent?.value ?? '').toString().trim();
+                if (raw === '') return 0;
+                const val = parseInt(raw, 10);
+                return Number.isFinite(val) ? val : 0;
+            }
+
+            function parsePrice() {
+                const raw = (price?.value ?? '').toString().trim();
+                if (raw === '') return null;
+                const digits = raw.replace(/[^0-9]/g, '');
+                if (digits === '') return null;
+                const val = parseInt(digits, 10);
+                return Number.isFinite(val) ? val : null;
+            }
+
+            function syncDiscountEnabledState() {
+                const priceVal = parsePrice();
+                const allowDiscount = (priceVal !== null && priceVal > 0);
+
+                if (percent) {
+                    percent.disabled = !allowDiscount;
+                    if (!allowDiscount) {
+                        percent.value = '';
+                    }
+                }
+
+                const p = parsePercent();
+                const enabled = p > 0;
+
+                start.disabled = !enabled;
+                end.disabled = !enabled;
+
+                if (!enabled) {
+                    // If discount is not set, do not submit dates.
+                    start.value = '';
+                    end.value = '';
+                    return;
+                }
+
+                // If discount is set but date is empty, default to today
+                if (!start.value) start.value = todayStr;
+                if (!end.value) end.value = start.value;
+                syncDiscountDates();
+            }
+
+            // Initial clamp (handles old values)
+            clampDateInput(start, todayStr);
+            syncDiscountDates();
+            syncDiscountEnabledState();
+
+            start.addEventListener('change', syncDiscountDates);
+            end.addEventListener('change', syncDiscountDates);
+            percent?.addEventListener('input', syncDiscountEnabledState);
+            percent?.addEventListener('change', syncDiscountEnabledState);
+            price?.addEventListener('input', syncDiscountEnabledState);
+            price?.addEventListener('change', syncDiscountEnabledState);
         })();
 
         // Pengeluaran (Course) - dynamic editable rows
@@ -1039,6 +1258,8 @@
             const trainerSelect = document.getElementById('course-trainer');
             if (!trainerSelect) return;
 
+            const selectedTrainerId = (trainerSelect.getAttribute('data-selected') || '').trim();
+
             const endpoint = '/admin/api/trainers';
             fetch(endpoint, {
                     headers: {
@@ -1050,23 +1271,105 @@
                 .then((json) => {
                     const trainers = Array.isArray(json?.data) ? json.data : [];
                     if (trainers.length === 0) {
-                        trainerSelect.innerHTML = '<option selected disabled>Belum ada trainer</option>';
+                        trainerSelect.innerHTML = '<option value="" selected disabled>Belum ada trainer</option>';
                         return;
                     }
-                    trainerSelect.innerHTML = '<option selected disabled>Pilih trainer</option>';
+                    trainerSelect.innerHTML = '<option value="" selected disabled>Pilih trainer</option>';
                     trainers.forEach((t) => {
                         if (!t || typeof t.id === 'undefined') return;
                         const opt = document.createElement('option');
                         opt.value = String(t.id);
                         opt.textContent = (t.name || ('Trainer #' + t.id));
+                        if (selectedTrainerId !== '' && opt.value === selectedTrainerId) {
+                            opt.selected = true;
+                        }
                         trainerSelect.appendChild(opt);
                     });
                 })
                 .catch(() => {
                     // Keep UI usable even if endpoint not ready
-                    trainerSelect.innerHTML = '<option selected disabled>Gagal memuat trainer</option>';
+                    trainerSelect.innerHTML = '<option value="" selected disabled>Gagal memuat trainer</option>';
                 });
         })();
+
+            // File previews (small box)
+            (function(){
+                function setPlaceholder(previewEl){
+                    if(!previewEl) return;
+                    // cleanup previous object URL
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+                    previewEl.dataset.objectUrl = '';
+                    previewEl.innerHTML = '<small class="text-muted">Preview</small>';
+                }
+
+                function renderPreview(inputEl, previewEl, allowVideo){
+                    if(!inputEl || !previewEl) return;
+                    const file = inputEl.files && inputEl.files[0];
+                    if(!file){
+                        setPlaceholder(previewEl);
+                        return;
+                    }
+
+                    // cleanup old
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+
+                    const url = URL.createObjectURL(file);
+                    previewEl.dataset.objectUrl = url;
+                    previewEl.innerHTML = '';
+
+                    const type = (file.type || '').toLowerCase();
+                    const isImage = type.startsWith('image/');
+                    const isVideo = allowVideo && type.startsWith('video/');
+
+                    if(isImage){
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Preview';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        previewEl.appendChild(img);
+                        return;
+                    }
+
+                    if(isVideo){
+                        const video = document.createElement('video');
+                        video.src = url;
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.loop = true;
+                        video.autoplay = true;
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        previewEl.appendChild(video);
+                        return;
+                    }
+
+                    // fallback
+                    const span = document.createElement('small');
+                    span.className = 'text-muted';
+                    span.textContent = file.name || 'File dipilih';
+                    previewEl.appendChild(span);
+                }
+
+                const introInput = document.getElementById('course-thumbnail');
+                const introPreview = document.getElementById('course-thumbnail-preview');
+                const cardInput = document.getElementById('card-thumbnail');
+                const cardPreview = document.getElementById('card-thumbnail-preview');
+
+                setPlaceholder(introPreview);
+                setPlaceholder(cardPreview);
+
+                introInput?.addEventListener('change', () => renderPreview(introInput, introPreview, true));
+                cardInput?.addEventListener('change', () => renderPreview(cardInput, cardPreview, false));
+            })();
     </script>
 </body>
 

@@ -73,10 +73,6 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\User\FeedbackController::class, 'store'])->name('feedback.store');
-    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
-    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-    // Redirect search to the best-matching event detail (exact title match preferred)
-    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
     Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
@@ -122,7 +118,7 @@ Route::middleware('auth')->group(function () {
 
     // User profile
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
-    Route::get('/profile/events', [\App\Http\Controllers\User\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
@@ -177,6 +173,44 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('events.registered.detail', $event)
             ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
     })->name('events.save');
+
+    // Save/unsave course
+    Route::post('/courses/{course}/save', function (\Illuminate\Http\Request $request, \App\Models\Course $course) {
+        $user = $request->user();
+        if (!$user) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+            return redirect()->route('login');
+        }
+
+        $exists = \DB::table('user_saved_courses')
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->exists();
+
+        $saved = true;
+        if ($exists) {
+            \DB::table('user_saved_courses')
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->delete();
+            $saved = false;
+        } else {
+            \DB::table('user_saved_courses')->insert([
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            $saved = true;
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'saved' => $saved]);
+        }
+        return back()->with('success', $saved ? 'Course disimpan.' : 'Course dihapus dari tersimpan.');
+    })->name('courses.save');
 });
     // User dashboard (only for non-admin users)
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');

@@ -200,6 +200,12 @@ class QuizController extends Controller
             return redirect()->route('user.quiz.result.short', $attempt);
         }
 
+        // Backfill started_at for legacy attempts so timer works reliably
+        if (!$attempt->started_at) {
+            $attempt->forceFill(['started_at' => now()])->save();
+            $attempt->refresh();
+        }
+
         $questions = $module->quizQuestions()->with('answers')->get();
 
         if ($questions->count() === 0) {

@@ -298,6 +298,85 @@ class AdminController extends Controller
 
     public function reports()
     {
+        $activeTab = (string) request('tab', 'pendapatan');
+
+        // Period selection shared across tabs (?period=YYYY-MM)
+        $earliestDate = Carbon::create(2025, 11, 1, 0, 0, 0);
+        $periodParam = (string) request('period', '');
+        if ($periodParam && preg_match('/^(\d{4})-(\d{2})$/', $periodParam, $m)) {
+            $selectedYear = (int) $m[1];
+            $selectedMonth = (int) $m[2];
+        } else {
+            $selectedYear = (int) now()->year;
+            $selectedMonth = (int) now()->month;
+        }
+        $selectedDate = Carbon::create($selectedYear, $selectedMonth, 1, 0, 0, 0);
+        if ($selectedDate->lt($earliestDate)) {
+            $selectedDate = $earliestDate->copy();
+        }
+
+        // Chart labels (days in selected month)
+        $daysInMonth = (int) $selectedDate->daysInMonth;
+        $chartLabels = range(1, $daysInMonth);
+
+        // === Pertumbuhan chart: free vs paid by EVENT DATE (per-day in selected month) ===
+        $paidMap = \App\Models\Event::query()
+            ->whereNotNull('event_date')
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
+            ->whereRaw('COALESCE(price, 0) > 0')
+            ->selectRaw('DAY(event_date) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $freeMap = \App\Models\Event::query()
+            ->whereNotNull('event_date')
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
+            ->whereRaw('COALESCE(price, 0) <= 0')
+            ->selectRaw('DAY(event_date) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $chartPaidData = [];
+        $chartFreeData = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $chartPaidData[] = (int) ($paidMap[$d] ?? 0);
+            $chartFreeData[] = (int) ($freeMap[$d] ?? 0);
+        }
+
+        $totalPaidEventsSelected = array_sum($chartPaidData);
+        $totalFreeEventsSelected = array_sum($chartFreeData);
+
+        // === Operasional chart: create vs manage by CREATED AT (per-day in selected month) ===
+        $createMap = \App\Models\Event::query()
+            ->whereYear('created_at', $selectedDate->year)
+            ->whereMonth('created_at', $selectedDate->month)
+            ->where(function ($q) {
+                $q->where('manage_action', 'create')->orWhereNull('manage_action');
+            })
+            ->selectRaw('DAY(created_at) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $manageMap = \App\Models\Event::query()
+            ->whereYear('created_at', $selectedDate->year)
+            ->whereMonth('created_at', $selectedDate->month)
+            ->where('manage_action', 'manage')
+            ->selectRaw('DAY(created_at) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $chartCreateData = [];
+        $chartManageData = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $chartCreateData[] = (int) ($createMap[$d] ?? 0);
+            $chartManageData[] = (int) ($manageMap[$d] ?? 0);
+        }
+
+        $totalCreateEventsSelected = array_sum($chartCreateData);
+        $totalManageEventsSelected = array_sum($chartManageData);
+
         // Build revenue per event and basic finance overview for the report
         // Paid statuses based on Midtrans typical values
         $paidStatuses = ['settlement', 'capture', 'success'];
@@ -401,6 +480,7 @@ class AdminController extends Controller
         });
 
         return view('admin.reports', compact(
+            'activeTab',
             'eventRows',
             'growthRows',
             'operationalRows',
@@ -408,7 +488,16 @@ class AdminController extends Controller
             'completedCount',
             'upcomingCount',
             'percentCompleted',
-            'percentNotCompleted'
+            'percentNotCompleted',
+            'chartLabels',
+            'chartFreeData',
+            'chartPaidData',
+            'chartCreateData',
+            'chartManageData',
+            'totalPaidEventsSelected',
+            'totalFreeEventsSelected',
+            'totalCreateEventsSelected',
+            'totalManageEventsSelected'
         ));
     }
 

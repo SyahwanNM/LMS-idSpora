@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Models\CourseTemplate;
 use App\Models\CourseTemplateModule;
 use App\Models\Category;
-use App\Services\CourseStructureService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -54,7 +53,9 @@ class CourseTemplateAdminController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
 
-        $this->syncModules($template, $validated['modules'] ?? [], (string) $validated['level']);
+        if (!empty($validated['modules'])) {
+            $this->syncModules($template, $validated['modules']);
+        }
 
         return redirect()->route('admin.templates.show', $template)->with('success', 'Template berhasil dibuat!');
     }
@@ -115,7 +116,9 @@ class CourseTemplateAdminController extends Controller
                 'description' => $validated['description'] ?? $template->description,
             ]);
 
-            $this->syncModules($newTemplate, $validated['modules'] ?? [], (string) $validated['level']);
+            if (!empty($validated['modules'])) {
+                $this->syncModules($newTemplate, $validated['modules']);
+            }
 
             return redirect()->route('admin.templates.show', $newTemplate)
                 ->with('success', 'Template versi baru berhasil dibuat!');
@@ -129,20 +132,9 @@ class CourseTemplateAdminController extends Controller
             'description' => $validated['description'],
         ]);
 
-        $modulePayload = array_key_exists('modules', $validated)
-            ? (array) $validated['modules']
-            : $template->modules()->orderBy('order_no')->get()->map(function ($module) {
-                return [
-                    'order_no' => (int) $module->order_no,
-                    'title' => (string) $module->title,
-                    'description' => $module->description,
-                    'type' => (string) $module->type,
-                    'is_required' => (bool) $module->is_required,
-                    'duration' => (int) $module->duration,
-                ];
-            })->all();
-
-        $this->syncModules($template, $modulePayload, (string) $validated['level']);
+        if (array_key_exists('modules', $validated)) {
+            $this->syncModules($template, $validated['modules']);
+        }
 
         return redirect()->route('admin.templates.show', $template)
             ->with('success', 'Template berhasil diupdate!');
@@ -156,13 +148,33 @@ class CourseTemplateAdminController extends Controller
             ->with('success', 'Template berhasil diarsipkan!');
     }
 
-    private function syncModules(CourseTemplate $template, array $modules, string $level): void
+    private function syncModules(CourseTemplate $template, array $modules): void
     {
-        app(CourseStructureService::class)->syncTemplate($template, $modules, $level);
-    }
+        $rows = collect($modules)
+            ->values()
+            ->map(function ($module, $index) {
+                $orderNo = (int) ($module['order_no'] ?? ($index + 1));
+                return [
+                    'order_no' => max(1, $orderNo),
+                    'title' => (string) ($module['title'] ?? ('Module ' . ($index + 1))),
+                    'description' => $module['description'] ?? null,
+                    'type' => (string) ($module['type'] ?? 'video'),
+                    'is_required' => (bool) ($module['is_required'] ?? true),
+                    'duration' => (int) ($module['duration'] ?? 0),
+                ];
+            })
+            ->sortBy('order_no')
+            ->values()
+            ->map(function ($row, $index) {
+                $row['order_no'] = $index + 1;
+                return $row;
+            })
+            ->all();
 
-    private function defaultModulesForLevel(string $level): array
-    {
-        return app(CourseStructureService::class)->buildModulesForLevel($level);
+        $template->modules()->delete();
+
+        if (!empty($rows)) {
+            $template->modules()->createMany($rows);
+        }
     }
 }

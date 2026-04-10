@@ -14,7 +14,7 @@
             border-radius: 24px;
             padding: 32px 36px;
             color: #fff;
-            margin-bottom: 0;
+            margin-bottom: 28px;
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -324,6 +324,7 @@
         .trainer-wrapper {
             display: flex;
             min-height: calc(100vh - 72px);
+            overflow-x: hidden;
         }
 
         .trainer-sidebar {
@@ -340,8 +341,10 @@
 
         .trainer-main {
             flex-grow: 1;
+            min-width: 0;
             padding: 32px;
             background-color: #F8F9FA;
+            overflow-x: auto;
         }
 
         .nav-menu-label {
@@ -463,13 +466,13 @@
 @section('content')
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation -->
-        @include('admin.partials.trainer-sidebar')
+        @include('admin.trainer._sidebar')
         @include('admin.trainer._top-text-color')
 
         <!-- Main Content -->
         <main class="trainer-main">
             <!-- Hero Section -->
-            <div class="trainer-hero mb-3">
+            <div class="trainer-hero mb-5">
                 <div class="hero-header">
                     <div>
                         <h1 class="hero-title">
@@ -579,7 +582,9 @@
                                 <th class="ps-4" style="min-width: 220px;">Trainer</th>
                                 <th style="min-width: 200px;">Kontak</th>
                                 <th style="min-width: 180px;">Keahlian</th>
+                                <th class="text-center" style="width: 100px;">Status</th>
                                 <th class="text-center" style="width: 100px;">Kelas</th>
+                                <th class="text-center" style="width: 100px;">Sesi</th>
                                 <th style="width: 130px;">Bergabung</th>
                                 <th class="text-center pe-4" style="width: 160px;">Aksi</th>
                             </tr>
@@ -617,8 +622,21 @@
                                         </div>
                                     </td>
                                     <td class="text-center">
+                                        @php
+                                            $isActive = $trainer->created_at >= now()->subDays(30);
+                                        @endphp
+                                        <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">
+                                            {{ $isActive ? 'Aktif' : 'Nonaktif' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
                                         <span class="badge-course">
                                             {{ $trainer->courses_as_trainer_count ?? 0 }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge-event">
+                                            {{ $trainer->events_as_trainer_count ?? 0 }}
                                         </span>
                                     </td>
                                     <td>

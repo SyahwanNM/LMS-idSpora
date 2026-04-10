@@ -8,7 +8,6 @@ use App\Models\CourseModule;
 use App\Models\Event;
 use App\Models\TrainerNotification;
 use App\Models\User;
-use App\Services\TrainerActivityService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -17,237 +16,6 @@ use Illuminate\Support\Facades\Storage;
 
 class MaterialApprovalController extends Controller
 {
-    private function resolveCourseNotificationRecipientIds(Course $course): array
-    {
-        $ids = [];
-
-        if (!empty($course->trainer_id)) {
-            $ids[] = (int) $course->trainer_id;
-        }
-
-        $invitedTrainerIds = TrainerNotification::query()
-            ->where('type', 'course_invitation')
-            ->where('data->entity_type', 'course')
-            ->where('data->entity_id', (int) $course->id)
-            ->pluck('trainer_id')
-            ->map(fn($id) => (int) $id)
-            ->filter(fn($id) => $id > 0)
-            ->values()
-            ->all();
-
-        $ids = array_merge($ids, $invitedTrainerIds);
-
-        return collect($ids)
-            ->map(fn($id) => (int) $id)
-            ->filter(fn($id) => $id > 0)
-            ->unique()
-            ->values()
-            ->all();
-    }
-
-    private function normalizeModuleReviewStatus(?string $status): string
-    {
-        $status = strtolower(trim((string) $status));
-        return in_array($status, ['approved', 'rejected', 'pending_review'], true)
-            ? $status
-            : 'pending_review';
-    }
-
-    private function moduleReviewSortRank(?string $status): int
-    {
-        return match ($this->normalizeModuleReviewStatus($status)) {
-            'pending_review' => 0,
-            'rejected' => 1,
-            'approved' => 2,
-            default => 3,
-        };
-    }
-
-    private function refreshCourseReviewStatus(Course $course): void
-    {
-        $course->loadMissing(['modules.quizQuestions']);
-
-        $uploadedModules = $course->modules
-            ->filter(fn(CourseModule $module) => $this->isUploadedModule($module))
-            ->values();
-
-        if ($uploadedModules->isEmpty()) {
-            $course->update([
-                'status' => 'pending_review',
-                'approved_at' => null,
-                'rejected_at' => null,
-                'rejection_reason' => null,
-            ]);
-            return;
-        }
-
-        $hasRejected = false;
-        $allApproved = true;
-        $reasons = [];
-
-        foreach ($uploadedModules as $module) {
-            $moduleStatus = $this->normalizeModuleReviewStatus($module->review_status);
-            if ($moduleStatus === 'rejected') {
-                $hasRejected = true;
-                if (!empty($module->review_rejection_reason)) {
-                    $reasons[] = $module->title . ': ' . $module->review_rejection_reason;
-                }
-            }
-
-            if ($moduleStatus !== 'approved') {
-                $allApproved = false;
-            }
-        }
-
-        if ($hasRejected) {
-            $course->update([
-                'status' => 'rejected',
-                'approved_at' => null,
-                'rejected_at' => now(),
-                'approved_by' => Auth::id(),
-                'rejection_reason' => !empty($reasons) ? implode("\n", $reasons) : 'Beberapa modul masih perlu revisi.',
-            ]);
-            return;
-        }
-
-        if ($allApproved) {
-            $course->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-                'approved_by' => Auth::id(),
-                'rejected_at' => null,
-                'rejection_reason' => null,
-            ]);
-            return;
-        }
-
-        $course->update([
-            'status' => 'pending_review',
-            'approved_at' => null,
-            'rejected_at' => null,
-            'rejection_reason' => null,
-        ]);
-    }
-
-    private function isUploadedModule(CourseModule $module): bool
-    {
-        if ($module->isQuiz()) {
-            return (int) ($module->quizQuestions->count() ?? 0) > 0;
-        }
-
-        $content = trim((string) ($module->content_url ?? ''));
-        if ($content !== '' && $content !== 'quiz_submitted') {
-            return true;
-        }
-
-        // Text-first module authoring stores content in description HTML.
-        if ($module->isPdf()) {
-            $description = trim((string) ($module->description ?? ''));
-            return $description !== '';
-        }
-
-        return false;
-    }
-
-    private function normalizePublicPath(?string $path): string
-    {
-        $normalized = ltrim((string) $path, '/');
-
-        if ($normalized === '') {
-            return '';
-        }
-
-        if (preg_match('#^https?://#i', $normalized)) {
-            $urlPath = parse_url($normalized, PHP_URL_PATH);
-            $normalized = is_string($urlPath) ? ltrim($urlPath, '/') : '';
-        }
-
-        $normalized = str_replace('\\', '/', $normalized);
-        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
-        $normalized = ltrim($normalized, '/');
-
-        if (str_starts_with($normalized, 'public/')) {
-            $normalized = ltrim(substr($normalized, 7), '/');
-        }
-
-        if (str_starts_with($normalized, 'storage/app/public/')) {
-            $normalized = ltrim(substr($normalized, 19), '/');
-        }
-
-        if (str_starts_with($normalized, 'storage/')) {
-            $normalized = ltrim(substr($normalized, 8), '/');
-        }
-
-        if (str_starts_with($normalized, 'uploads/')) {
-            $normalized = ltrim(substr($normalized, 8), '/');
-        }
-
-        return $normalized;
-    }
-
-    private function resolveModuleFilePath(CourseModule $module): ?string
-    {
-        $sourcePath = trim((string) ($module->content_url ?? ''));
-        if ($sourcePath === '' || $sourcePath === 'quiz_submitted') {
-            return null;
-        }
-
-        $normalized = $this->normalizePublicPath($sourcePath);
-        if ($normalized === '') {
-            return null;
-        }
-
-        $possiblePaths = [
-            storage_path('app/public/' . $normalized),
-            public_path('uploads/' . $normalized),
-            public_path($normalized),
-        ];
-
-        if (str_starts_with($normalized, 'uploads/')) {
-            $possiblePaths[] = storage_path('app/public/' . ltrim(substr($normalized, 8), '/'));
-        }
-
-        $possiblePaths = array_values(array_unique($possiblePaths));
-
-        foreach ($possiblePaths as $path) {
-            if (file_exists($path) && is_file($path)) {
-                return $path;
-            }
-        }
-
-        return null;
-    }
-
-    private function guessMimeType(CourseModule $module): string
-    {
-        $mime = (string) ($module->mime_type ?? '');
-        if ($mime !== '') {
-            return $mime;
-        }
-
-        try {
-            $absolutePath = $this->resolveModuleFilePath($module);
-            if ($absolutePath && file_exists($absolutePath)) {
-                $detected = @mime_content_type($absolutePath);
-                if (is_string($detected) && $detected !== '') {
-                    return $detected;
-                }
-            }
-        } catch (\Throwable $e) {
-            // ignore detection failures and fall back to extension-based guessing
-        }
-
-        $ext = strtolower(pathinfo((string) $module->content_url, PATHINFO_EXTENSION));
-
-        return match ($ext) {
-            'mp4' => 'video/mp4',
-            'webm' => 'video/webm',
-            'ogg', 'ogv' => 'video/ogg',
-            'pdf' => 'application/pdf',
-            default => ($module->isVideo() ? 'video/mp4' : 'application/octet-stream'),
-        };
-    }
-
     private function assessStructureCompleteness(Course $course): array
     {
         $modules = $course->modules()->withCount('quizQuestions')->orderBy('order_no')->get();
@@ -274,10 +42,8 @@ class MaterialApprovalController extends Controller
             }
 
             $content = trim((string) ($module->content_url ?? ''));
-            $description = trim((string) ($module->description ?? ''));
-            $hasTextContent = $module->isPdf() && $description !== '';
-            if (($content === '' || $content === 'quiz_submitted') && !$hasTextContent) {
-                $missingItems[] = $slotLabel . ' (file atau konten teks belum diupload)';
+            if ($content === '' || $content === 'quiz_submitted') {
+                $missingItems[] = $slotLabel . ' (file belum diupload)';
             }
         }
 
@@ -434,8 +200,7 @@ class MaterialApprovalController extends Controller
             ->whereNotNull('module_path')
             ->where(function ($q) {
                 $q->whereNull('material_status')
-                    ->orWhere('material_status', '')
-                    ->orWhereNotIn('material_status', ['approved', 'rejected']);
+                    ->orWhereIn('material_status', ['pending', 'pending_review']);
             });
 
         if ($request->filled('search')) {
@@ -448,27 +213,8 @@ class MaterialApprovalController extends Controller
             });
         }
 
-        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
-            $now = now();
-
-            $pendingEventModulesQuery->where(function ($q) use ($deadlineFilter, $now) {
-                if ($deadlineFilter === 'overdue') {
-                    $q->whereNotNull('material_deadline')
-                        ->where('material_deadline', '<', $now);
-                    return;
-                }
-
-                if ($deadlineFilter === 'on_time') {
-                    $q->whereNotNull('material_deadline')
-                        ->where('material_deadline', '>=', $now);
-                    return;
-                }
-
-                $q->whereNull('material_deadline');
-            });
-        }
-
         $pendingEventModules = $pendingEventModulesQuery
+            ->orderByDesc('module_submitted_at')
             ->orderByDesc('created_at')
             ->orderByDesc('event_date')
             ->get([
@@ -477,10 +223,20 @@ class MaterialApprovalController extends Controller
                 'title',
                 'jenis',
                 'event_date',
-                'material_deadline',
                 'module_path',
-                'created_at as module_submitted_at',
+                'module_submitted_at',
+                'created_at',
+                'updated_at',
             ]);
+
+        // Backward-compat display: older rows may not have module_submitted_at filled.
+        // For pending items, updated_at usually reflects the module upload time.
+        $pendingEventModules->transform(function (Event $event) {
+            if (empty($event->module_submitted_at) && !empty($event->module_path)) {
+                $event->setAttribute('module_submitted_at', $event->updated_at);
+            }
+            return $event;
+        });
 
         // Statistics
         $totalPending = Course::where('status', 'pending_review')->count()
@@ -488,8 +244,7 @@ class MaterialApprovalController extends Controller
                 ->whereNotNull('module_path')
                 ->where(function ($q) {
                     $q->whereNull('material_status')
-                        ->orWhere('material_status', '')
-                        ->orWhereNotIn('material_status', ['approved', 'rejected']);
+                        ->orWhereIn('material_status', ['pending', 'pending_review']);
                 })
                 ->count();
         $totalApproved = Course::where('status', 'approved')->count()
@@ -530,34 +285,9 @@ class MaterialApprovalController extends Controller
             'reviews'
         ]);
 
-        $uploadedModules = $material->modules
-            ->filter(fn(CourseModule $module) => $this->isUploadedModule($module))
-            ->sortBy(function (CourseModule $module) {
-                return [
-                    $this->moduleReviewSortRank($module->review_status),
-                    (int) ($module->order_no ?? 0),
-                    (int) ($module->id ?? 0),
-                ];
-            })
-            ->values();
-
-        $uploadedModulesCount = $uploadedModules->count();
-
-        $moduleReviewStats = [
-            'pending' => $uploadedModules->filter(fn(CourseModule $module) => $this->normalizeModuleReviewStatus($module->review_status) === 'pending_review')->count(),
-            'rejected' => $uploadedModules->filter(fn(CourseModule $module) => $this->normalizeModuleReviewStatus($module->review_status) === 'rejected')->count(),
-            'approved' => $uploadedModules->filter(fn(CourseModule $module) => $this->normalizeModuleReviewStatus($module->review_status) === 'approved')->count(),
-        ];
-
         $structureCompleteness = $this->assessStructureCompleteness($material);
 
-        return view('admin.material.show', compact(
-            'material',
-            'structureCompleteness',
-            'uploadedModules',
-            'uploadedModulesCount',
-            'moduleReviewStats'
-        ));
+        return view('admin.material.show', compact('material', 'structureCompleteness'));
     }
 
     /**
@@ -573,82 +303,36 @@ class MaterialApprovalController extends Controller
             abort(404, 'Modul kuis tidak memiliki file untuk dipreview.');
         }
 
-        $absolutePath = $this->resolveModuleFilePath($module);
-        if (!$absolutePath) {
-            $textHtml = trim((string) ($module->description ?? ''));
-            if ($module->isPdf() && $textHtml !== '') {
-                $sanitizedHtml = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $textHtml) ?? $textHtml;
-
-                $document = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-                    . '<title>Preview Materi</title>'
-                    . '<style>body{font-family:Arial,sans-serif;line-height:1.65;color:#1e293b;padding:24px;max-width:900px;margin:0 auto}img{max-width:100%;height:auto;border-radius:10px}pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto}code{font-family:Consolas,Monaco,monospace}</style>'
-                    . '</head><body>' . $sanitizedHtml . '</body></html>';
-
-                return response($document, 200, [
-                    'Content-Type' => 'text/html; charset=UTF-8',
-                    'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-                    'X-Frame-Options' => 'SAMEORIGIN',
-                ]);
-            }
-
+        $contentPath = trim((string) ($module->content_url ?? ''));
+        if ($contentPath === '' || $contentPath === 'quiz_submitted') {
             abort(404, 'File modul tidak tersedia.');
         }
 
-        $downloadName = $module->file_name ?: basename($absolutePath);
-        $mime = $this->guessMimeType($module);
-        $range = $request->header('Range');
-        $headers = [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . $downloadName . '"',
-            'Accept-Ranges' => 'bytes',
-        ];
+        if (str_starts_with($contentPath, 'storage/')) {
+            $contentPath = ltrim(substr($contentPath, 8), '/');
+        }
+
+        $contentPath = ltrim($contentPath, '/');
+
+        if (!Storage::disk('public')->exists($contentPath)) {
+            abort(404, 'File modul tidak ditemukan di storage.');
+        }
+
+        $absolutePath = Storage::disk('public')->path($contentPath);
+        $downloadName = $module->file_name ?: basename($contentPath);
+        $detectedMime = @mime_content_type($absolutePath);
+        $mime = (string) ($module->mime_type ?: $detectedMime ?: 'application/octet-stream');
 
         if ($request->boolean('download')) {
-            return response()->download($absolutePath, $downloadName, $headers);
+            return response()->download($absolutePath, $downloadName, [
+                'Content-Type' => $mime,
+            ]);
         }
 
-        if (is_string($range) && preg_match('/bytes=(\d*)-(\d*)/i', $range, $matches)) {
-            $fileSize = filesize($absolutePath);
-            $start = ($matches[1] !== '') ? (int) $matches[1] : 0;
-            $end = ($matches[2] !== '') ? (int) $matches[2] : ($fileSize - 1);
-            $end = min($end, $fileSize - 1);
-            if ($start > $end) {
-                $start = 0;
-            }
-
-            $length = $end - $start + 1;
-            $headers['Content-Length'] = $length;
-            $headers['Content-Range'] = 'bytes ' . $start . '-' . $end . '/' . $fileSize;
-
-            return response()->stream(function () use ($absolutePath, $start, $end) {
-                $chunkSize = 8192;
-                $handle = fopen($absolutePath, 'rb');
-                if ($handle === false) {
-                    return;
-                }
-
-                fseek($handle, $start);
-                $remaining = $end - $start + 1;
-
-                while ($remaining > 0 && !feof($handle)) {
-                    $read = ($remaining > $chunkSize) ? $chunkSize : $remaining;
-                    $buffer = fread($handle, $read);
-                    if ($buffer === '' || $buffer === false) {
-                        break;
-                    }
-                    echo $buffer;
-                    flush();
-                    $remaining -= strlen($buffer);
-                }
-
-                fclose($handle);
-            }, 206, $headers);
-        }
-
-        $headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0';
-        $headers['Content-Length'] = filesize($absolutePath);
-
-        return response()->file($absolutePath, $headers);
+        return response()->file($absolutePath, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        ]);
     }
 
     /**
@@ -656,34 +340,23 @@ class MaterialApprovalController extends Controller
      */
     public function approve(Course $material)
     {
-        $material->loadMissing(['trainer', 'modules.quizQuestions']);
+        $material->loadMissing(['trainer', 'modules']);
 
-        $uploadedModules = $material->modules
-            ->filter(fn(CourseModule $module) => $this->isUploadedModule($module));
-
-        if ($uploadedModules->isEmpty()) {
+        if ($material->modules->isEmpty()) {
             return redirect()
                 ->route('admin.material.show', $material)
-                ->with('error', 'Belum ada materi yang diupload trainer. Approval hanya bisa dilakukan untuk materi yang sudah diupload.');
+                ->with('error', 'Belum ada materi yang diupload trainer. Approval hanya bisa dilakukan untuk materi yang sudah ada.');
         }
 
-        foreach ($uploadedModules as $module) {
-            $module->update([
-                'review_status' => 'approved',
-                'reviewed_at' => now(),
-                'reviewed_by' => Auth::id(),
-                'review_rejection_reason' => null,
-            ]);
-        }
-
-        $this->refreshCourseReviewStatus($material);
+        $material->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => Auth::id(),
+            'rejection_reason' => null,
+            'rejected_at' => null,
+        ]);
 
         if (!empty($material->trainer_id)) {
-            $trainer = User::query()->find((int) $material->trainer_id);
-            if ($trainer) {
-                app(TrainerActivityService::class)->refresh($trainer);
-            }
-
             TrainerNotification::create([
                 'trainer_id' => (int) $material->trainer_id,
                 'type' => 'course_material_approved',
@@ -719,26 +392,16 @@ class MaterialApprovalController extends Controller
         $material->loadMissing(['trainer']);
         $rejectionReason = (string) $request->rejection_reason;
 
-        $material->loadMissing(['modules.quizQuestions']);
+        $material->update([
+            'status' => 'rejected',
+            'rejection_reason' => $rejectionReason,
+            'rejected_at' => now(),
+            'approved_by' => Auth::id(), // Track who rejected it
+        ]);
 
-        $uploadedModules = $material->modules
-            ->filter(fn(CourseModule $module) => $this->isUploadedModule($module));
-
-        foreach ($uploadedModules as $module) {
-            $module->update([
-                'review_status' => 'rejected',
-                'reviewed_at' => now(),
-                'reviewed_by' => Auth::id(),
-                'review_rejection_reason' => $rejectionReason,
-            ]);
-        }
-
-        $this->refreshCourseReviewStatus($material);
-
-        $recipientIds = $this->resolveCourseNotificationRecipientIds($material);
-        foreach ($recipientIds as $trainerId) {
+        if (!empty($material->trainer_id)) {
             TrainerNotification::create([
-                'trainer_id' => (int) $trainerId,
+                'trainer_id' => (int) $material->trainer_id,
                 'type' => 'course_material_rejected',
                 'title' => 'Materi Course Perlu Revisi',
                 'message' => 'Materi course "' . $material->name . '" perlu revisi. Catatan admin: ' . $rejectionReason,
@@ -757,98 +420,13 @@ class MaterialApprovalController extends Controller
             ->with('success', "Materi \"{$material->name}\" ditolak dan catatan revisi telah dikirim ke trainer.");
     }
 
-    public function approveModule(Course $material, CourseModule $module)
-    {
-        if ((int) $module->course_id !== (int) $material->id) {
-            return redirect()->route('admin.material.show', $material)->with('error', 'Modul tidak valid untuk course ini.');
-        }
-
-        if (!$this->isUploadedModule($module)) {
-            return redirect()->route('admin.material.show', $material)->with('error', 'Modul belum memiliki materi untuk direview.');
-        }
-
-        $module->update([
-            'review_status' => 'approved',
-            'reviewed_at' => now(),
-            'reviewed_by' => Auth::id(),
-            'review_rejection_reason' => null,
-        ]);
-
-        $this->refreshCourseReviewStatus($material);
-
-        return redirect()->route('admin.material.show', $material)->with('success', 'Modul berhasil disetujui.');
-    }
-
-    public function rejectModule(Request $request, Course $material, CourseModule $module)
-    {
-        $request->validate([
-            'rejection_reason' => 'required|string|min:10|max:1000',
-        ]);
-
-        if ((int) $module->course_id !== (int) $material->id) {
-            return redirect()->route('admin.material.show', $material)->with('error', 'Modul tidak valid untuk course ini.');
-        }
-
-        if (!$this->isUploadedModule($module)) {
-            return redirect()->route('admin.material.show', $material)->with('error', 'Modul belum memiliki materi untuk direview.');
-        }
-
-        $module->update([
-            'review_status' => 'rejected',
-            'reviewed_at' => now(),
-            'reviewed_by' => Auth::id(),
-            'review_rejection_reason' => (string) $request->rejection_reason,
-        ]);
-
-        $recipientIds = $this->resolveCourseNotificationRecipientIds($material);
-        foreach ($recipientIds as $trainerId) {
-            TrainerNotification::create([
-                'trainer_id' => (int) $trainerId,
-                'type' => 'course_material_rejected',
-                'title' => 'Modul Course Perlu Revisi',
-                'message' => 'Modul "' . $module->title . '" pada course "' . $material->name . '" ditolak. Catatan admin: ' . (string) $request->rejection_reason,
-                'data' => [
-                    'entity_type' => 'course',
-                    'entity_id' => (int) $material->id,
-                    'module_id' => (int) $module->id,
-                    'rejection_reason' => (string) $request->rejection_reason,
-                    'url' => route('trainer.courses.studio', $material->id),
-                ],
-                'expires_at' => now()->addDays(30),
-            ]);
-        }
-
-        $this->refreshCourseReviewStatus($material);
-
-        return redirect()->route('admin.material.show', $material)->with('success', 'Modul ditolak. Catatan revisi tersimpan.');
-    }
-
     /**
      * Show all approved materials
      */
     public function approved(Request $request)
     {
         $query = Course::with(['trainer', 'category'])
-            ->where(function ($q) {
-                $q->where('status', 'approved')
-                    ->orWhereHas('modules', function ($moduleQuery) {
-                        $moduleQuery->where('review_status', 'approved')
-                            ->where(function ($uploadedQuery) {
-                                $uploadedQuery->where(function ($contentQuery) {
-                                    $contentQuery->whereNotNull('content_url')
-                                        ->where('content_url', '!=', '')
-                                        ->where('content_url', '!=', 'quiz_submitted');
-                                })->orWhere(function ($textQuery) {
-                                    $textQuery->where('type', 'pdf')
-                                        ->whereNotNull('description')
-                                        ->where('description', '!=', '');
-                                })->orWhere(function ($quizQuery) {
-                                    $quizQuery->where('type', 'quiz')
-                                        ->whereHas('quizQuestions');
-                                });
-                            });
-                    });
-            })
+            ->where('status', 'approved')
             ->withCount('modules');
 
         $approvedEventModulesQuery = Event::query()
@@ -903,9 +481,7 @@ class MaterialApprovalController extends Controller
             }
         }
 
-        $approvedMaterials = $query
-            ->orderByRaw('COALESCE(approved_at, updated_at) DESC')
-            ->paginate(15);
+        $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
 
         $approvedEventModules = $approvedEventModulesQuery
             ->orderByDesc('material_approved_at')

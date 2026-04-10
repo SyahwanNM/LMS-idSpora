@@ -11,6 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $midtransClientKey = (string) config('midtrans.client_key');
+        $midtransIsProduction = (bool) config('midtrans.is_production', false);
+    @endphp
+    @if($midtransClientKey)
+        <script src="https://app{{ $midtransIsProduction ? '' : '.sandbox' }}.midtrans.com/snap/snap.js" data-client-key="{{ $midtransClientKey }}"></script>
+    @endif
     <style>
         body {
             background-color: #F8FAFC;
@@ -68,16 +75,9 @@
         /* Warning Text */
         .warning-text { color: #EF4444; font-size: 11px; font-style: italic; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
 
-        /* Whatsapp & Voucher */
+        /* Whatsapp */
         .wa-group { display: flex; gap: 8px; }
         .wa-group select { width: 100px; }
-        
-        .voucher-header { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
-        .voucher-input-group { display: flex; gap: 8px; }
-        .btn-check-voucher {
-            background-color: #FACC15; color: #854D0E; border: none; padding: 0 14px;
-            font-weight: 600; border-radius: 6px; font-size: 12px; white-space: nowrap;
-        }
 
         /* Order Detail Items */
         .order-detail-content { display: flex; gap: 12px; align-items: flex-start; }
@@ -183,24 +183,7 @@
                         </div>
                          
                     </div>
-                     <div class="card-custom">
-                        <h3>Voucher & Referral</h3>
-                        
-                        <div class="voucher-header">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-patch-check" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M10.354 6.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
-                                <path d="m10.273 2.513-.921-.944.715-.698.622.637.89-.011a2.89 2.89 0 0 1 2.924 2.924l-.01.89.636.622a2.89 2.89 0 0 1 0 4.134l-.637.622.011.89a2.89 2.89 0 0 1-2.924 2.924l-.89-.01-.622.636a2.89 2.89 0 0 1-4.134 0l-.622-.637-.89.011a2.89 2.89 0 0 1-2.924-2.924l.01-.89-.636-.622a2.89 2.89 0 0 1 0-4.134l.637-.622-.011-.89a2.89 2.89 0 0 1 2.924-2.924l.89.01.622-.636a2.89 2.89 0 0 1 4.134 0l-.715.698a1.89 1.89 0 0 0-2.704 0l-.92.944-1.32-.016a1.89 1.89 0 0 0-1.911 1.912l.016 1.318-.944.921a1.89 1.89 0 0 0 0 2.704l.944.92-.016 1.32a1.89 1.89 0 0 0 1.912 1.911l1.318-.016.921.944a1.89 1.89 0 0 0 2.704 0l.92-.944 1.32.016a1.89 1.89 0 0 0 1.911-1.912l-.016-1.318.944-.921a1.89 1.89 0 0 0 0-2.704l-.944-.92.016-1.32a1.89 1.89 0 0 0-1.912-1.911z"/>
-                            </svg>
-                            Kode Voucher
-                        </div>
-                        <div class="voucher-input-group">
-                            <input type="text" class="form-control-custom" placeholder="Input Kode Voucher" name="voucher_code">
-                            <button type="button" class="btn-check-voucher">Cek</button>
-                        </div>
-                        <div class="referral-event" style="margin-bottom:25px;margin-top:10px"> <label class="form-label-custom">Kode Referral</label>
-                            <input type="text" class="form-control-custom" name="referral_code" placeholder="Kode Referral (Opsional)">
-                        </div>
-                    </div>
+                    
                     
                 </div>
 
@@ -216,35 +199,140 @@
                             <div class="order-info">
                                 <h5>{{ isset($event)? $event->title : 'Event Title' }}</h5>
                                 <p>IdSpora</p>
-                                <div class="price-text">
+                                <div class="price-text" id="eventPriceText" data-base-amount="{{ (int) round($finalPrice ?? 0) }}">
                                     @if($isFree) FREE @else Rp{{ number_format($finalPrice,0,',','.') }} @endif
                                 </div>
                             </div>
                         </div>
-                         <div class="mt-3 text-center">
-                            <img src="{{ asset('aset/qr-payment-idSpora.png') }}" alt="QRIS" style="max-width:220px;cursor:pointer;" id="qrisImage">
-                            <div class="small text-muted mt-2">Scan QRIS di atas untuk membayar secara manual</div>
-                        </div>
+
+                            @if(!$isFree)
+                                <div class="mt-3">
+                                    <div class="form-label-custom" style="margin-bottom:6px;">Metode Pembayaran</div>
+                                   <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                            <input type="radio" name="payment_method" value="manual" checked>
+                             Manual (QRIS + upload bukti)
+                                 </label>
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                         <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif>
+                         Midtrans
+                     </label>
+                    </div>
+                                    @if(!$midtransClientKey)
+                                        <div class="small text-muted" style="margin-top:6px;">Midtrans belum dikonfigurasi.</div>
+                                    @endif
+                                </div>
+                            @endif
+
                     </div>
 
-
-                    <div class="upload-bukti">
-                        <div class="mt-3">
-                            <h3>Upload Bukti Pembayaran </h3>
-                            <small>Dengan (JPEG/PNG, max 5MB)</small>
-                            <input type="file" name="payment_proof" accept="image/*" class="form-control-custom">
-                   
-                        </div>
-
-                        <button type="submit" class="btn-pay">
-                            @if(isset($event) && $isFree) Daftar Gratis @else Kirim Bukti Pembayaran @endif
-                        </button>
-                        
+                    <div class="mt-3" id="manualPaySection">
+                        @if(isset($event) && $isFree)
+                            <button type="submit" class="btn-pay">Daftar Gratis</button>
+                        @else
+                            <button type="button" id="showQrisBtn" class="btn-pay" disabled>Bayar</button>
+                        @endif
                     </div>
+
+                    @if(!$isFree)
+                        <div id="midtransSection" style="display:none;">
+                            <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Bayar dengan Midtrans</button>
+                            <div class="small text-muted mt-2">Pembayaran akan terverifikasi otomatis setelah sukses.</div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </form>
+
+    <!-- QRIS Modal (manual) - mirip Course payment -->
+    @if(!isset($event) || !(isset($event) && $isFree))
+    <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
+
+                    <img id="qrisImage" class="qris-image" src="{{ asset('aset/qr-payment-idSpora.png') }}" alt="QRIS Payment" style="max-width: 260px; width: 100%; height: auto; border-radius: 10px; border: 1px solid #e5e7eb;">
+
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{{ asset('aset/qr-payment-idSpora.png') }}" class="btn btn-outline-primary" download>
+                            Download QR
+                        </a>
+                        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadProofCollapse" aria-expanded="false" aria-controls="uploadProofCollapse">
+                            Saya sudah bayar, upload bukti
+                        </button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+
+                    <div class="collapse mt-3 text-start" id="uploadProofCollapse">
+                        <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
+                            <p class="mb-2 text-secondary">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
+
+                            <div class="mb-2">
+                                <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
+                                <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required form="paymentForm">
+                            </div>
+                            <div id="proofPreview" class="mb-3" style="display:none;">
+                                <p class="mb-1">Preview bukti:</p>
+                                <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
+                            </div>
+
+                            <button type="submit" id="payNowBtn" class="btn-pay" style="margin-top: 0;" form="paymentForm" disabled>Bayar Sekarang</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm proof submission Modal -->
+    <div class="modal fade" id="confirmProofModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi Bukti Pembayaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1 fw-semibold">Yakin untuk bukti pembayaran sudah benar?</p>
+                    <p class="mb-0 text-danger">Tindakan ini tidak dapat dibatalkan!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" id="confirmProofSubmitBtn" class="btn btn-primary">Ya, kirim</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Midtrans Success Modal (Checklist hijau) -->
+    <div class="modal fade" id="midtransSuccessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
+                <div class="modal-body p-4 text-center">
+                    <div class="d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 64px; height: 64px; background: rgba(22, 163, 74, 0.12); border-radius: 50%;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#16A34A" viewBox="0 0 16 16" aria-hidden="true">
+                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/>
+                        </svg>
+                    </div>
+                    <h5 class="mb-2" style="font-weight: 700;">Berhasil!</h5>
+                    <div id="midtransSuccessModalText" class="text-muted" style="font-size: 14px;"></div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px 18px; font-weight: 600;">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function(){
@@ -253,40 +341,401 @@
         const fullName = form.querySelector('input[name="full_name"]');
         const dial = form.querySelector('select[name="dial_code"]');
         const wa = form.querySelector('input[name="whatsapp"]');
-        const proof = form.querySelector('input[name="payment_proof"]');
-        const btn = form.querySelector('.btn-pay');
+        const showQrisBtn = document.getElementById('showQrisBtn');
+        const paymentProofInput = document.getElementById('paymentProofInput');
+        const payNowBtn = document.getElementById('payNowBtn');
+        const methodRadios = form.querySelectorAll('input[name="payment_method"]');
+        const manualPaySection = document.getElementById('manualPaySection');
+        const midtransSection = document.getElementById('midtransSection');
+        const midtransPayBtn = document.getElementById('midtransPayBtn');
         const isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
+
+        let pendingProofSubmit = false;
+
+        function getSelectedMethod(){
+            const checked = form.querySelector('input[name="payment_method"]:checked');
+            return checked ? checked.value : 'manual';
+        }
+
+        function toggleMethodUI(){
+            if(isFree) return;
+            const method = getSelectedMethod();
+            const isManual = method === 'manual';
+            if(manualPaySection) manualPaySection.style.display = isManual ? '' : 'none';
+            if(midtransSection) midtransSection.style.display = isManual ? 'none' : '';
+        }
 
         function isValidPhone(val){ return /^[0-9]{6,15}$/.test(String(val || '').trim()); }
 
         function validate(){
-            if(isFree){ btn.disabled = false; btn.style.opacity = '1'; return true; }
+            if(isFree){
+                return true;
+            }
+            const method = getSelectedMethod();
             const nameOk = fullName && fullName.value.trim().length >= 3;
             const dialOk = dial && dial.value.trim() !== '';
             const waOk = wa && isValidPhone(wa.value);
-            const proofOk = proof && proof.files.length > 0;
-            const ok = nameOk && dialOk && waOk && proofOk;
-            if(btn){ btn.disabled = !ok; btn.style.opacity = ok ? '1' : '0.5'; }
-            return ok;
+            const okMidtrans = nameOk && dialOk && waOk;
+            const okManualBase = nameOk && dialOk && waOk;
+            if(showQrisBtn){
+                showQrisBtn.disabled = !(method === 'manual' && okManualBase);
+                showQrisBtn.style.opacity = (method === 'manual' && okManualBase) ? '1' : '0.5';
+            }
+            if(midtransPayBtn){
+                midtransPayBtn.disabled = !(method === 'midtrans' && okMidtrans);
+                midtransPayBtn.style.opacity = (method === 'midtrans' && okMidtrans) ? '1' : '0.5';
+            }
+            // payNow button depends on proof selected
+            if(payNowBtn){
+                const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
+                payNowBtn.disabled = !(method === 'manual' && okManualBase && proofOk);
+            }
+            return (method === 'midtrans') ? okMidtrans : okManualBase;
         }
 
         ['input','change','keyup','blur'].forEach(evt => {
             if(fullName) fullName.addEventListener(evt, validate);
             if(dial) dial.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
-            if(proof) proof.addEventListener(evt, validate);
+            if(paymentProofInput) paymentProofInput.addEventListener(evt, validate);
         });
 
+        if(methodRadios && methodRadios.length){
+            methodRadios.forEach(r => r.addEventListener('change', function(){
+                toggleMethodUI();
+                validate();
+            }));
+        }
+
         form.addEventListener('submit', function(e){
+            if(!isFree && getSelectedMethod() === 'midtrans'){
+                e.preventDefault();
+                return;
+            }
+            if(!isFree && getSelectedMethod() === 'manual'){
+                // Require proof for manual submit
+                const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
+                if(!proofOk){
+                    e.preventDefault();
+                    alert('Silakan upload bukti pembayaran terlebih dahulu.');
+                    return;
+                }
+
+                if(pendingProofSubmit){
+                    return;
+                }
+
+                e.preventDefault();
+                const confirmModalEl = document.getElementById('confirmProofModal');
+                if(confirmModalEl && window.bootstrap){
+                    const m = window.bootstrap.Modal.getOrCreateInstance(confirmModalEl);
+                    m.show();
+                } else {
+                    // If bootstrap modal is unavailable, submit directly
+                    pendingProofSubmit = true;
+                    form.submit();
+                }
+                return;
+            }
+
             if(!validate()){
                 e.preventDefault();
-                alert('Lengkapi data peserta sebelum mengirim bukti pembayaran.');
+                alert('Lengkapi data peserta sebelum membayar.');
             }
-            // otherwise allow normal form submission (multipart upload handled by server)
         });
 
         // initial
+        toggleMethodUI();
         validate();
+
+        // Manual QRIS modal open
+        if(showQrisBtn){
+            showQrisBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                validate();
+                if(showQrisBtn.disabled){
+                    alert('Lengkapi data peserta terlebih dahulu.');
+                    return;
+                }
+
+                const qrisEl = document.getElementById('qrisModal');
+                if(qrisEl && window.bootstrap){
+                    try {
+                        const collapseEl = document.getElementById('uploadProofCollapse');
+                        if(collapseEl && window.bootstrap.Collapse){
+                            const collapse = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+                            collapse.hide();
+                        }
+                        const proofPreviewEl = document.getElementById('proofPreview');
+                        if(paymentProofInput) paymentProofInput.value = '';
+                        if(proofPreviewEl) proofPreviewEl.style.display = 'none';
+                        if(payNowBtn) payNowBtn.disabled = true;
+                    } catch(_e) {}
+
+                    const modal = window.bootstrap.Modal.getOrCreateInstance(qrisEl);
+                    modal.show();
+                }
+            });
+        }
+
+        // Proof preview + size validation
+        if(paymentProofInput){
+            paymentProofInput.addEventListener('change', function(){
+                const file = paymentProofInput.files && paymentProofInput.files[0];
+                const proofPreviewEl = document.getElementById('proofPreview');
+                const proofPreviewImg = document.getElementById('proofPreviewImg');
+                if(!file){
+                    if(proofPreviewEl) proofPreviewEl.style.display = 'none';
+                    validate();
+                    return;
+                }
+                if(file.size > 5 * 1024 * 1024){
+                    alert('Ukuran file terlalu besar. Maksimal 5MB.');
+                    paymentProofInput.value = '';
+                    if(proofPreviewEl) proofPreviewEl.style.display = 'none';
+                    validate();
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt){
+                    if(proofPreviewImg) proofPreviewImg.src = evt.target.result;
+                    if(proofPreviewEl) proofPreviewEl.style.display = 'block';
+                    validate();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Confirm modal submit
+        const confirmProofModalEl = document.getElementById('confirmProofModal');
+        const confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
+        if(confirmProofModalEl && confirmProofSubmitBtn){
+            confirmProofSubmitBtn.addEventListener('click', function(){
+                if(pendingProofSubmit) return;
+                pendingProofSubmit = true;
+                try { confirmProofSubmitBtn.disabled = true; } catch(_e) {}
+                form.submit();
+            });
+
+            confirmProofModalEl.addEventListener('hidden.bs.modal', function(){
+                pendingProofSubmit = false;
+                try { confirmProofSubmitBtn.disabled = false; } catch(_e) {}
+            });
+        }
+
+        // Midtrans flow
+        const snapTokenUrl = @json(isset($event) ? route('payment.snap-token', $event->id) : '');
+        const pendingOrderUrl = @json(isset($event) ? route('payment.pending-order', $event->id) : '');
+        const finalizeUrl = @json(isset($event) ? route('payment.finalize', $event->id) : '');
+        const eventTitle = @json(isset($event) ? ($event->title ?? 'Event') : 'Event');
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        function showMidtransSuccessModal(){
+            const text = document.getElementById('midtransSuccessModalText');
+            if (text) {
+                text.textContent = 'Anda berhasil terdaftar di event "' + eventTitle + '".';
+            }
+
+            const modalEl = document.getElementById('midtransSuccessModal');
+            if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                const m = window.bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static', keyboard: false });
+                m.show();
+            }
+        }
+
+        let cachedPending = null;
+
+        async function fetchPendingOrder(){
+            if(!pendingOrderUrl) return null;
+            try{
+                const res = await fetch(pendingOrderUrl, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+                const data = await res.json();
+                if(!res.ok) return null;
+                return data;
+            } catch(_e){
+                return null;
+            }
+        }
+
+        async function ensurePendingLabel(){
+            if(!midtransPayBtn || !pendingOrderUrl) return;
+            const pending = await fetchPendingOrder();
+            cachedPending = pending;
+            if(pending && pending.pending && pending.order_id){
+                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+
+                // Autofill WA from pending payment if empty
+                if (pending.whatsapp_number && wa && (!wa.value || wa.value.trim() === '')) {
+                    const raw = String(pending.whatsapp_number).trim();
+                    // Expect formats like +62xxxxxxxx or 62xxxxxxxx or 0xxxxxxxx
+                    const dialEl = dial;
+                    if (raw.startsWith('+')) {
+                        const m = raw.match(/^\+(\d{1,3})(.*)$/);
+                        if (m) {
+                            const dialCode = '+' + m[1];
+                            const rest = String(m[2] || '').replace(/\D/g, '');
+                            if (dialEl) {
+                                const opt = Array.from(dialEl.options || []).find(o => o.value === dialCode);
+                                if (opt) dialEl.value = dialCode;
+                            }
+                            wa.value = rest;
+                        }
+                    } else {
+                        wa.value = raw.replace(/\D/g, '');
+                    }
+                }
+
+                // Auto select Midtrans and disable Manual option while pending
+                const midtransRadio = form.querySelector('input[name="payment_method"][value="midtrans"]');
+                const manualRadio = form.querySelector('input[name="payment_method"][value="manual"]');
+                if (midtransRadio && !midtransRadio.disabled) {
+                    midtransRadio.checked = true;
+                }
+                if (manualRadio) {
+                    manualRadio.disabled = true;
+                }
+                if (paymentProofInput) paymentProofInput.disabled = true;
+                if (showQrisBtn) showQrisBtn.disabled = true;
+
+                toggleMethodUI();
+                validate();
+            }
+        }
+
+        async function postFinalize(orderId){
+            if(!finalizeUrl) return null;
+            const res = await fetch(finalizeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ order_id: orderId })
+            });
+            return await res.json();
+        }
+
+        async function startMidtrans(){
+            if(typeof window.snap === 'undefined'){
+                alert('Midtrans belum siap. Pastikan client key sudah diset.');
+                return;
+            }
+
+            const forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
+
+            // ensure validation up-to-date
+            validate();
+            if(midtransPayBtn && midtransPayBtn.disabled){
+                alert('Lengkapi data peserta sebelum membayar.');
+                return;
+            }
+
+            const dialVal = (dial ? dial.value : '').trim();
+            const waVal = (wa ? wa.value : '').trim();
+
+            async function getOrCreateSnapToken(forceNew){
+                // Prefer pending order token if available
+                const pending = cachedPending || await fetchPendingOrder();
+                cachedPending = pending;
+                if(!forceNew && pending && pending.pending && pending.order_id && pending.snap_token){
+                    return { snap_token: pending.snap_token, order_id: pending.order_id };
+                }
+
+                const url = new URL(snapTokenUrl, window.location.origin);
+                if(dialVal) url.searchParams.set('dial_code', dialVal);
+                if(waVal) url.searchParams.set('whatsapp', waVal);
+                if(forceNew) url.searchParams.set('force_new', '1');
+
+                const res = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+                const data = await res.json();
+                if(!res.ok || !data || !data.snap_token){
+                    throw new Error(data && data.message ? data.message : 'Gagal membuat token Midtrans');
+                }
+                return data;
+            }
+
+            midtransPayBtn.disabled = true;
+            const originalText = midtransPayBtn.textContent;
+            midtransPayBtn.textContent = 'Memproses...';
+
+            try{
+                let data;
+                if (forceNewFromQuery) {
+                    // Explicit user intent: always create a new Midtrans transaction.
+                    cachedPending = null;
+                    data = await getOrCreateSnapToken(true);
+                } else {
+                    try {
+                        data = await getOrCreateSnapToken(false);
+                    } catch(e) {
+                        // One-time fallback: force new transaction if needed
+                        data = await getOrCreateSnapToken(true);
+                    }
+                }
+
+                // If we used pending order, make label reflect it
+                if(data && data.snap_token && originalText !== 'Lanjutkan pembayaran Midtrans'){
+                    try { await ensurePendingLabel(); } catch(_e) {}
+                }
+
+                window.snap.pay(data.snap_token, {
+                    onSuccess: async function(){
+                        try {
+                            await postFinalize(data.order_id);
+                        } catch(_e) {}
+                        showMidtransSuccessModal();
+                        // Give user a moment to see success modal before redirect
+                        setTimeout(function(){
+                            window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                        }, 1400);
+                    },
+                    onPending: async function(){
+                        // keep as pending; user can retry later
+                        try { await postFinalize(data.order_id); } catch(_e) {}
+                        alert('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.');
+                        // Update label for next attempt
+                        cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
+                        if(midtransPayBtn) midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                    },
+                    onError: function(){
+                        alert('Pembayaran gagal. Silakan coba lagi.');
+                    },
+                    onClose: function(){
+                        // user closed popup
+                    }
+                });
+            } catch(e){
+                alert(String(e && e.message ? e.message : e));
+            } finally {
+                midtransPayBtn.disabled = false;
+                if(cachedPending && cachedPending.pending && cachedPending.order_id){
+                    midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                } else {
+                    midtransPayBtn.textContent = originalText;
+                }
+                validate();
+            }
+        }
+
+        if(midtransPayBtn){
+            midtransPayBtn.addEventListener('click', function(e){
+                e.preventDefault();
+                startMidtrans();
+            });
+        }
+
+        // If there is a pending Midtrans payment, show "continue" label
+        ensurePendingLabel();
     });
     </script>
 </body>

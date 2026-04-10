@@ -27,6 +27,11 @@ use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
+    private const AUTO_TEMPLATE_UNITS_BY_LEVEL = [
+        'beginner' => 3,
+        'intermediate' => 6,
+        'advanced' => 12,
+    ];
     /**
      * Show the payment page for a course.
      */
@@ -48,7 +53,7 @@ class CourseController extends Controller
             ->where('course_id', $course->id)
             ->first();
 
-        $enrolledActive = $enrollment && $enrollment->status === 'active';
+        $enrolledActive = $enrollment && in_array((string) $enrollment->status, ['active', 'completed'], true);
 
         $hasSettledPayment = ManualPayment::query()
             ->where('user_id', $user->id)
@@ -70,8 +75,10 @@ class CourseController extends Controller
                 ['status' => 'active']
             );
             if ($enrollment->status !== 'active') {
-                $enrollment->status = 'active';
-                $enrollment->save();
+                if ((string) $enrollment->status !== 'completed') {
+                    $enrollment->status = 'active';
+                    $enrollment->save();
+                }
             }
         }
 
@@ -164,15 +171,123 @@ class CourseController extends Controller
             }
 
             if ($markCompleted) {
-                Progress::query()->updateOrCreate(
-                    [
-                        'enrollment_id' => $enrollment->id,
-                        'course_module_id' => $currentModule->id,
-                    ],
-                    [
-                        'completed' => true,
-                    ]
-                );
+                // The UI groups PDF+Video as a single "Materi" item.
+                // If we only mark the currently selected module (e.g. PDF),
+                // progress can never reach 100% because Video is counted as a separate module.
+                $moduleIdsToMark = [(int) $currentModule->id];
+
+                if (in_array($moduleType, ['pdf', 'video'], true)) {
+                    $normalizeGroupKey = function (string $title, int $fallbackIndex = 1): string {
+                        $t = trim($title);
+                        if ($t === '') {
+                            return 'UNIT_' . $fallbackIndex;
+                        }
+
+                        if (preg_match('/^(Module\s*\d+)/i', $t, $m)) {
+                            return mb_strtoupper(trim($m[1]));
+                        }
+
+                        $t2 = preg_replace('/\s*-\s*(PDF\s*Material|Video\s*Lesson|Quiz)\s*$/i', '', $t);
+                        $t2 = trim((string) $t2);
+                        return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_' . $fallbackIndex);
+                    };
+
+                    $isGenericUnitTitle = function (string $title): bool {
+                        $t = trim($title);
+                        return (bool) preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $t);
+                    };
+
+                    $currentGroupKey = null;
+                    $unitCounter = 1;
+                    $currentGenericKey = null;
+
+                    foreach ($modules as $m) {
+                        $titleStr = (string) ($m->title ?? '');
+                        $type = strtolower(trim((string) ($m->type ?? '')));
+
+                        if ($isGenericUnitTitle($titleStr)) {
+                            if (!$currentGenericKey) {
+                                $currentGenericKey = 'UNIT_' . $unitCounter;
+                                $unitCounter++;
+                            }
+                            $key = $currentGenericKey;
+                            if ($type === 'quiz') {
+                                $currentGenericKey = null;
+                            }
+                        } else {
+                            $currentGenericKey = null;
+                            $key = $normalizeGroupKey($titleStr, $unitCounter);
+                            if (str_starts_with($key, 'UNIT_')) {
+                                $unitCounter++;
+                            }
+                        }
+
+                        if ((int) ($m->id ?? 0) === (int) $currentModule->id) {
+                            $currentGroupKey = $key;
+                            break;
+                        }
+                    }
+
+                    if ($currentGroupKey) {
+                        // Collect PDF+Video ids in the same group.
+                        $unitCounter = 1;
+                        $currentGenericKey = null;
+                        foreach ($modules as $m) {
+                            $titleStr = (string) ($m->title ?? '');
+                            $type = strtolower(trim((string) ($m->type ?? '')));
+
+                            if ($isGenericUnitTitle($titleStr)) {
+                                if (!$currentGenericKey) {
+                                    $currentGenericKey = 'UNIT_' . $unitCounter;
+                                    $unitCounter++;
+                                }
+                                $key = $currentGenericKey;
+                                if ($type === 'quiz') {
+                                    $currentGenericKey = null;
+                                }
+                            } else {
+                                $currentGenericKey = null;
+                                $key = $normalizeGroupKey($titleStr, $unitCounter);
+                                if (str_starts_with($key, 'UNIT_')) {
+                                    $unitCounter++;
+                                }
+                            }
+
+                            if ($key !== $currentGroupKey) {
+                                continue;
+                            }
+
+                            if (in_array($type, ['pdf', 'video'], true)) {
+                                $moduleIdsToMark[] = (int) $m->id;
+                            }
+                        }
+                    }
+                }
+
+                $moduleIdsToMark = array_values(array_unique(array_filter($moduleIdsToMark, fn ($id) => $id > 0)));
+                foreach ($moduleIdsToMark as $mid) {
+                    Progress::query()->updateOrCreate(
+                        [
+                            'enrollment_id' => $enrollment->id,
+                            'course_module_id' => $mid,
+                        ],
+                        [
+                            'completed' => true,
+                        ]
+                    );
+                }
+
+                // If all modules are completed, mark enrollment completed (needed for certificate readiness).
+                $enrollment->setRelation('course', $course);
+                if ($enrollment->getProgressPercentage() >= 100) {
+                    if ((string) $enrollment->status !== 'completed') {
+                        $enrollment->status = 'completed';
+                    }
+                    if (!$enrollment->completed_at) {
+                        $enrollment->completed_at = now();
+                    }
+                    $enrollment->save();
+                }
             }
         }
 
@@ -229,6 +344,26 @@ class CourseController extends Controller
     }
 
     /**
+     * Unpublish course: cancel publish by setting status back to 'approved'.
+     */
+    public function unpublish(Request $request, Course $course)
+    {
+        if (((string) $course->status) !== 'active') {
+            return redirect()
+                ->route('admin.courses.index')
+                ->with('error', 'Course ini belum diterbitkan');
+        }
+
+        // Return to pre-publish state so it no longer appears on public pages
+        $course->status = 'approved';
+        $course->save();
+
+        return redirect()
+            ->route('admin.courses.index')
+            ->with('success', 'Publish course berhasil dibatalkan.');
+    }
+
+    /**
      * Strip HTML tags and normalize whitespace from description input.
      */
     private function sanitizeDescription(?string $html): string
@@ -244,7 +379,6 @@ class CourseController extends Controller
         $trainer = User::query()
             ->where('id', $trainerId)
             ->where('role', 'trainer')
-            ->where('user_status', 'active')
             ->first();
 
         if (!$trainer) {
@@ -256,23 +390,24 @@ class CourseController extends Controller
             'type' => 'course_invitation',
             'title' => 'Undangan Menjadi Trainer Course',
             'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
-            'invitation_status' => 'pending',
             'data' => [
                 'entity_type' => 'course',
                 'entity_id' => $course->id,
                 'url' => route('trainer.detail-course', $course->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'due_at' => now()->addHours(24)->toIso8601String(),
+                'due_at' => now()->addDays(7)->toIso8601String(),
             ],
         ]);
     }
 
     /**
-     * Resolve template by course level.
-     * If a manual template is provided but level mismatches, it is ignored.
+     * Resolve a template for a course.
+     * - If a template is explicitly selected, always honor it (no silent ignore).
+     * - If not selected, auto-pick the latest active template matching level,
+     *   preferring the same category when available.
      */
-    private function resolveTemplateForCourse(?int $templateId, string $level): ?CourseTemplate
+    private function resolveTemplateForCourse(?int $templateId, string $level, ?int $categoryId = null): ?CourseTemplate
     {
         if (!empty($templateId)) {
             $selected = CourseTemplate::query()
@@ -280,19 +415,122 @@ class CourseController extends Controller
                 ->with('modules')
                 ->find($templateId);
 
-            if ($selected && (string) $selected->level === (string) $level) {
-                return $selected;
+            if ($selected) {
+                $this->ensureAutoTemplateHasMinimumUnits($selected, $this->autoTemplateMinUnitsForLevel((string) ($selected->level ?? $level)));
+                $selected->load('modules');
             }
+
+            return $selected ?: null;
         }
 
-        // Auto-pick latest active template for the chosen level.
-        return CourseTemplate::query()
+        $query = CourseTemplate::query()
             ->where('status', 'active')
             ->where('level', $level)
+            ->with('modules');
+
+        if (!empty($categoryId)) {
+            // Prefer same category, but allow generic templates (NULL category).
+            $query->where(function ($q) use ($categoryId) {
+                $q->where('category_id', $categoryId)->orWhereNull('category_id');
+            });
+            $query->orderByRaw('CASE WHEN category_id = ? THEN 0 WHEN category_id IS NULL THEN 1 ELSE 2 END', [$categoryId]);
+        }
+
+        $resolved = $query
             ->orderByDesc('version')
             ->orderByDesc('id')
-            ->with('modules')
             ->first();
+
+        if ($resolved) {
+            $this->ensureAutoTemplateHasMinimumUnits($resolved, $this->autoTemplateMinUnitsForLevel((string) ($resolved->level ?? $level)));
+            $resolved->load('modules');
+            return $resolved;
+        }
+
+        // No template exists yet: create a minimal default template for this level.
+        if (!in_array($level, ['beginner', 'intermediate', 'advanced'], true)) {
+            return null;
+        }
+
+        $baseName = 'Auto Template - ' . ucfirst($level);
+        $existingVersion = (int) CourseTemplate::query()
+            ->where('name', $baseName)
+            ->max('version');
+        $nextVersion = max(1, $existingVersion + 1);
+
+        $newTemplate = CourseTemplate::create([
+            'name' => $baseName,
+            'category_id' => null,
+            'level' => $level,
+            'version' => $nextVersion,
+            'status' => 'active',
+            'created_by' => auth()->id(),
+            'description' => 'Auto-generated default template for level ' . $level,
+        ]);
+
+        $this->ensureAutoTemplateHasMinimumUnits($newTemplate, $this->autoTemplateMinUnitsForLevel($level));
+
+        return $newTemplate->load('modules');
+    }
+
+    private function ensureAutoTemplateHasMinimumUnits(CourseTemplate $template, int $minUnits): void
+    {
+        $name = (string) ($template->name ?? '');
+        if (!str_starts_with($name, 'Auto Template - ')) {
+            return;
+        }
+
+        $minUnits = max(1, $minUnits);
+        $targetSlots = $minUnits * 3;
+
+        $existingSlots = (int) $template->modules()->count();
+        if ($existingSlots >= $targetSlots) {
+            return;
+        }
+
+        $maxOrderNo = (int) $template->modules()->max('order_no');
+        $nextOrderNo = max(0, $maxOrderNo) + 1;
+
+        $startUnit = (int) floor($existingSlots / 3) + 1;
+        $rows = [];
+
+        for ($unit = $startUnit; $unit <= $minUnits; $unit++) {
+            $rows[] = [
+                'order_no' => $nextOrderNo++,
+                'title' => 'Module ' . $unit . ' - PDF Material',
+                'description' => null,
+                'type' => 'pdf',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $nextOrderNo++,
+                'title' => 'Module ' . $unit . ' - Video Lesson',
+                'description' => null,
+                'type' => 'video',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+            $rows[] = [
+                'order_no' => $nextOrderNo++,
+                'title' => 'Module ' . $unit . ' - Quiz',
+                'description' => null,
+                'type' => 'quiz',
+                'is_required' => true,
+                'duration' => 0,
+            ];
+        }
+
+        if (!empty($rows)) {
+            $template->modules()->createMany($rows);
+        }
+    }
+
+    private function autoTemplateMinUnitsForLevel(string $level): int
+    {
+        $lvl = strtolower(trim($level));
+        $units = (int) (self::AUTO_TEMPLATE_UNITS_BY_LEVEL[$lvl] ?? 3);
+        return max(1, $units);
     }
 
     /**
@@ -385,6 +623,52 @@ class CourseController extends Controller
         return view('admin.courses.index', compact('courses'));
     }
 
+    private function missingMaterialLabelsFromModules($modules): array
+    {
+        $modules = $modules ?? collect();
+        if (!($modules instanceof \Illuminate\Support\Collection)) {
+            $modules = collect($modules);
+        }
+
+        $missing = [];
+
+        if ($modules->count() <= 0) {
+            $missing[] = 'Modul';
+        }
+
+        $pdfSlots = $modules->where('type', 'pdf');
+        if ($pdfSlots->count() <= 0 || $pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0) {
+            $missing[] = 'Modul (PDF)';
+        }
+
+        $videoSlots = $modules->where('type', 'video');
+        if ($videoSlots->count() <= 0 || $videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0) {
+            $missing[] = 'Video';
+        }
+
+        $quizSlots = $modules->where('type', 'quiz');
+        if ($quizSlots->count() <= 0) {
+            $missing[] = 'Kuis';
+        } else {
+            $missingQuiz = $quizSlots->filter(function ($m) {
+                $count = null;
+                if (isset($m->quiz_questions_count)) {
+                    $count = (int) $m->quiz_questions_count;
+                } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                    $count = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                }
+                $count = (int) ($count ?? 0);
+                return $count <= 0;
+            })->count();
+
+            if ($missingQuiz > 0) {
+                $missing[] = 'Kuis';
+            }
+        }
+
+        return array_values(array_unique(array_filter($missing)));
+    }
+
     public function export(Request $request)
     {
         $format = (string) $request->get('format', 'pdf');
@@ -392,7 +676,12 @@ class CourseController extends Controller
         $month = trim((string) $request->get('month', '')); // YYYY-MM
 
         $coursesQuery = Course::query()
-            ->with(['category', 'modules'])
+            ->with([
+                'category',
+                'modules' => function ($q) {
+                    $q->withCount('quizQuestions');
+                },
+            ])
             ->orderByDesc('created_at');
 
         if ($q !== '') {
@@ -531,9 +820,9 @@ class CourseController extends Controller
                 $quizCount = $modules->where('type', 'quiz')->count();
                 $totalModules = $modules->count();
 
-                $hasModules = $totalModules > 0;
                 $isPublished = ((string) $course->status) === 'active';
-                $kelengkapan = $isPublished ? 'Complete' : ($hasModules ? 'In Progress' : 'Missing Material');
+                $missing = $this->missingMaterialLabelsFromModules($modules);
+                $kelengkapan = $isPublished ? 'Complete' : (!empty($missing) ? 'Missing Material' : 'In Progress');
 
                 fputcsv($file, [
                     $course->id,
@@ -559,7 +848,12 @@ class CourseController extends Controller
 
     public function show(Request $request, Course $course)
     {
-        $course->load('category', 'modules', 'trainer');
+        $course->load([
+            'category',
+            'modules' => function ($q) {
+                $q->orderBy('order_no')->withCount('quizQuestions');
+            },
+        ]);
         // Students enrolled (use active enrollments for the count)
         $course->loadCount([
             'enrollments as students_count' => function ($q) {
@@ -586,7 +880,6 @@ class CourseController extends Controller
         $categories = Category::all();
         $trainers = User::query()
             ->whereRaw('LOWER(role) = ?', ['trainer'])
-            ->where('user_status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
         $templates = CourseTemplate::query()
@@ -600,15 +893,27 @@ class CourseController extends Controller
 
     public function store(Request $request)
     {
+        // New courses are created as 'archive' by default.
+        // (UI does not expose status selection on create.)
+        $request->merge(['status' => 'archive']);
+
+        // Allow price inputs with thousand separators (e.g. "1.000") by normalizing to digits.
+        if ($request->has('price')) {
+            $request->merge([
+                'price' => preg_replace('/[^0-9]/', '', (string) $request->input('price')),
+            ]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
+            'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
-                'nullable',
+                'required',
+                'integer',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereRaw('LOWER(role) = ?', ['trainer'])
-                        ->where('user_status', 'active');
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
             ],
             'description' => 'nullable|string',
@@ -617,10 +922,15 @@ class CourseController extends Controller
             'price' => 'required|integer|min:0',
             'duration' => 'required|integer|min:0',
             'image' => 'required|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
-            'card_thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
-            'discount_percent' => 'nullable|integer|min:1|max:100',
-            'discount_start' => 'nullable|date',
-            'discount_end' => 'nullable|date|after_or_equal:discount_start',
+            'card_thumbnail' => 'required|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'discount_start' => 'nullable|date|after_or_equal:today',
+            'discount_end' => [
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                Rule::when($request->filled('discount_start'), 'after_or_equal:discount_start'),
+            ],
             'free_access_mode' => 'nullable|in:all,limit_2',
             'expenses' => 'nullable|array',
             'expenses.*.item' => 'nullable|string|max:255',
@@ -629,11 +939,37 @@ class CourseController extends Controller
             'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
+            ,
+            'unit_titles' => 'nullable|array',
+            'unit_titles.*' => 'nullable|string|max:255',
         ]);
+
+        // Normalize discount fields: if discount is not set (null/0), ignore dates.
+        // If discount is set (>0) and dates are empty, default to today.
+        $priceValue = $request->filled('price') ? (int) $request->input('price') : 0;
+        $discountPercent = $request->filled('discount_percent') ? (int) $request->input('discount_percent') : null;
+        if ($priceValue <= 0 || empty($discountPercent)) {
+            $request->merge([
+                'discount_percent' => $discountPercent,
+                'discount_start' => null,
+                'discount_end' => null,
+            ]);
+        } else {
+            $start = $request->filled('discount_start') ? (string) $request->input('discount_start') : now()->toDateString();
+            $end = $request->filled('discount_end') ? (string) $request->input('discount_end') : $start;
+            if ($end < $start) {
+                $end = $start;
+            }
+            $request->merge([
+                'discount_start' => $start,
+                'discount_end' => $end,
+            ]);
+        }
 
         $template = $this->resolveTemplateForCourse(
             $request->filled('template_id') ? (int) $request->input('template_id') : null,
-            (string) $request->input('level')
+            (string) $request->input('level'),
+            $request->filled('category_id') ? (int) $request->input('category_id') : null
         );
 
         $expensesInput = $request->input('expenses');
@@ -686,6 +1022,7 @@ class CourseController extends Controller
             'status' => $request->status,
             'price' => $request->price,
             'free_access_mode' => $request->input('free_access_mode', 'limit_2'),
+            'is_reseller_course' => $request->boolean('is_reseller_course'),
             'duration' => $request->duration,
             'media' => $mediaPath,
             'media_type' => $mediaType,
@@ -795,7 +1132,6 @@ class CourseController extends Controller
         $categories = Category::all();
         $trainers = User::query()
             ->whereRaw('LOWER(role) = ?', ['trainer'])
-            ->where('user_status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
         $templates = CourseTemplate::query()
@@ -803,13 +1139,25 @@ class CourseController extends Controller
             ->withCount('modules')
             ->orderBy('name')
             ->get();
-        $course->load('modules.quizQuestions.answers');
+        $course->load('modules.quizQuestions.answers', 'units');
         return view('admin.courses.edit', compact('course', 'categories', 'templates', 'trainers'));
     }
 
     public function update(Request $request, Course $course)
     {
         $previousTrainerId = (int) ($course->trainer_id ?? 0);
+
+        // Status is controlled by publish flow: keep 'active' only if already published; otherwise lock to 'archive'.
+        $request->merge([
+            'status' => ((string) ($course->status ?? '')) === 'active' ? 'active' : 'archive',
+        ]);
+
+        // Allow price inputs with thousand separators (e.g. "1.000") by normalizing to digits.
+        if ($request->has('price')) {
+            $request->merge([
+                'price' => preg_replace('/[^0-9]/', '', (string) $request->input('price')),
+            ]);
+        }
 
         $delIdsRaw = $request->input('modules_delete_ids');
         if (is_array($delIdsRaw)) {
@@ -830,11 +1178,11 @@ class CourseController extends Controller
             'category_id' => 'required|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'sync_template_modules' => 'nullable|boolean',
+            'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->whereRaw('LOWER(role) = ?', ['trainer'])
-                        ->where('user_status', 'active');
+                    $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
             ],
             'description' => 'nullable|string',
@@ -843,6 +1191,15 @@ class CourseController extends Controller
             'price' => 'required|integer|min:0',
             'duration' => 'required|integer|min:0',
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,webm,ogg|max:204800',
+            'card_thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'discount_start' => 'nullable|date|after_or_equal:today',
+            'discount_end' => [
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                Rule::when($request->filled('discount_start'), 'after_or_equal:discount_start'),
+            ],
             // Legacy single-upload (kept for backward compatibility)
             'admin_video_file' => 'nullable|file|mimes:mp4,webm,ogg|max:204800',
             'admin_video_title' => 'nullable|string|max:255',
@@ -866,10 +1223,62 @@ class CourseController extends Controller
             'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
         ]);
 
+        // Normalize discount fields: if discount is not set (null/0), ignore dates.
+        // If discount is set (>0) and dates are empty, default to today.
+        $priceValue = $request->filled('price') ? (int) $request->input('price') : 0;
+        $discountPercent = $request->filled('discount_percent') ? (int) $request->input('discount_percent') : null;
+        if ($priceValue <= 0 || empty($discountPercent)) {
+            $request->merge([
+                'discount_percent' => $discountPercent,
+                'discount_start' => null,
+                'discount_end' => null,
+            ]);
+        } else {
+            $start = $request->filled('discount_start') ? (string) $request->input('discount_start') : now()->toDateString();
+            $end = $request->filled('discount_end') ? (string) $request->input('discount_end') : $start;
+            if ($end < $start) {
+                $end = $start;
+            }
+            $request->merge([
+                'discount_start' => $start,
+                'discount_end' => $end,
+            ]);
+        }
+
         $template = $this->resolveTemplateForCourse(
             $request->filled('template_id') ? (int) $request->input('template_id') : null,
-            (string) $request->input('level')
+            (string) $request->input('level'),
+            $request->filled('category_id') ? (int) $request->input('category_id') : null
         );
+
+        $expensesJson = null;
+        if ($request->exists('expenses')) {
+            $expensesInput = $request->input('expenses');
+            if (is_array($expensesInput)) {
+                $normalized = [];
+                foreach ($expensesInput as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $item = trim((string) ($row['item'] ?? ''));
+                    $qty = (int) ($row['quantity'] ?? 0);
+                    $unit = (int) ($row['unit_price'] ?? 0);
+                    if ($item === '' && $qty === 0 && $unit === 0) {
+                        continue;
+                    }
+                    $qty = max(0, $qty);
+                    $unit = max(0, $unit);
+                    $total = max(0, $qty * $unit);
+                    $normalized[] = [
+                        'item' => $item,
+                        'quantity' => $qty,
+                        'unit_price' => $unit,
+                        'total' => $total,
+                    ];
+                }
+                $expensesJson = !empty($normalized) ? $normalized : null;
+            }
+        }
 
         $data = [
             'name' => $request->name,
@@ -880,11 +1289,16 @@ class CourseController extends Controller
             'status' => $request->status,
             'price' => $request->price,
             'free_access_mode' => $request->input('free_access_mode', $course->free_access_mode ?? 'limit_2'),
+            'is_reseller_course' => $request->boolean('is_reseller_course'),
             'duration' => $request->duration,
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
             'discount_end' => $request->discount_end,
         ];
+
+        if ($request->exists('expenses')) {
+            $data['expenses_json'] = $expensesJson;
+        }
 
         if ($request->exists('template_id')) {
             $data['template_id'] = $template?->id;
@@ -1165,6 +1579,32 @@ class CourseController extends Controller
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
+            }
+        }
+
+        // Save Academic Unit header titles (admin-managed)
+        $unitTitles = $request->input('unit_titles');
+        if (is_array($unitTitles)) {
+            $unitCount = (int) ceil(max(0, (int) $course->modules()->count()) / 3);
+            foreach ($unitTitles as $unitNoRaw => $titleRaw) {
+                $unitNo = (int) $unitNoRaw;
+                if ($unitNo <= 0 || ($unitCount > 0 && $unitNo > $unitCount)) {
+                    continue;
+                }
+                $title = trim((string) $titleRaw);
+
+                if ($title === '') {
+                    \App\Models\CourseUnit::query()
+                        ->where('course_id', $course->id)
+                        ->where('unit_no', $unitNo)
+                        ->delete();
+                    continue;
+                }
+
+                \App\Models\CourseUnit::query()->updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => $unitNo],
+                    ['title' => $title]
+                );
             }
         }
 

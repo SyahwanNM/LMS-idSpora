@@ -74,16 +74,7 @@
                 <img src="{{ asset('aset/profile.png') }}" alt="profile" class="rounded-circle" width="60" height="60">
                 <div>
                     <h5 class="mb-1">{{ $event->title }}</h5>
-                    <h6 class="text-muted">
-                        Created by
-                        @if(!empty($event->trainer))
-                            <a href="{{ route('trainers.public.show', $event->trainer) }}" class="black" style="text-decoration:none; font-weight:600;">
-                                {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
-                            </a>
-                        @else
-                            <span class="black">idSpora</span>
-                        @endif
-                    </h6>
+                    <h6 class="text-muted">Created by <span class="black">idSpora</span></h6>
                 </div>
 
             </div>

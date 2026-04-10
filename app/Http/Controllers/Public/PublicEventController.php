@@ -13,13 +13,20 @@ class PublicEventController extends Controller
 {
 	public function index(Request $request)
 	{
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+
 		$query = Event::query()
 			->withCount([
-				'registrations as registrations_count' => function ($q) {
+				'registrations as registrations_count' => function($q){
 					$q->select(DB::raw('COUNT(DISTINCT user_id)'))
-						->where('status', 'active');
+					  ->where('status','active');
 				}
 			]);
+
+		// User-facing pages: only show published events
+		if (!$isAdmin) {
+			$query->where('is_published', true);
+		}
 
 		// Server-side status filter: upcoming | ongoing | finished | all (Semua Status)
 		$now = now()->format('Y-m-d H:i:s');
@@ -70,9 +77,9 @@ class PublicEventController extends Controller
 		if ($type = $request->get('event_type')) {
 			if ($type === 'online') {
 				$query->whereNotNull('zoom_link')
-					->where(function ($q) {
+					->where(function($q){
 						$q->whereNull('location')
-							->orWhere('location', 'like', '%online%');
+						  ->orWhere('location', 'like', '%online%');
 					});
 			} elseif ($type === 'onsite') {
 				$query->whereNull('zoom_link')
@@ -117,20 +124,24 @@ class PublicEventController extends Controller
 		}
 
 		$events = $query->paginate(12)->withQueryString();
-		$locations = Event::select('location')->whereNotNull('location')->distinct()->orderBy('location')->pluck('location');
+		$locationsQuery = Event::select('location')->whereNotNull('location');
+		if (!$isAdmin) {
+			$locationsQuery->where('is_published', true);
+		}
+		$locations = $locationsQuery->distinct()->orderBy('location')->pluck('location');
 
 		// Tandai event yang sudah diregistrasi user login
-		if ($request->user()) {
+		if($request->user()){
 			$userRegEventIds = $request->user()->eventRegistrations()
-				->where('status', '!=', 'rejected')
-				->pluck('event_id')->toArray();
+				->where('status', 'active')
+                ->pluck('event_id')->toArray();
+            
+            // Tandai event yang disimpan
+            $userSavedEventIds = DB::table('user_saved_events')
+                ->where('user_id', $request->user()->id)
+                ->pluck('event_id')->toArray();
 
-			// Tandai event yang disimpan
-			$userSavedEventIds = DB::table('user_saved_events')
-				->where('user_id', $request->user()->id)
-				->pluck('event_id')->toArray();
-
-			$events->getCollection()->transform(function ($ev) use ($userRegEventIds, $userSavedEventIds) {
+			$events->getCollection()->transform(function($ev) use ($userRegEventIds, $userSavedEventIds){
 				$ev->is_registered = in_array($ev->id, $userRegEventIds);
 				$ev->is_saved = in_array($ev->id, $userSavedEventIds);
 				return $ev;
@@ -153,8 +164,16 @@ class PublicEventController extends Controller
 			return redirect()->route('events.index');
 		}
 
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+
 		// Prefer exact (case-insensitive) match first
-		$exact = Event::whereRaw('LOWER(title) = ?', [mb_strtolower($search)])->first();
+		$exactQuery = Event::query();
+		if (!$isAdmin) {
+			$exactQuery->where('is_published', true);
+		}
+		$exact = $exactQuery
+			->whereRaw('LOWER(title) = ?', [mb_strtolower($search)])
+			->first();
 		if ($exact) {
 			return redirect()->route('events.show', $exact);
 		}
@@ -162,13 +181,17 @@ class PublicEventController extends Controller
 		// Then try best partial match, prioritize prefix matches
 		$likeTerm = "%{$search}%";
 		$prefixTerm = "{$search}%";
-		$best = Event::query()
+		$bestQuery = Event::query();
+		if (!$isAdmin) {
+			$bestQuery->where('is_published', true);
+		}
+		$best = $bestQuery
 			->orderByRaw('CASE WHEN title LIKE ? THEN 0 WHEN title LIKE ? THEN 1 ELSE 2 END', [$prefixTerm, $likeTerm])
 			->orderByDesc('created_at')
-			->where(function ($q) use ($likeTerm) {
-				$q->where('title', 'like', $likeTerm)
-					->orWhere('speaker', 'like', $likeTerm)
-					->orWhere('location', 'like', $likeTerm);
+			->where(function($q) use ($likeTerm){
+				$q->where('title','like',$likeTerm)
+				  ->orWhere('speaker','like',$likeTerm)
+				  ->orWhere('location','like',$likeTerm);
 			})
 			->first();
 		if ($best) {
@@ -181,14 +204,18 @@ class PublicEventController extends Controller
 
 	public function show(Event $event, Request $request)
 	{
-		$event->loadMissing('trainer');
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+		if (!$isAdmin && !(bool) $event->is_published) {
+			abort(404);
+		}
+
 		// Tandai sudah terdaftar (reuse logic ringkas)
 		$isRegistered = false;
-		if ($request->user()) {
+		if($request->user()){
 			$isRegistered = $request->user()->eventRegistrations()
-				->where('event_id', $event->id)
-				->where('status', '!=', 'rejected')
-				->exists();
+                ->where('event_id',$event->id)
+                ->where('status', 'active')
+                ->exists();
 		}
 		$event->is_registered = $isRegistered;
 		// Load feedbacks for display on the event detail page
@@ -199,13 +226,18 @@ class PublicEventController extends Controller
 
 	public function ticket(Event $event, Request $request)
 	{
-		$user = $request->user();
-		if (!$user) {
-			return redirect()->route('login', ['redirect' => request()->fullUrl()]);
+		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
+		if (!$isAdmin && !(bool) $event->is_published) {
+			abort(404);
 		}
-		$registration = $user->eventRegistrations()->where('event_id', $event->id)->first();
-		if (!$registration) {
-			return redirect()->route('events.show', $event)->with('warning', 'Anda belum terdaftar pada event ini.');
+
+		$user = $request->user();
+		if(!$user){
+			return redirect()->route('login', ['redirect'=>request()->fullUrl()]);
+		}
+		$registration = $user->eventRegistrations()->where('event_id',$event->id)->first();
+		if(!$registration){
+			return redirect()->route('events.show',$event)->with('warning','Anda belum terdaftar pada event ini.');
 		}
 		return view('events.ticket', [
 			'event' => $event,

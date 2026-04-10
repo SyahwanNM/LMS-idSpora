@@ -134,6 +134,8 @@ Route::middleware(['admin'])->group(function () {
     // Course management routes
     // Publish course (set status active)
     Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
+    // Unpublish course (cancel publish)
+    Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
     Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
     Route::get('/admin/courses/{course}/participants', [CourseController::class, 'participants'])->name('admin.courses.participants');
     Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
@@ -157,8 +159,8 @@ Route::middleware(['admin'])->group(function () {
 
     // Event document uploads (admin)
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
-    // Admin: remind trainer to upload module
-    Route::post('/admin/events/{event}/module/remind', [EventController::class, 'remindModuleUpload'])->name('admin.events.module.remind');
+    // Publish event (show on user pages)
+    Route::post('/admin/events/{event}/publish', [EventController::class, 'publish'])->name('admin.events.publish');
     // Event QR actions (admin)
     Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
     Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
@@ -166,8 +168,6 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
         // Event document uploads (admin)
         Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
-        // Admin: remind trainer to upload module
-        Route::post('/admin/events/{event}/module/remind', [EventController::class, 'remindModuleUpload'])->name('admin.events.module.remind');
         // Admin: verify/reject trainer event module submission
         Route::post('/admin/events/{event}/module/approve', [EventController::class, 'approveModule'])->name('admin.events.module.approve');
         Route::post('/admin/events/{event}/module/reject', [EventController::class, 'rejectModule'])->name('admin.events.module.reject');

@@ -590,15 +590,11 @@
 }
 
 .course-detail-page .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    font-family: 'bootstrap-icons' !important;
-    font-size: 1.2em;
-    transition: transform 0.3s ease;
-    color: #333;
+    content: none !important;
 }
 
 .course-detail-page .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
+    transform: none;
 }
 
 .course-detail-page .syllabus-dropdown-item ul {
@@ -4484,8 +4480,69 @@ input[type="time"] {
     overflow: auto;
     padding: 18px;
     border-radius: 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
     position: sticky;
     top: 90px;
+}
+
+/* Quiz module list – compact accordion (match course module list) */
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: none;
+    padding: 0;
+    overflow: hidden;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-header {
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+    border: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 10px 12px;
+    color: #111827;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item.selected {
+    border-color: #f5c52f;
+    box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-content {
+    display: none;
+    padding: 10px 12px 12px;
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item.active .accordion-content {
+    display: block;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .arrow {
+    display: inline-block;
+    font-size: 12px;
+    transition: transform 0.15s ease;
+    color: #9ca3af;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item.active .arrow {
+    transform: rotate(180deg);
 }
 
 .box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules.closed {
@@ -4550,6 +4607,64 @@ input[type="time"] {
     max-width: 900px;
 }
 
+/* When module list is closed, expand main content and place questions on the right */
+.box_luar_kuis.quiz-take-v2.modules-closed {
+    justify-content: center;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .box_kuis_kanan {
+    max-width: 1100px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    grid-template-rows: auto auto 1fr;
+    column-gap: 24px;
+    align-items: start;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed #openModulesBtn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: #fff;
+    color: #111827;
+    padding: 0;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .waktu_kuis {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    margin: 6px 0 6px 0;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .quiz-title-row {
+    grid-column: 1;
+    grid-row: 2;
+    margin-bottom: 12px;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .quiz-sidebar-heading {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0 !important;
+    margin-bottom: 12px;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .nomor_kuis {
+    grid-column: 2;
+    grid-row: 3;
+    align-content: start;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .box_soal_kuis {
+    grid-column: 1;
+    grid-row: 3;
+}
+
 .box_luar_kuis.quiz-take-v2 .quiz-title-row {
     display: flex;
     justify-content: space-between;
@@ -4572,11 +4687,11 @@ input[type="time"] {
 
 .box_luar_kuis.quiz-take-v2 .box_soal_kuis {
     margin-top: 0;
-    background: #fff;
-    border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    padding: 18px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    background: transparent;
+    border-radius: 0;
+    border: none;
+    padding: 0;
+    box-shadow: none;
 }
 
 .box_luar_kuis.quiz-take-v2 .pertanyaan_kuis {
@@ -4638,7 +4753,7 @@ input[type="time"] {
     padding: 6px 14px;
     border-radius: 999px;
     font-size: 12px;
-    margin: 0 0 14px 0;
+    margin: 20px 0 14px 0;
 }
 
 .box_luar_kuis.quiz-take-v2 .quiz-sidebar-heading {
@@ -4656,6 +4771,13 @@ input[type="time"] {
     width: 36px;
     height: 36px;
     font-size: 13px;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    border-radius: 50%;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    line-height: 1;
 }
 
 .box_kuis_kiri {
@@ -5654,6 +5776,11 @@ body{
     align-items: flex-start;
     gap: clamp(14px, 2.2vw, 28px);
     padding: clamp(12px, 2vw, 22px);
+}
+
+/* Push result cards slightly lower below navbar */
+.quiz-result-page .box_luar_hasil {
+    margin-top: 18px;
 }
 
 /* Quiz result (new UI, scoped) */
@@ -6927,6 +7054,18 @@ textarea::placeholder {
     display: flex;
     gap: 24px;
     align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+
+/* Quiz preview (admin) alignment: count left, passing right */
+.detail-kuis .info-item {
+    align-items: flex-start;
+}
+
+.detail-kuis .info-item.passing-score {
+    align-items: flex-end;
+    text-align: right;
 }
 
 .info-item {

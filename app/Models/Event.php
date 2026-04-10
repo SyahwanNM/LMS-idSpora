@@ -45,7 +45,6 @@ class Event extends Model
         'event_time_end',
         'event_date',
         'material_deadline',
-        'material_revision_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -59,12 +58,18 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
+
+        // publishing
+        'is_published',
+        'published_at',
+
+        // reseller
+        'is_reseller_event',
     ];
 
     protected $casts = [
         'event_date' => 'date',
         'material_deadline' => 'datetime',
-        'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
         'module_submitted_at' => 'datetime',
@@ -80,6 +85,11 @@ class Event extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+
+        'is_published' => 'boolean',
+        'published_at' => 'datetime',
+
+        'is_reseller_event' => 'boolean',
     ];
 
     /**
@@ -87,41 +97,45 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        $count = 0;
-        if (!empty($this->vbg_path)) {
-            $count++;
-        }
-        if (!empty($this->certificate_path)) {
-            $count++;
-            if (!empty($this->vbg_path))
-                $count++;
-            if (!empty($this->certificate_path))
-                $count++;
-            if (!empty($this->module_path))
-                $count++;
-        }
-        // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
-        if (!empty($this->module_path)) {
-            $count++;
-        }
-        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
+        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
+        $isOfflineOnly = $hasMaps && !$hasZoom;
+
+        $hasVbg = !empty($this->vbg_path);
+        $hasModule = !empty($this->module_path);
         $hasAttendance = !empty($this->attendance_path)
             || !empty($this->attendance_qr_image)
             || !empty($this->attendance_qr_token);
+
+        // Offline-only events do not require Virtual Background.
+        $count = 0;
+        if (!$isOfflineOnly && $hasVbg) {
+            $count++;
+        }
+        if ($hasModule) {
+            $count++;
+        }
         if ($hasAttendance) {
             $count++;
         }
+
         return $count;
     }
 
     /**
-     * Percentage (0-100) of document completeness based on 3 required docs.
+     * Percentage (0-100) of document completeness based on required docs.
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 4; // Virtual Background, Sertifikat, Module (Trainer), Absensi (QR/File)
+        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
+        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
+        $isOfflineOnly = $hasMaps && !$hasZoom;
+        $total = $isOfflineOnly
+            ? 2 // Module (Trainer), Absensi (QR/File)
+            : 3; // + Virtual Background
+
         $done = max(0, min($total, (int) $this->documents_completed_count));
-        return (int) floor(($done / $total) * 100);
+        return $total > 0 ? (int) floor(($done / $total) * 100) : 0;
     }
 
     public function getModuleSubmissionUrlAttribute(): ?string

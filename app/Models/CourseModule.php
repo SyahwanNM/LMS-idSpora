@@ -24,10 +24,6 @@ class CourseModule extends Model
         'is_free',
         'preview_pages',
         'duration',
-        'review_status',
-        'reviewed_at',
-        'reviewed_by',
-        'review_rejection_reason',
     ];
 
     protected $casts = [
@@ -36,7 +32,6 @@ class CourseModule extends Model
         'preview_pages' => 'integer',
         'duration' => 'integer',
         'file_size' => 'integer',
-        'reviewed_at' => 'datetime',
     ];
 
     public function course()
@@ -66,12 +61,12 @@ class CourseModule extends Model
         $m = intdiv($rem, 60);
         $s = $rem % 60;
         if ($h > 0) {
-            return $h . 'j ' . $m . 'm ' . $s . 'd';
+            return $h.'j '.$m.'m '.$s.'d';
         }
         if ($m > 0) {
-            return $m . 'm ' . $s . 'd';
+            return $m.'m '.$s.'d';
         }
-        return $s . ' detik';
+        return $s.' detik';
     }
 
     public function getFileExtensionAttribute()

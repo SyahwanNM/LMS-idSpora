@@ -24,17 +24,10 @@
     --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
-
+    
   }
 
-  html,
-  body,
-  .navbar-gradient,
-  .navbar,
-  .dropdown-menu,
-  .nav-link,
-  .btn,
-  .form-control {
+  html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
     font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
   }
 
@@ -52,7 +45,7 @@
     padding: 0 20px;
     margin-top: 0px;
   }
-
+  
 
   .title-course-hero {
     color: var(--white);
@@ -124,7 +117,6 @@
     object-fit: cover;
     background: #000;
   }
-
   .content-description,
   .comments {
     width: 100%;
@@ -255,7 +247,6 @@
     gap: 16px;
     align-items: flex-start;
   }
-
   .info-box>div {
     display: flex;
     align-items: center;
@@ -263,7 +254,6 @@
     padding: 0;
     justify-content: flex-start;
   }
-
   .info-box>div p {
     text-align: left !important;
   }
@@ -498,8 +488,7 @@
   .main-col>*+* {
     margin-top: 20px;
   }
-
-  .box_kiri_vid_course {
+  .box_kiri_vid_course{
     margin-left: 0;
   }
 
@@ -555,29 +544,47 @@
     cursor: pointer;
     outline: none;
     position: relative;
-    list-style: none;
+    list-style: none !important;
     /* Hide default marker */
   }
 
   .syllabus-dropdown-item summary::-webkit-details-marker,
   .syllabus-dropdown-item summary::marker {
-    display: none;
+    display: none !important;
     /* Hide default marker for webkit and standard browsers */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker {
+    display: none !important;
   }
 
 
   .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    /* Bootstrap Icons chevron-down */
-    font-family: "bootstrap-icons" !important;
+    content: none;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons i {
     font-size: 1.2em;
-    transition: transform 0.3s ease;
+    line-height: 1;
     color: #333;
   }
 
-  .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
-    /* Rotate arrow up when open */
+  .syllabus-dropdown-item .syllabus-summary-icons .lock-ico {
+    color: #6c757d;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .chevron-ico {
+    transition: transform 0.3s ease;
+  }
+
+  .syllabus-dropdown-item details[open] .syllabus-summary-icons .chevron-ico {
+    transform: rotate(90deg);
   }
 
   .syllabus-dropdown-item ul {
@@ -982,29 +989,47 @@
     cursor: pointer;
     outline: none;
     position: relative;
-    list-style: none;
+    list-style: none !important;
     /* Hide default marker */
   }
 
   .syllabus-dropdown-item summary::-webkit-details-marker,
   .syllabus-dropdown-item summary::marker {
-    display: none;
+    display: none !important;
     /* Hide default marker for webkit and standard browsers */
+  }
+
+  .syllabus-dropdown-item summary::-webkit-details-marker {
+    display: none !important;
   }
 
 
   .syllabus-dropdown-item summary::after {
-    content: '\f282';
-    /* Bootstrap Icons chevron-down */
-    font-family: "bootstrap-icons" !important;
+    content: none;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons i {
     font-size: 1.2em;
-    transition: transform 0.3s ease;
+    line-height: 1;
     color: #333;
   }
 
-  .syllabus-dropdown-item details[open] summary::after {
-    transform: rotate(180deg);
-    /* Rotate arrow up when open */
+  .syllabus-dropdown-item .syllabus-summary-icons .lock-ico {
+    color: #6c757d;
+  }
+
+  .syllabus-dropdown-item .syllabus-summary-icons .chevron-ico {
+    transition: transform 0.3s ease;
+  }
+
+  .syllabus-dropdown-item details[open] .syllabus-summary-icons .chevron-ico {
+    transform: rotate(90deg);
   }
 
   .syllabus-dropdown-item ul {
@@ -1061,7 +1086,7 @@
 </style> --}}
 
 <body class="course-detail-page">
-
+  
   <section class="course-hero">
     <nav aria-label="breadcrumb">
       <div class="hero-inner" style="margin-top: 0;">
@@ -1078,17 +1103,7 @@
     <div class="title-course-hero">
       <div class="sub-title">
         <h6>{{ $course->category->name ?? '-' }}</h6>
-        <p>
-          by
-          @if(!empty($course->trainer))
-            <a href="{{ route('trainers.public.show', $course->trainer) }}"
-              style="color:#F4C430; text-decoration:none; font-weight:600;">
-              {{ $course->trainer->full_name_with_title ?: $course->trainer->name }}
-            </a>
-          @else
-            idSpora
-          @endif
-        </p>
+        <p>by idSpora</p>
       </div>
       <div class="main-title">
         <h1>{{ $course->name }}</h1>
@@ -1097,43 +1112,38 @@
         <div class="icon-time">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill"
             viewBox="0 0 20 20">
-            <path
-              d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
           </svg>
           <span>{{ $course->duration ?? '-' }} Jam</span>
         </div>
         <div class="icon-attendant">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
-            <path
-              d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
-            <path
-              d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
+            <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
+            <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
           </svg>
           <span>{{ $course->students_count ?? '0' }} Students</span>
         </div>
         <div class="icon-badge">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reception-4"
             viewBox="0 0 16 16">
-            <path
-              d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
+            <path d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
           </svg>
           <span>{{ $course->level ?? '-' }}</span>
         </div>
         <div class="icon-lesson">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
-            <path
-              d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
+            <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
           </svg>
-          <span>{{ $course->modules->count() ?? '0' }} Lessons</span>
+          <span>{{ $course->modules->count() ?? 0 }} Lessons</span>
         </div>
         <div class="icon-quizzez">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
             <path fill="currentColor"
               d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
           </svg>
-          <span>{{ $course->modules->where('type', 'quiz')->count() ?? '0' }} Quizzes</span>
+          <span>{{ $course->modules->where('type','quiz')->count() ?? 0 }} Quizzes</span>
         </div>
       </div>
     </div>
@@ -1143,31 +1153,97 @@
     <div class="box_kiri_vid_course main-col">
 
       @php
+        $courseStatus = (string) ($course->status ?? '');
+        $isApproved = $courseStatus === 'approved';
+        $isPending = $courseStatus === 'pending_review';
+        $isRejected = $courseStatus === 'rejected';
+
         $modulesCol = $course->modules ?? collect();
+
+        // Access rules (freemium + paid purchase)
+        $priceInt = (int) ($course->price ?? 0);
+        $isFreeCourse = $priceInt <= 0;
+        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+
+        $userCanAccessCourse = $isFreeCourse;
+        if (!$isFreeCourse && auth()->check()) {
+          try {
+            $enrollment = \App\Models\Enrollment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->first();
+
+            $enrolledActive = $enrollment && $enrollment->status === 'active';
+            $hasSettledPayment = \App\Models\ManualPayment::query()
+              ->where('user_id', auth()->id())
+              ->where('course_id', $course->id)
+              ->where('status', 'settled')
+              ->exists();
+
+            $userCanAccessCourse = $enrolledActive || $hasSettledPayment;
+          } catch (\Throwable $e) {
+            $userCanAccessCourse = false;
+          }
+        }
+
+        $orderedAllModules = $modulesCol->sortBy(fn($m) => (int) ($m->order_no ?? 0))->values();
+        $accessibleModuleIds = [];
+        if ($userCanAccessCourse) {
+          if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } else {
+            $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          }
+        }
+
+        // Modules with actual content ready
+        $visibleModules = $modulesCol->filter(function ($m) {
+          $type = strtolower((string) ($m->type ?? ''));
+          if ($type === 'quiz') {
+            return ((int) ($m->quiz_questions_count ?? 0)) > 0;
+          }
+          if (in_array($type, ['pdf', 'video'], true)) {
+            return !empty($m->content_url) && (string) $m->content_url !== 'quiz_submitted';
+          }
+          return false;
+        })->values();
         $totalModules = $modulesCol->count();
-        $pdfCount = $modulesCol->where('type', 'pdf')->count();
-        $videoCount = $modulesCol->where('type', 'video')->count();
-        $quizCount = $modulesCol->where('type', 'quiz')->count();
+
+        $pdfSlots = $modulesCol->where('type', 'pdf');
+        $videoSlots = $modulesCol->where('type', 'video');
+        $quizSlots = $modulesCol->where('type', 'quiz');
+
+        $pdfUploadedCount = $pdfSlots->filter(fn($m) => !empty($m->content_url))->count();
+        $videoUploadedCount = $videoSlots->filter(fn($m) => !empty($m->content_url))->count();
+        $quizReadyCount = $quizSlots->filter(fn($m) => ((int) ($m->quiz_questions_count ?? 0)) > 0)->count();
+
         $missingMaterials = [];
-        if ($totalModules <= 0) {
-          $missingMaterials[] = 'Modul';
-        }
-        if ($pdfCount <= 0) {
-          $missingMaterials[] = 'Modul (PDF)';
-        }
-        if ($videoCount <= 0) {
-          $missingMaterials[] = 'Video';
-        }
-        if ($quizCount <= 0) {
-          $missingMaterials[] = 'Kuis';
-        }
+        if ($totalModules <= 0) { $missingMaterials[] = 'Struktur modul'; }
+        if ($pdfSlots->count() > 0 && $pdfUploadedCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+        if ($videoSlots->count() > 0 && $videoUploadedCount <= 0) { $missingMaterials[] = 'Video'; }
+        if ($quizSlots->count() > 0 && $quizReadyCount <= 0) { $missingMaterials[] = 'Kuis'; }
       @endphp
 
-      @if(!empty($missingMaterials))
+      @if($isPending)
+        <div class="alert alert-info" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Materi sedang diproses.</div>
+          <div style="margin-top:6px;">Trainer sudah submit materi. Menunggu approval admin trainer.</div>
+        </div>
+      @elseif($isRejected)
+        <div class="alert alert-danger" role="alert" style="margin-bottom:16px;">
+          <div style="font-weight:600;">Materi course ditolak.</div>
+          <div style="margin-top:6px;">Trainer perlu melakukan revisi sebelum materi tampil di preview.</div>
+          @if(!empty($course->rejection_reason))
+            <div style="margin-top:6px;"><strong>Catatan:</strong> {{ $course->rejection_reason }}</div>
+          @endif
+        </div>
+      @endif
+
+      @if(!$isPending && !$isRejected && !empty($missingMaterials))
         <div class="alert alert-warning" role="alert" style="margin-bottom:16px;">
           <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
           <div style="margin-top:6px;">
-            {{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.
+            {{ implode(', ', $missingMaterials) }} belum ada.
           </div>
         </div>
       @endif
@@ -1192,15 +1268,19 @@
       @endphp
 
       <div class="video-container">
-        <div id="video-wrapper" data-media-url="{{ $previewMediaUrl ?? '' }}" data-media-type="{{ $previewMediaType }}">
-        </div>
+        <div id="video-wrapper"
+             data-media-url="{{ $previewMediaUrl ?? '' }}"
+             data-media-type="{{ $previewMediaType }}"></div>
       </div>
 
       @php
-        $progressTotal = $course->modules->count();
+        $progressModules = ($course->modules ?? collect())
+          ->filter(fn($m) => in_array((int) ($m->id ?? 0), $accessibleModuleIds, true))
+          ->values();
+        $progressTotal = $progressModules->count();
         $progressCompleted = 0;
-        if (auth()->check()) {
-          $moduleIds = $course->modules
+        if(auth()->check() && $progressTotal > 0) {
+          $moduleIds = $progressModules
             ->pluck('id')
             ->map(fn($id) => (int) $id)
             ->values()
@@ -1227,7 +1307,7 @@
             }
 
             $passingPercent = 75;
-            $quizModuleIds = $course->modules
+            $quizModuleIds = $progressModules
               ->filter(fn($m) => strtolower(trim((string) ($m->type ?? ''))) === 'quiz')
               ->pluck('id')
               ->map(fn($id) => (int) $id)
@@ -1264,9 +1344,7 @@
             <div style="color:#6c6c6c;font-size:14px;">{{ $progressCompleted }} / {{ $progressTotal }}</div>
           </div>
           <div style="background:#f3f3f3;border-radius:8px;height:10px;overflow:hidden;">
-            <div
-              style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;">
-            </div>
+            <div style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;"></div>
           </div>
         </div>
       </div>
@@ -1279,26 +1357,98 @@
         </div>
         <div class="tab-content active" id="overview">
           <h5>Overview</h5>
-          <p>
-            {!! $course->description !!}
-          </p>
+            <p>
+              {!! $course->description !!}
+            </p>
         </div>
         <div class="tab-content" id="syllabus">
           <div class="syllabus-list">
-            @forelse($course->modules as $module)
+            @php
+              $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
+              $groupedByUnit = $modulesCol
+                ->sortBy(fn($m) => (int) ($m->order_no ?? 0))
+                ->groupBy(function ($m) {
+                  $orderNo = (int) ($m->order_no ?? 0);
+                  if ($orderNo <= 0) {
+                    return 1;
+                  }
+                  return (int) floor(($orderNo - 1) / 3) + 1;
+                });
+            @endphp
+
+            @forelse($groupedByUnit as $unitNo => $modulesInUnit)
               @php
-                $moduleTitle = $module->title ?? 'Materi';
-                $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
+                $existingUnitTitle = (string) optional($unitTitlesByNo->get((int) $unitNo))->title;
+                $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . (int) $unitNo);
+
+                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds) {
+                  if (!$userCanAccessCourse) {
+                    return true;
+                  }
+                  if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                    return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
+                  }
+                  return false;
+                });
               @endphp
               <div class="syllabus-dropdown-item">
                 <details>
-                  <summary>{{ $moduleTitle }}</summary>
+                  <summary>
+                    <span>{{ $unitTitle }}</span>
+                    <span class="syllabus-summary-icons" aria-hidden="true">
+                      <i class="bi bi-chevron-right chevron-ico"></i>
+                      @if($unitHasLocked)
+                        <i class="bi bi-lock-fill lock-ico"></i>
+                      @endif
+                    </span>
+                  </summary>
                   <ul style="counter-reset: lesson-counter;">
-                    @if($moduleDesc !== '')
-                      <li>{{ Str::limit($moduleDesc, 160) }}</li>
-                    @else
-                      <li class="text-muted">Deskripsi belum tersedia.</li>
-                    @endif
+                    @foreach($modulesInUnit as $module)
+                      @php
+                        $type = strtolower((string) ($module->type ?? ''));
+                        $moduleTitle = trim((string) ($module->title ?? ''));
+                        if ($moduleTitle === '') {
+                          $moduleTitle = 'Materi';
+                        }
+                        $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
+                        $quizCount = (int) ($module->quiz_questions_count ?? 0);
+
+                        $hasContent = false;
+                        if ($type === 'quiz') {
+                          $hasContent = $quizCount > 0;
+                        } elseif (in_array($type, ['pdf', 'video'], true)) {
+                          $hasContent = !empty($module->content_url) && (string) $module->content_url !== 'quiz_submitted';
+                        }
+
+                        $isLocked = false;
+                        if (!$userCanAccessCourse) {
+                          $isLocked = true;
+                        } elseif ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                          $isLocked = !in_array((int) ($module->id ?? 0), $accessibleModuleIds, true);
+                        }
+
+                        $typeLabel = match ($type) {
+                          'pdf' => 'PDF',
+                          'video' => 'Video',
+                          'quiz' => 'Kuis',
+                          default => 'Materi',
+                        };
+                      @endphp
+                      <li>
+                        <div style="font-weight:600;">{{ $typeLabel }}: {{ $moduleTitle }}</div>
+                        @if($isLocked)
+                          <div class="text-muted">Terkunci.</div>
+                        @elseif(!$hasContent)
+                          <div class="text-muted">Materi belum tersedia.</div>
+                        @elseif($type === 'quiz')
+                          <div class="text-muted">{{ $quizCount }} soal kuis tersedia.</div>
+                        @elseif($moduleDesc !== '')
+                          <div class="text-muted">{{ Str::limit($moduleDesc, 160) }}</div>
+                        @else
+                          <div class="text-muted">Deskripsi belum tersedia.</div>
+                        @endif
+                      </li>
+                    @endforeach
                   </ul>
                 </details>
               </div>
@@ -1334,28 +1484,31 @@
         </div>
       </div>
 
-
+      
     </div>
 
     <aside class="sidebar">
       <div class="kanan">
         <div class="price">
           @php
+            $isFreeCourse = (int) ($course->price ?? 0) <= 0;
             $now = \Carbon\Carbon::now();
-            $hasDiscount = $course->discount_percent && $course->discount_percent > 0 &&
+            $hasDiscount = !$isFreeCourse && $course->discount_percent && $course->discount_percent > 0 &&
               ($course->discount_start == null || $now->gte(\Carbon\Carbon::parse($course->discount_start))) &&
               ($course->discount_end == null || $now->lte(\Carbon\Carbon::parse($course->discount_end)));
             $discountedPrice = $hasDiscount
               ? (int) round($course->price * (1 - $course->discount_percent / 100))
               : $course->price;
           @endphp
-          @if($hasDiscount)
-            <span
-              class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+          @if($isFreeCourse)
+            <h4 class="price-text">GRATIS</h4>
+          @elseif($hasDiscount)
+            <span class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
             <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
           @else
             <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
           @endif
+          @if(!$isFreeCourse)
           <div class="box-diskon">
             <div class="time-alert">
               <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
@@ -1383,6 +1536,7 @@
               @endif
             </div>
           </div>
+          @endif
           <hr>
           <div class="info-box">
             <div class="time">
@@ -1413,8 +1567,7 @@
               <p class="location-text">{{ $course->students_count ?? 0 }}</p>
             </div>
             <div class="bahasa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3"
-                class="ikon bi bi-journal-text" viewBox="0 0 20 20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 20 20">
                 <path
                   d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
                 <path
@@ -1438,28 +1591,33 @@
           <hr>
           @php
             $canLearn = false;
+            $paymentUnderReview = false;
             if (auth()->check()) {
-              $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
-                ->where('course_id', $course->id)
-                ->where('status', 'active')
-                ->exists();
+                $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'active')
+                    ->exists();
 
-              $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
-                ->where('course_id', $course->id)
-                ->where('status', 'settled')
-                ->exists();
+                $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'settled')
+                    ->exists();
+
+                // Payment uploaded / waiting admin verification
+                $paymentUnderReview = \App\Models\ManualPayment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->where('status', 'pending')
+                    ->exists();
 
               $canLearn = $enrolledActive || $hasSettledPayment;
             }
           @endphp
           @if($canLearn)
-            <a href="{{ route('course.learn', $course->id) }}" class="enroll"
-              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar
-              Sekarang</a>
+            <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+          @elseif($paymentUnderReview)
+            <button type="button" class="enroll" disabled style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran sedang ditinjau</button>
           @else
-            <a href="{{ route('course.payment', $course->id) }}" class="enroll"
-              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar
-              Sekarang</a>
+            <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @endif
           <button class="save">Save</button>
           <p class="note">Note: all course have 30-days money-back guarantee</p>
@@ -1532,18 +1690,15 @@
               <span>Copy Link</span>
             </button>
 
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener"
-              class="share-ico" aria-label="Share to Facebook">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to Facebook">
               <i class="bi bi-facebook"></i>
             </a>
 
-            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank"
-              rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
+            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
               <i class="bi bi-twitter"></i>
             </a>
 
-            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico"
-              aria-label="Share via Email">
+            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico" aria-label="Share via Email">
               <i class="bi bi-envelope"></i>
             </a>
 
@@ -1564,7 +1719,7 @@
       const text = url || window.location.href;
       const done = () => {
         // Simple feedback without changing layout
-        try { alert('Link berhasil disalin'); } catch (e) { }
+        try { alert('Link berhasil disalin'); } catch (e) {}
       };
 
       if (navigator.clipboard && window.isSecureContext) {
@@ -1576,7 +1731,7 @@
           ta.style.top = '-9999px';
           document.body.appendChild(ta);
           ta.select();
-          try { document.execCommand('copy'); done(); } catch (e) { }
+          try { document.execCommand('copy'); done(); } catch (e) {}
           document.body.removeChild(ta);
         });
         return;
@@ -1589,7 +1744,7 @@
       ta.style.top = '-9999px';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) { }
+      try { document.execCommand('copy'); done(); } catch (e) {}
       document.body.removeChild(ta);
     }
 
