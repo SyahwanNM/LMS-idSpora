@@ -168,7 +168,7 @@ class CourseAccessController extends Controller
         $enrolledActive = Enrollment::query()
             ->where('user_id', $userId)
             ->where('course_id', $course->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'completed'])
             ->exists();
 
         $hasSettledPayment = ManualPayment::query()
@@ -215,11 +215,13 @@ class CourseAccessController extends Controller
         }
 
         if ($enrollment->status !== 'active' && $hasSettledPayment) {
-            $enrollment->status = 'active';
-            $enrollment->save();
+            if ($enrollment->status !== 'completed') {
+                $enrollment->status = 'active';
+                $enrollment->save();
+            }
         }
 
-        if ($enrollment->status !== 'active') {
+        if (!in_array((string) $enrollment->status, ['active', 'completed'], true)) {
             return [
                 'status' => 403,
                 'body' => [

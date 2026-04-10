@@ -13,7 +13,13 @@
                     <ul>
                         <li><strong>Course:</strong> {{ $course->name ?? '-' }}</li>
                         <li><strong>Category:</strong> {{ $course->category->name ?? '-' }}</li>
-                        <li><strong>Price:</strong> Rp{{ number_format($course->price ?? 0, 0, ',', '.') }}</li>
+                        <li><strong>Price:</strong>
+                            @if((int) ($course->price ?? 0) <= 0)
+                                GRATIS
+                            @else
+                                Rp{{ number_format($course->price ?? 0, 0, ',', '.') }}
+                            @endif
+                        </li>
                         <li><strong>Duration:</strong> {{ $course->duration ?? '-' }} minutes</li>
                     </ul>
                     <hr>

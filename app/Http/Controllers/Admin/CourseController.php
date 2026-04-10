@@ -53,7 +53,7 @@ class CourseController extends Controller
             ->where('course_id', $course->id)
             ->first();
 
-        $enrolledActive = $enrollment && $enrollment->status === 'active';
+        $enrolledActive = $enrollment && in_array((string) $enrollment->status, ['active', 'completed'], true);
 
         $hasSettledPayment = ManualPayment::query()
             ->where('user_id', $user->id)
@@ -75,8 +75,10 @@ class CourseController extends Controller
                 ['status' => 'active']
             );
             if ($enrollment->status !== 'active') {
-                $enrollment->status = 'active';
-                $enrollment->save();
+                if ((string) $enrollment->status !== 'completed') {
+                    $enrollment->status = 'active';
+                    $enrollment->save();
+                }
             }
         }
 
@@ -169,15 +171,123 @@ class CourseController extends Controller
             }
 
             if ($markCompleted) {
-                Progress::query()->updateOrCreate(
-                    [
-                        'enrollment_id' => $enrollment->id,
-                        'course_module_id' => $currentModule->id,
-                    ],
-                    [
-                        'completed' => true,
-                    ]
-                );
+                // The UI groups PDF+Video as a single "Materi" item.
+                // If we only mark the currently selected module (e.g. PDF),
+                // progress can never reach 100% because Video is counted as a separate module.
+                $moduleIdsToMark = [(int) $currentModule->id];
+
+                if (in_array($moduleType, ['pdf', 'video'], true)) {
+                    $normalizeGroupKey = function (string $title, int $fallbackIndex = 1): string {
+                        $t = trim($title);
+                        if ($t === '') {
+                            return 'UNIT_' . $fallbackIndex;
+                        }
+
+                        if (preg_match('/^(Module\s*\d+)/i', $t, $m)) {
+                            return mb_strtoupper(trim($m[1]));
+                        }
+
+                        $t2 = preg_replace('/\s*-\s*(PDF\s*Material|Video\s*Lesson|Quiz)\s*$/i', '', $t);
+                        $t2 = trim((string) $t2);
+                        return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_' . $fallbackIndex);
+                    };
+
+                    $isGenericUnitTitle = function (string $title): bool {
+                        $t = trim($title);
+                        return (bool) preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $t);
+                    };
+
+                    $currentGroupKey = null;
+                    $unitCounter = 1;
+                    $currentGenericKey = null;
+
+                    foreach ($modules as $m) {
+                        $titleStr = (string) ($m->title ?? '');
+                        $type = strtolower(trim((string) ($m->type ?? '')));
+
+                        if ($isGenericUnitTitle($titleStr)) {
+                            if (!$currentGenericKey) {
+                                $currentGenericKey = 'UNIT_' . $unitCounter;
+                                $unitCounter++;
+                            }
+                            $key = $currentGenericKey;
+                            if ($type === 'quiz') {
+                                $currentGenericKey = null;
+                            }
+                        } else {
+                            $currentGenericKey = null;
+                            $key = $normalizeGroupKey($titleStr, $unitCounter);
+                            if (str_starts_with($key, 'UNIT_')) {
+                                $unitCounter++;
+                            }
+                        }
+
+                        if ((int) ($m->id ?? 0) === (int) $currentModule->id) {
+                            $currentGroupKey = $key;
+                            break;
+                        }
+                    }
+
+                    if ($currentGroupKey) {
+                        // Collect PDF+Video ids in the same group.
+                        $unitCounter = 1;
+                        $currentGenericKey = null;
+                        foreach ($modules as $m) {
+                            $titleStr = (string) ($m->title ?? '');
+                            $type = strtolower(trim((string) ($m->type ?? '')));
+
+                            if ($isGenericUnitTitle($titleStr)) {
+                                if (!$currentGenericKey) {
+                                    $currentGenericKey = 'UNIT_' . $unitCounter;
+                                    $unitCounter++;
+                                }
+                                $key = $currentGenericKey;
+                                if ($type === 'quiz') {
+                                    $currentGenericKey = null;
+                                }
+                            } else {
+                                $currentGenericKey = null;
+                                $key = $normalizeGroupKey($titleStr, $unitCounter);
+                                if (str_starts_with($key, 'UNIT_')) {
+                                    $unitCounter++;
+                                }
+                            }
+
+                            if ($key !== $currentGroupKey) {
+                                continue;
+                            }
+
+                            if (in_array($type, ['pdf', 'video'], true)) {
+                                $moduleIdsToMark[] = (int) $m->id;
+                            }
+                        }
+                    }
+                }
+
+                $moduleIdsToMark = array_values(array_unique(array_filter($moduleIdsToMark, fn ($id) => $id > 0)));
+                foreach ($moduleIdsToMark as $mid) {
+                    Progress::query()->updateOrCreate(
+                        [
+                            'enrollment_id' => $enrollment->id,
+                            'course_module_id' => $mid,
+                        ],
+                        [
+                            'completed' => true,
+                        ]
+                    );
+                }
+
+                // If all modules are completed, mark enrollment completed (needed for certificate readiness).
+                $enrollment->setRelation('course', $course);
+                if ($enrollment->getProgressPercentage() >= 100) {
+                    if ((string) $enrollment->status !== 'completed') {
+                        $enrollment->status = 'completed';
+                    }
+                    if (!$enrollment->completed_at) {
+                        $enrollment->completed_at = now();
+                    }
+                    $enrollment->save();
+                }
             }
         }
 
