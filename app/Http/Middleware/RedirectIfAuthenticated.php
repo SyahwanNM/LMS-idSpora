@@ -6,7 +6,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
-use App\Support\AdminSettings;
 
 class RedirectIfAuthenticated
 {
@@ -22,12 +21,6 @@ class RedirectIfAuthenticated
 
             if ($role === 'admin') {
                 return redirect()->route('admin.dashboard');
-            }
-
-            // During maintenance, keep non-admin users on landing page.
-            if (AdminSettings::maintenanceEnabled()) {
-                $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
-                return redirect('/')->with('maintenance_notice', $msg);
             }
 
             if ($role === 'trainer') {
