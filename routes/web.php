@@ -222,9 +222,9 @@ Route::get('/', function () {
                     return redirect()->route('admin.dashboard');
                 }
                 // user/trainer stays on landing page
-                return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+                return app(\App\Http\Controllers\Public\LandingPageController::class)->index();
             }
-            return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+            return app(\App\Http\Controllers\Public\LandingPageController::class)->index();
         }
     } catch (\Throwable $e) {
         // fallback to normal behavior
@@ -243,7 +243,7 @@ Route::get('/', function () {
 
         return redirect()->route('dashboard');
     }
-    return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+    return app(\App\Http\Controllers\Public\LandingPageController::class)->index();
 })->name('landing-page');
 
 // Public pages
@@ -327,7 +327,7 @@ Route::middleware('auth')->group(function () {
         return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
     })->name('events.scan');
     // Attendance via scan: persist attendance when QR is decoded
-    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
+    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\User\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
     // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');

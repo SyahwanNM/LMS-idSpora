@@ -64,7 +64,8 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
 
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $downloadName = 'materi-event-' . $event->id . ($ext ? ('.' . $ext) : '');
-    return \Illuminate\Support\Facades\Storage::disk('public')->download($path, $downloadName);
+    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($path);
+    return response()->download($fullPath, $downloadName);
 })->name('events.modules.download');
 
 
