@@ -290,7 +290,7 @@ Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController:
 // Event actions (register/feedback/etc.) require authentication
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
-    Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
+    Route::post('/feedback/store', [\App\Http\Controllers\User\FeedbackController::class, 'store'])->name('feedback.store');
     Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
