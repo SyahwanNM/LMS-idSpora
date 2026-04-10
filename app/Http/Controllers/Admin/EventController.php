@@ -130,7 +130,12 @@ class EventController extends Controller
             ->orderByDesc('created_at')
             ->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
     }
 
@@ -400,7 +405,12 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
     }
 

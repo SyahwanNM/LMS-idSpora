@@ -413,11 +413,7 @@
                                     @csrf
                                     @php $adminDocsComplete = $isOfflineOnly ? ($hasAbs) : ($hasVbg && $hasAbs); @endphp
                                     @if($adminDocsComplete)
-                                        <div class="text-center mb-3">
-                                            <button type="button" class="btn btn-outline-primary btn-sm" data-edit-doc-toggle="{{ $event->id }}">
-                                                <i class="bi bi-pencil-square me-1"></i>Edit Upload
-                                            </button>
-                                        </div>
+                                      
                                         <div class="doc-edit-wrapper d-none" id="docEditWrapper-{{ $event->id }}">
                                             @if($requiresVbg)
                                                 <div class="box-up mb-3">
@@ -442,7 +438,12 @@
                             </div>
                             <div class="modal-footer">
                                 <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
+                                     <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
+                                      <div class="text-center ">
+                                            <button type="button" class="btn btn-outline-primary px-4" data-edit-doc-toggle="{{ $event->id }}">
+                                                <i class="bi bi-pencil-square me-1"></i>Edit Upload
+                                            </button>
+                                        </div>
                                     <button type="submit" class="btn btn-primary px-4" form="docForm-{{ $event->id }}">
                                         <span class="me-1">Save changes</span>
                                         <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
@@ -527,8 +528,13 @@
                                                 ->values()
                                                 ->all();
                                         @endphp
-                                        <input type="text" name="materi" id="materi" class="form-control" required value="{{ old('materi') }}" placeholder="Ketik minimal 2 huruf (contoh: Backend)" autocomplete="off">
-                                        <div id="materiSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                        <input type="text" name="materi" id="materi" class="form-control" required value="{{ old('materi') }}" placeholder="Ketik materi (contoh: Backend Development)" list="materiList" autocomplete="off">
+                                        <datalist id="materiList">
+                                            @foreach($materiMerged as $opt)
+                                                @php $optStr = (string) $opt; @endphp
+                                                <option value="{{ $optStr }}"></option>
+                                            @endforeach
+                                        </datalist>
                                     </div>
                                     <div class="form-text">Pilih kategori materi utama event.</div>
                                     <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
@@ -558,10 +564,18 @@
                                 <!-- Reseller Event -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Reseller Event</label>
+                                    
                                     <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', 0) ? 1 : 0 }}">
                                     <div class="btn-group w-100" role="group" aria-label="Reseller Event">
-                                        <button type="button" id="reseller-event-no" class="btn btn-outline-secondary">Tidak</button>
-                                        <button type="button" id="reseller-event-yes" class="btn btn-outline-secondary">Ya</button>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                            <label class="form-check-label" for="flexRadioDefault1">Ya</label>
+                                        </div>
+                                        <div class="form-check" style="margin-left: 30px;">
+                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                            <label class="form-check-label" for="flexRadioDefault2">Tidak</label>
+                                        </div>
+                                
                                     </div>
                                     <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
                                 </div>
@@ -573,11 +587,18 @@
                                             $jenisDefaults = ['Webinar','Seminar','Workshop'];
                                             $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
                                             $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))->map(fn($v) => trim((string)$v))->filter()->unique(fn($v) => mb_strtolower($v))->values()->all();
+
+                                            $currentJenis = trim((string) old('jenis', ''));
                                         @endphp
-                                        <input type="text" name="jenis" id="jenis" class="form-control" required value="{{ old('jenis') }}" placeholder="Ketik minimal 2 huruf (contoh: Webinar)" autocomplete="off">
-                                        <div id="jenisSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                        <select name="jenis" id="jenis" class="form-select" required>
+                                            <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Pilih jenis acara</option>
+                                            @foreach($jenisMerged as $opt)
+                                                @php $optStr = (string) $opt; @endphp
+                                                <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
-                                    <div class="form-text">Ketik minimal 2 huruf untuk melihat saran. Bisa juga isi manual.</div>
+                                    <div class="form-text">Pilih jenis acara untuk event ini.</div>
                                 </div>
                                 <!-- Level field removed per request -->
                                 <!-- Penjelasan Singkat (maks 40 kata) -->
@@ -606,7 +627,7 @@
                                     <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="lokasi" class="form-label fw-semibold">Lokasi <span class="text-danger">*</span></label>
+                                    <label for="lokasi" class="form-label fw-semibold">Tipe Pelaksanaan <span class="text-danger">*</span></label>
                                     @php
                                         $oldMode = old('location_mode');
                                         $oldMaps = trim((string) old('maps_url', ''));
@@ -952,126 +973,36 @@
             tTriggers.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
         }
 
-        // Jenis Acara autocomplete (show after 2 chars)
-        (function setupJenisAutocomplete(){
-            const jenisInput = document.getElementById('jenis');
-            const box = document.getElementById('jenisSuggestions');
-            if(!jenisInput || !box) return;
-
-            const options = @json($jenisMerged ?? []);
-            const norm = (s) => String(s || '').trim();
-            const lower = (s) => norm(s).toLowerCase();
-
-            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
-            function show(items){
-                if(!items.length){ hide(); return; }
-                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
-                box.style.display = 'block';
-            }
-            function filter(q){
-                const query = lower(q);
-                if(query.length < 2) return [];
-                return options
-                    .map(norm)
-                    .filter(Boolean)
-                    .filter(v => lower(v).includes(query))
-                    .slice(0, 8);
-            }
-
-            jenisInput.addEventListener('input', () => {
-                const items = filter(jenisInput.value);
-                show(items);
-            });
-            jenisInput.addEventListener('focus', () => {
-                const items = filter(jenisInput.value);
-                show(items);
-            });
-            jenisInput.addEventListener('blur', () => setTimeout(hide, 150));
-
-            box.addEventListener('mousedown', (e) => {
-                const btn = e.target?.closest('[data-value]');
-                if(!btn) return;
-                e.preventDefault();
-                jenisInput.value = btn.getAttribute('data-value') || '';
-                hide();
-            });
-            document.addEventListener('click', (e) => {
-                if (e.target === jenisInput) return;
-                if (box.contains(e.target)) return;
-                hide();
-            });
-        })();
-
-        // Materi autocomplete (show after 2 chars)
-        (function setupMateriAutocomplete(){
+        // Materi dropdown (native datalist) + validation (must match one of the options)
+        (function setupMateriDatalist(){
             const materiInput = document.getElementById('materi');
-            const box = document.getElementById('materiSuggestions');
+            const list = document.getElementById('materiList');
             const invalidText = document.getElementById('materiInvalidText');
-            if(!materiInput || !box) return;
+            if(!materiInput || !list) return;
 
-            const options = @json($materiMerged ?? []);
-            const norm = (s) => String(s || '').trim();
-            const lower = (s) => norm(s).toLowerCase();
-
-            function isValidSelection(value){
-                const v = lower(value);
-                if(!v) return true;
-                return options.some(opt => lower(opt) === v);
+            const options = Array.from(list.options || []).map(o => String(o.value || '').trim()).filter(Boolean);
+            if(!options.length){
+                // No options to validate against
+                materiInput.setCustomValidity('');
+                if(invalidText) invalidText.style.display = 'none';
+                return;
             }
+            const optionSet = new Set(options.map(v => v.toLowerCase()));
+
             function applyValidity(){
-                const v = materiInput.value;
-                const ok = isValidSelection(v);
-                if(ok){
+                const raw = String(materiInput.value || '').trim();
+                if(!raw){
                     materiInput.setCustomValidity('');
                     if(invalidText) invalidText.style.display = 'none';
-                }else{
-                    materiInput.setCustomValidity('Tidak ada materi');
-                    if(invalidText) invalidText.style.display = 'block';
+                    return;
                 }
+                const ok = optionSet.has(raw.toLowerCase());
+                materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
+                if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
             }
 
-            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
-            function show(items){
-                if(!items.length){ hide(); return; }
-                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
-                box.style.display = 'block';
-            }
-            function filter(q){
-                const query = lower(q);
-                if(query.length < 2) return [];
-                return options
-                    .map(norm)
-                    .filter(Boolean)
-                    .filter(v => lower(v).includes(query))
-                    .slice(0, 10);
-            }
-
-            materiInput.addEventListener('input', () => {
-                const items = filter(materiInput.value);
-                show(items);
-                applyValidity();
-            });
-            materiInput.addEventListener('focus', () => {
-                const items = filter(materiInput.value);
-                show(items);
-            });
-            materiInput.addEventListener('blur', () => { applyValidity(); setTimeout(hide, 150); });
-
-            box.addEventListener('mousedown', (e) => {
-                const btn = e.target?.closest('[data-value]');
-                if(!btn) return;
-                e.preventDefault();
-                materiInput.value = btn.getAttribute('data-value') || '';
-                hide();
-                applyValidity();
-            });
-            document.addEventListener('click', (e) => {
-                if (e.target === materiInput) return;
-                if (box.contains(e.target)) return;
-                hide();
-            });
-
-            // Initial validity (old() value)
+            materiInput.addEventListener('input', applyValidity);
+            materiInput.addEventListener('blur', applyValidity);
             applyValidity();
         })();
         // CKEditor init for deskripsi and terms
@@ -2326,3 +2257,53 @@
     </div>
 </div>
 <form id="deleteEventFormGlobal" action="#" method="POST" class="d-none">@csrf @method('DELETE')</form>
+
+<script>
+// Isolated binding for Delete Event modal (defensive against other script errors)
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        var modalEl = document.getElementById('deleteEventModal');
+        var formEl = document.getElementById('deleteEventFormGlobal');
+        var nameEl = document.getElementById('deleteEventName');
+        var checkboxEl = document.getElementById('deleteConfirmCheckbox');
+        var btnEl = document.getElementById('deleteConfirmBtn');
+
+        if(!modalEl || !formEl || !btnEl) return;
+        if(btnEl.dataset.boundDeleteModal === '1') return;
+        btnEl.dataset.boundDeleteModal = '1';
+
+        function syncBtn(){
+            btnEl.disabled = !(checkboxEl && checkboxEl.checked);
+        }
+
+        if(checkboxEl){
+            checkboxEl.addEventListener('change', syncBtn);
+        }
+
+        // Set action/title when modal is opened
+        modalEl.addEventListener('show.bs.modal', function(ev){
+            var trigger = ev.relatedTarget;
+            var url = trigger && trigger.getAttribute ? (trigger.getAttribute('data-url') || '') : '';
+            var title = trigger && trigger.getAttribute ? (trigger.getAttribute('data-title') || 'Event') : 'Event';
+
+            if(url) formEl.setAttribute('action', url);
+            if(nameEl) nameEl.textContent = title;
+            if(checkboxEl) checkboxEl.checked = false;
+            syncBtn();
+        });
+
+        // Submit programmatically for maximum browser compatibility
+        btnEl.addEventListener('click', function(e){
+            if(btnEl.disabled) return;
+            e.preventDefault();
+            btnEl.disabled = true;
+            if(typeof formEl.requestSubmit === 'function') formEl.requestSubmit();
+            else formEl.submit();
+        });
+
+        syncBtn();
+    } catch(e) {
+        // swallow - never block the page
+    }
+});
+</script>

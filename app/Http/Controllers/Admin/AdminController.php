@@ -388,9 +388,11 @@ class AdminController extends Controller
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
-        // Get events with participants count
+        // Get events with participants count + average ratings (from feedback)
         $events = \App\Models\Event::query()
             ->withCount('registrations')
+            ->withAvg('feedbacks as event_rating_avg', 'rating')
+            ->withAvg('feedbacks as speaker_rating_avg', 'speaker_rating')
             ->orderBy('event_date', 'asc')
             ->get();
 
@@ -446,14 +448,17 @@ class AdminController extends Controller
 
         // Build rows for Pertumbuhan table (growth metrics per event)
         $growthRows = $events->map(function ($e) {
+            $eventRating = $e->event_rating_avg;
+            $speakerRating = $e->speaker_rating_avg;
+
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
                 'speaker' => $e->speaker,
-                'event_rating' => null, // placeholder until rating source available
-                'speaker_rating' => null, // placeholder
+                'event_rating' => is_null($eventRating) ? null : round((float) $eventRating, 1),
+                'speaker_rating' => is_null($speakerRating) ? null : round((float) $speakerRating, 1),
             ];
         });
 
