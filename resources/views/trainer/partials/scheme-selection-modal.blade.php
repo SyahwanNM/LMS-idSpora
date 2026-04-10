@@ -529,48 +529,49 @@
             checkFormValidity();
         });
 
+        function upsertHiddenInput(name, value) {
+            let input = form.querySelector(`input[name="${name}"]`);
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                form.appendChild(input);
+            }
+            input.value = value;
+        }
+
         // Handle confirm button click
         confirmBtn.addEventListener('click', function (e) {
             e.preventDefault();
 
             if (confirmBtn.disabled) return;
 
-            // Set form action and submit
+            // Set form action and payload based on invitation entity type
             const notificationId = document.getElementById('notification_id').value;
-            form.action = `/trainer/notifications/${notificationId}/accept-with-scheme`;
+            const entityType = modal.getAttribute('data-entity-type') || 'event';
+
+            if (entityType === 'event') {
+                form.action = `/trainer/notifications/${notificationId}/accept-with-scheme`;
+            } else {
+                form.action = `/trainer/notifications/${notificationId}/respond`;
+            }
 
             // Add scheme and agreement values to form
             const schemeValue = document.querySelector('.scheme-radio:checked').value;
             const agreement1 = document.getElementById('agreement1').checked ? '1' : '';
             const agreement2 = document.getElementById('agreement2').checked ? '1' : '';
 
-            // Create hidden inputs for form submission
-            let hiddenScheme = form.querySelector('input[name="scheme_type"]');
-            if (!hiddenScheme) {
-                hiddenScheme = document.createElement('input');
-                hiddenScheme.type = 'hidden';
-                hiddenScheme.name = 'scheme_type';
-                form.appendChild(hiddenScheme);
+            if (entityType === 'event') {
+                // Event flow uses dedicated endpoint
+                upsertHiddenInput('scheme_type', schemeValue);
+                upsertHiddenInput('legal_agreement_1', agreement1);
+                upsertHiddenInput('legal_agreement_2', agreement2);
+            } else {
+                // Course flow uses standard respond endpoint
+                upsertHiddenInput('decision', 'accept');
+                upsertHiddenInput('contribution_scheme', schemeValue);
+                upsertHiddenInput('e_agreement', agreement1 && agreement2 ? '1' : '');
             }
-            hiddenScheme.value = schemeValue;
-
-            let hiddenAgr1 = form.querySelector('input[name="legal_agreement_1"]');
-            if (!hiddenAgr1) {
-                hiddenAgr1 = document.createElement('input');
-                hiddenAgr1.type = 'hidden';
-                hiddenAgr1.name = 'legal_agreement_1';
-                form.appendChild(hiddenAgr1);
-            }
-            hiddenAgr1.value = agreement1;
-
-            let hiddenAgr2 = form.querySelector('input[name="legal_agreement_2"]');
-            if (!hiddenAgr2) {
-                hiddenAgr2 = document.createElement('input');
-                hiddenAgr2.type = 'hidden';
-                hiddenAgr2.name = 'legal_agreement_2';
-                form.appendChild(hiddenAgr2);
-            }
-            hiddenAgr2.value = agreement2;
 
             // Show loading state
             confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Memproses...';
@@ -581,9 +582,12 @@
         });
 
         // Window function for opening modal with invitation info
-        window.openSchemeSelectionModal = function (notificationId, eventTitle) {
+        window.openSchemeSelectionModal = function (notificationId, eventTitle, entityType) {
+            modal.setAttribute('data-entity-type', entityType || 'event');
             document.getElementById('notification_id').value = notificationId;
-            document.getElementById('invitationTitle').textContent = 'Anda menerima undangan untuk mengajar kelas:';
+            document.getElementById('invitationTitle').textContent = (entityType === 'course')
+                ? 'Anda menerima penugasan untuk course:'
+                : 'Anda menerima undangan untuk mengajar kelas:';
             document.getElementById('invitationDesc').textContent = eventTitle;
 
             // Reset form

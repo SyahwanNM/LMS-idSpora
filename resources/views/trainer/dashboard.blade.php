@@ -1190,52 +1190,16 @@
               @if($inviteStatus === 'pending')
                 <div class="invitation-actions">
                   @php $inviteEntityType = data_get($invite->data, 'entity_type'); @endphp
-                  @if($inviteEntityType === 'event')
-                    {{-- EVENT INVITATION: Show Modal Trigger --}}
-                    <button type="button" class="action-chip primary"
-                      onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}')">
-                      Terima
-                    </button>
-                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
-                      class="js-invitation-response-form">
-                      @csrf
-                      <input type="hidden" name="decision" value="reject">
-                      <button type="submit" class="action-chip warning">Tolak</button>
-                    </form>
-                  @else
-                    {{-- COURSE INVITATION: Keep Original Form --}}
-                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
-                      class="js-invitation-response-form">
-                      @csrf
-                      <input type="hidden" name="decision" value="accept">
-                      <select name="contribution_scheme" required
-                        style="margin: 0 0 8px; width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:10px; background:#fff; font-size:13px;">
-                        <option value="" selected disabled>Skema kontribusi</option>
-                        @foreach(Auth::user()->available_contribution_schemes as $schemeKey => $scheme)
-                          <option value="{{ $schemeKey }}">{{ data_get($scheme, 'percent') }}% - {{ data_get($scheme, 'label') }}
-                          </option>
-                        @endforeach
-                      </select>
-                      @if(!empty($inviteUrl))
-                        <a href="{{ route('trainer.notifications.open', $invite->id) }}" target="_blank" rel="noopener"
-                          style="display:inline-flex; margin-bottom:8px; font-size:12px; color:#2563eb; text-decoration:underline;">
-                          Buka E-Agreement
-                        </a>
-                      @endif
-                      <label
-                        style="display:flex; gap:8px; align-items:flex-start; font-size:12px; color:#334155; margin-bottom:8px;">
-                        <input type="checkbox" name="e_agreement" value="1" required style="margin-top:2px;">
-                        <span>Saya menyetujui E-Agreement penugasan ini.</span>
-                      </label>
-                      <button type="submit" class="action-chip primary" data-loading-text="Memproses...">Terima</button>
-                    </form>
-                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
-                      class="js-invitation-response-form">
-                      @csrf
-                      <input type="hidden" name="decision" value="reject">
-                      <button type="submit" class="action-chip warning">Tolak</button>
-                    </form>
-                  @endif
+                  <button type="button" class="action-chip primary"
+                    onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">
+                    Terima
+                  </button>
+                  <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                    class="js-invitation-response-form">
+                    @csrf
+                    <input type="hidden" name="decision" value="reject">
+                    <button type="submit" class="action-chip warning">Tolak</button>
+                  </form>
                 </div>
               @endif
             </div>
