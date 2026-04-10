@@ -37,7 +37,6 @@ class User extends Authenticatable
         'total_courses_completed',
         'average_rating',
         'late_uploads',
-        'trainer_tier',
         'user_status',
         'consecutive_expired_invitations',
         'consecutive_late_uploads',
@@ -77,7 +76,6 @@ class User extends Authenticatable
             'total_courses_completed' => 'integer',
             'average_rating' => 'decimal:2',
             'late_uploads' => 'integer',
-            'trainer_tier' => 'string',
             'user_status' => 'string',
             'consecutive_expired_invitations' => 'integer',
             'consecutive_late_uploads' => 'integer',
@@ -397,14 +395,6 @@ class User extends Authenticatable
     public function getTrainerActivitySummaryAttribute(): array
     {
         return app(\App\Services\TrainerActivityService::class)->summary($this, false);
-    }
-
-    /**
-     * Live trainer tier label.
-     */
-    public function getTrainerTierLabelAttribute(): string
-    {
-        return (string) data_get($this->trainer_activity_summary, 'trainer_tier_label', 'Associate Trainer');
     }
 
     /**

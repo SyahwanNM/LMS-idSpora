@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\CourseModule;
+use App\Models\Feedback;
 use App\Models\Quiz;
+use App\Models\TrainerAssignment;
 use App\Models\TrainerNotification;
 use App\Services\TrainerActivityService;
 use Illuminate\Http\Request;
@@ -414,6 +416,92 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
+        $activeAssignments = TrainerAssignment::query()
+            ->where('trainer_id', $user->id)
+            ->where('status', 'accepted')
+            ->with(['event'])
+            ->orderByRaw('CASE WHEN sla_upload_deadline IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('sla_upload_deadline')
+            ->limit(6)
+            ->get()
+            ->map(function (TrainerAssignment $assignment) {
+                $schemeDefinitions = TrainerAssignment::getSchemeDefinitions();
+                $schemeType = (int) ($assignment->scheme_type ?? 0);
+                $scheme = $schemeDefinitions[$schemeType] ?? [];
+
+                return [
+                    'assignment' => $assignment,
+                    'event_title' => (string) optional($assignment->event)->title,
+                    'event_date' => optional($assignment->event?->event_date)?->format('d M Y'),
+                    'scheme_label' => (string) ($scheme['label'] ?? 'Skema'),
+                    'scheme_percent' => (int) ($scheme['percentage'] ?? 0),
+                    'deadline' => $assignment->sla_upload_deadline,
+                    'remaining_hours' => $assignment->getRemainingHours(),
+                    'status_label' => match ((string) $assignment->status) {
+                        'accepted' => 'Berjalan',
+                        'completed' => 'Selesai',
+                        'rejected' => 'Ditolak',
+                        'expired' => 'Expired',
+                        default => 'Pending',
+                    },
+                ];
+            })
+            ->values();
+
+        $revenueCourses = (clone $coursesQuery)
+            ->withCount([
+                'enrollments as monthly_active_students_count' => function ($query) {
+                    $query->where('status', 'active')
+                        ->whereYear('created_at', now()->year)
+                        ->whereMonth('created_at', now()->month);
+                },
+            ])
+            ->withAvg('reviews', 'rating')
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get()
+            ->map(function (Course $course) {
+                $activeStudents = (int) ($course->monthly_active_students_count ?? 0);
+                $price = (float) ($course->price ?? 0);
+                $schemePercent = (int) ($course->trainer_revenue_percent ?? 0);
+                $estimatedRevenue = $activeStudents > 0 && $price > 0 && $schemePercent > 0
+                    ? round(($activeStudents * $price * $schemePercent) / 100)
+                    : 0;
+
+                return [
+                    'course_id' => (int) $course->id,
+                    'course_name' => (string) $course->name,
+                    'active_students_count' => $activeStudents,
+                    'price' => $price,
+                    'scheme_percent' => $schemePercent,
+                    'estimated_revenue' => $estimatedRevenue,
+                    'rating' => (float) ($course->reviews_avg_rating ?? 0),
+                ];
+            })
+            ->values();
+
+        $completedCourses = (clone $coursesQuery)
+            ->whereIn('status', ['completed', 'finished', 'archived', 'approved'])
+            ->withCount([
+                'enrollments as active_students_count' => function ($query) {
+                    $query->where('status', 'active');
+                },
+            ])
+            ->withAvg('reviews', 'rating')
+            ->orderByDesc('approved_at')
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get();
+
+        $recentEventFeedbacks = Feedback::query()
+            ->whereHas('event', function ($query) use ($user) {
+                $query->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'event', 'replies.trainer'])
+            ->latest('created_at')
+            ->limit(5)
+            ->get();
+
         $totalCertificates = (clone TrainerCertificate::query())
             ->where('trainer_id', $user->id)
             ->where('status', 'sent')
@@ -433,6 +521,10 @@ class TrainerController extends Controller
             'totalStudents',
             'totalCertificates',
             'teachingHistory',
+            'activeAssignments',
+            'revenueCourses',
+            'completedCourses',
+            'recentEventFeedbacks',
             'dashboardInvitations',
             'unreadInvitationCount',
             'trainerActivity',

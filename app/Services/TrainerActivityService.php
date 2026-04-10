@@ -17,27 +17,6 @@ class TrainerActivityService
      */
     private array $summaryCache = [];
 
-    public function tiers(): array
-    {
-        return [
-            'associate' => [
-                'label' => 'Associate Trainer',
-                'rank' => 1,
-                'color' => '#64748b',
-            ],
-            'professional' => [
-                'label' => 'Professional Trainer',
-                'rank' => 2,
-                'color' => '#0f766e',
-            ],
-            'expert' => [
-                'label' => 'Expert Trainer',
-                'rank' => 3,
-                'color' => '#b45309',
-            ],
-        ];
-    }
-
     /**
      * @return array<string, mixed>
      */
@@ -57,8 +36,6 @@ class TrainerActivityService
         $lateUploads = max(0, (int) ($trainer->consecutive_late_uploads ?? $trainer->late_uploads ?? 0));
         $expiredInvitations = max(0, (int) ($trainer->consecutive_expired_invitations ?? 0));
         $lastTeachingAt = $this->latestTeachingTimestamp($trainerId);
-        $baseTier = $this->resolveBaseTier($totalCoursesCompleted, $averageRating);
-        $trainerTier = $baseTier;
         $userStatus = $this->resolveUserStatus($trainer, (string) ($trainer->user_status ?? 'active'), $lateUploads, $expiredInvitations, $lastTeachingAt);
 
         $summary = [
@@ -69,11 +46,7 @@ class TrainerActivityService
             'consecutive_expired_invitations' => $expiredInvitations,
             'last_teaching_at' => $lastTeachingAt?->toIso8601String(),
             'user_status' => $userStatus,
-            'base_tier' => $baseTier,
-            'trainer_tier' => $trainerTier,
-            'trainer_tier_label' => $this->tierLabel($trainerTier),
-            'trainer_tier_rank' => $this->tierRank($trainerTier),
-            'available_schemes' => $this->availableContributionSchemesByTier($trainerTier),
+            'available_schemes' => $this->availableContributionSchemesConfig(),
         ];
 
         $this->summaryCache[$trainerId] = $summary;
@@ -87,7 +60,6 @@ class TrainerActivityService
                 'consecutive_expired_invitations' => $expiredInvitations,
                 'last_teaching_at' => $lastTeachingAt,
                 'user_status' => $userStatus,
-                'trainer_tier' => $trainerTier,
             ])->save();
         }
 
@@ -107,7 +79,7 @@ class TrainerActivityService
      */
     public function availableContributionSchemes(User $trainer): array
     {
-        return $this->availableContributionSchemesByTier((string) ($trainer->trainer_tier ?? 'associate'));
+        return $this->availableContributionSchemesConfig();
     }
 
     public function schemeAllowedForTrainer(User $trainer, string $schemeKey): bool
@@ -131,7 +103,7 @@ class TrainerActivityService
         }
 
         $summary = $this->refresh($trainer);
-        $this->notifyLateUploadChange($trainer, $oldLateUploads, $newLateUploads, (string) $summary['trainer_tier'], $context);
+        $this->notifyLateUploadChange($trainer, $oldLateUploads, $newLateUploads, $context);
 
         return $summary;
     }
@@ -171,7 +143,6 @@ class TrainerActivityService
                 'entityTitle' => (string) data_get($context, 'entity_title', ''),
                 'url' => data_get($context, 'url'),
                 'newLateUploads' => 0,
-                'currentTier' => (string) ($summary['trainer_tier'] ?? 'associate'),
             ]
         );
 
@@ -208,34 +179,16 @@ class TrainerActivityService
         return (string) ($trainer->user_status ?? 'active') === 'active';
     }
 
-    public function tierLabel(string $tier): string
-    {
-        return $this->tiers()[$tier]['label'] ?? $this->tiers()['associate']['label'];
-    }
-
     /**
      * @return array<string, array<string, mixed>>
      */
-    public function availableContributionSchemesByTier(string $tier): array
+    public function availableContributionSchemesConfig(): array
     {
         $schemes = config('trainer_schemes', []);
 
         return collect($schemes)
             ->sortBy('order')
             ->all();
-    }
-
-    private function resolveBaseTier(int $totalCoursesCompleted, float $averageRating): string
-    {
-        if ($totalCoursesCompleted >= 35 && $averageRating >= 4.6) {
-            return 'expert';
-        }
-
-        if ($totalCoursesCompleted >= 10 && $averageRating >= 4.0) {
-            return 'professional';
-        }
-
-        return 'associate';
     }
 
     private function calculateAverageRating(int $trainerId): float
@@ -333,7 +286,7 @@ class TrainerActivityService
         return 'active';
     }
 
-    private function notifyLateUploadChange(User $trainer, int $oldLateUploads, int $newLateUploads, string $currentTier, array $context = []): void
+    private function notifyLateUploadChange(User $trainer, int $oldLateUploads, int $newLateUploads, array $context = []): void
     {
         if ($newLateUploads <= 0) {
             return;
@@ -345,17 +298,17 @@ class TrainerActivityService
         $url = data_get($context, 'url');
 
         if ($oldLateUploads < 1 && $newLateUploads >= 1) {
-            $this->createNotification($trainer, 'trainer_late_upload_warning', 'Kartu Kuning (SP1)', 'Anda telat mengunggah materi. Ini adalah peringatan pertama.', compact('entityType', 'entityId', 'entityTitle', 'url', 'newLateUploads', 'currentTier'));
+            $this->createNotification($trainer, 'trainer_late_upload_warning', 'Kartu Kuning (SP1)', 'Anda telat mengunggah materi. Ini adalah peringatan pertama.', compact('entityType', 'entityId', 'entityTitle', 'url', 'newLateUploads'));
             return;
         }
 
         if ($oldLateUploads < 2 && $newLateUploads >= 2) {
-            $this->createNotification($trainer, 'trainer_hard_warning', 'Peringatan Keras (SP2)', 'Pelanggaran keterlambatan kedua terdeteksi. Satu pelanggaran lagi akun Anda akan dibekukan.', compact('entityType', 'entityId', 'entityTitle', 'url', 'newLateUploads', 'currentTier'));
+            $this->createNotification($trainer, 'trainer_hard_warning', 'Peringatan Keras (SP2)', 'Pelanggaran keterlambatan kedua terdeteksi. Satu pelanggaran lagi akun Anda akan dibekukan.', compact('entityType', 'entityId', 'entityTitle', 'url', 'newLateUploads'));
             return;
         }
 
         if ($oldLateUploads < 3 && $newLateUploads >= 3) {
-            $this->createNotification($trainer, 'trainer_account_suspended', 'Akun Dibekukan', 'Pelanggaran keterlambatan ke-3 terdeteksi. Akun Anda otomatis dibekukan (suspended).', compact('entityType', 'entityId', 'entityTitle', 'url', 'newLateUploads', 'currentTier'));
+            $this->createNotification($trainer, 'trainer_account_suspended', 'Akun Dibekukan', 'Pelanggaran keterlambatan ke-3 terdeteksi. Akun Anda otomatis dibekukan (suspended).', compact('entityType', 'entityId', 'entityTitle', 'url', 'newLateUploads'));
         }
     }
 
@@ -371,7 +324,6 @@ class TrainerActivityService
                 'entity_id' => $context['entityId'] ?? null,
                 'entity_title' => $context['entityTitle'] ?? null,
                 'late_uploads' => $context['newLateUploads'] ?? null,
-                'trainer_tier' => $context['currentTier'] ?? null,
                 'url' => $context['url'] ?? null,
             ],
             'expires_at' => now()->addDays(14),
@@ -391,16 +343,7 @@ class TrainerActivityService
             'consecutive_expired_invitations' => 0,
             'last_teaching_at' => null,
             'user_status' => 'active',
-            'base_tier' => 'associate',
-            'trainer_tier' => 'associate',
-            'trainer_tier_label' => $this->tierLabel('associate'),
-            'trainer_tier_rank' => 1,
-            'available_schemes' => $this->availableContributionSchemesByTier('associate'),
+            'available_schemes' => $this->availableContributionSchemesConfig(),
         ];
-    }
-
-    private function tierRank(string $tier): int
-    {
-        return (int) data_get($this->tiers(), $tier . '.rank', 1);
     }
 }
