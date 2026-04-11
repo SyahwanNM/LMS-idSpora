@@ -20,7 +20,7 @@ class SendTrainerInvitationDeadlineReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Send automatic H-2 and H-1 reminders for pending trainer invitations';
+    protected $description = 'Send automatic 12-hour and 1-hour reminders for pending trainer invitations';
 
     /**
      * Execute the console command.
@@ -59,8 +59,8 @@ class SendTrainerInvitationDeadlineReminders extends Command
                 continue;
             }
 
-            $daysLeft = $now->copy()->startOfDay()->diffInDays($dueAt->copy()->startOfDay(), false);
-            if (!in_array($daysLeft, [1, 2], true)) {
+            $hoursLeft = $now->diffInHours($dueAt, false);
+            if (!in_array($hoursLeft, [1, 12], true)) {
                 continue;
             }
 
@@ -68,12 +68,12 @@ class SendTrainerInvitationDeadlineReminders extends Command
                 'invitation' => $invitation,
                 'data' => $data,
                 'due_at' => $dueAt,
-                'days_left' => $daysLeft,
+                'hours_left' => $hoursLeft,
             ]);
         }
 
         if ($candidateInvitations->isEmpty()) {
-            $this->info('No H-2/H-1 reminders to send.');
+            $this->info('No 12-hour/1-hour reminders to send.');
             return self::SUCCESS;
         }
 
@@ -97,7 +97,7 @@ class SendTrainerInvitationDeadlineReminders extends Command
                 return implode(':', [
                     (int) $notification->trainer_id,
                     (int) data_get($data, 'reminder_for_notification_id', 0),
-                    (int) data_get($data, 'reminder_day', 0),
+                    (int) data_get($data, 'reminder_hour', 0),
                 ]);
             })
             ->filter()
@@ -115,9 +115,9 @@ class SendTrainerInvitationDeadlineReminders extends Command
             $data = $candidate['data'];
             /** @var Carbon $dueAt */
             $dueAt = $candidate['due_at'];
-            $daysLeft = (int) $candidate['days_left'];
+            $hoursLeft = (int) $candidate['hours_left'];
 
-            $key = implode(':', [(int) $invitation->trainer_id, (int) $invitation->id, $daysLeft]);
+            $key = implode(':', [(int) $invitation->trainer_id, (int) $invitation->id, $hoursLeft]);
             if (isset($existingReminderKeys[$key])) {
                 continue;
             }
@@ -129,15 +129,15 @@ class SendTrainerInvitationDeadlineReminders extends Command
             TrainerNotification::create([
                 'trainer_id' => (int) $invitation->trainer_id,
                 'type' => 'invitation_deadline_reminder',
-                'title' => 'Reminder Deadline Pengumpulan Materi (H-' . $daysLeft . ')',
-                'message' => 'Batas waktu konfirmasi dan pengumpulan materi untuk ' . $entityLabel . ' tersisa ' . $daysLeft . ' hari (deadline: ' . $deadlineText . ').',
+                'title' => 'Reminder SLA Undangan (' . $hoursLeft . ' jam tersisa)',
+                'message' => 'Batas waktu respon undangan untuk ' . $entityLabel . ' tersisa ' . $hoursLeft . ' jam (deadline: ' . $deadlineText . ').',
                 'data' => [
                     'entity_type' => data_get($data, 'entity_type'),
                     'entity_id' => data_get($data, 'entity_id'),
                     'url' => data_get($data, 'url'),
                     'due_at' => $dueAt->toIso8601String(),
                     'reminder_for_notification_id' => (int) $invitation->id,
-                    'reminder_day' => $daysLeft,
+                    'reminder_hour' => $hoursLeft,
                 ],
                 'expires_at' => $dueAt,
             ]);

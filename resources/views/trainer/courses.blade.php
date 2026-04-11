@@ -60,7 +60,9 @@
         </section>
 
         @php
+            $allCourses = ($courses ?? collect())->values();
             $statusData = [
+                ['id' => 'courses-all', 'label' => 'Semua', 'data' => $allCourses],
                 ['id' => 'courses-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingCourses ?? collect()],
                 ['id' => 'courses-upcoming', 'label' => 'Mendatang', 'data' => $upcomingCourses ?? collect()],
                 ['id' => 'courses-finished', 'label' => 'Selesai', 'data' => $finishedCourses ?? collect()],
@@ -87,17 +89,47 @@
                     @else
                         <div class="card-course">
                             @foreach($status['data'] as $course)
+                                @php
+                                    $courseCardImage = null;
+                                    $rawCardThumb = trim((string) ($course->card_thumbnail ?? ''));
+                                    $rawMedia = trim((string) ($course->media ?? ''));
+
+                                    if ($rawCardThumb !== '') {
+                                        if (str_starts_with($rawCardThumb, 'http://') || str_starts_with($rawCardThumb, 'https://')) {
+                                            $courseCardImage = $rawCardThumb;
+                                        } elseif (str_starts_with($rawCardThumb, 'uploads/')) {
+                                            $courseCardImage = asset($rawCardThumb);
+                                        } elseif (str_starts_with($rawCardThumb, 'storage/')) {
+                                            $courseCardImage = asset($rawCardThumb);
+                                        } elseif (str_starts_with($rawCardThumb, 'public/')) {
+                                            $courseCardImage = asset('storage/' . ltrim(substr($rawCardThumb, 7), '/'));
+                                        } else {
+                                            $courseCardImage = asset('storage/' . ltrim($rawCardThumb, '/'));
+                                        }
+                                    } elseif ($rawMedia !== '' && (string) ($course->media_type ?? 'image') === 'image') {
+                                        if (str_starts_with($rawMedia, 'http://') || str_starts_with($rawMedia, 'https://')) {
+                                            $courseCardImage = $rawMedia;
+                                        } elseif (str_starts_with($rawMedia, 'uploads/')) {
+                                            $courseCardImage = asset($rawMedia);
+                                        } elseif (str_starts_with($rawMedia, 'storage/')) {
+                                            $courseCardImage = asset($rawMedia);
+                                        } elseif (str_starts_with($rawMedia, 'public/')) {
+                                            $courseCardImage = asset('storage/' . ltrim(substr($rawMedia, 7), '/'));
+                                        } else {
+                                            $courseCardImage = asset('storage/' . ltrim($rawMedia, '/'));
+                                        }
+                                    }
+                                @endphp
                                 <article class="card-item">
-                                    <div class="card-media {{ $course->card_thumbnail ? '' : 'no-image' }}">
+                                    <div class="card-media {{ $courseCardImage ? '' : 'no-image' }}">
                                         <p class="badge-online">{{ strtoupper($course->level ?? 'GENERAL') }}</p>
                                         <div class="rating">
                                             <i class="bi bi-star-fill"></i>
                                             <p>{{ number_format($course->reviews_avg_rating ?? 0, 1) }}</p>
                                         </div>
 
-                                        @php $thumbUrl = $course->card_thumbnail_url; @endphp
-                                        @if(!empty($thumbUrl))
-                                            <img class="card-image" src="{{ $thumbUrl }}" alt="{{ $course->name }}">
+                                        @if($courseCardImage)
+                                            <img class="card-image" src="{{ $courseCardImage }}" alt="{{ $course->name }}">
                                         @else
                                             <div class="no-image-placeholder" aria-hidden="true">
                                                 <i class="bi bi-image"></i>

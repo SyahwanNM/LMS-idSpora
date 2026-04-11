@@ -57,9 +57,6 @@
                         <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
                     </li>
                     @endif
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
-                    </li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
@@ -111,11 +108,22 @@
                     </div>
                     <div class="modal-body pt-0">
                         <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
+
+                        <div class="logout-check d-flex align-items-start gap-3 p-3 rounded-3">
+                            
+                            <div class="flex-grow-1">
+                                <div class="form-check m-0">
+                                    <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck" aria-describedby="logoutConfirmHelp">
+                                    <label class="form-check-label fw-semibold" for="logoutConfirmCheck">Saya yakin ingin logout</label>
+                                </div>
+                                <small id="logoutConfirmHelp" class="text-muted d-block mt-1">Anda akan keluar dari sesi admin dan perlu login kembali.</small>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                             <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn" disabled>
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                             </button>
@@ -169,8 +177,17 @@
                 });
             });
         }
-        // NOTE: Legacy Bootstrap toast auto-show disabled.
-        // Admin uses the newer global notification banner (#globalNotifications).
+        // Auto-show any server-rendered Bootstrap toasts (flash messages)
+        try {
+            document.querySelectorAll('.toast').forEach(function(t){
+                try {
+                    if(window.bootstrap && bootstrap.Toast){
+                        var inst = bootstrap.Toast.getOrCreateInstance(t);
+                        inst.show();
+                    }
+                } catch(e) {}
+            });
+        } catch(e) {}
         
         // Logout confirmation (modern modal)
         const logoutTrigger = document.getElementById('logoutTrigger');
@@ -184,6 +201,13 @@
             const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
             const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
 
+            function setConfirmState(checked){
+                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
+                const box = modalEl.querySelector('.logout-check .check-anim');
+                if(confirmBtn) confirmBtn.disabled = !checked;
+                if(box) box.classList.toggle('active', !!checked);
+            }
+
             function resetLogoutModal(){
                 const body = modalEl.querySelector('.modal-body');
                 const footer = modalEl.querySelector('.modal-footer');
@@ -195,18 +219,26 @@
                     footer.style.display = initialFooterDisplay;
                     footer.innerHTML = initialFooterHtml;
                 }
-                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
-                if(confirmBtn) confirmBtn.disabled = false;
+                const confirmCheck = modalEl.querySelector('#logoutConfirmCheck');
+                if(confirmCheck) confirmCheck.checked = false;
+                setConfirmState(false);
             }
 
             logoutTrigger.addEventListener('click', function(ev){
                 ev.preventDefault();
                 resetLogoutModal();
                 confirmModal.show();
-                // focus confirm button for keyboard flow
+                // focus checkbox for faster keyboard flow
                 setTimeout(function(){
-                    try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
+                    try { modalEl.querySelector('#logoutConfirmCheck')?.focus(); } catch(e) {}
                 }, 150);
+            });
+
+            modalEl.addEventListener('change', function(ev){
+                const target = ev.target;
+                if(target && target.id === 'logoutConfirmCheck'){
+                    setConfirmState(!!target.checked);
+                }
             });
 
             function showLogoutSuccessState(){
@@ -232,6 +264,8 @@
                 const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
                 if(!btn) return;
                 ev.preventDefault();
+                const confirmCheck = modalEl.querySelector('#logoutConfirmCheck');
+                if(!confirmCheck || !confirmCheck.checked) return;
                 btn.disabled = true;
                 try { showLogoutSuccessState(); } catch(e){}
                 setTimeout(function(){ logoutForm.submit(); }, 900);
@@ -401,49 +435,6 @@
             });
         } catch(e){}
     });
-
-    // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
-    window.adminNotify = function(type, message, timeout){
-        try {
-            const kind = (type === 'error') ? 'error' : 'success';
-            const text = (message == null) ? '' : String(message);
-            const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
-
-            let wrap = document.getElementById('globalNotifications');
-            if(!wrap){
-                wrap = document.createElement('div');
-                wrap.id = 'globalNotifications';
-                wrap.className = 'global-notification';
-                wrap.setAttribute('aria-live', 'polite');
-                wrap.setAttribute('aria-atomic', 'true');
-                document.body.appendChild(wrap);
-            }
-
-            const n = document.createElement('div');
-            n.className = 'notification ' + kind;
-            n.setAttribute('role', 'status');
-            n.setAttribute('data-timeout', String(ms));
-
-            const msg = document.createElement('div');
-            msg.className = 'notif-message';
-            msg.textContent = text;
-
-            const close = document.createElement('button');
-            close.className = 'notif-close';
-            close.setAttribute('aria-label', 'Close');
-            close.type = 'button';
-            close.innerHTML = '&times;';
-
-            n.appendChild(msg);
-            n.appendChild(close);
-            wrap.appendChild(n);
-
-            const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
-            close.addEventListener('click', hide);
-            setTimeout(function(){ n.classList.add('show'); }, 20);
-            setTimeout(hide, ms);
-        } catch(e){}
-    };
     </script>
 
     @yield('scripts')

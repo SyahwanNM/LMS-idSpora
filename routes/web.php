@@ -64,14 +64,14 @@ Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
     Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
-     Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
 
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
     Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
     Route::get('/reseller/withdraw/download', [\App\Http\Controllers\User\ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
-        // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
+    // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
     Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
 
     // Referral check (auto discount 10% if valid)
@@ -222,9 +222,9 @@ Route::get('/', function () {
                     return redirect()->route('admin.dashboard');
                 }
                 // user/trainer stays on landing page
-                return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+                return app(\App\Http\Controllers\Public\LandingPageController::class)->index();
             }
-            return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+            return app(\App\Http\Controllers\Public\LandingPageController::class)->index();
         }
     } catch (\Throwable $e) {
         // fallback to normal behavior
@@ -243,7 +243,7 @@ Route::get('/', function () {
 
         return redirect()->route('dashboard');
     }
-    return app(\App\Http\Controllers\Public\LandingPageController::class)->index(request());
+    return app(\App\Http\Controllers\Public\LandingPageController::class)->index();
 })->name('landing-page');
 
 // Public pages
@@ -290,7 +290,7 @@ Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController:
 // Event actions (register/feedback/etc.) require authentication
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
-    Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
+    Route::post('/feedback/store', [\App\Http\Controllers\User\FeedbackController::class, 'store'])->name('feedback.store');
     Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
@@ -327,7 +327,7 @@ Route::middleware('auth')->group(function () {
         return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
     })->name('events.scan');
     // Attendance via scan: persist attendance when QR is decoded
-    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
+    Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\User\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');
     // Ticket page removed; use event detail instead
     // Notifications
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
@@ -340,7 +340,8 @@ Route::middleware('auth')->group(function () {
     // User profile
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
-    Route::get('/profile/events', function() { return redirect()->route('profile.history'); }); // Redirect legacy route
+    Route::get('/profile/events', function () {
+        return redirect()->route('profile.history'); }); // Redirect legacy route
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
@@ -583,7 +584,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'edit'])->name('certificates.edit');
             Route::put('/certificates/{event}', [\App\Http\Controllers\CRM\CertificateController::class, 'update'])->name('certificates.update');
             Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
-            
+
             // New routes for course certificates
             Route::get('/courses/{course}/certificates/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'editCourse'])->name('certificates.edit-course');
             Route::put('/courses/{course}/certificates', [\App\Http\Controllers\CRM\CertificateController::class, 'updateCourse'])->name('certificates.update-course');
@@ -632,6 +633,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/courses', [TrainerController::class, 'courses'])->name('courses');
     Route::get('/courses/{id}', [TrainerController::class, 'courseDetail'])->name('detail-course');
     Route::get('/finance', [TrainerController::class, 'finance'])->name('finance');
+    Route::post('/availability/toggle', [TrainerController::class, 'toggleAvailability'])->name('availability.toggle');
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [TrainerController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');
@@ -647,18 +649,21 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/notifications', [TrainerNotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [TrainerNotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::get('/notifications/{notification}/open', [TrainerNotificationsController::class, 'open'])->name('notifications.open');
+    Route::post('/notifications/{notification}/accept-with-scheme', [TrainerNotificationsController::class, 'acceptEventWithScheme'])->name('notifications.accept-with-scheme');
     Route::post('/notifications/{notification}/respond', [TrainerNotificationsController::class, 'respond'])->name('notifications.respond');
 
     // --- STUDIO UNTUK COURSE ---
     Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
     Route::get('/courses/{courseId}/materials/{moduleId}/view', [TrainerController::class, 'viewCourseMaterial'])->name('courses.studio.material.view');
     Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
+    Route::post('/courses/{id}/studio/editor-image', [TrainerController::class, 'uploadCourseEditorImage'])->name('courses.studio.editor-image');
     Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
 
     // --- STUDIO UNTUK EVENT ---
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
     Route::post('/events/{id}/studio/upload', [TrainerController::class, 'uploadEventMaterials'])->name('events.studio.upload');
     Route::post('/events/{id}/studio/quiz', [TrainerController::class, 'saveEventQuiz'])->name('events.studio.quiz');
+    Route::get('/events/{id}/vbg/download', [TrainerController::class, 'downloadEventVbg'])->name('events.vbg.download');
     Route::post('/events/{id}/invitation/accept', [TrainerController::class, 'acceptEventInvitation'])->name('events.invitation.accept');
     Route::post('/events/{id}/invitation/reject', [TrainerController::class, 'rejectEventInvitation'])->name('events.invitation.reject');
 

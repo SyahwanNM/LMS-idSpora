@@ -12,7 +12,6 @@ class Review extends Model
         'user_id',
         'course_id',
         'rating',
-        'trainer_rating',
         'comment',
     ];
 

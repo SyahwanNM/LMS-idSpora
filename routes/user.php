@@ -64,7 +64,8 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
 
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $downloadName = 'materi-event-' . $event->id . ($ext ? ('.' . $ext) : '');
-    return \Illuminate\Support\Facades\Storage::disk('public')->download($path, $downloadName);
+    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($path);
+    return response()->download($fullPath, $downloadName);
 })->name('events.modules.download');
 
 
@@ -99,8 +100,10 @@ Route::middleware('auth')->group(function () {
             $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
         } catch (\Throwable $e) {
         }
-        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        if (!$startTime && $eventDate)
+            $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate)
+            $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
@@ -212,38 +215,38 @@ Route::middleware('auth')->group(function () {
         return back()->with('success', $saved ? 'Course disimpan.' : 'Course dihapus dari tersimpan.');
     })->name('courses.save');
 });
-    // User dashboard (only for non-admin users)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
-    // User module access routes
-    Route::get('/courses/{course}/modules', [UserModuleController::class, 'index'])->name('user.modules.index');
-    Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
-    Route::get('/courses/{course}/modules/{module}/download', [UserModuleController::class, 'download'])->name('user.modules.download');
-    Route::get('/courses/{course}/modules/{module}/stream', [UserModuleController::class, 'stream'])->name('user.modules.stream');
+// User dashboard (only for non-admin users)
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
+// User module access routes
+Route::get('/courses/{course}/modules', [UserModuleController::class, 'index'])->name('user.modules.index');
+Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
+Route::get('/courses/{course}/modules/{module}/download', [UserModuleController::class, 'download'])->name('user.modules.download');
+Route::get('/courses/{course}/modules/{module}/stream', [UserModuleController::class, 'stream'])->name('user.modules.stream');
 
-    // Learning time (realtime) endpoints for authenticated users
-    Route::middleware(['auth', 'throttle:120,1'])->group(function () {
-        Route::post('/learning-time/heartbeat', [\App\Http\Controllers\User\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
-        Route::get('/learning-time/chart', [\App\Http\Controllers\User\LearningTimeController::class, 'chart'])->name('learning-time.chart');
-    });
+// Learning time (realtime) endpoints for authenticated users
+Route::middleware(['auth', 'throttle:120,1'])->group(function () {
+    Route::post('/learning-time/heartbeat', [\App\Http\Controllers\User\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
+    Route::get('/learning-time/chart', [\App\Http\Controllers\User\LearningTimeController::class, 'chart'])->name('learning-time.chart');
+});
 
-    // User quiz routes
-    Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
-    Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
-    Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
-    Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
-    Route::get('/quiz/{attempt}/result', [QuizController::class, 'resultShort'])->name('user.quiz.result.short');
-    Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
+// User quiz routes
+Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
+Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
+Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
+Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
+Route::get('/quiz/{attempt}/result', [QuizController::class, 'resultShort'])->name('user.quiz.result.short');
+Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
-    Route::get('/course-quiz-result', function () {
-        return view('course.quiz.result');
-    })->name('course.quiz.result');
+Route::get('/course-quiz-result', function () {
+    return view('course.quiz.result');
+})->name('course.quiz.result');
 
-    Route::get('/course-quiz', function () {
-        return view('course.quiz.intro');
-    })->name('course.quiz.intro');
+Route::get('/course-quiz', function () {
+    return view('course.quiz.intro');
+})->name('course.quiz.intro');
 
-    Route::get('/course-quiz-start', function () {
-        return view('course.quiz.start');
-    })->name('course.quiz.start');
+Route::get('/course-quiz-start', function () {
+    return view('course.quiz.start');
+})->name('course.quiz.start');
 
 
