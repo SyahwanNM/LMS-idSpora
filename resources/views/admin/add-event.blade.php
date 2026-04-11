@@ -511,32 +511,33 @@
                                 <!-- Materi (kategori konten) -->
                                 <div class="mb-3">
                                     <label for="materi" class="form-label fw-semibold">Materi <span class="text-danger">*</span></label>
+                                    @php
+                                        $materiDefaults = [
+                                            'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
+                                            'Frontend Development',
+                                            'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
+                                            'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                        ];
+                                        $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                        $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
+                                            ->map(fn($v) => trim((string)$v))
+                                            ->filter()
+                                            ->unique(fn($v) => mb_strtolower($v))
+                                            ->sortBy(fn($v) => mb_strtolower($v))
+                                            ->values()
+                                            ->all();
+                                        $currentMateri = trim((string) old('materi'));
+                                    @endphp
                                     <div class="position-relative">
-                                        @php
-                                            $materiDefaults = [
-                                                'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
-                                                'Frontend Development',
-                                                'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
-                                                'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
-                                            ];
-                                            $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
-                                            $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
-                                                ->map(fn($v) => trim((string)$v))
-                                                ->filter()
-                                                ->unique(fn($v) => mb_strtolower($v))
-                                                ->sortBy(fn($v) => mb_strtolower($v))
-                                                ->values()
-                                                ->all();
-                                        @endphp
-                                        <input type="text" name="materi" id="materi" class="form-control" required value="{{ old('materi') }}" placeholder="Ketik materi (contoh: Backend Development)" list="materiList" autocomplete="off">
-                                        <datalist id="materiList">
-                                            @foreach($materiMerged as $opt)
-                                                @php $optStr = (string) $opt; @endphp
-                                                <option value="{{ $optStr }}"></option>
-                                            @endforeach
-                                        </datalist>
+                                        <input type="text" name="materi" id="materi" class="form-control" required
+                                               value="{{ $currentMateri }}"
+                                               placeholder="Klik untuk lihat daftar, lalu ketik untuk mencari"
+                                               autocomplete="off">
+                                        <div id="materiSuggestions"
+                                             class="list-group position-absolute w-100 shadow-sm"
+                                             style="display:none; z-index: 1066; max-height: 240px; overflow-y:auto;"></div>
                                     </div>
-                                    <div class="form-text">Pilih kategori materi utama event.</div>
+                                    <div class="form-text">Klik kolom untuk melihat daftar. Ketik untuk mencari.</div>
                                     <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
                                 </div>
                                 <!-- Kelola Event: Manage / Create -->
@@ -613,9 +614,10 @@
                                     <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="tanggal" class="form-label fw-semibold">Tanggal Event <span class="text-danger">*</span></label>
-                                    <input type="date" name="event_date" id="tanggal" class="form-control date-enhanced js-date-picker" required value="{{ old('event_date') }}" min="{{ date('Y-m-d') }}">
-                                    <small class="text-muted d-block mt-1">Format tampilan: Hari, DD Bulan YYYY</small>
+                                    <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
+                                     <input type="date" name="event_date" id="tanggal" class="form-control" required
+                                         value="{{ old('event_date') }}" min="{{ date('Y-m-d') }}">
+                                     <div class="form-text">Pilih tanggal pelaksanaan event.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Waktu Mulai & Selesai <span class="text-danger">*</span></label>
@@ -809,6 +811,8 @@
         /* Enhanced date input */
         .date-enhanced:focus { box-shadow: 0 0 0 .2rem rgba(13,110,253,.25); }
         .flatpickr-calendar { font-family: inherit; }
+        /* Flatpickr inside Bootstrap modal: keep calendar above modal */
+        .flatpickr-calendar.open { z-index: 1065 !important; }
         .flatpickr-day.today { border-color:#0d6efd; }
         .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange { background:#0d6efd; color:#fff; }
         .flatpickr-day.selected:hover { background:#0b5ed7; }
@@ -973,36 +977,61 @@
             tTriggers.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
         }
 
-        // Materi dropdown (native datalist) + validation (must match one of the options)
-        (function setupMateriDatalist(){
+        // Materi autocomplete (show after 2 chars) + validation
+        (function setupMateriAutocomplete(){
             const materiInput = document.getElementById('materi');
-            const list = document.getElementById('materiList');
+            const box = document.getElementById('materiSuggestions');
             const invalidText = document.getElementById('materiInvalidText');
-            if(!materiInput || !list) return;
+            if(!materiInput || !box) return;
 
-            const options = Array.from(list.options || []).map(o => String(o.value || '').trim()).filter(Boolean);
-            if(!options.length){
-                // No options to validate against
-                materiInput.setCustomValidity('');
-                if(invalidText) invalidText.style.display = 'none';
-                return;
+            const options = @json($materiMerged ?? []);
+            const norm = (s) => String(s || '').trim();
+            const lower = (s) => norm(s).toLowerCase();
+            const optionSet = new Set(options.map(v => lower(v)).filter(Boolean));
+
+            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+            function show(items){
+                if(!items.length){ hide(); return; }
+                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                box.style.display = 'block';
             }
-            const optionSet = new Set(options.map(v => v.toLowerCase()));
-
+            function filter(q){
+                const query = lower(q);
+                const base = options.map(norm).filter(Boolean);
+                if(!query) return base.slice(0, 30);
+                return base
+                    .filter(v => lower(v).includes(query))
+                    .slice(0, 30);
+            }
             function applyValidity(){
-                const raw = String(materiInput.value || '').trim();
+                const raw = norm(materiInput.value);
                 if(!raw){
                     materiInput.setCustomValidity('');
                     if(invalidText) invalidText.style.display = 'none';
                     return;
                 }
-                const ok = optionSet.has(raw.toLowerCase());
+                const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
                 materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
                 if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
             }
 
-            materiInput.addEventListener('input', applyValidity);
-            materiInput.addEventListener('blur', applyValidity);
+            materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
+            materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
+            materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
+
+            box.addEventListener('mousedown', (e) => {
+                const btn = e.target?.closest('[data-value]');
+                if(!btn) return;
+                e.preventDefault();
+                materiInput.value = btn.getAttribute('data-value') || '';
+                hide();
+                applyValidity();
+            });
+            document.addEventListener('click', (e) => {
+                if (e.target === materiInput) return;
+                if (box.contains(e.target)) return;
+                hide();
+            });
             applyValidity();
         })();
         // CKEditor init for deskripsi and terms
@@ -1583,7 +1612,7 @@
                 locale:'id',
                 dateFormat:'Y-m-d',
                 altInput:true,
-                altFormat:'l, j F Y',
+                altFormat:'l, d F Y',
                 disableMobile:true,
                 clickOpens:true
             });
@@ -2046,21 +2075,11 @@
             console.warn('[EventForm] Form element not found.');
         }
 
+        // NOTE: Add Event uses native <input type="date"> for #tanggal (no Flatpickr).
+
         @if($errors->any())
             if (window.bootstrap) { new bootstrap.Modal(document.getElementById('addEventModal')).show(); }
         @endif
-
-        // Flatpickr date picker initialization (Indonesian locale)
-        if(window.flatpickr){
-            flatpickr('#tanggal', {
-                locale: 'id',
-                dateFormat: 'Y-m-d',
-                altInput: true,
-                altFormat: 'l, j F Y',
-                minDate: 'today',
-                disableMobile: true
-            });
-        }
 
         // Live preview for document uploads in each event modal
         function initDocUploadPreviews(){
