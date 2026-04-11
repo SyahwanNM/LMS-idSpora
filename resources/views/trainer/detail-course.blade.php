@@ -70,7 +70,34 @@
                 <div class="hero-media">
                     <div class="hero-image-wrap">
                         @if($course->card_thumbnail)
-                            <img src="{{ asset('storage/' . $course->card_thumbnail) }}" alt="{{ $course->name }}" />
+                            @php
+                                $rawThumb = str_replace('\\', '/', trim((string) $course->card_thumbnail));
+                                $thumbUrl = null;
+
+                                if (str_starts_with($rawThumb, 'http://') || str_starts_with($rawThumb, 'https://')) {
+                                    $thumbUrl = $rawThumb;
+                                } elseif (str_starts_with($rawThumb, 'uploads/')) {
+                                    $thumbUrl = asset($rawThumb);
+                                } else {
+                                    $rel = $rawThumb;
+                                    $markerPos = stripos($rel, 'storage/app/public/');
+                                    if ($markerPos !== false) {
+                                        $rel = substr($rel, $markerPos + strlen('storage/app/public/'));
+                                    }
+                                    if (str_starts_with($rel, 'storage/')) {
+                                        $rel = ltrim(substr($rel, 8), '/');
+                                    }
+                                    if (str_starts_with($rel, 'public/')) {
+                                        $rel = ltrim(substr($rel, 7), '/');
+                                    }
+                                    $rel = ltrim($rel, '/');
+                                    if ($rel !== '' && !str_contains($rel, '/')) {
+                                        $rel = 'courses/card_thumbnails/' . $rel;
+                                    }
+                                    $thumbUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($rel);
+                                }
+                            @endphp
+                            <img src="{{ $thumbUrl }}" alt="{{ $course->name }}" />
                         @else
                             <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=360&fit=crop"
                                 alt="Default Thumbnail" />

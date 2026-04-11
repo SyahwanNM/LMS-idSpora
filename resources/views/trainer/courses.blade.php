@@ -94,29 +94,66 @@
                                     $rawCardThumb = trim((string) ($course->card_thumbnail ?? ''));
                                     $rawMedia = trim((string) ($course->media ?? ''));
 
+                                    // Normalize Windows paths that may have been stored with backslashes
+                                    if ($rawCardThumb !== '') $rawCardThumb = str_replace('\\', '/', $rawCardThumb);
+                                    if ($rawMedia !== '') $rawMedia = str_replace('\\', '/', $rawMedia);
+
+                                    // Resolve image from card_thumbnail (uploaded via admin to disk "public")
                                     if ($rawCardThumb !== '') {
                                         if (str_starts_with($rawCardThumb, 'http://') || str_starts_with($rawCardThumb, 'https://')) {
                                             $courseCardImage = $rawCardThumb;
                                         } elseif (str_starts_with($rawCardThumb, 'uploads/')) {
+                                            // legacy public uploads
                                             $courseCardImage = asset($rawCardThumb);
-                                        } elseif (str_starts_with($rawCardThumb, 'storage/')) {
-                                            $courseCardImage = asset($rawCardThumb);
-                                        } elseif (str_starts_with($rawCardThumb, 'public/')) {
-                                            $courseCardImage = asset('storage/' . ltrim(substr($rawCardThumb, 7), '/'));
                                         } else {
-                                            $courseCardImage = asset('storage/' . ltrim($rawCardThumb, '/'));
+                                            // Normalize various stored formats into a public-disk relative path
+                                            $rel = $rawCardThumb;
+
+                                            // absolute path containing storage/app/public/...
+                                            $markerPos = stripos($rel, 'storage/app/public/');
+                                            if ($markerPos !== false) {
+                                                $rel = substr($rel, $markerPos + strlen('storage/app/public/'));
+                                            }
+
+                                            // handle prefixes
+                                            if (str_starts_with($rel, 'storage/')) {
+                                                $rel = ltrim(substr($rel, 8), '/');
+                                            }
+                                            if (str_starts_with($rel, 'public/')) {
+                                                $rel = ltrim(substr($rel, 7), '/');
+                                            }
+
+                                            $rel = ltrim($rel, '/');
+
+                                            // If only a filename is stored (no folders), assume it lives under admin upload folder
+                                            if ($rel !== '' && !str_contains($rel, '/')) {
+                                                $rel = 'courses/card_thumbnails/' . $rel;
+                                            }
+
+                                            $courseCardImage = \Illuminate\Support\Facades\Storage::disk('public')->url($rel);
                                         }
-                                    } elseif ($rawMedia !== '' && (string) ($course->media_type ?? 'image') === 'image') {
+                                    }
+
+                                    // Fallback to legacy media (if needed)
+                                    if (!$courseCardImage && $rawMedia !== '' && (string) ($course->media_type ?? 'image') === 'image') {
                                         if (str_starts_with($rawMedia, 'http://') || str_starts_with($rawMedia, 'https://')) {
                                             $courseCardImage = $rawMedia;
                                         } elseif (str_starts_with($rawMedia, 'uploads/')) {
                                             $courseCardImage = asset($rawMedia);
-                                        } elseif (str_starts_with($rawMedia, 'storage/')) {
-                                            $courseCardImage = asset($rawMedia);
-                                        } elseif (str_starts_with($rawMedia, 'public/')) {
-                                            $courseCardImage = asset('storage/' . ltrim(substr($rawMedia, 7), '/'));
                                         } else {
-                                            $courseCardImage = asset('storage/' . ltrim($rawMedia, '/'));
+                                            $rel = $rawMedia;
+                                            $markerPos = stripos($rel, 'storage/app/public/');
+                                            if ($markerPos !== false) {
+                                                $rel = substr($rel, $markerPos + strlen('storage/app/public/'));
+                                            }
+                                            if (str_starts_with($rel, 'storage/')) {
+                                                $rel = ltrim(substr($rel, 8), '/');
+                                            }
+                                            if (str_starts_with($rel, 'public/')) {
+                                                $rel = ltrim(substr($rel, 7), '/');
+                                            }
+                                            $rel = ltrim($rel, '/');
+                                            $courseCardImage = \Illuminate\Support\Facades\Storage::disk('public')->url($rel);
                                         }
                                     }
                                 @endphp

@@ -15,6 +15,19 @@ use Illuminate\Support\Str;
 
 class ResellerController extends Controller
 {
+    public function admin()
+    {
+        if (view()->exists('admin.reseller.dashboard')) {
+            return $this->adminDashboard();
+        }
+
+        if (view()->exists('admin.reseller.data')) {
+            return $this->adminData();
+        }
+
+        abort(404, 'Reseller admin view not found.');
+    }
+
     // Fungsi 1: Khusus nampilin Dashboard & Grafik Admin
     public function adminDashboard()
     {

@@ -557,7 +557,11 @@
             }
 
             // Add scheme and agreement values to form
-            const schemeValue = document.querySelector('.scheme-radio:checked').value;
+            const schemeSelected = document.querySelector('.scheme-radio:checked');
+            if (!schemeSelected) {
+                return;
+            }
+            const schemeValue = schemeSelected.value;
             const agreement1 = document.getElementById('agreement1').checked ? '1' : '';
             const agreement2 = document.getElementById('agreement2').checked ? '1' : '';
 
@@ -569,7 +573,15 @@
             } else {
                 // Course flow uses standard respond endpoint
                 upsertHiddenInput('decision', 'accept');
-                upsertHiddenInput('contribution_scheme', schemeValue);
+                // Backend expects string keys from config('trainer_schemes'):
+                // e2e (35%), module_video (25%), video_only (10%)
+                const courseSchemeKey = (function () {
+                    if (schemeValue === '1') return 'e2e';
+                    if (schemeValue === '2') return 'module_video';
+                    if (schemeValue === '3') return 'video_only';
+                    return schemeValue;
+                })();
+                upsertHiddenInput('contribution_scheme', courseSchemeKey);
                 upsertHiddenInput('e_agreement', agreement1 && agreement2 ? '1' : '');
             }
 

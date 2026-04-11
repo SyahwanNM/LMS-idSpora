@@ -407,22 +407,26 @@
                         <div style="margin-top:20px;">
                             <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Metode Pembayaran</div>
                            <div style="display:flex; gap:14px; flex-wrap:wrap;">
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-        <input type="radio" name="payment_method" value="manual" checked>
-        Manual (QRIS + upload bukti)
-    </label>
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-        <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif>
-        Midtrans
-    </label>
-</div>
+                                @if(!$midtransClientKey)
+                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                                        <input type="radio" name="payment_method" value="manual" checked>
+                                        Manual (QRIS + upload bukti)
+                                    </label>
+                                @endif
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                                    <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
+                                    Midtrans
+                                </label>
+                           </div>
                             @if(!$midtransClientKey)
                                 <div style="font-size:12px; color:#888; margin-top:6px;">Midtrans belum dikonfigurasi.</div>
                             @endif
                         </div>
                     @endif
 
-                    <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
+                    @if($isFreeCourse || !$midtransClientKey)
+                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
+                    @endif
                     @if(!$isFreeCourse)
                         <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Bayar dengan Midtrans</button>
                     @endif
@@ -434,7 +438,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- QRIS Modal -->
+    @if(!$isFreeCourse && !$midtransClientKey)
+        <!-- QRIS Modal -->
         <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -443,65 +448,21 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-center">
-                            <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
+                        <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
 
-                            <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
+                        <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
 
-                            <div class="d-grid gap-2 mt-3">
-                                    <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
-                                            Download QR
-                                    </a>
-                                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadProofCollapse" aria-expanded="false" aria-controls="uploadProofCollapse">
-                                            Saya sudah bayar, upload bukti
-                                    </button>
-                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-
-                            <div class="collapse mt-3 text-start" id="uploadProofCollapse">
-                                    <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                                            <p class="mb-2 text-secondary">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
-
-                                            <!-- Upload bukti pembayaran -->
-                                                <form id="uploadProofForm" method="POST" action="{{ route('courses.manual-payment.upload', $course) }}" enctype="multipart/form-data">
-                                                    @csrf
-                                                    <input type="hidden" name="whatsapp" id="formWhatsappFullInput">
-                                                    <div class="mb-2">
-                                                            <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
-                                                            <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required>
-                                                    </div>
-                                                    <div id="proofPreview" class="mb-3" style="display:none;">
-                                                            <p class="mb-1">Preview bukti:</p>
-                                                            <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
-                                                    </div>
-
-                                                    <button type="submit" id="payNowBtn" class="btn_bayar_payment">Bayar Sekarang</button>
-                                            </form>
-                                    </div>
-                            </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
+                                Download QR
+                            </a>
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-    <!-- Confirm proof submission Modal -->
-    <div class="modal fade" id="confirmProofModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Konfirmasi Bukti Pembayaran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-1 fw-semibold">Yakin untuk bukti pembayaran sudah benar?</p>
-                    <p class="mb-0 text-danger">Tindakan ini tidak dapat dibatalkan!</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" id="confirmProofSubmitBtn" class="btn btn-primary">Ya, kirim</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

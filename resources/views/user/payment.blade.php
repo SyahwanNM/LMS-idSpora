@@ -209,15 +209,17 @@
                                 <div class="mt-3">
                                     <div class="form-label-custom" style="margin-bottom:6px;">Metode Pembayaran</div>
                                    <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                            <input type="radio" name="payment_method" value="manual" checked>
-                             Manual (QRIS + upload bukti)
-                                 </label>
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                         <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif>
-                         Midtrans
-                     </label>
-                    </div>
+                                        @if(!$midtransClientKey)
+                                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                                                <input type="radio" name="payment_method" value="manual" checked>
+                                                Manual (QRIS + upload bukti)
+                                            </label>
+                                        @endif
+                                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                                            <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
+                                            Midtrans
+                                        </label>
+                                   </div>
                                     @if(!$midtransClientKey)
                                         <div class="small text-muted" style="margin-top:6px;">Midtrans belum dikonfigurasi.</div>
                                     @endif
@@ -226,13 +228,19 @@
 
                     </div>
 
-                    <div class="mt-3" id="manualPaySection">
-                        @if(isset($event) && $isFree)
+                    @if(isset($event) && $isFree)
+                        <div class="mt-3" id="manualPaySection">
                             <button type="submit" class="btn-pay">Daftar Gratis</button>
+                        </div>
+                    @else
+                        @if(!$midtransClientKey)
+                            <div class="mt-3" id="manualPaySection">
+                                <button type="button" id="showQrisBtn" class="btn-pay" disabled>Bayar</button>
+                            </div>
                         @else
-                            <button type="button" id="showQrisBtn" class="btn-pay" disabled>Bayar</button>
+                            <div class="mt-3" id="manualPaySection" style="display:none;"></div>
                         @endif
-                    </div>
+                    @endif
 
                     @if(!$isFree)
                         <div id="midtransSection" style="display:none;">
@@ -246,7 +254,7 @@
     </form>
 
     <!-- QRIS Modal (manual) - mirip Course payment -->
-    @if(!isset($event) || !(isset($event) && $isFree))
+    @if((!isset($event) || !(isset($event) && $isFree)) && !$midtransClientKey)
     <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -263,48 +271,8 @@
                         <a href="{{ asset('aset/qr-payment-idSpora.png') }}" class="btn btn-outline-primary" download>
                             Download QR
                         </a>
-                        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadProofCollapse" aria-expanded="false" aria-controls="uploadProofCollapse">
-                            Saya sudah bayar, upload bukti
-                        </button>
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
                     </div>
-
-                    <div class="collapse mt-3 text-start" id="uploadProofCollapse">
-                        <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                            <p class="mb-2 text-secondary">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
-
-                            <div class="mb-2">
-                                <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
-                                <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required form="paymentForm">
-                            </div>
-                            <div id="proofPreview" class="mb-3" style="display:none;">
-                                <p class="mb-1">Preview bukti:</p>
-                                <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
-                            </div>
-
-                            <button type="submit" id="payNowBtn" class="btn-pay" style="margin-top: 0;" form="paymentForm" disabled>Bayar Sekarang</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm proof submission Modal -->
-    <div class="modal fade" id="confirmProofModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Konfirmasi Bukti Pembayaran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-1 fw-semibold">Yakin untuk bukti pembayaran sudah benar?</p>
-                    <p class="mb-0 text-danger">Tindakan ini tidak dapat dibatalkan!</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" id="confirmProofSubmitBtn" class="btn btn-primary">Ya, kirim</button>
                 </div>
             </div>
         </div>
