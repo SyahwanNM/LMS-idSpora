@@ -90,35 +90,7 @@
                         <div class="card-course">
                             @foreach($status['data'] as $course)
                                 @php
-                                    $courseCardImage = null;
-                                    $rawCardThumb = trim((string) ($course->card_thumbnail ?? ''));
-                                    $rawMedia = trim((string) ($course->media ?? ''));
-
-                                    if ($rawCardThumb !== '') {
-                                        if (str_starts_with($rawCardThumb, 'http://') || str_starts_with($rawCardThumb, 'https://')) {
-                                            $courseCardImage = $rawCardThumb;
-                                        } elseif (str_starts_with($rawCardThumb, 'uploads/')) {
-                                            $courseCardImage = asset($rawCardThumb);
-                                        } elseif (str_starts_with($rawCardThumb, 'storage/')) {
-                                            $courseCardImage = asset($rawCardThumb);
-                                        } elseif (str_starts_with($rawCardThumb, 'public/')) {
-                                            $courseCardImage = asset('storage/' . ltrim(substr($rawCardThumb, 7), '/'));
-                                        } else {
-                                            $courseCardImage = asset('storage/' . ltrim($rawCardThumb, '/'));
-                                        }
-                                    } elseif ($rawMedia !== '' && (string) ($course->media_type ?? 'image') === 'image') {
-                                        if (str_starts_with($rawMedia, 'http://') || str_starts_with($rawMedia, 'https://')) {
-                                            $courseCardImage = $rawMedia;
-                                        } elseif (str_starts_with($rawMedia, 'uploads/')) {
-                                            $courseCardImage = asset($rawMedia);
-                                        } elseif (str_starts_with($rawMedia, 'storage/')) {
-                                            $courseCardImage = asset($rawMedia);
-                                        } elseif (str_starts_with($rawMedia, 'public/')) {
-                                            $courseCardImage = asset('storage/' . ltrim(substr($rawMedia, 7), '/'));
-                                        } else {
-                                            $courseCardImage = asset('storage/' . ltrim($rawMedia, '/'));
-                                        }
-                                    }
+                                    $courseCardImage = $course->card_thumbnail_url;
                                 @endphp
                                 <article class="card-item">
                                     <div class="card-media {{ $courseCardImage ? '' : 'no-image' }}">

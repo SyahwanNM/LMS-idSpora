@@ -69,8 +69,8 @@
                 </div>
                 <div class="hero-media">
                     <div class="hero-image-wrap">
-                        @if($course->card_thumbnail)
-                            <img src="{{ asset('storage/' . $course->card_thumbnail) }}" alt="{{ $course->name }}" />
+                        @if($course->card_thumbnail_url)
+                            <img src="{{ $course->card_thumbnail_url }}" alt="{{ $course->name }}" />
                         @else
                             <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=360&fit=crop"
                                 alt="Default Thumbnail" />

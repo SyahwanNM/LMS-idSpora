@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('user_status', 20)->default('active')->after('trainer_tier');
+            $table->string('user_status', 20)->default('active')->after('late_uploads');
             $table->unsignedInteger('consecutive_expired_invitations')->default(0)->after('user_status');
             $table->unsignedInteger('consecutive_late_uploads')->default(0)->after('consecutive_expired_invitations');
             $table->timestamp('last_teaching_at')->nullable()->after('consecutive_late_uploads');

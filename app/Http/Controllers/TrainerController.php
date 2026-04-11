@@ -22,6 +22,32 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
+    private function latestCourseInvitation(int $courseId, int $trainerId): ?TrainerNotification
+    {
+        if ($courseId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'course_invitation')
+            ->where(function ($query) use ($courseId) {
+                $query->where('data', 'like', '%"entity_id":' . $courseId . '%');
+            })
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    private function isCourseMaterialLockedForTrainer(int $courseId, int $trainerId): bool
+    {
+        $invitation = $this->latestCourseInvitation($courseId, $trainerId);
+        if (!$invitation) {
+            return false;
+        }
+
+        return $invitation->effectiveInvitationStatus() !== 'accepted';
+    }
+
     private function ensureTrainerCertificatesSynced($trainer): void
     {
         $trainerId = (int) ($trainer->id ?? 0);
@@ -300,7 +326,22 @@ class TrainerController extends Controller
         $trainerActivity = $activityService->refresh($user);
         $availableContributionSchemes = $activityService->availableContributionSchemes($user);
 
-        $coursesQuery = $user->coursesAsTrainer();
+        // Get pending invitation course IDs to exclude them from displaying
+        $pendingInvitationCourseIds = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->where('type', 'course_invitation')
+            ->where('invitation_status', 'pending')
+            ->pluck('data')
+            ->map(function ($data) {
+                return (int) data_get($data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $coursesQuery = $user->coursesAsTrainer()
+            ->whereNotIn('id', $pendingInvitationCourseIds);
 
         $priorityCourses = (clone $coursesQuery)
             ->withCount([
@@ -326,8 +367,23 @@ class TrainerController extends Controller
             ->whereIn('status', ['published', 'approved', 'active'])
             ->count();
 
+        // Get pending invitation event IDs to exclude them from displaying
+        $pendingInvitationEventIds = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->where('type', 'event_invitation')
+            ->where('invitation_status', 'pending')
+            ->pluck('data')
+            ->map(function ($data) {
+                return (int) data_get($data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
         $activeEventsQuery = Event::query()
             ->where('trainer_id', $user->id)
+            ->whereNotIn('id', $pendingInvitationEventIds)
             ->whereNotNull('event_date')
             ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
 
@@ -1019,7 +1075,12 @@ class TrainerController extends Controller
 
     public function courseStudio(Request $request, $id)
     {
-        $course = \App\Models\Course::where('id', $id)->where('trainer_id', Auth::id())->firstOrFail();
+        $trainerId = (int) Auth::id();
+        $course = \App\Models\Course::where('id', $id)->where('trainer_id', $trainerId)->firstOrFail();
+
+        $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
+        $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
+        $courseMaterialLocked = $this->isCourseMaterialLockedForTrainer((int) $course->id, $trainerId);
 
         $requestedSchemeType = (int) $request->query('scheme', 0);
         $sessionSchemeType = (int) session('trainer_active_scheme_type', 0);
@@ -1032,6 +1093,14 @@ class TrainerController extends Controller
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
             3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
+
+        if ($courseMaterialLocked) {
+            $schemePermissions = [
+                'can_module' => false,
+                'can_video' => false,
+                'can_quiz' => false,
+            ];
+        }
 
         $allowedTabs = array_values(array_filter([
             'module' => $schemePermissions['can_module'] ?? false,
@@ -1101,7 +1170,9 @@ class TrainerController extends Controller
             'uploadedMaterials',
             'activeSchemeType',
             'schemePermissions',
-            'activeTab'
+            'activeTab',
+            'courseMaterialLocked',
+            'courseInvitationStatus'
         ));
     }
 
@@ -1397,6 +1468,13 @@ class TrainerController extends Controller
         $course = \App\Models\Course::findOrFail($id);
         if ($course->trainer_id !== Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
+        }
+
+        if ($this->isCourseMaterialLockedForTrainer((int) $course->id, (int) Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi course masih terkunci sampai undangan diterima.',
+            ], 422);
         }
 
         // Ubah string "1,2" menjadi array [1, 2]
@@ -1704,6 +1782,13 @@ class TrainerController extends Controller
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
         }
 
+        if ($this->isCourseMaterialLockedForTrainer((int) $course->id, (int) Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi course masih terkunci sampai undangan diterima.',
+            ], 422);
+        }
+
         $file = $request->file('image');
         $uploadDir = public_path('uploads/courses/' . $id . '/editor-images');
         if (!is_dir($uploadDir)) {
@@ -1892,6 +1977,13 @@ class TrainerController extends Controller
         $course = \App\Models\Course::findOrFail($id);
         if ($course->trainer_id !== Auth::id()) {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.']);
+        }
+
+        if ($this->isCourseMaterialLockedForTrainer((int) $course->id, (int) Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Materi course masih terkunci sampai undangan diterima.',
+            ], 422);
         }
 
         $questionsData = $request->questions;

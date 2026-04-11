@@ -85,9 +85,9 @@ class TrainerNotificationsController extends Controller
             $notification->save();
         }
 
-        $entityType = (string) data_get($notification->data, 'entity_type', '');
-        $entityId = (int) data_get($notification->data, 'entity_id', 0);
-        $invitationStatus = (string) data_get($notification->data, 'invitation_status', 'pending');
+        $entityType = $notification->effectiveEntityType();
+        $entityId = $notification->effectiveEntityId();
+        $invitationStatus = $notification->effectiveInvitationStatus();
 
         if ($entityType === 'event' && $entityId > 0 && in_array($invitationStatus, ['pending', 'accepted'], true)) {
             return redirect()->to(route('trainer.events.show', $entityId) . '#e-agreement');
@@ -112,7 +112,7 @@ class TrainerNotificationsController extends Controller
         $trainer = User::query()->findOrFail($uid);
         $activityService->refresh($trainer);
 
-        $entityType = (string) data_get($notification->data, 'entity_type', '');
+        $entityType = $notification->effectiveEntityType();
 
         $rules = [
             'decision' => 'required|in:accept,reject',
@@ -127,7 +127,7 @@ class TrainerNotificationsController extends Controller
         $decision = (string) $validated['decision'];
 
         $data = is_array($notification->data) ? $notification->data : [];
-        $currentStatus = (string) data_get($data, 'invitation_status', 'pending');
+        $currentStatus = $notification->effectiveInvitationStatus() ?: 'pending';
         if (in_array($currentStatus, ['accepted', 'rejected', 'expired'], true)) {
             return back()->with('success', 'Undangan ini sudah diproses sebelumnya.');
         }
