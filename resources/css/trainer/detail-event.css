@@ -518,6 +518,10 @@ h1 {
     margin-bottom: 18px;
 }
 
+.vsa-grid.is-hybrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .vsa-card {
     background: var(--detail-panel-bg);
     border: 1px solid var(--detail-border);

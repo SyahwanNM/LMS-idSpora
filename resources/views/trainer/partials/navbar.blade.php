@@ -117,10 +117,21 @@
                                             $notificationEntityType = data_get($notification->data, 'entity_type');
                                             $notificationTitle = addslashes((string) ($notification->title ?? 'Undangan Event'));
                                         @endphp
-                                        <button type="button" class="trainer-notification-action accept"
-                                            onclick="openSchemeSelectionModal({{ $notification->id }}, '{{ $notificationTitle }}', '{{ $notificationEntityType }}')">
-                                            Terima
-                                        </button>
+                                        @if($notificationEntityType === 'course')
+                                            <button type="button" class="trainer-notification-action accept"
+                                                onclick="openSchemeSelectionModal({{ $notification->id }}, '{{ $notificationTitle }}', '{{ $notificationEntityType }}')">
+                                                Terima
+                                            </button>
+                                        @else
+                                            <form method="POST" class="js-invitation-response-form"
+                                                action="{{ route('trainer.notifications.respond', $notification->id) }}">
+                                                @csrf
+                                                <input type="hidden" name="decision" value="accept">
+                                                <input type="hidden" name="e_agreement" value="1">
+                                                <button type="submit" class="trainer-notification-action accept"
+                                                    data-loading-text="Memproses...">Terima</button>
+                                            </form>
+                                        @endif
                                         <form method="POST" class="js-invitation-response-form"
                                             action="{{ route('trainer.notifications.respond', $notification->id) }}">
                                             @csrf

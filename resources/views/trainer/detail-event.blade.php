@@ -13,10 +13,14 @@
 
 @php
   $mapLink = '';
+  $mapsUrl = trim((string) ($event->maps_url ?? ''));
+  $zoomLink = trim((string) ($event->zoom_link ?? ''));
   $isOfflineEvent = false;
+  $hasMapLink = false;
+  $hasZoomLink = $zoomLink !== '';
 
-  if (!empty($event->maps_url)) {
-    $maps = trim((string) $event->maps_url);
+  if ($mapsUrl !== '') {
+    $maps = $mapsUrl;
     if (
       \Illuminate\Support\Str::startsWith($maps, ['http://', 'https://', '//'])
     ) {
@@ -29,13 +33,16 @@
       }
     }
     $isOfflineEvent = true;
+    $hasMapLink = true;
   } elseif (!empty($event->latitude) && !empty($event->longitude)) {
     $mapLink = 'https://www.google.com/maps?q=' . urlencode($event->latitude . ',' . $event->longitude);
     $isOfflineEvent = true;
+    $hasMapLink = true;
   }
 
   // Legacy compatibility: some old online events stored VBG in image field.
-  $hasVbgAsset = !empty($event->vbg_path) || (!$isOfflineEvent && !empty($event->image));
+  $hasHybridAssets = $hasMapLink && $hasZoomLink;
+  $hasVbgAsset = !empty($event->vbg_path) || ($hasZoomLink && !empty($event->image));
   $vbgUrl = $hasVbgAsset ? route('trainer.events.vbg.download', $event->id) : '';
 @endphp
 
@@ -129,8 +136,8 @@
     <div class="detail-layout-top">
       <section class="vsa-section">
         <p class="vsa-title">Event Assets</p>
-        <div class="vsa-grid">
-          @if($isOfflineEvent)
+        <div class="vsa-grid {{ $hasHybridAssets ? 'is-hybrid' : '' }}">
+          @if($hasMapLink)
             <article class="vsa-card">
               <div class="vsa-icon vsa-icon-blue">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
@@ -140,7 +147,7 @@
               </div>
               <div class="vsa-meta">
                 <p class="vsa-label">LOCATION MAP</p>
-                <h3>Offline Venue</h3>
+                <h3>Lokasi Event</h3>
                 <p class="vsa-link">{{ $event->location ?? 'Lokasi belum tersedia' }}</p>
               </div>
               <a href="{{ $mapLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($mapLink) ? 'disabled' : '' }}>
@@ -153,7 +160,9 @@
                 </svg>
               </a>
             </article>
-          @else
+          @endif
+
+          @if($hasZoomLink)
             <article class="vsa-card">
               <div class="vsa-icon vsa-icon-blue">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
@@ -162,10 +171,11 @@
                 </svg>
               </div>
               <div class="vsa-meta">
+                <p class="vsa-label">ONLINE SESSION</p>
                 <h3>Virtual Meet</h3>
-                <p class="vsa-link">{{ $event->zoom_link ?? 'Link belum tersedia' }}</p>
+                <p class="vsa-link">{{ $zoomLink ?: 'Link belum tersedia' }}</p>
               </div>
-              <a href="{{ $event->zoom_link ?? '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($event->zoom_link) ? 'disabled' : '' }}>
+              <a href="{{ $zoomLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($zoomLink) ? 'disabled' : '' }}>
                 JOIN SESSION
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path fill-rule="evenodd"
@@ -175,31 +185,32 @@
                 </svg>
               </a>
             </article>
+          @endif
 
-            @if(!empty($vbgUrl))
-              <article class="vsa-card">
-                <div class="vsa-icon vsa-icon-amber">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
-                    <path
-                      d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
-                  </svg>
-                </div>
-                <div class="vsa-meta">
-                  <h3>Virtual Background</h3>
-                  <p class="vsa-desc">High-Res PNG • Pre-branded</p>
-                </div>
-                <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-amber" download>
-                  DOWNLOAD VBG
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path
-                      d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                    <path
-                      d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                  </svg>
-                </a>
-              </article>
-            @endif
+          @if(!empty($vbgUrl))
+            <article class="vsa-card">
+              <div class="vsa-icon vsa-icon-amber">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
+                  <path
+                    d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
+                </svg>
+              </div>
+              <div class="vsa-meta">
+                <p class="vsa-label">VIRTUAL BACKGROUND</p>
+                <h3>Virtual Background</h3>
+                <p class="vsa-desc">High-Res PNG • Pre-branded</p>
+              </div>
+              <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-amber" download>
+                DOWNLOAD VBG
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path
+                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                  <path
+                    d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                </svg>
+              </a>
+            </article>
           @endif
         </div>
 

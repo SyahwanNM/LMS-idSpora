@@ -126,13 +126,6 @@ class TrainerNotificationsController extends Controller
         $validated = $request->validate($rules);
         $decision = (string) $validated['decision'];
 
-        // Event acceptance must use the dedicated scheme modal flow to persist assignment and legal agreements.
-        if ($entityType === 'event' && $decision === 'accept') {
-            return redirect()
-                ->route('trainer.dashboard')
-                ->with('error', 'Untuk menerima undangan event, gunakan tombol Terima pada kartu undangan (dengan pemilihan skema).');
-        }
-
         $data = is_array($notification->data) ? $notification->data : [];
         $currentStatus = (string) data_get($data, 'invitation_status', 'pending');
         if (in_array($currentStatus, ['accepted', 'rejected', 'expired'], true)) {

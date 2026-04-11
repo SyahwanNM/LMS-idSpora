@@ -902,7 +902,8 @@
           <p class="metric-label">Undangan Kedaluwarsa</p>
           <div class="metric-value-row">
             <h2 class="metric-value">
-              {{ number_format((int) data_get($trainerActivity, 'consecutive_expired_invitations', 0)) }}</h2>
+              {{ number_format((int) data_get($trainerActivity, 'consecutive_expired_invitations', 0)) }}
+            </h2>
             <span
               class="metric-change {{ (int) data_get($trainerActivity, 'consecutive_expired_invitations', 0) > 0 ? 'is-negative' : 'is-positive' }}">
               {{ (int) data_get($trainerActivity, 'consecutive_expired_invitations', 0) > 0 ? 'Perlu Perhatian' : 'Terkendali' }}
@@ -1145,39 +1146,30 @@
               $dueDate = $inviteDueAt ? \Illuminate\Support\Carbon::parse($inviteDueAt) : null;
               $isOverdue = $dueDate ? $dueDate->isPast() : false;
               $inviteEntityType = data_get($invite->data, 'entity_type', 'course');
-              $inviteTypeLabel = $inviteEntityType === 'event' ? 'Event Invitation' : 'Course Invitation';
+              $inviteTypeLabel = $inviteEntityType === 'event' ? 'Event' : 'Course';
+              $inviteStatusLabel = match ($inviteStatus) {
+                'accepted' => 'Diterima',
+                'rejected' => 'Ditolak',
+                'expired' => 'Expired',
+                default => 'Menunggu Tindakan Anda',
+              };
             @endphp
-            <div class="invitation-item {{ is_null($invite->read_at) ? 'is-unread' : '' }}">
+            <div
+              class="invitation-item {{ is_null($invite->read_at) ? 'is-unread' : '' }} {{ $inviteEntityType === 'event' ? 'is-event' : 'is-course' }}">
               <div class="invitation-item-top">
                 <h4 class="invitation-item-title">{{ $invite->title }}</h4>
-                <span class="mini-pill is-blue">{{ $inviteTypeLabel }}</span>
+                <span class="invitation-type-label {{ $inviteEntityType === 'event' ? 'is-event' : 'is-course' }}">{{ $inviteTypeLabel }}</span>
               </div>
-              <p class="invitation-item-message">{{ $invite->message }}</p>
-
-              <div class="entry-tags">
-                @if($dueDate)
-                  <span
-                    class="countdown-timer js-countdown {{ $isOverdue && $inviteStatus === 'pending' ? 'is-urgent' : '' }}"
-                    data-deadline="{{ $dueDate->toIso8601String() }}" data-mode="24h">
-                    Menghitung...
-                  </span>
-                @endif
-                @if($inviteStatus === 'pending')
-                  <span class="mini-pill is-yellow">Menunggu Tindakan Anda</span>
-                @elseif($inviteStatus === 'accepted')
-                  <span class="mini-pill is-green">Diterima</span>
-                @elseif($inviteStatus === 'rejected')
-                  <span class="mini-pill is-red">Ditolak</span>
-                @elseif($inviteStatus === 'expired')
-                  <span class="mini-pill is-red">Expired</span>
-                @endif
+              <div class="invitation-item-summary">
+                <span class="invitation-summary-text {{ $isOverdue && $inviteStatus === 'pending' ? 'is-overdue' : '' }}">
+                  {{ $inviteStatusLabel }}
+                </span>
               </div>
-
               @if($dueDate)
                 <p class="invitation-deadline {{ $isOverdue && $inviteStatus === 'pending' ? 'is-overdue' : '' }}">
-                  Deadline: {{ $dueDate->format('d M Y H:i') }} • SLA 24 jam
+                  Deadline: {{ $dueDate->format('d M Y H:i') }}
                   @if($isOverdue && $inviteStatus === 'pending')
-                    (Terlambat)
+                    • SLA terlewat
                   @endif
                 </p>
               @endif
@@ -1190,10 +1182,20 @@
               @if($inviteStatus === 'pending')
                 <div class="invitation-actions">
                   @php $inviteEntityType = data_get($invite->data, 'entity_type'); @endphp
-                  <button type="button" class="action-chip primary"
-                    onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">
-                    Terima
-                  </button>
+                  @if($inviteEntityType === 'course')
+                    <button type="button" class="action-chip primary"
+                      onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">
+                      Terima
+                    </button>
+                  @else
+                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
+                      class="js-invitation-response-form">
+                      @csrf
+                      <input type="hidden" name="decision" value="accept">
+                      <input type="hidden" name="e_agreement" value="1">
+                      <button type="submit" class="action-chip primary">Terima</button>
+                    </form>
+                  @endif
                   <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}"
                     class="js-invitation-response-form">
                     @csrf
