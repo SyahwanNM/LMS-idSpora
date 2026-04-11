@@ -100,17 +100,27 @@
                                 @endphp
                                 <div class="position-relative">
                                     <input type="text" name="materi" id="materi" class="form-control" required
-                                        value="{{ $currentMateri }}"
-                                        placeholder="Ketik materi (contoh: Backend Development)" list="materiList" autocomplete="off">
-                                    <datalist id="materiList">
-                                        @foreach($materiMerged as $opt)
-                                            @php $optStr = (string) $opt; @endphp
-                                            <option value="{{ $optStr }}"></option>
-                                        @endforeach
-                                    </datalist>
+                                           value="{{ $currentMateri }}"
+                                           placeholder="Klik untuk lihat daftar, lalu ketik untuk mencari"
+                                           autocomplete="off">
+                                    <div id="materiSuggestions"
+                                         class="list-group position-absolute w-100 shadow-sm"
+                                         style="display:none; z-index: 1060; max-height: 240px; overflow-y:auto;"></div>
                                 </div>
-                                <div class="form-text">Pilih kategori materi utama event.</div>
+                                <div class="form-text">Klik kolom untuk melihat daftar. Ketik untuk mencari.</div>
                                 <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
+                            </div>
+
+                            <!-- Kelola Event: Manage / Create -->
+                            <div class="mb-3">
+                                <label for="manage_action" class="form-label fw-semibold">Kelola Event <span class="text-danger">*</span></label>
+                                @php $currentManage = old('manage_action', $event->manage_action); @endphp
+                                <select name="manage_action" id="manage_action" class="form-select" required>
+                                    <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
+                                    <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
+                                    <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
+                                </select>
+                                <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
                             </div>
 
                             <!-- Jenis Acara (autocomplete after 2 chars) -->
@@ -147,10 +157,19 @@
                                     placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description', $event->short_description ?? '') }}</textarea>
                                 <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40
                                     kata</small>
-                                        class="text-danger">*</span></label>
-                                <input type="date" name="event_date" id="tanggal" class="form-control" required
-                                    value="{{ old('event_date', $event->event_date) }}">
-                                <div class="form-text">Pilih tanggal pelaksanaan event.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description', $event->description) }}</textarea>
+                                <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
+                                <input type="text" name="event_date" id="tanggal" class="form-control" required autocomplete="off"
+                                    value="{{ old('event_date', $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : '') }}">
+                                <div class="form-text">Format tampilan: Hari, DD Bulan YYYY</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Waktu Mulai & Selesai <span
@@ -520,35 +539,61 @@
                 });
             })();
 
-            // Materi dropdown (native datalist) + validation (must match one of the options)
-            (function setupMateriDatalist(){
+            // Materi autocomplete (show after 2 chars) + validation
+            (function setupMateriAutocomplete(){
                 const materiInput = document.getElementById('materi');
-                const list = document.getElementById('materiList');
+                const box = document.getElementById('materiSuggestions');
                 const invalidText = document.getElementById('materiInvalidText');
-                if(!materiInput || !list) return;
+                if(!materiInput || !box) return;
 
-                const options = Array.from(list.options || []).map(o => String(o.value || '').trim()).filter(Boolean);
-                if(!options.length){
-                    materiInput.setCustomValidity('');
-                    if(invalidText) invalidText.style.display = 'none';
-                    return;
+                const options = @json($materiMerged ?? []);
+                const norm = (s) => String(s || '').trim();
+                const lower = (s) => norm(s).toLowerCase();
+                const optionSet = new Set(options.map(v => lower(v)).filter(Boolean));
+
+                function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+                function show(items){
+                    if(!items.length){ hide(); return; }
+                    box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                    box.style.display = 'block';
                 }
-                const optionSet = new Set(options.map(v => v.toLowerCase()));
-
+                function filter(q){
+                    const query = lower(q);
+                    const base = options.map(norm).filter(Boolean);
+                    if(!query) return base.slice(0, 30);
+                    return base
+                        .filter(v => lower(v).includes(query))
+                        .slice(0, 30);
+                }
                 function applyValidity(){
-                    const raw = String(materiInput.value || '').trim();
+                    const raw = norm(materiInput.value);
                     if(!raw){
                         materiInput.setCustomValidity('');
                         if(invalidText) invalidText.style.display = 'none';
                         return;
                     }
-                    const ok = optionSet.has(raw.toLowerCase());
+                    const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
                     materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
                     if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
                 }
 
-                materiInput.addEventListener('input', applyValidity);
-                materiInput.addEventListener('blur', applyValidity);
+                materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
+                materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
+                materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
+
+                box.addEventListener('mousedown', (e) => {
+                    const btn = e.target?.closest('[data-value]');
+                    if(!btn) return;
+                    e.preventDefault();
+                    materiInput.value = btn.getAttribute('data-value') || '';
+                    hide();
+                    applyValidity();
+                });
+                document.addEventListener('click', (e) => {
+                    if (e.target === materiInput) return;
+                    if (box.contains(e.target)) return;
+                    hide();
+                });
                 applyValidity();
             })();
 
@@ -818,13 +863,13 @@
                     locale: 'id',
                     dateFormat: 'Y-m-d',
                     altInput: true,
-                    altFormat: 'l, j F Y',
+                    altFormat: 'l, d F Y',
                     disableMobile: true,
                     onChange: function () {
                         if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
                     }
                 });
-                discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true, clickOpens: true });
+                discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, d F Y', disableMobile: true, clickOpens: true });
             }
             function updateDiscountUntilBounds() {
                 if (!discountUntilFp) return;
