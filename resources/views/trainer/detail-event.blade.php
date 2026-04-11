@@ -11,6 +11,41 @@
   ];
 @endphp
 
+@php
+  $mapLink = '';
+  $mapsUrl = trim((string) ($event->maps_url ?? ''));
+  $zoomLink = trim((string) ($event->zoom_link ?? ''));
+  $isOfflineEvent = false;
+  $hasMapLink = false;
+  $hasZoomLink = $zoomLink !== '';
+
+  if ($mapsUrl !== '') {
+    $maps = $mapsUrl;
+    if (
+      \Illuminate\Support\Str::startsWith($maps, ['http://', 'https://', '//'])
+    ) {
+      $mapLink = $maps;
+    } else {
+      try {
+        $mapLink = \Illuminate\Support\Facades\Storage::url($maps);
+      } catch (\Throwable $e) {
+        $mapLink = $maps;
+      }
+    }
+    $isOfflineEvent = true;
+    $hasMapLink = true;
+  } elseif (!empty($event->latitude) && !empty($event->longitude)) {
+    $mapLink = 'https://www.google.com/maps?q=' . urlencode($event->latitude . ',' . $event->longitude);
+    $isOfflineEvent = true;
+    $hasMapLink = true;
+  }
+
+  // Legacy compatibility: some old online events stored VBG in image field.
+  $hasHybridAssets = $hasMapLink && $hasZoomLink;
+  $hasVbgAsset = !empty($event->vbg_path) || ($hasZoomLink && !empty($event->image));
+  $vbgUrl = $hasVbgAsset ? route('trainer.events.vbg.download', $event->id) : '';
+@endphp
+
 @section('content')
   <div class="hero-section">
     <div class="hero-container">
@@ -22,26 +57,13 @@
           </svg>
           <span>ALL SESSIONS</span>
         </button>
-
-        <div class="event-status-badges">
-          <span class="status-badge">{{ strtoupper($event->jenis ?? 'VIRTUAL STUDIO') }}</span>
-          <span class="status-badge">CONFIRMED COMMITMENT</span>
-        </div>
       </div>
 
       <div class="hero-body">
         <div class="hero-left">
-          <div class="event-category-badge">
-            <span class="badge-icon"></span>
-            <span>{{ strtoupper($event->category ?? 'HYBRID MASTERCLASS') }}</span>
-            <span class="badge-sep">•</span>
-            <span>SESSION LEDGER</span>
-          </div>
-
           <h1 class="event-hero-title">
             {{ $event->title }}
           </h1>
-
           <div class="event-info-cards">
             <div class="info-card">
               <div class="info-icon-shell">
@@ -111,274 +133,232 @@
   </div>
 
   <div class="detail-layout">
-    <section class="vsa-section">
-      <p class="vsa-title">VIRTUAL STUDIO ASSETS</p>
-      <div class="vsa-grid">
-        <article class="vsa-card">
-          <div class="vsa-icon vsa-icon-blue">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd"
-                d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
-            </svg>
-          </div>
-          <div class="vsa-meta">
-            <p class="vsa-label">MEETING PORTAL</p>
-            <h3>Session Conference</h3>
-            <p class="vsa-link">{{ $event->zoom_link ?? 'Link belum tersedia' }}</p>
-          </div>
-          <a href="{{ $event->zoom_link ?? '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($event->zoom_link) ? 'disabled' : '' }}>
-            JOIN SESSION
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd"
-                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-              <path fill-rule="evenodd"
-                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-            </svg>
-          </a>
-        </article>
-
-        <article class="vsa-card">
-          <div class="vsa-icon vsa-icon-amber">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
-              <path
-                d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
-            </svg>
-          </div>
-          <div class="vsa-meta">
-            <p class="vsa-label">BRANDING KIT</p>
-            <h3>Virtual Background</h3>
-            <p class="vsa-desc">High-Res PNG • Pre-branded</p>
-          </div>
-          @if(!empty($event->vbg_path) && !empty($event->vbg_file_url))
-            <a href="{{ $event->vbg_file_url }}" class="vsa-btn vsa-btn-amber" download>
-              DOWNLOAD VBG
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                <path
-                  d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-              </svg>
-            </a>
-          @else
-            <a href="#" class="vsa-btn vsa-btn-amber" disabled aria-disabled="true" tabindex="-1">
-              DOWNLOAD VBG
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path
-                  d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                <path
-                  d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-              </svg>
-            </a>
+    <div class="detail-layout-top">
+      <section class="vsa-section">
+        <p class="vsa-title">Event Assets</p>
+        <div class="vsa-grid {{ $hasHybridAssets ? 'is-hybrid' : '' }}">
+          @if($hasMapLink)
+            <article class="vsa-card">
+              <div class="vsa-icon vsa-icon-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                  <path
+                    d="M8 0a5 5 0 0 0-5 5c0 1.676 1.3 4.02 3.163 6.275A24.7 24.7 0 0 0 8 15c.837-1.08 1.837-2.36 2.837-3.725C12.7 9.02 14 6.676 14 5a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
+                </svg>
+              </div>
+              <div class="vsa-meta">
+                <p class="vsa-label">LOCATION MAP</p>
+                <h3>Lokasi Event</h3>
+                <p class="vsa-link">{{ $event->location ?? 'Lokasi belum tersedia' }}</p>
+              </div>
+              <a href="{{ $mapLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($mapLink) ? 'disabled' : '' }}>
+                OPEN MAPS
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd"
+                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                  <path fill-rule="evenodd"
+                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                </svg>
+              </a>
+            </article>
           @endif
-        </article>
-      </div>
 
-      <div class="vsa-context">
-        <div class="vsa-context-title">
-          <span class="context-dot"></span>
-          <span>PEDAGOGICAL CONTEXT</span>
+          @if($hasZoomLink)
+            <article class="vsa-card">
+              <div class="vsa-icon vsa-icon-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd"
+                    d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
+                </svg>
+              </div>
+              <div class="vsa-meta">
+                <p class="vsa-label">ONLINE SESSION</p>
+                <h3>Virtual Meet</h3>
+                <p class="vsa-link">{{ $zoomLink ?: 'Link belum tersedia' }}</p>
+              </div>
+              <a href="{{ $zoomLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($zoomLink) ? 'disabled' : '' }}>
+                JOIN SESSION
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd"
+                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                  <path fill-rule="evenodd"
+                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                </svg>
+              </a>
+            </article>
+          @endif
+
+          @if(!empty($vbgUrl))
+            <article class="vsa-card">
+              <div class="vsa-icon vsa-icon-amber">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
+                  <path
+                    d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
+                </svg>
+              </div>
+              <div class="vsa-meta">
+                <p class="vsa-label">VIRTUAL BACKGROUND</p>
+                <h3>Virtual Background</h3>
+                <p class="vsa-desc">High-Res PNG • Pre-branded</p>
+              </div>
+              <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-amber" download>
+                DOWNLOAD VBG
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path
+                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                  <path
+                    d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                </svg>
+              </a>
+            </article>
+          @endif
         </div>
-        @php
-          $pedagogicalDesc = isset($event) ? (string) ($event->description ?? '') : '';
-          // Some descriptions are stored as rich HTML with <p> wrappers.
-          // Remove <p> tags so they don't show up or affect layout here.
-          $pedagogicalDesc = preg_replace('#</?p[^>]*>#i', '', $pedagogicalDesc) ?? '';
-          $pedagogicalDesc = trim($pedagogicalDesc);
-        @endphp
-        @if($pedagogicalDesc !== '')
-          <div>{!! $pedagogicalDesc !!}</div>
-        @else
-          <div>Deskripsi detail event belum tersedia.</div>
-        @endif
-      </div>
 
-      <p class="vsa-subtitle">SESSION LEDGER</p>
-      <section class="rundown-list">
-        <h2>Rundown Acara</h2>
-        @php
-          $items = collect();
-
-          if (isset($event)) {
-            // Prefer normalized schedule items table
-            try {
-              $items = $event->relationLoaded('scheduleItems')
-                ? ($event->scheduleItems ?? collect())
-                : $event->scheduleItems()->get();
-            } catch (\Throwable $e) {
-              $items = collect();
-            }
-
-            // Fallback to schedule_json (legacy)
-            if ($items->isEmpty()) {
-              $rawSchedule = $event->schedule_json ?? null;
-
-              $scheduleArr = null;
-              if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
-                $decoded = json_decode($rawSchedule, true);
-                $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
-              } elseif (is_array($rawSchedule)) {
-                $scheduleArr = $rawSchedule;
-              } elseif (is_object($rawSchedule)) {
-                $scheduleArr = json_decode(json_encode($rawSchedule), true);
-              }
-
-              if (is_array($scheduleArr)) {
-                $items = collect($scheduleArr)->map(function ($row) {
-                  $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
-                  return (object) [
-                    'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
-                    'end' => $row['end'] ?? ($row['time_end'] ?? null),
-                    'title' => $row['title'] ?? ($row['activity'] ?? ''),
-                    'description' => $row['description'] ?? ($row['desc'] ?? ''),
-                  ];
-                })->filter(function ($it) {
-                  return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
-                })->values();
-              }
-            }
-          }
-
-          $formatTime = function ($t) {
-            if (empty($t)) {
-              return null;
-            }
-            try {
-              return \Carbon\Carbon::parse($t)->format('H:i');
-            } catch (\Throwable $e) {
-              return is_string($t) ? $t : null;
-            }
-          };
-        @endphp
-        <ul>
-          @forelse($items as $it)
+        <p class="vsa-title">Deskripsi Event</p>
+        <div class="detail-box detail-box-context">
+          <div class="vsa-context">
             @php
-              $start = $formatTime($it->start ?? null);
-              $end = $formatTime($it->end ?? null);
-              $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-              $activity = trim((string) ($it->title ?? ''));
-              if ($activity === '') {
-                $activity = trim((string) ($it->description ?? ''));
+              $eventDescription = trim((string) ($event->description ?? ''));
+              if ($eventDescription === '') {
+                $eventDescription = trim((string) ($event->short_description ?? ''));
+              }
+              if ($eventDescription === '') {
+                $eventDescription = trim((string) ($event->materi ?? ''));
               }
             @endphp
-            <li>
-              <span class="time-rundown">{{ $timeStr !== '' ? $timeStr : '-' }}</span>
-              <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
-            </li>
-          @empty
-            <li>
-              <span class="time-rundown">—</span>
-              <span class="activity-rundown">Schedule will be announced.</span>
-            </li>
-          @endforelse
-        </ul>
+            <div class="vsa-context-body">
+              {!! $eventDescription !== '' ? $eventDescription : '<p>Deskripsi event belum tersedia.</p>' !!}
+            </div>
+          </div>
+        </div>
+
+        <p class="vsa-title" id="e-agreement">E-Agreement Penugasan</p>
+        <div class="detail-box detail-box-context">
+          <div class="vsa-context">
+            @php
+              $agreementHtml = trim((string) ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')));
+            @endphp
+            <div class="vsa-context-body">
+              {!! $agreementHtml !== ''
+    ? $agreementHtml
+    : '<p>Dokumen E-Agreement belum tersedia. Silakan hubungi admin untuk melengkapi terms event ini.</p>' !!}
+            </div>
+          </div>
+        </div>
+
+        <section class="rundown-list">
+          <h2>Rundown Acara</h2>
+          @php
+            $items = collect();
+
+            if (isset($event)) {
+              try {
+                $items = $event->relationLoaded('scheduleItems')
+                  ? ($event->scheduleItems ?? collect())
+                  : $event->scheduleItems()->get();
+              } catch (\Throwable $e) {
+                $items = collect();
+              }
+
+              if ($items->isEmpty()) {
+                $rawSchedule = $event->schedule_json ?? null;
+
+                $scheduleArr = null;
+                if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                  $decoded = json_decode($rawSchedule, true);
+                  $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                } elseif (is_array($rawSchedule)) {
+                  $scheduleArr = $rawSchedule;
+                } elseif (is_object($rawSchedule)) {
+                  $scheduleArr = json_decode(json_encode($rawSchedule), true);
+                }
+
+                if (is_array($scheduleArr)) {
+                  $items = collect($scheduleArr)->map(function ($row) {
+                    $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
+                    return (object) [
+                      'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                      'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                      'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                      'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                    ];
+                  })->filter(function ($it) {
+                    return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                  })->values();
+                }
+              }
+            }
+
+            $formatTime = function ($t) {
+              if (empty($t)) {
+                return null;
+              }
+              try {
+                return \Carbon\Carbon::parse($t)->format('H:i');
+              } catch (\Throwable $e) {
+                return is_string($t) ? $t : null;
+              }
+            };
+          @endphp
+          <ul>
+            @forelse($items as $it)
+              @php
+                $start = $formatTime($it->start ?? null);
+                $end = $formatTime($it->end ?? null);
+                $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                $activity = trim((string) ($it->title ?? ''));
+                if ($activity === '') {
+                  $activity = trim((string) ($it->description ?? ''));
+                }
+              @endphp
+              <li>
+                <span class="time-rundown">{{ $timeStr !== '' ? $timeStr : '-' }}</span>
+                <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
+              </li>
+            @empty
+              <li>
+                <span class="time-rundown">—</span>
+                <span class="activity-rundown">Schedule will be announced.</span>
+              </li>
+            @endforelse
+          </ul>
+        </section>
       </section>
 
-      <aside class="hub-card">
-        <p class="hub-title">INSTRUCTOR HUB</p>
-
-        {{-- Invitation Status Section --}}
-        @php
-          $invitations = \App\Models\TrainerNotification::where('trainer_id', Auth::id())
-            ->where('type', 'event_invitation')
-            ->where(function ($q) use ($event) {
-              $q->whereJsonContains('data->entity_id', $event->id)
-                ->orWhereJsonContains('data->entity_id', (string) $event->id);
-            })
-            ->orderByDesc('created_at')
-            ->get();
-
-          $latestInvitation = $invitations->first();
-          $invitationDueAt = data_get($latestInvitation?->data, 'due_at');
-
-          $statuses = $invitations->map(function ($n) {
-            return (string) ($n?->invitation_status ?? data_get($n?->data, 'invitation_status', 'pending'));
-          })->map(fn($s) => strtolower(trim($s)))->filter()->values();
-
-          $hasPendingInvitation = $invitations->isNotEmpty() && !$statuses->contains('accepted') && !$statuses->contains('rejected');
-        @endphp
-
-        @if ($hasPendingInvitation)
-          <div class="hub-section"
-            style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <p class="hub-section-title" style="margin-bottom: 12px; color: #991b1b; border-bottom: none;">📋 Event
-              Invitation</p>
-            <p style="font-size: 13px; color: #7f1d1d; margin-bottom: 12px;">Anda telah diundang menjadi narasumber event ini.</p>
-            @if(!empty($invitationDueAt))
-              <p style="font-size: 12px; color: #991b1b; margin-bottom: 12px;">Tenggat pengumpulan materi:
-                {{ \Carbon\Carbon::parse($invitationDueAt)->format('d M Y H:i') }}</p>
-            @endif
-          </div>
-        @endif
-
+      <div class="hub-actions-column">
+        <p class="hub-title">Materi</p>
         <div class="hub-section">
-          <p class="hub-section-title">ENGAGEMENT REQUIREMENTS</p>
-          <div class="hub-pill-grid">
-            <div class="hub-pill" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
-              <p class="hub-pill-label">MATERIALS</p>
-              <p class="hub-pill-value">Upload Content</p>
+          <div class="hub-item" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
+            <div class="hub-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path
+                  d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v9A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5z" />
+                <path d="M12 11v7" />
+                <path d="m8.8 14.2 3.2-3.2 3.2 3.2" />
+              </svg>
             </div>
-            <div class="hub-pill" data-redirect="#">
-              <p class="hub-pill-label">ASSESSMENTS</p>
-              <p class="hub-pill-value">Quizzes</p>
+            <div>
+              <h4>Kirim Materi</h4>
             </div>
           </div>
         </div>
-
-        <div class="hub-item">
-          <div class="hub-item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-              <path
-                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-              <path
-                d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
-            </svg>
-          </div>
-          <div>
-            <h4>Submit Assets</h4>
-            <p>Pedagogical Materials</p>
-          </div>
-        </div>
-
-        <div class="hub-item">
-          <div class="hub-item-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-              <path
-                d="M5.338 5.59a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75zm6 0a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 .75-.75z" />
-            </svg>
-          </div>
-          <div>
-            <h4>Learner Ledger</h4>
-            <p>Attendance &amp; Profiles</p>
-          </div>
-        </div>
-
-        <div class="hub-alert">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-            <path
-              d="m10.97 4.97-.02.02-3.36 3.36a.75.75 0 1 1-1.06-1.06l3.36-3.36a.75.75 0 1 1 1.06 1.06l-.02.02zm-9.47 8.47H6a.75.75 0 0 1 0 1.5H.539l-.427 2.154a.75.75 0 0 0 .921.921l2.154-.427V16a.75.75 0 0 1 1.5 0v2.039l2.154.427a.75.75 0 0 0 .921-.921l-.427-2.154H6a.75.75 0 0 1 0-1.5H1.5z" />
-          </svg>
-          <p>
-            VALIDATION REQUIRED: PLEASE UPLOAD PEDAGOGICAL ASSETS AT LEAST 24H
-            PRIOR FOR AUDIT.
-          </p>
-        </div>
-      </aside>
+      </div>
+    </div>
   </div>
 @endsection
 
 @push('scripts')
   <script>
     document.addEventListener("click", (event) => {
-      const pill = event.target.closest(".hub-pill[data-redirect]");
-      if (!pill) return;
+      const item = event.target.closest(".hub-item[data-redirect]");
+      if (!item) return;
 
       event.preventDefault();
       event.stopPropagation();
 
-      const targetPath = pill.getAttribute("data-redirect");
+      const targetPath = item.getAttribute("data-redirect");
       if (targetPath && targetPath !== '#') {
         window.location.href = targetPath;
       }

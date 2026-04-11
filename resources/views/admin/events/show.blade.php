@@ -930,14 +930,14 @@ document.addEventListener('DOMContentLoaded', function(){
 document.addEventListener('DOMContentLoaded', function(){
     // Generic action modal
     var actionModalEl = document.getElementById('registrationActionModal');
-    var actionModal = actionModalEl ? new bootstrap.Modal(actionModalEl) : null;
+    var actionModal = (actionModalEl && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(actionModalEl) : null;
     var actionForm = document.getElementById('registrationActionForm');
     var actionMessage = document.getElementById('registrationActionMessage');
     var actionLabel = document.getElementById('registrationActionLabel');
 
     // Reject reason modal
     var rejectModalEl = document.getElementById('rejectRegistrationModal');
-    var rejectModal = rejectModalEl ? new bootstrap.Modal(rejectModalEl) : null;
+    var rejectModal = (rejectModalEl && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(rejectModalEl) : null;
     var rejectForm = document.getElementById('rejectRegistrationForm');
     var rejectReasonHtml = document.getElementById('rejectionReason');
 
@@ -963,6 +963,57 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     });
+
+    // Delete event modal: require explicit checkbox confirmation
+    var deleteCheckbox = document.getElementById('deleteConfirmCheckboxShow');
+    var deleteBtn = document.getElementById('deleteConfirmBtnShow');
+    var deleteModalEl = document.getElementById('deleteEventModal');
+    var deleteForm = document.getElementById('deleteEventFormShow');
+
+    function syncDeleteBtnState(){
+        if(!deleteBtn) return;
+        deleteBtn.disabled = !(deleteCheckbox && deleteCheckbox.checked);
+    }
+
+    if(deleteCheckbox){
+        deleteCheckbox.addEventListener('change', syncDeleteBtnState);
+    }
+
+    if(deleteBtn && deleteForm && deleteBtn.dataset.boundSubmit !== '1'){
+        deleteBtn.dataset.boundSubmit = '1';
+        deleteBtn.addEventListener('click', function(e){
+            // If still disabled for any reason, do nothing
+            if(deleteBtn.disabled) return;
+            e.preventDefault();
+            // Prevent double submit
+            deleteBtn.disabled = true;
+            try {
+                if(typeof deleteForm.requestSubmit === 'function'){
+                    deleteForm.requestSubmit();
+                } else {
+                    deleteForm.submit();
+                }
+            } catch(err) {
+                // Re-enable if submit fails
+                deleteBtn.disabled = false;
+                throw err;
+            }
+        });
+    }
+
+    if(deleteModalEl){
+        // Always reset when opening/closing to avoid stale state
+        deleteModalEl.addEventListener('show.bs.modal', function(){
+            if(deleteCheckbox) deleteCheckbox.checked = false;
+            syncDeleteBtnState();
+        });
+        deleteModalEl.addEventListener('hidden.bs.modal', function(){
+            if(deleteCheckbox) deleteCheckbox.checked = false;
+            syncDeleteBtnState();
+        });
+    }
+
+    syncDeleteBtnState();
 });
 </script>
 <!-- Delete Confirmation Modal (modern) -->

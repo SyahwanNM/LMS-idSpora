@@ -70,11 +70,11 @@ class EventModuleController extends Controller
 
         $event->update([
             'module_path' => $path,
-            'module_submitted_at' => now(),
             'material_status' => 'pending_review',
             'material_approved_at' => null,
             'material_approved_by' => null,
             'material_rejection_reason' => null,
+            'module_submitted_at' => now(),
             'module_verified_at' => null,
             'module_verified_by' => null,
             'module_rejected_at' => null,

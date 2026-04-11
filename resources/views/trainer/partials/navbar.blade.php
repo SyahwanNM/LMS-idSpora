@@ -76,6 +76,8 @@
                                         <span class="trainer-notification-pill accepted">Diterima</span>
                                     @elseif($isInvitation && $notificationStatus === 'rejected')
                                         <span class="trainer-notification-pill rejected">Ditolak</span>
+                                    @elseif($isInvitation && $notificationStatus === 'expired')
+                                        <span class="trainer-notification-pill rejected">Expired</span>
                                     @elseif($isMaterialApproved)
                                         <span class="trainer-notification-pill accepted">Materi Diterima</span>
                                     @elseif($isMaterialRejected)
@@ -85,6 +87,12 @@
                                 @if(!empty($notification->message))
                                     <p class="trainer-notification-message">
                                         {{ \Illuminate\Support\Str::limit($notification->message, 90) }}
+                                    </p>
+                                @endif
+                                @if($isMaterialRejected && !empty(data_get($notification->data, 'rejection_reason')))
+                                    <p class="trainer-notification-message" style="margin-top:6px; color:#b42318;">
+                                        Alasan revisi:
+                                        {{ \Illuminate\Support\Str::limit((string) data_get($notification->data, 'rejection_reason'), 180) }}
                                     </p>
                                 @endif
                                 @if($isInvitation && $notificationDueDate)
@@ -105,15 +113,26 @@
                                 </div>
                                 @if($isInvitation && ($notificationStatus === 'pending' || empty($notificationStatus)))
                                     <div class="trainer-notification-actions">
+                                        @php
+                                            $notificationEntityType = data_get($notification->data, 'entity_type');
+                                            $notificationTitle = addslashes((string) ($notification->title ?? 'Undangan Event'));
+                                        @endphp
+                                        @if($notificationEntityType === 'course')
+                                            <button type="button" class="trainer-notification-action accept"
+                                                onclick="openSchemeSelectionModal({{ $notification->id }}, '{{ $notificationTitle }}', '{{ $notificationEntityType }}')">
+                                                Terima
+                                            </button>
+                                        @else
+                                            <form method="POST" class="js-invitation-response-form"
+                                                action="{{ route('trainer.notifications.respond', $notification->id) }}">
+                                                @csrf
+                                                <input type="hidden" name="decision" value="accept">
+                                                <input type="hidden" name="e_agreement" value="1">
+                                                <button type="submit" class="trainer-notification-action accept"
+                                                    data-loading-text="Memproses...">Terima</button>
+                                            </form>
+                                        @endif
                                         <form method="POST" class="js-invitation-response-form"
-                                            action="{{ route('trainer.notifications.respond', $notification->id) }}">
-                                            @csrf
-                                            <input type="hidden" name="decision" value="accept">
-                                            <button type="submit" class="trainer-notification-action accept"
-                                                data-loading-text="Memproses...">Terima</button>
-                                        </form>
-                                        <form method="POST" class="js-invitation-response-form"
-                                            data-confirm="Yakin ingin menolak undangan ini?"
                                             action="{{ route('trainer.notifications.respond', $notification->id) }}">
                                             @csrf
                                             <input type="hidden" name="decision" value="reject">
@@ -166,12 +185,6 @@
     document.addEventListener('submit', function (event) {
         const form = event.target;
         if (!(form instanceof HTMLFormElement) || !form.classList.contains('js-invitation-response-form')) {
-            return;
-        }
-
-        const confirmationMessage = form.dataset.confirm;
-        if (confirmationMessage && !window.confirm(confirmationMessage)) {
-            event.preventDefault();
             return;
         }
 

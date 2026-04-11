@@ -43,6 +43,7 @@
     $completedCoursesCount = (int) ($completedCoursesCount ?? 0);
     $totalCertificates = (int) ($totalCertificates ?? 0);
     $trainerCertificates = collect($trainerCertificates ?? [])->take(3);
+    $profileCompletion = (int) $trainer->getProfileCompletionPercentage();
 @endphp
 
 @push('styles')
@@ -235,6 +236,249 @@
             margin-top: 8px;
         }
 
+        .profile-overview {
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 20px;
+            padding: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        }
+
+        .summary-banner {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 18px;
+            padding: 20px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #1b1763 0%, #27227e 58%, #0f172a 100%);
+            color: #fff;
+            margin-bottom: 16px;
+        }
+
+        .summary-banner::after {
+            content: '';
+            position: absolute;
+            inset: auto -70px -70px auto;
+            width: 220px;
+            height: 220px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(251, 197, 49, 0.22) 0%, rgba(251, 197, 49, 0) 70%);
+            pointer-events: none;
+        }
+
+        .summary-banner-copy,
+        .summary-banner-side {
+            position: relative;
+            z-index: 1;
+        }
+
+        .summary-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .summary-banner-title {
+            margin: 0 0 6px;
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.3px;
+        }
+
+        .summary-banner-desc {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 760px;
+        }
+
+        .summary-completion-box {
+            display: grid;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(6px);
+            align-self: stretch;
+        }
+
+        .summary-completion-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .summary-completion-head small {
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .summary-completion-head strong {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .summary-completion-bar {
+            width: 100%;
+            height: 9px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .summary-completion-bar span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #fbc531 0%, #ffd86b 48%, #ffffff 100%);
+        }
+
+        .summary-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .summary-pill-soft {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.25px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .summary-card {
+            display: grid;
+            gap: 10px;
+            min-height: 100%;
+            background: #fff;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #1b1763 0%, #fbc531 55%, #0ea5e9 100%);
+        }
+
+        .summary-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .summary-card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 4px;
+            font-size: 10px;
+            letter-spacing: 0.48px;
+            text-transform: uppercase;
+            color: var(--content-muted);
+            font-weight: 700;
+        }
+
+        .summary-card-value {
+            margin: 0;
+            color: var(--content-heading);
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1.25;
+            letter-spacing: -0.2px;
+        }
+
+        .summary-card-subtext {
+            margin: 0;
+            color: var(--content-muted);
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .summary-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            color: #1b1763;
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+            flex-shrink: 0;
+        }
+
+        .summary-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .summary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: #f8fafc;
+            border: 1px solid var(--content-border);
+            color: var(--content-heading);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.25px;
+        }
+
+        .summary-note {
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(27, 23, 99, 0.05);
+            border: 1px solid rgba(27, 23, 99, 0.08);
+            color: #475569;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
         .profile-text {
             min-width: 0;
             width: 100%;
@@ -390,6 +634,23 @@
 
             .profile-actions {
                 justify-content: flex-start;
+            }
+
+            .summary-banner {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-completion-head {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .summary-pills {
+                gap: 6px;
             }
 
             .top-edit-grid {
@@ -558,11 +819,6 @@
             box-shadow: none;
         }
 
-        .profile-overview .card-box {
-            background: transparent;
-            border-radius: 12px;
-        }
-
         .card-title {
             margin: 0 0 10px;
             font-size: 9px;
@@ -708,6 +964,11 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
+        }
+
+        .stats-row.summary-grid-compact {
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
         }
 
         .stats-item {
@@ -1318,24 +1579,6 @@
 
 @section('content')
     <div class="profile-wrap">
-        @if(session('success'))
-            <div
-                style="background:#ecfdf5;border:1px solid #86efac;color:#166534;padding:10px 12px;border-radius:10px;font-size:13px;">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div
-                style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:10px;font-size:13px;">
-                <ul style="margin:0;padding-left:18px;">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
         <section class="top-content">
             <div class="top-content-inner">
                 <div class="top-main-row">
@@ -1447,40 +1690,113 @@
 
         <div class="profile-content-stack">
             <section class="profile-info-card profile-overview">
-                <div class="statement-header" style="margin-bottom:0;">
-                    <h2 class="statement-title"><i class="bi bi-person-vcard"></i> RINGKASAN PROFIL</h2>
-                    <span class="view-all" style="cursor:default;">SIAP UNTUK PROFILE & SERTIFIKAT</span>
+                <div class="statement-header" style="margin-bottom:10px;">
+                    <div>
+                        <h2 class="statement-title" style="font-size:14px;"><i class="bi bi-person-vcard"></i> RINGKASAN
+                            PROFIL</h2>
+                        <p class="section-subtle" style="max-width: 760px;">
+                            Satu tampilan yang merangkum identitas, kelengkapan profile, data finance, dan reputasi trainer
+                            agar mudah dipakai admin maupun peserta.
+                        </p>
+                    </div>
                 </div>
 
-                <div class="stats-row" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-                    <div class="card-box">
-                        <p class="card-title">INFORMASI DASAR</p>
-                        <h5 style="margin:0 0 6px;color:#0f172a;font-size:16px;">{{ $displayFullName }}</h5>
-                        <p style="margin:0;font-size:12px;color:#475569;">{{ $trainer->email }}</p>
-                        <p style="margin:4px 0 0;font-size:12px;color:#475569;">WhatsApp:
-                            {{ $trainer->phone ?: 'Belum diisi' }}</p>
+                <div class="summary-banner">
+                    <div class="summary-banner-copy">
+                        <div class="summary-kicker">
+                            <i class="bi bi-stars"></i> PROFILE SNAPSHOT
+                        </div>
+                        <h3 class="summary-banner-title">Semua informasi inti trainer ada di sini</h3>
+                        <p class="summary-banner-desc">
+                            Gunakan ringkasan ini untuk memastikan data utama sudah siap dipakai di sertifikat, finance,
+                            dan notifikasi sistem tanpa perlu buka detail satu per satu.
+                        </p>
                     </div>
 
-                    <div class="card-box">
-                        <p class="card-title">INFORMASI PROFESIONAL</p>
-                        <h5 style="margin:0 0 6px;color:#0f172a;font-size:16px;">
-                            {{ $trainer->profession ?: 'Jabatan belum diisi' }}</h5>
-                        <p style="margin:0;font-size:12px;color:#475569;">
-                            {{ $trainer->institution ?: 'Institusi belum diisi' }}</p>
-                        <p style="margin:4px 0 0;font-size:12px;color:#475569;">LinkedIn:
-                            {{ $displayLinkedIn ?: 'Belum diisi' }}</p>
+                    <div class="summary-completion-box">
+                        <div class="summary-completion-head">
+                            <small>Kelengkapan Profile</small>
+                            <strong>{{ $profileCompletion }}%</strong>
+                        </div>
+                        <div class="summary-completion-bar" aria-hidden="true">
+                            <span style="width: {{ max(0, min(100, $profileCompletion)) }}%;"></span>
+                        </div>
+                        <div class="summary-pills">
+                            <span class="summary-pill-soft"><i class="bi bi-person-badge"></i> Identitas</span>
+                            <span class="summary-pill-soft"><i class="bi bi-briefcase"></i> Profesional</span>
+                            <span class="summary-pill-soft"><i class="bi bi-bank2"></i> Finance</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-grid">
+                    <div class="card-box summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <p class="summary-card-title"><i class="bi bi-person-badge"></i> INFORMASI DASAR</p>
+                                <p class="summary-card-value">{{ $displayFullName }}</p>
+                            </div>
+                            <span class="summary-card-icon"><i class="bi bi-person-lines-fill"></i></span>
+                        </div>
+                        <div class="summary-meta-row">
+                            <span class="summary-pill"><i class="bi bi-envelope"></i> {{ $trainer->email }}</span>
+                            <span class="summary-pill"><i class="bi bi-whatsapp"></i>
+                                {{ $trainer->phone ?: 'No. WA belum diisi' }}</span>
+                            @if($trainer->academic_title)
+                                <span class="summary-pill"><i class="bi bi-mortarboard"></i>
+                                    {{ $trainer->academic_title }}</span>
+                            @endif
+                        </div>
+                        <p class="summary-card-subtext">Nama lengkap ditampilkan bersama gelar akademik untuk kebutuhan
+                            sertifikat dan identitas resmi.</p>
                     </div>
 
-                    <div class="card-box">
-                        <p class="card-title">DATA FINANSIAL</p>
-                        <h5 style="margin:0 0 6px;color:#0f172a;font-size:16px;">{{ $displayBankName }}</h5>
-                        <p style="margin:0;font-size:12px;color:#475569;">{{ $displayBankAccountNumber }}</p>
-                        <p style="margin:4px 0 0;font-size:12px;color:#475569;">A/n {{ $displayBankAccountHolder }}</p>
+                    <div class="card-box summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <p class="summary-card-title"><i class="bi bi-briefcase"></i> INFORMASI PROFESIONAL</p>
+                                <p class="summary-card-value">{{ $trainer->profession ?: 'Jabatan belum diisi' }}</p>
+                            </div>
+                            <span class="summary-card-icon"><i class="bi bi-building"></i></span>
+                        </div>
+                        <div class="summary-meta-row">
+                            <span class="summary-pill"><i class="bi bi-geo-alt"></i>
+                                {{ $trainer->institution ?: 'Institusi belum diisi' }}</span>
+                            <span class="summary-pill"><i class="bi bi-linkedin"></i>
+                                {{ $displayLinkedIn ?: 'LinkedIn belum diisi' }}</span>
+                        </div>
+                        <p class="summary-card-subtext">Bagian ini memperkuat profil publik trainer saat tampil ke peserta
+                            dan admin.</p>
                     </div>
 
-                    <div class="card-box">
-                        <p class="card-title">RIWAYAT &amp; REPUTASI</p>
-                        <div class="stats-row" style="grid-template-columns:1fr 1fr; gap:8px;">
+                    <div class="card-box summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <p class="summary-card-title"><i class="bi bi-bank2"></i> DATA FINANSIAL</p>
+                                <p class="summary-card-value">{{ $displayBankName }}</p>
+                            </div>
+                            <span class="summary-card-icon"><i class="bi bi-wallet2"></i></span>
+                        </div>
+                        <div class="summary-meta-row">
+                            <span class="summary-pill"><i class="bi bi-upc-scan"></i> {{ $displayBankAccountNumber }}</span>
+                            <span class="summary-pill"><i class="bi bi-person-badge"></i> A/n
+                                {{ $displayBankAccountHolder }}</span>
+                        </div>
+                        <div class="summary-note">
+                            Dipakai Finance untuk transfer settlement. Trainer tidak perlu withdraw manual.
+                        </div>
+                    </div>
+
+                    <div class="card-box summary-card">
+                        <div class="summary-card-header">
+                            <div>
+                                <p class="summary-card-title"><i class="bi bi-award"></i> RIWAYAT &amp; REPUTASI</p>
+                                <p class="summary-card-value">{{ $completedEventsCount + $completedCoursesCount }} sesi
+                                    selesai</p>
+                            </div>
+                            <span class="summary-card-icon"><i class="bi bi-bar-chart-line-fill"></i></span>
+                        </div>
+                        <div class="stats-row summary-grid-compact">
                             <div class="stats-item">
                                 <p>Event</p>
                                 <h4>{{ $completedEventsCount }}</h4>
@@ -1490,10 +1806,14 @@
                                 <h4>{{ $completedCoursesCount }}</h4>
                             </div>
                         </div>
-                        <p style="margin:8px 0 0;font-size:12px;color:#475569;">Rating rata-rata:
-                            {{ number_format($averageRating, 1) }} / 5</p>
-                        <p style="margin:4px 0 0;font-size:12px;color:#475569;">Total E-Sertifikat: {{ $totalCertificates }}
-                        </p>
+                        <div class="summary-meta-row">
+                            <span class="summary-pill"><i class="bi bi-star-fill"></i>
+                                {{ number_format($averageRating, 1) }} / 5</span>
+                            <span class="summary-pill"><i class="bi bi-award-fill"></i> {{ $totalCertificates }}
+                                e-sertifikat</span>
+                        </div>
+                        <p class="summary-card-subtext">Reputasi dirangkum dari feedback peserta, riwayat penyelesaian, dan
+                            sertifikat apresiasi.</p>
                     </div>
                 </div>
             </section>
@@ -1562,7 +1882,7 @@
                     </div>
                 </aside>
 
-                <div class="dashboard-content">
+                <div class="right-content">
                     <div class="pedagogical-statement">
                         <div class="statement-header">
                             <h2 class="statement-title"><i class="bi bi-person"></i> Bio</h2>
@@ -1646,91 +1966,6 @@
                                 </div>
                             @endforelse
                         </div>
-                    </div>
-
-                    <div class="portfolio-header">
-                        <h2 class="portfolio-title"><i class="bi bi-grid-3x3-gap-fill"></i> ACTIVE COURSE PORTFOLIO</h2>
-                        <a href="{{ route('trainer.courses') }}" class="view-all">VIEW ALL</a>
-                    </div>
-
-                    <div class="course-grid">
-                        @forelse($activeCourses as $course)
-                            @php
-                                $thumbnailUrl = $course->card_thumbnail_url;
-                                $displayCourseImage = $thumbnailUrl ?: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=900';
-                                $rating = number_format((float) ($course->reviews_avg_rating ?? 0), 1);
-                              @endphp
-                            <a href="{{ route('trainer.detail-course', $course->id) }}" class="course-card"
-                                style="position:relative;">
-                                @if((float) $rating >= 4.5)
-                                    <div
-                                        style="position:absolute;top:8px;right:8px;background:#fbbf24;color:#78350f;padding:5px 10px;border-radius:5px;font-size:9px;font-weight:700;z-index:10;display:flex;align-items:center;gap:4px;letter-spacing:0.5px;">
-                                        <i class="bi bi-star-fill"></i> TOP
-                                    </div>
-                                @endif
-                                <img src="{{ $displayCourseImage }}" alt="{{ $course->name }}">
-                                <div class="course-card-body">
-                                    <div class="course-meta">
-                                        <span><i class="bi bi-star-fill" style="color:#f59e0b"></i> {{ $rating }}</span>
-                                        <span>{{ number_format($course->active_enrollments_count) }} LEARNERS</span>
-                                    </div>
-                                    <h4 class="course-title">{{ $course->name }}</h4>
-                                    <div class="course-meta">
-                                        <span>{{ strtoupper($course->level ?? 'GENERAL') }}</span>
-                                        <span>{{ $course->modules_count }} MODULES</span>
-                                    </div>
-                                </div>
-                            </a>
-                        @empty
-                            <div class="item-box" style="grid-column:1/-1;">
-                                <h5>Belum ada kelas aktif</h5>
-                                <p>Kelas yang sedang Anda ampu akan muncul di sini.</p>
-                            </div>
-                        @endforelse
-                    </div>
-
-                    <div class="student-feedback">
-                        <div class="feedback-header">
-                            <h2 class="feedback-title"><i class="bi bi-chat-quote-fill"></i> Recent Student Feedback</h2>
-                            <span
-                                style="font-size:12px;font-weight:700;color:#1b1763;">{{ number_format($averageRating, 1) }}
-                                <i class="bi bi-star-fill" style="color:#f59e0b"></i></span>
-                        </div>
-
-                        <div class="feedback-list">
-                            @forelse($selectedTestimonials as $feedback)
-                                @php
-                                    $rating = max(1, min(5, (int) $feedback->rating));
-                                    $authorName = optional($feedback->user)->name ?: 'Anonymous';
-                                    $authorInitial = strtoupper(mb_substr($authorName, 0, 1));
-                                  @endphp
-                                <div class="feedback-item">
-                                    <div class="feedback-stars">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            <i class="bi {{ $i <= $rating ? 'bi-star-fill' : 'bi-star' }}"
-                                                style="color:#f59e0b;font-size:12px;"></i>
-                                        @endfor
-                                        <span
-                                            class="feedback-time">{{ strtoupper(optional($feedback->created_at)->diffForHumans()) }}</span>
-                                    </div>
-                                    <p style="margin:6px 0 0;color:#475569;line-height:1.5;font-size:12px;">
-                                        "{{ $feedback->comment ?: 'Tidak ada komentar.' }}"</p>
-                                    <div class="feedback-author">
-                                        <span class="author-avatar">{{ $authorInitial }}</span>
-                                        <span class="author-name">{{ strtoupper($authorName) }}</span>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="item-box">
-                                    <h5>Belum ada feedback</h5>
-                                    <p>Feedback peserta untuk course Anda akan tampil di sini.</p>
-                                </div>
-                            @endforelse
-                        </div>
-
-                        <a href="{{ route('trainer.feedback') }}" class="view-all-reviews"
-                            style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;">VIEW ALL REVIEWS <i
-                                class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>

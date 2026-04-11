@@ -25,18 +25,7 @@ class EventController extends Controller
         $events = $query
             ->paginate((int) ($request->input('per_page', 15)));
 
-        $payload = $events->toArray();
-        $payload['status'] = 'success';
-        $payload['message'] = 'List event trainer';
-        $payload['errors'] = null;
-        $payload['pagination'] = [
-            'current_page' => $events->currentPage(),
-            'per_page' => $events->perPage(),
-            'total' => $events->total(),
-            'last_page' => $events->lastPage(),
-        ];
-
-        return response()->json($payload);
+        return response()->json($events);
     }
 
     public function show(Request $request, Event $event): JsonResponse
@@ -54,8 +43,6 @@ class EventController extends Controller
         ]);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Detail event trainer',
             'data' => [
                 'id' => $event->id,
                 'title' => $event->title,
@@ -71,7 +58,7 @@ class EventController extends Controller
                 'module_uploaded' => !empty($event->module_path),
                 'module_url' => !empty($event->module_path) ? $event->module_file_url : null,
                 'module_submission_url' => !empty($event->module_path) ? $event->module_file_url : null,
-                'module_submitted_at' => $event->module_submitted_at,
+                'module_submitted_at' => $event->created_at,
                 'schedule_items' => ($event->scheduleItems ?? collect())->map(function ($it) {
                     return [
                         'id' => $it->id,

@@ -12,6 +12,9 @@ class Course extends Model
         'template_id',
         'template_version',
         'trainer_id',
+        'trainer_contribution_scheme',
+        'trainer_revenue_percent',
+        'trainer_scheme_accepted_at',
         'description',
         'level',
         'status',
@@ -24,15 +27,11 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
-        'expenses_json',
         'user_id',
         'rejection_reason',
-                'is_reseller_course',
+        'approved_at',
         'rejected_at',
         'approved_by',
-        'certificate_logo',
-        'certificate_signature',
-        'certificate_template',
     ];
 
     protected $casts = [
@@ -40,48 +39,9 @@ class Course extends Model
         'rejected_at' => 'datetime',
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
-        'is_reseller_course' => 'boolean',
-        'expenses_json' => 'array',
-        'certificate_logo' => 'array',
-        'certificate_signature' => 'array',
+        'trainer_scheme_accepted_at' => 'datetime',
+        'expenses_json',
     ];
-
-    public function getCardThumbnailUrlAttribute(): ?string
-    {
-        return $this->buildPublicFileUrl($this->card_thumbnail);
-    }
-
-    private function buildPublicFileUrl(?string $path): ?string
-    {
-        $path = trim((string) $path);
-        if ($path === '') {
-            return null;
-        }
-
-        if (preg_match('#^https?://#i', $path)) {
-            return $path;
-        }
-
-        $normalized = str_replace('\\', '/', $path);
-        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
-        $normalized = ltrim($normalized, '/');
-
-        if (str_starts_with($normalized, 'public/')) {
-            $normalized = ltrim(substr($normalized, 7), '/');
-        }
-        if (str_starts_with($normalized, 'storage/app/public/')) {
-            $normalized = ltrim(substr($normalized, 19), '/');
-        }
-
-        if (str_starts_with($normalized, 'uploads/')) {
-            return asset($normalized);
-        }
-        if (str_starts_with($normalized, 'storage/')) {
-            $normalized = ltrim(substr($normalized, 8), '/');
-        }
-
-        return asset('uploads/' . $normalized);
-    }
 
     // protected $casts = [
     //     'expenses_json' => 'array',
@@ -112,6 +72,11 @@ class Course extends Model
     public function units()
     {
         return $this->hasMany(CourseUnit::class)->orderBy('unit_no');
+    }
+
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'course_id');
     }
 
     public function certificates()

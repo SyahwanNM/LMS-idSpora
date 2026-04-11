@@ -90,6 +90,12 @@ class EventController extends Controller
             return;
         }
 
+        $hasZoomLink = !empty($event->zoom_link);
+        $hasMapLink = !empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude));
+        $locationMode = $hasZoomLink && $hasMapLink
+            ? 'hybrid'
+            : ($hasZoomLink ? 'online' : 'offline');
+
         TrainerNotification::create([
             'trainer_id' => $trainer->id,
             'type' => 'event_invitation',
@@ -102,6 +108,11 @@ class EventController extends Controller
                 'url' => route('trainer.events.show', $event->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
+                'location_mode' => $locationMode,
+                'location' => $event->location,
+                'maps_url' => $event->maps_url,
+                'zoom_link' => $event->zoom_link,
+                'vbg_path' => $event->vbg_path,
                 'due_at' => ($event->material_deadline ?: now()->addDays(7))->toIso8601String(),
                 'material_deadline' => optional($event->material_deadline)->toIso8601String(),
             ],
@@ -130,7 +141,12 @@ class EventController extends Controller
             ->orderByDesc('created_at')
             ->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
     }
 
@@ -400,7 +416,12 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
     }
 

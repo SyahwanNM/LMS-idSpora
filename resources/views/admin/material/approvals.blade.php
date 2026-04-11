@@ -143,74 +143,148 @@
 
         /* --- HEADER & STATS --- */
         .page-header {
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #3949ab 100%);
+            border-radius: 20px;
+            padding: 24px 26px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 14px 30px rgba(26, 35, 126, 0.2);
+        }
+
+        .page-header::after {
+            content: '';
+            position: absolute;
+            right: -80px;
+            top: -80px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
+        }
+
+        .page-header>div,
+        .page-header>button {
+            position: relative;
+            z-index: 2;
         }
 
         .page-title {
-            font-size: 1.75rem;
+            font-size: 2rem;
             font-weight: 800;
-            color: var(--admin-primary);
+            color: #fff;
             margin-bottom: 8px;
             letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-subtitle {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 0.92rem;
+        }
+
+        .btn-header-action {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            color: #fff;
+            height: 42px;
+            padding: 0 16px;
+            border-radius: 10px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(2px);
+        }
+
+        .btn-header-action:hover {
+            background: rgba(255, 255, 255, 0.28);
+            color: #fff;
         }
 
         .stat-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
+            gap: 16px;
             margin-bottom: 32px;
         }
 
         .stat-card {
             background: var(--admin-card-bg);
             border-radius: 16px;
-            padding: 24px;
+            padding: 18px 20px;
             border: 1px solid var(--admin-border);
             display: flex;
             align-items: center;
-            gap: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            gap: 14px;
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
             transition: transform 0.2s;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
         }
 
         .stat-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             flex-shrink: 0;
         }
 
         .stat-card.pending .stat-icon {
-            background: #fef3c7;
-            color: #d97706;
+            background: #fff7e6;
+            color: #b45309;
         }
 
         .stat-card.approved .stat-icon {
-            background: #dcfce7;
+            background: #ecfdf3;
             color: #166534;
         }
 
         .stat-card.rejected .stat-icon {
-            background: #fee2e2;
-            color: #991b1b;
+            background: #fff1f2;
+            color: #be123c;
+        }
+
+        .stat-card.pending {
+            border-color: #fde68a;
+            background: linear-gradient(180deg, #fffdf5 0%, #ffffff 100%);
+        }
+
+        .stat-card.approved {
+            border-color: #bbf7d0;
+            background: linear-gradient(180deg, #f8fff9 0%, #ffffff 100%);
+        }
+
+        .stat-card.rejected {
+            border-color: #fecdd3;
+            background: linear-gradient(180deg, #fff8f9 0%, #ffffff 100%);
         }
 
         .stat-info h3 {
-            font-size: 1.8rem;
+            font-size: 1.45rem;
             font-weight: 800;
-            margin: 0 0 4px 0;
+            margin: 0 0 2px 0;
             color: var(--admin-text-main);
             line-height: 1;
         }
@@ -218,10 +292,9 @@
         .stat-info p {
             margin: 0;
             color: var(--admin-text-muted);
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
 
         /* --- TABLE CARD --- */
@@ -333,9 +406,10 @@
         }
 
         .table td {
-            padding: 20px 24px;
+            padding: 16px 24px;
             vertical-align: middle;
             border-bottom: 1px solid var(--admin-border);
+            font-size: 0.84rem;
         }
 
         .table tr:hover {
@@ -362,7 +436,7 @@
             font-weight: 700;
             color: var(--admin-text-main);
             margin: 0 0 4px 0;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
         }
 
         .badge-cat {
@@ -389,7 +463,7 @@
         .trainer-name {
             font-weight: 600;
             color: var(--admin-text-main);
-            font-size: 0.9rem;
+            font-size: 0.84rem;
         }
 
         .badge-status {
@@ -514,6 +588,17 @@
                 justify-content: flex-start;
                 margin-left: 0;
             }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .btn-header-action {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 @endsection
@@ -526,10 +611,10 @@
 
             <div class="page-header">
                 <div>
-                    <h1 class="page-title">Material Approvals</h1>
-                    <p class="text-muted mb-0">Review materi dari trainer sebelum tayang ke publik.</p>
+                    <h1 class="page-title"><i class="bi bi-hourglass-split"></i> Material Approvals</h1>
+                    <p class="page-subtitle">Review materi dari trainer sebelum tayang ke publik.</p>
                 </div>
-                <button class="btn btn-action" onclick="window.location.reload();">
+                <button class="btn btn-header-action" onclick="window.location.reload();">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
             </div>
@@ -542,7 +627,7 @@
             @endif
 
             <div class="stat-grid">
-                <div class="stat-card pending" style="border: 2px solid #fbbf24;">
+                <div class="stat-card pending">
                     <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
                     <div class="stat-info">
                         <h3>{{ $totalPending ?? 0 }}</h3>
@@ -569,14 +654,6 @@
                 <div class="toolbar">
                     @php
                         $activeDeadlineFilter = $deadlineFilter ?? 'all';
-                        $activeSearch = trim((string) request('search', ''));
-                        $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
-                        $deadlineLabelMap = [
-                            'all' => 'Semua Deadline',
-                            'overdue' => 'Overdue',
-                            'on_time' => 'Tepat Waktu',
-                            'no_deadline' => 'Tanpa Deadline',
-                        ];
                     @endphp
                     <div class="toolbar-left">
                         <form method="GET" class="toolbar-form">
@@ -595,14 +672,6 @@
                     </div>
 
                     <div class="toolbar-right">
-                        @if($hasActiveFilter)
-                            <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
-                                Filter: {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
-                            </span>
-                            <a href="{{ route('admin.material.approvals') }}" class="btn-action">
-                                <i class="bi bi-x-circle"></i> Reset
-                            </a>
-                        @endif
                         <a href="{{ route('admin.material.approved') }}" class="btn-action" style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
                             Lihat Disetujui <i class="bi bi-arrow-right"></i>
                         </a>
@@ -618,7 +687,7 @@
                                 <th>Isi Modul</th>
                                 <th>Tanggal Submit</th>
                                 <th>Status</th>
-                                <th>Monitoring Deadline</th>
+                                <th>Tenggat</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
@@ -627,7 +696,6 @@
                                 <tr>
                                     <td>
                                         <div class="course-info">
-                                            <img src="{{ $material->card_thumbnail_url ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}" class="course-thumb" alt="Cover">
                                             <div>
                                                 <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
                                                 <span class="badge-cat"><i class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
@@ -639,7 +707,6 @@
                                             <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}" class="trainer-avatar">
                                             <div>
                                                 <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
-                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -647,8 +714,8 @@
                                         <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis</div>
                                     </td>
                                     <td>
-                                        <div style="font-weight: 600; color: #334155;">{{ $material->created_at->format('d M Y') }}</div>
-                                        <div style="font-size: 0.75rem; color:#64748b;">{{ $material->created_at->diffForHumans() }}</div>
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}</div>
+                                        <div style="font-size: 0.75rem; color:#64748b;">{{ $material->updated_at?->diffForHumans() ?? $material->created_at->diffForHumans() }}</div>
                                     </td>
                                     <td>
                                         <span class="badge-status badge-pending">Review Pending</span>
@@ -660,7 +727,7 @@
                                     </td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action" style="background: var(--admin-primary); color:white; border:none;">
-                                            Mulai Review <i class="bi bi-play-fill"></i>
+                                            Review <i class="bi bi-play-fill"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -688,33 +755,51 @@
                 @endif
             </div>
 
-            @if(!($pendingEventModules ?? collect())->isEmpty())
-                <div class="content-card mt-4">
-                    <div class="px-3 pt-3">
-                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 pb-3 border-bottom">
-                            <div>
-                                <div class="fw-bold text-dark fs-5">Module Event (Trainer)</div>
-                                <div class="text-muted small">Antrean verifikasi modul event yang diupload trainer.</div>
+            <div class="content-card mt-4">
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <form method="GET" class="toolbar-form">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" name="search" placeholder="Cari modul event yang menunggu review..."
+                                    value="{{ request('search') }}">
                             </div>
-                            <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;height:fit-content;">
-                                {{ ($pendingEventModules ?? collect())->count() }} menunggu
-                            </span>
-                        </div>
+                            <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
+                                <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
+                                    Deadline</option>
+                                <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                                    Overdue</option>
+                                <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
+                                    Waktu</option>
+                                <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                                    Tanpa Deadline</option>
+                            </select>
+                        </form>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Event</th>
-                                    <th>Trainer</th>
-                                    <th>Tanggal Submit</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($pendingEventModules as $event)
+                    <div class="toolbar-right">
+                        <a href="{{ route('admin.material.approved') }}" class="btn-action"
+                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
+                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Materi (Event)</th>
+                                <th>Trainer</th>
+                                <th>Isi Modul</th>
+                                <th>Tanggal Submit</th>
+                                <th>Status</th>
+                                <th>Tenggat</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse(($pendingEventModules ?? collect()) as $event)
                                     <tr>
                                         <td>
                                             <div class="course-info" style="gap:12px;">
@@ -736,18 +821,29 @@
                                             </div>
                                         </td>
                                         <td>
+                                            <div style="font-weight: 600; color: #334155;">1 Dokumen Modul</div>
+                                        </td>
+                                        <td>
                                             <div style="font-weight: 600; color: #334155;">{{ $event->module_submitted_at?->format('d M Y') ?? ($event->created_at?->format('d M Y') ?? '-') }}</div>
                                             <div style="font-size: 0.75rem; color:#64748b;">{{ $event->module_submitted_at?->diffForHumans() ?? '' }}</div>
                                         </td>
                                         <td>
                                             <span class="badge-status badge-pending">Review Pending</span>
                                         </td>
+                                        <td>
+                                            @php
+                                                $eventDeadline = $event->material_deadline;
+                                                $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
+                                            @endphp
+                                            <div style="font-weight: 600; color: #334155;">{{ $eventDeadline ? $eventDeadline->format('d M Y H:i') : 'Belum ditentukan' }}</div>
+                                            <div style="font-size: 0.75rem; color: {{ $eventLate ? '#b91c1c' : '#64748b' }};">{{ $eventLate ? 'Melewati deadline' : 'Tanpa deadline' }}</div>
+                                        </td>
                                         <td class="text-end">
                                             <div class="event-action-group">
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="btn-action btn-icon-action" title="Lihat modul" aria-label="Lihat modul">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
-                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST">
+                                                <form action="{{ route('admin.event-material.approve', $event) }}" method="POST">
                                                     @csrf
                                                     <button type="submit" class="btn-action btn-icon-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
                                                         <i class="bi bi-check2-circle"></i>
@@ -758,9 +854,9 @@
                                                 </button>
                                             </div>
                                             <div class="collapse mt-2" id="rejectEventModule-{{ $event->id }}">
-                                                <form action="{{ route('admin.events.module.reject', $event) }}" method="POST" class="d-flex flex-column gap-2">
+                                                <form action="{{ route('admin.event-material.reject', $event) }}" method="POST" class="d-flex flex-column gap-2">
                                                     @csrf
-                                                    <textarea name="reason" rows="2" class="form-control" placeholder="Alasan penolakan (wajib)" required></textarea>
+                                                    <textarea name="rejection_reason" rows="2" class="form-control" placeholder="Alasan penolakan (wajib)" required></textarea>
                                                     <div class="d-flex justify-content-end">
                                                         <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-send me-1"></i>Kirim Penolakan</button>
                                                     </div>
@@ -768,12 +864,21 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                @empty
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="empty-state" style="padding: 36px 20px;">
+                                                <i class="bi bi-folder2-open"></i>
+                                                <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">Belum ada materi event pending</h6>
+                                                <p class="text-muted mb-0">Saat ini tidak ada modul event yang menunggu verifikasi.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            @endif
+            </div>
         </main>
     </div>
 @endsection

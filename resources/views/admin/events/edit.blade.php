@@ -101,8 +101,13 @@
                                 <div class="position-relative">
                                     <input type="text" name="materi" id="materi" class="form-control" required
                                         value="{{ $currentMateri }}"
-                                        placeholder="Ketik minimal 2 huruf (contoh: Backend)" autocomplete="off">
-                                    <div id="materiSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                        placeholder="Ketik materi (contoh: Backend Development)" list="materiList" autocomplete="off">
+                                    <datalist id="materiList">
+                                        @foreach($materiMerged as $opt)
+                                            @php $optStr = (string) $opt; @endphp
+                                            <option value="{{ $optStr }}"></option>
+                                        @endforeach
+                                    </datalist>
                                 </div>
                                 <div class="form-text">Pilih kategori materi utama event.</div>
                                 <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
@@ -121,13 +126,18 @@
                                             ->unique(fn($v) => mb_strtolower($v))
                                             ->values()
                                             ->all();
+
+                                        $currentJenis = trim((string) old('jenis', $event->jenis));
                                     @endphp
-                                    <input type="text" name="jenis" id="jenis" class="form-control" required
-                                        value="{{ old('jenis', $event->jenis) }}"
-                                        placeholder="Ketik minimal 2 huruf (contoh: Webinar)" autocomplete="off">
-                                    <div id="jenisSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                    <select name="jenis" id="jenis" class="form-select" required>
+                                        <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Pilih jenis acara</option>
+                                        @foreach($jenisMerged as $opt)
+                                            @php $optStr = (string) $opt; @endphp
+                                            <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <div class="form-text">Ketik minimal 2 huruf untuk melihat saran. Bisa juga isi manual.</div>
+                                <div class="form-text">Pilih jenis acara untuk event ini.</div>
                             </div>
                             <!-- Penjelasan Singkat (maks 40 kata) -->
                             <div class="mb-3">
@@ -137,49 +147,6 @@
                                     placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description', $event->short_description ?? '') }}</textarea>
                                 <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40
                                     kata</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span
-                                        class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6"
-                                    required>{{ old('description', $event->description) }}</textarea>
-                                <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
-                            </div>
-                            <!-- Kelola Event: Manage / Create -->
-                            <div class="mb-3">
-                                <label for="manage_action" class="form-label fw-semibold">
-                                    Kelola Event
-                                    <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
-                                        aria-label="Info kelola event"
-                                        style="color: var(--bs-warning);"
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        data-bs-custom-class="tooltip-hint-yellow"
-                                        title="Manage: pilih jika event ini masuk kategori dikelola (operasional/lanjutan). Create: pilih jika event ini dibuat sebagai event baru dari awal."></i>
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <select name="manage_action" id="manage_action" class="form-select" required>
-                                    @php $currentManage = old('manage_action', $event->manage_action ?? null); @endphp
-                                    <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
-                                    <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
-                                    <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
-                                </select>
-                                <small class="text-muted">Pilih apakah event ini dikelola (Manage) atau dibuat baru
-                                    (Create).</small>
-                            </div>
-
-                            <!-- Reseller Event -->
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Reseller Event</label>
-                                <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', (int) ($event->is_reseller_event ?? 0)) ? 1 : 0 }}">
-                                <div class="btn-group w-100" role="group" aria-label="Reseller Event">
-                                    <button type="button" id="reseller-event-no" class="btn btn-outline-secondary">Tidak</button>
-                                    <button type="button" id="reseller-event-yes" class="btn btn-outline-secondary">Ya</button>
-                                </div>
-                                <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="tanggal" class="form-label fw-semibold">Tanggal <span
                                         class="text-danger">*</span></label>
                                 <input type="date" name="event_date" id="tanggal" class="form-control" required
                                     value="{{ old('event_date', $event->event_date) }}">
@@ -503,33 +470,6 @@
                 }
             } catch (_) { }
 
-            // Reseller Event toggle (Yes/No)
-            (function(){
-                const input = document.getElementById('is_reseller_event');
-                const btnYes = document.getElementById('reseller-event-yes');
-                const btnNo = document.getElementById('reseller-event-no');
-
-                if (!input || (!btnYes && !btnNo)) return;
-
-                function setReseller(val){
-                    const v = val ? '1' : '0';
-                    input.value = v;
-
-                    if (btnYes) {
-                        btnYes.classList.toggle('btn-primary', v === '1');
-                        btnYes.classList.toggle('btn-outline-secondary', v !== '1');
-                    }
-                    if (btnNo) {
-                        btnNo.classList.toggle('btn-primary', v === '0');
-                        btnNo.classList.toggle('btn-outline-secondary', v !== '0');
-                    }
-                }
-
-                btnYes && btnYes.addEventListener('click', () => setReseller(true));
-                btnNo && btnNo.addEventListener('click', () => setReseller(false));
-                setReseller((input.value || '0') === '1');
-            })();
-
             // Jenis Acara autocomplete (show after 2 chars)
             (function setupJenisAutocomplete(){
                 const jenisInput = document.getElementById('jenis');
@@ -580,76 +520,35 @@
                 });
             })();
 
-            // Materi autocomplete (show after 2 chars)
-            (function setupMateriAutocomplete(){
+            // Materi dropdown (native datalist) + validation (must match one of the options)
+            (function setupMateriDatalist(){
                 const materiInput = document.getElementById('materi');
-                const box = document.getElementById('materiSuggestions');
+                const list = document.getElementById('materiList');
                 const invalidText = document.getElementById('materiInvalidText');
-                if(!materiInput || !box) return;
+                if(!materiInput || !list) return;
 
-                const options = @json($materiMerged ?? []);
-                const norm = (s) => String(s || '').trim();
-                const lower = (s) => norm(s).toLowerCase();
-
-                function isValidSelection(value){
-                    const v = lower(value);
-                    if(!v) return true;
-                    return options.some(opt => lower(opt) === v);
+                const options = Array.from(list.options || []).map(o => String(o.value || '').trim()).filter(Boolean);
+                if(!options.length){
+                    materiInput.setCustomValidity('');
+                    if(invalidText) invalidText.style.display = 'none';
+                    return;
                 }
+                const optionSet = new Set(options.map(v => v.toLowerCase()));
+
                 function applyValidity(){
-                    const v = materiInput.value;
-                    const ok = isValidSelection(v);
-                    if(ok){
+                    const raw = String(materiInput.value || '').trim();
+                    if(!raw){
                         materiInput.setCustomValidity('');
                         if(invalidText) invalidText.style.display = 'none';
-                    }else{
-                        materiInput.setCustomValidity('Tidak ada materi');
-                        if(invalidText) invalidText.style.display = 'block';
+                        return;
                     }
+                    const ok = optionSet.has(raw.toLowerCase());
+                    materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
+                    if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
                 }
 
-                function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
-                function show(items){
-                    if(!items.length){ hide(); return; }
-                    box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
-                    box.style.display = 'block';
-                }
-                function filter(q){
-                    const query = lower(q);
-                    if(query.length < 2) return [];
-                    return options
-                        .map(norm)
-                        .filter(Boolean)
-                        .filter(v => lower(v).includes(query))
-                        .slice(0, 10);
-                }
-
-                materiInput.addEventListener('input', () => {
-                    const items = filter(materiInput.value);
-                    show(items);
-                    applyValidity();
-                });
-                materiInput.addEventListener('focus', () => {
-                    const items = filter(materiInput.value);
-                    show(items);
-                });
-                materiInput.addEventListener('blur', () => { applyValidity(); setTimeout(hide, 150); });
-
-                box.addEventListener('mousedown', (e) => {
-                    const btn = e.target?.closest('[data-value]');
-                    if(!btn) return;
-                    e.preventDefault();
-                    materiInput.value = btn.getAttribute('data-value') || '';
-                    hide();
-                    applyValidity();
-                });
-                document.addEventListener('click', (e) => {
-                    if (e.target === materiInput) return;
-                    if (box.contains(e.target)) return;
-                    hide();
-                });
-
-                // Initial validity (old/current value)
+                materiInput.addEventListener('input', applyValidity);
+                materiInput.addEventListener('blur', applyValidity);
                 applyValidity();
             })();
 

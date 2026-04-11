@@ -255,10 +255,24 @@
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
                                                             @php
-                                                                $cMedia = $course->card_thumbnail ?? $course->media;
-                                                                if ($cMedia) {
-                                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
-                                                                } else {
+                                                                $raw = trim((string) ($course->card_thumbnail ?? $course->media ?? ''));
+                                                                $imgSrc = null;
+
+                                                                if ($raw !== '') {
+                                                                    if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+                                                                        $imgSrc = $raw;
+                                                                    } elseif (str_starts_with($raw, 'uploads/')) {
+                                                                        $imgSrc = asset($raw);
+                                                                    } elseif (str_starts_with($raw, 'storage/')) {
+                                                                        $imgSrc = asset($raw);
+                                                                    } elseif (str_starts_with($raw, 'public/')) {
+                                                                        $imgSrc = asset('storage/' . ltrim(substr($raw, 7), '/'));
+                                                                    } else {
+                                                                        $imgSrc = asset('storage/' . ltrim($raw, '/'));
+                                                                    }
+                                                                }
+
+                                                                if (!$imgSrc) {
                                                                     $imgSrc = asset('aset/poster.png');
                                                                 }
                                                             @endphp
@@ -331,10 +345,24 @@
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
                                             @php
-                                                $cMedia = $course->card_thumbnail ?? $course->media;
-                                                if ($cMedia) {
-                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
-                                                } else {
+                                                $raw = trim((string) ($course->card_thumbnail ?? $course->media ?? ''));
+                                                $imgSrc = null;
+
+                                                if ($raw !== '') {
+                                                    if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+                                                        $imgSrc = $raw;
+                                                    } elseif (str_starts_with($raw, 'uploads/')) {
+                                                        $imgSrc = asset($raw);
+                                                    } elseif (str_starts_with($raw, 'storage/')) {
+                                                        $imgSrc = asset($raw);
+                                                    } elseif (str_starts_with($raw, 'public/')) {
+                                                        $imgSrc = asset('storage/' . ltrim(substr($raw, 7), '/'));
+                                                    } else {
+                                                        $imgSrc = asset('storage/' . ltrim($raw, '/'));
+                                                    }
+                                                }
+
+                                                if (!$imgSrc) {
                                                     $imgSrc = 'https://via.placeholder.com/280x160';
                                                 }
                                             @endphp
