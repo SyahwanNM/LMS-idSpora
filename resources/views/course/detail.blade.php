@@ -1224,12 +1224,13 @@
         if ($quizSlots->count() > 0 && $quizReadyCount <= 0) { $missingMaterials[] = 'Kuis'; }
       @endphp
 
-      @if($isPending)
+      {{-- @if($isPending)
         <div class="alert alert-info" role="alert" style="margin-bottom:16px;">
           <div style="font-weight:600;">Materi sedang diproses.</div>
           <div style="margin-top:6px;">Trainer sudah submit materi. Menunggu approval admin trainer.</div>
         </div>
-      @elseif($isRejected)
+      @elseif($isRejected) --}}
+      @if($isRejected)
         <div class="alert alert-danger" role="alert" style="margin-bottom:16px;">
           <div style="font-weight:600;">Materi course ditolak.</div>
           <div style="margin-top:6px;">Trainer perlu melakukan revisi sebelum materi tampil di preview.</div>
@@ -1458,29 +1459,28 @@
           </div>
         </div>
         <div class="tab-content" id="review">
-          <h5>Review</h5>
-          <div class="review-card">
-            <h4>Erika Diana</h4>
-            <div class="star-rating">
-              <span>★★★★★</span>
+          <h5>Review ({{ $course->reviews->count() }})</h5>
+          
+          @forelse($course->reviews as $review)
+            <div class="review-card">
+              <h4>{{ $review->user->name ?? 'Anonymous' }}</h4>
+              <div class="star-rating">
+                @php
+                  $fullStars = (int) ($review->rating ?? 0);
+                  $emptyStars = 5 - $fullStars;
+                @endphp
+                <span>{{ str_repeat('★', $fullStars) }}{{ str_repeat('☆', $emptyStars) }}</span>
+              </div>
+              <p>
+                {{ $review->comment ?? 'Tidak ada komentar.' }}
+              </p>
+              <small class="text-muted" style="font-size: 12px;">{{ $review->created_at->format('d M Y') }}</small>
             </div>
-            <p>
-              Course ini sangat membantu saya memahami dasar-dasar pengembangan aplikasi mobile. Penjelasannya runtut
-              dan mudah dipahami, bahkan untuk pemula.
-            </p>
-          </div>
-
-          <div class="review-card">
-            <h4>Erika Diana</h4>
-            <div class="star-rating">
-              <span>★★★★★</span>
+          @empty
+            <div class="text-center py-5">
+              <p class="text-muted">Belum ada penilaian untuk course ini.</p>
             </div>
-            <p>
-              Course ini sangat membantu saya memahami dasar-dasar pengembangan aplikasi mobile. Penjelasannya runtut
-              dan mudah dipahami, bahkan untuk pemula.
-            </p>
-          </div>
-
+          @endforelse
         </div>
       </div>
 
@@ -1827,4 +1827,4 @@
 
 
 </html>
-@include('partials.footer-before-login')
+@include('partials.footer-after-login')

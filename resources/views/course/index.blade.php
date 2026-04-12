@@ -8,6 +8,26 @@
         margin-top: 85px; /* Jarak dikurangi agar lebih rapat dengan navbar */
     }
 </style>
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </head>
 
 @include('partials.navbar-after-login') 
@@ -332,7 +352,7 @@
             {{ $courses->onEachSide(1)->links('pagination::bootstrap-5') }}
         </div>
     @endif
-    @include('partials.footer-before-login')
+   @include('partials.footer-after-login')
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

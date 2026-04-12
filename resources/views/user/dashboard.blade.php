@@ -254,29 +254,7 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            @php
-                                                                $raw = trim((string) ($course->card_thumbnail ?? $course->media ?? ''));
-                                                                $imgSrc = null;
-
-                                                                if ($raw !== '') {
-                                                                    if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
-                                                                        $imgSrc = $raw;
-                                                                    } elseif (str_starts_with($raw, 'uploads/')) {
-                                                                        $imgSrc = asset($raw);
-                                                                    } elseif (str_starts_with($raw, 'storage/')) {
-                                                                        $imgSrc = asset($raw);
-                                                                    } elseif (str_starts_with($raw, 'public/')) {
-                                                                        $imgSrc = asset('storage/' . ltrim(substr($raw, 7), '/'));
-                                                                    } else {
-                                                                        $imgSrc = asset('storage/' . ltrim($raw, '/'));
-                                                                    }
-                                                                }
-
-                                                                if (!$imgSrc) {
-                                                                    $imgSrc = asset('aset/poster.png');
-                                                                }
-                                                            @endphp
-                                                            <img src="{{ $imgSrc }}"
+                                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -344,29 +322,7 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            @php
-                                                $raw = trim((string) ($course->card_thumbnail ?? $course->media ?? ''));
-                                                $imgSrc = null;
-
-                                                if ($raw !== '') {
-                                                    if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
-                                                        $imgSrc = $raw;
-                                                    } elseif (str_starts_with($raw, 'uploads/')) {
-                                                        $imgSrc = asset($raw);
-                                                    } elseif (str_starts_with($raw, 'storage/')) {
-                                                        $imgSrc = asset($raw);
-                                                    } elseif (str_starts_with($raw, 'public/')) {
-                                                        $imgSrc = asset('storage/' . ltrim(substr($raw, 7), '/'));
-                                                    } else {
-                                                        $imgSrc = asset('storage/' . ltrim($raw, '/'));
-                                                    }
-                                                }
-
-                                                if (!$imgSrc) {
-                                                    $imgSrc = 'https://via.placeholder.com/280x160';
-                                                }
-                                            @endphp
-                                            <img src="{{ $imgSrc }}"
+                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
@@ -963,6 +919,27 @@
             });
         }
     </script>
+
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </body>
 
 </html>

@@ -850,6 +850,7 @@ class CourseController extends Controller
     {
         $course->load([
             'category',
+            'reviews.user',
             'modules' => function ($q) {
                 $q->orderBy('order_no')->withCount('quizQuestions');
             },

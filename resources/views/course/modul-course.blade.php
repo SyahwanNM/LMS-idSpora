@@ -268,11 +268,18 @@
                         if (!empty($descSource)) {
                             $cleanDesc = trim(strip_tags((string) $descSource));
                             if ($cleanDesc !== '') {
-                                // Split into short lines to preserve the original "list" feel
-                                $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
+                                // If it's a trainer-edited HTML content, just show a snippet or nothing in sub-items
+                                // to avoid cluttering the sidebar with split sentences.
+                                $isRich = str_contains((string)$descSource, '<') && str_contains((string)$descSource, '>');
+                                if ($isRich) {
+                                    $descLines = [\Illuminate\Support\Str::limit($cleanDesc, 80)];
+                                } else {
+                                    // Split into short lines to preserve the original "list" feel for legacy content
+                                    $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
+                                    $descLines = array_slice($descLines, 0, 3);
+                                }
                             }
                         }
-                        $descLines = array_slice($descLines, 0, 3);
                     @endphp
 
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
@@ -332,10 +339,13 @@
 
                 $resolveMediaUrl = function ($module) use ($course) {
                     if (!$module) return [null, false, null, null];
-                    $content = $module->content_url ?? null;
-                    $isHttp = is_string($content) && (str_starts_with($content, 'http://') || str_starts_with($content, 'https://'));
+                    $content = trim((string) ($module->content_url ?? ''));
+                    // If content is empty or just a slash, it's not a real file
+                    if ($content === '' || $content === '/') return [null, false, null, null];
+
+                    $isHttp = str_starts_with($content, 'http://') || str_starts_with($content, 'https://');
                     $storageUrl = null;
-                    if (is_string($content)) {
+                    if (!$isHttp) {
                         $normalized = ltrim($content, '/');
                         if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
                             $normalized = substr($normalized, strlen('uploads/'));
@@ -351,10 +361,35 @@
                 [$vidUrl, $vidIsHttp] = $resolveMediaUrl($videoModule);
             @endphp
 
+            @php
+                // Detect if the PDF module has rich HTML content from trainer editor
+                $pdfDescription = trim((string) ($pdfModule?->description ?? ''));
+                $videoDescription = trim((string) ($videoModule?->description ?? ''));
+                $cmDescription = trim((string) ($cm->description ?? ''));
+                $materialDescription = $pdfDescription ?: $videoDescription ?: $cmDescription;
+                
+                // Content counts as HTML if it contains tags
+                $hasRichHtml = $materialDescription !== '' && (
+                    str_contains($materialDescription, '<') && str_contains($materialDescription, '>')
+                );
+                
+                $hasPdfFile = !empty($pdfUrl);
+                
+                // Prioritize showing HTML content if a file doesn't exist OR if it's explicitly HTML content
+                $showHtmlContent = $hasRichHtml && !$hasPdfFile;
+            @endphp
+
             {{-- Materi: PDF + Video jadi satu kesatuan. Kuis: tidak menampilkan media kosong. --}}
             @if(!$isQuiz)
                 <div class="modul_media_card">
-                    @if($pdfModule && $pdfUrl)
+                    @if($showHtmlContent)
+                        {{-- Trainer rich text HTML content --}}
+                        <div class="trainer-html-content" style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; max-height: 600px; overflow-y: auto;">
+                            <div class="wysiwyg-output">
+                                {!! $materialDescription !!}
+                            </div>
+                        </div>
+                    @elseif($hasPdfFile)
                         <iframe class="video_course" width="560" height="315" src="{{ $pdfUrl }}" title="PDF" frameborder="0"></iframe>
                     @endif
 
@@ -371,7 +406,7 @@
                         @endif
                     @endif
 
-                    @if((!$pdfModule || !$pdfUrl) && (!$videoModule || !$vidUrl))
+                    @if(!$showHtmlContent && !$hasPdfFile && (!$videoModule || !$vidUrl))
                         <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
                     @endif
                 </div>
@@ -381,9 +416,21 @@
             @if(!$isQuiz)
                 <div class="box_luar_deskripsi_modul">
                     <div class="box_deskripsi_modul">
-                        <p class="deskripsi_modul">
-                            {{ ($pdfModule?->description ?? '') ?: ($videoModule?->description ?? '') ?: ($cm->description ?? 'Deskripsi modul belum tersedia.') }}
-                        </p>
+                        @if($hasRichHtml && !$showHtmlContent)
+                            {{-- HTML content exists but PDF file also exists, show as secondary content --}}
+                            <div class="deskripsi_modul wysiwyg-output">
+                                {!! $materialDescription !!}
+                            </div>
+                        @elseif($showHtmlContent)
+                            {{-- Description already shown above, show simple text --}}
+                            <p class="deskripsi_modul">
+                                Materi di atas disusun oleh Trainer. Silakan baca dan pelajari dengan saksama.
+                            </p>
+                        @else
+                            <p class="deskripsi_modul">
+                                {{ $materialDescription ?: 'Deskripsi modul belum tersedia.' }}
+                            </p>
+                        @endif
                     </div>
                 </div>
             @else
