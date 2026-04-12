@@ -203,7 +203,6 @@
             font-size: 12px;
         }
     </style>
-    @include('admin.trainer._top-text-color')
 @endsection
 
 @section('content')

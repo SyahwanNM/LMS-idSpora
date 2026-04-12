@@ -464,7 +464,6 @@
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation -->
         @include('admin.partials.trainer-sidebar')
-        @include('admin.trainer._top-text-color')
 
         <!-- Main Content -->
         <main class="trainer-main">

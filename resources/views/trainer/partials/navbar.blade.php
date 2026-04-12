@@ -53,7 +53,9 @@
                         @forelse($trainerNotifications as $notification)
                             @php
                                 $notificationUrl = data_get($notification->data, 'url');
-                                $notificationStatus = data_get($notification->data, 'invitation_status');
+                                $notificationStatus = method_exists($notification, 'effectiveInvitationStatus')
+                                    ? $notification->effectiveInvitationStatus()
+                                    : data_get($notification->data, 'invitation_status');
                                 $isInvitation = in_array($notification->type, ['course_invitation', 'event_invitation'], true);
                                 $isMaterialApproved = in_array($notification->type, ['course_material_approved', 'event_material_approved'], true);
                                 $isMaterialRejected = in_array($notification->type, ['course_material_rejected', 'event_material_rejected'], true);
@@ -114,7 +116,9 @@
                                 @if($isInvitation && ($notificationStatus === 'pending' || empty($notificationStatus)))
                                     <div class="trainer-notification-actions">
                                         @php
-                                            $notificationEntityType = data_get($notification->data, 'entity_type');
+                                            $notificationEntityType = method_exists($notification, 'effectiveEntityType')
+                                                ? $notification->effectiveEntityType()
+                                                : data_get($notification->data, 'entity_type');
                                             $notificationTitle = addslashes((string) ($notification->title ?? 'Undangan Event'));
                                         @endphp
                                         @if($notificationEntityType === 'course')

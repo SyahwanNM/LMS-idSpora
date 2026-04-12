@@ -1141,11 +1141,15 @@
           @forelse($pendingInvitationItems as $invite)
             @php
               $inviteUrl = data_get($invite->data, 'url');
-              $inviteStatus = data_get($invite->data, 'invitation_status', 'pending');
+              $inviteStatus = method_exists($invite, 'effectiveInvitationStatus')
+                ? $invite->effectiveInvitationStatus()
+                : data_get($invite->data, 'invitation_status', 'pending');
               $inviteDueAt = data_get($invite->data, 'due_at');
               $dueDate = $inviteDueAt ? \Illuminate\Support\Carbon::parse($inviteDueAt) : null;
               $isOverdue = $dueDate ? $dueDate->isPast() : false;
-              $inviteEntityType = data_get($invite->data, 'entity_type', 'course');
+              $inviteEntityType = method_exists($invite, 'effectiveEntityType')
+                ? $invite->effectiveEntityType()
+                : data_get($invite->data, 'entity_type', 'course');
               $inviteTypeLabel = $inviteEntityType === 'event' ? 'Event' : 'Course';
               $inviteStatusLabel = match ($inviteStatus) {
                 'accepted' => 'Diterima',
@@ -1158,7 +1162,8 @@
               class="invitation-item {{ is_null($invite->read_at) ? 'is-unread' : '' }} {{ $inviteEntityType === 'event' ? 'is-event' : 'is-course' }}">
               <div class="invitation-item-top">
                 <h4 class="invitation-item-title">{{ $invite->title }}</h4>
-                <span class="invitation-type-label {{ $inviteEntityType === 'event' ? 'is-event' : 'is-course' }}">{{ $inviteTypeLabel }}</span>
+                <span
+                  class="invitation-type-label {{ $inviteEntityType === 'event' ? 'is-event' : 'is-course' }}">{{ $inviteTypeLabel }}</span>
               </div>
               <div class="invitation-item-summary">
                 <span class="invitation-summary-text {{ $isOverdue && $inviteStatus === 'pending' ? 'is-overdue' : '' }}">
@@ -1181,7 +1186,6 @@
               </div>
               @if($inviteStatus === 'pending')
                 <div class="invitation-actions">
-                  @php $inviteEntityType = data_get($invite->data, 'entity_type'); @endphp
                   @if($inviteEntityType === 'course')
                     <button type="button" class="action-chip primary"
                       onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">
