@@ -253,11 +253,11 @@
                 <div class="learner-grid">
                     @forelse($activeStudents as $enrollment)
                         <div class="learner-card">
-                            <img src="{{ $enrollment->student->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->student->name) }}"
-                                alt="{{ $enrollment->student->name }}" />
+                            <img src="{{ $enrollment->user->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->user->name) }}"
+                                alt="{{ $enrollment->user->name }}" />
                             <div class="learner-info">
-                                <h4>{{ $enrollment->student->name ?? 'Anonim' }}</h4>
-                                <p>{{ strtoupper($enrollment->student->email ?? 'NO EMAIL') }}</p>
+                                <h4>{{ $enrollment->user->name ?? 'Anonim' }}</h4>
+                                <p>{{ strtoupper($enrollment->user->email ?? 'NO EMAIL') }}</p>
                                 <span class="learner-date">Joined: {{ $enrollment->created_at->format('Y-m-d') }}</span>
                             </div>
                         </div>

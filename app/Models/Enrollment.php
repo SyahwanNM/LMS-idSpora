@@ -15,11 +15,14 @@ class Enrollment extends Model
         'enrolled_at',
         'completed_at',
         'enrollment_code',
+        'certificate_number',
+        'certificate_issued_at',
     ];
 
     protected $casts = [
         'enrolled_at' => 'datetime',
         'completed_at' => 'datetime',
+        'certificate_issued_at' => 'datetime',
     ];
 
     /**
@@ -67,6 +70,14 @@ class Enrollment extends Model
             : $this->progress()->where('completed', true)->count();
         
         return (int) round(($completedModules / $totalModules) * 100);
+    }
+
+    /**
+     * Check if the enrollment is fully completed (progress is 100%).
+     */
+    public function isFullyCompleted(): bool
+    {
+        return $this->getProgressPercentage() >= 100;
     }
 }
 

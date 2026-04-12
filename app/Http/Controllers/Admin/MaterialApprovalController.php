@@ -280,7 +280,6 @@ class MaterialApprovalController extends Controller
      */
     public function show(Course $material)
     {
-        // Load relationships
         $material->load([
             'trainer',
             'category',
@@ -291,7 +290,10 @@ class MaterialApprovalController extends Controller
 
         $structureCompleteness = $this->assessStructureCompleteness($material);
 
-        return view('admin.material.show', compact('material', 'structureCompleteness'));
+        $uploadedModules = $material->modules;
+        $uploadedModulesCount = $uploadedModules->count();
+
+        return view('admin.material.show', compact('material', 'structureCompleteness', 'uploadedModules', 'uploadedModulesCount'));
     }
 
     /**
@@ -337,6 +339,51 @@ class MaterialApprovalController extends Controller
             'Content-Type' => $mime,
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
         ]);
+    }
+
+    /**
+     * Approve individual module
+     */
+    public function approveModule(Course $material, CourseModule $module)
+    {
+        if ((int) $module->course_id !== (int) $material->id) {
+            abort(404, 'Modul tidak ditemukan pada materi ini.');
+        }
+
+        $module->update([
+            'review_status' => 'approved',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+            'review_rejection_reason' => null
+        ]);
+
+        return back()->with('success', "Modul {$module->title} berhasil disetujui.");
+    }
+
+    /**
+     * Reject individual module
+     */
+    public function rejectModule(Request $request, Course $material, CourseModule $module)
+    {
+        if ((int) $module->course_id !== (int) $material->id) {
+            abort(404, 'Modul tidak ditemukan pada materi ini.');
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000',
+        ], [
+            'rejection_reason.required' => 'Alasan penolakan wajib diisi.',
+            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.',
+        ]);
+
+        $module->update([
+            'review_status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+            'review_rejection_reason' => $request->rejection_reason
+        ]);
+
+        return back()->with('success', "Modul {$module->title} berhasil ditolak.");
     }
 
     /**

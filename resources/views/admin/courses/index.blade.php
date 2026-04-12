@@ -243,11 +243,18 @@
                         })->count() > 0;
                     }
 
+                    // If it's a trainer course, ensure all modules have been approved
+                    $hasUnapprovedModules = false;
+                    if (!empty($course->trainer_id)) {
+                        $hasUnapprovedModules = $modulesCol->where('review_status', '!=', 'approved')->count() > 0;
+                    }
+
                     $missingForPublish = [];
                     if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
                     if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
                     if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
                     if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasUnapprovedModules) { $missingForPublish[] = 'Approval Trainer'; }
 
                     $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
@@ -281,18 +288,21 @@
                                 'enroll_count' => (int)($course->enrollments_count ?? 0),
                                 'edit_url' => route('admin.courses.edit', $course),
                                 'has_trainer' => !empty($course->trainer_id),
-                                'modules' => $course->modules->map(function($m) {
+                                'modules' => $course->modules->filter(function($m) use ($course) {
+                                    if (empty($course->trainer_id)) return true;
+                                    return $m->review_status === 'approved';
+                                })->map(function($m) {
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
                                 'title' => $m->title,
-                                'subtitle' => $m->description ?? '',
+                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Dokumen Materi',
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
                                 // Content completeness marker for preview
                                 'has_content' => $m->type === 'quiz'
                                     ? (($m->quizQuestions->count() ?? 0) > 0)
-                                    : !empty($m->content_url),
+                                    : (!empty($m->content_url) || !empty($m->description)),
                                 ];
                                 })->values()->toArray(),
                                 'published' => $isPublished ? '1' : '0',
@@ -718,7 +728,7 @@
                 if (!m) return false;
                 if (typeof m.has_content !== 'undefined') return !!m.has_content;
                 if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
-                return !!(m.content_url || '');
+                return !!(m.content_url || m.subtitle || ''); // subtitle maps to description in previewData
             }
 
             // --- 4. Event Delegation for Preview Click ---
