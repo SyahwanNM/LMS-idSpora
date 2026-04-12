@@ -118,7 +118,9 @@ class AdminController extends Controller
             ->get()
             ->filter(function (TrainerNotification $notification) {
                 $data = is_array($notification->data) ? $notification->data : [];
-                $status = (string) data_get($data, 'invitation_status', 'pending');
+                $status = method_exists($notification, 'effectiveInvitationStatus')
+                    ? $notification->effectiveInvitationStatus()
+                    : (string) data_get($data, 'invitation_status', 'pending');
                 if ($status !== 'pending') {
                     return false;
                 }
@@ -150,7 +152,9 @@ class AdminController extends Controller
                     'id' => $notification->id,
                     'trainer' => $notification->trainer?->name ?? 'Trainer',
                     'title' => (string) $notification->title,
-                    'entity_type' => (string) data_get($data, 'entity_type', 'course'),
+                    'entity_type' => method_exists($notification, 'effectiveEntityType')
+                        ? $notification->effectiveEntityType()
+                        : (string) data_get($data, 'entity_type', 'course'),
                     'entity_id' => (int) data_get($data, 'entity_id', 0),
                     'due_at_text' => $dueAtText,
                 ];
@@ -479,7 +483,7 @@ class AdminController extends Controller
                 'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                 // attendance QR data
                 'qr_token' => $e->attendance_qr_token,
-                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
+                'qr_url' => $e->attendance_qr_token ? url('/events/' . $e->id . '?t=' . $e->attendance_qr_token) : null,
                 'qr_image_url' => $e->attendance_qr_image_url,
             ];
         });

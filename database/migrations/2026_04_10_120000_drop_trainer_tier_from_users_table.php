@@ -29,7 +29,12 @@ return new class extends Migration {
         }
 
         Schema::table('users', function (Blueprint $table) {
-            $table->string('trainer_tier', 20)->default('associate')->after('late_uploads');
+            if (Schema::hasColumn('users', 'late_uploads')) {
+                $table->string('trainer_tier', 20)->default('associate')->after('late_uploads');
+                return;
+            }
+
+            $table->string('trainer_tier', 20)->default('associate');
         });
     }
 };

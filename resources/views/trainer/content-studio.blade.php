@@ -28,6 +28,8 @@
         || $moduleRejectionNotes->isNotEmpty();
 
     $activeSchemeType = (int) ($activeSchemeType ?? 1);
+    $courseMaterialLocked = (bool) ($courseMaterialLocked ?? false);
+    $courseInvitationStatus = (string) ($courseInvitationStatus ?? '');
     $schemePermissions = $schemePermissions ?? [
         'can_module' => true,
         'can_video' => true,
@@ -1005,24 +1007,30 @@
 
             <div class="studio-tabs" role="tablist">
                 <button
-                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ !$schemePermissions['can_module'] ? 'is-locked' : '' }}"
-                    data-tab="module" type="button" {{ !$schemePermissions['can_module'] ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ (!$schemePermissions['can_module'] || $courseMaterialLocked) ? 'is-locked' : '' }}"
+                    data-tab="module" type="button" {{ (!$schemePermissions['can_module'] || $courseMaterialLocked) ? 'data-locked="1"' : '' }}>
                     MODUL
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ !$schemePermissions['can_video'] ? 'is-locked' : '' }}"
-                    data-tab="video" type="button" {{ !$schemePermissions['can_video'] ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ (!$schemePermissions['can_video'] || $courseMaterialLocked) ? 'is-locked' : '' }}"
+                    data-tab="video" type="button" {{ (!$schemePermissions['can_video'] || $courseMaterialLocked) ? 'data-locked="1"' : '' }}>
                     VIDEO
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ !$schemePermissions['can_quiz'] ? 'is-locked' : '' }}"
-                    data-tab="quiz" type="button" {{ !$schemePermissions['can_quiz'] ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ (!$schemePermissions['can_quiz'] || $courseMaterialLocked) ? 'is-locked' : '' }}"
+                    data-tab="quiz" type="button" {{ (!$schemePermissions['can_quiz'] || $courseMaterialLocked) ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
                 </button>
             </div>
         </header>
 
-        @if(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
+        @if($courseMaterialLocked)
+            <section
+                style="margin-bottom:16px; padding: 12px 14px; border:1px solid #f59e0b; border-radius: 12px; background:#fffbeb; color:#92400e; font-size:13px;">
+                Materi course masih terkunci sampai undangan trainer diterima. Kamu masih bisa melihat detail course
+                ini, tetapi semua upload, penggantian file, dan penyusunan quiz dinonaktifkan sementara.
+            </section>
+        @elseif(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
             <section
                 style="margin-bottom:16px; padding: 12px 14px; border:1px dashed #cbd5e1; border-radius: 12px; background:#f8fafc; color:#475569; font-size:13px;">
                 @if(!$schemePermissions['can_module'])
@@ -1083,29 +1091,26 @@
                             <div class="text-editor-block">
                                 <p class="text-editor-label mb-2">Editor Materi</p>
                                 <div class="wysiwyg-toolbar" id="wysiwygToolbar">
-                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold"><i
-                                            class="bi bi-type-bold"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic"><i
+                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $courseMaterialLocked ? 'disabled' : '' }}><i
                                             class="bi bi-type-italic"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1">H1</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2">H2</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3">H3</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List"><i
-                                            class="bi bi-list-ul"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image"><i
-                                            class="bi bi-image"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri"><i
-                                            class="bi bi-text-left"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $courseMaterialLocked ? 'disabled' : '' }}>H1</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $courseMaterialLocked ? 'disabled' : '' }}>H2</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $courseMaterialLocked ? 'disabled' : '' }}>H3</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
                                     <button type="button" class="wysiwyg-btn" data-action="align-center"
                                         title="Rata Tengah"><i class="bi bi-text-center"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-right"
-                                        title="Rata Kanan"><i class="bi bi-text-right"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="code"
-                                        title="Insert Code Block"><i class="bi bi-code-square"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $courseMaterialLocked ? 'disabled' : '' }} title="Rata Kanan"><i
+                                            class="bi bi-text-right"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="code" {{ $courseMaterialLocked ? 'disabled' : '' }} title="Insert Code Block"><i
+                                            class="bi bi-code-square"></i></button>
                                 </div>
-                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" />
-                                <div id="moduleWysiwygEditor" class="wysiwyg-editor" contenteditable="true"
-                                    spellcheck="true">
+                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $courseMaterialLocked ? 'disabled' : '' }} />
+                                <div id="moduleWysiwygEditor" class="wysiwyg-editor"
+                                    contenteditable="{{ $courseMaterialLocked ? 'false' : 'true' }}" spellcheck="true"
+                                    style="{{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">
                                     <p>Tulis pengantar materi di sini...</p>
                                 </div>
                                 <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
@@ -1117,7 +1122,7 @@
                             <button type="button" class="secondary-btn" id="previewModuleBtn">
                                 <i class="bi bi-eye"></i> PREVIEW MODUL
                             </button>
-                            <button type="submit" class="primary-btn" id="uploadSubmitBtn">
+                            <button type="submit" class="primary-btn" id="uploadSubmitBtn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-send"></i> SUBMIT FOR REVIEW
                             </button>
                         </div>
@@ -1146,9 +1151,10 @@
                                 </ul>
                             </div>
 
-                            <div class="dropzone" id="videoDropzone">
+                            <div class="dropzone" id="videoDropzone"
+                                style="{{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72;' : '' }}">
                                 <input type="file" id="videoFileInput" multiple accept=".mp4" name="files[]"
-                                    style="display: none" />
+                                    style="display: none" {{ $courseMaterialLocked ? 'disabled' : '' }} />
                                 <i class="bi bi-camera-video"></i>
                                 <h2>Lampiran Video</h2>
                                 <p>Format: MP4</p>
@@ -1198,8 +1204,7 @@
                                                 onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                 <i class="bi bi-eye-fill"></i>
                                             </button>
-                                            <button type="button" class="select-replace-btn"
-                                                data-module-id="{{ $material->id }}" data-module-type="video"
+                                            <button type="button" class="select-replace-btn" {{ $courseMaterialLocked ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Ganti File"
                                                 style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
@@ -1213,7 +1218,7 @@
                         </div>
 
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn">
+                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-send"></i> SUBMIT VIDEO
                             </button>
                         </div>
@@ -1290,6 +1295,7 @@
                                                     {{ $isFilledQuiz ? 'Tersimpan' : 'Belum Diisi' }}
                                                 </span>
                                                 <button type="button" class="quiz-edit-btn" data-module-id="{{ $quizModule->id }}"
+                                                    {{ $courseMaterialLocked ? 'disabled' : '' }}
                                                     title="{{ $isFilledQuiz ? 'Edit Quiz' : 'Buat Quiz' }}"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
@@ -1366,10 +1372,10 @@
                         </div>
 
                         <div class="quiz-actions" style="margin-top: 24px;">
-                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn">
+                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-plus-lg"></i> TAMBAH SOAL
                             </button>
-                            <button type="submit" class="primary-btn quiz-save-btn">
+                            <button type="submit" class="primary-btn quiz-save-btn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-check-lg"></i> SIMPAN QUIZ
                             </button>
                         </div>
@@ -1759,6 +1765,7 @@
             const videoUploadBtn = document.getElementById('videoUploadSubmitBtn');
             const moduleForm = document.getElementById("moduleForm");
             const uploadBtn = document.getElementById("uploadSubmitBtn");
+            const courseMaterialsLocked = @json($courseMaterialLocked);
             const targetModulesInput = moduleForm.querySelector('input[name="target_modules"]');
             const materialDraftInput = document.getElementById('materialDraftInput');
             const materialDraftStorageKey = `trainer-course-draft-${{ (int) $course->id }}`;
@@ -1774,11 +1781,11 @@
             let selectedModuleImage = null;
 
             const codeLangOptions = `
-                            <option value="html">HTML</option>
-                            <option value="css">CSS</option>
-                            <option value="javascript">JavaScript</option>
-                            <option value="php">PHP</option>
-                        `;
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="php">PHP</option>
+                            `;
 
             function escapeCode(raw) {
                 return String(raw ?? '')
@@ -1789,19 +1796,24 @@
 
             function insertCodeBlock() {
                 const codeBlockHtml = `
-                                <div class="module-code-block" contenteditable="false">
-                                    <div class="module-code-top">
-                                        <select class="module-code-lang">${codeLangOptions}</select>
-                                        <button type="button" class="module-code-copy">Copy Code</button>
+                                    <div class="module-code-block" contenteditable="false">
+                                        <div class="module-code-top">
+                                            <select class="module-code-lang">${codeLangOptions}</select>
+                                            <button type="button" class="module-code-copy">Copy Code</button>
+                                        </div>
+                                        <pre><code class="language-html" contenteditable="true" spellcheck="false"></code></pre>
                                     </div>
-                                    <pre><code class="language-html" contenteditable="true" spellcheck="false"></code></pre>
-                                </div>
-                                <p><br></p>
-                            `;
+                                    <p><br></p>
+                                `;
                 document.execCommand('insertHTML', false, codeBlockHtml);
             }
 
             async function insertImageFromFile(file) {
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
+
                 if (!file || !file.type || !file.type.startsWith('image/')) {
                     showNotificationModal('Tipe File Tidak Sesuai', 'Silakan pilih file gambar yang valid.', 'error');
                     return;
@@ -1832,10 +1844,10 @@
                     }
 
                     const imageHtml = `
-                                    <figure class="module-inline-image" data-image-align="center">
-                                        <img src="${String(data.url || '')}" alt="Gambar materi" data-image-width="560" style="width:560px; max-width:100%;" />
-                                    </figure>
-                                `;
+                                        <figure class="module-inline-image" data-image-align="center">
+                                            <img src="${String(data.url || '')}" alt="Gambar materi" data-image-width="560" style="width:560px; max-width:100%;" />
+                                        </figure>
+                                    `;
                     document.execCommand('insertHTML', false, imageHtml);
                     syncEditorContentToInput();
                 } catch (error) {
@@ -1890,6 +1902,11 @@
 
             if (toolbar) {
                 toolbar.addEventListener('click', function (event) {
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        return;
+                    }
+
                     const btn = event.target.closest('.wysiwyg-btn');
                     if (!btn) return;
                     const action = btn.dataset.action;
@@ -1912,6 +1929,12 @@
 
             if (moduleImageInput) {
                 moduleImageInput.addEventListener('change', function (event) {
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        moduleImageInput.value = '';
+                        return;
+                    }
+
                     const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
                     if (file) {
                         insertImageFromFile(file);
@@ -2058,32 +2081,32 @@
                     const moduleId = Number(material.module_id || 0);
 
                     return `
-                                                <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                        <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                                        <div>
-                                                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                                            <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                    <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                            <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                            <div>
+                                                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
+                                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div style="display: flex; gap: 6px;">
-                                                        <button type="button" class="preview-material-btn"
-                                                            data-view-url="${viewUrl}" data-material-type="video" data-file-name="${fileName}"
-                                                            title="Preview File"
-                                                            style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                            <i class="bi bi-eye-fill"></i>
-                                                        </button>
-                                                        <button type="button" class="select-replace-btn"
-                                                            data-module-id="${moduleId}" data-module-type="video" data-file-name="${fileName}"
-                                                            title="Ganti File"
-                                                            style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                            onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                            <i class="bi bi-arrow-repeat"></i>
-                                                        </button>
-                                                    </div>
-                                                </li>
-                                            `;
+                                                        <div style="display: flex; gap: 6px;">
+                                                            <button type="button" class="preview-material-btn"
+                                                                data-view-url="${viewUrl}" data-material-type="video" data-file-name="${fileName}"
+                                                                title="Preview File"
+                                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                                <i class="bi bi-eye-fill"></i>
+                                                            </button>
+                                                            <button type="button" class="select-replace-btn"
+                                                                data-module-id="${moduleId}" data-module-type="video" data-file-name="${fileName}"
+                                                                title="Ganti File"
+                                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                                <i class="bi bi-arrow-repeat"></i>
+                                                            </button>
+                                                        </div>
+                                                    </li>
+                                                `;
                 }).join('');
             }
 
@@ -2112,6 +2135,11 @@
 
                 const editQuizBtn = event.target.closest('.quiz-edit-btn');
                 if (editQuizBtn) {
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        return;
+                    }
+
                     const moduleId = Number(editQuizBtn.dataset.moduleId || 0);
                     const key = String(moduleId);
                     const quizPayload = (existingQuizPayloads && Object.prototype.hasOwnProperty.call(existingQuizPayloads, key))
@@ -2162,10 +2190,20 @@
             const replacementCancelBtn = document.getElementById('replacementCancelBtn');
             const replacementConfirmBtn = document.getElementById('replacementConfirmBtn');
 
-            replacementDropzone.addEventListener('click', () => replacementFileInput.click());
+            replacementDropzone.addEventListener('click', () => {
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
+                replacementFileInput.click();
+            });
             replacementDropzone.addEventListener('dragover', (e) => { e.preventDefault(); });
             replacementDropzone.addEventListener('drop', (e) => {
                 e.preventDefault();
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
                 if (e.dataTransfer.files.length > 0) {
                     const file = e.dataTransfer.files[0];
                     if (validateReplacementFile(file)) {
@@ -2176,6 +2214,11 @@
             });
 
             replacementFileInput.addEventListener('change', (e) => {
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    replacementFileInput.value = '';
+                    return;
+                }
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
                     if (validateReplacementFile(file)) {
@@ -2188,6 +2231,11 @@
             replacementCancelBtn.addEventListener('click', closeReplacementModal);
 
             replacementConfirmBtn.addEventListener('click', () => {
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
+
                 if (!replacementState.selectedFile) {
                     showNotificationModal('Perhatian', 'Silakan pilih file terlebih dahulu.', 'error');
                     return;
@@ -2271,19 +2319,41 @@
             };
 
             if (videoDropzone && videoFileInput) {
-                videoDropzone.addEventListener("click", () => videoFileInput.click());
+                videoDropzone.addEventListener("click", () => {
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        return;
+                    }
+                    videoFileInput.click();
+                });
                 videoDropzone.addEventListener("dragover", (e) => { e.preventDefault(); videoDropzone.style.borderColor = "#1a237e"; videoDropzone.style.background = "#f0f5fc"; });
                 videoDropzone.addEventListener("dragleave", () => { videoDropzone.style.borderColor = "#dfe6f2"; videoDropzone.style.background = "#f8fafc"; });
                 videoDropzone.addEventListener("drop", (e) => {
                     e.preventDefault();
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        return;
+                    }
                     videoDropzone.style.borderColor = "#dfe6f2";
                     videoDropzone.style.background = "#f8fafc";
                     handleVideoFiles(e.dataTransfer.files);
                 });
-                videoFileInput.addEventListener("change", (e) => handleVideoFiles(e.target.files));
+                videoFileInput.addEventListener("change", (e) => {
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        videoFileInput.value = '';
+                        return;
+                    }
+                    handleVideoFiles(e.target.files);
+                });
             }
 
             function handleVideoFiles(files) {
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
+
                 if (!schemePermissions.can_video) {
                     showNotificationModal('Fitur Dikunci Skema', 'Skema aktif tidak mengizinkan upload video.', 'warning');
                     return;
@@ -2315,17 +2385,17 @@
                 if (videoUploadedFiles.length > 0) {
                     videoFileList.style.display = "block";
                     videoUploadedFilesList.innerHTML = videoUploadedFiles.map((file, index) => `
-                                                    <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                            <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                                            <div>
-                                                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                                                <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                                <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                                <div>
+                                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                                                    <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <button type="button" class="delete-video-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                                                    </li>
-                                                `).join("");
+                                                            <button type="button" class="delete-video-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                                                        </li>
+                                                    `).join("");
 
                     document.querySelectorAll(".delete-video-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -2341,6 +2411,11 @@
             if (videoForm) {
                 videoForm.addEventListener("submit", (e) => {
                     e.preventDefault();
+
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        return;
+                    }
 
                     if (videoUploadedFiles.length === 0) {
                         showNotificationModal('Perhatian', 'Silakan pilih minimal 1 file video untuk diupload.', 'error');
@@ -2425,6 +2500,12 @@
             // AJAX SUBMIT UPLOAD
             moduleForm.addEventListener("submit", (e) => {
                 e.preventDefault();
+
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
+
                 syncEditorContentToInput();
                 const hasEditorContent = !!(moduleContentInput && moduleContentInput.value.trim() !== '');
                 if (!hasEditorContent) {
@@ -2576,33 +2657,33 @@
                     const qEl = document.createElement("article");
                     qEl.className = "quiz-editor";
                     qEl.innerHTML = `
-                                                    <div class="q-head">
-                                                        <div class="q-number">${index + 1}</div>
-                                                        <div class="q-inputs">
-                                                            <label>PERTANYAAN</label>
-                                                            <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                                        <div class="q-head">
+                                                            <div class="q-number">${index + 1}</div>
+                                                            <div class="q-inputs">
+                                                                <label>PERTANYAAN</label>
+                                                                <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                                            </div>
+                                                            <div class="q-score">
+                                                                <label>BOBOT</label>
+                                                                <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                                            </div>
+                                                            <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
                                                         </div>
-                                                        <div class="q-score">
-                                                            <label>BOBOT</label>
-                                                            <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                                        <div class="options-section">
+                                                            <p class="options-label">PILIHAN JAWABAN</p>
+                                                            <div class="options-grid">
+                                                                ${q.options.map((opt, oIdx) => `
+                                                                    <div class="option-container">
+                                                                        <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
+                                                                            <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                                                            <span>Opsi ${oIdx + 1}</span>
+                                                                        </button>
+                                                                        <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                                                    </div>
+                                                                `).join("")}
+                                                            </div>
                                                         </div>
-                                                        <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
-                                                    </div>
-                                                    <div class="options-section">
-                                                        <p class="options-label">PILIHAN JAWABAN</p>
-                                                        <div class="options-grid">
-                                                            ${q.options.map((opt, oIdx) => `
-                                                                <div class="option-container">
-                                                                    <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                                                        <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                                                        <span>Opsi ${oIdx + 1}</span>
-                                                                    </button>
-                                                                    <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
-                                                                </div>
-                                                            `).join("")}
-                                                        </div>
-                                                    </div>
-                                                `;
+                                                    `;
 
                     // Event Listeners for this question
                     qEl.querySelector(".q-text").addEventListener("input", (e) => {
@@ -2679,6 +2760,11 @@
             // AJAX SUBMIT QUIZ
             document.getElementById("quizForm").addEventListener("submit", function (e) {
                 e.preventDefault();
+
+                if (courseMaterialsLocked) {
+                    showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                    return;
+                }
 
                 // Validasi Kosong
                 if (quizQuestions.length === 0) return showNotificationModal('Perhatian', 'Tambahkan minimal 1 soal!', 'error');

@@ -91,8 +91,12 @@ class MaterialApprovalController extends Controller
                 if ((int) $notification->trainer_id !== (int) $material->trainer_id) {
                     return false;
                 }
-                $entityType = (string) data_get($notification->data, 'entity_type');
-                $entityId = (int) data_get($notification->data, 'entity_id');
+                $entityType = method_exists($notification, 'effectiveEntityType')
+                    ? $notification->effectiveEntityType()
+                    : (string) data_get($notification->data, 'entity_type');
+                $entityId = method_exists($notification, 'effectiveEntityId')
+                    ? $notification->effectiveEntityId()
+                    : (int) data_get($notification->data, 'entity_id');
 
                 return $entityType === 'course' && $entityId === (int) $material->id && in_array($entityId, $courseIds, true);
             });

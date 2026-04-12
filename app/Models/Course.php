@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Course extends Model
 {
@@ -116,5 +117,61 @@ class Course extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function getCardThumbnailUrlAttribute(): ?string
+    {
+        $thumbnail = trim((string) ($this->card_thumbnail ?? ''));
+        if ($thumbnail !== '') {
+            return $this->resolvePublicImageUrl($thumbnail);
+        }
+
+        $media = trim((string) ($this->media ?? ''));
+        $mediaType = strtolower(trim((string) ($this->media_type ?? '')));
+        if ($media !== '' && ($mediaType === 'image' || $this->looksLikeImagePath($media))) {
+            return $this->resolvePublicImageUrl($media);
+        }
+
+        return null;
+    }
+
+    private function looksLikeImagePath(string $path): bool
+    {
+        $ext = strtolower(pathinfo(parse_url($path, PHP_URL_PATH) ?? $path, PATHINFO_EXTENSION));
+        return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'], true);
+    }
+
+    private function resolvePublicImageUrl(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+
+        if (str_starts_with($normalized, 'storage/')) {
+            return asset($normalized);
+        }
+
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+
+        if (Storage::disk('public')->exists($normalized)) {
+            return Storage::disk('public')->url($normalized);
+        }
+
+        return asset('storage/' . $normalized);
     }
 }
