@@ -393,10 +393,10 @@
         </div>
 
         <div id="pertumbuhan" class="rekap-box">
-            <div class="box-diagram-pertumbuhan col-md-8">
+            <div class="box-diagram-pertumbuhan">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <div style="height: 300px; position: relative;">
+                        <div style="height: 300px ; position: relative;">
                             <canvas id="chartEvent"></canvas>
                         </div>
                     </div>
@@ -531,13 +531,31 @@
                             });
                     @endphp
                     @forelse($growthRows as $row)
-                        <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
+                        <tr
+                            data-name="{{ Str::lower($row['name']) }}"
+                            data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}"
+                            data-participants="{{ $row['participants'] }}"
+                            data-event-rating="{{ $row['event_rating'] ?? '' }}"
+                            data-speaker-rating="{{ $row['speaker_rating'] ?? '' }}"
+                            data-title="{{ $row['name'] }}">
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['date'] ?? '-' }}</td>
                             <td>{{ $row['participants'] }} Peserta</td>
                             <td>{{ $row['speaker'] ?? '-' }}</td>
-                            <td>{{ $row['event_rating'] ?? '-' }}</td>
-                            <td>{{ $row['speaker_rating'] ?? '-' }}</td>
+                            <td>
+                                @if(isset($row['event_rating']) && $row['event_rating'] !== null)
+                                    {{ $row['event_rating'] }}/5
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td>
+                                @if(isset($row['speaker_rating']) && $row['speaker_rating'] !== null)
+                                    {{ $row['speaker_rating'] }}/5
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewPertumbuhanModal">
                                     <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
@@ -557,7 +575,7 @@
         <div id="operasional" class="rekap-box">
             <div>
                 <h5>Aktivitas Acara</h5>
-                <div class="box-diagram-operasional col-md-8 mt-3">
+                <div class="box-diagram-operasional">
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h6 class="mb-3">Total Event Create vs Manage</h6>
@@ -748,7 +766,7 @@
 
     <!-- Modals -->
     <div class="modal-view-pendapatan modal fade" id="viewPendapatanModal" tabindex="-1" aria-labelledby="viewPendapatanLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="content-event modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="viewPendapatanLabel">Rekap Pendaftaran</h5>
@@ -803,7 +821,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Detail Penilaian untuk acara ini.</p>
+                    <p class="mb-2">Detail penilaian untuk acara ini.</p>
+                    <div class="mb-3">
+                        <small class="text-muted">Event</small>
+                        <div class="fw-semibold" id="pertumbuhanEventName">-</div>
+                    </div>
                     <div class="pertumbuhan-dialog-box">
                         <div class="pertumbuhan-dialog-card">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#4b2dbf" class="bi bi-people" viewBox="0 0 16 16">
@@ -811,7 +833,7 @@
                             </svg>
                             <div class="view-pertumbuhan">
                                 <p class="label-view">Jumlah Peserta</p>
-                                <p>250 Peserta</p>
+                                <p class="value-view" id="pertumbuhanParticipants">-</p>
                             </div>
                         </div>
                         <div class="pertumbuhan-dialog-card">
@@ -820,7 +842,7 @@
                             </svg>
                             <div class="view-pertumbuhan">
                                 <p class="label-view">Rata-rata Rating Acara</p>
-                                <p>4.5/5</p>
+                                <p class="value-view" id="pertumbuhanEventRating">-</p>
                             </div>
                         </div>
                         <div class="pertumbuhan-dialog-card">
@@ -828,8 +850,8 @@
                                 <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Rata-rata Rating Event</p>
-                                <p>4.5/5</p>
+                                <p class="label-view">Rata-rata Rating Pembicara</p>
+                                <p class="value-view" id="pertumbuhanSpeakerRating">-</p>
                             </div>
                         </div>
                     </div>
@@ -867,17 +889,8 @@
                             <div id="preview-vbg" class="mb-2"></div>
                             <input type="file" class="form-control" id="vbg" name="virtual_background">
                         </div>
-                        <div class="box-up mb-3">
-                            <label for="sertif" class="form-label">Sertifikat</label>
-                            <div id="preview-sertif" class="mb-2"></div>
-                            <input type="file" class="form-control" id="sertif" name="certificate">
-                        </div>
-                        <div class="box-up mb-3">
-                            <label for="absensi" class="form-label">Absensi</label>
-                            <div id="preview-absensi" class="mb-2"></div>
-                        </div>
                         <div class="modal-footer px-0 pb-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
                             <button type="submit" class="btn btn-primary">Save changes</button>
                         </div>
                     </form>
@@ -947,6 +960,47 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+});
+</script>
+
+<script>
+// Fill Pertumbuhan detail modal from the clicked table row
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        const modalEl = document.getElementById('viewPertumbuhanModal');
+        if(!modalEl) return;
+
+        const nameEl = document.getElementById('pertumbuhanEventName');
+        const participantsEl = document.getElementById('pertumbuhanParticipants');
+        const eventRatingEl = document.getElementById('pertumbuhanEventRating');
+        const speakerRatingEl = document.getElementById('pertumbuhanSpeakerRating');
+
+        function fmtRating(v){
+            const n = Number(v);
+            if(!Number.isFinite(n) || n <= 0) return '-';
+            // show 1 decimal when needed, otherwise integer
+            const s = (Math.round(n * 10) % 10 === 0) ? String(Math.round(n)) : n.toFixed(1);
+            return s + '/5';
+        }
+
+        modalEl.addEventListener('show.bs.modal', function(ev){
+            const trigger = ev.relatedTarget;
+            const row = trigger && trigger.closest ? trigger.closest('tr') : null;
+            if(!row) return;
+
+            const title = row.getAttribute('data-title') || row.querySelector('td')?.textContent?.trim() || 'Event';
+            const participants = row.getAttribute('data-participants') || '';
+            const eventRating = row.getAttribute('data-event-rating') || '';
+            const speakerRating = row.getAttribute('data-speaker-rating') || '';
+
+            if(nameEl) nameEl.textContent = title;
+            if(participantsEl) participantsEl.textContent = participants ? (participants + ' Peserta') : '-';
+            if(eventRatingEl) eventRatingEl.textContent = fmtRating(eventRating);
+            if(speakerRatingEl) speakerRatingEl.textContent = fmtRating(speakerRating);
+        });
+    } catch(e) {
+        // never block report page
+    }
 });
 </script>
 

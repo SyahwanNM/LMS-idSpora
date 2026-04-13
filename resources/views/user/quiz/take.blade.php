@@ -36,7 +36,20 @@
     @endphp
     <div class="box_luar_kuis quiz-take-v2">
         <div class="box_kuis_kanan">
-            <div class="quiz-title-row">
+            <p class="waktu_kuis" id="quizTimer">--:--:--</p>
+            <div class="quiz-sidebar-heading" style="margin-top: 12px;">Questions</div>
+            <div class="nomor_kuis" style="margin-bottom: 16px;">
+                @foreach($questions as $idx => $q)
+                    @php
+                        $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
+                        $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
+                        $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
+                    @endphp
+                    <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
+                @endforeach
+            </div>
+
+            <div class="quiz-title-row" style="margin-top: 6px;">
                 <div class="quiz-title-left">
                     <span class="quiz-title-icon" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -76,21 +89,6 @@
                 </form>
             </div>
         </div>
-
-        <aside class="quiz-sidebar">
-            <p class="waktu_kuis" id="quizTimer">--:--:--</p>
-            <div class="quiz-sidebar-heading">Questions</div>
-            <div class="nomor_kuis">
-                @foreach($questions as $idx => $q)
-                    @php
-                        $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
-                        $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
-                        $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
-                    @endphp
-                    <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
-                @endforeach
-            </div>
-        </aside>
     </div>
 
     <script>

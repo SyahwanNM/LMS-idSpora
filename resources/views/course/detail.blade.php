@@ -1458,29 +1458,28 @@
           </div>
         </div>
         <div class="tab-content" id="review">
-          <h5>Review</h5>
-          <div class="review-card">
-            <h4>Erika Diana</h4>
-            <div class="star-rating">
-              <span>★★★★★</span>
+          <h5>Review ({{ $course->reviews->count() }})</h5>
+          
+          @forelse($course->reviews as $review)
+            <div class="review-card">
+              <h4>{{ $review->user->name ?? 'Anonymous' }}</h4>
+              <div class="star-rating">
+                @php
+                  $fullStars = (int) ($review->rating ?? 0);
+                  $emptyStars = 5 - $fullStars;
+                @endphp
+                <span>{{ str_repeat('★', $fullStars) }}{{ str_repeat('☆', $emptyStars) }}</span>
+              </div>
+              <p>
+                {{ $review->comment ?? 'Tidak ada komentar.' }}
+              </p>
+              <small class="text-muted" style="font-size: 12px;">{{ $review->created_at->format('d M Y') }}</small>
             </div>
-            <p>
-              Course ini sangat membantu saya memahami dasar-dasar pengembangan aplikasi mobile. Penjelasannya runtut
-              dan mudah dipahami, bahkan untuk pemula.
-            </p>
-          </div>
-
-          <div class="review-card">
-            <h4>Erika Diana</h4>
-            <div class="star-rating">
-              <span>★★★★★</span>
+          @empty
+            <div class="text-center py-5">
+              <p class="text-muted">Belum ada penilaian untuk course ini.</p>
             </div>
-            <p>
-              Course ini sangat membantu saya memahami dasar-dasar pengembangan aplikasi mobile. Penjelasannya runtut
-              dan mudah dipahami, bahkan untuk pemula.
-            </p>
-          </div>
-
+          @endforelse
         </div>
       </div>
 
@@ -1491,20 +1490,24 @@
       <div class="kanan">
         <div class="price">
           @php
+            $isFreeCourse = (int) ($course->price ?? 0) <= 0;
             $now = \Carbon\Carbon::now();
-            $hasDiscount = $course->discount_percent && $course->discount_percent > 0 &&
+            $hasDiscount = !$isFreeCourse && $course->discount_percent && $course->discount_percent > 0 &&
               ($course->discount_start == null || $now->gte(\Carbon\Carbon::parse($course->discount_start))) &&
               ($course->discount_end == null || $now->lte(\Carbon\Carbon::parse($course->discount_end)));
             $discountedPrice = $hasDiscount
               ? (int) round($course->price * (1 - $course->discount_percent / 100))
               : $course->price;
           @endphp
-          @if($hasDiscount)
+          @if($isFreeCourse)
+            <h4 class="price-text">GRATIS</h4>
+          @elseif($hasDiscount)
             <span class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
             <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
           @else
             <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
           @endif
+          @if(!$isFreeCourse)
           <div class="box-diskon">
             <div class="time-alert">
               <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
@@ -1532,6 +1535,7 @@
               @endif
             </div>
           </div>
+          @endif
           <hr>
           <div class="info-box">
             <div class="time">
@@ -1822,4 +1826,4 @@
 
 
 </html>
-@include('partials.footer-before-login')
+@include('partials.footer-after-login')

@@ -3861,7 +3861,7 @@ input[type="time"] {
 }
 
 .tabel-pendapatan {
-    width: 95%;
+    width: 100%;
     text-align: center;
     margin-left: 20px;
     margin-top: 20px;
@@ -3874,18 +3874,18 @@ input[type="time"] {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 400px;
+    width: 500px;
     height: 180px;
-    margin: 50px 20px 20px 20px;
+    margin: 50px 20px 20px 120px;
 }
 
 .data-pengguna {
     display: flex;
-    gap: 80px;
+    gap: 10px;
 }
 
 .data-pengguna-kiri {
-    width: 200px;
+    width: 500px;
     margin-left: 20px;
     margin-top: 20px;
 }
@@ -3919,16 +3919,14 @@ input[type="time"] {
 }
 
 .data-pengguna-kanan {
-    display: flex;
-    gap: 400px;
     background-color: white;
-    padding: 20px;
+    padding: 40px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     width: 600px;
     height: 180px;
     margin-top: -20px;
-    margin-left: 150px;
+    
 }
 
 .pertumbuhan-acara h5 {
@@ -3964,17 +3962,17 @@ input[type="time"] {
 
 .info-operasional-box {
     display: flex;
-    gap: 100px;
+    gap: 20px;
     align-items: center;
     text-align: center;
-    margin-left: 30px;
+    margin-left: 330px;
+    margin-bottom: 20px;
 }
 
 .info-operasional {
     background-color: rgb(210, 210, 251);
-    padding: 20px 30px 10px 30px;
     border-radius: 20px;
-    margin: 30px;
+    margin: 10px;;
     width: 350px;
 }
 
@@ -3984,8 +3982,7 @@ input[type="time"] {
 
 .proggress-box-operasional {
     display: flex;
-    gap: 170px;
-    margin-left: 580px;
+    
 }
 
 .title-prog-operasional {
@@ -4021,7 +4018,9 @@ input[type="time"] {
 /*MODAL PENDAPATAN*/
 .modal-view-pendapatan {
     width: 100%;
-    margin-top: 10%;
+    margin-top: 80px;
+    margin-left: -20px;
+    max-height: 600px;
 }
 
 .tabel-pemasukkan th {
@@ -4093,8 +4092,8 @@ input[type="time"] {
 /*MODAL PERTUMBUHAN*/
 .modal-view-pertumbuhan {
     width: 30%;
-    margin-left: 500px;
-    margin-top: 200px;
+    margin-left: 530px;
+    margin-top: 100px;
 }
 
 .isi-modal-view {
@@ -4107,7 +4106,6 @@ input[type="time"] {
 
 .btn-close-view {
     width: 20px;
-    height: 20px;
 }
 
 .pertumbuhan-dialog-card {
@@ -4116,28 +4114,26 @@ input[type="time"] {
 }
 
 .pertumbuhan-dialog-card svg {
-    margin-top: 30px;
-}
-
-.view-pertumbuhan {
-    margin-top: 20px;
-}
-
-.view-pertumbuhan p {
-    margin: 0px;
+    margin-top: 15px;
 }
 
 .label-view {
     color: black;
     font-weight: 700;
     font-size: small;
+    margin: 0px;
+}
+.value-view {
+    color: grey;
+    font-size: small;
+    margin-top: -30px;
 }
 
 /*MODAL VIEW OPERASIONAL*/
 .modal-view-operasional {
     width: 50%;
     margin-left: 380px;
-    margin-top: 200px;
+    margin-top: 80px;
 }
 
 .box-kelengkapan {
@@ -4480,8 +4476,69 @@ input[type="time"] {
     overflow: auto;
     padding: 18px;
     border-radius: 16px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
     position: sticky;
     top: 90px;
+}
+
+/* Quiz module list – compact accordion (match course module list) */
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: none;
+    padding: 0;
+    overflow: hidden;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-header {
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+    border: none;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 10px 12px;
+    color: #111827;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item.selected {
+    border-color: #f5c52f;
+    box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-content {
+    display: none;
+    padding: 10px 12px 12px;
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item.active .accordion-content {
+    display: block;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .arrow {
+    display: inline-block;
+    font-size: 12px;
+    transition: transform 0.15s ease;
+    color: #9ca3af;
+}
+
+.box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules .accordion-item.active .arrow {
+    transform: rotate(180deg);
 }
 
 .box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules.closed {
@@ -4544,6 +4601,64 @@ input[type="time"] {
     margin-top: 0;
     flex: 1;
     max-width: 900px;
+}
+
+/* When module list is closed, expand main content and place questions on the right */
+.box_luar_kuis.quiz-take-v2.modules-closed {
+    justify-content: center;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .box_kuis_kanan {
+    max-width: 1100px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    grid-template-rows: auto auto 1fr;
+    column-gap: 24px;
+    align-items: start;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed #openModulesBtn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: #fff;
+    color: #111827;
+    padding: 0;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .waktu_kuis {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    margin: 6px 0 6px 0;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .quiz-title-row {
+    grid-column: 1;
+    grid-row: 2;
+    margin-bottom: 12px;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .quiz-sidebar-heading {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0 !important;
+    margin-bottom: 12px;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .nomor_kuis {
+    grid-column: 2;
+    grid-row: 3;
+    align-content: start;
+}
+
+.box_luar_kuis.quiz-take-v2.modules-closed .box_soal_kuis {
+    grid-column: 1;
+    grid-row: 3;
 }
 
 .box_luar_kuis.quiz-take-v2 .quiz-title-row {
@@ -4650,7 +4765,7 @@ input[type="time"] {
     padding: 6px 14px;
     border-radius: 999px;
     font-size: 12px;
-    margin: 0 0 14px 0;
+    margin: 20px 0 14px 0;
 }
 
 .box_luar_kuis.quiz-take-v2 .quiz-sidebar-heading {
@@ -5673,6 +5788,11 @@ body{
     align-items: flex-start;
     gap: clamp(14px, 2.2vw, 28px);
     padding: clamp(12px, 2vw, 22px);
+}
+
+/* Push result cards slightly lower below navbar */
+.quiz-result-page .box_luar_hasil {
+    margin-top: 18px;
 }
 
 /* Quiz result (new UI, scoped) */
@@ -7626,6 +7746,124 @@ textarea::placeholder {
     font-size: 12px;
     line-height: 1.5;
     color: #6b7280;
+}
+
+/* Trainer rich text content (wysiwyg-output) rendered in user course view */
+.wysiwyg-output {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #1f2937;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.wysiwyg-output h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 14px 0;
+    line-height: 1.3;
+}
+
+.wysiwyg-output h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 20px 0 12px 0;
+    line-height: 1.35;
+}
+
+.wysiwyg-output h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #334155;
+    margin: 16px 0 10px 0;
+    line-height: 1.4;
+}
+
+.wysiwyg-output p {
+    margin: 0 0 12px 0;
+}
+
+.wysiwyg-output img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 14px 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.wysiwyg-output ul,
+.wysiwyg-output ol {
+    margin: 8px 0 14px 0;
+    padding-left: 24px;
+}
+
+.wysiwyg-output li {
+    margin-bottom: 6px;
+}
+
+.wysiwyg-output pre,
+.wysiwyg-output code {
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.wysiwyg-output pre {
+    padding: 14px 16px;
+    margin: 12px 0;
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+}
+
+.wysiwyg-output code {
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.wysiwyg-output pre code {
+    padding: 0;
+    background: transparent;
+}
+
+.wysiwyg-output blockquote {
+    border-left: 4px solid #6366f1;
+    margin: 14px 0;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-radius: 0 8px 8px 0;
+    color: #475569;
+}
+
+.wysiwyg-output a {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.wysiwyg-output hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 18px 0;
+}
+
+.trainer-html-content {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.trainer-html-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.trainer-html-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 99px;
+}
+
+.trainer-html-content::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 /* Next button */

@@ -207,7 +207,6 @@
                         <th>Level</th>
                         <th>Harga</th>
                         <th>Status Kelengkapan</th>
-                        <th>Pembayaran</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>

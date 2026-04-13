@@ -8,6 +8,26 @@
         margin-top: 85px; /* Jarak dikurangi agar lebih rapat dengan navbar */
     }
 </style>
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </head>
 
 @include('partials.navbar-after-login') 
@@ -230,14 +250,8 @@
         <div class="section-title">
             <h3>Kursus Pilihan</h3>
         </div>
-
-        @php
-            $publishedFeaturedCourses = isset($featuredCourses)
-                ? collect($featuredCourses)->filter(function($c){ return ($c->status ?? null) === 'active'; })
-                : collect();
-        @endphp
         <ul class="course-list">
-            @forelse($publishedFeaturedCourses as $course)
+            @forelse($courses as $course)
             <li>
                 @php
                     // Always go to detail first when clicking the card
@@ -304,7 +318,13 @@
                         </div>
                         <div class="price-row">
                             <div class="price-col">
-                                <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                <span class="price-now">
+                                    @if((int) ($course->price ?? 0) <= 0)
+                                        GRATIS
+                                    @else
+                                        Rp{{ number_format($course->price, 0, ',', '.') }}
+                                    @endif
+                                </span>
                             </div>
                             <a href="{{ $courseHref }}" class="btn-enroll" style="text-decoration:none;">Lihat Detail</a>
                         </div>
@@ -322,66 +342,17 @@
             @endforelse
         </ul>
         <div class="align-items-center" style="padding: 20px; text-align: center !important;">
-            <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
+            <a href="{{ route('courses.index') }}" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
         </div>
     </section>
 </main>
 
-    <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                <li class="page-item">
-                    <a class="page-link" href="#" id="prevBtn" aria-label="Previous">
-                        <span aria-hidden="true">&lt;</span>
-                    </a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="javascript:void(0)" data-page="1">1</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">2</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&gt;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const pageLinks = document.querySelectorAll('.pagination .page-link[data-page]');
-            const paginationContainer = document.querySelector('.pagination');
-            const eventLists = document.querySelectorAll('.event-list');
-
-            eventLists.forEach((list, index) => {
-                if (list.id !== 'page-1') {
-                    list.style.display = 'none';
-                }
-            });
-
-            paginationContainer.addEventListener('click', function(e) {
-                const clickedElement = e.target.closest('.page-link');
-                if (!clickedElement) return;
-
-                e.preventDefault();
-
-                const targetPage = clickedElement.getAttribute('data-page');
-
-                if (targetPage) {
-                    document.querySelectorAll('.pagination .page-item').forEach(item => {
-                        item.classList.remove('active');
-                    });
-
-                    eventLists.forEach(list => {
-                        if (list.id === 'page-' + targetPage) {
-                            list.style.display = 'grid';
-                        } else {
-                            list.style.display = 'none';
-                        }
-                    });
-                    clickedElement.closest('.page-item').classList.add('active');
-                }
-            });
-        });
-    </script>
-    @include('partials.footer-before-login')
+    @if($courses->hasPages())
+        <div class="d-flex justify-content-center mt-4">
+            {{ $courses->onEachSide(1)->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
+   @include('partials.footer-after-login')
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -7,17 +7,18 @@
         @endif
         @if(session('statusFilter'))
             <script>
-                document.addEventListener('DOMContentLoaded', function(){
-                    try{
+                document.addEventListener('DOMContentLoaded', function () {
+                    try {
                         var sel = document.getElementById('statusFilter');
-                        if(sel){
-                            sel.value = '{{ session('statusFilter') }}';
+                        if (sel) {
+                            sel.value = @json(session('statusFilter'));
                             sel.dispatchEvent(new Event('change'));
                         }
-                    }catch(e){}
+                    } catch (e) {}
                 });
             </script>
         @endif
+
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
@@ -25,6 +26,7 @@
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
             </div>
         </div>
+
         <div class="card shadow-sm"><div class="card-body">
             {{-- Month keys removed: using native month picker instead of precomputed list --}}
             <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
@@ -88,6 +90,7 @@
                                 <th>Tanggal</th>
                                 <th>Lokasi</th>
                                 <th>Link</th>
+                                <th>Reseller</th>
                                 <th>Kelengkapan Dokumen</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
@@ -149,6 +152,13 @@
                                         </div>
                                     @else
                                         —
+                                    @endif
+                                </td>
+                                <td>
+                                    @if((bool) ($event->is_reseller_event ?? false))
+                                        <span class="badge bg-success">Ya</span>
+                                    @else
+                                        <span class="badge bg-secondary">Tidak</span>
                                     @endif
                                 </td>
                                 <td>
@@ -455,8 +465,18 @@
                                 </form>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary" form="docForm-{{ $event->id }}">Save changes</button>
+                                <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
+                                     <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
+                                      <div class="text-center ">
+                                            <button type="button" class="btn btn-outline-primary px-4" data-edit-doc-toggle="{{ $event->id }}">
+                                                <i class="bi bi-pencil-square me-1"></i>Edit Upload
+                                            </button>
+                                        </div>
+                                    <button type="submit" class="btn btn-primary px-4" form="docForm-{{ $event->id }}">
+                                        <span class="me-1">Save changes</span>
+                                        <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -563,6 +583,25 @@
                                     <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
                                     <small id="manageActionHelp" class="text-danger" style="display:none">Lengkapi: pilih salah satu (Manage/Create) sebelum menyimpan.</small>
                                 </div>
+
+                                <!-- Reseller Event -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Reseller Event</label>
+                                    
+                                    <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', 0) ? 1 : 0 }}">
+                                    <div class="btn-group w-100" role="group" aria-label="Reseller Event">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                                            <label class="form-check-label" for="flexRadioDefault1">Ya</label>
+                                        </div>
+                                        <div class="form-check" style="margin-left: 30px;">
+                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                            <label class="form-check-label" for="flexRadioDefault2">Tidak</label>
+                                        </div>
+                                
+                                    </div>
+                                    <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                                </div>
                                 <!-- Jenis Acara -->
                                 <div class="mb-3">
                                     <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
@@ -590,9 +629,10 @@
                                     <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="tanggal" class="form-label fw-semibold">Tanggal Event <span class="text-danger">*</span></label>
-                                    <input type="date" name="event_date" id="tanggal" class="form-control date-enhanced js-date-picker" required value="{{ old('event_date') }}" min="{{ date('Y-m-d') }}">
-                                    <small class="text-muted d-block mt-1">Format tampilan: Hari, DD Bulan YYYY</small>
+                                    <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
+                                     <input type="date" name="event_date" id="tanggal" class="form-control" required
+                                         value="{{ old('event_date') }}" min="{{ date('Y-m-d') }}">
+                                     <div class="form-text">Pilih tanggal pelaksanaan event.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Waktu Mulai & Selesai <span class="text-danger">*</span></label>
@@ -734,7 +774,7 @@
                         Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan. Tenggat pengumpulan materi (jika diisi) harus sebelum hari-H event.
                     </div>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn" disabled>
+                    <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn">
                         <i class="bi bi-check-circle me-1"></i> Simpan Event
                     </button>
                 </div>
@@ -767,6 +807,8 @@
         /* Enhanced date input */
         .date-enhanced:focus { box-shadow: 0 0 0 .2rem rgba(13,110,253,.25); }
         .flatpickr-calendar { font-family: inherit; }
+        /* Flatpickr inside Bootstrap modal: keep calendar above modal */
+        .flatpickr-calendar.open { z-index: 1065 !important; }
         .flatpickr-day.today { border-color:#0d6efd; }
         .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange { background:#0d6efd; color:#fff; }
         .flatpickr-day.selected:hover { background:#0b5ed7; }
@@ -915,6 +957,8 @@
         .manage-action-manage:before { border-left-color:#093d94; }
         /* Ensure delete confirmation text is black */
         #deleteEventModal .form-check-label { color: #000 !important; }
+        /* Delete modal footer buttons: keep compact like logout/doc modal */
+        #deleteEventModal .modal-footer .btn{ width: auto !important; }
     </style>
     @endsection
     @section('scripts')
@@ -1065,17 +1109,78 @@
             if (ta) {
                 ta.value = e.getData();
             }
-            // if updateSubmitState is available later, this listener will keep the button state correct
-            e.model.document.on('change:data', () => {
-                if (ta) { ta.value = e.getData(); }
-                if (typeof window.updateSubmitState === 'function') {
-                    window.updateSubmitState();
+            function filter(q){
+                const query = lower(q);
+                const base = options.map(norm).filter(Boolean);
+                if(!query) return base.slice(0, 30);
+                return base
+                    .filter(v => lower(v).includes(query))
+                    .slice(0, 30);
+            }
+            function applyValidity(){
+                const raw = norm(materiInput.value);
+                if(!raw){
+                    materiInput.setCustomValidity('');
+                    if(invalidText) invalidText.style.display = 'none';
+                    return;
                 }
+                const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
+                materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
+                if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
+            }
+
+            materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
+            materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
+            materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
+
+            box.addEventListener('mousedown', (e) => {
+                const btn = e.target?.closest('[data-value]');
+                if(!btn) return;
+                e.preventDefault();
+                materiInput.value = btn.getAttribute('data-value') || '';
+                hide();
+                applyValidity();
             });
-        }).catch(console.error);
-        ClassicEditor.create(document.querySelector('#terms'), {
-            toolbar: ['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']
-        }).then(e => window.editorTerms = e).catch(console.error);
+            document.addEventListener('click', (e) => {
+                if (e.target === materiInput) return;
+                if (box.contains(e.target)) return;
+                hide();
+            });
+            applyValidity();
+        })();
+        // CKEditor init for deskripsi and terms
+        // IMPORTANT: guard ClassicEditor so a missing asset doesn't break the whole page (incl. submit enable/disable).
+        if (typeof ClassicEditor !== 'undefined') {
+            const deskripsiEl = document.querySelector('#deskripsi');
+            if (deskripsiEl) {
+                ClassicEditor.create(deskripsiEl, {
+                    toolbar: ['heading','|','bold','italic','underline','|','bulletedList','numberedList','|','link','blockQuote','insertTable','|','undo','redo','removeFormat']
+                }).then(e => {
+                    // store globally and ensure textarea value stays in sync for required checks
+                    window.editorDeskripsi = e;
+                    const ta = document.getElementById('deskripsi');
+                    if (ta) {
+                        ta.value = e.getData();
+                    }
+                    // if updateSubmitState is available later, this listener will keep the button state correct
+                    e.model.document.on('change:data', () => {
+                        if (ta) { ta.value = e.getData(); }
+                        if (typeof window.updateSubmitState === 'function') {
+                            window.updateSubmitState();
+                        }
+                    });
+                }).catch(console.error);
+            }
+
+            const termsEl = document.querySelector('#terms');
+            if (termsEl) {
+                ClassicEditor.create(termsEl, {
+                    toolbar: ['bold','italic','underline','bulletedList','numberedList','link','undo','redo','removeFormat']
+                }).then(e => window.editorTerms = e).catch(console.error);
+            }
+        } else {
+            console.warn('[EventForm] ClassicEditor is not available; skipping rich text init.');
+        }
 
         // Image preview & size display (max 5MB)
         const imgInp = document.getElementById('gambar');
@@ -1105,9 +1210,18 @@
 
         // Maps preview (Leaflet) from Google Maps link
     let leafletMap = null, leafletMarker = null;
+        const locationModeEl = document.getElementById('lokasi');
+        const placeNameGroup = document.getElementById('placeNameGroup');
+        const placeNameInput = document.getElementById('place_name');
+        const mapsGroup = document.getElementById('mapsGroup');
+        const zoomGroup = document.getElementById('zoomGroup');
+
         const mapsInput = document.getElementById('maps');
         const mapsPreview = document.getElementById('mapsPreview');
         const zoomInput = document.getElementById('zoom');
+        const mapsRequiredStar = document.getElementById('mapsRequiredStar');
+        const zoomRequiredStar = document.getElementById('zoomRequiredStar');
+        const placeNameRequiredStar = document.getElementById('placeNameRequiredStar');
     const btnResolveMaps = document.getElementById('btnResolveMaps');
     const csrfToken = '{{ csrf_token() }}';
     const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
@@ -1182,6 +1296,54 @@
             if (btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
             if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
         }
+
+        function showPlaceNameIfNeeded(forceShow = false){
+            if(!placeNameGroup || !placeNameInput) return;
+            const mode = String(locationModeEl?.value || '').toLowerCase();
+            const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+            const hasValue = String(placeNameInput.value || '').trim() !== '';
+            const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+            placeNameGroup.classList.toggle('d-none', !shouldShow);
+            placeNameInput.required = shouldShow;
+            if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
+        }
+
+        function syncLocationModeUI(){
+            const mode = String(locationModeEl?.value || '').toLowerCase();
+            const isOffline = mode === 'offline';
+            const isOnline = mode === 'online';
+            const isHybrid = mode === 'hybrid';
+
+            if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+            if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+            if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+            if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+
+            // Visual '*' must match the required logic.
+            if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+            if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
+
+            // Hide place name by default; shown after Deteksi or if already filled
+            showPlaceNameIfNeeded(false);
+
+            // If switching to Online, clear maps + coords + preview
+            if(isOnline){
+                if(mapsInput) mapsInput.value = '';
+                const latInp = document.getElementById('latitude');
+                const lngInp = document.getElementById('longitude');
+                if(latInp) latInp.value = '';
+                if(lngInp) lngInp.value = '';
+                if(mapsPreview) mapsPreview.style.display = 'none';
+                if(btnResolveMaps) btnResolveMaps.disabled = true;
+            }
+            // If switching to Offline, clear zoom
+            if(isOffline){
+                if(zoomInput) zoomInput.value = '';
+            }
+            syncMapsUI();
+            if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+        }
         if(mapsInput){
             mapsInput.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
             mapsInput.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
@@ -1193,9 +1355,16 @@
         syncMapsUI();
         if(btnResolveMaps){
             btnResolveMaps.addEventListener('click', async () => {
+                // When Deteksi clicked for offline/hybrid, reveal place name field
+                showPlaceNameIfNeeded(true);
+                if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+                    placeNameInput.focus();
+                }
+
                 const url = mapsInput?.value || '';
                 if(!url){ alert('Masukkan link Google Maps terlebih dahulu.'); return; }
                 try{
+                    setResolveMapsLoading(true);
                     btnResolveMaps.disabled = true;
                     const resp = await fetch(resolveMapsUrl, {
                         method: 'POST',
@@ -1211,15 +1380,24 @@
                 }catch(err){
                     alert('Gagal mendeteksi koordinat.');
                 }finally{
+                    setResolveMapsLoading(false);
                     btnResolveMaps.disabled = false;
+                    syncMapsUI();
                 }
             });
+        }
+
+        if(locationModeEl){
+            locationModeEl.addEventListener('change', syncLocationModeUI);
+            // initial
+            syncLocationModeUI();
         }
         // fix map size when modal is shown
         const addEventModalEl = document.getElementById('addEventModal');
         if(addEventModalEl){
             addEventModalEl.addEventListener('shown.bs.modal', () => {
                 if(leafletMap) setTimeout(() => leafletMap.invalidateSize(), 50);
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
             });
         }
 
@@ -1507,7 +1685,7 @@
                 locale:'id',
                 dateFormat:'Y-m-d',
                 altInput:true,
-                altFormat:'l, j F Y',
+                altFormat:'l, d F Y',
                 disableMobile:true,
                 clickOpens:true
             });
@@ -1884,7 +2062,26 @@
             // Live enable/disable submit button based on required fields
             const submitBtn = document.getElementById('submitBtn');
             const submitHint = document.getElementById('submitHint');
-            const requiredFields = Array.from(form.querySelectorAll('[required]'));
+            const isElementVisible = (el) => {
+                if (!el) return false;
+                if (el.closest('.d-none')) return false;
+                // More reliable than offsetParent (offsetParent can be null for some positioned elements)
+                return !!(el.getClientRects && el.getClientRects().length);
+            };
+            const getRequiredFields = () => Array.from(form.querySelectorAll('[required]'))
+                .filter(el => !el.disabled && isElementVisible(el));
+
+            const isRequiredFieldEmpty = (fieldEl) => {
+                if (!fieldEl) return true;
+                const type = String(fieldEl.type || '').toLowerCase();
+                if (type === 'file') {
+                    return !(fieldEl.files && fieldEl.files.length > 0);
+                }
+                if (type === 'checkbox' || type === 'radio') {
+                    return !fieldEl.checked;
+                }
+                return !String(fieldEl.value || '').trim();
+            };
             // Friendly name helper (shared with submit alert logic above)
             const fieldFriendlyName = (el) => {
                 if(!el) return 'Field';
@@ -1904,7 +2101,7 @@
                 return id || name || 'Field';
             };
             function missingRequired(){
-                return requiredFields.filter(f => !(f.value || '').trim());
+                return getRequiredFields().filter(isRequiredFieldEmpty);
             }
             function allRequiredFilled(){
                 return missingRequired().length === 0;
@@ -1962,11 +2159,34 @@
                         materialDeadlineHelp.classList.add('d-none');
                     }
                 }
+
+                // Required fields: show inline error under each missing field
+                missingRequired().forEach((fieldEl) => {
+                    fieldEl.classList.add('border-danger');
+                    setInlineError(fieldEl, fieldFriendlyName(fieldEl) + ' wajib diisi.');
+                });
+
+                // Clear errors for currently filled required fields
+                getRequiredFields()
+                    .filter((fieldEl) => String(fieldEl.value || '').trim())
+                    .forEach((fieldEl) => {
+                        fieldEl.classList.remove('border-danger');
+                        clearInlineError(fieldEl);
+                    });
+
+                // Short description max 40 words
+                if(sdEl){
+                    if(overLimit){
+                        sdEl.classList.add('border-danger');
+                        setInlineError(sdEl, 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).');
+                    } else {
+                        clearInlineError(sdEl);
+                    }
+                }
+
             }
             // Observe input/change events
-            requiredFields.forEach(f => {
-                ['input','change','blur'].forEach(evName => f.addEventListener(evName, updateSubmitState));
-            });
+            ['input','change','blur'].forEach(evName => form.addEventListener(evName, updateSubmitState));
             // If CKEditor was created earlier, bind now; otherwise it will bind in its own init then-callback
             if(window.editorDeskripsi){
                 const ta = document.getElementById('deskripsi');
@@ -1992,27 +2212,26 @@
                     shortDescCountEl.classList.remove('text-danger');
                 }
             }
+            // Direct listeners (keep) + delegated fallback for robustness.
             ['input','change','blur'].forEach(evName => shortDescEl?.addEventListener(evName, () => { updateShortDescCount(); updateSubmitState(); }));
+            document.addEventListener('input', function(e){
+                const t = e.target;
+                if(!(t instanceof HTMLElement)) return;
+                if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                    updateShortDescCount();
+                    if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                }
+            }, true);
             updateShortDescCount();
         } else {
             console.warn('[EventForm] Form element not found.');
         }
 
+        // NOTE: Add Event uses native <input type="date"> for #tanggal (no Flatpickr).
+
         @if($errors->any())
             if (window.bootstrap) { new bootstrap.Modal(document.getElementById('addEventModal')).show(); }
         @endif
-
-        // Flatpickr date picker initialization (Indonesian locale)
-        if(window.flatpickr){
-            flatpickr('#tanggal', {
-                locale: 'id',
-                dateFormat: 'Y-m-d',
-                altInput: true,
-                altFormat: 'l, j F Y',
-                minDate: 'today',
-                disableMobile: true
-            });
-        }
 
         // Live preview for document uploads in each event modal
         function initDocUploadPreviews(){
@@ -2135,6 +2354,39 @@
         }
     });
     </script>
+
+    <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
+    </script>
     @endsection
 
 <!-- Global Delete Event Modal (modern) -->
@@ -2173,3 +2425,53 @@
     </div>
 </div>
 <form id="deleteEventFormGlobal" action="#" method="POST" class="d-none">@csrf @method('DELETE')</form>
+
+<script>
+// Isolated binding for Delete Event modal (defensive against other script errors)
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        var modalEl = document.getElementById('deleteEventModal');
+        var formEl = document.getElementById('deleteEventFormGlobal');
+        var nameEl = document.getElementById('deleteEventName');
+        var checkboxEl = document.getElementById('deleteConfirmCheckbox');
+        var btnEl = document.getElementById('deleteConfirmBtn');
+
+        if(!modalEl || !formEl || !btnEl) return;
+        if(btnEl.dataset.boundDeleteModal === '1') return;
+        btnEl.dataset.boundDeleteModal = '1';
+
+        function syncBtn(){
+            btnEl.disabled = !(checkboxEl && checkboxEl.checked);
+        }
+
+        if(checkboxEl){
+            checkboxEl.addEventListener('change', syncBtn);
+        }
+
+        // Set action/title when modal is opened
+        modalEl.addEventListener('show.bs.modal', function(ev){
+            var trigger = ev.relatedTarget;
+            var url = trigger && trigger.getAttribute ? (trigger.getAttribute('data-url') || '') : '';
+            var title = trigger && trigger.getAttribute ? (trigger.getAttribute('data-title') || 'Event') : 'Event';
+
+            if(url) formEl.setAttribute('action', url);
+            if(nameEl) nameEl.textContent = title;
+            if(checkboxEl) checkboxEl.checked = false;
+            syncBtn();
+        });
+
+        // Submit programmatically for maximum browser compatibility
+        btnEl.addEventListener('click', function(e){
+            if(btnEl.disabled) return;
+            e.preventDefault();
+            btnEl.disabled = true;
+            if(typeof formEl.requestSubmit === 'function') formEl.requestSubmit();
+            else formEl.submit();
+        });
+
+        syncBtn();
+    } catch(e) {
+        // swallow - never block the page
+    }
+});
+</script>

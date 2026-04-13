@@ -481,7 +481,6 @@
                                 @endforelse
                             </div>
                         </div>
-                    </div>
 
                     <div class="mt-10">
                         <div class="flex items-center justify-between gap-4 mb-3">

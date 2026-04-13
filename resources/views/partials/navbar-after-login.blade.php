@@ -139,7 +139,7 @@
         </div>
         <div id="notificationList" class="notif-list-container" style="max-height: 350px; overflow-y: auto;">
             @forelse($notifications as $notification)
-                <div class="dropdown-item p-3 border-bottom {{ is_null($notification->read_at) ? 'bg-opacity-10 bg-primary' : '' }}" style="white-space: normal;">
+                <div class="dropdown-item p-3 border-bottom js-notif-item {{ is_null($notification->read_at) ? 'bg-opacity-10 bg-primary' : '' }}" style="white-space: normal; cursor: pointer;" role="button" tabindex="0" aria-expanded="false">
                     <div class="d-flex w-100 justify-content-between align-items-start">
                         <div class="d-flex align-items-center">
                             @if($notification->read_at)
@@ -155,7 +155,8 @@
                         </div>
                         <small class="text-white-50 ms-2" style="font-size: 0.7rem; white-space: nowrap;">{{ $notification->created_at->diffForHumans() }}</small>
                     </div>
-                    <p class="mb-1 small text-white-50 ms-4">{{ Str::limit($notification->message, 80) }}</p>
+                    <p class="mb-1 small text-white-50 ms-4 notif-message-short">{{ Str::limit($notification->message, 80) }}</p>
+                    <p class="mb-1 small text-white-50 ms-4 notif-message-full" style="display: none;">{{ $notification->message }}</p>
                 </div>
             @empty
                 <div class="px-3 py-4 text-center text-muted">
@@ -422,9 +423,7 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
 }
 
 .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #FBBD23 !important;
-    padding-left: 1.5rem !important;
+    background: transparent !important;
 }
 
 .notification-dropdown-premium {
@@ -820,6 +819,34 @@ function markAllAsRead() {
     })
     .catch(error => console.error('Error marking notifications as read:', error));
 }
+
+// Expand/collapse notification message on click
+(function () {
+    function toggleNotifItem(item) {
+        if (!item) return;
+        const expanded = item.classList.toggle('notif-expanded');
+        item.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+
+        const shortEl = item.querySelector('.notif-message-short');
+        const fullEl = item.querySelector('.notif-message-full');
+        if (shortEl) shortEl.style.display = expanded ? 'none' : '';
+        if (fullEl) fullEl.style.display = expanded ? '' : 'none';
+    }
+
+    document.addEventListener('click', function (e) {
+        const item = e.target && e.target.closest ? e.target.closest('.js-notif-item') : null;
+        if (!item) return;
+        toggleNotifItem(item);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const item = e.target && e.target.closest ? e.target.closest('.js-notif-item') : null;
+        if (!item) return;
+        e.preventDefault();
+        toggleNotifItem(item);
+    });
+})();
 
 function toggleUserDropdown() {
     const dropdown = document.getElementById('userDropdownMenu');

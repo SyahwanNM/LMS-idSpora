@@ -299,7 +299,7 @@
                                 <div id="participantsTableWrapper" class="table-responsive">
                                     <table id="participantsTable" class="table table-sm table-striped align-middle mb-0">
                                         <thead class="table-light">
-                                            <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
+                                            <tr>
                                                 <th style="width:48px;">No</th>
                                                 <th style="width:220px;">Nama</th>
                                                 <th style="width:240px;">Email</th>
@@ -311,7 +311,7 @@
                                         </thead>
                                         <tbody>
                                             @foreach($registrations as $i => $reg)
-                                            <tr>
+                                            <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
                                                 <td>{{ $i+1 }}</td>
                                                 <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
@@ -796,7 +796,6 @@ document.addEventListener('DOMContentLoaded', function(){
     }catch(e){ console.error(e); }
 });
 </script>
-</script>
 @endif
 <script>
 // Client-side filter for participants table (always rendered)
@@ -930,14 +929,14 @@ document.addEventListener('DOMContentLoaded', function(){
 document.addEventListener('DOMContentLoaded', function(){
     // Generic action modal
     var actionModalEl = document.getElementById('registrationActionModal');
-    var actionModal = actionModalEl ? new bootstrap.Modal(actionModalEl) : null;
+    var actionModal = (actionModalEl && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(actionModalEl) : null;
     var actionForm = document.getElementById('registrationActionForm');
     var actionMessage = document.getElementById('registrationActionMessage');
     var actionLabel = document.getElementById('registrationActionLabel');
 
     // Reject reason modal
     var rejectModalEl = document.getElementById('rejectRegistrationModal');
-    var rejectModal = rejectModalEl ? new bootstrap.Modal(rejectModalEl) : null;
+    var rejectModal = (rejectModalEl && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(rejectModalEl) : null;
     var rejectForm = document.getElementById('rejectRegistrationForm');
     var rejectReasonHtml = document.getElementById('rejectionReason');
 
@@ -963,6 +962,40 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     });
+
+    // Delete event modal: ensure submit works even if data-api is flaky
+    var deleteModalEl = document.getElementById('deleteEventModal');
+    var deleteForm = document.getElementById('deleteEventFormShow');
+    var deleteBtn = document.getElementById('deleteConfirmBtnShow');
+
+    // Fallback: open modal programmatically (covers cases where Bootstrap data-api is not bound)
+    document.querySelectorAll('[data-bs-target="#deleteEventModal"]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            try {
+                if(deleteModalEl && window.bootstrap && bootstrap.Modal){
+                    bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+                }
+            } catch(e) {}
+        });
+    });
+
+    if(deleteBtn && deleteForm && deleteBtn.dataset.boundSubmit !== '1'){
+        deleteBtn.dataset.boundSubmit = '1';
+        deleteBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            deleteBtn.disabled = true;
+            try {
+                if(typeof deleteForm.requestSubmit === 'function'){
+                    deleteForm.requestSubmit();
+                } else {
+                    deleteForm.submit();
+                }
+            } catch(err) {
+                deleteBtn.disabled = false;
+                throw err;
+            }
+        });
+    }
 });
 </script>
 <!-- Delete Confirmation Modal (modern) -->
@@ -983,9 +1016,9 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="modal-body">
                 <p class="mb-2">Anda akan menghapus event:</p>
                 <div class="p-2 rounded border bg-light"><i class="bi bi-calendar-event me-1"></i> <strong>{{ $event->title }}</strong></div>
-                <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" value="1" id="deleteConfirmCheckboxShow">
-                    <label class="form-check-label" for="deleteConfirmCheckboxShow">Saya paham bahwa penghapusan bersifat permanen.</label>
+                <div class="alert alert-warning small mt-3 mb-0">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Event akan dihapus permanen.
                 </div>
             </div>
             <div class="modal-footer border-0">
