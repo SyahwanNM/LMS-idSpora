@@ -960,6 +960,16 @@
             border-color: #1e293b;
         }
 
+        .module-item-approved {
+            border-color: #bbf7d0;
+            background: #f8fff9;
+        }
+
+        .module-item-rejected {
+            border-color: #fecaca;
+            background: #fff8f8;
+        }
+
         @media (max-width: 768px) {
             .module-item {
                 flex-direction: column;
@@ -977,533 +987,388 @@
     </style>
 @endsection
 
+
 @section('content')
     <div class="material-wrapper">
         @include('admin.partials.trainer-sidebar')
 
         <main class="material-main">
+
             @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+                <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-center gap-2 py-3">
+                    <i class="bi bi-exclamation-triangle-fill text-danger"></i>
                     <div>{{ session('error') }}</div>
                 </div>
             @endif
-
             @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center">
-                    <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                <div class="alert alert-success border-0 rounded-3 mb-4 d-flex align-items-center gap-2 py-3">
+                    <i class="bi bi-check-circle-fill text-success"></i>
                     <div>{{ session('success') }}</div>
                 </div>
             @endif
 
-            <div class="page-header">
+            <div class="page-header mb-4">
                 <a href="{{ route('admin.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
                     class="btn-back"><i class="bi bi-arrow-left me-2"></i>Kembali</a>
                 @if($material->status === 'approved')
-                    <span class="status-chip" style="border:1px solid #bbf7d0; background:#dcfce7; color:#166534;"><i
-                            class="bi bi-check-circle"></i>Status: Disetujui</span>
+                    <span class="status-chip" style="border-color:#bbf7d0;background:#dcfce7;color:#166534;">
+                        <i class="bi bi-check-circle-fill"></i> Disetujui
+                    </span>
                 @elseif($material->status === 'rejected')
-                    <span class="status-chip" style="border:1px solid #fecaca; background:#fee2e2; color:#991b1b;"><i
-                            class="bi bi-x-circle"></i>Status: Ditolak</span>
+                    <span class="status-chip" style="border-color:#fecaca;background:#fee2e2;color:#991b1b;">
+                        <i class="bi bi-x-circle-fill"></i> Ditolak
+                    </span>
                 @else
-                    <span class="status-chip"><i class="bi bi-hourglass-split"></i>Status: Pending Review</span>
+                    <span class="status-chip">
+                        <i class="bi bi-hourglass-split"></i> Pending Review
+                    </span>
                 @endif
             </div>
 
-            <div class="row">
-                <div class="col-xl-8">
-                    <div class="card-custom">
-                        <h1 class="fw-bold text-dark mb-2 fs-3">{{ $material->name }}</h1>
-                        <p class="text-muted mb-4">{{ $material->category->name ?? 'Kategori Umum' }} • Diupload
-                            {{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}
-                        </p>
+            <div class="row g-4" style="align-items:flex-start;">
 
-                        <div class="video-container mb-3" id="topReviewViewer">
-                            @if($material->media && str_contains($material->media, 'mp4'))
-                                <video controls controlsList="nodownload">
-                                    <source src="{{ asset('storage/' . $material->media) }}" type="video/mp4">
-                                </video>
-                            @elseif($material->card_thumbnail)
-                                <img src="{{ $material->card_thumbnail }}"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
-                            @else
-                                <div class="text-center opacity-50">
-                                    <i class="bi bi-camera-video" style="font-size: 4rem;"></i>
-                                    <p class="mt-2">Trailer Preview Tidak Tersedia</p>
-                                </div>
-                            @endif
+                {{-- KOLOM KIRI: Preview (sticky) + Modul --}}
+                <div class="col-xl-8">
+
+                    <div style="position:sticky;top:80px;z-index:10;margin-bottom:16px;">
+                        <div class="card-custom" style="margin-bottom:0;">
+                            <h1 class="fw-bold text-dark mb-1" style="font-size:1.15rem;">{{ $material->name }}</h1>
+                            <p class="text-muted mb-3" style="font-size:0.8rem;">
+                                <span class="badge me-1" style="background:#e2e8f0;color:#475569;font-weight:700;font-size:0.72rem;">
+                                    {{ $material->category->name ?? 'Kategori Umum' }}
+                                </span>
+                                Diupload {{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}
+                            </p>
+                            <div id="topReviewViewer" class="video-container" style="border-radius:10px;overflow:hidden;margin-bottom:10px;">
+                                @if($material->media && str_contains($material->media, 'mp4'))
+                                    <video controls controlsList="nodownload" style="width:100%;height:100%;">
+                                        <source src="{{ asset('storage/' . $material->media) }}" type="video/mp4">
+                                    </video>
+                                @elseif($material->card_thumbnail)
+                                    <img src="{{ $material->card_thumbnail }}" style="width:100%;height:100%;object-fit:cover;">
+                                @else
+                                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:0.4;">
+                                        <i class="bi bi-camera-video" style="font-size:3rem;"></i>
+                                        <p class="mt-2 mb-0" style="font-size:0.78rem;">Klik <i class="bi bi-eye"></i> pada modul untuk preview</p>
+                                    </div>
+                                @endif
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div id="topReviewTitle" style="font-size:0.78rem;font-weight:700;color:#475569;flex:1;">Preview materi course</div>
+                                <div id="topReviewMeta" style="font-size:0.72rem;color:#94a3b8;"></div>
+                            </div>
                         </div>
-                        @if($material->status === 'pending_review')
-                            <div class="review-state">
-                                <div class="review-state-title" id="topReviewTitle">Preview awal materi course</div>
-                            </div>
-                        @elseif($material->status === 'rejected')
-                            <div class="review-state">
-                                <div class="review-state-title" id="topReviewTitle">Preview materi course yang ditolak</div>
-                                <div class="review-state-meta" id="topReviewMeta">Materi ini telah ditolak oleh admin. Tidak
-                                    dapat direview ulang di sini.</div>
-                            </div>
-                        @endif
                     </div>
 
-                    <div class="card-custom">
-                        <h5 class="card-title">Isi Modul ({{ $uploadedModulesCount ?? 0 }})</h5>
-                        @php
-                            $allUploadedModules = collect($uploadedModules ?? [])->values();
-                            $moduleStatusTabs = [
-                                [
-                                    'id' => 'modules-pending',
-                                    'label' => 'Pending',
-                                    'icon' => 'bi-hourglass-split',
-                                    'status' => 'pending_review',
-                                    'data' => $allUploadedModules->filter(fn($m) => (($m->review_status ?? 'pending_review') === 'pending_review'))->values(),
-                                ],
-                                [
-                                    'id' => 'modules-rejected',
-                                    'label' => 'Rejected',
-                                    'icon' => 'bi-x-circle',
-                                    'status' => 'rejected',
-                                    'data' => $allUploadedModules->filter(fn($m) => (($m->review_status ?? 'pending_review') === 'rejected'))->values(),
-                                ],
-                                [
-                                    'id' => 'modules-approved',
-                                    'label' => 'Approved',
-                                    'icon' => 'bi-check-circle',
-                                    'status' => 'approved',
-                                    'data' => $allUploadedModules->filter(fn($m) => (($m->review_status ?? 'pending_review') === 'approved'))->values(),
-                                ],
-                            ];
-                        @endphp
+                    <div class="card-custom" style="margin-bottom:0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f1f5f9;">
+                            <h5 style="font-size:0.92rem;font-weight:800;color:#1e293b;margin:0;">Isi Materi</h5>
+                            <span style="font-size:0.75rem;color:#64748b;font-weight:600;">{{ $uploadedModulesCount ?? 0 }} modul</span>
+                        </div>
 
-                        <section id="module-review-board" class="status-board" aria-label="Filter review modul">
-                            <div class="status-switcher" role="tablist" aria-label="Tab status review modul">
-                                @foreach($moduleStatusTabs as $index => $tab)
-                                    <button class="status-pill {{ $index === 0 ? 'active' : '' }}" type="button"
-                                        data-target="{{ $tab['id'] }}" role="tab"
-                                        aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
-                                        <i class="bi {{ $tab['icon'] }}"></i>
-                                        <span>{{ $tab['label'] }}</span>
-                                        <span class="status-pill-count">{{ $tab['data']->count() }}</span>
-                                    </button>
-                                @endforeach
+                        @forelse($unitSummaries ?? [] as $unit)
+                            @php
+                                if ($unit['all_approved'])     { $uc = ['bg'=>'#f0fdf4','border'=>'#bbf7d0','text'=>'#166534','icon'=>'bi-check-circle-fill']; }
+                                elseif ($unit['any_rejected']) { $uc = ['bg'=>'#fff1f2','border'=>'#fecaca','text'=>'#be123c','icon'=>'bi-x-circle-fill']; }
+                                elseif ($unit['any_pending'])  { $uc = ['bg'=>'#fffbeb','border'=>'#fde68a','text'=>'#92400e','icon'=>'bi-hourglass-split']; }
+                                else                           { $uc = ['bg'=>'#f8fafc','border'=>'#e2e8f0','text'=>'#94a3b8','icon'=>'bi-minus-circle']; }
+                            @endphp
+
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;{{ $loop->first ? '' : 'margin-top:22px;' }}">
+                                <span style="display:inline-flex;align-items:center;gap:5px;background:{{ $uc['bg'] }};border:1px solid {{ $uc['border'] }};color:{{ $uc['text'] }};border-radius:8px;padding:3px 11px;font-size:0.76rem;font-weight:700;">
+                                    <i class="bi {{ $uc['icon'] }}" style="font-size:0.72rem;"></i>
+                                    {{ $unit['unit_label'] }}
+                                </span>
+                                <span style="font-size:0.73rem;color:#94a3b8;">{{ $unit['uploaded'] }}/{{ $unit['total'] }} modul</span>
                             </div>
 
-                            @foreach($moduleStatusTabs as $index => $tab)
-                                <section id="{{ $tab['id'] }}" class="status-panel {{ $index === 0 ? 'active' : '' }}"
-                                    role="tabpanel">
-                                    @if($tab['data']->isEmpty())
-                                        <div class="text-center py-4 text-muted border rounded-3 bg-light-subtle">
-                                            Tidak ada modul {{ strtolower($tab['label']) }}.
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                @foreach($unit['modules'] as $module)
+                                    @php
+                                        $rawContent     = trim((string)($module->content_url ?? ''));
+                                        $hasTextContent = $module->isPdf() && trim((string)($module->description ?? '')) !== '';
+                                        $isHttp         = str_starts_with($rawContent,'http://') || str_starts_with($rawContent,'https://');
+                                        $normalizedContent = ltrim((string)preg_replace('#^/?storage/#','',$rawContent),'/');
+                                        $ext  = strtolower(pathinfo($normalizedContent!==''?$normalizedContent:$rawContent,PATHINFO_EXTENSION));
+                                        $mime = strtolower((string)($module->mime_type ?? ''));
+                                        $contentUrl = null;
+
+                                        $previewKind = 'file';
+                                        if ($hasTextContent)       { $previewKind = 'module-html'; }
+                                        elseif ($module->isQuiz()) { $previewKind = 'quiz'; }
+                                        elseif ($module->isVideo()||str_starts_with($mime,'video/')||in_array($ext,['mp4','mov','avi','mkv','webm'],true)) { $previewKind = 'video'; }
+                                        elseif ($module->isPdf()||str_contains($mime,'pdf')||$ext==='pdf') { $previewKind = 'pdf'; }
+
+                                        if ($isHttp) { $contentUrl = $rawContent; }
+                                        elseif ($normalizedContent!==''&&$rawContent!=='quiz_submitted') {
+                                            $contentUrl = route('admin.material.module.stream',[$material,$module],false);
+                                        } elseif ($hasTextContent) {
+                                            $contentUrl = route('admin.material.module.stream',[$material,$module],false);
+                                        }
+
+                                        $canOpenFile   = !$module->isQuiz() && !empty($contentUrl) && !$hasTextContent;
+                                        $canPreview    = $canOpenFile || $module->isQuiz() || $hasTextContent;
+                                        $hasAnyContent = $canOpenFile || $hasTextContent || $module->isQuiz();
+                                        $reviewStatus  = in_array(($module->review_status??''),['approved','rejected','pending_review'],true)
+                                            ? $module->review_status : 'pending_review';
+                                    @endphp
+
+                                    <div class="module-item{{ $reviewStatus==='approved'?' module-item-approved':($reviewStatus==='rejected'?' module-item-rejected':'') }}">
+
+                                        <div class="module-icon">
+                                            @if($module->type==='video')    <i class="bi bi-play-fill"></i>
+                                            @elseif($module->type==='pdf')  <i class="bi bi-file-pdf-fill"></i>
+                                            @elseif($module->type==='quiz') <i class="bi bi-question-circle-fill"></i>
+                                            @else                           <i class="bi bi-file-earmark-fill"></i>
+                                            @endif
                                         </div>
-                                    @else
-                                        <div class="module-list">
-                                            @foreach($tab['data'] as $module)
-                                                @php
-                                                    $rawContent = trim((string) ($module->content_url ?? ''));
-                                                    $hasTextContent = $module->isPdf() && trim((string) ($module->description ?? '')) !== '';
-                                                    $isHttp = str_starts_with($rawContent, 'http://') || str_starts_with($rawContent, 'https://');
-                                                    $normalizedContent = ltrim((string) preg_replace('#^/?storage/#', '', $rawContent), '/');
-                                                    $contentUrl = null;
-                                                    $ext = strtolower(pathinfo($normalizedContent !== '' ? $normalizedContent : $rawContent, PATHINFO_EXTENSION));
-                                                    $mime = strtolower((string) ($module->mime_type ?? ''));
 
-                                                    $previewKind = 'file';
-                                                    if ($hasTextContent) {
-                                                        $previewKind = 'module-html';
-                                                    } elseif ($module->isQuiz()) {
-                                                        $previewKind = 'quiz';
-                                                    } elseif ($module->isVideo() || str_starts_with($mime, 'video/') || in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'webm'], true)) {
-                                                        $previewKind = 'video';
-                                                    } elseif ($module->isPdf() || str_contains($mime, 'pdf') || $ext === 'pdf') {
-                                                        $previewKind = 'pdf';
-                                                    }
-
-                                                    if ($isHttp) {
-                                                        $contentUrl = $rawContent;
-                                                    } elseif ($normalizedContent !== '' && $rawContent !== 'quiz_submitted') {
-                                                        $contentUrl = route('admin.material.module.stream', [$material, $module], false);
-                                                    } elseif ($hasTextContent) {
-                                                        $contentUrl = route('admin.material.module.stream', [$material, $module], false);
-                                                    }
-
-                                                    $canOpenFile = !$module->isQuiz() && !empty($contentUrl) && !$hasTextContent;
-                                                    $canReviewInline = $canOpenFile || $module->isQuiz() || $hasTextContent;
-                                                    $moduleReviewStatus = in_array(($module->review_status ?? ''), ['approved', 'rejected', 'pending_review'], true)
-                                                        ? $module->review_status
-                                                        : 'pending_review';
-                                                @endphp
-                                                <div class="module-item">
-                                                    <div class="module-icon">
-                                                        @if($module->type == 'video') <i class="bi bi-play-fill"></i>
-                                                        @elseif($module->type == 'pdf') <i class="bi bi-file-pdf-fill"></i>
-                                                        @elseif($module->type == 'quiz') <i class="bi bi-question-circle-fill"></i>
-                                                        @else <i class="bi bi-file-earmark-arrow-down-fill"></i> @endif
-                                                    </div>
-                                                    <div class="module-desc">
-                                                        <div class="module-head">
-                                                            <div class="module-head-left">
-                                                                <h6>{{ $module->order_no }}. {{ $module->title }}</h6>
-                                                            </div>
-                                                            <div class="module-quick-actions">
-                                                                @if($canReviewInline)
-                                                                    <button type="button" class="module-review-trigger"
-                                                                        data-review-module-id="{{ $module->id }}"
-                                                                        data-review-title="{{ e($module->title) }}"
-                                                                        data-review-url="{{ $contentUrl }}"
-                                                                        data-review-kind="{{ $previewKind }}"
-                                                                        data-review-template-id="{{ $hasTextContent ? 'module-html-preview-' . $module->id : '' }}"
-                                                                        data-review-file="{{ e($module->file_name ?: basename((string) $module->content_url)) }}"
-                                                                        title="Preview">
-                                                                        <span class="module-icon-btn preview"><i
-                                                                                class="bi bi-eye"></i></span>
-                                                                    </button>
-                                                                @endif
-                                                                @if($canOpenFile)
-                                                                    <a href="{{ route('admin.material.module.stream', [$material, $module], false) }}?download=1"
-                                                                        class="module-icon-btn download" title="Unduh">
-                                                                        <i class="bi bi-download"></i>
-                                                                    </a>
-                                                                @endif
-                                                            </div>
-                                                        </div>
-                                                        <p>Tipe: {{ strtoupper($module->type) }} @if($module->duration) •
-                                                        {{ $module->duration }} Menit @endif
-                                                        </p>
-                                                        @if(!empty($module->file_name) || !empty($module->mime_type))
-                                                            <div class="module-meta">
-                                                                {{ $module->file_name ?: basename((string) $module->content_url) }}
-                                                                @if(!empty($module->mime_type))
-                                                                    • {{ $module->mime_type }}
-                                                                @endif
-                                                            </div>
-                                                        @endif
-
-                                                        @if($hasTextContent)
-                                                            <template
-                                                                id="module-html-preview-{{ $module->id }}">{!! $module->description !!}</template>
-                                                        @endif
-
-                                                        @if($material->status === 'pending_review')
-                                                            @if($canReviewInline)
-                                                                @if($moduleReviewStatus !== 'approved')
-                                                                    <div class="module-decision-stack">
-                                                                        <form method="POST"
-                                                                            action="{{ route('admin.material.module.approve', [$material, $module]) }}"
-                                                                            class="module-action-form">
-                                                                            @csrf
-                                                                            <button type="submit" class="module-btn-approve">
-                                                                                <i class="bi bi-check2-circle"></i> Approve Modul
-                                                                            </button>
-                                                                        </form>
-
-                                                                        <button type="button" class="module-btn-reject" data-bs-toggle="collapse"
-                                                                            data-bs-target="#rejectModuleForm-{{ $module->id }}"
-                                                                            aria-expanded="false">
-                                                                            <i class="bi bi-x-circle"></i> Reject Modul
-                                                                        </button>
-                                                                    </div>
-
-                                                                    <div class="collapse module-reject-form"
-                                                                        id="rejectModuleForm-{{ $module->id }}">
-                                                                        <form method="POST"
-                                                                            action="{{ route('admin.material.module.reject', [$material, $module]) }}">
-                                                                            @csrf
-                                                                            <textarea name="rejection_reason" required minlength="10"
-                                                                                placeholder="Tulis alasan revisi untuk modul ini..."></textarea>
-                                                                            <button type="submit" class="module-btn-reject">
-                                                                                <i class="bi bi-send"></i> Kirim Revisi Modul
-                                                                            </button>
-                                                                        </form>
-                                                                    </div>
-                                                                @endif
-
-                                                                <span
-                                                                    class="module-review-badge {{ $moduleReviewStatus === 'approved' ? 'approved' : ($moduleReviewStatus === 'rejected' ? 'rejected' : 'pending') }}">
-                                                                    @if($moduleReviewStatus === 'approved')
-                                                                        <i class="bi bi-check-circle"></i> Modul approved
-                                                                    @elseif($moduleReviewStatus === 'rejected')
-                                                                        <i class="bi bi-x-circle"></i> Modul rejected
-                                                                    @else
-                                                                        <i class="bi bi-hourglass-split"></i> Menunggu review modul
-                                                                    @endif
-                                                                </span>
-                                                                <span
-                                                                    class="module-tag module-tag-ready">{{ $module->isQuiz() ? 'Kuis tersedia' : ($hasTextContent ? 'Konten teks tersedia' : 'File tersedia') }}</span>
-                                                            @elseif($module->isQuiz())
-                                                                <span class="module-tag module-tag-ready">Kuis tersedia</span>
-                                                            @else
-                                                                <span class="module-tag module-tag-missing">File/konten belum tersedia</span>
-                                                            @endif
-                                                        @elseif($material->status === 'approved')
-                                                            @if($canOpenFile)
-                                                                <span
-                                                                    class="module-tag module-tag-ready">{{ $module->isQuiz() ? 'Kuis tersedia' : 'File tersedia' }}</span>
-                                                            @elseif($hasTextContent)
-                                                                <span class="module-tag module-tag-ready">Konten teks tersedia</span>
-                                                            @elseif($module->isQuiz())
-                                                                <span class="module-tag module-tag-ready">Kuis tersedia</span>
-                                                            @else
-                                                                <span class="module-tag module-tag-missing">File/konten belum tersedia</span>
-                                                            @endif
-                                                        @elseif($material->status === 'rejected')
-                                                            @if($canOpenFile)
-                                                                <span
-                                                                    class="module-tag module-tag-ready">{{ $module->isQuiz() ? 'Kuis tersedia' : 'File tersedia' }}</span>
-                                                            @elseif($hasTextContent)
-                                                                <span class="module-tag module-tag-ready">Konten teks tersedia</span>
-                                                            @elseif($module->isQuiz())
-                                                                <span class="module-tag module-tag-ready">Kuis tersedia</span>
-                                                            @else
-                                                                <span class="module-tag module-tag-missing">File/konten belum tersedia</span>
-                                                            @endif
+                                        <div class="module-desc">
+                                            <div class="module-head">
+                                                <div class="module-head-left">
+                                                    <h6 style="font-size:0.85rem;">{{ $module->order_no }}. {{ $module->title }}</h6>
+                                                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">
+                                                        <span style="font-size:0.73rem;color:#94a3b8;font-weight:600;">
+                                                            {{ strtoupper($module->type) }}{{ $module->duration?' · '.$module->duration.' mnt':'' }}
+                                                        </span>
+                                                        @if(!empty($module->file_name))
+                                                            <span style="font-size:0.7rem;color:#cbd5e1;">·</span>
+                                                            <span style="font-size:0.7rem;color:#94a3b8;font-style:italic;">{{ Str::limit($module->file_name,28) }}</span>
                                                         @endif
                                                     </div>
                                                 </div>
-                                            @endforeach
+                                                <div class="module-quick-actions">
+                                                    @if($canPreview)
+                                                        <button type="button" class="module-review-trigger module-icon-btn preview"
+                                                            data-review-module-id="{{ $module->id }}"
+                                                            data-review-title="{{ e($module->title) }}"
+                                                            data-review-url="{{ $contentUrl }}"
+                                                            data-review-kind="{{ $previewKind }}"
+                                                            data-review-template-id="{{ $hasTextContent?'module-html-preview-'.$module->id:'' }}"
+                                                            data-review-file="{{ e($module->file_name?:basename((string)$module->content_url)) }}"
+                                                            title="Preview">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                    @endif
+                                                    @if($canOpenFile)
+                                                        <a href="{{ route('admin.material.module.stream',[$material,$module],false) }}?download=1"
+                                                            class="module-icon-btn download" title="Unduh">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            @if($hasTextContent)
+                                                <template id="module-html-preview-{{ $module->id }}">{!! $module->description !!}</template>
+                                            @endif
+
+                                            <div style="margin-top:9px;display:flex;flex-direction:column;gap:7px;">
+                                                @if($hasAnyContent)
+                                                    <div>
+                                                        <span class="module-review-badge {{ $reviewStatus==='approved'?'approved':($reviewStatus==='rejected'?'rejected':'pending') }}">
+                                                            @if($reviewStatus==='approved')     <i class="bi bi-check-circle-fill"></i> Disetujui
+                                                            @elseif($reviewStatus==='rejected') <i class="bi bi-x-circle-fill"></i> Ditolak
+                                                            @else                               <i class="bi bi-hourglass-split"></i> Menunggu review
+                                                            @endif
+                                                        </span>
+                                                        @if($module->isQuiz())
+                                                            <span style="font-size:0.72rem;color:#64748b;margin-left:6px;">· {{ $module->quizQuestions->count() }} soal</span>
+                                                        @endif
+                                                        @if($reviewStatus==='rejected'&&!empty($module->review_rejection_reason))
+                                                            <div style="margin-top:5px;font-size:0.73rem;color:#be123c;background:#fff1f2;border:1px solid #fecaca;border-radius:6px;padding:5px 9px;">
+                                                                <i class="bi bi-chat-left-text me-1"></i>{{ Str::limit($module->review_rejection_reason,80) }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <span class="module-tag module-tag-missing"><i class="bi bi-exclamation me-1"></i>File belum diupload</span>
+                                                @endif
+
+                                                @if($material->status==='pending_review'&&$hasAnyContent&&$reviewStatus!=='approved')
+                                                    <div class="module-decision-stack">
+                                                        <form method="POST" action="{{ route('admin.material.module.approve',[$material,$module]) }}" class="module-action-form">
+                                                            @csrf
+                                                            <button type="submit" class="module-btn-approve"><i class="bi bi-check2-circle"></i> Setujui</button>
+                                                        </form>
+                                                        <button type="button" class="module-btn-reject"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#rejectForm-{{ $module->id }}">
+                                                            <i class="bi bi-x-circle"></i> Tolak
+                                                        </button>
+                                                    </div>
+                                                    <div class="collapse module-reject-form" id="rejectForm-{{ $module->id }}">
+                                                        <form method="POST" action="{{ route('admin.material.module.reject',[$material,$module]) }}">
+                                                            @csrf
+                                                            <textarea name="rejection_reason" required minlength="10" placeholder="Tulis catatan revisi untuk modul ini..."></textarea>
+                                                            <button type="submit" class="module-btn-reject"><i class="bi bi-send"></i> Kirim Catatan</button>
+                                                        </form>
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </div>
-                                    @endif
-                                </section>
-                            @endforeach
-                        </section>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                        @empty
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox" style="font-size:2.5rem;color:#cbd5e1;"></i>
+                                <p class="mt-3 mb-0 fw-semibold text-muted">Belum ada modul untuk course ini.</p>
+                            </div>
+                        @endforelse
                     </div>
 
-                </div>
+                </div>{{-- end col-xl-8 --}}
 
+                {{-- KOLOM KANAN: Trainer + Stats (sticky) --}}
                 <div class="col-xl-4">
                     <div class="action-box">
-                        <div class="card-custom side-card mb-3" style="padding: 20px;">
-                            <h6 class="side-card-title">Dibuat Oleh:</h6>
-                            <div class="trainer-box m-0">
-                                <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
-                                    alt="Trainer">
+                        <div class="card-custom side-card" style="padding:18px;margin-bottom:14px;">
+                            <div class="side-card-title">Dibuat Oleh</div>
+                            <div class="trainer-box" style="margin-bottom:0;">
+                                <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($material->trainer?->name ?? 'T').'&background=3949ab&color=fff' }}"
+                                    alt="{{ $material->trainer?->name ?? 'Trainer' }}"
+                                    style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                                 <div>
-                                    <h6 class="fw-bold m-0 text-dark">{{ $material->trainer?->name ?? 'Anonim' }}</h6>
-                                    <p class="m-0 text-muted" style="font-size: 0.8rem;">Instruktur</p>
+                                    <div style="font-weight:700;color:#1e293b;font-size:0.86rem;">{{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                    <div style="font-size:0.73rem;color:#64748b;">Instruktur</div>
+                                    @if($material->trainer?->email)
+                                        <div style="font-size:0.7rem;color:#94a3b8;margin-top:1px;">{{ $material->trainer->email }}</div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
+                        <div class="card-custom side-card" style="padding:16px;">
+                            <div class="side-card-title">Ringkasan</div>
+                            @php
+                                $totalUploaded  = collect($unitSummaries??[])->sum('uploaded');
+                                $totalApprovedM = collect($unitSummaries??[])->flatMap(fn($u)=>$u['modules'])->filter(fn($m)=>($m->review_status??'')==='approved')->count();
+                                $totalRejectedM = collect($unitSummaries??[])->flatMap(fn($u)=>$u['modules'])->filter(fn($m)=>($m->review_status??'')==='rejected')->count();
+                                $totalBabs      = count($unitSummaries??[]);
+                                $totalPending   = $totalUploaded-$totalApprovedM-$totalRejectedM;
+                            @endphp
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div style="background:#f8fafc;border-radius:10px;padding:10px;text-align:center;">
+                                    <div style="font-size:1.2rem;font-weight:800;color:#1e293b;">{{ $totalBabs }}</div>
+                                    <div style="font-size:0.68rem;color:#64748b;margin-top:2px;">Total Bab</div>
+                                </div>
+                                <div style="background:#f8fafc;border-radius:10px;padding:10px;text-align:center;">
+                                    <div style="font-size:1.2rem;font-weight:800;color:#1e293b;">{{ $totalUploaded }}</div>
+                                    <div style="font-size:0.68rem;color:#64748b;margin-top:2px;">Modul Aktif</div>
+                                </div>
+                                <div style="background:#f0fdf4;border-radius:10px;padding:10px;text-align:center;">
+                                    <div style="font-size:1.2rem;font-weight:800;color:#166534;">{{ $totalApprovedM }}</div>
+                                    <div style="font-size:0.68rem;color:#14532d;margin-top:2px;">Disetujui</div>
+                                </div>
+                                <div style="background:{{ $totalRejectedM>0?'#fff1f2':'#f8fafc' }};border-radius:10px;padding:10px;text-align:center;">
+                                    <div style="font-size:1.2rem;font-weight:800;color:{{ $totalRejectedM>0?'#be123c':'#94a3b8' }};">{{ $totalRejectedM }}</div>
+                                    <div style="font-size:0.68rem;color:{{ $totalRejectedM>0?'#be123c':'#94a3b8' }};margin-top:2px;">Ditolak</div>
+                                </div>
+                            </div>
+                            @if($totalPending>0)
+                                <div style="margin-top:10px;background:#fffbeb;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:6px;font-size:0.77rem;color:#92400e;font-weight:700;">
+                                    <i class="bi bi-hourglass-split"></i> {{ $totalPending }} modul menunggu review
+                                </div>
+                            @endif
+                        </div>
                     </div>
-                </div>
-            </div>
+                </div>{{-- end col-xl-4 --}}
+
+            </div>{{-- end row --}}
         </main>
     </div>
 
     @php
-        $quizMapForJs = collect($uploadedModules ?? [])
-            ->filter(fn($m) => $m->isQuiz())
-            ->mapWithKeys(function ($m) {
-                return [
-                    (string) $m->id => $m->quizQuestions
-                        ->map(function ($q) {
-                            return [
-                                'question' => (string) ($q->question ?? ''),
-                                'points' => (int) ($q->points ?? 0),
-                                'answers' => $q->answers
-                                    ->sortBy('order_no')
-                                    ->map(function ($a) {
-                                        return [
-                                            'text' => (string) ($a->answer_text ?? ''),
-                                            'is_correct' => (bool) ($a->is_correct ?? false),
-                                        ];
-                                    })
-                                    ->values()
-                                    ->all(),
-                            ];
-                        })
-                        ->values()
-                        ->all(),
-                ];
-            })
-            ->all();
+        $quizMapForJs = collect($uploadedModules??[])->filter(fn($m)=>$m->isQuiz())->mapWithKeys(function($m){
+            return [(string)$m->id => $m->quizQuestions->map(function($q){
+                return ['question'=>(string)($q->question??''),'points'=>(int)($q->points??0),'answers'=>$q->answers->sortBy('order_no')->map(fn($a)=>['text'=>(string)($a->answer_text??''),'is_correct'=>(bool)($a->is_correct??false)])->values()->all()];
+            })->values()->all()];
+        })->all();
     @endphp
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
-        (function () {
-            const board = document.getElementById('module-review-board');
-            const quizMap = @json($quizMapForJs);
-            const viewer = document.getElementById('topReviewViewer');
-            const viewerTitle = document.getElementById('topReviewTitle');
-            const viewerMeta = document.getElementById('topReviewMeta');
+        (function(){
+            const quizMap=@json($quizMapForJs);
+            const viewer=document.getElementById('topReviewViewer');
+            const viewerTitle=document.getElementById('topReviewTitle');
+            const viewerMeta=document.getElementById('topReviewMeta');
 
-            function escapeHtml(value) {
-                return String(value ?? '')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
+            function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+
+            function showPreviewContent(content,title,meta,mode='file'){
+                if(!viewer)return;
+                viewer.classList.toggle('is-quiz',mode==='quiz');
+                viewer.classList.toggle('is-module-html',mode==='module-html');
+                viewer.innerHTML='';
+                if(content instanceof HTMLElement){viewer.appendChild(content);}
+                else{viewer.innerHTML=String(content||'');}
+                if(viewerTitle)viewerTitle.textContent=title||'Preview Modul';
+                if(viewerMeta)viewerMeta.textContent=meta||'';
+                viewer.style.outline='3px solid #3949ab55';
+                viewer.style.outlineOffset='2px';
+                setTimeout(()=>{viewer.style.outline='';viewer.style.outlineOffset='';},600);
             }
 
-            function showPreviewContent(content, title, meta, mode = 'file') {
-                if (!viewer) {
-                    return;
-                }
-
-                viewer.classList.toggle('is-quiz', mode === 'quiz');
-                viewer.classList.toggle('is-module-html', mode === 'module-html');
-                viewer.innerHTML = '';
-
-                if (content instanceof HTMLElement) {
-                    viewer.appendChild(content);
-                } else {
-                    viewer.innerHTML = String(content || '');
-                }
-
-                if (viewerTitle) {
-                    viewerTitle.textContent = title || 'Preview Modul';
-                }
-
-                if (viewerMeta) {
-                    viewerMeta.textContent = meta || '-';
-                }
-
-                viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-
-            function renderModuleHtml(rawHtml) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'module-preview-article';
-                wrapper.innerHTML = rawHtml && rawHtml.trim() !== ''
-                    ? rawHtml
-                    : '<p class="text-muted">Konten teks modul belum tersedia.</p>';
-
-                wrapper.querySelectorAll('.module-code-block').forEach((block) => {
-                    const lang = block.querySelector('.module-code-lang')?.value || 'plaintext';
-                    const codeText = block.querySelector('code')?.textContent || '';
-
-                    const pre = document.createElement('pre');
-                    const code = document.createElement('code');
-                    code.className = `language-${lang}`;
-                    code.textContent = codeText;
-                    pre.appendChild(code);
-
-                    const copyBtn = document.createElement('button');
-                    copyBtn.type = 'button';
-                    copyBtn.className = 'module-code-copy';
-                    copyBtn.textContent = 'Copy Code';
-                    copyBtn.dataset.codeText = codeText;
-
-                    const holder = document.createElement('div');
-                    holder.className = 'module-code-block';
-                    holder.appendChild(pre);
-                    holder.appendChild(copyBtn);
-
-                    block.replaceWith(holder);
+            function renderModuleHtml(rawHtml){
+                const wrapper=document.createElement('div');
+                wrapper.className='module-preview-article';
+                wrapper.innerHTML=rawHtml&&rawHtml.trim()!==''?rawHtml:'<p class="text-muted">Konten teks modul belum tersedia.</p>';
+                wrapper.querySelectorAll('.module-code-block').forEach((block)=>{
+                    const lang=block.querySelector('.module-code-lang')?.value||'plaintext';
+                    const codeText=block.querySelector('code')?.textContent||'';
+                    const pre=document.createElement('pre');const code=document.createElement('code');
+                    code.className=`language-${lang}`;code.textContent=codeText;pre.appendChild(code);
+                    const copyBtn=document.createElement('button');copyBtn.type='button';copyBtn.className='module-code-copy';
+                    copyBtn.textContent='Copy Code';copyBtn.dataset.codeText=codeText;
+                    const holder=document.createElement('div');holder.className='module-code-block';
+                    holder.appendChild(pre);holder.appendChild(copyBtn);block.replaceWith(holder);
                 });
-
-                wrapper.querySelectorAll('.module-code-copy').forEach((btn) => {
-                    btn.addEventListener('click', function () {
-                        const codeText = this.dataset.codeText || '';
-                        navigator.clipboard.writeText(codeText).then(() => {
-                            const originalLabel = this.textContent;
-                            this.textContent = 'Copied';
-                            setTimeout(() => {
-                                this.textContent = originalLabel;
-                            }, 1000);
-                        }).catch(() => {
-                        });
+                wrapper.querySelectorAll('.module-code-copy').forEach((btn)=>{
+                    btn.addEventListener('click',function(){
+                        navigator.clipboard.writeText(this.dataset.codeText||'').then(()=>{
+                            const orig=this.textContent;this.textContent='Copied!';setTimeout(()=>{this.textContent=orig;},1000);
+                        }).catch(()=>{});
                     });
                 });
-
-                wrapper.querySelectorAll('pre code').forEach((el) => {
-                    if (window.hljs) {
-                        window.hljs.highlightElement(el);
-                    }
-                });
-
+                wrapper.querySelectorAll('pre code').forEach((el)=>{if(window.hljs)window.hljs.highlightElement(el);});
                 return wrapper;
             }
 
-            function renderQuiz(moduleId) {
-                const questions = quizMap[String(moduleId)] || [];
-
-                if (!questions.length) {
-                    return '<div class="text-muted">Belum ada soal pada modul kuis ini.</div>';
-                }
-
-                const items = questions.map((q, idx) => {
-                    const answers = (q.answers || []).map((a) => {
-                        return `<div class="quiz-preview-answer ${a.is_correct ? 'is-correct' : ''}">${escapeHtml(a.text || '-')}</div>`;
-                    }).join('');
-
-                    return `
-                            <div class="quiz-preview-item">
-                                <p class="quiz-preview-q">${idx + 1}. ${escapeHtml(q.question || 'Tanpa pertanyaan')} ${q.points ? `(${q.points} poin)` : ''}</p>
-                                <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi jawaban</div>'}</div>
-                            </div>
-                        `;
+            function renderQuiz(moduleId){
+                const questions=quizMap[String(moduleId)]||[];
+                if(!questions.length)return '<div class="text-muted py-3 text-center">Belum ada soal pada modul kuis ini.</div>';
+                const items=questions.map((q,i)=>{
+                    const answers=(q.answers||[]).map(a=>`<div class="quiz-preview-answer ${a.is_correct?'is-correct':''}">${escapeHtml(a.text||'-')}</div>`).join('');
+                    return `<div class="quiz-preview-item"><p class="quiz-preview-q">${i+1}. ${escapeHtml(q.question||'?')} ${q.points?`<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>`:''}</p><div class="quiz-preview-answers">${answers||'<div class="quiz-preview-answer">Belum ada opsi</div>'}</div></div>`;
                 }).join('');
-
                 return `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
             }
 
-            function renderPreview(url, kind) {
-                if (!url) {
-                    return '<div class="text-center opacity-50"><i class="bi bi-file-earmark-x" style="font-size: 4rem;"></i><p class="mt-2 mb-0">File tidak tersedia</p></div>';
-                }
-
-                if (kind === 'video') {
-                    return `<video controls controlsList="nodownload"><source src="${url}"></video>`;
-                }
-
-                if (kind === 'pdf') {
-                    return `<iframe src="${url}#toolbar=1&navpanes=0"></iframe>`;
-                }
-
+            function renderPreview(url,kind){
+                if(!url)return '<div class="text-center opacity-50 py-4"><i class="bi bi-file-earmark-x" style="font-size:3rem;"></i><p class="mt-2 mb-0">File tidak tersedia</p></div>';
+                if(kind==='video')return `<video controls controlsList="nodownload"><source src="${url}"></video>`;
+                if(kind==='pdf')return `<iframe src="${url}#toolbar=1&navpanes=0"></iframe>`;
                 return `<iframe src="${url}"></iframe>`;
             }
 
-            if (board) {
-                const pills = board.querySelectorAll('.status-pill');
-                const panels = board.querySelectorAll('.status-panel');
-
-                pills.forEach((pill) => {
-                    pill.addEventListener('click', function () {
-                        const target = this.dataset.target;
-                        pills.forEach((item) => {
-                            const isActive = item === this;
-                            item.classList.toggle('active', isActive);
-                            item.setAttribute('aria-selected', isActive ? 'true' : 'false');
-                        });
-                        panels.forEach((panel) => panel.classList.toggle('active', panel.id === target));
-                    });
-                });
-
-                board.addEventListener('click', function (event) {
-                    const trigger = event.target.closest('.module-review-trigger');
-                    if (!trigger) {
-                        return;
-                    }
-
-                    const fileUrl = trigger.getAttribute('data-review-url') || '';
-                    const fileKind = trigger.getAttribute('data-review-kind') || 'file';
-                    const moduleTitle = trigger.getAttribute('data-review-title') || 'Materi';
-                    const fileName = trigger.getAttribute('data-review-file') || 'File';
-                    const moduleId = trigger.getAttribute('data-review-module-id') || '';
-
-                    if (fileKind === 'quiz') {
-                        showPreviewContent(renderQuiz(moduleId), 'Preview: ' + moduleTitle, 'Menampilkan daftar soal dan opsi jawaban modul kuis', 'quiz');
-                        return;
-                    }
-
-                    if (fileKind === 'module-html') {
-                        const templateId = trigger.getAttribute('data-review-template-id') || '';
-                        const templateEl = templateId ? document.getElementById(templateId) : null;
-                        const moduleHtml = templateEl ? templateEl.innerHTML : '';
-                        showPreviewContent(
-                            renderModuleHtml(moduleHtml),
-                            'Preview: ' + moduleTitle,
-                            'Menampilkan konten teks modul seperti di studio trainer',
-                            'module-html'
-                        );
-                        return;
-                    }
-
-                    showPreviewContent(renderPreview(fileUrl, fileKind), 'Preview: ' + moduleTitle, 'Menampilkan: ' + fileName, 'file');
-                });
-            }
-
+            document.addEventListener('click',function(e){
+                const trigger=e.target.closest('.module-review-trigger');
+                if(!trigger)return;
+                const fileUrl=trigger.getAttribute('data-review-url')||'';
+                const fileKind=trigger.getAttribute('data-review-kind')||'file';
+                const moduleTitle=trigger.getAttribute('data-review-title')||'Materi';
+                const fileName=trigger.getAttribute('data-review-file')||'File';
+                const moduleId=trigger.getAttribute('data-review-module-id')||'';
+                if(fileKind==='quiz'){showPreviewContent(renderQuiz(moduleId),'Preview: '+moduleTitle,'Soal kuis','quiz');return;}
+                if(fileKind==='module-html'){
+                    const tmplId=trigger.getAttribute('data-review-template-id')||'';
+                    const tmplEl=tmplId?document.getElementById(tmplId):null;
+                    showPreviewContent(renderModuleHtml(tmplEl?tmplEl.innerHTML:''),'Preview: '+moduleTitle,'Konten teks modul','module-html');return;
+                }
+                showPreviewContent(renderPreview(fileUrl,fileKind),'Preview: '+moduleTitle,fileName,'file');
+            });
         })();
     </script>
 @endsection

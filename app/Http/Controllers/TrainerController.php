@@ -1136,22 +1136,28 @@ class TrainerController extends Controller
         // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
-        $uploadedMaterials = $allModules
-            ->filter(function ($module) {
-                return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
-            })
-            ->map(function ($module) use ($course) {
-                $unitNo = (int) floor((((int) $module->order_no) - 1) / 3) + 1;
+        // Hanya tampilkan materi yang sudah diupload untuk bab (unit) yang sedang aktif saja.
+        // Mengambil ID modul yang ada di bab aktif untuk filter yang presisi.
+        $activeUnitModuleIds = $activeUnitModules->pluck('id')->all();
 
+        $uploadedMaterials = $allModules
+            ->filter(function ($module) use ($activeUnitModuleIds) {
+                // Hanya modul di bab aktif, dengan file yang sudah terupload
+                return in_array($module->id, $activeUnitModuleIds)
+                    && in_array($module->type, ['pdf', 'video'])
+                    && !empty($module->content_url);
+            })
+            ->map(function ($module) use ($course, $unitIndex) {
                 return [
                     'module_id' => (int) $module->id,
                     'order_no' => (int) $module->order_no,
-                    'unit_no' => $unitNo,
+                    'unit_no' => (int) $unitIndex + 1,
                     'type' => (string) $module->type,
                     'title' => (string) ($module->title ?? ''),
                     'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
                     'view_url' => route('trainer.courses.studio.material.view', [$course->id, $module->id]),
                     'updated_at' => optional($module->updated_at)->toDateTimeString(),
+                    'review_status' => (string) ($module->review_status ?? 'pending_review'),
                 ];
             })
             ->values();

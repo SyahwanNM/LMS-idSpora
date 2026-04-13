@@ -276,7 +276,7 @@ class MaterialApprovalController extends Controller
     }
 
     /**
-     * Display specific material for review with preview
+     * Display specific material for review with preview, grouped by unit (bab)
      */
     public function show(Course $material)
     {
@@ -291,8 +291,320 @@ class MaterialApprovalController extends Controller
 
         $structureCompleteness = $this->assessStructureCompleteness($material);
 
-        return view('admin.material.show', compact('material', 'structureCompleteness'));
+        // Ambil semua modul yang sudah punya konten (file/quiz/teks)
+        $uploadedModules = $material->modules->filter(function ($module) {
+            $hasFile = !empty($module->content_url) && $module->content_url !== 'quiz_submitted';
+            $hasText = $module->isPdf() && trim((string) ($module->description ?? '')) !== '';
+            $hasQuiz = $module->isQuiz();
+            return $hasFile || $hasText || $hasQuiz;
+        })->values();
+
+        $uploadedModulesCount = $uploadedModules->count();
+
+        // Kelompokkan SEMUA modul per unit (bab) — setiap bab = 3 modul berurutan
+        $allModules = $material->modules->sortBy('order_no')->values();
+        $unitChunks = $allModules->chunk(3)->values();
+
+        // Map tiap unit dengan status kelengkapannya
+        $unitSummaries = $unitChunks->map(function ($unitModules, $unitIndex) {
+            $total = $unitModules->count();
+            $uploaded = $unitModules->filter(function ($m) {
+                $hasFile = !empty($m->content_url) && $m->content_url !== 'quiz_submitted';
+                $hasText = $m->isPdf() && trim((string) ($m->description ?? '')) !== '';
+                $hasQuiz = $m->isQuiz();
+                return $hasFile || $hasText || $hasQuiz;
+            })->count();
+
+            $allApproved = $unitModules->every(fn($m) => ($m->review_status ?? 'pending_review') === 'approved' || $m->isQuiz());
+            $anyRejected = $unitModules->contains(fn($m) => ($m->review_status ?? '') === 'rejected');
+            $anyPending  = $unitModules->contains(fn($m) => !$m->isQuiz() && ($m->review_status ?? 'pending_review') === 'pending_review' && (!empty($m->content_url) || (trim((string)($m->description ?? '')) !== '')));
+
+            return [
+                'unit_index' => $unitIndex,
+                'unit_label' => 'Bab ' . ($unitIndex + 1),
+                'modules'    => $unitModules->values(),
+                'total'      => $total,
+                'uploaded'   => $uploaded,
+                'all_approved' => $allApproved,
+                'any_rejected' => $anyRejected,
+                'any_pending'  => $anyPending,
+            ];
+        })->values();
+
+        return view('admin.material.show', compact(
+            'material',
+            'structureCompleteness',
+            'uploadedModules',
+            'uploadedModulesCount',
+            'unitSummaries'
+        ));
     }
+
+    /**
+     * Approve a single module
+     */
+    public function approveModule(Course $material, CourseModule $module)
+    {
+        if ((int) $module->course_id !== (int) $material->id) {
+            abort(404, 'Modul tidak ditemukan pada course ini.');
+        }
+
+        $module->update([
+            'review_status'           => 'approved',
+            'reviewed_at'             => now(),
+            'reviewed_by'             => Auth::id(),
+            'review_rejection_reason' => null,
+        ]);
+
+        // Cek apakah semua modul course sudah approved → otomatis approve course
+        $allModulesApproved = CourseModule::where('course_id', $material->id)
+            ->where(function ($q) {
+                $q->whereNotIn('type', ['quiz'])
+                  ->where(function ($inner) {
+                      $inner->whereNotNull('content_url')
+                            ->orWhereNotNull('description');
+                  });
+            })
+            ->where('review_status', '!=', 'approved')
+            ->doesntExist();
+
+        if ($allModulesApproved && $material->status === 'pending_review') {
+            $material->update([
+                'status'      => 'approved',
+                'approved_at' => now(),
+                'approved_by' => Auth::id(),
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+
+            if (!empty($material->trainer_id)) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $material->trainer_id,
+                    'type'       => 'course_material_approved',
+                    'title'      => 'Semua Materi Course Diterima',
+                    'message'    => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
+                    'data'       => [
+                        'entity_type' => 'course',
+                        'entity_id'   => (int) $material->id,
+                        'url'         => route('trainer.detail-course', $material->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
+        }
+
+        return redirect()
+            ->route('admin.material.show', $material)
+            ->with('success', 'Modul "' . $module->title . '" berhasil disetujui.');
+    }
+
+    /**
+     * Reject a single module with reason
+     */
+    public function rejectModule(Request $request, Course $material, CourseModule $module)
+    {
+        if ((int) $module->course_id !== (int) $material->id) {
+            abort(404, 'Modul tidak ditemukan pada course ini.');
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000',
+        ], [
+            'rejection_reason.required' => 'Alasan penolakan modul wajib diisi.',
+            'rejection_reason.min'      => 'Alasan penolakan minimal 10 karakter.',
+        ]);
+
+        $module->update([
+            'review_status'           => 'rejected',
+            'reviewed_at'             => now(),
+            'reviewed_by'             => Auth::id(),
+            'review_rejection_reason' => $request->rejection_reason,
+        ]);
+
+        // Kembalikan status course ke pending_review jika sebelumnya approved
+        if ($material->status === 'approved') {
+            $material->update(['status' => 'pending_review']);
+        }
+
+        // Kirim notifikasi revisi ke trainer
+        if (!empty($material->trainer_id)) {
+            TrainerNotification::create([
+                'trainer_id' => (int) $material->trainer_id,
+                'type'       => 'course_material_rejected',
+                'title'      => 'Modul Course Perlu Revisi',
+                'message'    => 'Modul "' . $module->title . '" pada course "' . $material->name . '" perlu revisi. Catatan: ' . $request->rejection_reason,
+                'data'       => [
+                    'entity_type'      => 'course',
+                    'entity_id'        => (int) $material->id,
+                    'rejection_reason' => $request->rejection_reason,
+                    'url'              => route('trainer.courses.studio', $material->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.material.show', $material)
+            ->with('success', 'Modul "' . $module->title . '" ditolak dan catatan revisi telah dikirim ke trainer.');
+    }
+
+    /**
+     * Approve all modules within a specific unit (bab)
+     */
+    public function approveUnit(Course $material, int $unitIndex)
+    {
+        $allModules = CourseModule::where('course_id', $material->id)
+            ->orderBy('order_no', 'asc')
+            ->get();
+
+        $chunks      = $allModules->chunk(3)->values();
+        $unitModules = $chunks->get($unitIndex, collect());
+
+        if ($unitModules->isEmpty()) {
+            return redirect()->route('admin.material.show', $material)
+                ->with('error', 'Unit (bab) tidak ditemukan.');
+        }
+
+        $approvedCount = 0;
+        foreach ($unitModules as $module) {
+            if ($module->isQuiz()) {
+                continue; // Quiz tidak perlu approve manual
+            }
+            $hasContent = !empty($module->content_url) || trim((string) ($module->description ?? '')) !== '';
+            if (!$hasContent) {
+                continue;
+            }
+            $module->update([
+                'review_status'           => 'approved',
+                'reviewed_at'             => now(),
+                'reviewed_by'             => Auth::id(),
+                'review_rejection_reason' => null,
+            ]);
+            $approvedCount++;
+        }
+
+        // Cek apakah seluruh course sudah approved
+        $allModulesApprovedNow = CourseModule::where('course_id', $material->id)
+            ->where(function ($q) {
+                $q->whereNotIn('type', ['quiz'])
+                  ->where(function ($inner) {
+                      $inner->whereNotNull('content_url')
+                            ->orWhereNotNull('description');
+                  });
+            })
+            ->where('review_status', '!=', 'approved')
+            ->doesntExist();
+
+        if ($allModulesApprovedNow && $material->status === 'pending_review') {
+            $material->update([
+                'status'      => 'approved',
+                'approved_at' => now(),
+                'approved_by' => Auth::id(),
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+
+            if (!empty($material->trainer_id)) {
+                TrainerNotification::create([
+                    'trainer_id' => (int) $material->trainer_id,
+                    'type'       => 'course_material_approved',
+                    'title'      => 'Semua Materi Course Diterima',
+                    'message'    => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
+                    'data'       => [
+                        'entity_type' => 'course',
+                        'entity_id'   => (int) $material->id,
+                        'url'         => route('trainer.detail-course', $material->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            }
+        } elseif (!empty($material->trainer_id)) {
+            // Notifikasi bab diapprove sebagian
+            TrainerNotification::create([
+                'trainer_id' => (int) $material->trainer_id,
+                'type'       => 'course_material_approved',
+                'title'      => 'Materi Bab ' . ($unitIndex + 1) . ' Diterima',
+                'message'    => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" telah disetujui.',
+                'data'       => [
+                    'entity_type' => 'course',
+                    'entity_id'   => (int) $material->id,
+                    'url'         => route('trainer.detail-course', $material->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.material.show', $material)
+            ->with('success', 'Bab ' . ($unitIndex + 1) . ': ' . $approvedCount . ' modul berhasil disetujui.');
+    }
+
+    /**
+     * Reject all modules within a specific unit (bab) with reason
+     */
+    public function rejectUnit(Request $request, Course $material, int $unitIndex)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000',
+        ], [
+            'rejection_reason.required' => 'Alasan penolakan wajib diisi.',
+            'rejection_reason.min'      => 'Alasan penolakan minimal 10 karakter.',
+        ]);
+
+        $allModules = CourseModule::where('course_id', $material->id)
+            ->orderBy('order_no', 'asc')
+            ->get();
+
+        $chunks      = $allModules->chunk(3)->values();
+        $unitModules = $chunks->get($unitIndex, collect());
+
+        if ($unitModules->isEmpty()) {
+            return redirect()->route('admin.material.show', $material)
+                ->with('error', 'Unit (bab) tidak ditemukan.');
+        }
+
+        $rejectedCount = 0;
+        foreach ($unitModules as $module) {
+            if ($module->isQuiz()) continue;
+            $hasContent = !empty($module->content_url) || trim((string) ($module->description ?? '')) !== '';
+            if (!$hasContent) continue;
+            $module->update([
+                'review_status'           => 'rejected',
+                'reviewed_at'             => now(),
+                'reviewed_by'             => Auth::id(),
+                'review_rejection_reason' => $request->rejection_reason,
+            ]);
+            $rejectedCount++;
+        }
+
+        // Kembalikan status course ke pending_review
+        if ($material->status === 'approved') {
+            $material->update(['status' => 'pending_review']);
+        }
+
+        // Notifikasi ke trainer
+        if (!empty($material->trainer_id)) {
+            TrainerNotification::create([
+                'trainer_id' => (int) $material->trainer_id,
+                'type'       => 'course_material_rejected',
+                'title'      => 'Materi Bab ' . ($unitIndex + 1) . ' Perlu Revisi',
+                'message'    => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" ditolak. Catatan: ' . $request->rejection_reason,
+                'data'       => [
+                    'entity_type'      => 'course',
+                    'entity_id'        => (int) $material->id,
+                    'rejection_reason' => $request->rejection_reason,
+                    'url'              => route('trainer.courses.studio', $material->id),
+                ],
+                'expires_at' => now()->addDays(30),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.material.show', $material)
+            ->with('success', 'Bab ' . ($unitIndex + 1) . ': ' . $rejectedCount . ' modul ditolak. Notifikasi revisi dikirim ke trainer.');
+    }
+
+
 
     /**
      * Stream module file for admin review (inline) or download.

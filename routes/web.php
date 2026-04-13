@@ -703,6 +703,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
 
+    // Per-modul approval routes
+    Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
+    Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
+
+    // Per-unit (bab) approval routes
+    Route::post('/admin/material/{material}/units/{unitIndex}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveUnit'])->name('admin.material.unit.approve');
+    Route::post('/admin/material/{material}/units/{unitIndex}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectUnit'])->name('admin.material.unit.reject');
+
     // Event Material Approval Routes
     Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');
     Route::get('/admin/event/{event}/material', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'show'])->name('admin.event-material.show');
