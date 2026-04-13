@@ -20,6 +20,58 @@
                 Anda ampu.</p>
         </section>
 
+        @if($payouts->count() > 0)
+        <section style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;">
+            <h3 style="margin:0 0 14px 0;color:#0f172a;">Gaji & Nota Pembayaran</h3>
+            <div style="overflow:auto;">
+                <table style="width:100%;border-collapse:collapse;min-width:740px;">
+                    <thead>
+                        <tr style="background:#fffcf1;color:#856404;">
+                            <th style="text-align:left;padding:10px;border-bottom:1px solid #ffeeba;">Periode</th>
+                            <th style="text-align:left;padding:10px;border-bottom:1px solid #ffeeba;">Nominal</th>
+                            <th style="text-align:left;padding:10px;border-bottom:1px solid #ffeeba;">Nota Gaji</th>
+                            <th style="text-align:left;padding:10px;border-bottom:1px solid #ffeeba;">Bukti Transfer</th>
+                            <th style="text-align:left;padding:10px;border-bottom:1px solid #ffeeba;">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($payouts as $payout)
+                            <tr>
+                                <td style="padding:10px;border-bottom:1px solid #f1f5f9;color:#334155;">
+                                    {{ date('F', mktime(0, 0, 0, $payout->month, 1)) }} {{ $payout->year }}
+                                </td>
+                                <td style="padding:10px;border-bottom:1px solid #f1f5f9;color:#0f172a;font-weight:600;">
+                                    Rp {{ number_format($payout->amount, 0, ',', '.') }}
+                                </td>
+                                <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
+                                    @if($payout->salary_slip)
+                                        <a href="{{ asset('storage/' . $payout->salary_slip) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0" style="font-size: 11px;">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i> Lihat Nota
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td style="padding:10px;border-bottom:1px solid #f1f5f9;">
+                                    @if($payout->proof_of_payment)
+                                        <a href="{{ asset('storage/' . $payout->proof_of_payment) }}" target="_blank" class="btn btn-sm btn-outline-success py-0" style="font-size: 11px;">
+                                            <i class="bi bi-image me-1"></i> Lihat Bukti
+                                        </a>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td style="padding:10px;border-bottom:1px solid #f1f5f9;color:#64748b;font-size: 12px;">
+                                    {{ $payout->note ?: '-' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        @endif
+
         <section style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;">
             <h3 style="margin:0 0 14px 0;color:#0f172a;">Riwayat Pembayaran</h3>
 

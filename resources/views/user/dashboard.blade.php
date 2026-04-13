@@ -720,6 +720,15 @@
         {{-- </div> --}}
     </main>
 
+    @if(config('app.debug') || (auth()->check() && auth()->user()->role === 'admin'))
+    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+        <a href="{{ route('debug.latest-certificate') }}" class="btn btn-dark shadow-lg d-flex align-items-center gap-2" style="background: #1e293b; border-radius: 50px; padding: 10px 20px; border: 1px solid rgba(255,255,255,0.1);">
+            <i class="bi bi-bug-fill text-warning"></i>
+            <span class="fw-bold small">Preview Certificate (Test)</span>
+        </a>
+    </div>
+    @endif
+
     @include('partials.footer-after-login')
 
     {{-- /* Script - Library Chart.js untuk Visualisasi Data */ --}}

@@ -288,7 +288,23 @@
         <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
     </div>
 
-@if(!isset($is_preview) || !$is_preview)
+    @if(isset($is_preview) && $is_preview)
+    <script>
+        function adjustScale() {
+            const cert = document.querySelector('.certificate-page');
+            if (!cert) return;
+            // 29.7cm at 96dpi is ~1123px
+            const baseWidth = 1123;
+            const currentWidth = window.innerWidth;
+            const scale = currentWidth / baseWidth;
+            cert.style.setProperty('--cert-scale', scale);
+            // Also adjust body height to prevent scrolling if possible
+            document.body.style.overflow = 'hidden';
+        }
+        window.addEventListener('resize', adjustScale);
+        window.addEventListener('load', adjustScale);
+        setTimeout(adjustScale, 100);
+    </script>
+    @endif
 </body>
 </html>
-@endif

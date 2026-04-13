@@ -12,6 +12,21 @@ use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Public\PublicEventController;
 use App\Http\Controllers\Public\AuthController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Models\Enrollment;
+
+// Debug route for testing certificate view
+Route::middleware(['auth'])->get('/debug/latest-certificate', function() {
+    $enrollment = Enrollment::where('user_id', auth()->id())
+        ->where('status', 'completed')
+        ->latest()
+        ->first();
+    if (!$enrollment) {
+        $enrollment = Enrollment::where('user_id', auth()->id())->first();
+    }
+    if (!$enrollment) return "No enrollment found for current user. Please enroll in a course first.";
+    return redirect()->route('course.rating.success', $enrollment->course_id);
+})->name('debug.latest-certificate');
+
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\User\UserModuleController;
@@ -339,6 +354,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CRM\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CRM\CertificateController::class, 'download'])->name('certificates.download');
     Route::get('/courses/{course}/certificate/{enrollment}/download', [\App\Http\Controllers\CRM\CertificateController::class, 'downloadCourse'])->name('course.certificates.download');
+    Route::get('/courses/{course}/certificate/{enrollment}/preview', [\App\Http\Controllers\CRM\CertificateController::class, 'previewCourse'])->name('course.certificates.preview');
 
     // User profile
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
@@ -449,6 +465,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/admin/finance', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('admin.finance.index');
+        Route::post('/admin/finance/expense', [\App\Http\Controllers\Admin\FinanceController::class, 'storeExpense'])->name('admin.finance.store-expense');
+        Route::post('/admin/finance/trainer-payment', [\App\Http\Controllers\Admin\FinanceController::class, 'storeTrainerPayment'])->name('admin.finance.store-trainer-payment');
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');

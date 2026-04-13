@@ -232,19 +232,16 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     color: #fff !important; /* Force global text color to white */
 }
 
-/* Fix Tailwind Conflict for Bootstrap Collapse */
+/* Fix Tailwind/Global Conflict for Bootstrap Collapse */
 .premium-nav .collapse.navbar-collapse {
-    display: none; /* Default Bootstrap behavior */
     visibility: visible !important;
 }
 
-.premium-nav .collapse.navbar-collapse.show {
-    display: block !important;
-}
-
+/* Ensure Desktop Layout */
 @media (min-width: 992px) {
     .premium-nav .collapse.navbar-collapse {
         display: flex !important;
+        flex-basis: auto;
     }
 }
 

@@ -337,9 +337,32 @@ class CertificateController extends Controller
         $filename = 'Sertifikat_Course_'.Str::slug($course->name).'_'.Str::slug($enrollment->user->name).'.pdf';
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => ($request->boolean('inline') ? 'inline' : 'attachment').'; filename="'.$filename.'"',
+            'Content-Disposition' => (request()->boolean('inline') ? 'inline' : 'attachment').'; filename="'.$filename.'"',
         ]);
     }
+
+    public function previewCourse(Course $course, $enrollment)
+    {
+        if(!($enrollment instanceof Enrollment)) {
+            $enrollment = Enrollment::with('user', 'course')->findOrFail($enrollment);
+        }
+        if($enrollment->course_id !== $course->id) abort(404);
+        
+        $this->authorizeAccessCourse($course, $enrollment);
+        
+        if(!$enrollment->certificate_number) {
+            $enrollment->update([
+                'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
+                'certificate_issued_at' => now(),
+            ]);
+        }
+        
+        $data = $this->getCertificateDataCourse($course, $enrollment->fresh());
+        $data['is_preview'] = true;
+        
+        return view('courses.certificate-pdf', $data);
+    }
+
 
     public function generateMassalCourse(Request $request, Course $course)
     {

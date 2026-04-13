@@ -1034,8 +1034,14 @@ class TrainerController extends Controller
         $payments = (clone $baseQuery)
             ->latest('created_at')
             ->paginate(10);
+            
+        // Fetch Trainer Payouts (Gaji)
+        $payouts = \App\Models\TrainerPayment::where('trainer_id', $trainerId)
+            ->latest('year')
+            ->latest('month')
+            ->get();
 
-        return view('trainer.finance', compact('totalEarned', 'payments'));
+        return view('trainer.finance', compact('totalEarned', 'payments', 'payouts'));
     }
 
     public function show()
