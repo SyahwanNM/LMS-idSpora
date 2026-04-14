@@ -137,10 +137,13 @@ class CourseManualPaymentController extends Controller
             $referralCode = null;
         }
 
+        if ($referralCode !== null && $referralCode !== '' && $user->referral_code && strcasecmp($referralCode, (string) $user->referral_code) === 0) {
+            return redirect()->back()->withInput()->with('error', 'Kode referral tidak boleh menggunakan kode milik sendiri.');
+        }
+
         $referrer = $this->resolveValidReferrer($user, $referralCode);
-        if (!$referrer) {
-            // Block self-code silently (no discount) for safety.
-            $referralCode = null;
+        if ($referralCode !== null && $referralCode !== '' && !$referrer) {
+            return redirect()->back()->withInput()->with('error', 'Kode referral tidak valid.');
         }
 
         $baseAmount = (float) ($course->price ?? 0);

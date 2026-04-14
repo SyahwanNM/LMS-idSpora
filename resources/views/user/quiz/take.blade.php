@@ -76,19 +76,6 @@
         </div>
 
         <div class="box_kuis_kanan">
-            <p class="waktu_kuis" id="quizTimer">--:--:--</p>
-            <div class="quiz-sidebar-heading" style="margin-top: 12px;">Questions</div>
-            <div class="nomor_kuis" style="margin-bottom: 16px;">
-                @foreach($questions as $idx => $q)
-                    @php
-                        $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
-                        $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
-                        $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
-                    @endphp
-                    <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
-                @endforeach
-            </div>
-
             <div class="quiz-title-row" style="margin-top: 6px;">
                 <div class="quiz-title-left">
                     <button type="button" class="quiz-modules-open d-none" id="openModulesBtn" aria-label="Buka daftar modul">
@@ -101,6 +88,20 @@
             </div>
 
             <div class="box_soal_kuis">
+                <div id="quizHeaderBlock" style="margin-bottom:12px;">
+                    <p class="waktu_kuis" id="quizTimer">--:--:--</p>
+                    <div class="quiz-sidebar-heading" style="margin-top: 8px; margin-bottom:6px; font-weight:600;">Questions</div>
+                    <div class="nomor_kuis" style="margin-bottom: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+                        @foreach($questions as $idx => $q)
+                            @php
+                                $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
+                                $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
+                                $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
+                            @endphp
+                            <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
+                        @endforeach
+                    </div>
+                </div>
                 <h2 class="pertanyaan_kuis">{{ $currentQuestionIndex + 1 }}. {{ $currentQuestion->question }}</h2>
 
                 <form id="quizAnswerForm" action="{{ route('user.quiz.answer', [$course, $module, $attempt]) }}" method="POST">

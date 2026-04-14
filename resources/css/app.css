@@ -410,6 +410,22 @@
     margin-left: auto;
     color: #6c6c6c;
 }
+.view-biodata-trainer {
+    display: flex;
+    width: 100%;
+    margin-top: 15px;
+}
+.view-biodata-trainer button {
+    width: 100%;
+    padding: 12px 0;
+    border: 1px solid #f4c430;
+    font-weight: 600;
+    color: black;
+    border-radius: 0px 0px 0px 0px;
+}
+.view-biodata-trainer button:hover {
+    background-color: gray;
+}
 
 .course-detail-page .enroll {
     background-color: #f4c430;
@@ -2860,7 +2876,6 @@ label {
     margin-left: 75px;
     margin-top: 25px;
     position: relative;
-    /* anchor for absolute elements */
 }
 
 .progress-box h5 {
@@ -2870,7 +2885,6 @@ label {
 }
 
 .progress-line {
-    /* Hidden in favor of per-step connectors to ensure the bar touches circles */
     display: none;
 }
 
@@ -2885,18 +2899,12 @@ label {
     content: "";
     position: absolute;
     top: 20px;
-    /* vertical center of 40px circles */
     left: 12.5%;
-    /* from center of first step */
     right: 12.5%;
-    /* to center of last step */
     height: 6px;
     background-color: #f4c430;
-    /* yellow bar */
     z-index: 1;
-    /* behind circles */
     transform: translateY(-3px);
-    /* fine-tune alignment */
 }
 
 .step {
@@ -2938,7 +2946,6 @@ label {
     margin-left: 0;
 }
 
-/* Connector lines between steps that are completed */
 .progress-steps .step {
     position: relative;
 }
@@ -2947,18 +2954,13 @@ label {
     content: "";
     position: absolute;
     top: 20px;
-    /* vertical center of 40px circle */
     left: 50%;
-    /* start from center of this step */
     width: 100%;
-    /* reach center of next step */
     height: 6px;
     background-color: #f4c430;
     z-index: 1;
-    /* below circles */
     display: none;
     transform: translateY(-3px);
-    /* fine-tune alignment */
 }
 
 .progress-steps .step.active::after {
@@ -3016,11 +3018,23 @@ label {
 .line-info {
     margin-top: 10px;
 }
-
 .info-box {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.event-speaker-value{
+    border: solid 2px #f4c430;
+    color: rgb(0, 0, 0);
+    font-size: small;
+    text-align: right;
+}
+.event-speaker-value:hover{
+    background-color: rgb(32, 5, 58);
+    color: white;
+    font-size: small;
+    text-align: right;
 }
 
 .info-item {
@@ -3475,7 +3489,6 @@ textarea {
     width: 250px;
 }
 
-/* Admin: search input with icon (Manage User) */
 .box-title-add .box-serach-users {
     margin-left: auto;
     position: relative;
@@ -3771,7 +3784,7 @@ input[type="time"] {
     font-size: smaller;
 }
 
-/*REPORTS-ADMIN-EVENT*/
+/*REPORTS ADMIN EVENT*/
 .box-report {
     padding: 30px;
 }
@@ -4006,16 +4019,49 @@ input[type="time"] {
     color: white;
     border: none;
     font-size: 12px;
-    margin: 5px;
+    margin-left: 140px;
     border-radius: 10px;
     padding: 5px;
+    width: 40px;
+}
+.status-lengkap{
+    background-color: green;
+    color: white;
+    border: none;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 10px;
+    padding: 5px;
+    width: 70px;
+}
+.status-kurang-lengkap{
+    background-color: #dbd517;
+    color: rgb(0, 0, 0);
+    border: none;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 10px;
+    padding: 5px;
+    width: 100px;
+}
+.status-tidak-lengkap{
+    background-color: #cc0606;
+    color: white;
+    border: none;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 10px;
+    padding: 5px;
+    width: 120px;
 }
 
-.add-dokumen:hover {
-    background-color: #150651;
+/*EDIT EVENT*/
+.radio-group-reseller-event{
+    display: flex;
+    gap: 20px;
 }
 
-/*MODAL PENDAPATAN*/
+/*MODAL PENDAPATAN EVENT*/
 .modal-view-pendapatan {
     width: 100%;
     margin-top: 80px;
@@ -4089,7 +4135,7 @@ input[type="time"] {
     font-weight: 800;
 }
 
-/*MODAL PERTUMBUHAN*/
+/*MODAL PERTUMBUHAN EVENT*/
 .modal-view-pertumbuhan {
     width: 30%;
     margin-left: 530px;
@@ -4129,7 +4175,7 @@ input[type="time"] {
     margin-top: -30px;
 }
 
-/*MODAL VIEW OPERASIONAL*/
+/*MODAL VIEW OPERASIONAL EVENT*/
 .modal-view-operasional {
     width: 50%;
     margin-left: 380px;

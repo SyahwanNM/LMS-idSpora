@@ -210,7 +210,7 @@
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
-                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
                                             <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-action-icon"
@@ -566,18 +566,16 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Reseller Event</label>
                                     
-                                    <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', 0) ? 1 : 0 }}">
-                                    <div class="btn-group w-100" role="group" aria-label="Reseller Event">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-                                            <label class="form-check-label" for="flexRadioDefault1">Ya</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-yes" value="1" {{ old('is_reseller_event', 0) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="reseller-event-yes">Ya</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-no" value="0" {{ old('is_reseller_event', 0) ? '' : 'checked' }}>
+                                                <label class="form-check-label" for="reseller-event-no">Tidak</label>
+                                            </div>
                                         </div>
-                                        <div class="form-check" style="margin-left: 30px;">
-                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
-                                            <label class="form-check-label" for="flexRadioDefault2">Tidak</label>
-                                        </div>
-                                
-                                    </div>
                                     <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
                                 </div>
                                 <!-- Jenis Acara -->
@@ -616,7 +614,7 @@
                                 <div class="mb-3">
                                     <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
                                      <input type="date" name="event_date" id="tanggal" class="form-control" required
-                                         value="{{ old('event_date') }}" min="{{ date('Y-m-d') }}">
+                                         value="{{ old('event_date') }}">
                                      <div class="form-text">Pilih tanggal pelaksanaan event.</div>
                                 </div>
                                 <div class="mb-3">
@@ -1374,32 +1372,7 @@
         // Apply to all per-event document modals
         document.querySelectorAll('.modal-upload-operasional').forEach(m => enableDraggableModal(m));
 
-        // Reseller Event toggle (Yes/No)
-        (function(){
-            const input = document.getElementById('is_reseller_event');
-            const btnYes = document.getElementById('reseller-event-yes');
-            const btnNo = document.getElementById('reseller-event-no');
-
-            if (!input || (!btnYes && !btnNo)) return;
-
-            function setReseller(val){
-                const v = val ? '1' : '0';
-                input.value = v;
-
-                if (btnYes) {
-                    btnYes.classList.toggle('btn-primary', v === '1');
-                    btnYes.classList.toggle('btn-outline-secondary', v !== '1');
-                }
-                if (btnNo) {
-                    btnNo.classList.toggle('btn-primary', v === '0');
-                    btnNo.classList.toggle('btn-outline-secondary', v !== '0');
-                }
-            }
-
-            btnYes && btnYes.addEventListener('click', () => setReseller(true));
-            btnNo && btnNo.addEventListener('click', () => setReseller(false));
-            setReseller((input.value || '0') === '1');
-        })();
+        // Reseller Event: radios submit as `is_reseller_event` directly; no JS sync required.
 
         // Speakers (dynamic) - sourced from Trainer API; first required, others optional
         const speakersContainer = document.getElementById('speakersContainer');
@@ -2323,6 +2296,527 @@ document.addEventListener('DOMContentLoaded', function(){
         syncBtn();
     } catch(e) {
         // swallow - never block the page
+    }
+});
+</script>
+<script>
+function initEditEventLocationAndBenefits(modalEl){
+    if(!modalEl || modalEl.dataset.locationBenefitsInitialized === '1') return;
+    modalEl.dataset.locationBenefitsInitialized = '1';
+
+    const eventDateInput = modalEl.querySelector('#tanggal');
+    const discountUntilInput = modalEl.querySelector('#discount_until');
+    const locationModeEl = modalEl.querySelector('#lokasi');
+    const placeNameGroup = modalEl.querySelector('#placeNameGroup');
+    const placeNameInput = modalEl.querySelector('#place_name');
+    const mapsGroup = modalEl.querySelector('#mapsGroup');
+    const zoomGroup = modalEl.querySelector('#zoomGroup');
+    const mapsInput = modalEl.querySelector('#maps');
+    const mapsPreview = modalEl.querySelector('#mapsPreview');
+    const btnResolveMaps = modalEl.querySelector('#btnResolveMaps');
+    const zoomInput = modalEl.querySelector('#zoom');
+    const mapsRequiredStar = modalEl.querySelector('#mapsRequiredStar');
+    const zoomRequiredStar = modalEl.querySelector('#zoomRequiredStar');
+    const placeNameRequiredStar = modalEl.querySelector('#placeNameRequiredStar');
+    const latitudeInput = modalEl.querySelector('#latitude');
+    const longitudeInput = modalEl.querySelector('#longitude');
+    const form = modalEl.querySelector('#editEventForm');
+    const submitBtn = modalEl.querySelector('#editSubmitBtn');
+    const benefitsContainer = modalEl.querySelector('#benefitsContainer');
+    const addBenefitBtn = modalEl.querySelector('#addBenefitRow');
+    const benefitHidden = modalEl.querySelector('#benefit');
+    const resolveMapsUrl = @json(route('admin.maps.resolve'));
+    const csrfToken = @json(csrf_token());
+    let leafletMap = null;
+    let leafletMarker = null;
+    let eventDateFp = null;
+    let discountUntilFp = null;
+
+    if(eventDateInput){
+        eventDateInput.removeAttribute('min');
+    }
+
+    if(window.flatpickr){
+        if(eventDateInput && !eventDateInput._flatpickr){
+            eventDateFp = flatpickr(eventDateInput, {
+                locale: 'id',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'l, d F Y',
+                disableMobile: true,
+                allowInput: true,
+                defaultDate: eventDateInput.value || null
+            });
+        }else if(eventDateInput?._flatpickr){
+            eventDateFp = eventDateInput._flatpickr;
+        }
+
+        if(discountUntilInput && !discountUntilInput._flatpickr){
+            discountUntilFp = flatpickr(discountUntilInput, {
+                locale: 'id',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'l, d F Y',
+                disableMobile: true,
+                clickOpens: true
+            });
+        }else if(discountUntilInput?._flatpickr){
+            discountUntilFp = discountUntilInput._flatpickr;
+        }
+    }
+
+    function updateDiscountUntilBounds(){
+        if(!discountUntilInput || !discountUntilFp) return;
+        const dateStr = eventDateInput?.value || '';
+        if(!dateStr) return;
+
+        const eventDate = new Date(dateStr + 'T00:00:00');
+        if(isNaN(eventDate.getTime())) return;
+
+        const maxDate = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if(maxDate < today){
+            discountUntilInput.disabled = true;
+            if(discountUntilFp.altInput) discountUntilFp.altInput.disabled = true;
+            discountUntilInput.value = '';
+            discountUntilFp.clear();
+            return;
+        }
+
+        discountUntilFp.set('minDate', today);
+        discountUntilFp.set('maxDate', maxDate);
+
+        const current = discountUntilInput.value;
+        if(current){
+            const currentDate = new Date(current + 'T00:00:00');
+            if(currentDate >= eventDate){
+                discountUntilFp.clear();
+                discountUntilInput.value = '';
+            }
+        }
+    }
+
+    function parseLatLngFromUrl(url){
+        if(!url) return null;
+        try{
+            const decoded = decodeURIComponent(url);
+            let match = decoded.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            match = decoded.match(/[?&]q=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            match = decoded.match(/[?&]ll=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            match = decoded.match(/[?&]center=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            const m3d = decoded.match(/!3d(-?\d+\.\d+)/);
+            const m4d = decoded.match(/!4d(-?\d+\.\d+)/);
+            if(m3d && m4d) return { lat: parseFloat(m3d[1]), lng: parseFloat(m4d[1]) };
+            match = decoded.trim().match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        }catch(_){}
+        return null;
+    }
+
+    function ensureMap(){
+        if(!mapsPreview || !window.L) return;
+        if(!leafletMap){
+            leafletMap = L.map(mapsPreview).setView([-6.200, 106.816], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(leafletMap);
+        }
+        setTimeout(function(){ leafletMap.invalidateSize(); }, 50);
+    }
+
+    function showMap(lat, lng){
+        if(latitudeInput) latitudeInput.value = (+lat).toFixed(7);
+        if(longitudeInput) longitudeInput.value = (+lng).toFixed(7);
+        if(!mapsPreview || !window.L) return;
+        mapsPreview.style.display = 'block';
+        ensureMap();
+        if(!leafletMap) return;
+        const position = [lat, lng];
+        leafletMap.setView(position, 14);
+        if(leafletMarker){
+            leafletMarker.setLatLng(position);
+        }else{
+            leafletMarker = L.marker(position).addTo(leafletMap);
+        }
+    }
+
+    function tryRenderMap(){
+        const value = mapsInput?.value || '';
+        const parsed = parseLatLngFromUrl(value);
+        if(parsed){
+            showMap(parsed.lat, parsed.lng);
+            return;
+        }
+        const lat = latitudeInput ? parseFloat(String(latitudeInput.value || '')) : NaN;
+        const lng = longitudeInput ? parseFloat(String(longitudeInput.value || '')) : NaN;
+        if(Number.isFinite(lat) && Number.isFinite(lng)){
+            showMap(lat, lng);
+        }else if(mapsPreview){
+            mapsPreview.style.display = 'none';
+        }
+    }
+
+    function syncMapsUI(){
+        const hasMaps = !!String(mapsInput?.value || '').trim();
+        if(btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
+        if(!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
+    }
+
+    function setResolveMapsLoading(isLoading){
+        if(!btnResolveMaps) return;
+        if(isLoading){
+            if(!btnResolveMaps.dataset.originalHtml){
+                btnResolveMaps.dataset.originalHtml = btnResolveMaps.innerHTML;
+            }
+            btnResolveMaps.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memuat...';
+            btnResolveMaps.setAttribute('aria-busy', 'true');
+        }else{
+            btnResolveMaps.innerHTML = btnResolveMaps.dataset.originalHtml || 'Deteksi';
+            btnResolveMaps.removeAttribute('aria-busy');
+        }
+    }
+
+    function showPlaceNameIfNeeded(forceShow = false){
+        if(!placeNameGroup || !placeNameInput) return;
+        const mode = String(locationModeEl?.value || '').toLowerCase();
+        const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+        const hasValue = String(placeNameInput.value || '').trim() !== '';
+        const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+        placeNameGroup.classList.toggle('d-none', !shouldShow);
+        placeNameInput.required = shouldShow;
+        if(placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
+    }
+
+    function syncLocationModeUI(){
+        const mode = String(locationModeEl?.value || '').toLowerCase();
+        const isOffline = mode === 'offline';
+        const isOnline = mode === 'online';
+        const isHybrid = mode === 'hybrid';
+
+        if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+        if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+        if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+        if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+        if(mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+        if(zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
+
+        showPlaceNameIfNeeded(false);
+
+        if(isOnline){
+            if(mapsInput) mapsInput.value = '';
+            if(latitudeInput) latitudeInput.value = '';
+            if(longitudeInput) longitudeInput.value = '';
+            if(mapsPreview) mapsPreview.style.display = 'none';
+            if(btnResolveMaps) btnResolveMaps.disabled = true;
+        }
+        if(isOffline && zoomInput){
+            zoomInput.value = '';
+        }
+
+        syncMapsUI();
+        if(typeof window.updateSubmitState === 'function') window.updateSubmitState();
+    }
+
+    mapsInput?.addEventListener('input', function(){ tryRenderMap(); syncMapsUI(); });
+    mapsInput?.addEventListener('change', function(){ tryRenderMap(); syncMapsUI(); });
+    mapsInput?.addEventListener('blur', function(){ tryRenderMap(); syncMapsUI(); });
+    eventDateInput?.addEventListener('input', updateDiscountUntilBounds);
+    eventDateInput?.addEventListener('change', updateDiscountUntilBounds);
+    locationModeEl?.addEventListener('change', syncLocationModeUI);
+    btnResolveMaps?.addEventListener('click', async function(){
+        showPlaceNameIfNeeded(true);
+        if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+            placeNameInput.focus();
+        }
+
+        const url = mapsInput?.value || '';
+        if(!url){
+            alert('Masukkan link Google Maps terlebih dahulu.');
+            return;
+        }
+
+        try{
+            setResolveMapsLoading(true);
+            btnResolveMaps.disabled = true;
+            const response = await fetch(resolveMapsUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ url })
+            });
+            const data = await response.json();
+            if(response.ok && data.lat && data.lng){
+                showMap(data.lat, data.lng);
+            }else{
+                alert(data.message || 'Koordinat tidak ditemukan.');
+            }
+        }catch(_){
+            alert('Gagal mendeteksi koordinat.');
+        }finally{
+            setResolveMapsLoading(false);
+            btnResolveMaps.disabled = false;
+            syncMapsUI();
+        }
+    });
+
+    function renderBenefitRow(prefill = ''){
+        if(!benefitsContainer) return;
+        const row = document.createElement('div');
+        row.className = 'input-group mb-2 benefit-row';
+        const safeValue = String(prefill || '').replace(/"/g, '&quot;');
+        row.innerHTML = `<input type="text" class="form-control" name="benefits[]" placeholder="Tuliskan benefit" value="${safeValue}"><button type="button" class="btn btn-outline-danger" data-action="remove-benefit" title="Hapus"><i class="bi bi-x"></i></button>`;
+        benefitsContainer.appendChild(row);
+    }
+
+    benefitsContainer?.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="remove-benefit"]');
+        if(btn){
+            btn.closest('.benefit-row')?.remove();
+        }
+    });
+
+    addBenefitBtn?.addEventListener('click', function(){
+        renderBenefitRow();
+    });
+
+    if(benefitsContainer){
+        const raw = (benefitHidden?.value || '').trim();
+        const parts = raw ? (raw.includes('|') ? raw.split('|') : raw.split(/\r?\n/)).map(function(item){
+            return (item || '').trim();
+        }).filter(Boolean) : [];
+        if(parts.length){
+            parts.forEach(function(item){ renderBenefitRow(item); });
+        }else{
+            renderBenefitRow();
+        }
+    }
+
+    form?.addEventListener('submit', function(){
+        if(benefitHidden && benefitsContainer){
+            const items = Array.from(benefitsContainer.querySelectorAll('input[name="benefits[]"]'))
+                .map(function(input){ return (input.value || '').trim(); })
+                .filter(Boolean);
+            benefitHidden.value = items.join(' | ');
+        }
+    });
+
+    if(submitBtn && form && submitBtn.dataset.boundEditSubmit !== '1'){
+        submitBtn.dataset.boundEditSubmit = '1';
+        submitBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if(typeof form.requestSubmit === 'function'){
+                form.requestSubmit();
+            }else{
+                form.submit();
+            }
+        });
+    }
+
+    tryRenderMap();
+    syncMapsUI();
+    syncLocationModeUI();
+    updateDiscountUntilBounds();
+}
+
+function initEditEventDynamicTables(modalEl){
+    if(!modalEl || modalEl.dataset.dynamicTablesInitialized === '1') return;
+    modalEl.dataset.dynamicTablesInitialized = '1';
+
+    const scheduleTableBody = modalEl.querySelector('#scheduleTable tbody');
+    const addScheduleBtn = modalEl.querySelector('#addScheduleRow');
+    let scheduleIndex = scheduleTableBody ? scheduleTableBody.querySelectorAll('tr').length : 0;
+
+    function createScheduleRow(idx){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td>
+            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td>
+            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td>
+            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus">
+                    <i class="bi bi-x"></i>
+                </button>
+            </td>`;
+        return tr;
+    }
+
+    function addScheduleRow(){
+        if(!scheduleTableBody) return;
+        scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++));
+    }
+
+    addScheduleBtn?.addEventListener('click', function(e){
+        e.preventDefault();
+        addScheduleRow();
+    });
+
+    scheduleTableBody?.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="remove"]');
+        if(btn){
+            btn.closest('tr')?.remove();
+        }
+    });
+
+    if(scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0){
+        addScheduleRow();
+    }
+
+    const expensesTableBody = modalEl.querySelector('#expensesTable tbody');
+    const addExpenseBtn = modalEl.querySelector('#addExpenseRow');
+    const expensesGrandTotalEl = modalEl.querySelector('#expensesGrandTotal');
+    let expenseIndex = expensesTableBody ? expensesTableBody.querySelectorAll('tr').length : 0;
+
+    function formatRupiah(value){
+        const n = Math.max(0, Math.floor(Number(value) || 0));
+        return 'Rp' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function clampNonNegativeNumberInput(input){
+        if(!input) return;
+        input.addEventListener('keydown', function(e){
+            if(e.key === '-' || e.key === 'Subtract' || e.keyCode === 189){
+                e.preventDefault();
+            }
+        });
+        input.addEventListener('input', function(){
+            if(input.value === '') return;
+            let v = parseFloat(input.value);
+            if(isNaN(v) || v < 0) v = 0;
+            input.value = Math.floor(v).toString();
+        });
+    }
+
+    function recalcExpensesGrandTotal(){
+        if(!expensesTableBody || !expensesGrandTotalEl) return;
+        let total = 0;
+        expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(function(input){
+            const value = parseFloat(input.value || '0');
+            if(!isNaN(value)) total += value;
+        });
+        expensesGrandTotalEl.textContent = formatRupiah(total);
+    }
+
+    function recalcExpenseRow(tr){
+        if(!tr) return;
+        const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0');
+        const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0');
+        const totalInput = tr.querySelector('input[data-expense-total]');
+        const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit);
+        if(totalInput) totalInput.value = Math.max(0, Math.round(total));
+        recalcExpensesGrandTotal();
+    }
+
+    function wireExpenseRow(tr){
+        if(!tr || tr.dataset.expenseRowInitialized === '1') return;
+        tr.dataset.expenseRowInitialized = '1';
+
+        const qtyInput = tr.querySelector('input[data-expense-qty]');
+        const unitInput = tr.querySelector('input[data-expense-unit]');
+
+        clampNonNegativeNumberInput(qtyInput);
+        clampNonNegativeNumberInput(unitInput);
+
+        qtyInput?.addEventListener('input', function(){ recalcExpenseRow(tr); });
+        unitInput?.addEventListener('input', function(){ recalcExpenseRow(tr); });
+    }
+
+    function createExpenseRow(idx){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td>
+            <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td>
+            <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td>
+            <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </td>`;
+        wireExpenseRow(tr);
+        return tr;
+    }
+
+    function addExpenseRow(){
+        if(!expensesTableBody) return;
+        const row = createExpenseRow(expenseIndex++);
+        expensesTableBody.appendChild(row);
+        recalcExpenseRow(row);
+    }
+
+    addExpenseBtn?.addEventListener('click', function(e){
+        e.preventDefault();
+        addExpenseRow();
+    });
+
+    expensesTableBody?.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="remove-expense"]');
+        if(btn){
+            btn.closest('tr')?.remove();
+            recalcExpensesGrandTotal();
+        }
+    });
+
+    if(expensesTableBody){
+        const rows = Array.from(expensesTableBody.querySelectorAll('tr'));
+        if(rows.length === 0){
+            addExpenseRow();
+        }else{
+            rows.forEach(function(row){
+                wireExpenseRow(row);
+                recalcExpenseRow(row);
+            });
+            recalcExpensesGrandTotal();
+        }
+    }
+}
+
+// Edit button: load edit modal via AJAX, fallback to full navigation
+document.addEventListener('click', async function(e){
+    const btn = e.target.closest('.edit-event-btn');
+    if(!btn) return;
+    const url = btn.getAttribute('data-edit-url') || btn.href;
+    // allow open-in-new-tab
+    if (e.button === 1 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    if(!url) return;
+    try{
+        const existing = document.getElementById('editEventModal');
+        if(existing) existing.remove();
+        const res = await fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
+        if(!res.ok){ window.location.href = url; return; }
+        const text = await res.text();
+        const tmp = document.createElement('div'); tmp.innerHTML = text;
+        const modalEl = tmp.querySelector('#editEventModal');
+        if(!modalEl){ window.location.href = url; return; }
+        // Inject forced label color styles into the modal (AJAX responses may lack page-level styles)
+        try{
+            const css = `#editEventModal #editEventForm label,#editEventModal #editEventForm .form-label,#editEventModal #editEventForm small,#editEventModal #editEventForm .form-text,#editEventModal #editEventForm .input-group-text{color:#000!important} #editEventModal ::placeholder{color:#000!important;opacity:1!important}`;
+            const styleEl = document.createElement('style'); styleEl.type = 'text/css'; styleEl.appendChild(document.createTextNode(css));
+            modalEl.insertBefore(styleEl, modalEl.firstChild);
+        }catch(e){}
+        document.body.appendChild(modalEl);
+        initEditEventLocationAndBenefits(modalEl);
+        initEditEventDynamicTables(modalEl);
+        if(typeof enableDraggableModal === 'function') try{ enableDraggableModal(modalEl); }catch(_){}
+        if(window.bootstrap && typeof bootstrap.Modal === 'function'){
+            const m = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+            m.show();
+        } else {
+            modalEl.classList.add('show'); modalEl.style.display = 'block';
+        }
+    } catch(err){
+        console.error('Edit modal load failed', err);
+        window.location.href = url;
     }
 });
 </script>

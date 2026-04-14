@@ -109,4 +109,41 @@ class PublicCourseController extends Controller
 
             return view('course.index', compact('courses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments'));
     }
+    public function toggleSave(Request $request, Course $course)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $isSaved = $user->savedCourses()->where('course_id', $course->id)->exists();
+
+        if ($isSaved) {
+            $user->savedCourses()->detach($course->id);
+            $action = 'Unsave Course';
+            $description = 'Menghapus course dari simpanan: ' . $course->name;
+            $saved = false;
+        } else {
+            $user->savedCourses()->attach($course->id);
+            $action = 'Save Course';
+            $description = 'Menyimpan course: ' . $course->name;
+            $saved = true;
+        }
+
+        \App\Models\ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => $action,
+            'description' => $description
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'saved' => $saved,
+                'message' => $saved ? 'Course berhasil disimpan' : 'Course dihapus dari simpanan'
+            ]);
+        }
+
+        return back()->with('success', $saved ? 'Course berhasil disimpan' : 'Course dihapus dari simpanan');
+    }
 }

@@ -59,6 +59,7 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
+        'is_reseller_event',
     ];
 
     protected $casts = [
@@ -78,6 +79,7 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'is_reseller_event' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
     ];

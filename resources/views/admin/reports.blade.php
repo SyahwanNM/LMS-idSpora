@@ -665,6 +665,7 @@
                                 <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Tanggal</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Jenis Kegiatan</th>
+                                <th style="background-color: #E4E4E6;" scope="col">Progress Dokumen</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Status Kelengkapan Dokumen</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Aksi</th>
                             </tr>
@@ -700,7 +701,7 @@
                                     <td>{{ $row['date'] ?? '-' }}</td>
                                     <td>{{ $row['type'] }}</td>
                                     <td>
-                                        <button class="add-dokumen" data-bs-toggle="modal" data-bs-target="#uploadOperasionalModal" 
+                                        <h3 class="add-dokumen" 
                                             data-bs-id="{{ $row['id'] }}"
                                             data-vbg="{{ $row['vbg_url'] ?? '' }}"
                                             data-cert="{{ $row['cert_url'] ?? '' }}"
@@ -709,7 +710,16 @@
                                             data-qr-img="{{ $row['qr_image_url'] ?? '' }}"
                                         >
                                             {{ $row['documents_percent'] }}%
-                                        </button>
+                                        </h3>
+                                    </td>
+                                    <td>
+                                        @if($row['documents_percent'] == 100)
+                                            <span class="status-lengkap">Lengkap</span>
+                                        @elseif($row['documents_percent'] > 0)
+                                            <span class="status-kurang-lengkap">Kurang Lengkap</span>
+                                        @else
+                                            <span class="status-tidak-lengkap">Tidak Lengkap</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @php
@@ -873,31 +883,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-upload-operasional modal fade" id="uploadOperasionalModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="content-operasional-view modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Status Dokumen Detail</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Tinjau status semua dokumen terkait acara dan administrasi.</p>
-                    <form id="formUploadOperasional" action="" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="box-up mb-3">
-                            <label for="vbg" class="form-label">Virtual Background</label>
-                            <div id="preview-vbg" class="mb-2"></div>
-                            <input type="file" class="form-control" id="vbg" name="virtual_background">
-                        </div>
-                        <div class="modal-footer px-0 pb-0">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Save changes</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+   
 </div>
 @endsection
 @section('scripts')

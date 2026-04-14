@@ -382,19 +382,7 @@
             {{-- Materi: PDF + Video jadi satu kesatuan. Kuis: tidak menampilkan media kosong. --}}
             @if(!$isQuiz)
                 <div class="modul_media_card">
-                    @if($showHtmlContent)
-                        {{-- Trainer rich text HTML content --}}
-                        <div class="trainer-html-content" style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; max-height: 600px; overflow-y: auto;">
-                            <div class="wysiwyg-output">
-                                {!! $materialDescription !!}
-                            </div>
-                        </div>
-                    @elseif($hasPdfFile)
-                        <iframe class="video_course" width="560" height="315" src="{{ $pdfUrl }}" title="PDF" frameborder="0"></iframe>
-                    @endif
-
                     @if($videoModule && $vidUrl)
-                        <div style="margin-top:12px;"></div>
                         @if($vidIsHttp)
                             <iframe class="video_course" width="560" height="315" src="{{ $videoModule->content_url }}" title="Video" frameborder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -406,6 +394,23 @@
                         @endif
                     @endif
 
+                    @if($showHtmlContent)
+                        @if($videoModule && $vidUrl)
+                            <div style="margin-top:12px;"></div>
+                        @endif
+                        {{-- Trainer rich text HTML content --}}
+                        <div class="trainer-html-content" style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; max-height: 600px; overflow-y: auto;">
+                            <div class="wysiwyg-output">
+                                {!! $materialDescription !!}
+                            </div>
+                        </div>
+                    @elseif($hasPdfFile)
+                        @if($videoModule && $vidUrl)
+                            <div style="margin-top:12px;"></div>
+                        @endif
+                        <iframe class="video_course" width="560" height="315" src="{{ $pdfUrl }}" title="PDF" frameborder="0"></iframe>
+                    @endif
+
                     @if(!$showHtmlContent && !$hasPdfFile && (!$videoModule || !$vidUrl))
                         <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
                     @endif
@@ -414,25 +419,22 @@
             <h2 class="judul_modul">{{ $activeDisplay['title'] ?? ($cm->title ?? 'Gambaran Umum') }}</h2>
 
             @if(!$isQuiz)
-                <div class="box_luar_deskripsi_modul">
-                    <div class="box_deskripsi_modul">
-                        @if($hasRichHtml && !$showHtmlContent)
-                            {{-- HTML content exists but PDF file also exists, show as secondary content --}}
-                            <div class="deskripsi_modul wysiwyg-output">
-                                {!! $materialDescription !!}
-                            </div>
-                        @elseif($showHtmlContent)
-                            {{-- Description already shown above, show simple text --}}
-                            <p class="deskripsi_modul">
-                                Materi di atas disusun oleh Trainer. Silakan baca dan pelajari dengan saksama.
-                            </p>
-                        @else
-                            <p class="deskripsi_modul">
-                                {{ $materialDescription ?: 'Deskripsi modul belum tersedia.' }}
-                            </p>
-                        @endif
+                @if(!$showHtmlContent)
+                    <div class="box_luar_deskripsi_modul">
+                        <div class="box_deskripsi_modul">
+                            @if($hasRichHtml && !$showHtmlContent)
+                                {{-- HTML content exists but PDF file also exists, show as secondary content --}}
+                                <div class="deskripsi_modul wysiwyg-output">
+                                    {!! $materialDescription !!}
+                                </div>
+                            @else
+                                <p class="deskripsi_modul">
+                                    {{ $materialDescription ?: 'Deskripsi modul belum tersedia.' }}
+                                </p>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @endif
             @else
                 @php
                     $questionCount = $cm?->quizQuestions?->count() ?? 0;
@@ -551,7 +553,7 @@
                 $nextModule = null;
                 if ($modulesList && $modulesList->count() > 0) {
                     if (!$isQuiz) {
-                        // For combined Materi, skip within-group modules (pdf/video) and jump to next after the group.
+                        // For combined Materi, skip within-group modules (pdf/video) and jump to next non-quiz module after the group.
                         $candidateIds = [];
                         if (!empty($pdfModule?->id)) $candidateIds[] = (int) $pdfModule->id;
                         if (!empty($videoModule?->id)) $candidateIds[] = (int) $videoModule->id;
@@ -565,7 +567,16 @@
                         }
 
                         if ($maxIdx >= 0) {
-                            $nextModule = $modulesList->get($maxIdx + 1);
+                            $nextIdx = $maxIdx + 1;
+                            while ($modulesList->has($nextIdx)) {
+                                $candidate = $modulesList->get($nextIdx);
+                                $candidateType = strtolower(trim((string) ($candidate->type ?? '')));
+                                if ($candidateType !== 'quiz') {
+                                    $nextModule = $candidate;
+                                    break;
+                                }
+                                $nextIdx++;
+                            }
                         }
                     } else {
                         if ($cm) {
@@ -577,9 +588,7 @@
                     }
                 }
 
-                // If currently on Materi and group has Quiz, Next should go directly to that Quiz.
-                $nextToQuiz = (!$isQuiz && $quizModule);
-                $nextTarget = $nextToQuiz ? $quizModule : $nextModule;
+                $nextTarget = $nextModule;
 
                 $lockNext = ($isQuiz && auth()->check() && !$currentQuizPassed);
 

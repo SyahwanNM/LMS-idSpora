@@ -395,6 +395,9 @@ Route::middleware('auth')->group(function () {
             ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
     })->name('events.save');
 
+    // Save/unsave course
+    Route::post('/courses/{course}/save', [\App\Http\Controllers\Public\PublicCourseController::class, 'toggleSave'])->name('courses.save');
+
     // Course Rating
     Route::get('/courses/{course}/rating', [\App\Http\Controllers\User\CourseReviewController::class, 'create'])->name('course.rating');
     Route::post('/courses/{course}/rating', [\App\Http\Controllers\User\CourseReviewController::class, 'store'])->name('course.rating.store');
@@ -494,6 +497,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
         // Unpublish course (cancel publish)
         Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
+        Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
+        Route::get('/admin/courses/{course}/participants', [CourseController::class, 'participants'])->name('admin.courses.participants');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');

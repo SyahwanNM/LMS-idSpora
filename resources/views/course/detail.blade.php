@@ -34,7 +34,7 @@
   .course-hero {
     background: var(--navy);
     height: fit-content;
-    padding-top: 40px;
+    padding-top: 5px;
     padding-bottom: 20px;
   }
 
@@ -51,7 +51,7 @@
     color: var(--white);
     max-width: 1200px;
     width: 100%;
-    margin: 60px auto 0;
+    margin: 30px auto 0;
     padding: 0 20px;
   }
 
@@ -1089,7 +1089,7 @@
   
   <section class="course-hero">
     <nav aria-label="breadcrumb">
-      <div class="hero-inner" style="margin-top: 0;">
+      <div class="hero-inner" style="margin-top: 0; padding-top: 5px;">
         <div style="color:#fff; font-size:15px; font-weight:500;">
           <span><a href="{{ route('dashboard') }}" style="color:#fff; text-decoration:none;">Home</a></span>
           <span style="margin: 0 7px;">/</span>
@@ -1109,13 +1109,15 @@
         <h1>{{ $course->name }}</h1>
       </div>
       <div class="container-icon">
+        @if(($course->duration ?? 0) > 0)
         <div class="icon-time">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill"
             viewBox="0 0 20 20">
             <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
           </svg>
-          <span>{{ $course->duration ?? '-' }} Jam</span>
+          <span>{{ $course->duration }} Jam</span>
         </div>
+        @endif
         <div class="icon-attendant">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
             class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
@@ -1240,14 +1242,7 @@
         </div>
       @endif
 
-      @if(!$isPending && !$isRejected && !empty($missingMaterials))
-        <div class="alert alert-warning" role="alert" style="margin-bottom:16px;">
-          <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
-          <div style="margin-top:6px;">
-            {{ implode(', ', $missingMaterials) }} belum ada.
-          </div>
-        </div>
-      @endif
+
 
       @php
         $previewMedia = $course->media ?? null;
@@ -1539,15 +1534,6 @@
           @endif
           <hr>
           <div class="info-box">
-            <div class="time">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock"
-                style="align-items: center;" viewBox="0 0 20 20">
-                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
-              </svg>
-              <p class="date-judul">Course Duration</p>
-              <p class="date-text">{{ ($course->duration ?? 0) > 0 ? ($course->duration . ' Jam') : '-' }}</p>
-            </div>
             <div class="level">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bar-chart"
                 viewBox="0 0 20 20">
@@ -1588,7 +1574,11 @@
               <p class="sertifikat-text">{{ $certificateLabel ?? 'Include' }}</p>
             </div>
           </div>
+            <div class= "view-biodata-trainer">
+              <button class="view_trainer btn">View Trainer</button>
+            </div>
           <hr>
+          
           @php
             $canLearn = false;
             $paymentUnderReview = false;
@@ -1619,7 +1609,16 @@
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @endif
-          <button class="save">Save</button>
+          @php
+              $isSaved = auth()->check() && auth()->user()->savedCourses()->where('course_id', $course->id)->exists();
+          @endphp
+          <button class="save {{ $isSaved ? 'saved' : '' }}" 
+                  id="btn-save-course" 
+                  data-course-id="{{ $course->id }}"
+                  style="width: 100%; margin-top: 10px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: {{ $isSaved ? '#dc3545' : '#fff' }}; color: {{ $isSaved ? '#fff' : '#000' }}; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+              <i class="bi {{ $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' }} me-2"></i>
+              <span id="save-text">{{ $isSaved ? 'Saved' : 'Save' }}</span>
+          </button>
           <p class="note">Note: all course have 30-days money-back guarantee</p>
         </div>
         <hr>
@@ -1820,6 +1819,52 @@
           document.getElementById(tab.dataset.tab).classList.add("active");
         });
       });
+
+      // --- LOGIKA SAVE COURSE ---
+      const btnSaveCourse = document.getElementById('btn-save-course');
+      if (btnSaveCourse) {
+        btnSaveCourse.addEventListener('click', function() {
+          const courseId = this.dataset.courseId;
+          const saveText = document.getElementById('save-text');
+          const saveIcon = this.querySelector('i');
+
+          fetch(`/courses/${courseId}/save`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (response.status === 401) {
+              window.location.href = "{{ route('login') }}";
+              return;
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data && data.success) {
+              if (data.saved) {
+                this.classList.add('saved');
+                this.style.background = '#dc3545';
+                this.style.color = '#fff';
+                saveText.textContent = 'Saved';
+                saveIcon.classList.remove('bi-bookmark');
+                saveIcon.classList.add('bi-bookmark-fill');
+              } else {
+                this.classList.remove('saved');
+                this.style.background = '#fff';
+                this.style.color = '#000';
+                saveText.textContent = 'Save';
+                saveIcon.classList.remove('bi-bookmark-fill');
+                saveIcon.classList.add('bi-bookmark');
+              }
+            }
+          })
+          .catch(error => console.error('Error:', error));
+        });
+      }
     });
   </script>
 

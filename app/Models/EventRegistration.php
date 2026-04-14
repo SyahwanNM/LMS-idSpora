@@ -57,4 +57,9 @@ class EventRegistration extends Model
     public function event(){
         return $this->belongsTo(Event::class);
     }
+
+    public function paymentProofs()
+    {
+        return $this->hasMany(PaymentProof::class, 'event_registration_id');
+    }
 }

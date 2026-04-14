@@ -671,6 +671,9 @@ class CourseController extends Controller
 
     public function export(Request $request)
     {
+        ini_set('memory_limit', '1G');
+        set_time_limit(300);
+
         $format = (string) $request->get('format', 'pdf');
         $q = trim((string) $request->get('q', ''));
         $month = trim((string) $request->get('month', '')); // YYYY-MM
@@ -701,34 +704,40 @@ class CourseController extends Controller
                     ->whereMonth('created_at', $dt->month);
                 $periodName = 'Bulan ' . $dt->translatedFormat('F Y');
             } catch (\Throwable $e) {
-                // ignore invalid month
+                \Illuminate\Support\Facades\Log::error('Export filter error: ' . $e->getMessage());
             }
         }
 
         $courses = $coursesQuery->get();
 
-        if ($format === 'excel') {
+        if ($format === 'excel' || $format === 'csv') {
             return $this->exportCoursesToCsv($courses, $periodName, $q, $month);
         }
 
-        $options = new Options();
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', true);
-        $dompdf = new Dompdf($options);
+        try {
+            $options = new Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
 
-        $html = view('admin.courses.report_pdf', [
-            'courses' => $courses,
-            'periodName' => $periodName,
-            'q' => $q,
-        ])->render();
+            $html = view('admin.courses.report_pdf', [
+                'courses' => $courses,
+                'periodName' => $periodName,
+                'q' => $q,
+                'month' => $month,
+            ])->render();
 
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'landscape');
+            $dompdf->render();
 
-        return response($dompdf->output(), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'attachment; filename="Daftar_Course_' . now()->format('YmdHis') . '.pdf"');
+            return response($dompdf->output(), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="Daftar_Course_' . now()->format('YmdHis') . '.pdf"');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Export PDF error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membuat PDF: ' . $e->getMessage());
+        }
     }
 
     public function participants(Request $request, Course $course)
@@ -1295,11 +1304,8 @@ class CourseController extends Controller
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
             'discount_end' => $request->discount_end,
+            'expenses_json' => $expensesJson,
         ];
-
-        if ($request->exists('expenses')) {
-            $data['expenses_json'] = $expensesJson;
-        }
 
         if ($request->exists('template_id')) {
             $data['template_id'] = $template?->id;
