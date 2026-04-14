@@ -1103,7 +1103,15 @@
     <div class="title-course-hero">
       <div class="sub-title">
         <h6>{{ $course->category->name ?? '-' }}</h6>
-        <p>by idSpora</p>
+        <p>by 
+          @if($course->trainer)
+            <a href="{{ route('public.trainer-profile.show', $course->trainer->id) }}" style="color: var(--secondary); text-decoration: none; font-weight: 600;">
+              {{ $course->trainer->full_name_with_title ?: $course->trainer->name }}
+            </a>
+          @else
+            idSpora
+          @endif
+        </p>
       </div>
       <div class="main-title">
         <h1>{{ $course->name }}</h1>

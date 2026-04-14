@@ -87,6 +87,20 @@ class PublicTrainerProfileController extends Controller
             'rating' => round($combinedRating, 1),
             'rating_count' => $totalRatings,
             'students' => (int) $courseStudents + (int) $eventStudents,
+            'experience_years' => 10, // Mocked for design preview
+            'success_rate' => 98,    // Mocked for design preview
+            'active_learners' => (int) $courseStudents + (int) $eventStudents,
+        ];
+
+        // Expertise tags (mocked or derived)
+        $expertise = ['Data Science', 'Machine Learning', 'AI Ethics', 'Python', 'Neural Networks'];
+        
+        // Social links fallback
+        $socials = [
+            'linkedin' => $trainer->linkedin_url ?? '#',
+            'portfolio' => $trainer->website ?? '#',
+            'twitter' => '#',
+            'github' => '#',
         ];
 
         return view('public.trainer-profile', [
@@ -94,6 +108,10 @@ class PublicTrainerProfileController extends Controller
             'activeCourses' => $activeCourses,
             'activeEvents' => $activeEvents,
             'reputation' => $reputation,
+            'expertise' => $expertise,
+            'socials' => $socials,
+            'philosophy' => 'Fokus pada implementasi praktis dan studi kasus nyata untuk memastikan setiap peserta mampu menerapkan ilmu secara langsung di dunia kerja.',
+            'outcomes' => 'Siswa akan mendapatkan pemahaman mendalam tentang arsitektur AI dan kemampuan untuk membangun solusi berbasis data yang skalabel.',
         ]);
     }
 }

@@ -391,7 +391,15 @@
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">
-                    <p><span class="highlite-yellow">Event</span> by idSpora</p>
+                    <p><span class="highlite-yellow">Event</span> by 
+                        @if($event->trainer)
+                            <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}" style="color: var(--secondary); text-decoration: none; font-weight: 600;">
+                                {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
+                            </a>
+                        @else
+                            {{ $event->speaker ?? 'idSpora Team' }}
+                        @endif
+                    </p>
                 </div>
                 <div class="add-calender">
                     @php
