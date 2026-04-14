@@ -181,6 +181,14 @@
                                 <input type="text" class="form-control-custom" name="whatsapp" placeholder="No Whatsapp" inputmode="numeric" required>
                             </div>
                         </div>
+                        @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Kode Referral (opsional)</label>
+                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Masukkan kode referral jika ada" value="{{ request()->query('ref', '') }}">
+                            <div id="referralMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
+                            <div class="form-text small">Masukkan kode referral reseller untuk mendapatkan diskon/komisi.</div>
+                        </div>
+                        @endif
                          
                     </div>
                     
@@ -311,6 +319,80 @@
         const wa = form.querySelector('input[name="whatsapp"]');
         const showQrisBtn = document.getElementById('showQrisBtn');
         const paymentProofInput = document.getElementById('paymentProofInput');
+        const referralInput = form.querySelector('input[name="referral_code"]');
+        const referralMessageEl = document.getElementById('referralMessage');
+        const eventPriceEl = document.getElementById('eventPriceText');
+        const currentUserReferral = @json(auth()->user()->referral_code ?? '');
+        const REFERRAL_RATE = 0.10;
+
+        function formatRupiah(val){
+            try{
+                return (new Intl.NumberFormat('id-ID')).format(Math.round(val));
+            }catch(e){
+                return String(Math.round(val));
+            }
+        }
+
+        let _referralTimer = null;
+        async function validateReferralServer(code){
+            if(!checkReferralUrl) return null;
+            try{
+                const url = new URL(checkReferralUrl, window.location.origin);
+                url.searchParams.set('code', code);
+                const res = await fetch(url.toString(), { method: 'GET', credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if(!res.ok) return null;
+                return await res.json();
+            } catch(e){ return null; }
+        }
+
+        function updateReferralUI(){
+            if(!eventPriceEl) return;
+            const base = parseFloat(eventPriceEl.dataset.baseAmount || '0') || 0;
+            const code = referralInput ? String(referralInput.value || '').trim() : '';
+
+            // self-referral block
+            if(code !== '' && currentUserReferral && code.toUpperCase() === String(currentUserReferral).toUpperCase()){
+                if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Kode referral tidak boleh milik Anda sendiri.'; }
+                if(showQrisBtn) showQrisBtn.disabled = true;
+                if(midtransPayBtn) midtransPayBtn.disabled = true;
+                if(payNowBtn) payNowBtn.disabled = true;
+                if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(base);
+                return;
+            }
+
+            if(code === ''){
+                if(eventPriceEl) eventPriceEl.textContent = base > 0 ? ('Rp' + formatRupiah(base)) : 'FREE';
+                if(referralMessageEl){ referralMessageEl.style.display = 'none'; referralMessageEl.textContent = ''; }
+                validate();
+                return;
+            }
+
+            // debounce server validation
+            if(_referralTimer) clearTimeout(_referralTimer);
+            _referralTimer = setTimeout(async function(){
+                const data = await validateReferralServer(code);
+                if(!data){
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Gagal memeriksa kode. Coba lagi.'; }
+                    if(showQrisBtn) showQrisBtn.disabled = true;
+                    if(midtransPayBtn) midtransPayBtn.disabled = true;
+                    if(payNowBtn) payNowBtn.disabled = true;
+                    if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(base);
+                    return;
+                }
+
+                if(data.valid){
+                    if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(data.final_amount) + ' (' + Math.round((data.discount_rate||REFERRAL_RATE)*100) + '% off)';
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-danger'); referralMessageEl.classList.add('text-muted'); referralMessageEl.textContent = data.message || 'Kode referral valid.'; }
+                    validate();
+                } else {
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = data.message || 'Kode referral tidak valid.'; }
+                    if(showQrisBtn) showQrisBtn.disabled = true;
+                    if(midtransPayBtn) midtransPayBtn.disabled = true;
+                    if(payNowBtn) payNowBtn.disabled = true;
+                    if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(base);
+                }
+            }, 450);
+        }
         const payNowBtn = document.getElementById('payNowBtn');
         const methodRadios = form.querySelectorAll('input[name="payment_method"]');
         const manualPaySection = document.getElementById('manualPaySection');
@@ -366,6 +448,7 @@
             if(dial) dial.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
             if(paymentProofInput) paymentProofInput.addEventListener(evt, validate);
+            if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
         });
 
         if(methodRadios && methodRadios.length){
@@ -414,6 +497,7 @@
 
         // initial
         toggleMethodUI();
+        updateReferralUI();
         validate();
 
         // Manual QRIS modal open
@@ -497,6 +581,7 @@
         const finalizeUrl = @json(isset($event) ? route('payment.finalize', $event->id) : '');
         const eventTitle = @json(isset($event) ? ($event->title ?? 'Event') : 'Event');
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const checkReferralUrl = @json(isset($event) ? route('payment.check-referral', $event->id) : '');
 
         function showMidtransSuccessModal(){
             const text = document.getElementById('midtransSuccessModalText');
@@ -618,6 +703,7 @@
                 const url = new URL(snapTokenUrl, window.location.origin);
                 if(dialVal) url.searchParams.set('dial_code', dialVal);
                 if(waVal) url.searchParams.set('whatsapp', waVal);
+                if(referralInput && referralInput.value && referralInput.value.trim() !== '') url.searchParams.set('referral_code', referralInput.value.trim());
                 if(forceNew) url.searchParams.set('force_new', '1');
 
                 const res = await fetch(url.toString(), {

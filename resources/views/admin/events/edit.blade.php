@@ -12,15 +12,16 @@
                 <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data"
-                    id="eventForm">@csrf @method('PUT')
+        <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="editEventModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Event</h5></div>
+                <div class="modal-body">
+                    <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data" id="editEventForm" novalidate>@csrf @method('PUT')
                     <div class="row g-3">
                         <div class="col-lg-8">
                             <div class="mb-3">
-                                <label for="image" class="form-label fw-semibold">Gambar Event</label>
-                                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                                <label for="gambar" class="form-label fw-semibold">Gambar Event</label>
+                                <input type="file" name="image" id="gambar" class="form-control" accept="image/*">
                                 <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span
                                         id="imageSizeInfo" class="fw-semibold"></span></div>
                                 @if($event->image)
@@ -122,6 +123,22 @@
                                 </select>
                                 <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reseller Event</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-yes" value="1" {{ old('is_reseller_event', $event->is_reseller_event) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="reseller-event-yes">Ya</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-no" value="0" {{ old('is_reseller_event', $event->is_reseller_event) ? '' : 'checked' }}>
+                                        <label class="form-check-label" for="reseller-event-no">Tidak</label>
+                                    </div>
+                                </div>
+                                <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                            </div>
+
+                            </div>
 
                             <!-- Jenis Acara (autocomplete after 2 chars) -->
                             <div class="mb-3">
@@ -161,7 +178,7 @@
 
                             <div class="mb-3">
                                 <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description', $event->description) }}</textarea>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description', $event->description) !!}</textarea>
                                 <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                             </div>
 
@@ -184,7 +201,7 @@
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="lokasi" class="form-label fw-semibold">Lokasi <span
+                                <label for="lokasi" class="form-label fw-semibold">Tipe Pelaksanaan <span
                                         class="text-danger">*</span></label>
                                 @php
                                     $oldMode = old('location_mode');
@@ -246,18 +263,18 @@
                                 <div id="benefitsContainer"></div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addBenefitRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Benefit</button>
-                                <input type="hidden" name="benefit" id="benefitHidden"
+                                <input type="hidden" name="benefit" id="benefit"
                                     value="{{ old('benefit', $event->benefit) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
                             <div class="mb-3 {{ trim($defaultPlaceName) !== '' ? '' : 'd-none' }}" id="placeNameGroup">
-                                <label for="place_name" class="form-label fw-semibold">Nama Tempat</label>
+                                <label for="place_name" class="form-label fw-semibold">Nama Tempat <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
                                 <input type="text" name="place_name" id="place_name" class="form-control"
                                     value="{{ $defaultPlaceName }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
                                 <div class="form-text">Muncul setelah klik "Deteksi" untuk offline/hybrid.</div>
                             </div>
                             <div class="mb-3" id="mapsGroup">
-                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
+                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
                                 <div class="input-group">
                                     <input type="text" name="maps_url" id="maps" class="form-control"
                                         value="{{ old('maps_url', $event->maps_url) }}"
@@ -272,7 +289,7 @@
                                 </div>
                             </div>
                             <div class="mb-3" id="zoomGroup">
-                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
+                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
                                 <input type="text" name="zoom_link" id="zoom" class="form-control"
                                     value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Masukkan Link Zoom">
                                 <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
@@ -382,15 +399,14 @@
                         </div>
                     </div>
                     <div class="d-flex justify-content-end mt-3 gap-2">
-                        <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i
-                                class="bi bi-x-circle me-1"></i> Batal</a>
-                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled><i
-                                class="bi bi-check-circle me-1"></i> Update Event</button>
+                        <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i> Batal</a>
+                        <button type="submit" class="btn btn-primary" form="editEventForm" id="editSubmitBtn"><i class="bi bi-check-circle me-1"></i> Update Event</button>
                     </div>
-                    <div class="small text-muted mt-2" id="submitHint" style="display:none;">Lengkapi semua field wajib
-                        untuk mengaktifkan tombol Update.</div>
-                </form>
-            </div>
+                    <div class="small text-muted mt-2" id="editSubmitHint" style="display:none;">Lengkapi semua field wajib untuk mengaktifkan tombol Update.</div>
+                    </form>
+                </div>
+                
+            </div></div>
         </div>
     </div>
 @endsection
@@ -401,16 +417,16 @@
             min-height: 260px
         }
 
-        #eventForm label,
-        #eventForm .form-label,
-        #eventForm input,
-        #eventForm textarea,
-        #eventForm select {
+        #editEventForm label,
+        #editEventForm .form-label,
+        #editEventForm input,
+        #editEventForm textarea,
+        #editEventForm select {
             color: #000
         }
 
-        #eventForm input::placeholder,
-        #eventForm textarea::placeholder {
+        #editEventForm input::placeholder,
+        #editEventForm textarea::placeholder {
             color: #666
         }
 
@@ -434,6 +450,67 @@
         .tooltip-hint-yellow.bs-tooltip-bottom .tooltip-arrow::before{ border-bottom-color: var(--bs-warning-bg-subtle); }
         .tooltip-hint-yellow.bs-tooltip-start .tooltip-arrow::before{ border-left-color: var(--bs-warning-bg-subtle); }
         .tooltip-hint-yellow.bs-tooltip-end .tooltip-arrow::before{ border-right-color: var(--bs-warning-bg-subtle); }
+    </style>
+    <style>
+        /* Edit modal: lower slightly to better center vertically */
+        #editEventModal .modal-dialog { margin-top: clamp(3rem, 12vh, 120px); }
+
+        /* Make the right-side helper panel sticky inside the modal-body so it follows when scrolling */
+        #editEventModal .event-side-sticky {
+            position: sticky;
+            top: 0.75rem;
+            z-index: 1060;
+            align-self: flex-start;
+            display: block;
+        }
+
+        /* Blue Tips alert: float to right and appear as a compact floating box */
+        /* Keep the Tips box full-width within the side column (no float) */
+        #editEventModal .event-side-sticky .alert {
+            display: block;
+            float: none;
+            max-width: 100%;
+            width: 100%;
+            text-align: left;
+            color: #000; /* ensure black text */
+        }
+
+        /* Force list items and headings in the side column to be black */
+        #editEventModal .event-side-sticky .list-group-item,
+        #editEventModal .event-side-sticky .list-group-item *,
+        #editEventModal .event-side-sticky .alert,
+        #editEventModal .event-side-sticky .alert * {
+            color: #000 !important;
+        }
+
+        /* Force all form labels, helper text, table headers and modal title inside edit modal to black */
+        #editEventModal label,
+        #editEventModal .form-label,
+        #editEventModal th,
+        #editEventModal .modal-title,
+        #editEventModal .form-text,
+        #editEventModal .text-muted,
+        #editEventModal small {
+            color: #000 !important;
+        }
+
+        /* Also ensure placeholders and muted helper texts appear black */
+        #editEventModal ::placeholder,
+        #editEventModal input::placeholder,
+        #editEventModal textarea::placeholder {
+            color: #000 !important;
+            opacity: 1 !important;
+        }
+
+        /* Stronger target: ensure all labels and small helper texts within the form are black */
+        #editEventModal #editEventForm label,
+        #editEventModal #editEventForm .form-label,
+        #editEventModal #editEventForm .form-label.fw-semibold,
+        #editEventModal #editEventForm small,
+        #editEventModal #editEventForm .form-text,
+        #editEventModal #editEventForm .input-group-text {
+            color: #000 !important;
+        }
     </style>
 @endsection
 
@@ -489,6 +566,14 @@
                 }
             } catch (_) { }
 
+            // Auto-show edit modal when visiting the edit page
+            try {
+                const modalEl = document.getElementById('editEventModal');
+                if (modalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
+                    const editModal = new bootstrap.Modal(modalEl);
+                    editModal.show();
+                }
+            } catch (e) { console.error(e); }
             // Jenis Acara autocomplete (show after 2 chars)
             (function setupJenisAutocomplete(){
                 const jenisInput = document.getElementById('jenis');
@@ -619,6 +704,9 @@
             const mapsPreview = document.getElementById('mapsPreview');
             const btnResolveMaps = document.getElementById('btnResolveMaps');
             const zoomInput = document.getElementById('zoom');
+            const mapsRequiredStar = document.getElementById('mapsRequiredStar');
+            const zoomRequiredStar = document.getElementById('zoomRequiredStar');
+            const placeNameRequiredStar = document.getElementById('placeNameRequiredStar');
             const csrfToken = '{{ csrf_token() }}';
             const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
             function parseLatLngFromUrl(url) {
@@ -695,6 +783,7 @@
                 const shouldShow = isOfflineHybrid && (forceShow || hasValue);
                 placeNameGroup.classList.toggle('d-none', !shouldShow);
                 placeNameInput.required = shouldShow;
+                if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
             }
 
             function syncLocationModeUI(){
@@ -708,6 +797,8 @@
 
                 if(mapsInput) mapsInput.required = (isOffline || isHybrid);
                 if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+                if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+                if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
 
                 showPlaceNameIfNeeded(false);
 
@@ -735,6 +826,9 @@
             syncMapsUI();
             btnResolveMaps?.addEventListener('click', async () => {
                 showPlaceNameIfNeeded(true);
+                if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+                    placeNameInput.focus();
+                }
                 const url = mapsInput?.value || '';
                 if (!url) { alert('Masukkan link terlebih dahulu'); return; }
                 try {
@@ -858,6 +952,10 @@
 
             // Flatpickr init for tanggal & discount_until
             let eventDateFp = null, discountUntilFp = null;
+            const eventDateInput = document.getElementById('tanggal');
+            if (eventDateInput) {
+                eventDateInput.removeAttribute('min');
+            }
             if (window.flatpickr) {
                 eventDateFp = flatpickr('#tanggal', {
                     locale: 'id',
@@ -865,6 +963,8 @@
                     altInput: true,
                     altFormat: 'l, d F Y',
                     disableMobile: true,
+                    allowInput: true,
+                    defaultDate: eventDateInput?.value || null,
                     onChange: function () {
                         if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
                     }
@@ -898,25 +998,49 @@
             updateDiscountUntilBounds();
 
             // Schedule dynamic
-            const scheduleTableBody = document.querySelector('#scheduleTable tbody'); const addScheduleBtn = document.getElementById('addScheduleRow'); let scheduleIndex = 0;
-            function createScheduleRow(idx) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`; return tr; }
-            function addScheduleRow() { scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
-            addScheduleBtn?.addEventListener('click', addScheduleRow); scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } }); addScheduleRow();
+            const scheduleTableBody = document.querySelector('#scheduleTable tbody');
+            const addScheduleBtn = document.getElementById('addScheduleRow');
+            let scheduleIndex = 0;
+            if (scheduleTableBody) scheduleIndex = scheduleTableBody.querySelectorAll('tr').length;
+            function createScheduleRow(idx) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
+                return tr;
+            }
+            function addScheduleRow() { if (!scheduleTableBody) return; console.debug('addScheduleRow()', scheduleIndex); scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
+            // prefer delegated click so handler works even if button moves or is re-rendered
+            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addScheduleRow')) { console.debug('delegated addScheduleRow click'); addScheduleRow(); } });
+            // also attach directly to the button when available (reliability across browsers/modal states)
+            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addScheduleBtn click'); addScheduleRow(); });
+            scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } });
+            // only add an initial row if there are no existing rows
+            if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) { addScheduleRow(); }
 
             // Expenses dynamic
-            const expensesTableBody = document.querySelector('#expensesTable tbody'); const addExpenseBtn = document.getElementById('addExpenseRow'); const expensesGrandTotalEl = document.getElementById('expensesGrandTotal'); let expenseIndex = 0;
-            function clampNonNeg(input, step = 1) { input.addEventListener('keydown', e => { if (['-', 'Subtract'].includes(e.key) || e.keyCode === 189) e.preventDefault(); }); input.addEventListener('input', () => { if (input.value === '') return; let v = parseFloat(input.value); if (isNaN(v) || v < 0) v = 0; if (step >= 1) v = Math.floor(v); input.value = v; }); }
+            const expensesTableBody = document.querySelector('#expensesTable tbody');
+            const addExpenseBtn = document.getElementById('addExpenseRow');
+            const expensesGrandTotalEl = document.getElementById('expensesGrandTotal');
+            let expenseIndex = 0;
+            if (expensesTableBody) expenseIndex = expensesTableBody.querySelectorAll('tr').length;
+            function clampNonNeg(input, step = 1) { if (!input) return; input.addEventListener('keydown', e => { if (['-', 'Subtract'].includes(e.key) || e.keyCode === 189) e.preventDefault(); }); input.addEventListener('input', () => { if (input.value === '') return; let v = parseFloat(input.value); if (isNaN(v) || v < 0) v = 0; if (step >= 1) v = Math.floor(v); input.value = v; }); }
             function formatRupiah(n) { const v = Math.max(0, Math.floor(n || 0)); return 'Rp' + v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-            function recalcExpensesGrandTotal() { let total = 0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp => { const val = parseFloat(inp.value || '0'); if (!isNaN(val)) total += val; }); expensesGrandTotalEl.textContent = formatRupiah(total); }
-            function recalcExpenseRow(tr) { const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0'); const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0'); const tot = tr.querySelector('input[data-expense-total]'); const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit); if (tot) tot.value = Math.max(0, Math.round(total)); recalcExpensesGrandTotal(); }
-            function createExpenseRow(idx) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`; const q = tr.querySelector('input[data-expense-qty]'); const u = tr.querySelector('input[data-expense-unit]'); clampNonNeg(q, 1); clampNonNeg(u, 1); q.addEventListener('input', () => recalcExpenseRow(tr)); u.addEventListener('input', () => recalcExpenseRow(tr)); return tr; }
-            function addExpenseRow() { const row = createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
-            addExpenseBtn?.addEventListener('click', addExpenseRow); expensesTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove-expense"]'); if (b) { b.closest('tr').remove(); recalcExpensesGrandTotal(); } }); addExpenseRow();
+            function recalcExpensesGrandTotal() { if (!expensesTableBody || !expensesGrandTotalEl) return; let total = 0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp => { const val = parseFloat(inp.value || '0'); if (!isNaN(val)) total += val; }); expensesGrandTotalEl.textContent = formatRupiah(total); }
+            function recalcExpenseRow(tr) { if (!tr) return; const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0'); const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0'); const tot = tr.querySelector('input[data-expense-total]'); const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit); if (tot) tot.value = Math.max(0, Math.round(total)); recalcExpensesGrandTotal(); }
+            function createExpenseRow(idx) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`;
+                const q = tr.querySelector('input[data-expense-qty]'); const u = tr.querySelector('input[data-expense-unit]'); clampNonNeg(q, 1); clampNonNeg(u, 1); q.addEventListener('input', () => recalcExpenseRow(tr)); u.addEventListener('input', () => recalcExpenseRow(tr)); return tr;
+            }
+            function addExpenseRow() { if (!expensesTableBody) return; console.debug('addExpenseRow()', expenseIndex); const row = createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
+            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addExpenseRow')) { console.debug('delegated addExpenseRow click'); addExpenseRow(); } });
+            if (addExpenseBtn) addExpenseBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addExpenseBtn click'); addExpenseRow(); });
+            expensesTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove-expense"]'); if (b) { b.closest('tr').remove(); recalcExpensesGrandTotal(); } });
+            if (expensesTableBody && expensesTableBody.querySelectorAll('tr').length === 0) { addExpenseRow(); }
 
             // Benefits dynamic (serialize to hidden field)
             const benefitsContainer = document.getElementById('benefitsContainer');
             const addBenefitBtn = document.getElementById('addBenefitRow');
-            const benefitHidden = document.getElementById('benefitHidden');
+            const benefitHidden = document.getElementById('benefit');
             function renderBenefitRow(prefill = '') {
                 if (!benefitsContainer) return;
                 const row = document.createElement('div');
@@ -939,11 +1063,37 @@
             })();
 
             // Validation & submit state
-            const form = document.getElementById('eventForm'); if (form) {
-                const submitBtn = document.getElementById('submitBtn');
-                const submitHint = document.getElementById('submitHint');
-                const getRequiredFields = () => Array.from(form.querySelectorAll('[required]'))
-                    .filter(el => !el.disabled && el.offsetParent !== null);
+            const form = document.getElementById('editEventForm'); if (form) {
+                const submitBtn = document.getElementById('editSubmitBtn');
+                const submitHint = document.getElementById('editSubmitHint');
+                const getRequiredFields = () => {
+                    const fields = [
+                        document.getElementById('nama'),
+                        form.querySelector('select[name="speakers[]"]'),
+                        document.getElementById('materi'),
+                        document.getElementById('manage_action'),
+                        document.getElementById('jenis'),
+                        document.getElementById('short_desc'),
+                        document.getElementById('deskripsi'),
+                        document.getElementById('tanggal'),
+                        document.getElementById('masuk1'),
+                        document.getElementById('lokasi'),
+                        document.getElementById('hargaDisplay'),
+                    ];
+
+                    const mode = String(document.getElementById('lokasi')?.value || '').toLowerCase();
+                    if (mode === 'offline' || mode === 'hybrid') {
+                        fields.push(document.getElementById('maps'));
+                    }
+                    if (mode === 'online' || mode === 'hybrid') {
+                        fields.push(document.getElementById('zoom'));
+                    }
+                    if ((mode === 'offline' || mode === 'hybrid') && !document.getElementById('placeNameGroup')?.classList.contains('d-none')) {
+                        fields.push(document.getElementById('place_name'));
+                    }
+
+                    return fields.filter(el => el && !el.disabled);
+                };
 
                 function fieldFriendlyName(el) {
                     if (!el) return 'Field';
@@ -964,14 +1114,13 @@
 
                 function missingRequired() { return getRequiredFields().filter(f => !(f.value || '').trim()); }
                 window.updateSubmitState = function () {
-                    const filled = missingRequired().length === 0;
+                    const missing = missingRequired();
                     const sdEl = document.getElementById('short_desc');
                     const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                     const overLimit = sdEl ? sdWords > 40 : false;
-                    if (submitBtn) submitBtn.disabled = (!filled || overLimit);
                     if (submitHint) {
-                        if (!filled) {
-                            submitHint.textContent = 'Lengkapi: ' + missingRequired().map(fieldFriendlyName).join(', ');
+                        if (missing.length) {
+                            submitHint.textContent = 'Cek wajib isi: ' + missing.map(fieldFriendlyName).join(', ');
                             submitHint.style.display = 'block';
                         } else if (overLimit) {
                             submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';

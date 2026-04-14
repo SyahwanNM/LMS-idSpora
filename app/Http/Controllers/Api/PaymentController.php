@@ -820,9 +820,25 @@ class PaymentController extends Controller
         }
 
         $rawReferralCode = trim((string) $request->query('referral_code', $request->input('referral_code')));
+        if (
+            $rawReferralCode !== ''
+            && (bool) ($course->is_reseller_course ?? false)
+            && $user->referral_code
+            && strcasecmp($rawReferralCode, (string) $user->referral_code) === 0
+        ) {
+            return response()->json([
+                'message' => 'Kode referral tidak boleh menggunakan kode milik sendiri.',
+            ], 422);
+        }
+
         $referrer = (bool) ($course->is_reseller_course ?? false)
             ? $this->resolveValidReferrer($user, $rawReferralCode)
             : null;
+        if ($rawReferralCode !== '' && (bool) ($course->is_reseller_course ?? false) && !$referrer) {
+            return response()->json([
+                'message' => 'Kode referral tidak valid.',
+            ], 422);
+        }
         $referralCode = $referrer ? $rawReferralCode : null;
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 

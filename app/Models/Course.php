@@ -33,6 +33,8 @@ class Course extends Model
         'approved_at',
         'rejected_at',
         'approved_by',
+        'expenses_json',
+        'is_reseller_course',
     ];
 
     protected $casts = [
@@ -41,7 +43,8 @@ class Course extends Model
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
         'trainer_scheme_accepted_at' => 'datetime',
-        'expenses_json',
+        'expenses_json' => 'array',
+        'is_reseller_course' => 'boolean',
     ];
 
     // protected $casts = [

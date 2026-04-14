@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\EventPaymentRejectedMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
@@ -205,6 +206,18 @@ class EventController extends Controller
             'is_reseller_event' => 'nullable|boolean',
         ]);
 
+        // Debug: log submitted reseller inputs
+        Log::info('EventController@update submitted reseller values', [
+            'is_reseller_event_raw' => $request->input('is_reseller_event'),
+            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
+        ]);
+
+        // Debug: log submitted reseller inputs
+        Log::info('EventController@store submitted reseller values', [
+            'is_reseller_event_raw' => $request->input('is_reseller_event'),
+            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
+        ]);
+
         $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
         $placeName = trim((string) $request->input('place_name', ''));
 
@@ -275,6 +288,16 @@ class EventController extends Controller
         }
 
         // Simpan data ke database
+        // Determine reseller flag: prefer explicit hidden field, fallback to radio input
+        $isReseller = null;
+        if ($request->has('is_reseller_event')) {
+            $isReseller = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $isReseller = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $isReseller = false;
+        }
+
         $event = Event::create([
             'trainer_id' => $request->input('trainer_id') ?: null,
             'title' => $request->title,
@@ -301,6 +324,7 @@ class EventController extends Controller
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
+            'is_reseller_event' => (bool) $isReseller,
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -432,6 +456,39 @@ class EventController extends Controller
             $event->speaker
         );
 
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
+        $normalizedLocationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $normalizedPlaceName = trim((string) $request->input('place_name', ''));
+        if ($normalizedPlaceName === '' && $normalizedLocationMode !== 'online') {
+            $existingLocation = trim((string) $event->location);
+            if ($existingLocation !== '' && strtolower($existingLocation) !== 'online') {
+                $normalizedPlaceName = $existingLocation;
+            }
+        }
+
+        $normalizedMapsUrl = trim((string) $request->input('maps_url', ''));
+        $normalizedZoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($normalizedZoomLink !== '' && !preg_match('#^https?://#i', $normalizedZoomLink)) {
+            $normalizedZoomLink = 'https://' . ltrim($normalizedZoomLink, '/');
+        }
+
+        $request->merge([
+            'speaker' => $normalizedSpeaker,
+            'location_mode' => $normalizedLocationMode,
+            'place_name' => $normalizedPlaceName,
+            'maps_url' => $normalizedMapsUrl,
+            'zoom_link' => $normalizedZoomLink,
+        ]);
+
         $request->validate([
             'title' => 'required|string|max:255',
             'trainer_id' => [
@@ -498,7 +555,14 @@ class EventController extends Controller
             'event_time_end'
         ]);
 
-        $data['is_reseller_event'] = $request->boolean('is_reseller_event');
+        // Determine reseller flag robustly (hidden input or radio fallback)
+        if ($request->has('is_reseller_event')) {
+            $data['is_reseller_event'] = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $data['is_reseller_event'] = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $data['is_reseller_event'] = false;
+        }
 
         $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
         $placeName = trim((string) $request->input('place_name', ''));

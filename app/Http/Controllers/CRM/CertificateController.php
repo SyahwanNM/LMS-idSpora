@@ -341,6 +341,49 @@ class CertificateController extends Controller
         ]);
     }
 
+    /**
+     * Preview course certificate inline (for iframe)
+     */
+    public function previewCourse(Request $request, Course $course, $enrollment)
+    {
+        if(!($enrollment instanceof Enrollment)) {
+            $enrollment = Enrollment::with('user', 'course')->findOrFail($enrollment);
+        }
+        if($enrollment->course_id !== $course->id) abort(404);
+
+        $this->authorizeAccessCourse($course, $enrollment);
+
+        if($enrollment->status !== 'completed') {
+            return response('Sertifikat belum tersedia.', 403);
+        }
+
+        if(!$enrollment->certificate_number) {
+            $enrollment->update([
+                'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
+                'certificate_issued_at' => now(),
+            ]);
+        }
+
+        $data = $this->getCertificateDataCourse($course, $enrollment->fresh());
+
+        $dompdf = new Dompdf();
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+
+        $html = view('courses.certificate-pdf', $data)->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $filename = 'Sertifikat_Course_'.Str::slug($course->name).'_'.Str::slug($enrollment->user->name).'.pdf';
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
+    }
+
     public function generateMassalCourse(Request $request, Course $course)
     {
         if(!Auth::check() || Auth::user()->role !== 'admin') abort(403);
