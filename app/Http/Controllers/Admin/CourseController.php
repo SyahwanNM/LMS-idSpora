@@ -157,7 +157,7 @@ class CourseController extends Controller
                 if (!$passedPrevQuiz) {
                     $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
                     return redirect()->to($target)
-                        ->with('error', 'Kamu harus lulus kuis terlebih dahulu untuk membuka materi selanjutnya.');
+                        ->with('error', 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.');
                 }
             }
         }
@@ -950,7 +950,7 @@ class CourseController extends Controller
                 'after_or_equal:today',
                 Rule::when($request->filled('discount_start'), 'after_or_equal:discount_start'),
             ],
-            'free_access_mode' => 'nullable|in:all,limit_2',
+            'free_access_mode' => 'nullable|in:all,limit_2,none',
             'expenses' => 'nullable|array',
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|integer|min:0',
@@ -1232,7 +1232,7 @@ class CourseController extends Controller
             'modules_delete_ids' => 'nullable|string',
             'modules_payload_new' => 'nullable|string',
             'modules_order_updates' => 'nullable|string',
-            'free_access_mode' => 'nullable|in:all,limit_2',
+            'free_access_mode' => 'nullable|in:all,limit_2,none',
             'expenses' => 'nullable|array',
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|integer|min:0',

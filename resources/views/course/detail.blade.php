@@ -2,8 +2,6 @@
 <!DOCTYPE html>
 <html lang="en">
 
-
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1088,18 +1086,18 @@
 <body class="course-detail-page">
   
   <section class="course-hero">
-    <nav aria-label="breadcrumb">
-      <div class="hero-inner" style="margin-top: 0; padding-top: 5px;">
+    <div class="breadcrumb-text" style="color:#fff; font-size:15px; font-weight:500;">
+      <div class="hero-inner" style="margin-top: 1px;">
         <div style="color:#fff; font-size:15px; font-weight:500;">
           <span><a href="{{ route('dashboard') }}" style="color:#fff; text-decoration:none;">Home</a></span>
-          <span style="margin: 0 7px;">/</span>
+          <span style="margin: 0 1px;">/</span>
           <span><a href="{{ route('courses.index') }}" style="color:#fff; text-decoration:none;">Course</a></span>
-          <span style="margin: 0 7px;">/</span>
+          <span style="margin: 0 1px;">/</span>
           <span style="color:#fff; font-weight:600;">{{ $course->name }}</span>
         </div>
       </div>
     </nav>
-
+    
     <div class="title-course-hero">
       <div class="sub-title">
         <h6>{{ $course->category->name ?? '-' }}</h6>
@@ -1165,7 +1163,7 @@
         // Access rules (freemium + paid purchase)
         $priceInt = (int) ($course->price ?? 0);
         $isFreeCourse = $priceInt <= 0;
-        $freeAccessMode = (string) ($course->free_access_mode ?? ($isFreeCourse ? 'limit_2' : 'all'));
+        $freeAccessMode = (string) ($course->free_access_mode ?? ($isFreeCourse ? 'all' : 'none'));
 
         $userCanAccessCourse = $isFreeCourse;
         if (!$isFreeCourse && auth()->check()) {
@@ -1190,11 +1188,20 @@
 
         $orderedAllModules = $modulesCol->sortBy(fn($m) => (int) ($m->order_no ?? 0))->values();
         $accessibleModuleIds = [];
+        
         if ($userCanAccessCourse) {
           if ($isFreeCourse && $freeAccessMode === 'limit_2') {
             $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
           } else {
             $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          }
+        } else {
+          if ($freeAccessMode === 'all') {
+            $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } elseif ($freeAccessMode === 'limit_2') {
+            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } else {
+            $accessibleModuleIds = [];
           }
         }
 
@@ -1377,17 +1384,8 @@
                 $existingUnitTitle = (string) optional($unitTitlesByNo->get((int) $unitNo))->title;
                 $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . (int) $unitNo);
 
-                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds, $unitNo) {
-                  if ($freeAccessMode === 'limit_2' && $unitNo == 1) {
-                    return false;
-                  }
-                  if (!$userCanAccessCourse) {
-                    return true;
-                  }
-                  if ($freeAccessMode === 'limit_2') {
-                    return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
-                  }
-                  return false;
+                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($accessibleModuleIds) {
+                  return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
                 });
               @endphp
               <div class="syllabus-dropdown-item">
@@ -1402,41 +1400,37 @@
                     </span>
                   </summary>
                   <ul style="counter-reset: lesson-counter;">
-                    @foreach($modulesInUnit as $module)
+                    @php
+                        $materiModules = $modulesInUnit->filter(fn($m) => in_array(strtolower($m->type), ['pdf', 'video']))->values();
+                        $quizModule = $modulesInUnit->first(fn($m) => strtolower($m->type) === 'quiz');
+                        
+                        $displayItems = [];
+                        if ($materiModules->isNotEmpty()) {
+                            $displayItems[] = [
+                                'title' => 'Materi',
+                                'ids' => $materiModules->pluck('id')->all()
+                            ];
+                        }
+                        if ($quizModule) {
+                            $displayItems[] = [
+                                'title' => 'Quiz',
+                                'ids' => [$quizModule->id]
+                            ];
+                        }
+                    @endphp
+
+                    @foreach($displayItems as $item)
                       @php
-                        $type = strtolower((string) ($module->type ?? ''));
-                        $moduleTitle = trim((string) ($module->title ?? ''));
-                        if ($moduleTitle === '') {
-                          $moduleTitle = 'Materi';
-                        }
-                        $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
-                        $quizCount = (int) ($module->quiz_questions_count ?? 0);
-
-                        $hasContent = false;
-                        if ($type === 'quiz') {
-                          $hasContent = $quizCount > 0;
-                        } elseif (in_array($type, ['pdf', 'video'], true)) {
-                          $hasContent = !empty($module->content_url) && (string) $module->content_url !== 'quiz_submitted';
-                        }
-
                         $isLocked = false;
-                        if ($freeAccessMode === 'limit_2' && $unitNo == 1) {
-                          $isLocked = false;
-                        } elseif (!$userCanAccessCourse) {
-                          $isLocked = true;
-                        } elseif ($freeAccessMode === 'limit_2') {
-                          $isLocked = !in_array((int) ($module->id ?? 0), $accessibleModuleIds, true);
+                        foreach($item['ids'] as $id) {
+                            if (!in_array((int)$id, $accessibleModuleIds, true)) {
+                                $isLocked = true;
+                                break;
+                            }
                         }
-
-                        $typeLabel = match ($type) {
-                          'pdf' => 'PDF',
-                          'video' => 'Video',
-                          'quiz' => 'Kuis',
-                          default => 'Materi',
-                        };
                       @endphp
                       <li>
-                        <div style="font-weight:600;">{{ $typeLabel }}: {{ $moduleTitle }}</div>
+                        <div style="font-weight:600;">{{ $item['title'] }}</div>
                         @if($isLocked)
                           <div class="text-muted d-flex align-items-center gap-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
@@ -1444,14 +1438,6 @@
                             </svg>
                             Terkunci.
                           </div>
-                        @elseif(!$hasContent)
-                          <div class="text-muted">Materi belum tersedia.</div>
-                        @elseif($type === 'quiz')
-                          <div class="text-muted">{{ $quizCount }} soal kuis tersedia.</div>
-                        @elseif($moduleDesc !== '')
-                          <div class="text-muted">{{ Str::limit($moduleDesc, 160) }}</div>
-                        @else
-                          <div class="text-muted">Deskripsi belum tersedia.</div>
                         @endif
                       </li>
                     @endforeach
@@ -1632,7 +1618,7 @@
             </a>
             @if($hasPreview)
               <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#fff;background:#252346;margin-top:10px;font-weight:600;">
-                Daftar Gratis (Freemium)
+                Coba Sekarang
               </a>
               <p class="text-center text-muted mt-2" style="font-size:12px;">Akses Modul 1 & Kuis secara gratis</p>
             @endif

@@ -319,7 +319,7 @@
                                         <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
                                     </svg>
                                 </button>
-                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" onsubmit="return confirm('Hapus course ini?')">
+                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" class="delete-course-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn p-0" title="Delete">
@@ -377,10 +377,6 @@
                                 <button class="tab-btn" data-target="tab-video">Video</button>
                                 <button class="tab-btn" data-target="tab-kuis">Kuis</button>
                                 <button class="tab-btn" data-target="tab-participant">Participant</button>
-                            </div>
-
-                            <div>
-                                <button id="coursePreviewEditBtn" type="button" class="button_edit_preview">Edit</button>
                             </div>
                         </div>
 
@@ -1212,6 +1208,37 @@
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var deleteForms = document.querySelectorAll('.delete-course-form');
+            deleteForms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Apakah Anda yakin?',
+                            text: 'apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    } else {
+                        if (confirm('apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan')) {
+                            form.submit();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </body>
-
 </html>

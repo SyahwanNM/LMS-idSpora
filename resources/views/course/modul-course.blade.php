@@ -232,17 +232,18 @@
                 data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
                 data-active-module-id="{{ $activeDisplayModuleId }}"
             >
+                @php $hasFailedPrevQuiz = false; @endphp
                 @forelse($displayItems as $it)
                     @php
                         $rep = $it['rep'];
                         $isActive = ((int) ($activeDisplayModuleId ?? 0) === (int) ($rep->id ?? 0))
                             && (($activeDisplay['kind'] ?? '') === ($it['kind'] ?? ''));
                         $typeLabel = ($it['kind'] ?? '') === 'quiz' ? 'QUIZ' : 'MATERI';
-                        $prevItem = $displayItems->get($loop->index - 1);
-                        $isLocked = false;
-                        $lockReason = '';
+                        
+                        $isLocked = $hasFailedPrevQuiz;
+                        $lockReason = $hasFailedPrevQuiz ? 'quiz' : '';
 
-                        if ($isFreeLimited) {
+                        if ($isFreeLimited && !$isLocked) {
                             $candidateIds = [];
                             if (($it['kind'] ?? '') === 'quiz') {
                                 $candidateIds[] = (int) ($rep->id ?? 0);
@@ -263,11 +264,11 @@
                             }
                         }
 
-                        if (auth()->check() && $prevItem && (($prevItem['kind'] ?? '') === 'quiz') && !$isLocked) {
-                            $prevQuizId = (int) (($prevItem['rep']->id ?? 0));
-                            $isLocked = !in_array($prevQuizId, $passedQuizModuleIds, true);
-                            if ($isLocked) {
-                                $lockReason = 'quiz';
+                        // Cascading quiz check: if this is a quiz and not passed, ALL subsequent items will be locked.
+                        if (($it['kind'] ?? '') === 'quiz') {
+                            $quizId = (int) ($rep->id ?? 0);
+                            if (auth()->check() && !in_array($quizId, $passedQuizModuleIds, true)) {
+                                $hasFailedPrevQuiz = true;
                             }
                         }
 
@@ -611,6 +612,8 @@
                     data-is-locked-free="1"
                     data-buy-url="{{ route('course.payment', $course->id) }}"
                     data-course-name="{{ $course->name }}"
+                @elseif($lockNext)
+                    data-is-locked-quiz="1"
                 @else
                     disabled style="opacity:.6; cursor:not-allowed;"
                 @endif
@@ -676,9 +679,19 @@
                 if (locked) {
                     const reason = item.getAttribute('data-locked-reason') || '';
                     if (reason === 'free') {
-                        alert('Materi ini terkunci. Silakan beli atau daftar course ini untuk membuka seluruh materi.');
+                        Swal.fire({
+                            title: 'Oops!',
+                            text: 'Materi ini terkunci. Silakan beli atau daftar course ini untuk membuka seluruh materi.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f4c430',
+                        });
                     } else {
-                        alert('Materi ini terkunci. Kamu harus lulus kuis terlebih dahulu.');
+                        Swal.fire({
+                            title: 'Oops!',
+                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f4c430',
+                        });
                     }
                     return;
                 }
@@ -712,6 +725,17 @@
                         if (result.isConfirmed && buyUrl) {
                             window.location.href = buyUrl;
                         }
+                    });
+                    return;
+                }
+
+                const isLockedQuiz = nextBtn.getAttribute('data-is-locked-quiz') === '1';
+                if (isLockedQuiz) {
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f4c430',
                     });
                     return;
                 }
@@ -770,6 +794,26 @@
                 sendHeartbeat(HEARTBEAT_SECONDS);
             }, HEARTBEAT_SECONDS * 1000);
         })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('error'))
+                Swal.fire({
+                    title: 'Oops!',
+                    text: '{{ session('error') }}',
+                    icon: 'warning',
+                    confirmButtonColor: '#f4c430',
+                });
+            @endif
+            @if(session('success'))
+                Swal.fire({
+                    title: 'Berhasil',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    confirmButtonColor: '#16a34a',
+                });
+            @endif
+        });
     </script>
 </body>
 
