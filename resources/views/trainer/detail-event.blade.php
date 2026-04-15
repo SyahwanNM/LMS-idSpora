@@ -119,13 +119,12 @@
         </div>
 
         <div class="hero-media">
-          @if(Str::startsWith($event->image, ['http://', 'https://']))
-            <img src="{{ $event->image }}" alt="{{ $event->title }}" class="hero-image" />
-          @elseif($event->image)
-            <img src="{{ asset('storage/' . $event->image) }}" alt="{{ $event->title }}" class="hero-image" />
+          @if($event->image_url)
+            <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="hero-image" />
           @else
-            <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop"
-              alt="Default Event Image" class="hero-image" />
+            <div class="hero-image-placeholder">
+              <span>{{ strtoupper(substr($event->title, 0, 1)) }}</span>
+            </div>
           @endif
         </div>
       </div>

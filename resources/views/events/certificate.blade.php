@@ -67,7 +67,7 @@
                     </a>
                 @else
                     <button class="btn btn-secondary px-4 shadow-sm" disabled>
-                        <i class="bi bi-clock me-2"></i> Tersedia H+3 ({{ $event->event_date?->copy()->addDays(3)->format('d M') }})
+                        <i class="bi bi-clock me-2"></i> Belum Tersedia
                     </button>
                     @if(app()->environment('local') || Auth::user()->role === 'admin')
                     <a href="{{ route('certificates.download', [$event, $registration]) }}?force=1" class="btn btn-outline-primary shadow-sm" target="_blank">
@@ -79,11 +79,11 @@
         </div>
 
         @if(!$certificateReady)
-            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4">
+            <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
                 <i class="bi bi-info-circle-fill fs-4 me-3"></i>
                 <div>
-                    <strong>Sertifikat sedang dalam proses validasi.</strong><br>
-                    Anda dapat melihat preview di bawah ini. Tombol download akan aktif otomatis setelah 3 hari dari tanggal event.
+                    <strong>Sertifikat sedang disiapkan.</strong><br>
+                    Sertifikat akan tersedia segera setelah acara selesai dan Anda telah mengisi feedback & rating.
                 </div>
             </div>
         @endif

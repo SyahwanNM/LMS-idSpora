@@ -78,6 +78,9 @@ class EventParticipationController extends Controller
                 ]);
             } catch(\Throwable $e) { /* ignore notification errors */ }
         }
+        if($request->expectsJson() || $request->ajax()){
+            return response()->json(['success' => true, 'message' => 'Anda berhasil terdaftar!', 'redirect' => route('events.registered.detail', $event)]);
+        }
         return redirect()->back()->with('success','Anda berhasil terdaftar!');
     }
 

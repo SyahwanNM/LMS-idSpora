@@ -4101,12 +4101,12 @@ input[type="time"] {
     width: 450px;
     margin-left: 50px;
 }
-
 .tabel-pengeluaran td {
     vertical-align: middle;
     text-align: center;
     margin-left: 20px;
 }
+
 
 .tabel-pengeluaran h5 {
     margin-left: 50px;
@@ -4385,6 +4385,15 @@ input[type="time"] {
 
 .filter-group {
     width: 200px;
+
+}
+.filter-group svg {
+    position: absolute;
+    margin-left: -30px;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
 }
 
 .filter-label {

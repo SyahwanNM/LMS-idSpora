@@ -174,66 +174,17 @@
                             </div>
                         </div>
 
-                        <!-- Pengeluaran (Breakdown) -->
-                        <div>
-                            <div class="flex items-center justify-between gap-4 mb-2">
-                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
-                                <button type="button" id="add-expense-row"
-                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    Tambah Pengeluaran
-                                </button>
-                            </div>
-                            <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
-                                    <div class="col-span-5">Item</div>
-                                    <div class="col-span-2">Qty</div>
-                                    <div class="col-span-3">Harga Satuan</div>
-                                    <div class="col-span-2">Aksi</div>
-                                </div>
 
-                                <div id="expense-rows" class="divide-y divide-gray-200">
-                                    @foreach($expenseRows as $i => $row)
-                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
-                                            <div class="col-span-12 md:col-span-5">
-                                                <input type="text" name="expenses[{{ $i }}][item]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
-                                                    placeholder="Contoh: Iklan, Produksi, dll">
-                                            </div>
-                                            <div class="col-span-6 md:col-span-2">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
-                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
-                                                    placeholder="0">
-                                            </div>
-                                            <div class="col-span-6 md:col-span-3">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
-                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
-                                                    placeholder="0">
-                                            </div>
-                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
-                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
-                                                    Hapus
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
-                        </div>
-
-                        <!-- Akses Course Gratis -->
+                        <!-- Akses Course (Freemium Mode) -->
                         <div>
-                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
-                                Gratis</label>
+                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course</label>
                             <select name="free_access_mode" id="free_access_mode"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka semua materi</option>
-                                <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                                <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                            <p class="mt-1 text-xs text-gray-500">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</p>
                         </div>
 
                         <!-- Reseller Course -->
@@ -328,6 +279,56 @@
                                 <input type="file" name="card_thumbnail"
                                     class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
                             </div>
+                        </div>
+
+                        <!-- Pengeluaran (Breakdown) -->
+                        <div>
+                            <div class="flex items-center justify-between gap-4 mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
+                                <button type="button" id="add-expense-row"
+                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Tambah Pengeluaran
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <div class="col-span-5">Item</div>
+                                    <div class="col-span-2">Qty</div>
+                                    <div class="col-span-3">Harga Satuan</div>
+                                    <div class="col-span-2">Aksi</div>
+                                </div>
+
+                                <div id="expense-rows" class="divide-y divide-gray-200">
+                                    @foreach($expenseRows as $i => $row)
+                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
+                                            <div class="col-span-12 md:col-span-5">
+                                                <input type="text" name="expenses[{{ $i }}][item]"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
+                                                    placeholder="Contoh: Iklan, Produksi, dll">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
+                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-3">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
+                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
                         </div>
 
                         <!-- Hidden inputs for other required fields not in design (Duration, etc) -->

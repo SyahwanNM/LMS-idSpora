@@ -814,7 +814,8 @@ class PaymentController extends Controller
 
         $forceNew = (bool) $request->boolean('force_new');
 
-        $baseAmount = (float) ($course->price ?? 0);
+        $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
+        $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
         if ($baseAmount <= 0) {
             return response()->json(['message' => 'Course gratis, tidak perlu Midtrans.'], 400);
         }
@@ -1109,13 +1110,23 @@ class PaymentController extends Controller
                 }
             }
 
-            // Persist terminal non-success statuses to the registration as well
-            // so registrations don't remain pending forever when Midtrans expires.
-            if ($payment->event_registration_id && in_array($internalStatus, ['expired', 'rejected'], true)) {
-                $registration = EventRegistration::find($payment->event_registration_id);
-                if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
-                    $registration->status = $internalStatus;
-                    $registration->save();
+            // Persist terminal non-success statuses to the related entities
+            // so they don't remain pending forever when Midtrans expires or is rejected.
+            if (in_array($internalStatus, ['expired', 'rejected'], true)) {
+                if ($payment->event_registration_id) {
+                    $registration = EventRegistration::find($payment->event_registration_id);
+                    if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
+                        $registration->status = $internalStatus;
+                        $registration->save();
+                    }
+                }
+
+                if ($payment->enrollment_id) {
+                    $enrollment = Enrollment::find($payment->enrollment_id);
+                    if ($enrollment && $enrollment->status !== 'active') {
+                        $enrollment->status = $internalStatus;
+                        $enrollment->save();
+                    }
                 }
             }
 
@@ -1220,11 +1231,23 @@ class PaymentController extends Controller
                 }
             }
 
-            if ($payment->event_registration_id && in_array($internalStatus, ['expired', 'rejected'], true)) {
-                $registration = EventRegistration::find($payment->event_registration_id);
-                if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
-                    $registration->status = $internalStatus;
-                    $registration->save();
+            // Persist terminal non-success statuses to the related entities
+            // so they don't remain pending forever when Midtrans expires or is rejected.
+            if (in_array($internalStatus, ['expired', 'rejected'], true)) {
+                if ($payment->event_registration_id) {
+                    $registration = EventRegistration::find($payment->event_registration_id);
+                    if ($registration && $registration->status !== 'active' && $registration->status !== 'canceled') {
+                        $registration->status = $internalStatus;
+                        $registration->save();
+                    }
+                }
+
+                if ($payment->enrollment_id) {
+                    $enrollment = Enrollment::find($payment->enrollment_id);
+                    if ($enrollment && $enrollment->status !== 'active') {
+                        $enrollment->status = $internalStatus;
+                        $enrollment->save();
+                    }
                 }
             }
 
@@ -1258,7 +1281,8 @@ class PaymentController extends Controller
                 if ($internalStatus === 'pending') {
                     return redirect()->route('course.payment', $course)->with('info', 'Pembayaran masih pending. Silakan selesaikan di Midtrans.');
                 }
-                return redirect()->route('course.payment', $course)->with('warning', 'Transaksi sudah kadaluarsa / gagal. Silakan lakukan pembayaran ulang.');
+                return redirect()->route('course.payment', ['course' => $course->id, 'force_new' => 1])
+                    ->with('warning', 'Transaksi sudah kadaluarsa / gagal. Silakan lakukan pembayaran ulang.');
             }
         }
 

@@ -198,15 +198,17 @@ class TrainerNotificationsController extends Controller
             $event = Event::query()->find($entityId);
             if ($event) {
                 if ($decision === 'accept') {
-                    if (!empty($event->trainer_id) && (int) $event->trainer_id !== (int) $uid) {
-                        return back()->with('error', 'Undangan tidak bisa diterima karena event sudah ditugaskan ke trainer lain.');
-                    }
-                    if ((int) $event->trainer_id !== (int) $uid) {
+                    // Multi-speaker support: don't block others if trainer_id is already set.
+                    // Only update event->trainer_id if it's currently empty, to record at least one official trainer.
+                    if (empty($event->trainer_id)) {
                         $event->trainer_id = $uid;
+                        if (empty($event->material_deadline)) {
+                            $event->material_deadline = now()->addDays(3);
+                        }
                     }
-                    $event->material_deadline = now()->addDays(3);
                     $event->save();
                 } else {
+                    // Only clear trainer_id if the current user was the one assigned.
                     if ((int) $event->trainer_id === (int) $uid) {
                         $event->trainer_id = null;
                         $event->save();

@@ -177,4 +177,32 @@ class Course extends Model
 
         return asset('storage/' . $normalized);
     }
+
+    public function hasDiscount(): bool
+    {
+        if (($this->discount_percent ?? 0) <= 0) {
+            return false;
+        }
+
+        $now = now();
+        if ($this->discount_start && $this->discount_start > $now) {
+            return false;
+        }
+        if ($this->discount_end && $this->discount_end < $now) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getDiscountedPriceAttribute(): float
+    {
+        $base = (float) ($this->price ?? 0);
+        if (!$this->hasDiscount()) {
+            return $base;
+        }
+
+        $perc = (float) ($this->discount_percent ?? 0);
+        return max(0, $base * (1 - ($perc / 100)));
+    }
 }

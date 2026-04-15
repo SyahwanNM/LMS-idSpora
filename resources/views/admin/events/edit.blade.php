@@ -3,16 +3,13 @@
 @section('content')
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
-            <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>
-                Kembali</a>
         </div>
         @if($errors->any())
             <div class="alert alert-danger">
                 <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false">
+        <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="editEventModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Event</h5></div>
                 <div class="modal-body">
@@ -56,17 +53,17 @@
                                                     <option value="" disabled>Memuat pembicara...</option>
                                                     <option value="{{ $sp }}" selected>{{ $sp }}</option>
                                                 </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i === 0 ? 'disabled' : '' }} title="Hapus">&times;</button>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
                                             </div>
                                         @endforeach
                                     @else
                                         <div class="input-group speaker-row">
                                             <select name="speakers[]" class="form-select speaker-select" data-selected=""
                                                 required>
-                                                <option value="" selected disabled>Pilih pembicara</option>
+                                                <option value="" selected disabled>Pilih narasumber</option>
                                             </select>
-                                            <button type="button" class="btn btn-outline-danger remove-speaker" disabled
-                                                title="Hapus">&times;</button>
+                                            <button type="button" class="btn btn-outline-danger remove-speaker"
+                                                title="Hapus"><i class="bi bi-trash"></i></button>
                                         </div>
                                     @endif
                                 </div>
@@ -103,7 +100,7 @@
                                     <input type="text" name="materi" id="materi" class="form-control" required
                                            value="{{ $currentMateri }}"
                                            placeholder="Klik untuk lihat daftar, lalu ketik untuk mencari"
-                                           autocomplete="off">
+                                           autocomplete="off" data-options="@json($materiMerged ?? [])">
                                     <div id="materiSuggestions"
                                          class="list-group position-absolute w-100 shadow-sm"
                                          style="display:none; z-index: 1060; max-height: 240px; overflow-y:auto;"></div>
@@ -178,7 +175,7 @@
 
                             <div class="mb-3">
                                 <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description', $event->description) !!}</textarea>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ strip_tags(old('description', $event->description ?? '')) }}</textarea>
                                 <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                             </div>
 
@@ -297,7 +294,7 @@
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
-                                    rows="6">{{ old('terms_and_conditions', $event->terms_and_conditions) }}</textarea>
+                                    rows="6">{{ strip_tags(old('terms_and_conditions', $event->terms_and_conditions ?? '')) }}</textarea>
                                 <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
                             </div>
                             <div class="mb-3">
@@ -399,7 +396,15 @@
                         </div>
                     </div>
                     <div class="d-flex justify-content-end mt-3 gap-2">
-                        <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i> Batal</a>
+                        @if((bool)($event->is_published ?? false))
+                            <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan publikasi event ini?')">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-megaphone me-1"></i> Batal Terbitkan
+                                </button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Batal</a>
                         <button type="submit" class="btn btn-primary" form="editEventForm" id="editSubmitBtn"><i class="bi bi-check-circle me-1"></i> Update Event</button>
                     </div>
                     <div class="small text-muted mt-2" id="editSubmitHint" style="display:none;">Lengkapi semua field wajib untuk mengaktifkan tombol Update.</div>
@@ -867,7 +872,16 @@
                 catch (e) { trainersCache = []; }
                 return trainersCache;
             }
-            function updateSpeakerRowsState() { speakersContainer?.querySelectorAll('.speaker-row').forEach((row, idx) => { const sel = row.querySelector('select[name="speakers[]"]'); const rm = row.querySelector('.remove-speaker'); if (sel) sel.required = (idx === 0); if (rm) rm.disabled = (idx === 0); }); }
+            function updateSpeakerRowsState() {
+                if (!speakersContainer) return;
+                const rows = speakersContainer.querySelectorAll('.speaker-row');
+                rows.forEach((row, idx) => {
+                    const sel = row.querySelector('select[name="speakers[]"]');
+                    const rm = row.querySelector('.remove-speaker');
+                    if (sel) sel.required = (idx === 0);
+                    if (rm) rm.disabled = (rows.length <= 1);
+                });
+            }
             function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join(', '); }
             function populateSpeakerSelect(selectEl, selectedName, trainers) {
                 if (!selectEl) return;
@@ -891,7 +905,7 @@
                 const div = document.createElement('div');
                 div.className = 'input-group speaker-row';
                 const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
-                div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih pembicara</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>`;
+                div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih narasumber</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>`;
                 speakersContainer.appendChild(div);
                 updateSpeakerRowsState();
                 refreshSpeakerSelects();

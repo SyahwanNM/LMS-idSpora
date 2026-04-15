@@ -175,7 +175,8 @@ class CoursePaymentController extends Controller
         $referrer = $this->resolveValidReferrer($user, $referralCode);
         $referralCode = $referrer ? $referralCode : null;
 
-        $baseAmount = (float) ($course->price ?? 0);
+        $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
+        $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
         DB::beginTransaction();
@@ -287,7 +288,8 @@ class CoursePaymentController extends Controller
         $referrer = $this->resolveValidReferrer($user, $referralCode);
         $referralCode = $referrer ? $referralCode : null;
 
-        $baseAmount = (float) ($course->price ?? 0);
+        $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
+        $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
         DB::beginTransaction();

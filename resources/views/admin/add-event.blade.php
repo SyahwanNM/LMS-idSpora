@@ -182,6 +182,11 @@
                                         $totalDisplay = $isOfflineOnly ? 2 : 3;
                                         // Tampilkan count UI (offline: tanpa VBG)
                                         $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        // Determine missing items for publish confirmation
+                                        $missing = [];
+                                        if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+                                        if (!$hasModule) $missing[] = 'Module (Trainer)';
+                                        if (!$hasAbs) $missing[] = 'Absensi';
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $tooltip }}">{{ $pct }}%</span>
@@ -196,16 +201,19 @@
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
                                         @if(!(bool)($event->is_published ?? false))
-                                            <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline publish-form">
                                                 @csrf
-                                                <button type="submit" class="btn btn-outline-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan" onclick="return confirm('Terbitkan event ini agar muncul di halaman user?');">
+                                                <button type="button" class="btn btn-outline-success btn-action-icon publish-event-btn" data-doc-pct="{{ $pct }}" data-missing='@json($missing)' data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan">
                                                     <i class="bi bi-megaphone"></i><span class="visually-hidden">Terbitkan</span>
                                                 </button>
                                             </form>
                                         @else
-                                            <button type="button" class="btn btn-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Sudah Terbit" disabled>
-                                                <i class="bi bi-check2-circle"></i><span class="visually-hidden">Sudah Terbit</span>
-                                            </button>
+                                            <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline unpublish-form">
+                                                @csrf
+                                                <button type="button" class="btn btn-success btn-action-icon unpublish-event-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="Batal Terbitkan">
+                                                    <i class="bi bi-check2-circle"></i><span class="visually-hidden">Batal Terbitkan</span>
+                                                </button>
+                                            </form>
                                         @endif
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
@@ -457,7 +465,7 @@
                 <div class="mt-3">{{ $events->links() }}</div>
             @else <div class="text-center py-5">Belum ada event.</div> @endif
         </div></div>
-        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false">
+        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
@@ -492,15 +500,15 @@
                                                     <option value="" disabled>Memuat pembicara...</option>
                                                     <option value="{{ $sp }}" selected>{{ $sp }}</option>
                                                 </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i === 0 ? 'disabled' : '' }} title="Hapus">&times;</button>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
                                             </div>
                                             @endforeach
                                         @else
-                                            <div class="input-group speaker-row">
+                                                <div class="input-group speaker-row">
                                                 <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
-                                                    <option value="" selected disabled>Pilih pembicara</option>
+                                                    <option value="" selected disabled>Pilih narasumber</option>
                                                 </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" disabled title="Hapus">&times;</button>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
                                             </div>
                                         @endif
                                     </div>
@@ -782,7 +790,94 @@
                 </div>
             </div></div>
         </div>
-    </div>
+        </div>
+
+        <!-- Publish confirmation modal (global) -->
+        <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="publishConfirmModalLabel">Konfirmasi Terbitkan Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body" id="publishConfirmModalBody"></div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="publishConfirmBtn">Terbitkan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var publishModalEl = document.getElementById('publishConfirmModal');
+            var publishModal = (publishModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') ? new bootstrap.Modal(publishModalEl) : null;
+            var pendingPublishForm = null;
+            document.querySelectorAll('.publish-event-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var pct = parseInt(btn.getAttribute('data-doc-pct') || '0', 10);
+                    var missingJson = btn.getAttribute('data-missing') || '[]';
+                    var missing = [];
+                    try { missing = JSON.parse(missingJson); } catch(e) { missing = []; }
+                    var form = btn.closest('form');
+                    var body = document.getElementById('publishConfirmModalBody');
+                    var title = document.getElementById('publishConfirmModalLabel');
+                    var confirmBtn = document.getElementById('publishConfirmBtn');
+                    
+                    if (title) title.textContent = 'Konfirmasi Terbitkan Event';
+                    if (confirmBtn) {
+                        confirmBtn.textContent = 'Terbitkan';
+                        confirmBtn.classList.remove('btn-danger');
+                        confirmBtn.classList.add('btn-primary');
+                    }
+
+                    if (pct >= 100) {
+                        if (body) body.innerHTML = '<p>Apakah anda yakin ingin publish event ini? Dokumen sudah lengkap dan event akan segera tampil untuk publik.</p>';
+                    } else {
+                        if (body) {
+                            var html = '<p>Kelengkapan dokumen event ini belum lengkap:</p><ul>';
+                            if (Array.isArray(missing) && missing.length) {
+                                missing.forEach(function(it){ html += '<li>' + it + '</li>'; });
+                            } else {
+                                html += '<li>Beberapa dokumen belum lengkap</li>';
+                            }
+                            html += '</ul><p>Apakah anda yakin ingin publish event ini?</p>';
+                            body.innerHTML = html;
+                        }
+                    }
+                    pendingPublishForm = form;
+                    if (publishModal) publishModal.show();
+                });
+            });
+            document.querySelectorAll('.unpublish-event-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var form = btn.closest('form');
+                    var body = document.getElementById('publishConfirmModalBody');
+                    var title = document.getElementById('publishConfirmModalLabel');
+                    var confirmBtn = document.getElementById('publishConfirmBtn');
+                    
+                    if (title) title.textContent = 'Konfirmasi Batal Terbitkan';
+                    if (confirmBtn) {
+                        confirmBtn.textContent = 'Batal Terbitkan';
+                        confirmBtn.classList.remove('btn-primary');
+                        confirmBtn.classList.add('btn-danger');
+                    }
+                    if (body) body.innerHTML = '<p>Apakah Anda yakin ingin membatalkan publikasi event ini? Event tidak akan terlihat lagi oleh publik.</p>';
+                    
+                    pendingPublishForm = form;
+                    if (publishModal) publishModal.show();
+                });
+            });
+            var confirmBtn = document.getElementById('publishConfirmBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    if (pendingPublishForm) pendingPublishForm.submit();
+                });
+            }
+        });
+        </script>
+
     @endsection
     @section('styles')
     <style>
@@ -909,6 +1004,14 @@
         .modal-upload-operasional .btn{ border-radius: 12px; padding-top: .6rem; padding-bottom: .6rem; }
         .modal-upload-operasional .modal-footer .btn{ width: auto !important; flex: 0 0 auto; }
 
+        /* Publish confirmation modal: compact footer/buttons like logout/feedback confirm modal */
+        #publishConfirmModal .modal-content{ border-radius: 18px; overflow: hidden; }
+        #publishConfirmModal .modal-header{ padding: 1.1rem 1.1rem .75rem; }
+        #publishConfirmModal .modal-body{ padding: 0 1.1rem 1rem; }
+        #publishConfirmModal .modal-footer{ padding: .25rem 1.1rem 1.1rem; border-top: 0; }
+        #publishConfirmModal .btn{ border-radius: 12px; padding-top: .6rem; padding-bottom: .6rem; }
+        #publishConfirmModal .modal-footer .btn{ width: auto !important; flex: 0 0 auto; }
+
         /* Slightly shift centered doc modal upward */
         .modal-upload-operasional.show .modal-dialog {
             transform: translate(0, -24px) !important;
@@ -976,61 +1079,67 @@
         }
 
         // Materi autocomplete (show after 2 chars) + validation
-        (function setupMateriAutocomplete(){
-            const materiInput = document.getElementById('materi');
-            const box = document.getElementById('materiSuggestions');
-            const invalidText = document.getElementById('materiInvalidText');
-            if(!materiInput || !box) return;
-
-            const options = @json($materiMerged ?? []);
+        function setupGenericAutocomplete(inputEl, boxEl, options, invalidEl) {
+            if(!inputEl || !boxEl) return;
             const norm = (s) => String(s || '').trim();
             const lower = (s) => norm(s).toLowerCase();
-            const optionSet = new Set(options.map(v => lower(v)).filter(Boolean));
+            const optionSet = new Set((options || []).map(v => lower(v)).filter(Boolean));
 
-            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+            function hide(){ boxEl.style.display = 'none'; boxEl.innerHTML = ''; }
             function show(items){
                 if(!items.length){ hide(); return; }
-                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
-                box.style.display = 'block';
+                boxEl.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                boxEl.style.display = 'block';
             }
             function filter(q){
                 const query = lower(q);
-                const base = options.map(norm).filter(Boolean);
+                const base = (options || []).map(norm).filter(Boolean);
                 if(!query) return base.slice(0, 30);
-                return base
-                    .filter(v => lower(v).includes(query))
-                    .slice(0, 30);
+                return base.filter(v => lower(v).includes(query)).slice(0, 30);
             }
             function applyValidity(){
-                const raw = norm(materiInput.value);
-                if(!raw){
-                    materiInput.setCustomValidity('');
-                    if(invalidText) invalidText.style.display = 'none';
-                    return;
-                }
+                const raw = norm(inputEl.value);
+                if(!raw){ inputEl.setCustomValidity(''); if(invalidEl) invalidEl.style.display = 'none'; return; }
                 const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
-                materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
-                if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
+                inputEl.setCustomValidity(ok ? '' : 'Tidak valid');
+                if(invalidEl) invalidEl.style.display = ok ? 'none' : 'block';
             }
 
-            materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
-            materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
-            materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
+            inputEl.addEventListener('input', () => { show(filter(inputEl.value)); applyValidity(); });
+            inputEl.addEventListener('focus', () => { show(filter(inputEl.value)); });
+            inputEl.addEventListener('click', () => { show(filter(inputEl.value)); });
+            inputEl.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
 
-            box.addEventListener('mousedown', (e) => {
+            boxEl.addEventListener('mousedown', (e) => {
                 const btn = e.target?.closest('[data-value]');
                 if(!btn) return;
                 e.preventDefault();
-                materiInput.value = btn.getAttribute('data-value') || '';
+                inputEl.value = btn.getAttribute('data-value') || '';
                 hide();
                 applyValidity();
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
             });
             document.addEventListener('click', (e) => {
-                if (e.target === materiInput) return;
-                if (box.contains(e.target)) return;
+                if (e.target === inputEl) return;
+                if (boxEl.contains(e.target)) return;
                 hide();
             });
             applyValidity();
+        }
+
+        (function setupMateriAutocomplete(){
+            const inp = document.getElementById('materi');
+            const box = document.getElementById('materiSuggestions');
+            const inv = document.getElementById('materiInvalidText');
+            if(!inp || !box) return;
+            setupGenericAutocomplete(inp, box, @json($materiMerged ?? []), inv);
+        })();
+
+        (function setupJenisAutocomplete(){
+            const inp = document.getElementById('jenis');
+            const box = document.getElementById('jenisSuggestions');
+            if(!inp || !box) return;
+            setupGenericAutocomplete(inp, box, @json($jenisMerged ?? []));
         })();
         // CKEditor init for deskripsi and terms
         // IMPORTANT: guard ClassicEditor so a missing asset doesn't break the whole page (incl. submit enable/disable).
@@ -1401,7 +1510,7 @@
                 const sel = row.querySelector('select[name="speakers[]"]');
                 const rm  = row.querySelector('.remove-speaker');
                 if(sel){ sel.required = (idx === 0); }
-                if(rm){ rm.disabled = (idx === 0); }
+                if(rm){ rm.disabled = (rows.length <= 1); }
             });
         }
 
@@ -1451,9 +1560,9 @@
             const safeVal = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
             div.innerHTML = `
                 <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
-                    <option value="" selected disabled>Pilih pembicara</option>
+                    <option value="" selected disabled>Pilih narasumber</option>
                 </select>
-                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>
+                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
             `;
             speakersContainer.appendChild(div);
             updateSpeakerRowsState();
@@ -2780,6 +2889,138 @@ function initEditEventDynamicTables(modalEl){
     }
 }
 
+function initEditEventSpeakers(modalEl){
+    if(!modalEl || modalEl.dataset.speakersInitialized === '1') return;
+    modalEl.dataset.speakersInitialized = '1';
+
+    const speakersContainer = modalEl.querySelector('#speakersContainer');
+    const addSpeakerBtn = modalEl.querySelector('#addSpeakerRow');
+    const speakerCombined = modalEl.querySelector('#speakerCombined');
+    const trainersUrl = @json(route('admin.api.trainers'));
+    let trainersCache = null;
+
+    async function fetchTrainers(){
+        if (trainersCache !== null) return trainersCache;
+        try {
+            const res = await fetch(trainersUrl, { headers: { 'Accept': 'application/json' } });
+            const json = await res.json();
+            const list = (json && Array.isArray(json.data)) ? json.data : [];
+            trainersCache = list.map(t => ({ id: t.id, name: String(t.name || '').trim() })).filter(t => t.name !== '');
+        } catch (e) { trainersCache = []; }
+        return trainersCache;
+    }
+
+    function updateSpeakerRowsState() {
+        if (!speakersContainer) return;
+        const rows = speakersContainer.querySelectorAll('.speaker-row');
+        rows.forEach((row, idx) => {
+            const sel = row.querySelector('select[name="speakers[]"]');
+            const rm = row.querySelector('.remove-speaker');
+            if (sel) sel.required = (idx === 0);
+            if (rm) rm.disabled = (rows.length <= 1);
+        });
+    }
+
+    function updateSpeakerCombined() {
+        if (!speakerCombined || !speakersContainer) return;
+        const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]'))
+            .map(s => String(s.value || '').trim())
+            .filter(Boolean);
+        speakerCombined.value = names.join(', ');
+    }
+
+    function populateSpeakerSelect(selectEl, selectedName, trainers) {
+        if (!selectEl) return;
+        const selected = String(selectedName || '').trim();
+        const options = [];
+        options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Pilih narasumber</option>');
+        const names = new Set();
+        (trainers || []).forEach(t => {
+            const name = String(t.name || '').trim();
+            if (!name || names.has(name)) return;
+            names.add(name);
+            const isSel = selected && name === selected;
+            options.push('<option value="' + name.replace(/"/g, '&quot;') + '" ' + (isSel ? 'selected' : '') + '>' + name + '</option>');
+        });
+        if (selected && !names.has(selected)) {
+            options.push('<option value="' + selected.replace(/"/g, '&quot;') + '" selected>' + selected + ' (tidak ditemukan)</option>');
+        }
+        selectEl.innerHTML = options.join('');
+        if (selected) { selectEl.value = selected; }
+    }
+
+    async function refreshSpeakerSelects() {
+        if (!speakersContainer) return;
+        const trainers = await fetchTrainers();
+        speakersContainer.querySelectorAll('select[name="speakers[]"]').forEach(sel => {
+            const selected = sel.getAttribute('data-selected') || sel.value || '';
+            populateSpeakerSelect(sel, selected, trainers);
+            sel.setAttribute('data-selected', sel.value || '');
+        });
+        updateSpeakerCombined();
+    }
+
+    function addSpeakerRow(prefill = '') {
+        if (!speakersContainer) return;
+        const div = document.createElement('div');
+        div.className = 'input-group speaker-row';
+        const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
+        div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih narasumber</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>`;
+        speakersContainer.appendChild(div);
+        updateSpeakerRowsState();
+        refreshSpeakerSelects();
+    }
+
+    if(speakersContainer){
+        speakersContainer.addEventListener('click', e => {
+            const btn = e.target.closest('.remove-speaker');
+            if (btn) {
+                const row = btn.closest('.speaker-row');
+                if(row) {
+                    row.remove();
+                    updateSpeakerRowsState();
+                    updateSpeakerCombined();
+                }
+            }
+        });
+        speakersContainer.addEventListener('change', e => {
+            const sel = e.target.closest('select[name="speakers[]"]');
+            if(sel){
+                sel.setAttribute('data-selected', sel.value || '');
+                updateSpeakerCombined();
+            }
+        });
+    }
+
+    if(addSpeakerBtn){
+        addSpeakerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addSpeakerRow();
+        });
+    }
+
+    updateSpeakerRowsState();
+    refreshSpeakerSelects();
+}
+
+function initEditEventAutocomplete(modalEl) {
+    if(!modalEl || modalEl.dataset.autocompleteInitialized === '1') return;
+    modalEl.dataset.autocompleteInitialized = '1';
+
+    const materiInp = modalEl.querySelector('#materi');
+    const materiBox = modalEl.querySelector('#materiSuggestions');
+    const materiInv = modalEl.querySelector('#materiInvalidText');
+    
+    if(materiInp && materiBox) {
+        let options = [];
+        try {
+            const raw = materiInp.getAttribute('data-options');
+            options = raw ? JSON.parse(raw) : [];
+        } catch(e) { options = []; }
+        setupGenericAutocomplete(materiInp, materiBox, options, materiInv);
+    }
+}
+
 // Edit button: load edit modal via AJAX, fallback to full navigation
 document.addEventListener('click', async function(e){
     const btn = e.target.closest('.edit-event-btn');
@@ -2807,6 +3048,8 @@ document.addEventListener('click', async function(e){
         document.body.appendChild(modalEl);
         initEditEventLocationAndBenefits(modalEl);
         initEditEventDynamicTables(modalEl);
+        initEditEventSpeakers(modalEl);
+        initEditEventAutocomplete(modalEl);
         if(typeof enableDraggableModal === 'function') try{ enableDraggableModal(modalEl); }catch(_){}
         if(window.bootstrap && typeof bootstrap.Modal === 'function'){
             const m = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });

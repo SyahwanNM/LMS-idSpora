@@ -382,6 +382,9 @@
                             <p class="harga_judul_event">
                                 @if($isFreeCourseLocal)
                                     GRATIS
+                                @elseif($course->hasDiscount())
+                                    <span style="text-decoration: line-through; color: #888; font-size: 12px; margin-right: 5px;">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                    Rp{{ number_format($course->discounted_price, 0, ',', '.') }}
                                 @else
                                     Rp{{ number_format($course->price ?? 0, 0, ',', '.') }}
                                 @endif
@@ -394,9 +397,12 @@
                     <div class="harga_teks_payment">
                         <div class="teks_payment">
                             <p>Total</p>
-                            <h4 id="totalAmountText" data-base-amount="{{ (int) round($course->price ?? 0) }}">
+                            <h4 id="totalAmountText" data-base-amount="{{ (int) round($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0)) }}">
                                 @if($isFreeCourseLocal)
                                     GRATIS
+                                @elseif($course->hasDiscount())
+                                    <span style="text-decoration: line-through; color: #888; font-size: 14px; margin-right: 8px; font-weight: 400;">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
+                                    Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
                                 @else
                                     Rp {{ number_format($course->price ?? 0, 0, ',', '.') }}
                                 @endif
