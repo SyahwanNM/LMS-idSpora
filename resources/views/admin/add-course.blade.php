@@ -85,6 +85,17 @@
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
+                        <!-- Akses Course (Freemium Mode) -->
+                        <div class="mb-3">
+                            <label for="free_access_mode" class="form-label text-dark">Akses Course</label>
+                            <select name="free_access_mode" id="free_access_mode" class="form-select">
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
+                            </select>
+                            <div class="form-text text-muted small">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label text-dark">Reseller Course</label>
                             @php

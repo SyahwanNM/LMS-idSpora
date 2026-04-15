@@ -208,7 +208,14 @@
                                 <h5>{{ isset($event)? $event->title : 'Event Title' }}</h5>
                                 <p>IdSpora</p>
                                 <div class="price-text" id="eventPriceText" data-base-amount="{{ (int) round($finalPrice ?? 0) }}">
-                                    @if($isFree) FREE @else Rp{{ number_format($finalPrice,0,',','.') }} @endif
+                                    @if($isFree) 
+                                        FREE 
+                                    @elseif(isset($event) && $event->hasDiscount())
+                                        <span style="text-decoration: line-through; color: #888; font-size: 0.85em; margin-right: 6px; font-weight: 400;">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
+                                        Rp{{ number_format($finalPrice, 0, ',', '.') }}
+                                    @else 
+                                        Rp{{ number_format($finalPrice, 0, ',', '.') }} 
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -238,7 +245,7 @@
 
                     @if(isset($event) && $isFree)
                         <div class="mt-3" id="manualPaySection">
-                            <button type="submit" class="btn-pay">Daftar Gratis</button>
+                            <button type="submit" class="btn-pay" id="freeRegBtn">Daftar Gratis</button>
                         </div>
                     @else
                         @if(!$midtransClientKey)
@@ -307,11 +314,55 @@
             </div>
         </div>
     </div>
+    
+    <!-- Generic Notification Modal -->
+    <div class="modal fade" id="appNotificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
+                <div class="modal-body p-4 text-center">
+                    <div id="appNotifyIcon" class="mb-3"></div>
+                    <h5 id="appNotifyTitle" class="mb-2" style="font-weight: 700;">Informasi</h5>
+                    <div id="appNotifyMessage" class="text-muted" style="font-size: 14px;"></div>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px; font-weight: 600;">Mengerti</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function(){
+        function showAppNotify(message, type = 'info') {
+            const modalEl = document.getElementById('appNotificationModal');
+            const titleEl = document.getElementById('appNotifyTitle');
+            const messageEl = document.getElementById('appNotifyMessage');
+            const iconEl = document.getElementById('appNotifyIcon');
+            if (!modalEl || !messageEl) return;
+            messageEl.textContent = message;
+            let iconHtml = '';
+            let titleText = 'Informasi';
+            let btnClass = 'btn-primary';
+            if (type === 'error') {
+                iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#EF4444" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg></div>';
+                titleText = 'Oops!';
+                btnClass = 'btn-danger';
+            } else if (type === 'success') {
+                iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(22, 163, 74, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#16A34A" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/></svg></div>';
+                titleText = 'Berhasil';
+                btnClass = 'btn-success';
+            } else {
+                iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(59, 130, 246, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#3B82F6" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>';
+            }
+            if (iconEl) iconEl.innerHTML = iconHtml;
+            if (titleEl) titleEl.textContent = titleText;
+            const btn = modalEl.querySelector('.btn');
+            if (btn) btn.className = 'btn w-100 ' + btnClass;
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+
         const form = document.getElementById('paymentForm');
         if(!form) return;
         const fullName = form.querySelector('input[name="full_name"]');
@@ -418,15 +469,23 @@
         function isValidPhone(val){ return /^[0-9]{6,15}$/.test(String(val || '').trim()); }
 
         function validate(){
-            if(isFree){
-                return true;
-            }
-            const method = getSelectedMethod();
             const nameOk = fullName && fullName.value.trim().length >= 3;
             const dialOk = dial && dial.value.trim() !== '';
             const waOk = wa && isValidPhone(wa.value);
-            const okMidtrans = nameOk && dialOk && waOk;
-            const okManualBase = nameOk && dialOk && waOk;
+            const allOk = nameOk && dialOk && waOk;
+
+            if(isFree){
+                const freeBtn = document.getElementById('freeRegBtn');
+                if(freeBtn){
+                    freeBtn.disabled = !allOk;
+                    freeBtn.style.opacity = allOk ? '1' : '0.5';
+                }
+                return allOk;
+            }
+
+            const method = getSelectedMethod();
+            const okMidtrans = allOk;
+            const okManualBase = allOk;
             if(showQrisBtn){
                 showQrisBtn.disabled = !(method === 'manual' && okManualBase);
                 showQrisBtn.style.opacity = (method === 'manual' && okManualBase) ? '1' : '0.5';
@@ -439,6 +498,7 @@
             if(payNowBtn){
                 const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
                 payNowBtn.disabled = !(method === 'manual' && okManualBase && proofOk);
+                payNowBtn.style.opacity = (method === 'manual' && okManualBase && proofOk) ? '1' : '0.5';
             }
             return (method === 'midtrans') ? okMidtrans : okManualBase;
         }
@@ -459,6 +519,47 @@
         }
 
         form.addEventListener('submit', function(e){
+            if(isFree){
+                e.preventDefault();
+                if(!validate()) return;
+                
+                const freeBtn = document.getElementById('freeRegBtn');
+                if(freeBtn) {
+                    freeBtn.disabled = true;
+                    freeBtn.textContent = 'Memproses...';
+                }
+
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success){
+                        showMidtransSuccessModal(data.message);
+                        setTimeout(function(){
+                            window.location.href = data.redirect || @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                        }, 1600);
+                    } else {
+                        showAppNotify(data.message || 'Gagal mendaftar.', 'error');
+                        if(freeBtn) {
+                            freeBtn.disabled = false;
+                            freeBtn.textContent = 'Daftar Gratis';
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showAppNotify('Terjadi kesalahan sistem.', 'error');
+                    if(freeBtn) {
+                        freeBtn.disabled = false;
+                        freeBtn.textContent = 'Daftar Gratis';
+                    }
+                });
+                return;
+            }
             if(!isFree && getSelectedMethod() === 'midtrans'){
                 e.preventDefault();
                 return;
@@ -468,7 +569,7 @@
                 const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
                 if(!proofOk){
                     e.preventDefault();
-                    alert('Silakan upload bukti pembayaran terlebih dahulu.');
+                    showAppNotify('Silakan upload bukti pembayaran terlebih dahulu.', 'error');
                     return;
                 }
 
@@ -491,7 +592,7 @@
 
             if(!validate()){
                 e.preventDefault();
-                alert('Lengkapi data peserta sebelum membayar.');
+                showAppNotify('Lengkapi data peserta sebelum membayar.', 'error');
             }
         });
 
@@ -506,7 +607,7 @@
                 e.preventDefault();
                 validate();
                 if(showQrisBtn.disabled){
-                    alert('Lengkapi data peserta terlebih dahulu.');
+                    showAppNotify('Lengkapi data peserta terlebih dahulu.', 'error');
                     return;
                 }
 
@@ -542,7 +643,7 @@
                     return;
                 }
                 if(file.size > 5 * 1024 * 1024){
-                    alert('Ukuran file terlalu besar. Maksimal 5MB.');
+                    showAppNotify('Ukuran file terlalu besar. Maksimal 5MB.', 'error');
                     paymentProofInput.value = '';
                     if(proofPreviewEl) proofPreviewEl.style.display = 'none';
                     validate();
@@ -583,10 +684,10 @@
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         const checkReferralUrl = @json(isset($event) ? route('payment.check-referral', $event->id) : '');
 
-        function showMidtransSuccessModal(){
+        function showMidtransSuccessModal(customMsg = null){
             const text = document.getElementById('midtransSuccessModalText');
             if (text) {
-                text.textContent = 'Anda berhasil terdaftar di event "' + eventTitle + '".';
+                text.textContent = customMsg || ('Anda berhasil terdaftar di event "' + eventTitle + '".');
             }
 
             const modalEl = document.getElementById('midtransSuccessModal');
@@ -676,7 +777,7 @@
 
         async function startMidtrans(){
             if(typeof window.snap === 'undefined'){
-                alert('Midtrans belum siap. Pastikan client key sudah diset.');
+                showAppNotify('Midtrans belum siap. Pastikan client key sudah diset.', 'error');
                 return;
             }
 
@@ -685,7 +786,7 @@
             // ensure validation up-to-date
             validate();
             if(midtransPayBtn && midtransPayBtn.disabled){
-                alert('Lengkapi data peserta sebelum membayar.');
+                showAppNotify('Lengkapi data peserta sebelum membayar.', 'error');
                 return;
             }
 
@@ -756,20 +857,20 @@
                     onPending: async function(){
                         // keep as pending; user can retry later
                         try { await postFinalize(data.order_id); } catch(_e) {}
-                        alert('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.');
+                        showAppNotify('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.', 'info');
                         // Update label for next attempt
                         cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
                         if(midtransPayBtn) midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
                     },
                     onError: function(){
-                        alert('Pembayaran gagal. Silakan coba lagi.');
+                        showAppNotify('Pembayaran gagal. Silakan coba lagi.', 'error');
                     },
                     onClose: function(){
                         // user closed popup
                     }
                 });
             } catch(e){
-                alert(String(e && e.message ? e.message : e));
+                showAppNotify(String(e && e.message ? e.message : e), 'error');
             } finally {
                 midtransPayBtn.disabled = false;
                 if(cachedPending && cachedPending.pending && cachedPending.order_id){

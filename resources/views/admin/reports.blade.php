@@ -259,10 +259,16 @@
             <div class="pendapatan-box">
                 <h5>Pendapatan Per Acara</h5>
                 <div class="filter-section" id="filters-pendapatan">
-                    <div class="filter-kiri" style="display:flex; gap:10px; align-items:flex-end;">
-                        <div class="filter-group">
-                            <label for="filter-event-pendapatan" class="filter-label">Cari Event</label>
+                    <div class="filter-kiri" >
+                        <div class="filter-group" style="padding-left:50px;">
+                            <label for="filter-event-pendapatan" class="filter-label" style="margin-left:-20px;">Cari Event</label>
+                           <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
                             <input type="text" id="filter-event-pendapatan" class="filter-input" placeholder="Cari nama event...">
+                           </div> 
+                            
                         </div>
                     </div>
                     <div class="filter-kanan" style="display:flex; gap:14px; align-items:flex-end;">
@@ -297,52 +303,7 @@
                         </tr>
                     <tbody>
                         @php
-                            // Selalu generate $eventRows di sini agar tidak ada cache lama dari controller
-                            $paidStatuses = ['settlement','capture','success'];
-                            $revenueMap = \App\Models\ManualPayment::query()
-                                ->selectRaw('event_id, SUM(amount) as total')
-                                ->where('status','settled')
-                                ->groupBy('event_id')
-                                ->pluck('total','event_id');
-                            // Ambil event yang event_date-nya tidak null dan sesuai bulan/tahun yang dipilih
-                            $eventsTmp = \App\Models\Event::withCount('registrations')
-                                ->whereNotNull('event_date')
-                                ->whereYear('event_date', $selectedDate->year)
-                                ->whereMonth('event_date', $selectedDate->month)
-                                ->orderBy('event_date','desc')->get();
-                            $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
-                                $price = $e->discounted_price ?? $e->price;
-                                $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
-                                $revenue = (float) $payments->sum('amount');
-                                $registeredCount = (int) $e->registrations()->where('status','active')->count();
-                                $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
-                                $incomeRows = [
-                                    [ 'label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue ],
-                                ];
-                                $expenseModels = $e->expenses()->get(['item','quantity','unit_price','total']);
-                                $expenseRows = $expenseModels->map(function($row){
-                                    return [
-                                        'label' => $row->item,
-                                        'qty' => (int)($row->quantity ?? 0),
-                                        'unit' => (float)($row->unit_price ?? 0),
-                                        'total' => (float)($row->total ?? 0),
-                                    ];
-                                })->values()->all();
-                                $expense = (float) array_sum(array_map(fn($r)=> (float)($r['total'] ?? 0), $expenseRows));
-                                return [
-                                    'id' => $e->id,
-                                    'name' => $e->title,
-                                    'date' => optional($e->event_date)->format('d/m/Y'),
-                                    'participants' => (int)$e->registrations_count,
-                                    'registered_count' => $registeredCount,
-                                    'price' => (float)$price,
-                                    'revenue' => $revenue,
-                                    'expense' => $expense,
-                                    'profit' => $revenue - $expense,
-                                    'income_rows' => $incomeRows,
-                                    'expense_rows' => $expenseRows,
-                                ];
-                            });
+                            // $eventRows is now provided by the controller and filtered by month/year.
                         @endphp
                         @forelse($eventRows as $row)
                             <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
@@ -479,12 +440,29 @@
             <h5 class="title-laporan-metrik">Metrik Operasional Rinci</h5>
             <div class="filter-section" id="filters-pertumbuhan">
                 <div class="filter-kiri">
+                    <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
+                           
+                           </div> 
                     <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
                         <input type="hidden" name="tab" value="pertumbuhan">
                         <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event..." style="width:200px">
                         
                         <label for="period_pertumbuhan" class="filter-label ms-2 mb-0">Periode</label>
-                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $selectedDate->format('Y-m') }}" class="form-control form-control-sm" style="width:150px">
+                        @php
+                            // Default the pertumbuhan period to the month of the first event shown (if any),
+                            // otherwise fall back to the selected date from request.
+                            $firstGrowthDateStr = null;
+                            try {
+                                $firstGrowthDateStr = collect($growthRows ?? [])->pluck('date')->filter()->first();
+                            } catch (\Throwable $e) { $firstGrowthDateStr = null; }
+                            try {
+                                $periodPertumbuhanValue = $firstGrowthDateStr ? \Carbon\Carbon::createFromFormat('d/m/Y', $firstGrowthDateStr)->format('Y-m') : $selectedDate->format('Y-m');
+                            } catch (\Throwable $e) { $periodPertumbuhanValue = $selectedDate->format('Y-m'); }
+                        @endphp
+                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $periodPertumbuhanValue }}" class="form-control form-control-sm" style="width:150px">
                         
                         <button type="submit" class="btn btn-primary btn-sm ms-2">Tampilkan</button>
                     </form>
@@ -515,20 +493,7 @@
                 </thead>
                 <tbody>
                     @php
-                        $growthRows = $growthRows ?? \App\Models\Event::withCount('registrations')
-                            ->orderBy('event_date','desc')
-                            ->get()
-                            ->map(function($e){
-                                return [
-                                    'id' => $e->id,
-                                    'name' => $e->title,
-                                    'date' => optional($e->event_date)->format('d/m/Y'),
-                                    'participants' => (int)$e->registrations_count,
-                                    'speaker' => $e->speaker,
-                                    'event_rating' => null,
-                                    'speaker_rating' => null,
-                                ];
-                            });
+                        // $growthRows is now provided by the controller and filtered by month/year.
                     @endphp
                     @forelse($growthRows as $row)
                         <tr
@@ -591,7 +556,7 @@
                         <input type="hidden" name="tab" value="operasional">
                         <div>
                             <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
-                            <input type="month" name="period" id="period_op" value="{{ $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                            <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
                         </div>
                         <div class="d-flex gap-2 align-items-end">
                             <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
@@ -638,9 +603,14 @@
                     <h5>Manajemen Dokumen Per Event</h5>
                     <div class="filter-section" id="filters-operasional">
                         <div class="filter-kiri">
-                            <div class="filter-group">
-                                <label for="filter-event-operasional" class="filter-label">Cari Event</label>
-                                <input type="text" id="filter-event-operasional" class="filter-input" placeholder="Cari nama event...">
+                            <div class="filter-group" style="padding-left:50px;">
+                                <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
+                            <input type="text" id="filter-event-operasional" class="filter-input" placeholder="Cari nama event...">
+                           </div> 
+                                
                             </div>
                         </div>
                             <div class="filter-kanan">
@@ -672,28 +642,7 @@
                         </thead>
                         <tbody>
                             @php
-                                if(!isset($operationalRows)) {
-                                    $operationalRows = \App\Models\Event::query()
-                                        ->orderBy('event_date','desc')
-                                        ->get()
-                                        ->map(function($e){
-                                            return [
-                                                'id' => $e->id,
-                                                'name' => $e->title,
-                                                'date' => optional($e->event_date)->format('d/m/Y'),
-                                                'type' => $e->jenis ?? 'N/A',
-                                                'documents_percent' => $e->documents_completion_percent,
-                                                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
-                                                'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
-                                                'module_url' => !empty($e->module_path) ? ($e->module_file_url ?? '') : '',
-                                                'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
-                                                // attendance QR data
-                                                'qr_token' => $e->attendance_qr_token,
-                                                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                                                'qr_image_url' => $e->attendance_qr_image_url,
-                                            ];
-                                        });
-                                }
+                                // $operationalRows is now provided by the controller and filtered by month/year.
                             @endphp
                             @forelse($operationalRows as $row)
                                 <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-type="{{ Str::lower($row['type']) }}" data-docs="{{ $row['documents_percent'] }}">
@@ -1150,28 +1099,95 @@ document.addEventListener('DOMContentLoaded', function(){
         if(!table) return;
         const rows = Array.from(table.querySelectorAll('tbody tr'));
         function matches(row){
-            const name = (row.getAttribute('data-name')||'').toLowerCase();
-            const date = row.getAttribute('data-date');
+            // Prefer explicit data-name (already lowercased server-side),
+            // but fall back to first cell text when attribute is missing.
+            const nameAttr = row.getAttribute('data-name') || '';
+            const name = (nameAttr ? nameAttr : (row.querySelector('td')?.textContent || '')).toLowerCase();
+            const rawDateAttr = row.getAttribute('data-date') || '';
+            const displayedDateText = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+            const rowDateStr = rawDateAttr || displayedDateText;
             const searchVal = (searchInput?.value || '').toLowerCase().trim();
             const fromVal = dateFromInput?.value || '';
             const toVal = dateToInput?.value || '';
+
             // Name filter
             if(searchVal && !name.includes(searchVal)) return false;
-            // Date range filter
-            if(date){
-                if(fromVal && date < fromVal) return false;
-                if(toVal && date > toVal) return false;
+
+            // Generic parser: supports YYYY-MM-DD, YYYY/MM/DD and DD/MM/YYYY
+            function parseToTimestamp(s){
+                if(!s) return NaN;
+                s = String(s).trim();
+                // ISO-like YYYY-MM-DD or YYYY/MM/DD
+                if(/^\d{4}[\-/]\d{2}[\-/]\d{2}$/.test(s)){
+                    const normalized = s.replace(/\//g,'-');
+                    const dt = new Date(normalized);
+                    return isNaN(dt.getTime()) ? NaN : dt.getTime();
+                }
+                // dd/mm/yyyy
+                if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+                    const p = s.split('/');
+                    const day = Number(p[0]);
+                    const mon = Number(p[1]);
+                    const yr = Number(p[2]);
+                    const dt = new Date(yr, mon - 1, day);
+                    return isNaN(dt.getTime()) ? NaN : dt.getTime();
+                }
+                const parsed = Date.parse(s);
+                return isNaN(parsed) ? NaN : parsed;
             }
+
+            const rowTime = parseToTimestamp(rowDateStr);
+
+            if(fromVal){
+                const fromTime = parseToTimestamp(fromVal);
+                if(!isNaN(rowTime) && !isNaN(fromTime)){
+                    if(rowTime < fromTime) return false;
+                } else if(rowDateStr && fromVal){
+                    if(rowDateStr < fromVal) return false;
+                }
+            }
+            if(toVal){
+                const toTime = parseToTimestamp(toVal);
+                if(!isNaN(rowTime) && !isNaN(toTime)){
+                    if(rowTime > toTime) return false;
+                } else if(rowDateStr && toVal){
+                    if(rowDateStr > toVal) return false;
+                }
+            }
+
             return true;
         }
         function apply(){
+            const tbody = table.tBodies && table.tBodies[0] ? table.tBodies[0] : null;
+            const colCount = table.tHead && table.tHead.rows[0] ? table.tHead.rows[0].cells.length : 1;
+            let visibleCount = 0;
             rows.forEach(r => {
                 if(matches(r)){
                     r.style.display='';
+                    visibleCount++;
                 } else {
                     r.style.display='none';
                 }
             });
+
+            // Manage client-side 'no data' row
+            if(tbody){
+                const existing = tbody.querySelector('tr.no-data-client');
+                if(visibleCount === 0){
+                    if(!existing){
+                        const tr = document.createElement('tr');
+                        tr.className = 'no-data-client';
+                        const td = document.createElement('td');
+                        td.setAttribute('colspan', String(colCount));
+                        td.className = 'text-center';
+                        td.textContent = 'Belum ada data event';
+                        tr.appendChild(td);
+                        tbody.appendChild(tr);
+                    }
+                } else {
+                    if(existing) existing.remove();
+                }
+            }
         }
         // Expose for global re-apply
         config.apply = apply;
@@ -1224,6 +1240,7 @@ document.addEventListener('DOMContentLoaded', function(){
     function applyAllFilters(){
         filterConfigs.forEach(cfg => cfg.apply && cfg.apply());
     }
+    window.applyAllFilters = applyAllFilters;
     // Initial apply to normalize state
     applyAllFilters();
 
@@ -1688,5 +1705,109 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        const periodInputs = [
+            document.getElementById('period'),
+            document.getElementById('period_pertumbuhan'),
+            document.getElementById('period_op'),
+        ].filter(Boolean);
+
+        function formatMonthLabel(ym){
+            if(!ym) return '-';
+            const parts = ym.split('-');
+            if(parts.length !== 2) return ym;
+            const y = Number(parts[0]), m = Number(parts[1]);
+            const dt = new Date(y, m - 1, 1);
+            try {
+                return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(dt);
+            } catch (e) {
+                return dt.toLocaleString();
+            }
+        }
+
+        function setAllPeriods(value){
+            if(!value) return;
+            periodInputs.forEach(inp => { if(inp && inp.value !== value) inp.value = value; });
+            const label = formatMonthLabel(value);
+            const labPend = document.getElementById('month-label-pendapatan');
+            const labPert = document.getElementById('month-label-pertumbuhan');
+            const labOp = document.getElementById('month-label-operasional');
+            if(labPend) labPend.textContent = label;
+            if(labPert) labPert.textContent = label;
+            if(labOp) labOp.textContent = label;
+
+            // Also set per-tab date-from / date-to inputs so client-side table filters reflect the whole month
+            const parts = (value || '').split('-');
+            if(parts.length === 2){
+                const y = Number(parts[0]);
+                const m = Number(parts[1]);
+                const mm = String(m).padStart(2,'0');
+                const firstDay = `${y}-${mm}-01`;
+                const lastDate = new Date(y, m, 0).getDate();
+                const lastDay = `${y}-${mm}-${String(lastDate).padStart(2,'0')}`;
+
+                const mapping = [
+                    ['date-from-pendapatan','date-to-pendapatan'],
+                    ['date-from-pertumbuhan','date-to-pertumbuhan'],
+                    ['date-from-operasional','date-to-operasional'],
+                ];
+                mapping.forEach(([fromId,toId]) => {
+                    const fromEl = document.getElementById(fromId);
+                    const toEl = document.getElementById(toId);
+                    if(fromEl) fromEl.value = firstDay;
+                    if(toEl) toEl.value = lastDay;
+                });
+
+                // Apply client-side filters immediately so the visible tables reflect the chosen month
+                if(window.applyAllFilters) window.applyAllFilters();
+            }
+        }
+
+        let submitTimer = null;
+        function submitActiveTabAfterDelay(delay = 300){
+            clearTimeout(submitTimer);
+            submitTimer = setTimeout(()=>{
+                const activeBtn = document.querySelector('.btn-report.active');
+                const activeTab = activeBtn?.getAttribute('data-target') || 'pendapatan';
+                const form = document.querySelector('#' + activeTab + ' form');
+                if(form){
+                    const hiddenTab = form.querySelector('input[name="tab"]');
+                    if(hiddenTab) hiddenTab.value = activeTab;
+                    form.submit();
+                }
+            }, delay);
+        }
+
+        periodInputs.forEach(inp => {
+            inp.addEventListener('change', function(){
+                const v = this.value;
+                setAllPeriods(v);
+                // auto submit to refresh lists based on selected month
+                submitActiveTabAfterDelay(400);
+            });
+        });
+
+        // Sync on load from server-rendered values
+        (function init(){
+            const initial = periodInputs.find(i => i && i.value)?.value;
+            if(initial) setAllPeriods(initial);
+        })();
+
+        // When switching tabs client-side, ensure inputs and labels reflect current period
+        const tabButtons = document.querySelectorAll('.btn-report');
+        tabButtons.forEach(btn => btn.addEventListener('click', function(){
+            const active = document.querySelector('.btn-report.active');
+            const activeTarget = active?.getAttribute('data-target') || 'pendapatan';
+            const activePeriodInp = document.querySelector('#' + activeTarget + ' input[type="month"]');
+            const val = activePeriodInp?.value || periodInputs.find(i => i && i.value)?.value;
+            if(val) setAllPeriods(val);
+        }));
+    } catch(e){
+        console.error('period sync error', e);
+    }
+});
+</script>
 
 @endsection

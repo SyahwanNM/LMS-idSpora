@@ -49,6 +49,7 @@ class CourseReportController extends Controller
             to: $to,
             period: $period,
             hasCustomRange: $hasCustomRange,
+            q: $request->query('q', '')
         );
 
         // Growth tab uses its own filter (month + search).
@@ -81,7 +82,8 @@ class CourseReportController extends Controller
         $period = $this->normalizePeriod($request->query('period', 'monthly'));
         [$from, $to, $hasCustomRange] = $this->parseDateRange($request, $period);
 
-        $revenueReport = $this->buildRevenueReport(from: $from, to: $to, period: $period, hasCustomRange: $hasCustomRange);
+        $q = trim((string) $request->query('q', ''));
+        $revenueReport = $this->buildRevenueReport(from: $from, to: $to, period: $period, hasCustomRange: $hasCustomRange, q: $q);
 
         return response()->json($revenueReport);
     }
@@ -255,7 +257,8 @@ class CourseReportController extends Controller
             $subtitle = 'Periode: ' . $periodLabel . ' | Rentang: ' . $from . ' s/d ' . $to;
         } else {
             [$fromDt, $toDt, $hasCustomRange] = $this->parseDateRange($request, $period);
-            $revenue = $this->buildRevenueReport(from: $fromDt, to: $toDt, period: $period, hasCustomRange: $hasCustomRange);
+            $q = trim((string) $request->query('q', ''));
+            $revenue = $this->buildRevenueReport(from: $fromDt, to: $toDt, period: $period, hasCustomRange: $hasCustomRange, q: $q);
             $rows = $revenue['rows'] ?? [];
             $from = (string) ($revenue['totals']['from'] ?? $fromDt->toDateString());
             $to = (string) ($revenue['totals']['to'] ?? $toDt->toDateString());
@@ -361,7 +364,10 @@ class CourseReportController extends Controller
 
             $reviewRow = $reviewsByCourse->get($courseId);
             $commentsCount = (int) ($reviewRow->comments_count ?? 0);
-            $ratingAvg = (float) ($reviewRow->rating_avg ?? 0);
+            
+            // Return cumulative rating for the course instead of just the filtered period rating
+            $course = Course::find($courseId);
+            $ratingAvg = $course ? (float) $course->reviews()->avg('rating') : 0.0;
 
             return [
                 'course_id' => $courseId,
@@ -376,7 +382,14 @@ class CourseReportController extends Controller
                 'comments_count' => $commentsCount,
                 'rating_avg' => $ratingAvg > 0 ? (float) round($ratingAvg, 1) : 0,
             ];
-        })->values();
+        });
+
+        if ($q === '') {
+            $rows = $rows->filter(function($row) {
+                return $row['total_views'] > 0 || $row['avg_watch_minutes'] > 0 || $row['comments_count'] > 0;
+            });
+        }
+        $rows = $rows->values();
 
         $baseEnrollments = Enrollment::query()
             ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -403,8 +416,8 @@ class CourseReportController extends Controller
         $avgAllSeconds = $allViewers > 0 ? (int) floor($allSeconds / $allViewers) : 0;
         $avgAllMinutes = (int) round($avgAllSeconds / 60);
 
-        $ratingAllQuery = Review::query()
-            ->whereBetween('created_at', [$from, $to]);
+        // Platform-wide rating (average of all reviews, respecting search filter)
+        $ratingAllQuery = Review::query();
         if ($courseIdFilter) {
             $ratingAllQuery->whereIn('course_id', $courseIdFilter);
         }
@@ -450,7 +463,15 @@ class CourseReportController extends Controller
     {
         $toRaw = trim((string) $request->query('to', ''));
         $fromRaw = trim((string) $request->query('from', ''));
-        $hasCustomRange = ($toRaw !== '' || $fromRaw !== '');
+        $monthRaw = trim((string) $request->query('month', ''));
+        $hasCustomRange = ($toRaw !== '' || $fromRaw !== '' || $monthRaw !== '');
+
+        if ($monthRaw !== '' && $fromRaw === '' && $toRaw === '') {
+            try {
+                $base = Carbon::createFromFormat('Y-m', $monthRaw)->startOfMonth();
+                return [$base->copy()->startOfMonth()->startOfDay(), $base->copy()->endOfMonth()->endOfDay(), true];
+            } catch (\Throwable $e) { /* ignore */ }
+        }
 
         $to = $toRaw !== '' ? Carbon::parse($toRaw)->endOfDay() : Carbon::now()->endOfDay();
 
@@ -459,7 +480,6 @@ class CourseReportController extends Controller
         } else {
             $from = match ($period) {
                 'daily' => $to->copy()->startOfDay(),
-                // Week-to-date (Monday start) to match common reporting expectations.
                 'weekly' => $to->copy()->startOfWeek(Carbon::MONDAY)->startOfDay(),
                 default => $to->copy()->startOfMonth()->startOfDay(),
             };
@@ -500,7 +520,7 @@ class CourseReportController extends Controller
         return 'COALESCE(manual_payments.amount, ' . $calcPrice . ')';
     }
 
-    private function buildRevenueReport(Carbon $from, Carbon $to, string $period = 'monthly', bool $hasCustomRange = false): array
+    private function buildRevenueReport(Carbon $from, Carbon $to, string $period = 'monthly', bool $hasCustomRange = false, string $q = ''): array
     {
         $priceExpr = $this->getRevenuePriceExpr();
 
@@ -557,8 +577,20 @@ class CourseReportController extends Controller
                 'expense_total' => $expense,
                 'last_paid_at' => $stat && $stat->last_paid_at ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString() : null,
             ];
-        })
-        ->values();
+        });
+
+        // Filter: only show courses with revenue/transactions unless searching
+        if (!isset($q) || $q === '') {
+            $rows = $rows->filter(function($row) {
+                return $row['transactions_count'] > 0;
+            });
+        } elseif (isset($q) && $q !== '') {
+            $rows = $rows->filter(function($row) use ($q) {
+                return stripos($row['course_name'], $q) !== false;
+            });
+        }
+        
+        $rows = $rows->values();
 
         $revenueByLevel = $baseEnrollments->clone()
             ->groupBy('courses.level')

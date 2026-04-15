@@ -59,9 +59,18 @@
                     const date = escapeHtml(it.event_date || '—');
                     const status = it.module_uploaded ? 'Sudah' : 'Belum';
                     const statusCls = it.module_uploaded ? 'text-green-700' : 'text-red-700';
-                    const download = it.module_uploaded && it.module_url
-                        ? `<a class="text-blue-700 hover:underline" href="${escapeHtml(it.module_url)}" target="_blank">Unduh</a>`
-                        : `<span class="text-gray-500">—</span>`;
+                    
+                    const modules = Array.isArray(it.modules) ? it.modules : [];
+                    const modulesHtml = modules.length > 0 
+                        ? `<div class="mt-2 space-y-1">` + 
+                            modules.map((m, idx) => `
+                                <div class="flex items-center justify-between bg-gray-50 p-1.5 rounded border text-xs">
+                                    <span class="truncate max-w-[150px]" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+                                    <a href="${escapeHtml(m.url)}" target="_blank" class="text-blue-600 font-bold hover:underline">Unduh</a>
+                                </div>
+                            `).join('') + 
+                          `</div>`
+                        : '';
 
                     return `
                     <tr>
@@ -70,16 +79,18 @@
                             <div class="text-xs text-gray-500">${escapeHtml(it.jenis || '')}</div>
                         </td>
                         <td class="px-4 py-3">${date}</td>
-                        <td class="px-4 py-3"><span class="font-medium ${statusCls}">${status}</span></td>
+                        <td class="px-4 py-3">
+                            <span class="font-medium ${statusCls}">${status}</span>
+                            ${modulesHtml}
+                        </td>
                         <td class="px-4 py-3">
                             <div class="flex flex-col gap-2">
-                                ${download}
                                 <form method="POST" action="/trainer/events/${encodeURIComponent(it.id)}/module" enctype="multipart/form-data" class="flex items-center gap-2">
                                     <input type="hidden" name="_token" value="${escapeHtml(csrf)}" />
                                     <input type="file" name="module" required class="block w-full text-sm" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.7z" />
                                     <button type="submit" class="rounded bg-gray-900 px-3 py-2 text-xs font-medium text-white">Upload</button>
                                 </form>
-                                <div class="text-xs text-gray-500">Format: PDF/DOC/PPT/ZIP. Maks 20MB.</div>
+                                <div class="text-xs text-gray-500">Format: PDF/DOC/PPT/ZIP. Maks 20MB. Tambahkan file baru jika ada beberapa materi.</div>
                             </div>
                         </td>
                     </tr>

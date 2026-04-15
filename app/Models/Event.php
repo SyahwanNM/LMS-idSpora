@@ -82,6 +82,7 @@ class Event extends Model
         'is_reseller_event' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+        'module_path' => 'array', // Added to support multiple trainer modules
     ];
 
     /**
@@ -89,31 +90,28 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
+        // Count completed items for the UI-perceived requirements.
+        // Business rule (used across admin views):
+        // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
+        // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
+        $hasVbg = !empty($this->vbg_path);
+        $hasModule = !empty($this->module_path);
+        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
+
+        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
+
+        // Return the raw count of completed items (not the denominator-aware percent).
         $count = 0;
-        if (!empty($this->vbg_path)) {
+        if (!$isOfflineOnly && $hasVbg) {
             $count++;
         }
-        if (!empty($this->certificate_path)) {
-            $count++;
-            if (!empty($this->vbg_path))
-                $count++;
-            if (!empty($this->certificate_path))
-                $count++;
-            if (!empty($this->module_path))
-                $count++;
-        }
-        // Module dianggap selesai setelah diverifikasi admin (module_path terisi)
-        if (!empty($this->module_path)) {
+        if ($hasModule) {
             $count++;
         }
-        // Absensi dianggap selesai bila ada file attendance atau QR attendance aktif
-        $hasAttendance = !empty($this->attendance_path)
-            || !empty($this->attendance_qr_image)
-            || !empty($this->attendance_qr_token);
         if ($hasAttendance) {
             $count++;
         }
-        return $count;
+        return (int) max(0, $count);
     }
 
     /**
@@ -121,8 +119,13 @@ class Event extends Model
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $total = 4; // Virtual Background, Sertifikat, Module (Trainer), Absensi (QR/File)
-        $done = max(0, min($total, (int) $this->documents_completed_count));
+        // Determine denominator according to offline/online rule
+        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
+        $total = $isOfflineOnly ? 2 : 3;
+        $done = (int) $this->documents_completed_count;
+        $done = max(0, min($total, $done));
+        if ($total === 0) return 0;
+        if ($done === $total) return 100;
         return (int) floor(($done / $total) * 100);
     }
 

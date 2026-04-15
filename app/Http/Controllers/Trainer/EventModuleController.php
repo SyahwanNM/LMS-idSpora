@@ -40,7 +40,21 @@ class EventModuleController extends Controller
                 'event_date' => optional($event->event_date)->format('Y-m-d'),
                 'jenis' => $event->jenis,
                 'module_uploaded' => !empty($event->module_path),
-                'module_url' => !empty($event->module_path) ? $event->module_file_url : null,
+                'modules' => is_array($event->module_path) ? array_map(function($m) {
+                    return [
+                        'name' => $m['name'] ?? 'Untitled',
+                        'path' => $m['path'] ?? '',
+                        'url' => asset('uploads/' . ltrim($m['path'] ?? '', '/')),
+                        'uploaded_at' => $m['uploaded_at'] ?? null,
+                    ];
+                }, $event->module_path) : (
+                    !empty($event->module_path) ? [[
+                        'name' => 'Legacy Module',
+                        'path' => $event->module_path,
+                        'url' => $event->module_file_url,
+                        'uploaded_at' => $event->module_submitted_at
+                    ]] : []
+                ),
             ];
         })->values();
 
@@ -65,11 +79,25 @@ class EventModuleController extends Controller
         ]);
 
         $file = $request->file('module');
-        $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $originalName = $file->getClientOriginalName();
+        $filename = time() . '_' . str_replace(' ', '_', $originalName);
         $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
+        // Append to existing modules
+        $existing = is_array($event->module_path) ? $event->module_path : [];
+        if (!is_array($existing) && !empty($event->module_path)) {
+            // Convert legacy single string to array
+            $existing = [['path' => $event->module_path, 'name' => 'Module Utama', 'uploaded_at' => $event->module_submitted_at]];
+        }
+        
+        $existing[] = [
+            'path' => $path,
+            'name' => $originalName,
+            'uploaded_at' => now()->toDateTimeString(),
+        ];
+
         $event->update([
-            'module_path' => $path,
+            'module_path' => $existing,
             'material_status' => 'pending_review',
             'material_approved_at' => null,
             'material_approved_by' => null,

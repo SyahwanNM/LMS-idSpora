@@ -364,10 +364,20 @@
                                                 </div>
                                             </div>
 
-                                            <div
-                                                class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
-                                                    {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                            <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    @if($course->hasDiscount())
+                                                        <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px;">
+                                                            Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                        </span>
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
+                                                        </div>
+                                                    @else
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                                 <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
                                                     class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>

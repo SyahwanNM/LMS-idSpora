@@ -1165,7 +1165,7 @@
         // Access rules (freemium + paid purchase)
         $priceInt = (int) ($course->price ?? 0);
         $isFreeCourse = $priceInt <= 0;
-        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+        $freeAccessMode = (string) ($course->free_access_mode ?? ($isFreeCourse ? 'limit_2' : 'all'));
 
         $userCanAccessCourse = $isFreeCourse;
         if (!$isFreeCourse && auth()->check()) {
@@ -1377,11 +1377,14 @@
                 $existingUnitTitle = (string) optional($unitTitlesByNo->get((int) $unitNo))->title;
                 $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . (int) $unitNo);
 
-                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds) {
+                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds, $unitNo) {
+                  if ($freeAccessMode === 'limit_2' && $unitNo == 1) {
+                    return false;
+                  }
                   if (!$userCanAccessCourse) {
                     return true;
                   }
-                  if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                  if ($freeAccessMode === 'limit_2') {
                     return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
                   }
                   return false;
@@ -1417,9 +1420,11 @@
                         }
 
                         $isLocked = false;
-                        if (!$userCanAccessCourse) {
+                        if ($freeAccessMode === 'limit_2' && $unitNo == 1) {
+                          $isLocked = false;
+                        } elseif (!$userCanAccessCourse) {
                           $isLocked = true;
-                        } elseif ($isFreeCourse && $freeAccessMode === 'limit_2') {
+                        } elseif ($freeAccessMode === 'limit_2') {
                           $isLocked = !in_array((int) ($module->id ?? 0), $accessibleModuleIds, true);
                         }
 
@@ -1433,7 +1438,12 @@
                       <li>
                         <div style="font-weight:600;">{{ $typeLabel }}: {{ $moduleTitle }}</div>
                         @if($isLocked)
-                          <div class="text-muted">Terkunci.</div>
+                          <div class="text-muted d-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
+                              <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                            </svg>
+                            Terkunci.
+                          </div>
                         @elseif(!$hasContent)
                           <div class="text-muted">Materi belum tersedia.</div>
                         @elseif($type === 'quiz')
@@ -1594,20 +1604,38 @@
                     ->exists();
 
                 // Payment uploaded / waiting admin verification
+                // Only show "Under Review" for manual methods. Midtrans is automatic.
                 $paymentUnderReview = \App\Models\ManualPayment::where('user_id', auth()->id())
                     ->where('course_id', $course->id)
                     ->where('status', 'pending')
+                    ->whereNotIn('method', ['midtrans'])
+                    ->exists();
+
+                $paymentFailed = \App\Models\ManualPayment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->whereIn('status', ['expired', 'rejected'])
                     ->exists();
 
               $canLearn = $enrolledActive || $hasSettledPayment;
             }
+          @endphp
+          @php
+            $hasPreview = (string) ($course->free_access_mode ?? 'limit_2') === 'limit_2';
           @endphp
           @if($canLearn)
             <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
           @elseif($paymentUnderReview)
             <button type="button" class="enroll" disabled style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran sedang ditinjau</button>
           @else
-            <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+            <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">
+              {{ (isset($paymentFailed) && $paymentFailed) ? 'Bayar Lagi' : 'Beli Sekarang' }}
+            </a>
+            @if($hasPreview)
+              <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#fff;background:#252346;margin-top:10px;font-weight:600;">
+                Daftar Gratis (Freemium)
+              </a>
+              <p class="text-center text-muted mt-2" style="font-size:12px;">Akses Modul 1 & Kuis secara gratis</p>
+            @endif
           @endif
           @php
               $isSaved = auth()->check() && auth()->user()->savedCourses()->where('course_id', $course->id)->exists();

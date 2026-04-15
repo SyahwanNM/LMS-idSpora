@@ -130,12 +130,12 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" type="text" placeholder="Cari Course">
+                            <input class="cari_course" id="revenueSearch" type="text" placeholder="Cari Course">
                         </div>
                     </div>
                     <div class="box_filter">
                         <p class="mulai_course">Bulan</p>
-                        <input class="tanggal_course" type="month">
+                        <input class="tanggal_course" id="revenueMonth" type="month">
                         <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
                     </div>
 
@@ -218,7 +218,7 @@
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
                                 <h6>Rating Keseluruhan</h6>
-                                <h3 id="courseRating">0 ⭐</h3>
+                                <h3 id="courseRating">{{ number_format((float)(data_get($growthReport, 'summary.rating_avg', 0)), 1) }} ⭐</h3>
                             </div>
                         </div>
                     </div>
@@ -616,8 +616,8 @@
             const topLevelRevenueEl = document.getElementById('topLevelRevenue');
             const totalTransactionsEl = document.getElementById('totalTransactions');
             const tbody = document.getElementById('revenueTableBody');
-            const fromInput = document.getElementById('reportFrom');
-            const toInput = document.getElementById('reportTo');
+            const monthInput = document.getElementById('revenueMonth');
+            const searchInput = document.getElementById('revenueSearch');
             const applyBtn = document.getElementById('applyRevenueFilter');
 
             let currentPeriod = 'monthly';
@@ -744,11 +744,11 @@
             }
 
             async function refresh() {
-                const from = fromInput?.value || '';
-                const to = toInput?.value || '';
+                const month = monthInput?.value || '';
+                const q = searchInput?.value || '';
                 const url = new URL(apiUrl, window.location.origin);
-                if (from) url.searchParams.set('from', from);
-                if (to) url.searchParams.set('to', to);
+                if (month) url.searchParams.set('month', month);
+                if (q) url.searchParams.set('q', q);
                 url.searchParams.set('period', currentPeriod);
 
                 try {
@@ -780,6 +780,15 @@
                     refresh();
                 });
             }
+
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        refresh();
+                    }
+                });
+            }
         })();
     </script>
 
@@ -788,10 +797,10 @@
             const apiUrl = @json(route('admin.report.growth'));
 
             const tbody = document.getElementById('growthTableBody');
-            const completedUsersEl = document.getElementById('growthCompletedUsers');
             const totalViewsEl = document.getElementById('totalViews');
             const avgWatchEl = document.getElementById('avgWatch');
             const totalStudentsEl = document.getElementById('totalStudents');
+            const courseRatingEl = document.getElementById('courseRating');
             const monthInput = document.getElementById('growthMonth');
             const searchInput = document.getElementById('growthSearch');
             const applyBtn = document.getElementById('applyGrowthFilter');
@@ -845,8 +854,9 @@
                 if (totalViewsEl) totalViewsEl.textContent = String(summary.total_views || 0);
                 if (avgWatchEl) avgWatchEl.textContent = String(summary.avg_watch_minutes || 0) + ' Menit';
                 if (totalStudentsEl) totalStudentsEl.textContent = String(summary.participants || 0);
-                if (completedUsersEl && typeof summary.completed_users !== 'undefined') {
-                    completedUsersEl.textContent = String(summary.completed_users || 0);
+                if (courseRatingEl) {
+                    const r = Number(summary.rating_avg || 0);
+                    courseRatingEl.textContent = r > 0 ? (r.toFixed(1) + ' ⭐') : '0 ⭐';
                 }
             };
 

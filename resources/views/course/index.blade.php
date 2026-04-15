@@ -319,7 +319,14 @@
                         <div class="price-row">
                             <div class="price-col">
                                 <span class="price-now">
-                                    @if((int) ($course->price ?? 0) <= 0)
+                                    @if($course->hasDiscount())
+                                        <div class="d-flex flex-column" style="line-height:1.2;">
+                                            <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px; font-weight: normal; opacity: 0.7;">
+                                                Rp{{ number_format($course->price, 0, ',', '.') }}
+                                            </span>
+                                            <span style="font-size: 16px;">Rp{{ number_format($course->discounted_price, 0, ',', '.') }}</span>
+                                        </div>
+                                    @elseif((int) ($course->price ?? 0) <= 0)
                                         GRATIS
                                     @else
                                         Rp{{ number_format($course->price, 0, ',', '.') }}

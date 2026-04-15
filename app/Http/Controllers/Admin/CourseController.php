@@ -61,9 +61,13 @@ class CourseController extends Controller
             ->where('status', 'settled')
             ->exists();
 
-        // Only allow access if enrollment is active OR payment already approved.
-        // Pending payment/enrollment should not pass.
-        if (!$enrolledActive && !$hasSettledPayment) {
+        $isUserEnrolled = $enrolledActive || $hasSettledPayment;
+        $isFreeCourse = (int) ($course->price ?? 0) <= 0;
+        // Access mode: 'all', 'limit_2', or 'none'. Default 'limit_2' for free preview.
+        $configuredFreeAccessMode = (string) ($course->free_access_mode ?? 'limit_2');
+
+        // Only allow entry to learning page if enrolled OR it's a course with preview enabled.
+        if (!$isUserEnrolled && $configuredFreeAccessMode === 'none') {
             return redirect()->route('course.detail', $course->id)
                 ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
         }
@@ -80,6 +84,8 @@ class CourseController extends Controller
                     $enrollment->save();
                 }
             }
+            $enrolledActive = true;
+            $isUserEnrolled = true;
         }
 
         $course->load([
@@ -93,14 +99,17 @@ class CourseController extends Controller
         $selectedId = $request->query('module');
         $currentModule = null;
 
-        $isFreeCourse = (int) ($course->price ?? 0) <= 0;
-        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+        // If user is enrolled, they have 'all' access regardless of settings.
+        // If not enrolled, they follow the configured access mode (limit_2, all, none).
+        $freeAccessMode = $isUserEnrolled ? 'all' : $configuredFreeAccessMode;
         $freeAccessibleModuleIds = [];
-        if ($isFreeCourse && $freeAccessMode === 'limit_2') {
+
+        if ($freeAccessMode === 'limit_2') {
+            // Free preview covers all units in the first group (usually 3 items: PDF, Video, Quiz).
             $freeAccessibleModuleIds = $modules
                 ->sortBy('order_no')
                 ->values()
-                ->take(2)
+                ->take(3)
                 ->pluck('id')
                 ->map(fn($id) => (int) $id)
                 ->values()
@@ -114,22 +123,22 @@ class CourseController extends Controller
             $currentModule = $modules->first();
         }
 
-        // Free course access policy: optionally limit to first 2 modules
-        if ($isFreeCourse && $freeAccessMode === 'limit_2' && $currentModule) {
+        // Preview access policy: optionally limit to first 2 modules
+        if ($freeAccessMode === 'limit_2' && $currentModule) {
             $allowed = in_array((int) $currentModule->id, $freeAccessibleModuleIds, true);
             if (!$allowed) {
                 $fallbackId = $freeAccessibleModuleIds[0] ?? (int) ($modules->first()?->id ?? 0);
                 if ($fallbackId > 0) {
                     $target = route('course.learn', $course->id) . '?module=' . $fallbackId;
                     return redirect()->to($target)
-                        ->with('error', 'Course gratis ini hanya membuka 2 modul pertama.');
+                        ->with('error', 'Materi ini terkunci. Silakan beli course untuk membuka modul selanjutnya.');
                 }
             }
         }
 
         // Gate: only lock the module immediately after an unpassed quiz
         $passingPercent = 75;
-        if ($currentModule && $currentModule->order_no) {
+        if ($currentModule && $currentModule->order_no && $isUserEnrolled) {
             $prevModule = $modules
                 ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) $currentModule->order_no)
                 ->sortByDesc('order_no')
