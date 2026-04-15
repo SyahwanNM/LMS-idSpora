@@ -363,6 +363,30 @@
                     </div>
                 </div>
             </div>
+             <div class="mt-4 mb-4">
+                    <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
+                        <input type="hidden" name="tab" value="operasional">
+                        <div>
+                            <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
+                            <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                        </div>
+                        <div class="d-flex gap-2 align-items-end">
+                            <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
+                            @php
+                                $prevOp = (clone $selectedDate)->subMonth();
+                                $nextOp = (clone $selectedDate)->addMonth();
+                                $curr = \Carbon\Carbon::now()->startOfMonth();
+                                $isFut = $nextOp->gt($curr);
+                            @endphp
+                            <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
+                            <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
+                        </div>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                            <button type="button" class="btn-export-report btn btn-sm" data-export-tab="operasional" style="height:38px;">Export</button>
+                        </div>
+                    </form>
+                </div>
 
             <div class="data-box">
                 <div class="data-pengguna">
@@ -439,46 +463,33 @@
             </div>
             <h5 class="title-laporan-metrik">Metrik Operasional Rinci</h5>
             <div class="filter-section" id="filters-pertumbuhan">
-                <div class="filter-kiri">
-                    <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                        <div class="filter-kiri">
+                            <div class="filter-group" style="padding-left:50px;">
+                                <div style="display:flex; gap:6px; align-items:center; position:relative;">
                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
                             </svg>
-                           
+                            <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event...">
                            </div> 
-                    <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
-                        <input type="hidden" name="tab" value="pertumbuhan">
-                        <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event..." style="width:200px">
-                        
-                        <label for="period_pertumbuhan" class="filter-label ms-2 mb-0">Periode</label>
-                        @php
-                            // Default the pertumbuhan period to the month of the first event shown (if any),
-                            // otherwise fall back to the selected date from request.
-                            $firstGrowthDateStr = null;
-                            try {
-                                $firstGrowthDateStr = collect($growthRows ?? [])->pluck('date')->filter()->first();
-                            } catch (\Throwable $e) { $firstGrowthDateStr = null; }
-                            try {
-                                $periodPertumbuhanValue = $firstGrowthDateStr ? \Carbon\Carbon::createFromFormat('d/m/Y', $firstGrowthDateStr)->format('Y-m') : $selectedDate->format('Y-m');
-                            } catch (\Throwable $e) { $periodPertumbuhanValue = $selectedDate->format('Y-m'); }
-                        @endphp
-                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $periodPertumbuhanValue }}" class="form-control form-control-sm" style="width:150px">
-                        
-                        <button type="submit" class="btn btn-primary btn-sm ms-2">Tampilkan</button>
-                    </form>
-                </div>
-                <div class="filter-kanan d-flex align-items-end gap-2">
-                    <!-- Additional JS-based Date Range (Optional, currently reused for table filtering) -->
-                    <!-- We keep them but hidden or secondary if Month Filter is primary -->
-                    <div class="filter-group d-none">
-                         <!-- Hide these if we rely on Controller Month Filter -->
-                        <label for="date-from-pertumbuhan" class="filter-label">Dari</label>
-                         <input type="date" id="date-from-pertumbuhan" class="filter-input">
+                                
+                            </div>
+                        </div>
+                            <div class="filter-kanan">
+                            <div class="filter-group">
+                                <label for="date-from-pertumbuhan" class="filter-label">Dari Tanggal</label>
+                                <div class="filter-date-group">
+                                    <input type="date" id="date-from-pertumbuhan" class="filter-input">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label for="date-to-pertumbuhan" class="filter-label">Sampai Tanggal</label>
+                                <div class="filter-date-group">
+                                    <input type="date" id="date-to-pertumbuhan" class="filter-input">
+                                </div>
+                            </div>
+                            <div class="filter-actions"><button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d;">Reset</button></div>
+                        </div>
                     </div>
-                    <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
-                    <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan">Export</button>
-                </div>
-            </div>
             <table class="tabel-pendapatan" id="table-pertumbuhan">
                 <thead>
                     <tr>

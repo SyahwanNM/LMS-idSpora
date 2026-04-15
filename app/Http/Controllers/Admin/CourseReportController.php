@@ -400,7 +400,7 @@ class CourseReportController extends Controller
         }
 
         $summaryTotalViews = (int) $baseEnrollments->clone()->count();
-        $summaryParticipants = (int) $baseEnrollments->clone()->distinct('user_id')->count('user_id');
+        $summaryParticipants = (int) $rows->sum('participants_count');
 
         $timeAggAllQuery = LearningTimeDaily::query()
             ->whereBetween('learned_on', [$from->toDateString(), $to->toDateString()]);
@@ -411,13 +411,12 @@ class CourseReportController extends Controller
             ->selectRaw('SUM(seconds) as total_seconds')
             ->selectRaw('COUNT(DISTINCT user_id) as viewers')
             ->first();
-        $allSeconds = (int) ($timeAggAll->total_seconds ?? 0);
-        $allViewers = (int) ($timeAggAll->viewers ?? 0);
-        $avgAllSeconds = $allViewers > 0 ? (int) floor($allSeconds / $allViewers) : 0;
-        $avgAllMinutes = (int) round($avgAllSeconds / 60);
+        // Waktu tonton rata-rata dijumlah aja sesuai request user
+        $avgAllMinutes = (int) $rows->sum('avg_watch_minutes');
 
-        // Platform-wide rating (average of all reviews, respecting search filter)
-        $ratingAllQuery = Review::query();
+        // Platform-wide rating (average of all reviews, respecting search filter AND date range)
+        $ratingAllQuery = Review::query()
+            ->whereBetween('created_at', [$from, $to]);
         if ($courseIdFilter) {
             $ratingAllQuery->whereIn('course_id', $courseIdFilter);
         }
