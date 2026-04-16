@@ -235,7 +235,7 @@
                         @endif
 
                         <img src="{{ $carousel->image_url }}" alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; "
                             onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
                         @if($carousel->title)
@@ -254,7 +254,7 @@
                 @empty
                     <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
                         <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop" alt="Slide 1"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; ">
                         <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                             <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
                             <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
@@ -305,21 +305,21 @@
                             {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="">Any Day</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="today">Today</a></li>
+                            <li><a class="dropdown-item {{ !request('day') ? 'active' : '' }}" href="#" data-filter="day" data-value="">Any Day</a></li>
+                            <li><a class="dropdown-item {{ request('day') === 'weekdays' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
+                            <li><a class="dropdown-item {{ request('day') === 'weekend' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
+                            <li><a class="dropdown-item {{ request('day') === 'today' ? 'active' : '' }}" href="#" data-filter="day" data-value="today">Today</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'onsite' ? 'Onsite' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
+                            {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'offline' ? 'Offline' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="">Any Type</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="online">Online</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="onsite">Onsite</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
+                            <li><a class="dropdown-item {{ !request('event_type') ? 'active' : '' }}" href="#" data-filter="event_type" data-value="">Any Type</a></li>
+                            <li><a class="dropdown-item {{ request('event_type') === 'online' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="online">Online</a></li>
+                            <li><a class="dropdown-item {{ request('event_type') === 'offline' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="offline">Offline</a></li>
+                            <li><a class="dropdown-item {{ request('event_type') === 'hybrid' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
@@ -327,10 +327,10 @@
                             {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="">Any Category</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="training">Training</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
+                            <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">Any Category</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'workshop' ? 'active' : '' }}" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'training' ? 'active' : '' }}" href="#" data-filter="category" data-value="training">Training</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'webinar' ? 'active' : '' }}" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
@@ -616,7 +616,11 @@
                     e.preventDefault();
                     const key = this.getAttribute('data-filter');
                     const val = this.getAttribute('data-value') || '';
-                    const hiddenMap = { day: document.getElementById('filter-day'), event_type: document.getElementById('filter-type'), category: document.getElementById('filter-category') };
+                    const hiddenMap = {
+                        day: document.getElementById('filter-day'),
+                        event_type: document.getElementById('filter-type'),
+                        category: document.getElementById('filter-category')
+                    };
                     const hidden = hiddenMap[key]; if(hidden){ hidden.value = val; }
                     submitFilters();
                 });

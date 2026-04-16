@@ -206,32 +206,14 @@
                                     @endif
                                     <li class="list-group-item">
                                         @php
-                                            // Handle multiple modules
-                                            $modulesRaw = $event->module_path;
-                                            $moduleItems = [];
-                                            if (is_array($modulesRaw)) {
-                                                $moduleItems = $modulesRaw;
-                                            } elseif (!empty($modulesRaw)) {
-                                                // Check if it's a JSON string
-                                                $decoded = json_decode($modulesRaw, true);
-                                                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                                    $moduleItems = $decoded;
-                                                } else {
-                                                    // Legacy: single path string
-                                                    $moduleItems = [['path' => $modulesRaw, 'name' => 'Module Utama', 'uploaded_at' => $event->module_submitted_at]];
-                                                }
-                                            }
-
-                                            $hasModuleItems = count($moduleItems) > 0;
-                                            $moduleApproved = !empty($event->module_verified_at)
-                                                || (((string) ($event->material_status ?? '')) === 'approved' && !empty($event->material_approved_at));
-                                            $moduleRejected = !empty($event->module_rejected_at)
-                                                || (((string) ($event->material_status ?? '')) === 'rejected');
-                                            $modulePending = $hasModuleItems && !$moduleApproved && !$moduleRejected;
+                                            $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
+                                            $hasModuleItems = $trainerModules->isNotEmpty();
+                                            $moduleApproved = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'approved');
+                                            $moduleRejected = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'rejected');
+                                            $modulePending  = $trainerModules->contains('status', 'pending_review');
                                             $moduleIcon = $moduleApproved
                                                 ? 'bi-check-circle text-success'
-                                                : ($moduleRejected
-                                                    ? 'bi-x-circle text-danger'
+                                                : ($moduleRejected ? 'bi-x-circle text-danger'
                                                     : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
                                         @endphp
                                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -240,47 +222,55 @@
                                                 <span class="text-muted small">Belum ada</span>
                                             @endif
                                         </div>
-                                        
+
                                         @if($hasModuleItems)
-                                            <div class="mt-2 space-y-2">
-                                                @foreach($moduleItems as $idx => $m)
-                                                    <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 border-start border-4 {{ $moduleApproved ? 'border-success' : ($moduleRejected ? 'border-danger' : 'border-warning') }}">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-file-earmark-text me-2"></i>
+                                            <div class="mt-2">
+                                                @foreach($trainerModules as $tm)
+                                                    @php
+                                                        $borderClass = $tm->status === 'approved' ? 'border-success' : ($tm->status === 'rejected' ? 'border-danger' : 'border-warning');
+                                                    @endphp
+                                                    <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 border-start border-4 {{ $borderClass }}">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-file-earmark-text"></i>
                                                             <div>
-                                                                <div class="fw-bold" style="font-size: 0.75rem;">{{ $m['name'] ?? 'Module '.($idx+1) }}</div>
-                                                                @if(!empty($m['uploaded_at']))
-                                                                    <div class="text-muted" style="font-size: 0.7rem;">{{ \Carbon\Carbon::parse($m['uploaded_at'])->format('d/m/Y H:i') }}</div>
-                                                                @endif
+                                                                <div class="fw-bold" style="font-size:0.75rem;">{{ $tm->original_name }}</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">
+                                                                    {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            @if($moduleApproved)
-                                                                <a href="{{ asset('uploads/' . ltrim($m['path'], '/')) }}" target="_blank" class="btn btn-xs btn-primary py-0 px-2"><i class="bi bi-download"></i></a>
-                                                            @elseif($modulePending)
-                                                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">Pending</span>
-                                                                <a href="{{ asset('uploads/' . ltrim($m['path'], '/')) }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tm->path) }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
+                                                            @if($tm->status === 'pending_review')
+                                                                <form action="{{ route('admin.event-material.approve', $event) }}" method="POST" class="d-inline">
+                                                                    @csrf
+                                                                    <input type="hidden" name="module_id" value="{{ $tm->id }}">
+                                                                    <button type="submit" class="btn btn-xs btn-success py-0 px-2" title="Approve"><i class="bi bi-check2"></i></button>
+                                                                </form>
+                                                                <button type="button" class="btn btn-xs btn-danger py-0 px-2" data-bs-toggle="collapse" data-bs-target="#rejectTm-{{ $tm->id }}" title="Tolak"><i class="bi bi-x"></i></button>
+                                                                <div class="collapse w-100 mt-1" id="rejectTm-{{ $tm->id }}">
+                                                                    <form action="{{ route('admin.event-material.reject', $event) }}" method="POST" class="d-flex gap-1">
+                                                                        @csrf
+                                                                        <input type="hidden" name="module_id" value="{{ $tm->id }}">
+                                                                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Alasan penolakan" required>
+                                                                        <button type="submit" class="btn btn-sm btn-danger">Kirim</button>
+                                                                    </form>
+                                                                </div>
+                                                            @elseif($tm->status === 'approved')
+                                                                <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
                                                             @else
-                                                                <span class="badge bg-danger" style="font-size: 0.65rem;">Ditolak</span>
+                                                                <span class="badge bg-danger" style="font-size:0.65rem;">Ditolak</span>
                                                             @endif
                                                         </div>
                                                     </div>
                                                 @endforeach
                                             </div>
-                                            
-                                            @if(!$moduleApproved && !empty($event->trainer_id))
-                                                <div class="mt-2 text-end">
-                                                    <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn btn-xs btn-outline-warning py-1">
-                                                        <i class="bi bi-person-check me-1"></i>Verifikasi di Trainer
-                                                    </a>
-                                                </div>
-                                            @endif
                                         @endif
                                     </li>
-                                    @if($modulePending)
+                                    @if($modulePending ?? false)
                                         <li class="list-group-item">
                                             <div class="mt-2 small text-warning">
-                                                <i class="bi bi-info-circle me-1"></i>Module ini belum dihitung pada kelengkapan dokumen sampai di-approve (verifikasi dipusatkan di menu Trainer).
+                                                <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review.
                                             </div>
                                         </li>
                                     @endif

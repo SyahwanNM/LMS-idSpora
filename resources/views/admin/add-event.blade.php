@@ -168,7 +168,8 @@
                                         $hasZoomLink = !empty($event->zoom_link);
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                         $hasVbg = !empty($event->vbg_path);
-                                        $hasModule = !empty($event->module_path);
+                                        $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
+                                        $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
                                         // Absensi dianggap selesai jika ada file atau QR sudah aktif
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
@@ -332,7 +333,8 @@
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                     $requiresVbg = !$isOfflineOnly;
                                     $hasVbg = !empty($event->vbg_path);
-                                    $hasModule = !empty($event->module_path);
+                                    $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
+                                    $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
                                     // Absensi: selesai jika file atau QR aktif
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
@@ -372,13 +374,20 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
                                         <span>
                                             <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
                                             Module (Trainer)
                                         </span>
-                                        <span>
-                                            @if($hasModule)
+                                        <span class="d-flex flex-column align-items-end gap-1">
+                                            @if($eventTrainerModulesApproved->isNotEmpty())
+                                                @foreach($eventTrainerModulesApproved as $etm)
+                                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
+                                                        <i class="bi bi-file-earmark-arrow-down me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
+                                                        @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
+                                                    </a>
+                                                @endforeach
+                                            @elseif($hasModule)
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
                                                 <span class="text-muted">Belum ada</span>

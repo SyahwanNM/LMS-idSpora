@@ -138,6 +138,7 @@ class EventController extends Controller
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
         $events = Event::query()
+            ->with(['approvedTrainerModules.trainer'])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -976,7 +977,7 @@ class EventController extends Controller
 
     /**
      * Admin: approve trainer module submission for an event.
-     * Once approved, module_path will be set and document completeness will increase.
+     * Supports per-trainer module via event_trainer_modules table.
      */
     public function approveModule(Request $request, Event $event)
     {
@@ -984,43 +985,87 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $modulePath = trim((string) ($event->module_path ?? ''));
-        if ($modulePath === '') {
-            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
-                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
-        }
+        $moduleId = $request->input('module_id');
 
-        $event->update([
-            'material_status' => 'approved',
-            'material_approved_at' => now(),
-            'material_approved_by' => auth()->id(),
-            'material_rejection_reason' => null,
+        if ($moduleId) {
+            // Approve specific module
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
 
-            'module_verified_at' => now(),
-            'module_verified_by' => auth()->id(),
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
-        ]);
+            $module->update([
+                'status'      => 'approved',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+                'rejection_reason' => null,
+            ]);
 
-        // Notify trainer (if available)
-        try {
-            if (!empty($event->trainer_id)) {
+            // Notify the specific trainer
+            try {
                 \App\Models\TrainerNotification::create([
-                    'trainer_id' => (int) $event->trainer_id,
-                    'type' => 'event_material_approved',
-                    'title' => 'Materi Event Diterima',
-                    'message' => 'Materi event "' . $event->title . '" telah disetujui oleh admin.',
-                    'data' => [
+                    'trainer_id' => $module->trainer_id,
+                    'type'       => 'event_material_approved',
+                    'title'      => 'Materi Event Diterima',
+                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                    'data'       => [
                         'entity_type' => 'event',
-                        'entity_id' => (int) $event->id,
-                        'url' => route('trainer.events.show', $event->id),
+                        'entity_id'   => (int) $event->id,
+                        'url'         => route('trainer.events.show', $event->id),
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
+            } catch (\Throwable $e) {}
+        } else {
+            // Legacy: approve all pending modules for this event
+            $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')
+                ->get();
+
+            if ($pending->isEmpty()) {
+                return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                    ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
             }
-        } catch (\Throwable $e) {
-            // ignore notification errors
+
+            foreach ($pending as $module) {
+                $module->update([
+                    'status'      => 'approved',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                    'rejection_reason' => null,
+                ]);
+
+                try {
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $module->trainer_id,
+                        'type'       => 'event_material_approved',
+                        'title'      => 'Materi Event Diterima',
+                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                        'data'       => [
+                            'entity_type' => 'event',
+                            'entity_id'   => (int) $event->id,
+                            'url'         => route('trainer.events.show', $event->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        // Update event-level material_status if all modules approved
+        $stillPending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('status', 'pending_review')->count();
+        if ($stillPending === 0) {
+            $event->update([
+                'material_status'    => 'approved',
+                'material_approved_at' => now(),
+                'material_approved_by' => auth()->id(),
+                'material_rejection_reason' => null,
+                'module_verified_at' => now(),
+                'module_verified_by' => auth()->id(),
+                'module_rejected_at' => null,
+                'module_rejected_by' => null,
+                'module_rejection_reason' => null,
+            ]);
         }
 
         return back()->with('success', 'Module trainer berhasil diverifikasi.')
@@ -1036,48 +1081,87 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $modulePath = trim((string) ($event->module_path ?? ''));
-        if ($modulePath === '') {
-            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
-                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
-        }
-
         $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
+            'reason'    => ['required', 'string', 'max:500'],
+            'module_id' => ['nullable', 'integer'],
         ]);
 
-        $event->update([
-            'material_status' => 'rejected',
-            'material_approved_at' => null,
-            'material_approved_by' => null,
-            'material_rejection_reason' => $validated['reason'],
+        $moduleId = $validated['module_id'] ?? null;
 
-            'module_verified_at' => null,
-            'module_verified_by' => null,
-            'module_rejected_at' => now(),
-            'module_rejected_by' => auth()->id(),
-            'module_rejection_reason' => $validated['reason'],
-        ]);
+        if ($moduleId) {
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
 
-        // Notify trainer (if available)
-        try {
-            if (!empty($event->trainer_id)) {
+            $module->update([
+                'status'           => 'rejected',
+                'reviewed_by'      => auth()->id(),
+                'reviewed_at'      => now(),
+                'rejection_reason' => $validated['reason'],
+            ]);
+
+            try {
                 \App\Models\TrainerNotification::create([
-                    'trainer_id' => (int) $event->trainer_id,
-                    'type' => 'event_material_rejected',
-                    'title' => 'Materi Event Ditolak',
-                    'message' => 'Materi event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
-                    'data' => [
-                        'entity_type' => 'event',
-                        'entity_id' => (int) $event->id,
-                        'url' => route('trainer.events.show', $event->id),
+                    'trainer_id' => $module->trainer_id,
+                    'type'       => 'event_material_rejected',
+                    'title'      => 'Materi Event Ditolak',
+                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                    'data'       => [
+                        'entity_type'      => 'event',
+                        'entity_id'        => (int) $event->id,
+                        'url'              => route('trainer.events.show', $event->id),
                         'rejection_reason' => $validated['reason'],
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
+            } catch (\Throwable $e) {}
+        } else {
+            // Legacy: reject all pending
+            $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')
+                ->get();
+
+            if ($pending->isEmpty()) {
+                return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                    ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
             }
-        } catch (\Throwable $e) {
-            // ignore notification errors
+
+            foreach ($pending as $module) {
+                $module->update([
+                    'status'           => 'rejected',
+                    'reviewed_by'      => auth()->id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => $validated['reason'],
+                ]);
+
+                try {
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $module->trainer_id,
+                        'type'       => 'event_material_rejected',
+                        'title'      => 'Materi Event Ditolak',
+                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                        'data'       => [
+                            'entity_type'      => 'event',
+                            'entity_id'        => (int) $event->id,
+                            'url'              => route('trainer.events.show', $event->id),
+                            'rejection_reason' => $validated['reason'],
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+
+            $event->update([
+                'material_status'           => 'rejected',
+                'material_approved_at'      => null,
+                'material_approved_by'      => null,
+                'material_rejection_reason' => $validated['reason'],
+                'module_verified_at'        => null,
+                'module_verified_by'        => null,
+                'module_rejected_at'        => now(),
+                'module_rejected_by'        => auth()->id(),
+                'module_rejection_reason'   => $validated['reason'],
+            ]);
         }
 
         return back()->with('success', 'Module trainer ditolak.')
