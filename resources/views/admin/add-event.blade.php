@@ -456,11 +456,6 @@
                             <div class="modal-footer">
                                 <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                                      <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
-                                      <div class="text-center ">
-                                            <button type="button" class="btn btn-outline-primary px-4" data-edit-doc-toggle="{{ $event->id }}">
-                                                <i class="bi bi-pencil-square me-1"></i>Edit Upload
-                                            </button>
-                                        </div>
                                     <button type="submit" class="btn btn-primary px-4" form="docForm-{{ $event->id }}">
                                         <span class="me-1">Save changes</span>
                                         <i class="bi bi-arrow-right-short" aria-hidden="true"></i>

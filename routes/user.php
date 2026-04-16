@@ -112,25 +112,34 @@ Route::middleware('auth')->group(function () {
         if (!$registration || $registration->status !== 'active') {
             return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
         }
+
+        // Blok jika sudah absen
+        if (!empty($registration->attended_at) || !empty($registration->attendance_scan_qr)) {
+            return redirect()->route('events.registered.detail', $event)->with('info', 'Anda sudah melakukan absensi untuk event ini.');
+        }
+
         // Compute event start/end for gating
         $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
         $startTime = null;
         $endTime = null;
-        try {
-            $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null;
-        } catch (\Throwable $e) {
-        }
-        try {
-            $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
-        } catch (\Throwable $e) {
-        }
-        if (!$startTime && $eventDate)
-            $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate)
-            $endTime = $eventDate->copy()->endOfDay();
+        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch (\Throwable $e) {}
+        try { $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch (\Throwable $e) {}
+        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
+
+        // Blok jika event belum mulai
+        if (!$eventStarted) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Scan QR hanya tersedia saat event sedang berlangsung.');
+        }
+
+        // Blok jika event sudah selesai
+        if ($eventFinished) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Event sudah selesai, absensi tidak dapat dilakukan.');
+        }
+
         return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
     })->name('events.scan');
     // Attendance via scan: persist attendance when QR is decoded
@@ -257,7 +266,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
 Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
 Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
 Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
-Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
+Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizpController::class, 'finish'])->name('user.quiz.finish');
 Route::get('/quiz/{attempt}/result', [QuizController::class, 'resultShort'])->name('user.quiz.result.short');
 Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
