@@ -62,6 +62,32 @@ class EventController extends Controller
             ->all();
     }
 
+    private function syncEventSpeakers(Event $event, array $speakerNames, array $salaries): void
+    {
+        // Delete existing and re-sync
+        \App\Models\EventSpeaker::where('event_id', $event->id)->delete();
+
+        foreach ($speakerNames as $i => $name) {
+            $name = trim((string) $name);
+            if ($name === '') continue;
+
+            $salary = (float) preg_replace('/[^\d.]/', '', (string) ($salaries[$i] ?? 0));
+
+            // Try to find matching trainer
+            $trainer = \App\Models\User::where('role', 'trainer')
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                ->first();
+
+            \App\Models\EventSpeaker::create([
+                'event_id'   => $event->id,
+                'trainer_id' => $trainer?->id,
+                'name'       => $name,
+                'salary'     => $salary,
+                'order'      => $i,
+            ]);
+        }
+    }
+
     private function resolveAssignedTrainerIds(?int $trainerId, ?string $speaker): array
     {
         $ids = [];
@@ -350,6 +376,14 @@ class EventController extends Controller
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        // Sync speakers with salaries
+        $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
+        $speakerSalaries = (array) $request->input('speaker_salaries', []);
+        if (!empty($speakerNames)) {
+            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
+        }
+
         foreach ($assignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, $trainerId, $source);
@@ -694,6 +728,14 @@ class EventController extends Controller
             $event->speaker
         );
         $newlyAssignedTrainerIds = array_values(array_diff($currentAssignedTrainerIds, $previousAssignedTrainerIds));
+
+        // Sync speakers with salaries
+        $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
+        $speakerSalaries = (array) $request->input('speaker_salaries', []);
+        if (!empty($speakerNames)) {
+            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
+        }
+
         foreach ($newlyAssignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, (int) $trainerId, $source);
