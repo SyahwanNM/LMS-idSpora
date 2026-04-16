@@ -1,3 +1,105 @@
+            <!-- Trainer Modules/Materials Approval Section -->
+            <div class="detail-card mt-4">
+                <h5>
+                    <i class="bi bi-collection-play-fill" style="color: #3949ab;"></i>
+                    Daftar Modul/Video/Quiz Trainer
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Course</th>
+                                <th>Module Title</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Reviewed By</th>
+                                <th>Reviewed At</th>
+                                <th>Rejection Reason</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($trainerModules as $item)
+                            @php $module = $item['module']; $course = $item['course']; @endphp
+                            <tr>
+                                <td>{{ $course->name }}</td>
+                                <td>{{ $module->title }}</td>
+                                <td>{{ ucfirst($module->type) }}</td>
+                                <td>
+                                    @if($module->review_status === 'approved')
+                                        <span class="badge bg-success">Disetujui</span>
+                                    @elseif($module->review_status === 'rejected')
+                                        <span class="badge bg-danger">Ditolak</span>
+                                    @else
+                                        <span class="badge bg-secondary">Menunggu</span>
+                                    @endif
+                                </td>
+                                <td>{{ optional($module->reviewed_by ? App\Models\User::find($module->reviewed_by) : null)->name ?? '-' }}</td>
+                                <td>{{ $module->reviewed_at ? $module->reviewed_at->format('d M Y H:i') : '-' }}</td>
+                                <td>{{ $module->review_rejection_reason ?? '-' }}</td>
+                                <td class="text-center">
+                                    @if($module->review_status !== 'approved')
+                                    <form action="{{ route('admin.trainer.modules.approve', [$trainer->id, $module->id]) }}" method="POST" style="display:inline-block;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-sm" title="Setujui" onclick="return confirm('Setujui modul ini?')">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @if($module->review_status !== 'rejected')
+                                    <form action="#" method="POST" style="display:inline-block; margin-left:4px;">
+                                        @csrf
+                                        <button type="button" class="btn btn-danger btn-sm" title="Tolak" onclick="showRejectModal({{ $module->id }}, '{{ route('admin.trainer.modules.reject', [$trainer->id, $module->id]) }}')">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">Belum ada modul/video/quiz milik trainer ini.</td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal for rejection reason (simple JS, can be improved) -->
+            <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="rejectForm" method="POST" action="#">
+                            @csrf
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="rejectModalLabel">Alasan Penolakan Modul</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="module_id" id="rejectModuleId">
+                                <div class="mb-3">
+                                    <label for="rejection_reason" class="form-label">Alasan Penolakan</label>
+                                    <textarea name="rejection_reason" id="rejection_reason" class="form-control" required></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-danger">Tolak Modul</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function showRejectModal(moduleId, actionUrl) {
+                document.getElementById('rejectModuleId').value = moduleId;
+                document.getElementById('rejectForm').action = actionUrl;
+                var modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+                modal.show();
+            }
+            </script>
 @extends('layouts.admin')
 
 @section('title', 'Detail Trainer')

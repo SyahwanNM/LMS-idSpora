@@ -259,10 +259,16 @@
             <div class="pendapatan-box">
                 <h5>Pendapatan Per Acara</h5>
                 <div class="filter-section" id="filters-pendapatan">
-                    <div class="filter-kiri" style="display:flex; gap:10px; align-items:flex-end;">
-                        <div class="filter-group">
-                            <label for="filter-event-pendapatan" class="filter-label">Cari Event</label>
+                    <div class="filter-kiri" >
+                        <div class="filter-group" style="padding-left:50px;">
+                            <label for="filter-event-pendapatan" class="filter-label" style="margin-left:-20px;">Cari Event</label>
+                           <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
                             <input type="text" id="filter-event-pendapatan" class="filter-input" placeholder="Cari nama event...">
+                           </div> 
+                            
                         </div>
                     </div>
                     <div class="filter-kanan" style="display:flex; gap:14px; align-items:flex-end;">
@@ -297,52 +303,7 @@
                         </tr>
                     <tbody>
                         @php
-                            // Selalu generate $eventRows di sini agar tidak ada cache lama dari controller
-                            $paidStatuses = ['settlement','capture','success'];
-                            $revenueMap = \App\Models\ManualPayment::query()
-                                ->selectRaw('event_id, SUM(amount) as total')
-                                ->where('status','settled')
-                                ->groupBy('event_id')
-                                ->pluck('total','event_id');
-                            // Ambil event yang event_date-nya tidak null dan sesuai bulan/tahun yang dipilih
-                            $eventsTmp = \App\Models\Event::withCount('registrations')
-                                ->whereNotNull('event_date')
-                                ->whereYear('event_date', $selectedDate->year)
-                                ->whereMonth('event_date', $selectedDate->month)
-                                ->orderBy('event_date','desc')->get();
-                            $eventRows = $eventsTmp->map(function($e) use ($revenueMap){
-                                $price = $e->discounted_price ?? $e->price;
-                                $payments = \App\Models\ManualPayment::where('event_id',$e->id)->where('status','settled')->get();
-                                $revenue = (float) $payments->sum('amount');
-                                $registeredCount = (int) $e->registrations()->where('status','active')->count();
-                                $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
-                                $incomeRows = [
-                                    [ 'label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue ],
-                                ];
-                                $expenseModels = $e->expenses()->get(['item','quantity','unit_price','total']);
-                                $expenseRows = $expenseModels->map(function($row){
-                                    return [
-                                        'label' => $row->item,
-                                        'qty' => (int)($row->quantity ?? 0),
-                                        'unit' => (float)($row->unit_price ?? 0),
-                                        'total' => (float)($row->total ?? 0),
-                                    ];
-                                })->values()->all();
-                                $expense = (float) array_sum(array_map(fn($r)=> (float)($r['total'] ?? 0), $expenseRows));
-                                return [
-                                    'id' => $e->id,
-                                    'name' => $e->title,
-                                    'date' => optional($e->event_date)->format('d/m/Y'),
-                                    'participants' => (int)$e->registrations_count,
-                                    'registered_count' => $registeredCount,
-                                    'price' => (float)$price,
-                                    'revenue' => $revenue,
-                                    'expense' => $expense,
-                                    'profit' => $revenue - $expense,
-                                    'income_rows' => $incomeRows,
-                                    'expense_rows' => $expenseRows,
-                                ];
-                            });
+                            // $eventRows is now provided by the controller and filtered by month/year.
                         @endphp
                         @forelse($eventRows as $row)
                             <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
@@ -393,15 +354,39 @@
         </div>
 
         <div id="pertumbuhan" class="rekap-box">
-            <div class="box-diagram-pertumbuhan col-md-8">
+            <div class="box-diagram-pertumbuhan">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <div style="height: 300px; position: relative;">
+                        <div style="height: 300px ; position: relative;">
                             <canvas id="chartEvent"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
+             <div class="mt-4 mb-4">
+                    <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
+                        <input type="hidden" name="tab" value="operasional">
+                        <div>
+                            <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
+                            <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                        </div>
+                        <div class="d-flex gap-2 align-items-end">
+                            <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
+                            @php
+                                $prevOp = (clone $selectedDate)->subMonth();
+                                $nextOp = (clone $selectedDate)->addMonth();
+                                $curr = \Carbon\Carbon::now()->startOfMonth();
+                                $isFut = $nextOp->gt($curr);
+                            @endphp
+                            <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
+                            <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
+                        </div>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                            <button type="button" class="btn-export-report btn btn-sm" data-export-tab="operasional" style="height:38px;">Export</button>
+                        </div>
+                    </form>
+                </div>
 
             <div class="data-box">
                 <div class="data-pengguna">
@@ -478,29 +463,33 @@
             </div>
             <h5 class="title-laporan-metrik">Metrik Operasional Rinci</h5>
             <div class="filter-section" id="filters-pertumbuhan">
-                <div class="filter-kiri">
-                    <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
-                        <input type="hidden" name="tab" value="pertumbuhan">
-                        <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event..." style="width:200px">
-                        
-                        <label for="period_pertumbuhan" class="filter-label ms-2 mb-0">Periode</label>
-                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $selectedDate->format('Y-m') }}" class="form-control form-control-sm" style="width:150px">
-                        
-                        <button type="submit" class="btn btn-primary btn-sm ms-2">Tampilkan</button>
-                    </form>
-                </div>
-                <div class="filter-kanan d-flex align-items-end gap-2">
-                    <!-- Additional JS-based Date Range (Optional, currently reused for table filtering) -->
-                    <!-- We keep them but hidden or secondary if Month Filter is primary -->
-                    <div class="filter-group d-none">
-                         <!-- Hide these if we rely on Controller Month Filter -->
-                        <label for="date-from-pertumbuhan" class="filter-label">Dari</label>
-                         <input type="date" id="date-from-pertumbuhan" class="filter-input">
+                        <div class="filter-kiri">
+                            <div class="filter-group" style="padding-left:50px;">
+                                <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
+                            <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event...">
+                           </div> 
+                                
+                            </div>
+                        </div>
+                            <div class="filter-kanan">
+                            <div class="filter-group">
+                                <label for="date-from-pertumbuhan" class="filter-label">Dari Tanggal</label>
+                                <div class="filter-date-group">
+                                    <input type="date" id="date-from-pertumbuhan" class="filter-input">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label for="date-to-pertumbuhan" class="filter-label">Sampai Tanggal</label>
+                                <div class="filter-date-group">
+                                    <input type="date" id="date-to-pertumbuhan" class="filter-input">
+                                </div>
+                            </div>
+                            <div class="filter-actions"><button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d;">Reset</button></div>
+                        </div>
                     </div>
-                    <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
-                    <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan">Export</button>
-                </div>
-            </div>
             <table class="tabel-pendapatan" id="table-pertumbuhan">
                 <thead>
                     <tr>
@@ -515,29 +504,34 @@
                 </thead>
                 <tbody>
                     @php
-                        $growthRows = $growthRows ?? \App\Models\Event::withCount('registrations')
-                            ->orderBy('event_date','desc')
-                            ->get()
-                            ->map(function($e){
-                                return [
-                                    'id' => $e->id,
-                                    'name' => $e->title,
-                                    'date' => optional($e->event_date)->format('d/m/Y'),
-                                    'participants' => (int)$e->registrations_count,
-                                    'speaker' => $e->speaker,
-                                    'event_rating' => null,
-                                    'speaker_rating' => null,
-                                ];
-                            });
+                        // $growthRows is now provided by the controller and filtered by month/year.
                     @endphp
                     @forelse($growthRows as $row)
-                        <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
+                        <tr
+                            data-name="{{ Str::lower($row['name']) }}"
+                            data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}"
+                            data-participants="{{ $row['participants'] }}"
+                            data-event-rating="{{ $row['event_rating'] ?? '' }}"
+                            data-speaker-rating="{{ $row['speaker_rating'] ?? '' }}"
+                            data-title="{{ $row['name'] }}">
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['date'] ?? '-' }}</td>
                             <td>{{ $row['participants'] }} Peserta</td>
                             <td>{{ $row['speaker'] ?? '-' }}</td>
-                            <td>{{ $row['event_rating'] ?? '-' }}</td>
-                            <td>{{ $row['speaker_rating'] ?? '-' }}</td>
+                            <td>
+                                @if(isset($row['event_rating']) && $row['event_rating'] !== null)
+                                    {{ $row['event_rating'] }}/5
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td>
+                                @if(isset($row['speaker_rating']) && $row['speaker_rating'] !== null)
+                                    {{ $row['speaker_rating'] }}/5
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewPertumbuhanModal">
                                     <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
@@ -557,7 +551,7 @@
         <div id="operasional" class="rekap-box">
             <div>
                 <h5>Aktivitas Acara</h5>
-                <div class="box-diagram-operasional col-md-8 mt-3">
+                <div class="box-diagram-operasional">
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <h6 class="mb-3">Total Event Create vs Manage</h6>
@@ -573,7 +567,7 @@
                         <input type="hidden" name="tab" value="operasional">
                         <div>
                             <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
-                            <input type="month" name="period" id="period_op" value="{{ $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                            <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
                         </div>
                         <div class="d-flex gap-2 align-items-end">
                             <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
@@ -620,9 +614,14 @@
                     <h5>Manajemen Dokumen Per Event</h5>
                     <div class="filter-section" id="filters-operasional">
                         <div class="filter-kiri">
-                            <div class="filter-group">
-                                <label for="filter-event-operasional" class="filter-label">Cari Event</label>
-                                <input type="text" id="filter-event-operasional" class="filter-input" placeholder="Cari nama event...">
+                            <div class="filter-group" style="padding-left:50px;">
+                                <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                            </svg>
+                            <input type="text" id="filter-event-operasional" class="filter-input" placeholder="Cari nama event...">
+                           </div> 
+                                
                             </div>
                         </div>
                             <div class="filter-kanan">
@@ -647,34 +646,14 @@
                                 <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Tanggal</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Jenis Kegiatan</th>
+                                <th style="background-color: #E4E4E6;" scope="col">Progress Dokumen</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Status Kelengkapan Dokumen</th>
                                 <th style="background-color: #E4E4E6;" scope="col">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @php
-                                if(!isset($operationalRows)) {
-                                    $operationalRows = \App\Models\Event::query()
-                                        ->orderBy('event_date','desc')
-                                        ->get()
-                                        ->map(function($e){
-                                            return [
-                                                'id' => $e->id,
-                                                'name' => $e->title,
-                                                'date' => optional($e->event_date)->format('d/m/Y'),
-                                                'type' => $e->jenis ?? 'N/A',
-                                                'documents_percent' => $e->documents_completion_percent,
-                                                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
-                                                'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
-                                                'module_url' => !empty($e->module_path) ? ($e->module_file_url ?? '') : '',
-                                                'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
-                                                // attendance QR data
-                                                'qr_token' => $e->attendance_qr_token,
-                                                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                                                'qr_image_url' => $e->attendance_qr_image_url,
-                                            ];
-                                        });
-                                }
+                                // $operationalRows is now provided by the controller and filtered by month/year.
                             @endphp
                             @forelse($operationalRows as $row)
                                 <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-type="{{ Str::lower($row['type']) }}" data-docs="{{ $row['documents_percent'] }}">
@@ -682,7 +661,7 @@
                                     <td>{{ $row['date'] ?? '-' }}</td>
                                     <td>{{ $row['type'] }}</td>
                                     <td>
-                                        <button class="add-dokumen" data-bs-toggle="modal" data-bs-target="#uploadOperasionalModal" 
+                                        <h3 class="add-dokumen" 
                                             data-bs-id="{{ $row['id'] }}"
                                             data-vbg="{{ $row['vbg_url'] ?? '' }}"
                                             data-cert="{{ $row['cert_url'] ?? '' }}"
@@ -691,7 +670,16 @@
                                             data-qr-img="{{ $row['qr_image_url'] ?? '' }}"
                                         >
                                             {{ $row['documents_percent'] }}%
-                                        </button>
+                                        </h3>
+                                    </td>
+                                    <td>
+                                        @if($row['documents_percent'] == 100)
+                                            <span class="status-lengkap">Lengkap</span>
+                                        @elseif($row['documents_percent'] > 0)
+                                            <span class="status-kurang-lengkap">Kurang Lengkap</span>
+                                        @else
+                                            <span class="status-tidak-lengkap">Tidak Lengkap</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @php
@@ -720,7 +708,7 @@
 
     <!-- Export Preview Modal -->
     <div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top: clamp(48px, 10vh, 120px) !important; margin-bottom: 24px;">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top: 100px; margin-bottom: 24px;">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exportReportModalLabel">Export Preview</h5>
@@ -738,7 +726,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm btn-export-close" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-export-close" data-bs-dismiss="modal" >Close</button>
                     <button type="button" class="btn-export-report" id="btnExportPdf">Save PDF</button>
                     <button type="button" class="btn-export-report" id="btnExportExcel">Save Excel</button>
                 </div>
@@ -748,7 +736,7 @@
 
     <!-- Modals -->
     <div class="modal-view-pendapatan modal fade" id="viewPendapatanModal" tabindex="-1" aria-labelledby="viewPendapatanLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="content-event modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="viewPendapatanLabel">Rekap Pendaftaran</h5>
@@ -803,7 +791,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Detail Penilaian untuk acara ini.</p>
+                    <p class="mb-2">Detail penilaian untuk acara ini.</p>
+                    <div class="mb-3">
+                        <small class="text-muted">Event</small>
+                        <div class="fw-semibold" id="pertumbuhanEventName">-</div>
+                    </div>
                     <div class="pertumbuhan-dialog-box">
                         <div class="pertumbuhan-dialog-card">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#4b2dbf" class="bi bi-people" viewBox="0 0 16 16">
@@ -811,7 +803,7 @@
                             </svg>
                             <div class="view-pertumbuhan">
                                 <p class="label-view">Jumlah Peserta</p>
-                                <p>250 Peserta</p>
+                                <p class="value-view" id="pertumbuhanParticipants">-</p>
                             </div>
                         </div>
                         <div class="pertumbuhan-dialog-card">
@@ -820,7 +812,7 @@
                             </svg>
                             <div class="view-pertumbuhan">
                                 <p class="label-view">Rata-rata Rating Acara</p>
-                                <p>4.5/5</p>
+                                <p class="value-view" id="pertumbuhanEventRating">-</p>
                             </div>
                         </div>
                         <div class="pertumbuhan-dialog-card">
@@ -828,8 +820,8 @@
                                 <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Rata-rata Rating Event</p>
-                                <p>4.5/5</p>
+                                <p class="label-view">Rata-rata Rating Pembicara</p>
+                                <p class="value-view" id="pertumbuhanSpeakerRating">-</p>
                             </div>
                         </div>
                     </div>
@@ -851,40 +843,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-upload-operasional modal fade" id="uploadOperasionalModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="content-operasional-view modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Status Dokumen Detail</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Tinjau status semua dokumen terkait acara dan administrasi.</p>
-                    <form id="formUploadOperasional" action="" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="box-up mb-3">
-                            <label for="vbg" class="form-label">Virtual Background</label>
-                            <div id="preview-vbg" class="mb-2"></div>
-                            <input type="file" class="form-control" id="vbg" name="virtual_background">
-                        </div>
-                        <div class="box-up mb-3">
-                            <label for="sertif" class="form-label">Sertifikat</label>
-                            <div id="preview-sertif" class="mb-2"></div>
-                            <input type="file" class="form-control" id="sertif" name="certificate">
-                        </div>
-                        <div class="box-up mb-3">
-                            <label for="absensi" class="form-label">Absensi</label>
-                            <div id="preview-absensi" class="mb-2"></div>
-                        </div>
-                        <div class="modal-footer px-0 pb-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Save changes</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+   
 </div>
 @endsection
 @section('scripts')
@@ -947,6 +906,47 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+});
+</script>
+
+<script>
+// Fill Pertumbuhan detail modal from the clicked table row
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        const modalEl = document.getElementById('viewPertumbuhanModal');
+        if(!modalEl) return;
+
+        const nameEl = document.getElementById('pertumbuhanEventName');
+        const participantsEl = document.getElementById('pertumbuhanParticipants');
+        const eventRatingEl = document.getElementById('pertumbuhanEventRating');
+        const speakerRatingEl = document.getElementById('pertumbuhanSpeakerRating');
+
+        function fmtRating(v){
+            const n = Number(v);
+            if(!Number.isFinite(n) || n <= 0) return '-';
+            // show 1 decimal when needed, otherwise integer
+            const s = (Math.round(n * 10) % 10 === 0) ? String(Math.round(n)) : n.toFixed(1);
+            return s + '/5';
+        }
+
+        modalEl.addEventListener('show.bs.modal', function(ev){
+            const trigger = ev.relatedTarget;
+            const row = trigger && trigger.closest ? trigger.closest('tr') : null;
+            if(!row) return;
+
+            const title = row.getAttribute('data-title') || row.querySelector('td')?.textContent?.trim() || 'Event';
+            const participants = row.getAttribute('data-participants') || '';
+            const eventRating = row.getAttribute('data-event-rating') || '';
+            const speakerRating = row.getAttribute('data-speaker-rating') || '';
+
+            if(nameEl) nameEl.textContent = title;
+            if(participantsEl) participantsEl.textContent = participants ? (participants + ' Peserta') : '-';
+            if(eventRatingEl) eventRatingEl.textContent = fmtRating(eventRating);
+            if(speakerRatingEl) speakerRatingEl.textContent = fmtRating(speakerRating);
+        });
+    } catch(e) {
+        // never block report page
+    }
 });
 </script>
 
@@ -1110,28 +1110,95 @@ document.addEventListener('DOMContentLoaded', function(){
         if(!table) return;
         const rows = Array.from(table.querySelectorAll('tbody tr'));
         function matches(row){
-            const name = (row.getAttribute('data-name')||'').toLowerCase();
-            const date = row.getAttribute('data-date');
+            // Prefer explicit data-name (already lowercased server-side),
+            // but fall back to first cell text when attribute is missing.
+            const nameAttr = row.getAttribute('data-name') || '';
+            const name = (nameAttr ? nameAttr : (row.querySelector('td')?.textContent || '')).toLowerCase();
+            const rawDateAttr = row.getAttribute('data-date') || '';
+            const displayedDateText = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+            const rowDateStr = rawDateAttr || displayedDateText;
             const searchVal = (searchInput?.value || '').toLowerCase().trim();
             const fromVal = dateFromInput?.value || '';
             const toVal = dateToInput?.value || '';
+
             // Name filter
             if(searchVal && !name.includes(searchVal)) return false;
-            // Date range filter
-            if(date){
-                if(fromVal && date < fromVal) return false;
-                if(toVal && date > toVal) return false;
+
+            // Generic parser: supports YYYY-MM-DD, YYYY/MM/DD and DD/MM/YYYY
+            function parseToTimestamp(s){
+                if(!s) return NaN;
+                s = String(s).trim();
+                // ISO-like YYYY-MM-DD or YYYY/MM/DD
+                if(/^\d{4}[\-/]\d{2}[\-/]\d{2}$/.test(s)){
+                    const normalized = s.replace(/\//g,'-');
+                    const dt = new Date(normalized);
+                    return isNaN(dt.getTime()) ? NaN : dt.getTime();
+                }
+                // dd/mm/yyyy
+                if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){
+                    const p = s.split('/');
+                    const day = Number(p[0]);
+                    const mon = Number(p[1]);
+                    const yr = Number(p[2]);
+                    const dt = new Date(yr, mon - 1, day);
+                    return isNaN(dt.getTime()) ? NaN : dt.getTime();
+                }
+                const parsed = Date.parse(s);
+                return isNaN(parsed) ? NaN : parsed;
             }
+
+            const rowTime = parseToTimestamp(rowDateStr);
+
+            if(fromVal){
+                const fromTime = parseToTimestamp(fromVal);
+                if(!isNaN(rowTime) && !isNaN(fromTime)){
+                    if(rowTime < fromTime) return false;
+                } else if(rowDateStr && fromVal){
+                    if(rowDateStr < fromVal) return false;
+                }
+            }
+            if(toVal){
+                const toTime = parseToTimestamp(toVal);
+                if(!isNaN(rowTime) && !isNaN(toTime)){
+                    if(rowTime > toTime) return false;
+                } else if(rowDateStr && toVal){
+                    if(rowDateStr > toVal) return false;
+                }
+            }
+
             return true;
         }
         function apply(){
+            const tbody = table.tBodies && table.tBodies[0] ? table.tBodies[0] : null;
+            const colCount = table.tHead && table.tHead.rows[0] ? table.tHead.rows[0].cells.length : 1;
+            let visibleCount = 0;
             rows.forEach(r => {
                 if(matches(r)){
                     r.style.display='';
+                    visibleCount++;
                 } else {
                     r.style.display='none';
                 }
             });
+
+            // Manage client-side 'no data' row
+            if(tbody){
+                const existing = tbody.querySelector('tr.no-data-client');
+                if(visibleCount === 0){
+                    if(!existing){
+                        const tr = document.createElement('tr');
+                        tr.className = 'no-data-client';
+                        const td = document.createElement('td');
+                        td.setAttribute('colspan', String(colCount));
+                        td.className = 'text-center';
+                        td.textContent = 'Belum ada data event';
+                        tr.appendChild(td);
+                        tbody.appendChild(tr);
+                    }
+                } else {
+                    if(existing) existing.remove();
+                }
+            }
         }
         // Expose for global re-apply
         config.apply = apply;
@@ -1184,6 +1251,7 @@ document.addEventListener('DOMContentLoaded', function(){
     function applyAllFilters(){
         filterConfigs.forEach(cfg => cfg.apply && cfg.apply());
     }
+    window.applyAllFilters = applyAllFilters;
     // Initial apply to normalize state
     applyAllFilters();
 
@@ -1290,9 +1358,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
             container.innerHTML = [
                 row('Virtual Background', vbgUrl),
-                row('Sertifikat', certUrl),
                 row('Module (Trainer)', moduleUrl),
-                row('Dokumen Absensi', absUrl),
                 qrRow()
             ].join('');
 
@@ -1650,5 +1716,109 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        const periodInputs = [
+            document.getElementById('period'),
+            document.getElementById('period_pertumbuhan'),
+            document.getElementById('period_op'),
+        ].filter(Boolean);
+
+        function formatMonthLabel(ym){
+            if(!ym) return '-';
+            const parts = ym.split('-');
+            if(parts.length !== 2) return ym;
+            const y = Number(parts[0]), m = Number(parts[1]);
+            const dt = new Date(y, m - 1, 1);
+            try {
+                return new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(dt);
+            } catch (e) {
+                return dt.toLocaleString();
+            }
+        }
+
+        function setAllPeriods(value){
+            if(!value) return;
+            periodInputs.forEach(inp => { if(inp && inp.value !== value) inp.value = value; });
+            const label = formatMonthLabel(value);
+            const labPend = document.getElementById('month-label-pendapatan');
+            const labPert = document.getElementById('month-label-pertumbuhan');
+            const labOp = document.getElementById('month-label-operasional');
+            if(labPend) labPend.textContent = label;
+            if(labPert) labPert.textContent = label;
+            if(labOp) labOp.textContent = label;
+
+            // Also set per-tab date-from / date-to inputs so client-side table filters reflect the whole month
+            const parts = (value || '').split('-');
+            if(parts.length === 2){
+                const y = Number(parts[0]);
+                const m = Number(parts[1]);
+                const mm = String(m).padStart(2,'0');
+                const firstDay = `${y}-${mm}-01`;
+                const lastDate = new Date(y, m, 0).getDate();
+                const lastDay = `${y}-${mm}-${String(lastDate).padStart(2,'0')}`;
+
+                const mapping = [
+                    ['date-from-pendapatan','date-to-pendapatan'],
+                    ['date-from-pertumbuhan','date-to-pertumbuhan'],
+                    ['date-from-operasional','date-to-operasional'],
+                ];
+                mapping.forEach(([fromId,toId]) => {
+                    const fromEl = document.getElementById(fromId);
+                    const toEl = document.getElementById(toId);
+                    if(fromEl) fromEl.value = firstDay;
+                    if(toEl) toEl.value = lastDay;
+                });
+
+                // Apply client-side filters immediately so the visible tables reflect the chosen month
+                if(window.applyAllFilters) window.applyAllFilters();
+            }
+        }
+
+        let submitTimer = null;
+        function submitActiveTabAfterDelay(delay = 300){
+            clearTimeout(submitTimer);
+            submitTimer = setTimeout(()=>{
+                const activeBtn = document.querySelector('.btn-report.active');
+                const activeTab = activeBtn?.getAttribute('data-target') || 'pendapatan';
+                const form = document.querySelector('#' + activeTab + ' form');
+                if(form){
+                    const hiddenTab = form.querySelector('input[name="tab"]');
+                    if(hiddenTab) hiddenTab.value = activeTab;
+                    form.submit();
+                }
+            }, delay);
+        }
+
+        periodInputs.forEach(inp => {
+            inp.addEventListener('change', function(){
+                const v = this.value;
+                setAllPeriods(v);
+                // auto submit to refresh lists based on selected month
+                submitActiveTabAfterDelay(400);
+            });
+        });
+
+        // Sync on load from server-rendered values
+        (function init(){
+            const initial = periodInputs.find(i => i && i.value)?.value;
+            if(initial) setAllPeriods(initial);
+        })();
+
+        // When switching tabs client-side, ensure inputs and labels reflect current period
+        const tabButtons = document.querySelectorAll('.btn-report');
+        tabButtons.forEach(btn => btn.addEventListener('click', function(){
+            const active = document.querySelector('.btn-report.active');
+            const activeTarget = active?.getAttribute('data-target') || 'pendapatan';
+            const activePeriodInp = document.querySelector('#' + activeTarget + ' input[type="month"]');
+            const val = activePeriodInp?.value || periodInputs.find(i => i && i.value)?.value;
+            if(val) setAllPeriods(val);
+        }));
+    } catch(e){
+        console.error('period sync error', e);
+    }
+});
+</script>
 
 @endsection

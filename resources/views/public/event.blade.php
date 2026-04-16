@@ -183,6 +183,26 @@
         .header-card .dropdown-menu .dropdown-divider { margin: .35rem 0; }
         .header-card .dropdown-menu .dropdown-item.active { font-weight: 700; }
     </style>
+    <style>
+        .carousel-control-prev,
+        .carousel-control-next {
+            display: none !important;
+        }
+        .carousel-indicators [data-bs-target] {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #f4c430;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            border: none;
+            margin: 0 4px;
+        }
+        .carousel-indicators .active {
+            opacity: 1;
+            background-color: #51376c;
+        }
+    </style>
 </head>
 
 <body>
@@ -516,7 +536,7 @@
         </section>
         
     </main> <div class="footer-section-wrapper">
-        @include('partials.footer-before-login')
+        @include('partials.footer-after-login')
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function(){

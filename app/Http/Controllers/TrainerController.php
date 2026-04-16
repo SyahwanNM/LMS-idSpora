@@ -411,7 +411,7 @@ class TrainerController extends Controller
             ->get();
 
         $students = $user->trainerEnrollments()
-            ->with(['student', 'course'])
+            ->with(['user', 'course'])
             ->orderBy('enrollments.created_at', 'desc')
             ->limit(5)
             ->get();
@@ -713,7 +713,7 @@ class TrainerController extends Controller
                 // Urutkan modul, dan load relasi kuis
                 $query->orderBy('order_no', 'asc')->with('quizQuestions');
             },
-            'enrollments.student',
+            'enrollments.user',
             'reviews'
         ])
             ->where('id', $id)

@@ -163,6 +163,19 @@ class TrainerManagementController extends Controller
             ->latest('created_at')
             ->get();
 
+        // Load all modules (with quizzes) for all trainer's courses
+        $trainerModules = collect();
+        foreach ($trainerCourses as $course) {
+            $modules = $course->modules()->with('quizQuestions', 'quizAttempts')->get();
+            foreach ($modules as $module) {
+                $trainerModules->push([
+                    'course' => $course,
+                    'module' => $module,
+                    'quizzes' => $module->quizQuestions ?? collect(),
+                ]);
+            }
+        }
+
         return view('admin.trainer.show', compact(
             'trainer',
             'trainerCourses',
@@ -171,7 +184,8 @@ class TrainerManagementController extends Controller
             'completedEventsCount',
             'completedCoursesCount',
             'totalCompletedSessions',
-            'averageRating'
+            'averageRating',
+            'trainerModules'
         ));
     }
 
@@ -618,6 +632,42 @@ class TrainerManagementController extends Controller
         $trainer->update($data);
 
         return redirect()->route('admin.trainer.index')->with('success', 'Data trainer berhasil diperbarui!');
+    }
+
+    public function approveModule(Request $request, User $trainer, \App\Models\CourseModule $module)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $module->update([
+            'review_status' => 'approved',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+            'review_rejection_reason' => null
+        ]);
+
+        return back()->with('success', 'Modul berhasil disetujui.');
+    }
+
+    public function rejectModule(Request $request, User $trainer, \App\Models\CourseModule $module)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:1000'
+        ]);
+
+        $module->update([
+            'review_status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+            'review_rejection_reason' => $request->rejection_reason
+        ]);
+
+        return back()->with('success', 'Modul berhasil ditolak.');
     }
 
     public function destroy(User $trainer)

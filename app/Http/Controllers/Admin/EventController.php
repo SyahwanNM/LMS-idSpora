@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\EventPaymentRejectedMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
@@ -141,7 +142,12 @@ class EventController extends Controller
             ->orderByDesc('created_at')
             ->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
     }
 
@@ -156,6 +162,14 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        // Normalize price input: allow formatted values (e.g. "1.000.000") from client-side
+        // by stripping non-digit characters so validation accepts numeric values.
+        $rawPrice = $request->input('price', null);
+        if (!is_null($rawPrice)) {
+            $clean = preg_replace('/\D/', '', (string) $rawPrice);
+            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'trainer_id' => [
@@ -198,6 +212,18 @@ class EventController extends Controller
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
 
             'is_reseller_event' => 'nullable|boolean',
+        ]);
+
+        // Debug: log submitted reseller inputs
+        Log::info('EventController@update submitted reseller values', [
+            'is_reseller_event_raw' => $request->input('is_reseller_event'),
+            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
+        ]);
+
+        // Debug: log submitted reseller inputs
+        Log::info('EventController@store submitted reseller values', [
+            'is_reseller_event_raw' => $request->input('is_reseller_event'),
+            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
         ]);
 
         $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
@@ -270,10 +296,30 @@ class EventController extends Controller
         }
 
         // Simpan data ke database
+        // Determine reseller flag: prefer explicit hidden field, fallback to radio input
+        $isReseller = null;
+        if ($request->has('is_reseller_event')) {
+            $isReseller = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $isReseller = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $isReseller = false;
+        }
+
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
         $event = Event::create([
             'trainer_id' => $request->input('trainer_id') ?: null,
             'title' => $request->title,
-            'speaker' => $request->speaker,
+            'speaker' => $normalizedSpeaker,
             'manage_action' => $request->manage_action,
             'is_reseller_event' => $request->boolean('is_reseller_event'),
             'materi' => $request->materi,
@@ -296,6 +342,7 @@ class EventController extends Controller
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
+            'is_reseller_event' => (bool) $isReseller,
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -411,7 +458,12 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
     }
 
@@ -421,6 +473,46 @@ class EventController extends Controller
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
+        $normalizedLocationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $normalizedPlaceName = trim((string) $request->input('place_name', ''));
+        if ($normalizedPlaceName === '' && $normalizedLocationMode !== 'online') {
+            $existingLocation = trim((string) $event->location);
+            if ($existingLocation !== '' && strtolower($existingLocation) !== 'online') {
+                $normalizedPlaceName = $existingLocation;
+            }
+        }
+
+        $normalizedMapsUrl = trim((string) $request->input('maps_url', ''));
+        $normalizedZoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($normalizedZoomLink !== '' && !preg_match('#^https?://#i', $normalizedZoomLink)) {
+            $normalizedZoomLink = 'https://' . ltrim($normalizedZoomLink, '/');
+        }
+
+        $request->merge([
+            'speaker' => $normalizedSpeaker,
+            'location_mode' => $normalizedLocationMode,
+            'place_name' => $normalizedPlaceName,
+            'maps_url' => $normalizedMapsUrl,
+            'zoom_link' => $normalizedZoomLink,
+        ]);
+
+        // Normalize price input in case client sent a formatted string (e.g. "1.000.000").
+        $rawPrice = $request->input('price', null);
+        if (!is_null($rawPrice)) {
+            $clean = preg_replace('/\D/', '', (string) $rawPrice);
+            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -488,7 +580,14 @@ class EventController extends Controller
             'event_time_end'
         ]);
 
-        $data['is_reseller_event'] = $request->boolean('is_reseller_event');
+        // Determine reseller flag robustly (hidden input or radio fallback)
+        if ($request->has('is_reseller_event')) {
+            $data['is_reseller_event'] = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $data['is_reseller_event'] = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $data['is_reseller_event'] = false;
+        }
 
         $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
         $placeName = trim((string) $request->input('place_name', ''));
@@ -577,6 +676,16 @@ class EventController extends Controller
             }
         }
 
+        // Ensure price is numeric (accept formatted strings)
+        if (array_key_exists('price', $data)) {
+            if (is_string($data['price'])) {
+                $clean = preg_replace('/\D/', '', $data['price']);
+                $data['price'] = $clean === '' ? 0 : (float) $clean;
+            } else {
+                $data['price'] = (float) $data['price'];
+            }
+        }
+
         $event->update($data);
 
         $currentAssignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -652,12 +761,57 @@ class EventController extends Controller
             return back()->with('success', 'Event sudah diterbitkan.');
         }
 
+        // Prevent publishing if operational documents are incomplete
+        $pct = (int) $event->documents_completion_percent;
+        if ($pct < 100) {
+            // Recompute missing items similarly to admin view logic
+            $hasMapsLink = !empty($event->maps_url);
+            $hasZoomLink = !empty($event->zoom_link);
+            $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+            $hasVbg = !empty($event->vbg_path);
+            $hasModule = !empty($event->module_path);
+            $hasAbsFile = !empty($event->attendance_path);
+            $hasAbsQrImg = !empty($event->attendance_qr_image);
+            $hasAbsQrToken = !empty($event->attendance_qr_token);
+            $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+
+            $missing = [];
+            if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+            if (!$hasModule) $missing[] = 'Module (Trainer)';
+            if (!$hasAbs) $missing[] = 'Absensi';
+
+            $msg = 'Kelengkapan dokumen belum 100%.';
+            if (!empty($missing)) {
+                $msg .= ' Item yang belum lengkap: ' . implode(', ', $missing) . '.';
+            }
+            $msg .= ' Lengkapi dokumen sebelum menerbitkan.';
+
+            return back()->with('error', $msg)->with('publish_missing_items', $missing);
+        }
+
         $event->forceFill([
             'is_published' => true,
             'published_at' => now(),
         ])->save();
 
         return back()->with('success', 'Event berhasil diterbitkan!');
+    }
+
+    /**
+     * Admin: unpublish event (batal publish).
+     */
+    public function unpublish(Request $request, Event $event)
+    {
+        if (!(bool) $event->is_published) {
+            return back()->with('success', 'Event memang belum diterbitkan.');
+        }
+
+        $event->forceFill([
+            'is_published' => false,
+            'published_at' => null,
+        ])->save();
+
+        return back()->with('success', 'Publikasi event berhasil dibatalkan!');
     }
 
     // Public registration (AJAX)
@@ -766,11 +920,11 @@ class EventController extends Controller
         } catch (\Throwable $e) { /* ignore */
         }
         return response()->json([
-            'status' => 'ok',
-            'message' => 'Berhasil daftar event (GRATIS)',
+            'success' => true,
+            'message' => 'Berhasil daftar event (Gratis)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.show', $event)
+            'redirect' => route('events.registered.detail', $event)
         ]);
     }
 
@@ -1200,5 +1354,38 @@ class EventController extends Controller
         }
 
         return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
+    }
+
+    /**
+     * Delete an event registration and cleanup related data/files.
+     */
+    public function destroyRegistration(Event $event, EventRegistration $registration)
+    {
+        try {
+            // Cleanup related manual payments and their physical proof files
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $proofs = \App\Models\PaymentProof::where('manual_payment_id', $m->id)->get();
+                foreach ($proofs as $p) {
+                    if ($p->file_path && Storage::disk('public')->exists($p->file_path)) {
+                        Storage::disk('public')->delete($p->file_path);
+                    }
+                    $p->delete();
+                }
+                $m->delete();
+            }
+
+            // Cleanup the primary payment_proof file if exists
+            if ($registration->payment_proof && Storage::disk('public')->exists($registration->payment_proof)) {
+                Storage::disk('public')->delete($registration->payment_proof);
+            }
+
+            $registration->delete();
+
+            return redirect()->back()->with('success', 'Data pendaftaran berhasil dihapus.');
+        } catch (\Throwable $e) {
+            \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
+        }
     }
 }

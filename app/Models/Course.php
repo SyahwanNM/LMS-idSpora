@@ -33,6 +33,8 @@ class Course extends Model
         'approved_at',
         'rejected_at',
         'approved_by',
+        'expenses_json',
+        'is_reseller_course',
     ];
 
     protected $casts = [
@@ -41,7 +43,8 @@ class Course extends Model
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
         'trainer_scheme_accepted_at' => 'datetime',
-        'expenses_json',
+        'expenses_json' => 'array',
+        'is_reseller_course' => 'boolean',
     ];
 
     // protected $casts = [
@@ -68,6 +71,11 @@ class Course extends Model
     public function modules()
     {
         return $this->hasMany(CourseModule::class)->orderBy('order_no');
+    }
+
+    public function units()
+    {
+        return $this->hasMany(CourseUnit::class)->orderBy('unit_no');
     }
 
     public function quizzes()
@@ -168,5 +176,33 @@ class Course extends Model
         }
 
         return asset('storage/' . $normalized);
+    }
+
+    public function hasDiscount(): bool
+    {
+        if (($this->discount_percent ?? 0) <= 0) {
+            return false;
+        }
+
+        $now = now();
+        if ($this->discount_start && $this->discount_start > $now) {
+            return false;
+        }
+        if ($this->discount_end && $this->discount_end < $now) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getDiscountedPriceAttribute(): float
+    {
+        $base = (float) ($this->price ?? 0);
+        if (!$this->hasDiscount()) {
+            return $base;
+        }
+
+        $perc = (float) ($this->discount_percent ?? 0);
+        return max(0, $base * (1 - ($perc / 100)));
     }
 }

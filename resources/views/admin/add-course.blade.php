@@ -85,14 +85,53 @@
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
+                        <!-- Akses Course (Freemium Mode) -->
+                        <div class="mb-3">
+                            <label for="free_access_mode" class="form-label text-dark">Akses Course</label>
+                            <select name="free_access_mode" id="free_access_mode" class="form-select">
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
+                            </select>
+                            <div class="form-text text-muted small">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label text-dark">Reseller Course</label>
-                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', 0) ? 1 : 0 }}">
-                            <div class="btn-group w-100" role="group" aria-label="Reseller Course">
-                                <button type="button" id="reseller-course-no" class="btn btn-outline-secondary">Tidak</button>
-                                <button type="button" id="reseller-course-yes" class="btn btn-outline-secondary">Ya</button>
+                            @php
+                                $isResellerCourse = (int) old('is_reseller_course', 0);
+                            @endphp
+                            <div class="reseller-course-radios d-flex flex-wrap align-items-center" style="column-gap: 2rem; row-gap: .5rem;" role="radiogroup" aria-label="Reseller Course">
+                                <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
+                                    <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0"
+                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
+                                    <label class="text-dark" for="is_reseller_course_0">Tidak</label>
+                                </div>
+                                <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
+                                    <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1"
+                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
+                                    <label class="text-dark" for="is_reseller_course_1">Ya</label>
+                                </div>
                             </div>
                             <div class="form-text">Jika Ya, course ini ditandai sebagai course reseller.</div>
+                            <style>
+                                .reseller-course-radios input[type="radio"]{
+                                    appearance: auto !important;
+                                    -webkit-appearance: radio !important;
+                                    -moz-appearance: auto !important;
+                                    vertical-align: middle !important;
+                                }
+                                .reseller-course-radios label{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    margin: 0 0 0 .5rem !important;
+                                    cursor: pointer;
+                                    user-select: none;
+                                }
+                                .reseller-course-radios .reseller-course-option:first-child label{
+                                    margin-left: .05rem !important;
+                                }
+                            </style>
                         </div>
 
                         <div class="box_select_deskripsi mb-3">
@@ -179,32 +218,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        (function() {
-            const input = document.getElementById('is_reseller_course');
-            const btnYes = document.getElementById('reseller-course-yes');
-            const btnNo = document.getElementById('reseller-course-no');
-
-            if (!input || (!btnYes && !btnNo)) return;
-
-            function setReseller(val) {
-                const v = val ? '1' : '0';
-                input.value = v;
-
-                if (btnYes) {
-                    btnYes.classList.toggle('btn-primary', v === '1');
-                    btnYes.classList.toggle('btn-outline-secondary', v !== '1');
-                }
-                if (btnNo) {
-                    btnNo.classList.toggle('btn-primary', v === '0');
-                    btnNo.classList.toggle('btn-outline-secondary', v !== '0');
-                }
-            }
-
-            btnYes && btnYes.addEventListener('click', () => setReseller(true));
-            btnNo && btnNo.addEventListener('click', () => setReseller(false));
-            setReseller((input.value || '0') === '1');
-        })();
-
         (function() {
             const modules = [];
             const listEl = document.getElementById('modules-list');

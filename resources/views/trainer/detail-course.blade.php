@@ -206,8 +206,35 @@
                 </div>
                 <div class="hero-media">
                     <div class="hero-image-wrap">
-                        @if($course->card_thumbnail_url)
-                            <img src="{{ $course->card_thumbnail_url }}" alt="{{ $course->name }}" />
+                        @if($course->card_thumbnail)
+                            @php
+                                $rawThumb = str_replace('\\', '/', trim((string) $course->card_thumbnail));
+                                $thumbUrl = null;
+
+                                if (str_starts_with($rawThumb, 'http://') || str_starts_with($rawThumb, 'https://')) {
+                                    $thumbUrl = $rawThumb;
+                                } elseif (str_starts_with($rawThumb, 'uploads/')) {
+                                    $thumbUrl = asset($rawThumb);
+                                } else {
+                                    $rel = $rawThumb;
+                                    $markerPos = stripos($rel, 'storage/app/public/');
+                                    if ($markerPos !== false) {
+                                        $rel = substr($rel, $markerPos + strlen('storage/app/public/'));
+                                    }
+                                    if (str_starts_with($rel, 'storage/')) {
+                                        $rel = ltrim(substr($rel, 8), '/');
+                                    }
+                                    if (str_starts_with($rel, 'public/')) {
+                                        $rel = ltrim(substr($rel, 7), '/');
+                                    }
+                                    $rel = ltrim($rel, '/');
+                                    if ($rel !== '' && !str_contains($rel, '/')) {
+                                        $rel = 'courses/card_thumbnails/' . $rel;
+                                    }
+                                    $thumbUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($rel);
+                                }
+                            @endphp
+                            <img src="{{ $thumbUrl }}" alt="{{ $course->name }}" />
                         @else
                             <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=360&fit=crop"
                                 alt="Default Thumbnail" />
@@ -383,11 +410,11 @@
                 <div class="learner-grid">
                     @forelse($activeStudents as $enrollment)
                         <div class="learner-card">
-                            <img src="{{ $enrollment->student->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->student->name) }}"
-                                alt="{{ $enrollment->student->name }}" />
+                            <img src="{{ $enrollment->user->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->user->name) }}"
+                                alt="{{ $enrollment->user->name }}" />
                             <div class="learner-info">
-                                <h4>{{ $enrollment->student->name ?? 'Anonim' }}</h4>
-                                <p>{{ strtoupper($enrollment->student->email ?? 'NO EMAIL') }}</p>
+                                <h4>{{ $enrollment->user->name ?? 'Anonim' }}</h4>
+                                <p>{{ strtoupper($enrollment->user->email ?? 'NO EMAIL') }}</p>
                                 <span class="learner-date">Joined: {{ $enrollment->created_at->format('Y-m-d') }}</span>
                             </div>
                         </div>

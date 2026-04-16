@@ -141,10 +141,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
-                    <div class="mt-2">Berikut yang belum ada:</div>
+                    <div style="font-weight:600;" id="publishModalMainText">Oops, modul course belum lengkap.</div>
+                    <div class="mt-2" id="publishModalSubText">Berikut yang belum ada:</div>
                     <ul id="publishMissingList" class="mt-2 mb-3" style="padding-left: 18px;"></ul>
-                    <div class="text-muted" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
+                    <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
@@ -206,7 +206,6 @@
                         <th>Level</th>
                         <th>Harga</th>
                         <th>Status Kelengkapan</th>
-                        <th>Pembayaran</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -226,7 +225,7 @@
                     $videoCount = $videoSlots->count();
                     $quizCount = $quizSlots->count();
 
-                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url) && empty(trim(strip_tags($m->description ?? ''))))->count() > 0);
                     $hasMissingVideo = ($videoCount <= 0) || ($videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
                     $hasMissingQuiz = false;
                     if ($quizCount <= 0) {
@@ -244,11 +243,18 @@
                         })->count() > 0;
                     }
 
+                    // If it's a trainer course, ensure all modules have been approved
+                    $hasUnapprovedModules = false;
+                    if (!empty($course->trainer_id)) {
+                        $hasUnapprovedModules = $modulesCol->where('review_status', '!=', 'approved')->count() > 0;
+                    }
+
                     $missingForPublish = [];
                     if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
                     if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
                     if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
                     if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasUnapprovedModules) { $missingForPublish[] = 'Approval Trainer'; }
 
                     $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
@@ -262,112 +268,7 @@
                             @elseif($hasMissingMaterial)
                             <button class="status_kelengkapan_miss">Missing Material</button>
                             @else
-                            <button class="status_kelengkapan_inprogress">In Progress</button>
-                            @endif
-                        </td>
-                        <td>
-                            @php
-                            $coursePayments = $course->manualPayments ?? collect();
-                            $countPending = $coursePayments->where('status', 'pending')->count();
-                            $countApproved = $coursePayments->where('status', 'settled')->count();
-                            $countRejected = $coursePayments->where('status', 'rejected')->count();
-                            @endphp
-
-                            <div class="d-flex flex-wrap gap-1 align-items-center">
-                                <span class="badge text-bg-warning">Pending: {{ $countPending }}</span>
-                                <span class="badge text-bg-success">Approved: {{ $countApproved }}</span>
-                                <span class="badge text-bg-danger">Rejected: {{ $countRejected }}</span>
-                            </div>
-
-                            @if($coursePayments->count() > 0)
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
-                                Lihat user
-                            </button>
-
-                            <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-sm align-middle">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>User</th>
-                                                            <th>WhatsApp</th>
-                                                            <th>Referral</th>
-                                                            <th>Status</th>
-                                                            <th>Bukti</th>
-                                                            <th>Aksi</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($coursePayments->sortByDesc('created_at') as $payment)
-                                                        @php
-                                                        $proof = $payment->proofs->sortByDesc('created_at')->first();
-                                                        $status = $payment->status;
-                                                        $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
-                                                        $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
-                                                        @endphp
-                                                        <tr>
-                                                            <td>
-                                                                <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
-                                                                <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
-                                                            </td>
-                                                            <td>{{ $payment->whatsapp_number ?? '-' }}</td>
-                                                            <td>{{ $payment->referral_code ?: '-' }}</td>
-                                                            <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
-                                                            <td>
-                                                                @if($proof)
-                                                                @php
-                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
-                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
-                                                                $proofPath = substr($proofPath, strlen('uploads/'));
-                                                                }
-                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
-                                                                @endphp
-                                                                <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
-                                                                @else
-                                                                <span class="text-muted">-</span>
-                                                                @endif
-                                                            </td>
-                                                            <td>
-                                                                @if($status === 'pending')
-                                                                    <form method="POST" class="d-flex flex-wrap gap-1 m-0">
-                                                                        @csrf
-                                                                        <button type="submit" class="btn btn-sm btn-success"
-                                                                            formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
-                                                                            onclick="return confirm('Approve pembayaran ini?')">
-                                                                            Approve
-                                                                        </button>
-                                                                        <button type="button" class="btn btn-sm btn-danger js-reject-course-payment"
-                                                                            data-action="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
-                                                                            data-user="{{ $payment->user->name ?? 'User' }}"
-                                                                            data-course="{{ $course->name }}">
-                                                                            Reject
-                                                                        </button>
-                                                                    </form>
-                                                                @else
-                                                                    <span class="text-muted">-</span>
-                                                                @endif
-                                                            </td>
-                                                        </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @else
-                            <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
+                            <button class="status_kelengkapan_inprogress">On Progress</button>
                             @endif
                         </td>
                         <td>
@@ -387,18 +288,21 @@
                                 'enroll_count' => (int)($course->enrollments_count ?? 0),
                                 'edit_url' => route('admin.courses.edit', $course),
                                 'has_trainer' => !empty($course->trainer_id),
-                                'modules' => $course->modules->map(function($m) {
+                                'modules' => $course->modules->filter(function($m) use ($course) {
+                                    if (empty($course->trainer_id)) return true;
+                                    return $m->review_status === 'approved';
+                                })->map(function($m) {
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
                                 'title' => $m->title,
-                                'subtitle' => $m->description ?? '',
+                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Dokumen Materi',
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
                                 // Content completeness marker for preview
                                 'has_content' => $m->type === 'quiz'
                                     ? (($m->quizQuestions->count() ?? 0) > 0)
-                                    : !empty($m->content_url),
+                                    : (!empty($m->content_url) || !empty($m->description)),
                                 ];
                                 })->values()->toArray(),
                                 'published' => $isPublished ? '1' : '0',
@@ -415,7 +319,7 @@
                                         <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
                                     </svg>
                                 </button>
-                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" onsubmit="return confirm('Hapus course ini?')">
+                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" class="delete-course-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn p-0" title="Delete">
@@ -474,10 +378,6 @@
                                 <button class="tab-btn" data-target="tab-kuis">Kuis</button>
                                 <button class="tab-btn" data-target="tab-participant">Participant</button>
                             </div>
-
-                            <div>
-                                <button id="coursePreviewEditBtn" type="button" class="button_edit_preview">Edit</button>
-                            </div>
                         </div>
 
                     </div>
@@ -502,33 +402,9 @@
                                     <h5>Status</h5>
                                     <h4 id="cp-status">Selesai</h4>
                                 </div>
-                                <div class="list-info info-green">
-                                    <h5>STUDENT ENROLL</h5>
-                                    <h4 id="cp-enroll-count">0 Peserta</h4>
-                                </div>
-                                <div class="list-info info-yellow">
-                                    <h5>Benefit</h5>
-                                    <h4>
-                                        <ol>
-                                            <li>Sertifikat</li>
-                                            <li>Materi</li>
-                                            <li>Video</li>
-                                        </ol>
-                                    </h4>
-                                </div>
+                                
                             </div>
-                            <div class="ringkasan-konten">
-                                <h3>Deskripsi Konten</h3>
-                                <div class="info-ringkasan">
-                                    <p id="cp-content-description">-</p>
-                                </div>
-                            </div>
-                            <div class="ringkasan-konten">
-                                <h3>Syllabus</h3>
-                                <div class="syllabus-ringkasan">
-                                    <ol id="cp-syllabus-list"></ol>
-                                </div>
-                            </div>
+                            
                             <div class="ringkasan-konten">
                                 <h3>Ringkasan Konten</h3>
                                 <div class="info-ringkasan">
@@ -824,7 +700,7 @@
                 if (!m) return false;
                 if (typeof m.has_content !== 'undefined') return !!m.has_content;
                 if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
-                return !!(m.content_url || '');
+                return !!(m.content_url || m.subtitle || ''); // subtitle maps to description in previewData
             }
 
             // --- 4. Event Delegation for Preview Click ---
@@ -882,6 +758,16 @@
 
                 // --- MODULES PARSING ---
                 var modules = data.modules || [];
+                
+                // --- NORMALIZE MODULE TITLES ---
+                modules.forEach(function(m) {
+                    if (m && m.title) {
+                        if (['PDF Material', 'Video Lesson', 'Quiz', 'Modul PDF', 'Video Pembelajaran', 'Kuis'].includes(m.title)) {
+                            m.title = 'Module 1 - ' + m.title;
+                        }
+                    }
+                });
+
                 var visibleModules = Array.isArray(modules)
                     ? modules.filter(function(m) { return moduleHasContent(m); })
                     : [];
@@ -1049,53 +935,15 @@
     </script>
 
     <script>
-        (function() {
-            function buildExportUrl(anchorEl, format) {
-                if (!anchorEl) return null;
-
-                var url = new URL(anchorEl.getAttribute('href'), window.location.origin);
-                url.searchParams.set('format', format);
-
-                var qEl = document.querySelector('.cari_course_builder');
-                var monthEl = document.querySelector('.tanggal_course');
-
-                var q = qEl ? String(qEl.value || '').trim() : '';
-                var month = monthEl ? String(monthEl.value || '').trim() : '';
-
-                if (q !== '') url.searchParams.set('q', q);
-                else url.searchParams.delete('q');
-
-                if (month !== '') url.searchParams.set('month', month);
-                else url.searchParams.delete('month');
-
-                return url.toString();
+        document.addEventListener('DOMContentLoaded', function() {
+            // -- Generic Notify Helper (if adminNotify exists) --
+            function notifyError(message, ms) {
+                if (typeof window.adminNotify === 'function') {
+                    window.adminNotify('error', message, ms || 5000);
+                }
             }
 
-            var pdfBtn = document.getElementById('exportPdfBtn');
-            var excelBtn = document.getElementById('exportExcelBtn');
-
-            if (pdfBtn) {
-                pdfBtn.addEventListener('click', function(ev) {
-                    try {
-                        var u = buildExportUrl(pdfBtn, 'pdf');
-                        if (u) pdfBtn.setAttribute('href', u);
-                    } catch (e) {}
-                });
-            }
-
-            if (excelBtn) {
-                excelBtn.addEventListener('click', function(ev) {
-                    try {
-                        var u = buildExportUrl(excelBtn, 'excel');
-                        if (u) excelBtn.setAttribute('href', u);
-                    } catch (e) {}
-                });
-            }
-        })();
-    </script>
-
-    <script>
-        (function() {
+            // -- Filter & Search Logic --
             var applyBtn = document.getElementById('applyRevenueFilter');
             var qEl = document.querySelector('.cari_course_builder');
             var monthEl = document.querySelector('.tanggal_course');
@@ -1112,7 +960,6 @@
 
                     window.location.href = url.toString();
                 } catch (e) {
-                    // fallback
                     window.location.href = baseUrl;
                 }
             }
@@ -1132,7 +979,48 @@
                     }
                 });
             }
-        })();
+
+            // -- Export Logic --
+            function buildExportUrl(anchorEl, format) {
+                if (!anchorEl) return null;
+
+                var href = anchorEl.getAttribute('href');
+                if (!href) return null;
+
+                var url = new URL(href, window.location.origin);
+                url.searchParams.set('format', format);
+
+                var q = qEl ? String(qEl.value || '').trim() : '';
+                var month = monthEl ? String(monthEl.value || '').trim() : '';
+
+                if (q !== '') url.searchParams.set('q', q);
+                else url.searchParams.delete('q');
+
+                if (month !== '') url.searchParams.set('month', month);
+                else url.searchParams.delete('month');
+
+                return url.toString();
+            }
+
+            var pdfBtn = document.getElementById('exportPdfBtn');
+            var excelBtn = document.getElementById('exportExcelBtn');
+
+            if (pdfBtn) {
+                pdfBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var u = buildExportUrl(this, 'pdf');
+                    if (u) window.location.href = u;
+                });
+            }
+
+            if (excelBtn) {
+                excelBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var u = buildExportUrl(this, 'excel');
+                    if (u) window.location.href = u;
+                });
+            }
+        });
     </script>
 
     <script>
@@ -1161,10 +1049,36 @@
             function openPublishModal(missing, formEl) {
                 pendingPublishForm = formEl || null;
 
-                if (publishMissingList) {
-                    publishMissingList.innerHTML = (missing || []).map(function(x) {
-                        return '<li>' + escapeHtml(x) + ' belum ada</li>';
-                    }).join('');
+                var isComplete = !missing || missing.length === 0;
+
+                var labelEl = document.getElementById('publishConfirmModalLabel');
+                var mainTextEl = document.getElementById('publishModalMainText');
+                var subTextEl = document.getElementById('publishModalSubText');
+                var footerTextEl = document.getElementById('publishModalFooterText');
+                var btnEl = document.getElementById('publishConfirmProceedBtn');
+
+                if (isComplete) {
+                    if (labelEl) labelEl.textContent = 'Konfirmasi Publish Course';
+                    if (mainTextEl) mainTextEl.textContent = 'Apakah Anda yakin ingin publish course ini?';
+                    if (subTextEl) subTextEl.style.display = 'none';
+                    if (footerTextEl) footerTextEl.textContent = 'Tindakan ini tidak dapat dibatalkan.';
+                    if (btnEl) btnEl.textContent = 'Ya, Publish Course';
+                    if (publishMissingList) {
+                        publishMissingList.innerHTML = '';
+                        publishMissingList.style.display = 'none';
+                    }
+                } else {
+                    if (labelEl) labelEl.textContent = 'Course belum lengkap';
+                    if (mainTextEl) mainTextEl.textContent = 'Oops, modul course belum lengkap.';
+                    if (subTextEl) subTextEl.style.display = 'block';
+                    if (footerTextEl) footerTextEl.textContent = 'Segera hubungi trainer untuk melengkapi modul, video, dan kuis.';
+                    if (btnEl) btnEl.textContent = 'Tetap Publish';
+                    if (publishMissingList) {
+                        publishMissingList.style.display = 'block';
+                        publishMissingList.innerHTML = (missing || []).map(function(x) {
+                            return '<li>' + escapeHtml(x) + ' belum ada</li>';
+                        }).join('');
+                    }
                 }
 
                 try {
@@ -1174,8 +1088,14 @@
                     }
                 } catch (e) {}
 
-                // If bootstrap modal is unavailable, fall back to showing warning toast only (no browser popup)
-                notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
+                // If bootstrap modal is unavailable, fall back
+                if (isComplete) {
+                    if (confirm('Apakah Anda yakin ingin publish course ini? Tindakan ini tidak dapat dibatalkan.')) {
+                        if (pendingPublishForm) pendingPublishForm.submit();
+                    }
+                } else {
+                    notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
+                }
                 pendingPublishForm = null;
             }
 
@@ -1213,11 +1133,8 @@
                     missing = [];
                 }
 
-                if (missing.length > 0) {
-                    ev.preventDefault();
-                    openPublishModal(missing, btn.closest('form'));
-                    return;
-                }
+                ev.preventDefault();
+                openPublishModal(missing, btn.closest('form'));
             });
 
             // Reject course manual payment: show modal with rejection reason options (same as event)
@@ -1291,6 +1208,37 @@
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var deleteForms = document.querySelectorAll('.delete-course-form');
+            deleteForms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Apakah Anda yakin?',
+                            text: 'apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    } else {
+                        if (confirm('apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan')) {
+                            form.submit();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </body>
-
 </html>

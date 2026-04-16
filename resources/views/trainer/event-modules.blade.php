@@ -60,9 +60,18 @@
                     const date = escapeHtml(it.event_date || '—');
                     const status = it.module_uploaded ? 'Sudah' : 'Belum';
                     const statusCls = it.module_uploaded ? 'text-green-700' : 'text-red-700';
-                    const download = it.module_uploaded && it.module_url
-                        ? `<a class="text-blue-700 hover:underline" href="${escapeHtml(it.module_url)}" target="_blank">Unduh</a>`
-                        : `<span class="text-gray-500">—</span>`;
+                    
+                    const modules = Array.isArray(it.modules) ? it.modules : [];
+                    const modulesHtml = modules.length > 0 
+                        ? `<div class="mt-2 space-y-1">` + 
+                            modules.map((m, idx) => `
+                                <div class="flex items-center justify-between bg-gray-50 p-1.5 rounded border text-xs">
+                                    <span class="truncate max-w-[150px]" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>
+                                    <a href="${escapeHtml(m.url)}" target="_blank" class="text-blue-600 font-bold hover:underline">Unduh</a>
+                                </div>
+                            `).join('') + 
+                          `</div>`
+                        : '';
 
                     return `
                         <tr>

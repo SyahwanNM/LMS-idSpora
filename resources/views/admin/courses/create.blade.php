@@ -115,28 +115,62 @@
                             <p id="price_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
-                        <!-- Akses Course Gratis -->
+                        <!-- Akses Course (Freemium Mode) -->
                         <div>
-                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
-                                Gratis</label>
+                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course</label>
                             <select name="free_access_mode" id="free_access_mode"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka semua
-                                    materi</option>
-                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                            <p class="mt-1 text-xs text-gray-500">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</p>
                         </div>
 
                         <!-- Reseller Course -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Reseller Course</label>
-                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', 0) ? 1 : 0 }}">
-                            <div class="inline-flex w-full rounded-lg border border-gray-300 overflow-hidden">
-                                <button type="button" id="reseller-course-no" class="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Tidak</button>
-                                <button type="button" id="reseller-course-yes" class="flex-1 px-4 py-2.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition">Ya</button>
+                            @php
+                                $isResellerCourse = (int) old('is_reseller_course', 0);
+                            @endphp
+                            <div class="reseller-course-radios mt-1 flex flex-wrap items-center gap-x-8 gap-y-2" role="radiogroup" aria-label="Reseller Course">
+                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
+                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0" class="h-4 w-4"
+                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
+                                    <label for="is_reseller_course_0" class="text-sm text-gray-700">Tidak</label>
+                                </div>
+                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
+                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1" class="h-4 w-4"
+                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
+                                    <label for="is_reseller_course_1" class="text-sm text-gray-700">Ya</label>
+                                </div>
                             </div>
                             <p class="mt-1 text-xs text-gray-500">Jika Ya, course ini ditandai sebagai course reseller.</p>
+                            <style>
+                                .reseller-course-radios .reseller-course-option{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    flex: 0 0 auto !important;
+                                    white-space: nowrap !important;
+                                }
+                                .reseller-course-radios label{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    margin: 0 0 0 0.5rem !important;
+                                    cursor: pointer;
+                                    user-select: none;
+                                }
+                                .reseller-course-radios .reseller-course-option:first-child label{
+                                    margin-left: 0.15rem !important;
+                                }
+                                .reseller-course-radios input[type="radio"]{
+                                    appearance: auto !important;
+                                    -webkit-appearance: radio !important;
+                                    -moz-appearance: auto !important;
+                                    margin: 0 !important;
+                                    vertical-align: middle !important;
+                                }
+                            </style>
                         </div>
 
                         <!-- Deskripsi -->
@@ -321,31 +355,6 @@
 
                 return firstInvalid;
             }
-
-            // Reseller Course toggle (Yes/No)
-            const resellerInput = getEl('is_reseller_course');
-            const resellerYesBtn = getEl('reseller-course-yes');
-            const resellerNoBtn = getEl('reseller-course-no');
-            function setResellerCourse(val) {
-                const v = val ? '1' : '0';
-                if (resellerInput) resellerInput.value = v;
-
-                if (resellerYesBtn) {
-                    resellerYesBtn.classList.toggle('bg-purple-600', v === '1');
-                    resellerYesBtn.classList.toggle('text-white', v === '1');
-                    resellerYesBtn.classList.toggle('bg-white', v !== '1');
-                    resellerYesBtn.classList.toggle('text-gray-700', v !== '1');
-                }
-                if (resellerNoBtn) {
-                    resellerNoBtn.classList.toggle('bg-purple-600', v === '0');
-                    resellerNoBtn.classList.toggle('text-white', v === '0');
-                    resellerNoBtn.classList.toggle('bg-gray-100', v !== '0');
-                    resellerNoBtn.classList.toggle('text-gray-800', v !== '0');
-                }
-            }
-            if (resellerYesBtn) resellerYesBtn.addEventListener('click', () => setResellerCourse(true));
-            if (resellerNoBtn) resellerNoBtn.addEventListener('click', () => setResellerCourse(false));
-            setResellerCourse((resellerInput?.value || '0') === '1');
 
             // Live validation (lightweight)
             getEl('name')?.addEventListener('input', validate);

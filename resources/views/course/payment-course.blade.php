@@ -338,6 +338,23 @@
                         <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
                     </div>
                 </div>
+                @if((bool) ($course->is_reseller_course ?? false))
+                    <div class="input_biodata">
+                        <p>Kode Referral</p>
+                        <input
+                            class="kolom_input_biodata"
+                            type="text"
+                            id="referralCodeInput"
+                            placeholder="Masukkan kode referral reseller jika ada"
+                            value="{{ request()->query('ref', '') }}"
+                            autocomplete="off"
+                        >
+                        <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
+                        <div style="margin-top:6px; font-size:12px; color:#6b7280;">
+                            Kode valid akan memberi potongan 10%.
+                        </div>
+                    </div>
+                @endif
 
 
             </div>
@@ -365,6 +382,9 @@
                             <p class="harga_judul_event">
                                 @if($isFreeCourseLocal)
                                     GRATIS
+                                @elseif($course->hasDiscount())
+                                    <span style="text-decoration: line-through; color: #888; font-size: 12px; margin-right: 5px;">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                    Rp{{ number_format($course->discounted_price, 0, ',', '.') }}
                                 @else
                                     Rp{{ number_format($course->price ?? 0, 0, ',', '.') }}
                                 @endif
@@ -377,9 +397,12 @@
                     <div class="harga_teks_payment">
                         <div class="teks_payment">
                             <p>Total</p>
-                            <h4 id="totalAmountText">
+                            <h4 id="totalAmountText" data-base-amount="{{ (int) round($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0)) }}">
                                 @if($isFreeCourseLocal)
                                     GRATIS
+                                @elseif($course->hasDiscount())
+                                    <span style="text-decoration: line-through; color: #888; font-size: 14px; margin-right: 8px; font-weight: 400;">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
+                                    Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
                                 @else
                                     Rp {{ number_format($course->price ?? 0, 0, ',', '.') }}
                                 @endif
@@ -402,27 +425,32 @@
                     <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
+                    <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
 
                     @if(!$isFreeCourse)
                         <div style="margin-top:20px;">
                             <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Metode Pembayaran</div>
                            <div style="display:flex; gap:14px; flex-wrap:wrap;">
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-        <input type="radio" name="payment_method" value="manual" checked>
-        Manual (QRIS + upload bukti)
-    </label>
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-        <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif>
-        Midtrans
-    </label>
-</div>
+                                @if(!$midtransClientKey)
+                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                                        <input type="radio" name="payment_method" value="manual" checked>
+                                        Manual (QRIS + upload bukti)
+                                    </label>
+                                @endif
+                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
+                                    <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
+                                    Midtrans
+                                </label>
+                           </div>
                             @if(!$midtransClientKey)
                                 <div style="font-size:12px; color:#888; margin-top:6px;">Midtrans belum dikonfigurasi.</div>
                             @endif
                         </div>
                     @endif
 
-                    <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
+                    @if($isFreeCourse || !$midtransClientKey)
+                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
+                    @endif
                     @if(!$isFreeCourse)
                         <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Bayar dengan Midtrans</button>
                     @endif
@@ -434,7 +462,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- QRIS Modal -->
+    @if(!$isFreeCourse && !$midtransClientKey)
+        <!-- QRIS Modal -->
         <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -443,65 +472,21 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-center">
-                            <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
+                        <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
 
-                            <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
+                        <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
 
-                            <div class="d-grid gap-2 mt-3">
-                                    <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
-                                            Download QR
-                                    </a>
-                                    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#uploadProofCollapse" aria-expanded="false" aria-controls="uploadProofCollapse">
-                                            Saya sudah bayar, upload bukti
-                                    </button>
-                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-
-                            <div class="collapse mt-3 text-start" id="uploadProofCollapse">
-                                    <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                                            <p class="mb-2 text-secondary">Setelah melakukan pembayaran, silakan upload bukti pembayaran di bawah ini.</p>
-
-                                            <!-- Upload bukti pembayaran -->
-                                                <form id="uploadProofForm" method="POST" action="{{ route('courses.manual-payment.upload', $course) }}" enctype="multipart/form-data">
-                                                    @csrf
-                                                    <input type="hidden" name="whatsapp" id="formWhatsappFullInput">
-                                                    <div class="mb-2">
-                                                            <label for="paymentProofInput" class="form-label">Upload Bukti Pembayaran (JPG/PNG, max 5MB)</label>
-                                                            <input class="form-control" type="file" id="paymentProofInput" name="payment_proof" accept="image/*" required>
-                                                    </div>
-                                                    <div id="proofPreview" class="mb-3" style="display:none;">
-                                                            <p class="mb-1">Preview bukti:</p>
-                                                            <img id="proofPreviewImg" src="" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; border:1px solid #e5e7eb;">
-                                                    </div>
-
-                                                    <button type="submit" id="payNowBtn" class="btn_bayar_payment">Bayar Sekarang</button>
-                                            </form>
-                                    </div>
-                            </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
+                                Download QR
+                            </a>
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-    <!-- Confirm proof submission Modal -->
-    <div class="modal fade" id="confirmProofModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Konfirmasi Bukti Pembayaran</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-1 fw-semibold">Yakin untuk bukti pembayaran sudah benar?</p>
-                    <p class="mb-0 text-danger">Tindakan ini tidak dapat dibatalkan!</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" id="confirmProofSubmitBtn" class="btn btn-primary">Ya, kirim</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -516,10 +501,17 @@
             var showQrisBtn = document.getElementById('showQrisBtn');
             var midtransPayBtn = document.getElementById('midtransPayBtnCourse');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
+            var referralInput = document.getElementById('referralCodeInput');
+            var referralMessageEl = document.getElementById('referralMessage');
+            var formReferralCodeInput = document.getElementById('formReferralCodeInput');
             var uploadProofForm = document.getElementById('uploadProofForm');
             var confirmProofModalEl = document.getElementById('confirmProofModal');
             var confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
             var pendingProofSubmit = false;
+            var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
+            var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
+            var referralState = referralInput ? 'idle' : 'disabled';
+            var referralTimer = null;
 
             var isFreeCourse = false;
             if (manualPaymentForm) {
@@ -549,6 +541,34 @@
                 return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
+            function getBaseAmount() {
+                if (!totalAmountText) return 0;
+                return Math.max(0, parseInt(totalAmountText.getAttribute('data-base-amount') || '0', 10));
+            }
+
+            function getReferralCode() {
+                return referralInput ? String(referralInput.value || '').trim() : '';
+            }
+
+            function syncReferralInput() {
+                if (formReferralCodeInput) {
+                    formReferralCodeInput.value = getReferralCode();
+                }
+            }
+
+            function setReferralMessage(message, kind) {
+                if (!referralMessageEl) return;
+                if (!message) {
+                    referralMessageEl.style.display = 'none';
+                    referralMessageEl.textContent = '';
+                    referralMessageEl.style.color = '';
+                    return;
+                }
+                referralMessageEl.style.display = '';
+                referralMessageEl.textContent = message;
+                referralMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
+            }
+
             function setTotalAmount(amount) {
                 if (!totalAmountText) return;
                 var n = Math.max(0, parseInt(amount || 0, 10));
@@ -563,13 +583,126 @@
                 return (value || '').replace(/[^0-9]/g, '');
             }
 
+            async function validateReferralServer(code) {
+                if (!checkReferralUrl || !code) return null;
+                try {
+                    var url = new URL(checkReferralUrl, window.location.origin);
+                    url.searchParams.set('code', code);
+                    var res = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin'
+                    });
+                    if (!res.ok) return null;
+                    return await res.json();
+                } catch (_e) {
+                    return null;
+                }
+            }
+
             function updatePayButtonState() {
                 if (!showQrisBtn && !midtransPayBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 // For free course, allow without WhatsApp. For paid, WhatsApp is required.
                 var disable = (!isFreeCourse) && (wa.length === 0);
+                if (referralInput) {
+                    var code = getReferralCode();
+                    if (code !== '' && referralState !== 'valid') {
+                        disable = true;
+                    }
+                }
                 if (showQrisBtn) showQrisBtn.disabled = disable;
                 if (midtransPayBtn) midtransPayBtn.disabled = disable;
+            }
+
+            function updateReferralUIFromResult(data) {
+                var baseAmount = getBaseAmount();
+                if (!referralInput) {
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                var code = getReferralCode();
+                syncReferralInput();
+
+                if (code === '') {
+                    referralState = 'idle';
+                    setReferralMessage('', 'info');
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
+                    referralState = 'invalid';
+                    setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (!data) {
+                    referralState = 'invalid';
+                    setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (data.valid) {
+                    referralState = 'valid';
+                    setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
+                    setTotalAmount(data.final_amount || baseAmount);
+                } else {
+                    referralState = 'invalid';
+                    setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
+                    setTotalAmount(baseAmount);
+                }
+
+                updatePayButtonState();
+            }
+
+            function scheduleReferralValidation() {
+                if (!referralInput) return;
+                if (referralTimer) {
+                    clearTimeout(referralTimer);
+                }
+
+                var code = getReferralCode();
+                syncReferralInput();
+
+                if (code === '') {
+                    updateReferralUIFromResult({ valid: false, message: '' });
+                    return;
+                }
+
+                referralState = 'checking';
+                setReferralMessage('Memeriksa kode referral...', 'info');
+                setTotalAmount(getBaseAmount());
+                updatePayButtonState();
+
+                referralTimer = setTimeout(async function() {
+                    var data = await validateReferralServer(code);
+                    if (code !== getReferralCode()) {
+                        return;
+                    }
+                    updateReferralUIFromResult(data);
+                }, 400);
+            }
+
+            function showPaymentValidationAlert() {
+                var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
+                if ((!isFreeCourse) && wa.length === 0) {
+                    alert('Silakan isi No Whatsapp terlebih dahulu.');
+                    try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
+                    return;
+                }
+
+                if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
+                    alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
+                    try { referralInput.focus(); } catch (_e) {}
+                }
             }
 
             // Show dropdown on button click
@@ -605,6 +738,13 @@
                 whatsappInput.addEventListener('input', updatePayButtonState);
                 whatsappInput.addEventListener('blur', updatePayButtonState);
             }
+            if (referralInput) {
+                referralInput.addEventListener('input', scheduleReferralValidation);
+                referralInput.addEventListener('blur', scheduleReferralValidation);
+                scheduleReferralValidation();
+            } else {
+                setTotalAmount(getBaseAmount());
+            }
 
             // Method toggle
             var methodRadios = document.querySelectorAll('input[name="payment_method"]');
@@ -624,12 +764,12 @@
                     // guard (in case button enabled state is bypassed)
                     updatePayButtonState();
                     if (showQrisBtn.disabled) {
-                        alert('Silakan isi No Whatsapp terlebih dahulu.');
-                        try { whatsappInput && whatsappInput.focus(); } catch(err) {}
+                        showPaymentValidationAlert();
                         return;
                     }
                     if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
+                    syncReferralInput();
                     if (formWhatsappFullInput) {
                         var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
                         var waRaw = whatsappInput ? whatsappInput.value : '';
@@ -698,6 +838,14 @@
                     cachedPending = pending;
                     if (pending && pending.pending && pending.order_id) {
                         midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        if (pending.amount) {
+                            setTotalAmount(pending.amount);
+                        }
+                        if (referralInput && pending.referral_code && (!getReferralCode() || getReferralCode() === '')) {
+                            referralInput.value = pending.referral_code;
+                            syncReferralInput();
+                            scheduleReferralValidation();
+                        }
 
                         // Autofill WA from pending payment if empty
                         if (pending.whatsapp_number && whatsappInput && (!whatsappInput.value || whatsappInput.value.trim() === '')) {
@@ -737,8 +885,7 @@
                     e.preventDefault();
                     updatePayButtonState();
                     if (midtransPayBtn.disabled) {
-                        alert('Silakan isi No Whatsapp terlebih dahulu.');
-                        try { whatsappInput && whatsappInput.focus(); } catch(err) {}
+                        showPaymentValidationAlert();
                         return;
                     }
                     if (typeof window.snap === 'undefined') {
@@ -751,6 +898,7 @@
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
                     var dialVal = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
                     var waVal = whatsappInput ? (whatsappInput.value || '').trim() : '';
+                    var referralVal = getReferralCode();
 
                     var snapTokenUrl = @json(route('courses.payment.snap-token', $course));
                     var refreshUrl = @json(route('payment.refresh-course', ['orderId' => 'ORDER_ID']));
@@ -759,13 +907,15 @@
                     async function getOrCreateSnapToken(forceNew){
                         var pending = cachedPending || await fetchPendingCourseOrder();
                         cachedPending = pending;
-                        if (!forceNew && pending && pending.pending && pending.order_id && pending.snap_token) {
+                        var pendingReferral = pending && pending.referral_code ? String(pending.referral_code).trim() : '';
+                        if (!forceNew && pending && pending.pending && pending.order_id && pending.snap_token && pendingReferral === referralVal) {
                             return { snap_token: pending.snap_token, order_id: pending.order_id };
                         }
 
                         var url = new URL(snapTokenUrl, window.location.origin);
                         if (dialVal) url.searchParams.set('dial_code', dialVal);
                         if (waVal) url.searchParams.set('whatsapp', waVal);
+                        if (referralVal) url.searchParams.set('referral_code', referralVal);
                         if (forceNew) url.searchParams.set('force_new', '1');
 
                         var res = await fetch(url.toString(), {
@@ -917,4 +1067,4 @@
     </script>
 </body>
 </html>
-@include('partials.footer-before-login')
+@include('partials.footer-after-login')

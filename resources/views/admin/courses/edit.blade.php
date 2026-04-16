@@ -174,77 +174,63 @@
                             </div>
                         </div>
 
-                        <!-- Pengeluaran (Breakdown) -->
-                        <div>
-                            <div class="flex items-center justify-between gap-4 mb-2">
-                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
-                                <button type="button" id="add-expense-row"
-                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    Tambah Pengeluaran
-                                </button>
-                            </div>
-                            <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
-                                    <div class="col-span-5">Item</div>
-                                    <div class="col-span-2">Qty</div>
-                                    <div class="col-span-3">Harga Satuan</div>
-                                    <div class="col-span-2">Aksi</div>
-                                </div>
 
-                                <div id="expense-rows" class="divide-y divide-gray-200">
-                                    @foreach($expenseRows as $i => $row)
-                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
-                                            <div class="col-span-12 md:col-span-5">
-                                                <input type="text" name="expenses[{{ $i }}][item]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
-                                                    placeholder="Contoh: Iklan, Produksi, dll">
-                                            </div>
-                                            <div class="col-span-6 md:col-span-2">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
-                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
-                                                    placeholder="0">
-                                            </div>
-                                            <div class="col-span-6 md:col-span-3">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
-                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
-                                                    placeholder="0">
-                                            </div>
-                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
-                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
-                                                    Hapus
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
-                        </div>
-
-                        <!-- Akses Course Gratis -->
+                        <!-- Akses Course (Freemium Mode) -->
                         <div>
-                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
-                                Gratis</label>
+                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course</label>
                             <select name="free_access_mode" id="free_access_mode"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka semua materi</option>
-                                <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                                <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                            <p class="mt-1 text-xs text-gray-500">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</p>
                         </div>
 
                         <!-- Reseller Course -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Reseller Course</label>
-                            <input type="hidden" name="is_reseller_course" id="is_reseller_course" value="{{ old('is_reseller_course', (int) ($course->is_reseller_course ?? 0)) ? 1 : 0 }}">
-                            <div class="inline-flex w-full rounded-lg border border-gray-300 overflow-hidden">
-                                <button type="button" id="reseller-course-no" class="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Tidak</button>
-                                <button type="button" id="reseller-course-yes" class="flex-1 px-4 py-2.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition">Ya</button>
+                            @php
+                                $isResellerCourse = (int) old('is_reseller_course', (int) ($course->is_reseller_course ?? 0));
+                            @endphp
+                            <div class="reseller-course-radios mt-1 flex flex-wrap items-center gap-x-8 gap-y-2" role="radiogroup" aria-label="Reseller Course">
+                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
+                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0" class="h-4 w-4"
+                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
+                                    <label for="is_reseller_course_0" class="text-sm text-gray-700">Tidak</label>
+                                </div>
+                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
+                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1" class="h-4 w-4"
+                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
+                                    <label for="is_reseller_course_1" class="text-sm text-gray-700">Ya</label>
+                                </div>
                             </div>
                             <p class="mt-1 text-xs text-gray-500">Jika Ya, course ini ditandai sebagai course reseller.</p>
+                            <style>
+                                .reseller-course-radios .reseller-course-option{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    flex: 0 0 auto !important;
+                                    white-space: nowrap !important;
+                                }
+                                .reseller-course-radios label{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    margin: 0 0 0 0.5rem !important;
+                                    cursor: pointer;
+                                    user-select: none;
+                                }
+                                .reseller-course-radios .reseller-course-option:first-child label{
+                                    margin-left: 0.15rem !important;
+                                }
+                                .reseller-course-radios input[type="radio"]{
+                                    appearance: auto !important;
+                                    -webkit-appearance: radio !important;
+                                    -moz-appearance: auto !important;
+                                    margin: 0 !important;
+                                    vertical-align: middle !important;
+                                }
+                            </style>
                         </div>
 
                         <!-- Deskripsi -->
@@ -293,6 +279,56 @@
                                 <input type="file" name="card_thumbnail"
                                     class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
                             </div>
+                        </div>
+
+                        <!-- Pengeluaran (Breakdown) -->
+                        <div>
+                            <div class="flex items-center justify-between gap-4 mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
+                                <button type="button" id="add-expense-row"
+                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Tambah Pengeluaran
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <div class="col-span-5">Item</div>
+                                    <div class="col-span-2">Qty</div>
+                                    <div class="col-span-3">Harga Satuan</div>
+                                    <div class="col-span-2">Aksi</div>
+                                </div>
+
+                                <div id="expense-rows" class="divide-y divide-gray-200">
+                                    @foreach($expenseRows as $i => $row)
+                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
+                                            <div class="col-span-12 md:col-span-5">
+                                                <input type="text" name="expenses[{{ $i }}][item]"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
+                                                    placeholder="Contoh: Iklan, Produksi, dll">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
+                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-3">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
+                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
                         </div>
 
                         <!-- Hidden inputs for other required fields not in design (Duration, etc) -->
@@ -376,43 +412,6 @@
                 rowsWrap.appendChild(rowEl);
                 wireRow(rowEl);
             });
-        })();
-    </script>
-
-    <script>
-        (function() {
-            function getEl(id) {
-                return document.getElementById(id);
-            }
-
-            // Reseller Course toggle (Yes/No)
-            const resellerInput = getEl('is_reseller_course');
-            const resellerYesBtn = getEl('reseller-course-yes');
-            const resellerNoBtn = getEl('reseller-course-no');
-
-            if (!resellerInput || (!resellerYesBtn && !resellerNoBtn)) return;
-
-            function setResellerCourse(val) {
-                const v = val ? '1' : '0';
-                resellerInput.value = v;
-
-                if (resellerYesBtn) {
-                    resellerYesBtn.classList.toggle('bg-purple-600', v === '1');
-                    resellerYesBtn.classList.toggle('text-white', v === '1');
-                    resellerYesBtn.classList.toggle('bg-white', v !== '1');
-                    resellerYesBtn.classList.toggle('text-gray-700', v !== '1');
-                }
-                if (resellerNoBtn) {
-                    resellerNoBtn.classList.toggle('bg-purple-600', v === '0');
-                    resellerNoBtn.classList.toggle('text-white', v === '0');
-                    resellerNoBtn.classList.toggle('bg-gray-100', v !== '0');
-                    resellerNoBtn.classList.toggle('text-gray-800', v !== '0');
-                }
-            }
-
-            resellerYesBtn && resellerYesBtn.addEventListener('click', () => setResellerCourse(true));
-            resellerNoBtn && resellerNoBtn.addEventListener('click', () => setResellerCourse(false));
-            setResellerCourse((resellerInput.value || '0') === '1');
         })();
     </script>
 

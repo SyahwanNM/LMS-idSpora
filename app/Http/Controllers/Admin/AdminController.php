@@ -392,9 +392,13 @@ class AdminController extends Controller
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
-        // Get events with participants count
+        // Get events filtered by the selected month/year with participants count + average ratings
         $events = \App\Models\Event::query()
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
             ->withCount('registrations')
+            ->withAvg('feedbacks as event_rating_avg', 'rating')
+            ->withAvg('feedbacks as speaker_rating_avg', 'speaker_rating')
             ->orderBy('event_date', 'asc')
             ->get();
 
@@ -433,31 +437,57 @@ class AdminController extends Controller
         $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
+            
             // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
             $expense = (float) ($e->expenses_total ?? 0.0);
             $profit = $revenue - $expense;
+
+            // Detail items for the modal
+            $registeredCount = (int) $e->registrations()->where('status', 'active')->count();
+            $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+            
+            $incomeRows = [
+                ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
+            ];
+            
+            $expenseModels = $e->expenses()->get(['item', 'quantity', 'unit_price', 'total']);
+            $expenseRows = $expenseModels->map(function($row) {
+                return [
+                    'label' => $row->item,
+                    'qty' => (int)($row->quantity ?? 0),
+                    'unit' => (float)($row->unit_price ?? 0),
+                    'total' => (float)($row->total ?? 0),
+                ];
+            })->values()->all();
+
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
+                'registered_count' => $registeredCount,
                 'price' => (float) $price,
                 'revenue' => $revenue,
                 'expense' => $expense,
                 'profit' => $profit,
+                'income_rows' => $incomeRows,
+                'expense_rows' => $expenseRows,
             ];
         });
 
         // Build rows for Pertumbuhan table (growth metrics per event)
         $growthRows = $events->map(function ($e) {
+            $eventRating = $e->event_rating_avg;
+            $speakerRating = $e->speaker_rating_avg;
+
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
                 'speaker' => $e->speaker,
-                'event_rating' => null, // placeholder until rating source available
-                'speaker_rating' => null, // placeholder
+                'event_rating' => is_null($eventRating) ? null : round((float) $eventRating, 1),
+                'speaker_rating' => is_null($speakerRating) ? null : round((float) $speakerRating, 1),
             ];
         });
 

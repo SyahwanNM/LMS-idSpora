@@ -404,12 +404,16 @@ Route::middleware('auth')->group(function () {
             ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
     })->name('events.save');
 
+    // Save/unsave course
+    Route::post('/courses/{course}/save', [\App\Http\Controllers\Public\PublicCourseController::class, 'toggleSave'])->name('courses.save');
+
     // Course Rating
     Route::get('/courses/{course}/rating', [\App\Http\Controllers\User\CourseReviewController::class, 'create'])->name('course.rating');
     Route::post('/courses/{course}/rating', [\App\Http\Controllers\User\CourseReviewController::class, 'store'])->name('course.rating.store');
 
     // Course Certificate (after rating)
     Route::get('/courses/{course}/certificate', [\App\Http\Controllers\User\CourseCertificateController::class, 'show'])->name('course.certificate');
+     Route::get('/courses/{course}/certificate/{enrollment}/preview', [\App\Http\Controllers\CRM\CertificateController::class, 'previewCourse'])->name('course.certificates.preview');
 });
 Route::get('/courses', [\App\Http\Controllers\Public\PublicCourseController::class, 'index'])->name('courses.index');
 
@@ -506,6 +510,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
         // Unpublish course (cancel publish)
         Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
+        Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
+        Route::get('/admin/courses/{course}/participants', [CourseController::class, 'participants'])->name('admin.courses.participants');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');
@@ -696,6 +702,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
+    Route::post('/admin/trainer/{trainer}/modules/{module}/approve', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'approveModule'])->name('admin.trainer.modules.approve');
+    Route::post('/admin/trainer/{trainer}/modules/{module}/reject', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'rejectModule'])->name('admin.trainer.modules.reject');
     Route::post('/admin/trainer/{trainer}/certificates', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
     // Allow admin to upload/manual-send a certificate file to a trainer
     Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send');
@@ -718,6 +726,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/material/{material}/modules/{module}/accept-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'acceptProcessed'])->name('admin.material.module.accept-processed');
     Route::post('/admin/material/{material}/modules/{module}/request-revision', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'requestRevision'])->name('admin.material.module.request-revision');
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
+    Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
+    Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
 

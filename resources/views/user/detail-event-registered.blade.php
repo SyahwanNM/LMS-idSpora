@@ -647,6 +647,30 @@
                     @endif
                 </div>
                 <hr class="line-info">
+                <div class="event-info-item d-flex align-items-center justify-content-between">
+
+                    <div class="event-info-left d-flex align-items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person" viewBox="0 0 16 16">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                        </svg>
+                        <span class="event-info-label">Speaker</span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="event-info-value">
+                            {{ $event->speaker ?? '-' }}
+                        </span>
+
+                        <button class="event-speaker-value btn p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                </div>
+                 
+                <hr class="line-info">
                 <div class="info-boxluar">
                     <div class="event-info-item">
                         <div class="event-info-left">
@@ -791,7 +815,7 @@
                                 <a class="bookseat text-white text-center" href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" style="text-decoration:none;">Book Seat</a>
                             @else
                                 @if($isFree)
-                                    <button type="button" id="bookFreeBtn" class="bookseat">Book Seat</button>
+                                    <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
                                 @else
                                     <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
                                 @endif
@@ -1099,7 +1123,7 @@
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
                                 @php
-                                    $certReady = $event->event_date && now()->greaterThanOrEqualTo($event->event_date->copy()->addDays(3));
+                                    $certReady = $eventIsFinished || ($registration->certificate_issued_at ?? false);
                                 @endphp
                                 @if($certReady)
                                     <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
@@ -1108,8 +1132,11 @@
                                         <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
                                     </div>
                                 @else
-                                    <p>Sertifikat akan tersedia 3 hari setelah acara selesai.</p>
+                                    <p>Sertifikat akan tersedia setelah acara selesai.</p>
                                 @endif
+                            @elseif($eventIsFinished)
+                                <p>Sertifikat tersedia! Silakan isi feedback terlebih dahulu.</p>
+                                <a href="#feedbackSection" class="btn btn-sm btn-primary mt-2">Isi Feedback</a>
                             @else
                                 <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
                             @endif
@@ -1219,33 +1246,8 @@
                     <span style="line-height: 1;">&times;</span>
                 </button>
             </div>
-            <div class="row g-0" style="margin-top: 20px; min-height: 300px;">
-                <!-- Left Column: Participant Ratings -->
-                <div class="col-md-6" style="background-color: #f8f9fa; padding: 1rem; border-right: 1px solid #e9ecef;">
-                    <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Participant Ratings</h6>
-                    <div id="participant-ratings-list" style="max-height: 250px; overflow-y: auto;">
-                        @if(isset($feedbacks) && $feedbacks->count() > 0)
-                            @foreach($feedbacks as $feedback)
-                                <div class="rating-card mb-2" style="background: white; border: 1px solid #e9ecef; border-radius: 8px; padding: 0.75rem;">
-                                    <div class="stars-rating mb-2">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $i <= ($feedback->rating ?? 0) ? '#FFD600' : '#e0e0e0' }}" viewBox="0 0 16 16" style="margin-right: 2px;">
-                                                <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="mb-1" style="color: #333; font-size: 0.85rem; line-height: 1.4;">{{ $feedback->comment }}</p>
-                                    <p class="mb-0" style="color: #999; font-size: 0.8rem;">-{{ $feedback->user->name ?? 'Anonymous' }}</p>
-                                </div>
-                            @endforeach
-                        @else
-                            <div class="text-center text-muted py-3">
-                                <p style="font-size: 0.85rem;">Belum ada rating dari peserta</p>
-                            </div>
-                        @endif
-                    </div>
+            <div class="row g-0" >
                 </div>
-
                 <!-- Right Column: Share Your Feedback -->
                 <div class="col-md-6" style="background-color: white; padding: 1rem;">
                     <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
@@ -1257,37 +1259,39 @@
                         <form action="#" method="POST" id="feedback-form">
                             @csrf
                             
+                      <div style="display: flex; gap: 20px; margin-bottom: 15px;">
                             <!-- Event Rating -->
-                            <div class="mb-2">
-                                <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Event</label>
-                                <div class="stars-rating-input" data-target="eventRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                    <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                             <div style="flex: 5;">
+                                <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Event</label>
+                                <div class="stars-rating-input" data-target="eventRating" style="font-size: 30px !important; letter-spacing: 4px; cursor: pointer; user-select: none;">
+                                    <span data-rating="1" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="2" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="3" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="4" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="5" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
                                 </div>
                             </div>
 
                             <!-- Speaker Rating -->
-                            <div class="mb-3">
+                             <div style="flex: 5;">
                                 <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
-                                <div class="stars-rating-input" data-target="speakerRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                    <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                    <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
+                                <div class="stars-rating-input" data-target="speakerRating" style="font-size: 30px !important; letter-spacing: 4px; cursor: pointer; user-select: none;">
+                                    <span data-rating="1" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="2" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="3" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="4" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                    <span data-rating="5" style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
                                 </div>
                             </div>
+                        </div>
 
                             <!-- Feedback Text -->
                             <div class="mb-3">
-                                <textarea id="feedback-text" name="feedback" class="form-control" rows="4" placeholder="Write your thoughts..." required style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
+                                <textarea style="width: 1200px;" id="feedback-text" name="feedback" class="form-control" rows="4" placeholder="Write your thoughts..." required style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
                             </div>
 
                             <!-- Submit Button -->
-                            <button type="button" id="submit-feedback-btn" class="btn w-100 fw-semibold" style="background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                            <button  type="button" id="submit-feedback-btn" class="btn fw-semibold" style="width: 1200px; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
                                 Submit Feedback
                             </button>
                         </form>

@@ -280,7 +280,6 @@ class MaterialApprovalController extends Controller
      */
     public function show(Course $material)
     {
-        // Load relationships
         $material->load([
             'trainer',
             'category',
@@ -317,17 +316,17 @@ class MaterialApprovalController extends Controller
 
             $allApproved = $unitModules->every(fn($m) => ($m->review_status ?? 'pending_review') === 'approved' || $m->isQuiz());
             $anyRejected = $unitModules->contains(fn($m) => ($m->review_status ?? '') === 'rejected');
-            $anyPending  = $unitModules->contains(fn($m) => !$m->isQuiz() && ($m->review_status ?? 'pending_review') === 'pending_review' && (!empty($m->content_url) || (trim((string)($m->description ?? '')) !== '')));
+            $anyPending = $unitModules->contains(fn($m) => !$m->isQuiz() && ($m->review_status ?? 'pending_review') === 'pending_review' && (!empty($m->content_url) || (trim((string) ($m->description ?? '')) !== '')));
 
             return [
                 'unit_index' => $unitIndex,
                 'unit_label' => 'Bab ' . ($unitIndex + 1),
-                'modules'    => $unitModules->values(),
-                'total'      => $total,
-                'uploaded'   => $uploaded,
+                'modules' => $unitModules->values(),
+                'total' => $total,
+                'uploaded' => $uploaded,
                 'all_approved' => $allApproved,
                 'any_rejected' => $anyRejected,
-                'any_pending'  => $anyPending,
+                'any_pending' => $anyPending,
             ];
         })->values();
 
@@ -350,9 +349,9 @@ class MaterialApprovalController extends Controller
         }
 
         $module->update([
-            'review_status'           => 'approved',
-            'reviewed_at'             => now(),
-            'reviewed_by'             => Auth::id(),
+            'review_status' => 'approved',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
             'review_rejection_reason' => null,
         ]);
 
@@ -360,17 +359,17 @@ class MaterialApprovalController extends Controller
         $allModulesApproved = CourseModule::where('course_id', $material->id)
             ->where(function ($q) {
                 $q->whereNotIn('type', ['quiz'])
-                  ->where(function ($inner) {
-                      $inner->whereNotNull('content_url')
+                    ->where(function ($inner) {
+                        $inner->whereNotNull('content_url')
                             ->orWhereNotNull('description');
-                  });
+                    });
             })
             ->where('review_status', '!=', 'approved')
             ->doesntExist();
 
         if ($allModulesApproved && $material->status === 'pending_review') {
             $material->update([
-                'status'      => 'approved',
+                'status' => 'approved',
                 'approved_at' => now(),
                 'approved_by' => Auth::id(),
                 'rejected_at' => null,
@@ -380,13 +379,13 @@ class MaterialApprovalController extends Controller
             if (!empty($material->trainer_id)) {
                 TrainerNotification::create([
                     'trainer_id' => (int) $material->trainer_id,
-                    'type'       => 'course_material_approved',
-                    'title'      => 'Semua Materi Course Diterima',
-                    'message'    => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
-                    'data'       => [
+                    'type' => 'course_material_approved',
+                    'title' => 'Semua Materi Course Diterima',
+                    'message' => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
+                    'data' => [
                         'entity_type' => 'course',
-                        'entity_id'   => (int) $material->id,
-                        'url'         => route('trainer.detail-course', $material->id),
+                        'entity_id' => (int) $material->id,
+                        'url' => route('trainer.detail-course', $material->id),
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
@@ -411,13 +410,13 @@ class MaterialApprovalController extends Controller
             'rejection_reason' => 'required|string|min:10|max:1000',
         ], [
             'rejection_reason.required' => 'Alasan penolakan modul wajib diisi.',
-            'rejection_reason.min'      => 'Alasan penolakan minimal 10 karakter.',
+            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.',
         ]);
 
         $module->update([
-            'review_status'           => 'rejected',
-            'reviewed_at'             => now(),
-            'reviewed_by'             => Auth::id(),
+            'review_status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
             'review_rejection_reason' => $request->rejection_reason,
         ]);
 
@@ -430,14 +429,14 @@ class MaterialApprovalController extends Controller
         if (!empty($material->trainer_id)) {
             TrainerNotification::create([
                 'trainer_id' => (int) $material->trainer_id,
-                'type'       => 'course_material_rejected',
-                'title'      => 'Modul Course Perlu Revisi',
-                'message'    => 'Modul "' . $module->title . '" pada course "' . $material->name . '" perlu revisi. Catatan: ' . $request->rejection_reason,
-                'data'       => [
-                    'entity_type'      => 'course',
-                    'entity_id'        => (int) $material->id,
+                'type' => 'course_material_rejected',
+                'title' => 'Modul Course Perlu Revisi',
+                'message' => 'Modul "' . $module->title . '" pada course "' . $material->name . '" perlu revisi. Catatan: ' . $request->rejection_reason,
+                'data' => [
+                    'entity_type' => 'course',
+                    'entity_id' => (int) $material->id,
                     'rejection_reason' => $request->rejection_reason,
-                    'url'              => route('trainer.courses.studio', $material->id),
+                    'url' => route('trainer.courses.studio', $material->id),
                 ],
                 'expires_at' => now()->addDays(30),
             ]);
@@ -457,7 +456,7 @@ class MaterialApprovalController extends Controller
             ->orderBy('order_no', 'asc')
             ->get();
 
-        $chunks      = $allModules->chunk(3)->values();
+        $chunks = $allModules->chunk(3)->values();
         $unitModules = $chunks->get($unitIndex, collect());
 
         if ($unitModules->isEmpty()) {
@@ -475,9 +474,9 @@ class MaterialApprovalController extends Controller
                 continue;
             }
             $module->update([
-                'review_status'           => 'approved',
-                'reviewed_at'             => now(),
-                'reviewed_by'             => Auth::id(),
+                'review_status' => 'approved',
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
                 'review_rejection_reason' => null,
             ]);
             $approvedCount++;
@@ -487,17 +486,17 @@ class MaterialApprovalController extends Controller
         $allModulesApprovedNow = CourseModule::where('course_id', $material->id)
             ->where(function ($q) {
                 $q->whereNotIn('type', ['quiz'])
-                  ->where(function ($inner) {
-                      $inner->whereNotNull('content_url')
+                    ->where(function ($inner) {
+                        $inner->whereNotNull('content_url')
                             ->orWhereNotNull('description');
-                  });
+                    });
             })
             ->where('review_status', '!=', 'approved')
             ->doesntExist();
 
         if ($allModulesApprovedNow && $material->status === 'pending_review') {
             $material->update([
-                'status'      => 'approved',
+                'status' => 'approved',
                 'approved_at' => now(),
                 'approved_by' => Auth::id(),
                 'rejected_at' => null,
@@ -507,13 +506,13 @@ class MaterialApprovalController extends Controller
             if (!empty($material->trainer_id)) {
                 TrainerNotification::create([
                     'trainer_id' => (int) $material->trainer_id,
-                    'type'       => 'course_material_approved',
-                    'title'      => 'Semua Materi Course Diterima',
-                    'message'    => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
-                    'data'       => [
+                    'type' => 'course_material_approved',
+                    'title' => 'Semua Materi Course Diterima',
+                    'message' => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
+                    'data' => [
                         'entity_type' => 'course',
-                        'entity_id'   => (int) $material->id,
-                        'url'         => route('trainer.detail-course', $material->id),
+                        'entity_id' => (int) $material->id,
+                        'url' => route('trainer.detail-course', $material->id),
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
@@ -522,13 +521,13 @@ class MaterialApprovalController extends Controller
             // Notifikasi bab diapprove sebagian
             TrainerNotification::create([
                 'trainer_id' => (int) $material->trainer_id,
-                'type'       => 'course_material_approved',
-                'title'      => 'Materi Bab ' . ($unitIndex + 1) . ' Diterima',
-                'message'    => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" telah disetujui.',
-                'data'       => [
+                'type' => 'course_material_approved',
+                'title' => 'Materi Bab ' . ($unitIndex + 1) . ' Diterima',
+                'message' => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" telah disetujui.',
+                'data' => [
                     'entity_type' => 'course',
-                    'entity_id'   => (int) $material->id,
-                    'url'         => route('trainer.detail-course', $material->id),
+                    'entity_id' => (int) $material->id,
+                    'url' => route('trainer.detail-course', $material->id),
                 ],
                 'expires_at' => now()->addDays(30),
             ]);
@@ -548,14 +547,14 @@ class MaterialApprovalController extends Controller
             'rejection_reason' => 'required|string|min:10|max:1000',
         ], [
             'rejection_reason.required' => 'Alasan penolakan wajib diisi.',
-            'rejection_reason.min'      => 'Alasan penolakan minimal 10 karakter.',
+            'rejection_reason.min' => 'Alasan penolakan minimal 10 karakter.',
         ]);
 
         $allModules = CourseModule::where('course_id', $material->id)
             ->orderBy('order_no', 'asc')
             ->get();
 
-        $chunks      = $allModules->chunk(3)->values();
+        $chunks = $allModules->chunk(3)->values();
         $unitModules = $chunks->get($unitIndex, collect());
 
         if ($unitModules->isEmpty()) {
@@ -565,13 +564,15 @@ class MaterialApprovalController extends Controller
 
         $rejectedCount = 0;
         foreach ($unitModules as $module) {
-            if ($module->isQuiz()) continue;
+            if ($module->isQuiz())
+                continue;
             $hasContent = !empty($module->content_url) || trim((string) ($module->description ?? '')) !== '';
-            if (!$hasContent) continue;
+            if (!$hasContent)
+                continue;
             $module->update([
-                'review_status'           => 'rejected',
-                'reviewed_at'             => now(),
-                'reviewed_by'             => Auth::id(),
+                'review_status' => 'rejected',
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
                 'review_rejection_reason' => $request->rejection_reason,
             ]);
             $rejectedCount++;
@@ -586,14 +587,14 @@ class MaterialApprovalController extends Controller
         if (!empty($material->trainer_id)) {
             TrainerNotification::create([
                 'trainer_id' => (int) $material->trainer_id,
-                'type'       => 'course_material_rejected',
-                'title'      => 'Materi Bab ' . ($unitIndex + 1) . ' Perlu Revisi',
-                'message'    => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" ditolak. Catatan: ' . $request->rejection_reason,
-                'data'       => [
-                    'entity_type'      => 'course',
-                    'entity_id'        => (int) $material->id,
+                'type' => 'course_material_rejected',
+                'title' => 'Materi Bab ' . ($unitIndex + 1) . ' Perlu Revisi',
+                'message' => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" ditolak. Catatan: ' . $request->rejection_reason,
+                'data' => [
+                    'entity_type' => 'course',
+                    'entity_id' => (int) $material->id,
                     'rejection_reason' => $request->rejection_reason,
-                    'url'              => route('trainer.courses.studio', $material->id),
+                    'url' => route('trainer.courses.studio', $material->id),
                 ],
                 'expires_at' => now()->addDays(30),
             ]);

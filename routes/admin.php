@@ -78,6 +78,8 @@ Route::get('/admin/preview-pendapatan', function () {
 // Admin dashboard (only for admin users)
 Route::middleware(['admin'])->group(function () {
     Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
+    Route::get('/admin/reseller/dashboard', [ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
+    Route::get('/admin/reseller/data', [ResellerController::class, 'adminData'])->name('admin.reseller.data');
     // Admin view: Pendapatan (financial breakdown)
     Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
         ->name('admin.view-pendapatan');
@@ -165,6 +167,8 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
     // Publish event (show on user pages)
     Route::post('/admin/events/{event}/publish', [EventController::class, 'publish'])->name('admin.events.publish');
+    // Unpublish event (batal publish)
+    Route::post('/admin/events/{event}/unpublish', [EventController::class, 'unpublish'])->name('admin.events.unpublish');
     // Event QR actions (admin)
     Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
     Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');

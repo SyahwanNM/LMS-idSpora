@@ -59,7 +59,8 @@ class CourseManualPaymentController extends Controller
         $user = $request->user();
         $code = trim((string) $request->query('code', ''));
 
-        $baseAmount = (float) ($course->price ?? 0);
+        $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
+        $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
 
         // Only available for reseller-enabled courses
         if (!(bool) ($course->is_reseller_course ?? false)) {
@@ -137,13 +138,17 @@ class CourseManualPaymentController extends Controller
             $referralCode = null;
         }
 
-        $referrer = $this->resolveValidReferrer($user, $referralCode);
-        if (!$referrer) {
-            // Block self-code silently (no discount) for safety.
-            $referralCode = null;
+        if ($referralCode !== null && $referralCode !== '' && $user->referral_code && strcasecmp($referralCode, (string) $user->referral_code) === 0) {
+            return redirect()->back()->withInput()->with('error', 'Kode referral tidak boleh menggunakan kode milik sendiri.');
         }
 
-        $baseAmount = (float) ($course->price ?? 0);
+        $referrer = $this->resolveValidReferrer($user, $referralCode);
+        if ($referralCode !== null && $referralCode !== '' && !$referrer) {
+            return redirect()->back()->withInput()->with('error', 'Kode referral tidak valid.');
+        }
+
+        $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
+        $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
         $enrollment = Enrollment::firstOrCreate(

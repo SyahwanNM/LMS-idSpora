@@ -413,12 +413,6 @@
         .f-name { color: white; font-weight: 800; font-size: 18px; display: block; }
         .f-role { color: #fcc12d; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* CTA Ready */
-        .cta-ready { text-align: center; padding: 0 0 140px; }
-        .cta-ready h2 { font-size: 96px; font-weight: 900; color: var(--brand-navy); margin-bottom: 20px; letter-spacing: -3px; }
-        .cta-ready p { font-size: 20px; color: #64748b; margin-bottom: 60px; font-weight: 500; }
-        .cta-actions { display: flex; justify-content: center; gap: 24px; }
-
         @media (max-width: 1024px) {
             .hero-flex { flex-direction: column; text-align: center; }
             .trainer-name { font-size: 60px; }
@@ -443,17 +437,12 @@
                         <span class="badge-item badge-verified">Verified Professional</span>
                     </div>
                     <h4 class="trainer-name">{{ $trainer->full_name_with_title ?: $trainer->name }}</h4>
-                    <p class="trainer-role">{{ $trainer->profession ?: 'Senior Product Design Specialist at DesignFlow' }}</p>
+                    <p class="trainer-role">{{ $trainer->profession ?: 'Trainer' }}</p>
 
                     <div class="hero-meta">
-                        <div class="meta-item"><i class="bi bi-geo-alt-fill"></i> New York, USA</div>
-                        <div class="meta-item"><i class="bi bi-star-fill"></i> {{ number_format($reputation['rating'], 1) }} Rating</div>
-                        <div class="meta-item"><i class="bi bi-people-fill"></i> {{ number_format($reputation['students']) }} Students</div>
-                    </div>
-
-                    <div class="hero-btns">
-                        <a href="#courses" class="btn-navy">Enroll Now</a>
-                        <a href="#" class="btn-white">Message Mentor</a>
+                        <div class="meta-item"><i class="bi bi-geo-alt-fill"></i> {{ $trainer->institution ?: 'Lokasi tidak diisi' }}</div>
+                        <div class="meta-item"><i class="bi bi-star-fill"></i> {{ isset($reputation['rating']) ? number_format($reputation['rating'], 1) : '0.0' }} Rating</div>
+                        <div class="meta-item"><i class="bi bi-people-fill"></i> {{ isset($reputation['students']) ? number_format($reputation['students']) : '0' }} Students</div>
                     </div>
                 </div>
 
@@ -507,17 +496,17 @@
             <main>
                 <h2 class="bio-title"><i class="bi bi-person-fill"></i> Professional Biography</h2>
                 <div class="bio-text">
-                    {{ $trainer->bio ?: 'With over 10 years of experience in the design industry, I am passionate about bridging the gap between user needs and business goals. My teaching philosophy focuses on practical, scalable design systems that empower students to build professional-grade products.' }}
+                    {{ $trainer->bio ?: 'Profil belum dilengkapi. Tambahkan bio agar peserta mengenal Anda lebih baik.' }}
                 </div>
 
                 <div class="philosophy-cards">
                     <div class="phil-card">
                         <div class="phil-header"><i class="bi bi-lightning-fill"></i> Teaching Philosophy</div>
-                        <p class="phil-text">{{ $philosophy }}</p>
+                        <p class="phil-text">{{ $philosophy ?: '-' }}</p>
                     </div>
                     <div class="phil-card">
                         <div class="phil-header"><i class="bi bi-bullseye"></i> Learning Outcomes</div>
-                        <p class="phil-text">{{ $outcomes }}</p>
+                        <p class="phil-text">{{ $outcomes ?: '-' }}</p>
                     </div>
                 </div>
             </main>
@@ -527,16 +516,14 @@
                     <div class="side-label">Core Expertise</div>
                     <div class="tag-list">
                         @foreach($expertise as $tag)
-                            <span class="tag-pill">{{ $tag }}</span>
+                            <span class="tag-pill">{{ strtoupper($tag) }}</span>
                         @endforeach
                     </div>
 
                     <div class="side-label">Digital Presence</div>
                     <div class="social-grid">
-                        <a href="#" class="social-item"><i class="bi bi-linkedin"></i> LinkedIn</a>
-                        <a href="#" class="social-item"><i class="bi bi-globe"></i> Portfolio</a>
-                        <a href="#" class="social-item"><i class="bi bi-twitter-x"></i> Twitter</a>
-                        <a href="#" class="social-item"><i class="bi bi-github"></i> Github</a>
+                        <a href="{{ $trainer->linkedin_url ?: '#' }}" class="social-item" {{ $trainer->linkedin_url ? 'target=_blank rel=noopener noreferrer' : 'aria-disabled=true style=opacity:.55;pointer-events:none;' }}><i class="bi bi-linkedin"></i> LinkedIn</a>
+                        <a href="{{ $trainer->website ?: '#' }}" class="social-item" {{ $trainer->website ? 'target=_blank rel=noopener noreferrer' : 'aria-disabled=true style=opacity:.55;pointer-events:none;' }}><i class="bi bi-globe"></i> Website</a>
                     </div>
                 </div>
             </aside>
@@ -561,71 +548,60 @@
                     <div class="course-card">
                         <div class="course-img-box">
                             <img src="{{ $course->thumbnail_url ?: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800' }}" class="course-img">
-                            <span class="course-lvl-badge">Intermediate</span>
+                            <span class="course-lvl-badge">{{ $course->level ?? 'Intermediate' }}</span>
                         </div>
                         <div class="course-body">
                             <div class="course-meta-row">
-                                <span><i class="bi bi-clock"></i> 4 Modules</span>
-                                <span><i class="bi bi-star-fill"></i> 4.9</span>
+                                <span><i class="bi bi-clock"></i> {{ $course->modules_count ?? '-' }} Modules</span>
+                                <span><i class="bi bi-star-fill"></i> {{ $course->rating ?? '-' }}</span>
                             </div>
                             <h3 class="course-main-title">{{ $course->name }}</h3>
-                            <a href="#" class="course-btn-details">Course Details <i class="bi bi-arrow-right ms-2"></i></a>
+                            <a href="{{ route('course.detail', $course->id) }}" class="course-btn-details">Course Details <i class="bi bi-arrow-right ms-2"></i></a>
                         </div>
                     </div>
                     @empty
                     @endforelse
-                    
-                    {{-- Mock card matching image 1 precisely --}}
-                    <div class="course-card">
-                        <div class="course-img-box">
-                            <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=800" class="course-img">
-                            <span class="course-lvl-badge">Advanced</span>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-meta-row">
-                                <span><i class="bi bi-clock"></i> 6 Modules</span>
-                                <span><i class="bi bi-star-fill"></i> 4.7</span>
-                            </div>
-                            <h3 class="course-main-title">ADVANCED AI ARCHITECTURES</h3>
-                            <a href="#" class="course-btn-details">Course Details <i class="bi bi-arrow-right ms-2"></i></a>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div id="t-e" class="t-panel" style="display:none;">
                 <div class="timeline-wrap">
+                    @forelse($experiences as $exp)
                     <div class="timeline-item">
                         <div class="tm-header-row">
-                            <h4 class="tm-role">SENIOR PRODUCT DESIGNER</h4>
-                            <span class="tm-period">2020 - PRESENT</span>
+                            <h4 class="tm-role">{{ $exp->role }}</h4>
+                            <span class="tm-period">{{ $exp->period }}</span>
                         </div>
-                        <div class="tm-brand">DesignFlow</div>
-                        <p class="tm-info">Leading the design system team and overseeing the UX strategy for enterprise-level applications.</p>
+                        <div class="tm-brand">{{ $exp->company }}</div>
+                        <p class="tm-info">{{ $exp->description }}</p>
                     </div>
-                    <div class="timeline-item" style="margin-bottom:0;">
+                    @empty
+                    <div class="timeline-item">
                         <div class="tm-header-row">
-                            <h4 class="tm-role">UI/UX DESIGNER</h4>
-                            <span class="tm-period">2016 - 2020</span>
+                            <h4 class="tm-role">{{ $trainer->profession ?: 'Trainer' }}</h4>
+                            <span class="tm-period">PRESENT</span>
                         </div>
-                        <div class="tm-brand">Creative Studio X</div>
-                        <p class="tm-info">Developed brand identities and digital experiences for high-growth startups.</p>
+                        <div class="tm-brand">{{ $trainer->institution ?: 'idSpora Trainer' }}</div>
+                        <p class="tm-info">Aktif mengembangkan pengalaman belajar peserta dengan sesi training praktis.</p>
                     </div>
+                    @endforelse
                 </div>
             </div>
 
             <div id="t-cr" class="t-panel" style="display:none;">
                 <div class="course-grid">
+                    @forelse($certificates as $certificate)
                     <div class="cred-card">
-                        <img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" class="cred-icon">
-                        <h4 class="cred-title">GOOGLE UX DESIGN PROFESSIONAL CERTIFICATE</h4>
-                        <p class="cred-meta">COURSERA • 2021</p>
+                        <img src="{{ $certificate->icon_url ?? 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }}" class="cred-icon">
+                        <h4 class="cred-title">{{ $certificate->title }}</h4>
+                        <p class="cred-meta">{{ $certificate->issuer }} • {{ $certificate->year }}</p>
                     </div>
+                    @empty
                     <div class="cred-card">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3233/3233514.png" class="cred-icon">
-                        <h4 class="cred-title">CERTIFIED DESIGN SYSTEM SPECIALIST</h4>
-                        <p class="cred-meta">DESIGN INSTITUTE • 2019</p>
+                        <h4 class="cred-title">Belum ada sertifikat</h4>
+                        <p class="cred-meta">Sertifikat akan muncul di sini setelah diverifikasi.</p>
                     </div>
+                    @endforelse
                 </div>
             </div>
         </section>
@@ -636,39 +612,29 @@
                 <p>Direct reviews from professionals who completed mentorship programs.</p>
             </div>
             <div class="f-grid">
+                @forelse($feedbacks as $feedback)
                 <div class="f-card">
-                    <div class="f-stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
-                    <p class="f-text">"Sarah is an incredible mentor. Her deep knowledge of Figma constraints saved me hours of work!"</p>
+                    <div class="f-stars">
+                        @for($i = 0; $i < 5; $i++)
+                            <i class="bi {{ $i < $feedback->rating ? 'bi-star-fill' : 'bi-star' }}"></i>
+                        @endfor
+                    </div>
+                    <p class="f-text">"{{ $feedback->comment }}"</p>
                     <div class="f-author">
-                        <img src="https://i.pravatar.cc/150?u=alex" class="f-img">
+                        <img src="{{ $feedback->user_avatar_url ?? 'https://i.pravatar.cc/150?u=' . ($feedback->user_name ?? 'anon') }}" class="f-img">
                         <div>
-                            <span class="f-name">Alex Rivera</span>
-                            <span class="f-role">Product Designer</span>
+                            <span class="f-name">{{ $feedback->user_name ?? 'Anonim' }}</span>
+                            <span class="f-role">{{ $feedback->user_role ?? '' }}</span>
                         </div>
                     </div>
                 </div>
+                @empty
                 <div class="f-card">
-                    <div class="f-stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i></div>
-                    <p class="f-text">"The course was very well structured. I wish there were more hands-on exercises in module 3."</p>
-                    <div class="f-author">
-                        <img src="https://i.pravatar.cc/150?u=jessica" class="f-img">
-                        <div>
-                            <span class="f-name">Jessica Wong</span>
-                            <span class="f-role">UX Researcher</span>
-                        </div>
-                    </div>
+                    <p class="f-text">Belum ada feedback dari peserta.</p>
                 </div>
+                @endforelse
             </div>
         </section>
-
-        <div class="cta-ready">
-            <h2>READY TO EVOLVE?</h2>
-            <p>Join expert-led mentorship programs and accelerate your professional growth.</p>
-            <div class="cta-actions">
-                <a href="#" class="btn-navy">Explore All Courses</a>
-                <a href="#" class="btn-white">Contact Mentor</a>
-            </div>
-        </div>
     </div>
 
     <script>

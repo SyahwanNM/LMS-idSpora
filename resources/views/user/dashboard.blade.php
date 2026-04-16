@@ -254,15 +254,7 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            @php
-                                                                $cMedia = $course->card_thumbnail ?? $course->media;
-                                                                if ($cMedia) {
-                                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
-                                                                } else {
-                                                                    $imgSrc = asset('aset/poster.png');
-                                                                }
-                                                            @endphp
-                                                            <img src="{{ $imgSrc }}"
+                                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -330,15 +322,7 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            @php
-                                                $cMedia = $course->card_thumbnail ?? $course->media;
-                                                if ($cMedia) {
-                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
-                                                } else {
-                                                    $imgSrc = 'https://via.placeholder.com/280x160';
-                                                }
-                                            @endphp
-                                            <img src="{{ $imgSrc }}"
+                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
@@ -380,10 +364,20 @@
                                                 </div>
                                             </div>
 
-                                            <div
-                                                class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
-                                                    {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                            <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    @if($course->hasDiscount())
+                                                        <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px;">
+                                                            Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                        </span>
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
+                                                        </div>
+                                                    @else
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                                 <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
                                                     class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
@@ -935,6 +929,27 @@
             });
         }
     </script>
+
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </body>
 
 </html>

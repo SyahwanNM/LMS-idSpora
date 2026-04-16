@@ -8,6 +8,26 @@
         margin-top: 85px; /* Jarak dikurangi agar lebih rapat dengan navbar */
     }
 </style>
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </head>
 
 @include('partials.navbar-after-login') 
@@ -307,7 +327,14 @@
                         <div class="price-row">
                             <div class="price-col">
                                 <span class="price-now">
-                                    @if((int) ($course->price ?? 0) <= 0)
+                                    @if($course->hasDiscount())
+                                        <div class="d-flex flex-column" style="line-height:1.2;">
+                                            <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px; font-weight: normal; opacity: 0.7;">
+                                                Rp{{ number_format($course->price, 0, ',', '.') }}
+                                            </span>
+                                            <span style="font-size: 16px;">Rp{{ number_format($course->discounted_price, 0, ',', '.') }}</span>
+                                        </div>
+                                    @elseif((int) ($course->price ?? 0) <= 0)
                                         GRATIS
                                     @else
                                         Rp{{ number_format($course->price, 0, ',', '.') }}
@@ -340,7 +367,7 @@
             {{ $courses->onEachSide(1)->links('pagination::bootstrap-5') }}
         </div>
     @endif
-    @include('partials.footer-before-login')
+   @include('partials.footer-after-login')
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
