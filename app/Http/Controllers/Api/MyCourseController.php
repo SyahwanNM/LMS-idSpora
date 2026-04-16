@@ -60,10 +60,12 @@ class MyCourseController extends Controller
                 $progressPercent = $enr->getProgressPercentage();
             }
 
-            return [
-                'course' => (new CourseResource($course)),
-                'progress_percent' => (int) $progressPercent,
-            ];
+            $resource = new CourseResource($course);
+            $data = $resource->toArray(request());
+            $data['is_enrolled']      = true;
+            $data['progress_percent'] = (int) $progressPercent;
+
+            return $data;
         })->values();
 
         return response()->json([

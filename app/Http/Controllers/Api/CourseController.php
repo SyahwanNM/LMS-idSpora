@@ -37,6 +37,17 @@ class CourseController extends Controller
             $query->where('level', $level);
         }
 
+        $category = trim((string) $request->query('category', ''));
+        if ($category !== '') {
+            $query->whereHas('category', fn($q) => $q->where('id', $category)
+                ->orWhereRaw('LOWER(name) = ?', [mb_strtolower($category)]));
+        }
+
+        $topic = trim((string) $request->query('topic', ''));
+        if ($topic !== '') {
+            $query->where('name', 'like', "%{$topic}%");
+        }
+
         if ($request->has('free')) {
             $isFree = filter_var($request->query('free'), FILTER_VALIDATE_BOOL);
             if ($isFree) {
@@ -72,23 +83,99 @@ class CourseController extends Controller
     public function show(Request $request, Course $course)
     {
         if (((string) ($course->status ?? '')) !== 'active') {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Course tidak ditemukan',
-            ], 404);
+            return response()->json(['status' => 'error', 'message' => 'Course tidak ditemukan'], 404);
         }
 
-        $course->load([
-            'category',
-            'modules' => function ($q) {
-                $q->orderBy('order_no');
-            },
-        ])->loadCount('modules');
+        $course->load(['category', 'modules' => fn($q) => $q->orderBy('order_no')])
+            ->loadCount(['modules', 'enrollments as enrollments_count'])
+            ->loadAvg('reviews', 'rating');
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'Detail course',
-            'data' => new CourseResource($course),
+            'data'    => new CourseResource($course),
         ]);
+    }
+
+    /**
+     * Course reviews/ratings.
+     */
+    public function reviews(Request $request, Course $course)
+    {
+        if (((string) ($course->status ?? '')) !== 'active') {
+            return response()->json(['status' => 'error', 'message' => 'Course tidak ditemukan'], 404);
+        }
+
+        $perPage = max(1, min((int) $request->query('per_page', 10), 50));
+
+        $reviews = \App\Models\Review::with('user:id,name,avatar')
+            ->where('course_id', $course->id)
+            ->latest()
+            ->paginate($perPage);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Ulasan course',
+            'data'    => $reviews->map(fn($r) => [
+                'id'         => $r->id,
+                'rating'     => (int) $r->rating,
+                'comment'    => $r->comment,
+                'user'       => $r->user ? ['id' => $r->user->id, 'name' => $r->user->name] : null,
+                'created_at' => $r->created_at?->toISOString(),
+            ]),
+            'pagination' => [
+                'current_page' => $reviews->currentPage(),
+                'per_page'     => $reviews->perPage(),
+                'total'        => $reviews->total(),
+                'last_page'    => $reviews->lastPage(),
+            ],
+        ]);
+    }
+
+    /**
+     * Submit review for an enrolled course.
+     */
+    public function submitReview(Request $request, Course $course)
+    {
+        if (((string) ($course->status ?? '')) !== 'active') {
+            return response()->json(['status' => 'error', 'message' => 'Course tidak ditemukan'], 404);
+        }
+
+        $user = $request->user();
+
+        $canLearn = \App\Models\Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed'])
+            ->exists();
+
+        if (!$canLearn) {
+            return response()->json(['status' => 'error', 'message' => 'Anda belum mengikuti course ini'], 403);
+        }
+
+        $existing = \App\Models\Review::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        if ($existing) {
+            return response()->json(['status' => 'error', 'message' => 'Anda sudah memberikan ulasan'], 409);
+        }
+
+        $validated = $request->validate([
+            'rating'  => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        $review = \App\Models\Review::create([
+            'user_id'   => $user->id,
+            'course_id' => $course->id,
+            'rating'    => $validated['rating'],
+            'comment'   => $validated['comment'] ?? null,
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Ulasan berhasil dikirim',
+            'data'    => ['id' => $review->id, 'rating' => $review->rating, 'comment' => $review->comment],
+        ], 201);
     }
 }
