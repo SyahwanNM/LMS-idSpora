@@ -1056,33 +1056,73 @@
                             <p>Not available</p>
                         @else
                             <p>{{ $approvedModules->count() }} modul tersedia</p>
-                            @if($moduleUnlocked)
-                                <div class="d-flex flex-column gap-1 mt-1">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
-                                           style="font-size:11px; padding:3px 8px;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                            </svg>
-                                            {{ Str::limit($mod->original_name, 30) }}
-                                            @if($mod->trainer)
-                                                <span class="text-muted" style="font-size:10px;">({{ $mod->trainer->name }})</span>
-                                            @endif
-                                        </a>
-                                    @endforeach
-                                </div>
-                            @endif
                         @endif
                     </div>
-                    @if(!$moduleUnlocked)
+                    @if($moduleUnlocked)
+                        <button type="button" class="link-share d-flex align-items-center"
+                            data-bs-toggle="modal" data-bs-target="#modulesDownloadModal"
+                            title="Unduh Materi"
+                            style="background:none; border:none; padding:0; cursor:pointer; margin-left:auto;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                            </svg>
+                        </button>
+                    @else
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                     @endif
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}" style="position:relative;">
+                {{-- Modal unduh modul --}}
+                @if($moduleUnlocked)
+                <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:16px;">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" id="modulesDownloadModalLabel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                                        <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                                    </svg>
+                                    Unduh Materi Event
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pt-2">
+                                <p class="text-muted mb-3" style="font-size:13px;">Pilih materi yang ingin diunduh:</p>
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach($approvedModules as $mod)
+                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
+                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                </svg>
+                                            </div>
+                                            <div style="overflow:hidden;">
+                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
+                                                @if($mod->trainer)
+                                                    <div style="font-size:11px;color:#64748b;">oleh {{ $mod->trainer->name }}</div>
+                                                @endif
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && !$eventIsFinished && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}" style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-qr-code-scan" viewBox="0 0 16 16"><path d="M2 2h2v2H2V2Z"/><path d="M6 0H0v6h6V0ZM2 4V2h2v2H2Z"/><path d="M12 2h2v2h-2V2Z"/><path d="M16 0h-6v6h6V0Zm-4 4V2h2v2h-2Z"/><path d="M2 12h2v2H2v-2Z"/><path d="M6 10H0v6h6v-6Zm-4 4v-2h2v2H2Z"/><path d="M7 2h1v1H7V2Z"/><path d="M8 4h1v1H8V4Z"/><path d="M2 7h1v1H2V7Z"/><path d="M4 8h1v1H4V8Z"/><path d="M12 7h1v1h-1V7Z"/><path d="M7 12h1v1H7v-1Z"/><path d="M8 13h1v1H8v-1Z"/><path d="M9 7h1v1H9V7Z"/><path d="M10 2h1v1h-1V2Z"/><path d="M10 11h1v1h-1v-1Z"/><path d="M11 10h1v1h-1v-1Z"/><path d="M12 9h1v1h-1V9Z"/><path d="M13 8h1v1h-1V8Z"/><path d="M14 7h1v1h-1V7Z"/><path d="M15 6h1v1h-1V6Z"/><path d="M12 12h1v1h-1v-1Z"/><path d="M13 13h1v1h-1v-1Z"/><path d="M14 12h1v1h-1v-1Z"/></svg>
                     </div>
@@ -1126,23 +1166,15 @@
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                @php
-                                    $certReady = $eventIsFinished || ($registration->certificate_issued_at ?? false);
-                                @endphp
-                                @if($certReady)
-                                    <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
-                                        <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
-                                    </div>
-                                @else
-                                    <p>Sertifikat akan tersedia setelah acara selesai.</p>
-                                @endif
+                                <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
+                                <div class="d-flex gap-2 mt-2">
+                                    <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
+                                    <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                                </div>
                             @elseif($eventIsFinished)
-                                <p>Sertifikat tersedia! Silakan isi feedback terlebih dahulu.</p>
-                                <a href="#feedbackSection" class="btn btn-sm btn-primary mt-2">Isi Feedback</a>
+                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
                             @else
-                                <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
+                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
                             @endif
                         @else
                             <p>Tersedia setelah acara selesai.</p>
