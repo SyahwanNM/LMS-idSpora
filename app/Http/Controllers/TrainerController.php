@@ -624,7 +624,19 @@ class TrainerController extends Controller
                 'enrollments' => function ($query) {
                     $query->where('status', 'active');
                 },
-                'modules' // Tambahkan ini untuk menghitung jumlah modul
+                'modules', // Tambahkan ini untuk menghitung jumlah modul
+                'modules as processing_assigned_count' => function ($query) {
+                    $query->where('processing_status', 'assigned_to_admin_course');
+                },
+                'modules as processing_uploaded_count' => function ($query) {
+                    $query->where('processing_status', 'processed_uploaded');
+                },
+                'modules as processing_revision_count' => function ($query) {
+                    $query->where('processing_status', 'revision_requested');
+                },
+                'modules as processing_ready_count' => function ($query) {
+                    $query->where('processing_status', 'ready_for_publish');
+                },
             ])
             ->withAvg('reviews', 'rating')
             ->orderBy('created_at', 'desc')
@@ -736,6 +748,18 @@ class TrainerController extends Controller
             $classAverage = round($totalScores / $totalSubmissions, 1);
         }
 
+        $processingModules = $course->modules->filter(function ($module) {
+            return filled($module->processing_status ?? null);
+        });
+
+        $processingSummary = [
+            'total' => $processingModules->count(),
+            'assigned' => $processingModules->where('processing_status', 'assigned_to_admin_course')->count(),
+            'uploaded' => $processingModules->where('processing_status', 'processed_uploaded')->count(),
+            'revision' => $processingModules->where('processing_status', 'revision_requested')->count(),
+            'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
+        ];
+
         return view('trainer.detail-course', compact(
             'course',
             'enrollmentCount',
@@ -744,7 +768,8 @@ class TrainerController extends Controller
             'activeStudents',
             'quizAttempts',
             'classAverage',
-            'totalSubmissions'
+            'totalSubmissions',
+            'processingSummary'
         ));
     }
     public function events(Request $request)
@@ -1158,6 +1183,7 @@ class TrainerController extends Controller
                     'view_url' => route('trainer.courses.studio.material.view', [$course->id, $module->id]),
                     'updated_at' => optional($module->updated_at)->toDateTimeString(),
                     'review_status' => (string) ($module->review_status ?? 'pending_review'),
+                    'processing_status' => (string) ($module->processing_status ?? ''),
                 ];
             })
             ->values();

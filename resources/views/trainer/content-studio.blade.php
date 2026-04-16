@@ -48,6 +48,16 @@
     $videoTargetIds = $videoTargetModules->isNotEmpty()
         ? $videoTargetModules->pluck('id')->implode(',')
         : collect($activeUnitModules ?? [])->pluck('id')->implode(',');
+    $processingModules = collect($activeUnitModules ?? [])->filter(function ($module) {
+        return filled($module->processing_status ?? null);
+    });
+    $processingSummary = [
+        'total' => $processingModules->count(),
+        'assigned' => $processingModules->where('processing_status', 'assigned_to_admin_course')->count(),
+        'uploaded' => $processingModules->where('processing_status', 'processed_uploaded')->count(),
+        'revision' => $processingModules->where('processing_status', 'revision_requested')->count(),
+        'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
+    ];
 @endphp
 
 @push('styles')
@@ -188,6 +198,111 @@
             color: #7f1d1d;
             font-size: 13px;
             line-height: 1.45;
+        }
+
+        .processing-banner {
+            margin-bottom: var(--spacing-lg);
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid #d8e3f3;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+        }
+
+        .processing-banner-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .processing-banner-title {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #334155;
+        }
+
+        .processing-banner-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .processing-stat {
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .processing-stat .value {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1.1;
+            margin-bottom: 3px;
+        }
+
+        .processing-stat .label {
+            display: block;
+            font-size: 0.72rem;
+            color: #64748b;
+            line-height: 1.35;
+        }
+
+        .video-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .video-status-pill.assigned {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .video-status-pill.uploaded {
+            background: #ecfeff;
+            color: #0f766e;
+        }
+
+        .video-status-pill.revision {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .video-status-pill.ready {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .video-status-pill.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 992px) {
+            .processing-banner-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .processing-banner-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .panel {
@@ -1024,6 +1139,33 @@
             </div>
         </header>
 
+        @if(($processingSummary['total'] ?? 0) > 0)
+            <section class="processing-banner">
+                <div class="processing-banner-head">
+                    <p class="processing-banner-title">Processing Snapshot</p>
+                    <span class="hero-pill-outline">{{ $processingSummary['total'] }} modul aktif</span>
+                </div>
+                <div class="processing-banner-grid">
+                    <div class="processing-stat">
+                        <span class="value">{{ $processingSummary['assigned'] ?? 0 }}</span>
+                        <span class="label">Diserahkan ke admin course</span>
+                    </div>
+                    <div class="processing-stat">
+                        <span class="value">{{ $processingSummary['uploaded'] ?? 0 }}</span>
+                        <span class="label">Hasil edit diunggah</span>
+                    </div>
+                    <div class="processing-stat">
+                        <span class="value">{{ $processingSummary['revision'] ?? 0 }}</span>
+                        <span class="label">Revisi diminta</span>
+                    </div>
+                    <div class="processing-stat">
+                        <span class="value">{{ $processingSummary['ready'] ?? 0 }}</span>
+                        <span class="label">Siap dipublikasikan</span>
+                    </div>
+                </div>
+            </section>
+        @endif
+
         @if($courseMaterialLocked)
             <section
                 style="margin-bottom:16px; padding: 12px 14px; border:1px solid #f59e0b; border-radius: 12px; background:#fffbeb; color:#92400e; font-size:13px;">
@@ -1192,6 +1334,28 @@
                                                 <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot
                                                     {{ $material->order_no }}
                                                 </p>
+                                                @php
+                                                    $processingStatus = (string) ($material->processing_status ?? '');
+                                                    $processingLabel = match ($processingStatus) {
+                                                        'assigned_to_admin_course' => 'Diserahkan',
+                                                        'processed_uploaded' => 'Hasil Edit Diunggah',
+                                                        'revision_requested' => 'Revisi Diminta',
+                                                        'ready_for_publish' => 'Siap Publikasi',
+                                                        default => '',
+                                                    };
+                                                    $processingClass = match ($processingStatus) {
+                                                        'assigned_to_admin_course' => 'assigned',
+                                                        'processed_uploaded' => 'uploaded',
+                                                        'revision_requested' => 'revision',
+                                                        'ready_for_publish' => 'ready',
+                                                        default => 'pending',
+                                                    };
+                                                @endphp
+                                                @if($processingStatus !== '')
+                                                    <span class="video-status-pill {{ $processingClass }}">
+                                                        <i class="bi bi-activity"></i>{{ $processingLabel }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         </div>
                                         <div style="display: flex; gap: 6px;">
@@ -1781,11 +1945,11 @@
             let selectedModuleImage = null;
 
             const codeLangOptions = `
-                                <option value="html">HTML</option>
-                                <option value="css">CSS</option>
-                                <option value="javascript">JavaScript</option>
-                                <option value="php">PHP</option>
-                            `;
+                                    <option value="html">HTML</option>
+                                    <option value="css">CSS</option>
+                                    <option value="javascript">JavaScript</option>
+                                    <option value="php">PHP</option>
+                                `;
 
             function escapeCode(raw) {
                 return String(raw ?? '')
@@ -1796,15 +1960,15 @@
 
             function insertCodeBlock() {
                 const codeBlockHtml = `
-                                    <div class="module-code-block" contenteditable="false">
-                                        <div class="module-code-top">
-                                            <select class="module-code-lang">${codeLangOptions}</select>
-                                            <button type="button" class="module-code-copy">Copy Code</button>
+                                        <div class="module-code-block" contenteditable="false">
+                                            <div class="module-code-top">
+                                                <select class="module-code-lang">${codeLangOptions}</select>
+                                                <button type="button" class="module-code-copy">Copy Code</button>
+                                            </div>
+                                            <pre><code class="language-html" contenteditable="true" spellcheck="false"></code></pre>
                                         </div>
-                                        <pre><code class="language-html" contenteditable="true" spellcheck="false"></code></pre>
-                                    </div>
-                                    <p><br></p>
-                                `;
+                                        <p><br></p>
+                                    `;
                 document.execCommand('insertHTML', false, codeBlockHtml);
             }
 
@@ -1844,10 +2008,10 @@
                     }
 
                     const imageHtml = `
-                                        <figure class="module-inline-image" data-image-align="center">
-                                            <img src="${String(data.url || '')}" alt="Gambar materi" data-image-width="560" style="width:560px; max-width:100%;" />
-                                        </figure>
-                                    `;
+                                            <figure class="module-inline-image" data-image-align="center">
+                                                <img src="${String(data.url || '')}" alt="Gambar materi" data-image-width="560" style="width:560px; max-width:100%;" />
+                                            </figure>
+                                        `;
                     document.execCommand('insertHTML', false, imageHtml);
                     syncEditorContentToInput();
                 } catch (error) {
@@ -2079,34 +2243,48 @@
                     const fileName = escapeHtml(material.file_name || 'file');
                     const viewUrl = escapeHtml(material.view_url || '#');
                     const moduleId = Number(material.module_id || 0);
+                    const processingStatus = String(material.processing_status || '');
+                    const processingLabel = {
+                        assigned_to_admin_course: 'Diserahkan',
+                        processed_uploaded: 'Hasil Edit Diunggah',
+                        revision_requested: 'Revisi Diminta',
+                        ready_for_publish: 'Siap Publikasi',
+                    }[processingStatus] || '';
+                    const processingClass = {
+                        assigned_to_admin_course: 'assigned',
+                        processed_uploaded: 'uploaded',
+                        revision_requested: 'revision',
+                        ready_for_publish: 'ready',
+                    }[processingStatus] || 'pending';
 
                     return `
-                                                    <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                            <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                                            <div>
-                                                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                                <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                                <div>
+                                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
+                                                                    <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                                    ${processingStatus ? `<span class="video-status-pill ${processingClass}"><i class="bi bi-activity"></i>${escapeHtml(processingLabel)}</span>` : ''}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <div style="display: flex; gap: 6px;">
-                                                            <button type="button" class="preview-material-btn"
-                                                                data-view-url="${viewUrl}" data-material-type="video" data-file-name="${fileName}"
-                                                                title="Preview File"
-                                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                                <i class="bi bi-eye-fill"></i>
-                                                            </button>
-                                                            <button type="button" class="select-replace-btn"
-                                                                data-module-id="${moduleId}" data-module-type="video" data-file-name="${fileName}"
-                                                                title="Ganti File"
-                                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
-                                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                                <i class="bi bi-arrow-repeat"></i>
-                                                            </button>
-                                                        </div>
-                                                    </li>
-                                                `;
+                                                            <div style="display: flex; gap: 6px;">
+                                                                <button type="button" class="preview-material-btn"
+                                                                    data-view-url="${viewUrl}" data-material-type="video" data-file-name="${fileName}"
+                                                                    title="Preview File"
+                                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border-radius: 4px; border: none; text-decoration: none; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                                    <i class="bi bi-eye-fill"></i>
+                                                                </button>
+                                                                <button type="button" class="select-replace-btn"
+                                                                    data-module-id="${moduleId}" data-module-type="video" data-file-name="${fileName}"
+                                                                    title="Ganti File"
+                                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                                    <i class="bi bi-arrow-repeat"></i>
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                    `;
                 }).join('');
             }
 
@@ -2385,17 +2563,17 @@
                 if (videoUploadedFiles.length > 0) {
                     videoFileList.style.display = "block";
                     videoUploadedFilesList.innerHTML = videoUploadedFiles.map((file, index) => `
-                                                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
-                                                            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                                                                <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
-                                                                <div>
-                                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
-                                                                    <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                            <li style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--main-navy-clr);">
+                                                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                                    <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
+                                                                    <div>
+                                                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${file.name}</p>
+                                                                        <p style="margin: 0; font-size: 12px; color: #999;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                            <button type="button" class="delete-video-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
-                                                        </li>
-                                                    `).join("");
+                                                                <button type="button" class="delete-video-file" data-index="${index}" style="background: #ff6b6b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">HAPUS</button>
+                                                            </li>
+                                                        `).join("");
 
                     document.querySelectorAll(".delete-video-file").forEach(btn => {
                         btn.addEventListener("click", (e) => {
@@ -2657,33 +2835,33 @@
                     const qEl = document.createElement("article");
                     qEl.className = "quiz-editor";
                     qEl.innerHTML = `
-                                                        <div class="q-head">
-                                                            <div class="q-number">${index + 1}</div>
-                                                            <div class="q-inputs">
-                                                                <label>PERTANYAAN</label>
-                                                                <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                                            <div class="q-head">
+                                                                <div class="q-number">${index + 1}</div>
+                                                                <div class="q-inputs">
+                                                                    <label>PERTANYAAN</label>
+                                                                    <input type="text" class="q-text" placeholder="Masukkan pertanyaan..." value="${q.text}" />
+                                                                </div>
+                                                                <div class="q-score">
+                                                                    <label>BOBOT</label>
+                                                                    <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                                                </div>
+                                                                <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
                                                             </div>
-                                                            <div class="q-score">
-                                                                <label>BOBOT</label>
-                                                                <input type="number" class="q-weight" value="${q.weight}" min="1" />
+                                                            <div class="options-section">
+                                                                <p class="options-label">PILIHAN JAWABAN</p>
+                                                                <div class="options-grid">
+                                                                    ${q.options.map((opt, oIdx) => `
+                                                                        <div class="option-container">
+                                                                            <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
+                                                                                <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
+                                                                                <span>Opsi ${oIdx + 1}</span>
+                                                                            </button>
+                                                                            <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
+                                                                        </div>
+                                                                    `).join("")}
+                                                                </div>
                                                             </div>
-                                                            <button type="button" class="delete-question"><i class="bi bi-trash"></i> HAPUS</button>
-                                                        </div>
-                                                        <div class="options-section">
-                                                            <p class="options-label">PILIHAN JAWABAN</p>
-                                                            <div class="options-grid">
-                                                                ${q.options.map((opt, oIdx) => `
-                                                                    <div class="option-container">
-                                                                        <button type="button" class="option-btn ${q.correctAnswer === oIdx ? 'is-correct' : ''}" data-opt="${oIdx}">
-                                                                            <i class="bi ${q.correctAnswer === oIdx ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-                                                                            <span>Opsi ${oIdx + 1}</span>
-                                                                        </button>
-                                                                        <input type="text" class="option-input" value="${opt}" placeholder="Jawaban opsi ${oIdx + 1}" />
-                                                                    </div>
-                                                                `).join("")}
-                                                            </div>
-                                                        </div>
-                                                    `;
+                                                        `;
 
                     // Event Listeners for this question
                     qEl.querySelector(".q-text").addEventListener("input", (e) => {

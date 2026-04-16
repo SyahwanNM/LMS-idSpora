@@ -496,6 +496,8 @@
         const agreementChecks = modal ? modal.querySelectorAll('.agreement-check') : [];
         const confirmBtn = document.getElementById('confirmSchemeBtn');
         const form = document.getElementById('schemeSelectionForm');
+        const acceptWithSchemeUrlTemplate = @json(route('trainer.notifications.accept-with-scheme', ['notification' => '__NOTIFICATION_ID__']));
+        const respondUrlTemplate = @json(route('trainer.notifications.respond', ['notification' => '__NOTIFICATION_ID__']));
 
         if (!modal || !confirmBtn || !form) {
             return;
@@ -551,9 +553,9 @@
             const entityType = modal.getAttribute('data-entity-type') || 'event';
 
             if (entityType === 'event') {
-                form.action = `/trainer/notifications/${notificationId}/accept-with-scheme`;
+                form.action = acceptWithSchemeUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
             } else {
-                form.action = `/trainer/notifications/${notificationId}/respond`;
+                form.action = respondUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
             }
 
             // Add scheme and agreement values to form

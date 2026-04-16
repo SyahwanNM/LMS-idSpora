@@ -713,6 +713,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.material.module.stream');
     Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
     Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
+    Route::post('/admin/material/{material}/modules/{module}/assign-course', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'assignCourse'])->name('admin.material.module.assign-course');
+    Route::post('/admin/material/{material}/modules/{module}/upload-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'uploadProcessed'])->name('admin.material.module.upload-processed');
+    Route::post('/admin/material/{material}/modules/{module}/accept-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'acceptProcessed'])->name('admin.material.module.accept-processed');
+    Route::post('/admin/material/{material}/modules/{module}/request-revision', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'requestRevision'])->name('admin.material.module.request-revision');
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
