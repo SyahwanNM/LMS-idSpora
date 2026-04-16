@@ -23,6 +23,7 @@ use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleCont
 
 use App\Http\Controllers\User\NotificationsController;
 use App\Http\Controllers\Public\PublicPagesController;
+use App\Http\Controllers\Public\PublicTrainerProfileController;
 use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
@@ -255,7 +256,13 @@ Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide
 // Public event pages (accessible without login)
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
 Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-Route::get('/trainer/{trainer}', [PublicTrainerProfileController::class, 'show'])->name('public.trainer-profile.show');
+// Public trainer profile: constrain to numeric ID to avoid colliding with /trainer/dashboard.
+Route::get('/trainer/{trainer}', [PublicTrainerProfileController::class, 'show'])
+    ->whereNumber('trainer')
+    ->name('public.trainer-profile.show');
+Route::get('/trainers/{trainer}', [PublicTrainerProfileController::class, 'show'])
+    ->whereNumber('trainer')
+    ->name('trainers.profile');
 // Redirect search to the best-matching event detail (exact title match preferred)
 Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
 
@@ -342,7 +349,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
     Route::get('/profile/events', function () {
-        return redirect()->route('profile.history'); }); // Redirect legacy route
+        return redirect()->route('profile.history');
+    }); // Redirect legacy route
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
@@ -404,6 +412,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/courses/{course}/certificate', [\App\Http\Controllers\User\CourseCertificateController::class, 'show'])->name('course.certificate');
 });
 Route::get('/courses', [\App\Http\Controllers\Public\PublicCourseController::class, 'index'])->name('courses.index');
+
+// Redirect legacy /login path to the actual login page at /sign-in
+Route::get('/login', fn() => redirect('/sign-in'));
 
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
@@ -700,6 +711,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/approved', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approved'])->name('admin.material.approved');
     Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.material.rejected');
     Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.material.module.stream');
+    Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
+    Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
