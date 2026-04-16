@@ -11,7 +11,9 @@
     ];
 
     $materialStatus = (string) ($event->material_status ?? 'draft');
-    $isRevisionWindow = $materialStatus === 'rejected';
+    $hasUploadedModule = !empty($event->module_path);
+    $displayMaterialStatus = $hasUploadedModule ? $materialStatus : 'draft';
+    $isRevisionWindow = $displayMaterialStatus === 'rejected';
     $deadline = $isRevisionWindow
         ? (!empty($event->material_revision_deadline)
             ? \Carbon\Carbon::parse($event->material_revision_deadline)
@@ -24,14 +26,13 @@
     $deadlineHint = $deadlinePassed
         ? ($isRevisionWindow ? 'Batas revisi sudah lewat' : 'Batas pengumpulan sudah lewat')
         : ($isRevisionWindow ? 'Masa revisi masih terbuka' : 'Materi masih bisa diunggah');
-    $materialStatusLabel = strtoupper(str_replace('_', ' ', $materialStatus));
+    $materialStatusLabel = strtoupper(str_replace('_', ' ', $displayMaterialStatus));
     $eventRejectionReason = trim((string) ($event->material_rejection_reason ?? ''));
     if ($eventRejectionReason === '') {
         $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
     }
-    $showEventRejectionReason = $materialStatus === 'rejected' && $eventRejectionReason !== '';
+    $showEventRejectionReason = $displayMaterialStatus === 'rejected' && $eventRejectionReason !== '';
     $moduleFileUrl = $event->module_file_url;
-    $hasUploadedModule = !empty($event->module_path);
     $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
     $canUploadMaterials = $materialStatus !== 'approved';
 @endphp
@@ -405,120 +406,6 @@
             align-items: flex-start;
             gap: 14px;
             padding: 18px 20px;
-
-            .notification-modal {
-                display: none;
-                position: fixed;
-                inset: 0;
-                z-index: 2500;
-                align-items: center;
-                justify-content: center;
-                background: rgba(15, 23, 42, 0.55);
-                padding: 20px;
-            }
-
-            .notification-modal.is-open {
-                display: flex;
-            }
-
-            .notification-modal-card {
-                width: min(100%, 460px);
-                border-radius: 24px;
-                background: #ffffff;
-                box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
-                overflow: hidden;
-            }
-
-            .notification-modal-header {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                padding: 22px 24px 12px;
-            }
-
-            .notification-modal-icon {
-                width: 44px;
-                height: 44px;
-                border-radius: 14px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-                background: rgba(27, 23, 99, 0.08);
-                color: var(--main-navy-clr);
-            }
-
-            .notification-modal-icon.success {
-                background: rgba(22, 163, 74, 0.12);
-                color: #166534;
-            }
-
-            .notification-modal-icon.error {
-                background: rgba(220, 38, 38, 0.12);
-                color: #991b1b;
-            }
-
-            .notification-modal-icon.warning {
-                background: rgba(245, 158, 11, 0.15);
-                color: #92400e;
-            }
-
-            .notification-modal-title {
-                margin: 0;
-                font-size: 18px;
-                font-weight: 800;
-                color: var(--main-navy-clr);
-                line-height: 1.3;
-            }
-
-            .notification-modal-message {
-                margin: 0;
-                padding: 0 24px 18px 82px;
-                color: #475569;
-                font-size: 14px;
-                line-height: 1.6;
-                white-space: pre-line;
-            }
-
-            .notification-modal-footer {
-                display: flex;
-                justify-content: flex-end;
-                padding: 0 24px 24px;
-            }
-
-            .notification-modal-close {
-                border: none;
-                border-radius: 999px;
-                padding: 11px 18px;
-                background: var(--main-navy-clr);
-                color: #fff;
-                font-size: 13px;
-                font-weight: 700;
-                cursor: pointer;
-            }
-
-            .notification-modal-close:hover {
-                filter: brightness(1.05);
-            }
-
-            @media (max-width: 576px) {
-                .notification-modal-card {
-                    border-radius: 20px;
-                }
-
-                .notification-modal-header {
-                    padding: 18px 18px 10px;
-                }
-
-                .notification-modal-message {
-                    padding: 0 18px 16px 70px;
-                }
-
-                .notification-modal-footer {
-                    padding: 0 18px 18px;
-                }
-            }
-
             border-radius: 18px;
             border: 1px solid #dbe3f0;
             background: #f8fafc;
@@ -528,61 +415,9 @@
             width: 40px;
             height: 40px;
             border-radius: 12px;
-
-            <div id="notificationModal" class="notification-modal" aria-hidden="true"><div class="notification-modal-card" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle"><div class="notification-modal-header"><div id="notificationModalIcon" class="notification-modal-icon"><i class="bi bi-info-circle" style="font-size: 22px;"></i></div><div><h3 id="notificationModalTitle" class="notification-modal-title">Informasi</h3></div></div><p id="notificationModalMessage" class="notification-modal-message"></p><div class="notification-modal-footer"><button id="notificationModalCloseBtn" type="button" class="notification-modal-close">Tutup</button></div></div></div>display: inline-flex;
             align-items: center;
             justify-content: center;
             background: rgba(35, 29, 121, 0.08);
-
-            function showNotificationModal(title, message, type='info') {
-                const modal=document.getElementById('notificationModal');
-                const icon=document.getElementById('notificationModalIcon');
-                const titleEl=document.getElementById('notificationModalTitle');
-                const messageEl=document.getElementById('notificationModalMessage');
-
-                if ( !modal || !icon || !titleEl || !messageEl) {
-                    return;
-                }
-
-                icon.className='notification-modal-icon';
-                const iconEl=icon.querySelector('i');
-
-                if (iconEl) {
-                    iconEl.className='bi';
-                }
-
-                if (type==='success') {
-                    icon.classList.add('success');
-                    if (iconEl) iconEl.classList.add('bi-check-circle-fill');
-                }
-
-                else if (type==='error') {
-                    icon.classList.add('error');
-                    if (iconEl) iconEl.classList.add('bi-x-circle-fill');
-                }
-
-                else if (type==='warning') {
-                    icon.classList.add('warning');
-                    if (iconEl) iconEl.classList.add('bi-exclamation-triangle-fill');
-                }
-
-                else {
-                    if (iconEl) iconEl.classList.add('bi-info-circle-fill');
-                }
-
-                titleEl.textContent=title;
-                messageEl.textContent=message;
-                modal.classList.add('is-open');
-                modal.setAttribute('aria-hidden', 'false');
-            }
-
-            function closeNotificationModal() {
-                const modal=document.getElementById('notificationModal');
-                if ( !modal) return;
-                modal.classList.remove('is-open');
-                modal.setAttribute('aria-hidden', 'true');
-            }
-
             color: var(--main-navy-clr);
             flex-shrink: 0;
         }
@@ -591,24 +426,8 @@
             font-size: 18px;
         }
 
-        const notificationModal=document.getElementById('notificationModal');
-        const notificationModalCloseBtn=document.getElementById('notificationModalCloseBtn');
-
         .upload-lock-note h3 {
             margin: 0 0 6px 0;
-
-            if (notificationModalCloseBtn) {
-                notificationModalCloseBtn.addEventListener('click', closeNotificationModal);
-            }
-
-            if (notificationModal) {
-                notificationModal.addEventListener('click', (e)=> {
-                        if (e.target===notificationModal) {
-                            closeNotificationModal();
-                        }
-                    });
-            }
-
             color: var(--main-navy-clr);
             font-size: 18px;
             font-weight: 700;
@@ -619,6 +438,101 @@
             color: #4b5563;
             font-size: 13px;
             line-height: 1.5;
+        }
+
+        .notification-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2500;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.55);
+            padding: 20px;
+        }
+
+        .notification-modal.is-open {
+            display: flex;
+        }
+
+        .notification-modal-card {
+            width: min(100%, 460px);
+            border-radius: 24px;
+            background: #ffffff;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+            overflow: hidden;
+        }
+
+        .notification-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 22px 24px 12px;
+        }
+
+        .notification-modal-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(27, 23, 99, 0.08);
+            color: var(--main-navy-clr);
+        }
+
+        .notification-modal-icon.success {
+            background: rgba(22, 163, 74, 0.12);
+            color: #166534;
+        }
+
+        .notification-modal-icon.error {
+            background: rgba(220, 38, 38, 0.12);
+            color: #991b1b;
+        }
+
+        .notification-modal-icon.warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #92400e;
+        }
+
+        .notification-modal-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--main-navy-clr);
+            line-height: 1.3;
+        }
+
+        .notification-modal-message {
+            margin: 0;
+            padding: 0 24px 18px 82px;
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .notification-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 24px 24px;
+        }
+
+        .notification-modal-close {
+            border: none;
+            border-radius: 999px;
+            padding: 11px 18px;
+            background: var(--main-navy-clr);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .notification-modal-close:hover {
+            filter: brightness(1.05);
         }
 
         .upload-hints {
@@ -924,6 +838,22 @@
                 padding: 18px;
             }
 
+            .notification-modal-card {
+                border-radius: 20px;
+            }
+
+            .notification-modal-header {
+                padding: 18px 18px 10px;
+            }
+
+            .notification-modal-message {
+                padding: 0 18px 16px 70px;
+            }
+
+            .notification-modal-footer {
+                padding: 0 18px 18px;
+            }
+
             .validation-card {
                 border-radius: 22px;
                 padding: 18px;
@@ -982,21 +912,21 @@
                     <div class="icon"><i class="bi bi-file-earmark-check"></i></div>
                     <div>
                         <p class="label">Status</p>
-                        @if($materialStatus !== 'draft')
+                        @if($displayMaterialStatus !== 'draft')
                             @php
-                                $badgeClass = match ($materialStatus) {
+                                $badgeClass = match ($displayMaterialStatus) {
                                     'approved' => 'approved',
                                     'rejected' => 'rejected',
                                     'pending_review' => 'pending',
                                     default => 'pending',
                                 };
-                                $statusIcon = match ($materialStatus) {
+                                $statusIcon = match ($displayMaterialStatus) {
                                     'approved' => '✓',
                                     'rejected' => '✕',
                                     'pending_review' => '⏳',
                                     default => '📋',
                                 };
-                                $badgeLabel = match ($materialStatus) {
+                                $badgeLabel = match ($displayMaterialStatus) {
                                     'approved' => 'Material Approved',
                                     'rejected' => 'Revision Needed',
                                     'pending_review' => 'In Review',
@@ -1010,13 +940,13 @@
                         @else
                             <p class="value">{{ $materialStatusLabel }}</p>
                         @endif
-                        @if($materialStatus === 'draft')
-                            <p class="hint">Status review akan berubah setelah admin memeriksa file.</p>
-                        @elseif($materialStatus === 'approved')
+                        @if($displayMaterialStatus === 'draft')
+                            <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.</p>
+                        @elseif($displayMaterialStatus === 'approved')
                             <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
-                        @elseif($materialStatus === 'rejected')
+                        @elseif($displayMaterialStatus === 'rejected')
                             <p class="hint">Silakan upload ulang dengan revisi yang diperlukan admin.</p>
-                        @elseif($materialStatus === 'pending_review')
+                        @elseif($displayMaterialStatus === 'pending_review')
                             <p class="hint">Admin sedang mereview materi Anda. Harap menunggu notifikasi.</p>
                         @endif
                     </div>
@@ -1049,7 +979,7 @@
                                 @if($hasUploadedModule)
                                     <h3>{{ $uploadedModuleName }}</h3>
                                     <p>
-                                        {{ $materialStatus === 'approved' ? 'Materi ini sudah dikunci setelah disetujui admin.' : 'Materi ini masih tersimpan untuk status ' . strtolower(str_replace('_', ' ', $materialStatus)) . '.' }}
+                                        {{ $displayMaterialStatus === 'approved' ? 'Materi ini sudah dikunci setelah disetujui admin.' : 'Materi ini masih tersimpan untuk status ' . strtolower(str_replace('_', ' ', $displayMaterialStatus)) . '.' }}
                                     </p>
                                 @else
                                     <h3>Belum ada materi yang diunggah</h3>
@@ -1135,17 +1065,90 @@
         </div>
     </main>
 
+    <div id="notificationModal" class="notification-modal" aria-hidden="true">
+        <div class="notification-modal-card" role="dialog" aria-modal="true" aria-labelledby="notificationModalTitle">
+            <div class="notification-modal-header">
+                <div id="notificationModalIcon" class="notification-modal-icon">
+                    <i class="bi bi-info-circle" style="font-size: 22px;"></i>
+                </div>
+                <div>
+                    <h3 id="notificationModalTitle" class="notification-modal-title">Informasi</h3>
+                </div>
+            </div>
+            <p id="notificationModalMessage" class="notification-modal-message"></p>
+            <div class="notification-modal-footer">
+                <button id="notificationModalCloseBtn" type="button" class="notification-modal-close">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     @if($canUploadMaterials)
         <script>
             let uploadedFiles = [];
 
+            function showNotificationModal(title, message, type = 'info') {
+                const modal = document.getElementById('notificationModal');
+                const icon = document.getElementById('notificationModalIcon');
+                const titleEl = document.getElementById('notificationModalTitle');
+                const messageEl = document.getElementById('notificationModalMessage');
+
+                if (!modal || !icon || !titleEl || !messageEl) {
+                    return;
+                }
+
+                icon.className = 'notification-modal-icon';
+                const iconEl = icon.querySelector('i');
+                if (iconEl) {
+                    iconEl.className = 'bi';
+                }
+
+                if (type === 'success') {
+                    icon.classList.add('success');
+                    if (iconEl) iconEl.classList.add('bi-check-circle-fill');
+                } else if (type === 'error') {
+                    icon.classList.add('error');
+                    if (iconEl) iconEl.classList.add('bi-x-circle-fill');
+                } else if (type === 'warning') {
+                    icon.classList.add('warning');
+                    if (iconEl) iconEl.classList.add('bi-exclamation-triangle-fill');
+                } else {
+                    if (iconEl) iconEl.classList.add('bi-info-circle-fill');
+                }
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeNotificationModal() {
+                const modal = document.getElementById('notificationModal');
+                if (!modal) return;
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
             document.addEventListener("DOMContentLoaded", function () {
+                const notificationModal = document.getElementById('notificationModal');
+                const notificationModalCloseBtn = document.getElementById('notificationModalCloseBtn');
                 const dropzone = document.getElementById("dropzone");
                 const fileInput = document.getElementById("fileInput");
                 const fileList = document.getElementById("fileList");
                 const uploadedFilesList = document.getElementById("uploadedFiles");
                 const moduleForm = document.getElementById("moduleForm");
                 const submitBtn = document.getElementById("submitBtn");
+
+                if (notificationModalCloseBtn) {
+                    notificationModalCloseBtn.addEventListener('click', closeNotificationModal);
+                }
+
+                if (notificationModal) {
+                    notificationModal.addEventListener('click', (e) => {
+                        if (e.target === notificationModal) {
+                            closeNotificationModal();
+                        }
+                    });
+                }
 
                 if (!dropzone || !fileInput || !moduleForm || !submitBtn) return;
 
@@ -1256,6 +1259,9 @@
                             updateFileList();
                             fileInput.value = '';
                             showNotificationModal('Berhasil', data.message || 'Materi event berhasil diunggah dan dikirim ke admin.', 'success');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1200);
                         })
                         .catch(error => {
                             showNotificationModal('Gagal', error.message || 'Terjadi kesalahan saat mengunggah materi event.', 'error');

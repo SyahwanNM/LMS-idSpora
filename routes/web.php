@@ -734,6 +734,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Event Material Approval Routes
     Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');
     Route::get('/admin/event/{event}/material', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'show'])->name('admin.event-material.show');
+    Route::get('/admin/event/{event}/material/stream', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'stream'])->name('admin.event-material.stream');
     Route::post('/admin/event/{event}/material/approve', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'approve'])->name('admin.event-material.approve');
     Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
 });

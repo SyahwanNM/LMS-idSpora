@@ -162,7 +162,7 @@ class PublicTrainerProfileController extends Controller
 
         // Expertise tags (mocked or derived)
         $expertise = ['Data Science', 'Machine Learning', 'AI Ethics', 'Python', 'Neural Networks'];
-        
+
         // Social links fallback
         $socials = [
             'linkedin' => $trainer->linkedin_url ?? '#',

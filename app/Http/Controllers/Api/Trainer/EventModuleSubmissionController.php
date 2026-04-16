@@ -128,7 +128,7 @@ class EventModuleSubmissionController extends Controller
                 'event_id' => $event->id,
                 'module_submission_path' => $event->module_path,
                 'module_submission_url' => $event->module_file_url,
-                'module_submitted_at' => $event->created_at,
+                'module_submitted_at' => $event->module_submitted_at,
             ],
         ], 201);
     }

@@ -22,6 +22,67 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
+    private function latestEventInvitation(int $eventId, int $trainerId): ?TrainerNotification
+    {
+        if ($eventId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($eventId) {
+                $query->where('data', 'like', '%"entity_id":' . $eventId . '%');
+            })
+            ->latest('id')
+            ->first();
+    }
+
+    private function latestEventAssignment(int $eventId, int $trainerId): ?TrainerAssignment
+    {
+        if ($eventId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerAssignment::query()
+            ->where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->latest('id')
+            ->first();
+    }
+
+    private function ensureEventAssignmentForTrainer(Event $event, $trainer): ?TrainerAssignment
+    {
+        if (!$trainer) {
+            return null;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
+            return null;
+        }
+
+        $existing = $this->latestEventAssignment((int) $event->id, (int) $trainer->id);
+        if ($existing) {
+            return $existing;
+        }
+
+        $invitation = $this->latestEventInvitation((int) $event->id, (int) $trainer->id);
+        $invitationStatus = $invitation ? (string) $invitation->effectiveInvitationStatus() : '';
+
+        // Backward compatibility: for legacy multi-speaker events without assignment records,
+        // create accepted assignment so each trainer has isolated material/status.
+        $assignmentStatus = in_array($invitationStatus, ['rejected', 'expired'], true) ? $invitationStatus : 'accepted';
+
+        return TrainerAssignment::query()->create([
+            'trainer_id' => (int) $trainer->id,
+            'event_id' => (int) $event->id,
+            'invitation_notification_id' => $invitation ? (int) $invitation->id : null,
+            'status' => $assignmentStatus,
+            'scheme_type' => null,
+            'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+        ]);
+    }
+
     private function latestCourseInvitation(int $courseId, int $trainerId): ?TrainerNotification
     {
         if ($courseId <= 0 || $trainerId <= 0) {
@@ -1210,11 +1271,27 @@ class TrainerController extends Controller
 
     public function eventStudio($id)
     {
-        $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $trainer = Auth::user();
+        $event = \App\Models\Event::findOrFail($id);
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', $trainerId)
-            ->firstOrFail();
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            abort(403, 'Anda tidak memiliki akses ke materi event ini.');
+        }
+
+        $assignment = $this->ensureEventAssignmentForTrainer($event, $trainer)
+            ?: $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+
+        // For co-speakers, material state must be isolated per assignment.
+        if ($assignment && (int) ($event->trainer_id ?? 0) !== (int) ($trainer->id ?? 0)) {
+            $event->setAttribute('module_path', (string) ($assignment->material_path ?? ''));
+            $event->setAttribute('module_submission_path', (string) ($assignment->material_path ?? ''));
+            $event->setAttribute('module_submitted_at', $assignment->material_submitted_at ?: $assignment->materials_uploaded_at);
+            $event->setAttribute('material_status', (string) ($assignment->material_status ?: 'pending'));
+            $event->setAttribute('material_approved_at', $assignment->material_approved_at);
+            $event->setAttribute('module_verified_at', $assignment->material_approved_at);
+            $event->setAttribute('material_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
+            $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
+        }
 
         return view('trainer.event-studio', compact('event'));
     }
@@ -1885,11 +1962,25 @@ class TrainerController extends Controller
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000'
         ]);
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', Auth::id())
-            ->firstOrFail();
+        $trainer = Auth::user();
+        $event = \App\Models\Event::findOrFail($id);
+        $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0);
 
-        if (($event->material_status ?? '') === 'approved') {
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Anda tidak memiliki akses ke materi event ini.',
+            ], 403);
+        }
+
+        $assignment = $this->ensureEventAssignmentForTrainer($event, $trainer)
+            ?: $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+
+        $effectiveMaterialStatus = (string) ($isPrimaryTrainer
+            ? ($event->material_status ?? '')
+            : ($assignment->material_status ?? 'pending'));
+
+        if ($effectiveMaterialStatus === 'approved') {
             return response()->json([
                 'success' => false,
                 'error' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
@@ -1949,10 +2040,34 @@ class TrainerController extends Controller
         }
 
         if (!empty($primaryMaterialPath)) {
-            $event->update([
-                'module_path' => $primaryMaterialPath,
-                'material_status' => 'pending_review',
-            ]);
+            if ($isPrimaryTrainer || !$assignment) {
+                $event->update([
+                    'module_path' => $primaryMaterialPath,
+                    'material_status' => 'pending_review',
+                    'module_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejection_reason' => null,
+                    'module_verified_at' => null,
+                    'module_verified_by' => null,
+                    'module_rejected_at' => null,
+                    'module_rejected_by' => null,
+                    'module_rejection_reason' => null,
+                ]);
+            } else {
+                $assignment->update([
+                    'material_path' => $primaryMaterialPath,
+                    'materials_uploaded_at' => now(),
+                    'material_status' => 'pending_review',
+                    'material_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejected_at' => null,
+                    'material_rejected_by' => null,
+                    'material_rejection_reason' => null,
+                ]);
+            }
+
             if (str_starts_with((string) $file->getMimeType(), 'image/')) {
                 $latestImagePath = $filepath;
             } else {
@@ -1971,7 +2086,7 @@ class TrainerController extends Controller
         if ($latestModuleDocPath) {
             $updates['module_path'] = $latestModuleDocPath;
         }
-        if (!empty($updates)) {
+        if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
             $event->update($updates);
         }
 
@@ -2350,6 +2465,51 @@ class TrainerController extends Controller
         }
 
         abort(404, 'File sertifikat belum tersedia.');
+    }
+
+    private function trainerCanManageEventMaterials(Event $event, $trainer): bool
+    {
+        if (!$trainer) {
+            return false;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
+            return true;
+        }
+
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        if ($trainerName === '') {
+            return false;
+        }
+
+        $speakerRaw = trim((string) ($event->speaker ?? ''));
+        if ($speakerRaw === '') {
+            return false;
+        }
+
+        $parts = preg_split('/\s*[,;]+\s*/', $speakerRaw) ?: [];
+        $speakerNames = collect($parts)
+            ->map(fn($name) => mb_strtolower(trim((string) $name)))
+            ->filter(fn($name) => $name !== '')
+            ->unique()
+            ->values();
+
+        if ($speakerNames->contains($trainerName)) {
+            $assignment = $this->latestEventAssignment((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
+            if ($assignment) {
+                return in_array((string) ($assignment->status ?? ''), ['accepted', 'active'], true);
+            }
+
+            $invitation = $this->latestEventInvitation((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
+            if ($invitation) {
+                return in_array((string) $invitation->effectiveInvitationStatus(), ['accepted', 'pending'], true);
+            }
+
+            // Legacy fallback: speaker listed but no invitation/assignment record yet.
+            return true;
+        }
+
+        return false;
     }
 
 

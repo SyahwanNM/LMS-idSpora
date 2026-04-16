@@ -268,6 +268,10 @@
 @endsection
 
 @section('content')
+    @php
+        $currentStatus = (string) ($materialStatus ?? ($event->material_status ?? 'pending_review'));
+        $statusClass = in_array($currentStatus, ['pending', 'pending_review'], true) ? 'pending' : $currentStatus;
+    @endphp
     <div class="container-main">
         <button onclick="window.history.back()" class="back-button">
             <span>←</span> Kembali
@@ -295,7 +299,7 @@
 
                     <div class="material-info-item">
                         <div class="material-info-label">Trainer</div>
-                        <div class="material-info-value">{{ $event->trainer->name ?? 'Unknown' }}</div>
+                        <div class="material-info-value">{{ $materialTrainer->name ?? ($event->trainer->name ?? 'Unknown') }}</div>
                     </div>
 
                     <div class="material-info-item">
@@ -317,20 +321,20 @@
                 <div class="material-panel" style="margin-top: 24px;">
                     <div class="material-section-title">Uploaded Material</div>
 
-                    @if ($event->module_path)
+                    @if (!empty($materialPath))
                         <div class="material-file" target="_blank">
                             <div class="material-file-icon">📄</div>
                             <div class="material-file-info">
                                 <div class="material-file-name">
-                                    {{ basename($event->module_path) }}
+                                    {{ basename($materialPath) }}
                                 </div>
                                 <div class="material-file-size">
-                                    Uploaded: {{ optional($event->updated_at)->format('d M Y H:i') }}
+                                    Uploaded: {{ optional($materialSubmittedAt)->format('d M Y H:i') }}
                                 </div>
                             </div>
                         </div>
 
-                        <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="btn"
+                        <a href="{{ route('admin.event-material.stream', $event->id) }}?@if(!empty($assignment?->id))assignment_id={{ $assignment->id }}&@endifdownload=1" target="_blank" class="btn"
                             style="background: var(--admin-secondary); color: white; text-decoration: none; text-align: center;">
                             📥 Download Material
                         </a>
@@ -342,16 +346,19 @@
 
             <div>
                 <div class="sidebar-panel">
-                    <div class="status-badge {{ $event->material_status ?? 'pending' }}">
-                        {{ ucfirst($event->material_status ?? 'pending') }}
+                    <div class="status-badge {{ $statusClass }}">
+                        {{ $currentStatus === 'pending_review' ? 'Pending Review' : ucfirst($currentStatus) }}
                     </div>
 
-                    @if ($event->material_status === 'pending' || $event->material_status === 'pending_review')
+                    @if (in_array($currentStatus, ['pending', 'pending_review'], true))
                         <div class="action-form">
                             <!-- Approve Button -->
                             <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}"
                                 style="margin-bottom: 8px;">
                                 @csrf
+                                @if(!empty($assignment?->id))
+                                    <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                                @endif
                                 <button type="submit" class="btn btn-approve" onclick="return confirm('Approve material ini?')">
                                     ✓ Approve Material
                                 </button>
@@ -361,6 +368,9 @@
                             <div id="rejectForm" style="display: none;">
                                 <form method="POST" action="{{ route('admin.event-material.reject', $event->id) }}">
                                     @csrf
+                                    @if(!empty($assignment?->id))
+                                        <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                                    @endif
                                     <div class="form-group">
                                         <label class="form-label">Alasan Penolakan</label>
                                         <textarea name="rejection_reason" class="form-textarea"
@@ -385,7 +395,10 @@
                     @else
                         <div
                             style="padding: 12px; background: var(--admin-bg); border-radius: 8px; font-size: 12px; color: var(--admin-text-muted);">
-                            Material ini sudah di-review pada {{ optional($event->material_approved_at)->format('d M Y H:i') }}
+                            Material ini sudah di-review pada {{ optional($materialReviewedAt)->format('d M Y H:i') }}
+                            @if(!empty($materialRejectionReason) && $currentStatus === 'rejected')
+                                <div style="margin-top:8px; color:#991b1b;">Alasan: {{ $materialRejectionReason }}</div>
+                            @endif
                         </div>
                     @endif
                 </div>

@@ -232,9 +232,15 @@
             </div>
         @else
             @forelse ($materials as $material)
+                @php
+                    $event = $material->event;
+                    $status = (string) ($material->material_status ?? 'pending_review');
+                    $statusLabel = $status === 'pending_review' ? 'Pending Review' : ucfirst($status);
+                    $submittedAt = $material->material_submitted_at ?? $material->updated_at;
+                @endphp
                 <div class="material-card">
                     <div class="material-info">
-                        <div class="material-title">{{ $material->title }}</div>
+                        <div class="material-title">{{ $event->title ?? '-' }}</div>
                         <div class="material-trainer">
                             📌 Trainer: {{ $material->trainer->name ?? 'Unknown' }}
                         </div>
@@ -243,19 +249,19 @@
                             <span class="deadline-badge deadline-{{ $deadline['class'] }}">
                                 ⏱️ {{ $deadline['label'] }}
                             </span>
-                            @if(!empty($material->material_deadline))
+                            @if(!empty($event?->material_deadline))
                                 <span style="font-size: 11px; color: var(--admin-text-muted); margin-left: 6px;">
-                                    ({{ optional($material->material_deadline)->format('d M Y H:i') }})
+                                    ({{ optional($event->material_deadline)->format('d M Y H:i') }})
                                 </span>
                             @endif
                         </div>
                         <div class="material-meta">
-                            <span>📅 Upload: {{ optional($material->updated_at)->format('d M Y H:i') }}</span>
-                            <span>🗂️ Status: {{ ucfirst($material->material_status) }}</span>
+                            <span>📅 Upload: {{ optional($submittedAt)->format('d M Y H:i') }}</span>
+                            <span>🗂️ Status: {{ $statusLabel }}</span>
                         </div>
                     </div>
                     <div class="material-actions">
-                        <a href="{{ route('admin.event-material.show', $material->id) }}" class="btn-primary">
+                        <a href="{{ route('admin.event-material.show', $material->event_id) }}?assignment_id={{ $material->id }}" class="btn-primary">
                             View Details
                         </a>
                     </div>
