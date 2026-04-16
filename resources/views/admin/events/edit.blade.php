@@ -43,27 +43,44 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Pembicara <span
                                         class="text-danger">*</span></label>
-                                @php $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values(); @endphp
+                                @php
+                                    $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
+                                    $existingSpeakers = $event->speakers()->get()->keyBy(fn($s) => mb_strtolower(trim($s->name)));
+                                @endphp
                                 <div id="speakersContainer" class="d-flex flex-column gap-2">
                                     @if($speakerList->count())
                                         @foreach($speakerList as $i => $sp)
-                                            <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select"
-                                                    data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                    <option value="" disabled>Memuat pembicara...</option>
-                                                    <option value="{{ $sp }}" selected>{{ $sp }}</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            @php $spData = $existingSpeakers->get(mb_strtolower($sp)); @endphp
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select"
+                                                        data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                        value="{{ old('speaker_salaries.'.$i, $spData?->salary ?? '') }}"
+                                                        min="0" step="1000">
+                                                    <div class="form-text">Gaji untuk {{ $sp ?: 'pembicara ini' }}</div>
+                                                </div>
                                             </div>
                                         @endforeach
                                     @else
-                                        <div class="input-group speaker-row">
-                                            <select name="speakers[]" class="form-select speaker-select" data-selected=""
-                                                required>
-                                                <option value="" selected disabled>Pilih narasumber</option>
-                                            </select>
-                                            <button type="button" class="btn btn-outline-danger remove-speaker"
-                                                title="Hapus"><i class="bi bi-trash"></i></button>
+                                        <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                    <option value="" selected disabled>Pilih narasumber</option>
+                                                </select>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            </div>
+                                            <div class="mt-2">
+                                                <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
@@ -903,9 +920,20 @@
             function addSpeakerRow(prefill = '') {
                 if (!speakersContainer) return;
                 const div = document.createElement('div');
-                div.className = 'input-group speaker-row';
+                div.className = 'speaker-row border rounded p-2';
+                div.style.background = '#f8fafc';
                 const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
-                div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih narasumber</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>`;
+                div.innerHTML = `
+                    <div class="d-flex gap-2 align-items-center">
+                        <select name="speakers[]" class="form-select speaker-select" data-selected="${safe}">
+                            <option value="" selected disabled>Pilih narasumber</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="mt-2">
+                        <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                            placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                    </div>`;
                 speakersContainer.appendChild(div);
                 updateSpeakerRowsState();
                 refreshSpeakerSelects();

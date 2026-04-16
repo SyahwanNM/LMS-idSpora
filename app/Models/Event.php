@@ -273,6 +273,11 @@ class Event extends Model
         return $this->hasMany(\App\Models\EventTrainerModule::class)->where('status', 'approved');
     }
 
+    public function speakers()
+    {
+        return $this->hasMany(\App\Models\EventSpeaker::class)->orderBy('order');
+    }
+
     public function getStartAtAttribute(): ?Carbon
     {
         if (empty($this->event_date))
