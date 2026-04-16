@@ -168,7 +168,8 @@
                                         $hasZoomLink = !empty($event->zoom_link);
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                         $hasVbg = !empty($event->vbg_path);
-                                        $hasModule = !empty($event->module_path);
+                                        $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
+                                        $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
                                         // Absensi dianggap selesai jika ada file atau QR sudah aktif
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
@@ -332,7 +333,8 @@
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                     $requiresVbg = !$isOfflineOnly;
                                     $hasVbg = !empty($event->vbg_path);
-                                    $hasModule = !empty($event->module_path);
+                                    $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
+                                    $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
                                     // Absensi: selesai jika file atau QR aktif
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
@@ -372,13 +374,20 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
                                         <span>
                                             <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
                                             Module (Trainer)
                                         </span>
-                                        <span>
-                                            @if($hasModule)
+                                        <span class="d-flex flex-column align-items-end gap-1">
+                                            @if($eventTrainerModulesApproved->isNotEmpty())
+                                                @foreach($eventTrainerModulesApproved as $etm)
+                                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
+                                                        <i class="bi bi-file-earmark-arrow-down me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
+                                                        @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
+                                                    </a>
+                                                @endforeach
+                                            @elseif($hasModule)
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
                                                 <span class="text-muted">Belum ada</span>
@@ -447,11 +456,6 @@
                             <div class="modal-footer">
                                 <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                                      <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
-                                      <div class="text-center ">
-                                            <button type="button" class="btn btn-outline-primary px-4" data-edit-doc-toggle="{{ $event->id }}">
-                                                <i class="bi bi-pencil-square me-1"></i>Edit Upload
-                                            </button>
-                                        </div>
                                     <button type="submit" class="btn btn-primary px-4" form="docForm-{{ $event->id }}">
                                         <span class="me-1">Save changes</span>
                                         <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
@@ -489,32 +493,48 @@
                                     <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
                                 </div>
                                 <!-- Pembicara (dynamic, minimal 1 required) -->
+                                <div class="box-trainer-event">
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Nama Pembicara <span class="text-danger">*</span></label>
-                                    @php $oldSpeakers = old('speakers', []); @endphp
+                                    <label class="form-label fw-semibold">Nama Pembicara/Trainer <span class="text-danger">*</span></label>
+                                    @php $oldSpeakers = old('speakers', []); $oldSalaries = old('speaker_salaries', []); @endphp
                                     <div id="speakersContainer" class="d-flex flex-column gap-2">
                                         @if(!empty($oldSpeakers))
                                             @foreach($oldSpeakers as $i => $sp)
-                                            <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                    <option value="" disabled>Memuat pembicara...</option>
-                                                    <option value="{{ $sp }}" selected>{{ $sp }}</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                        value="{{ $oldSalaries[$i] ?? '' }}" min="0" step="1000">
+                                                </div>
                                             </div>
                                             @endforeach
                                         @else
-                                                <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
-                                                    <option value="" selected disabled>Pilih narasumber</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                        <option value="" selected disabled>Pilih pembicara</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Masukkan Gaji Pembicara/Trainer" min="0" step="1000">
+                                                    <div class="form-text">Isikan Gaji untuk Nama Pembicara/Trainer</div>
+                                                </div>
                                             </div>
                                         @endif
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
                                     <input type="hidden" name="speaker" id="speakerCombined" value="{{ old('speaker') }}">
                                     <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara bersifat opsional.</div>
+                                </div>
                                 </div>
                                 <!-- Materi (kategori konten) -->
                                 <div class="mb-3">
@@ -1556,14 +1576,20 @@
         function addSpeakerRow(prefill=''){
             if(!speakersContainer) return;
             const div = document.createElement('div');
-            div.className = 'input-group speaker-row';
+            div.className = 'speaker-row border rounded p-2';
+            div.style.background = '#f8fafc';
             const safeVal = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
             div.innerHTML = `
-                <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
-                    <option value="" selected disabled>Pilih narasumber</option>
-                </select>
-                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
-            `;
+                <div class="d-flex gap-2 align-items-center">
+                    <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
+                        <option value="" selected disabled>Pilih narasumber</option>
+                    </select>
+                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                </div>
+                <div class="mt-2">
+                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                        placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                </div>`;
             speakersContainer.appendChild(div);
             updateSpeakerRowsState();
             refreshSpeakerSelects();
@@ -2963,9 +2989,20 @@ function initEditEventSpeakers(modalEl){
     function addSpeakerRow(prefill = '') {
         if (!speakersContainer) return;
         const div = document.createElement('div');
-        div.className = 'input-group speaker-row';
+        div.className = 'speaker-row border rounded p-2';
+        div.style.background = '#f8fafc';
         const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
-        div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih narasumber</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>`;
+        div.innerHTML = `
+            <div class="d-flex gap-2 align-items-center">
+                <select name="speakers[]" class="form-select speaker-select" data-selected="${safe}">
+                    <option value="" selected disabled>Pilih narasumber</option>
+                </select>
+                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+            </div>
+            <div class="mt-2">
+                <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+            </div>`;
         speakersContainer.appendChild(div);
         updateSpeakerRowsState();
         refreshSpeakerSelects();

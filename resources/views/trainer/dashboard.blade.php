@@ -935,11 +935,12 @@
               $studioUrl = $event ? route('trainer.events.studio', $event->id) : route('trainer.events');
               $deadline = $assignment->sla_upload_deadline;
               $deadlineIso = $deadline ? $deadline->toIso8601String() : null;
-              $materialStatus = strtolower((string) data_get($event, 'material_status', 'pending_review'));
+              $materialStatus = strtolower((string) ($assignment->material_status ?? 'pending'));
               $approvalLabel = match ($materialStatus) {
                 'approved' => 'Disetujui',
                 'rejected' => 'Revisi',
-                default => 'Menunggu Review Admin',
+                'pending_review' => 'Menunggu Review Admin',
+                default => 'Belum Upload',
               };
               $approvalClass = match ($materialStatus) {
                 'approved' => 'is-green',
@@ -947,6 +948,9 @@
                 default => 'is-yellow',
               };
               $schemePercent = (int) ($assignmentRow['scheme_percent'] ?? 0);
+              $activeParticipantsCount = (int) ($assignmentRow['active_participants_count'] ?? 0);
+              $feePerParticipant = (float) ($assignmentRow['fee_per_participant'] ?? 0);
+              $estimatedFee = (float) ($assignmentRow['estimated_fee'] ?? 0);
               $assignmentIcon = match ($schemePercent) {
                 35 => 'bi-journal-text',
                 25 => 'bi-camera-video',
@@ -963,6 +967,11 @@
                   <p class="assignment-meta">
                     {{ $eventDate }} • {{ $assignmentRow['scheme_label'] }}
                   </p>
+                  <p class="assignment-meta">
+                    Fee/Peserta Rp {{ number_format($feePerParticipant, 0, ',', '.') }}
+                    • Peserta Aktif {{ number_format($activeParticipantsCount) }}
+                    • Estimasi Rp {{ number_format($estimatedFee, 0, ',', '.') }}
+                  </p>
                 </div>
               </div>
 
@@ -971,9 +980,9 @@
                   <div class="assignment-status-line">
                     <span class="mini-pill is-blue">{{ $assignmentRow['scheme_percent'] }}%</span>
                     <span class="mini-pill {{ $approvalClass }}">{{ $approvalLabel }}</span>
-                    @if($materialStatus === 'rejected' && !empty(data_get($event, 'material_rejection_reason')))
+                    @if($materialStatus === 'rejected' && !empty($assignment->material_rejection_reason))
                       <span
-                        class="mini-pill is-red">{{ Str::limit((string) data_get($event, 'material_rejection_reason'), 56) }}</span>
+                        class="mini-pill is-red">{{ Str::limit((string) $assignment->material_rejection_reason, 56) }}</span>
                     @endif
                   </div>
 

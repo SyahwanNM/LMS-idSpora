@@ -51,6 +51,64 @@ class TrainerController extends Controller
             ->first();
     }
 
+    private function resolveEventCompensation(Event $event, int $trainerId, ?TrainerAssignment $assignment = null): array
+    {
+        $activeParticipants = (int) ($event->active_participants_count ?? $event->participants_count ?? 0);
+        if ($activeParticipants <= 0 && method_exists($event, 'registrations')) {
+            $activeParticipants = (int) $event->registrations()
+                ->where('status', 'active')
+                ->count();
+        }
+
+        if (!$assignment && $trainerId > 0) {
+            $assignment = $this->latestEventAssignment((int) $event->id, $trainerId);
+        }
+
+        $schemePercent = (int) ($assignment?->getSchemePercentage() ?? 0);
+        $isFallbackToEventPrice = false;
+
+        if ($schemePercent <= 0 && $trainerId > 0) {
+            $acceptedNotification = TrainerNotification::query()
+                ->where('trainer_id', $trainerId)
+                ->where('type', 'event_invitation')
+                ->where(function ($query) use ($event) {
+                    $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+                })
+                ->orderByDesc('id')
+                ->first();
+
+            $notificationScheme = (int) data_get($acceptedNotification?->data ?? [], 'scheme_type', 0);
+            $notificationStatus = (string) data_get($acceptedNotification?->data ?? [], 'invitation_status', (string) ($acceptedNotification?->invitation_status ?? ''));
+
+            if ($notificationScheme > 0 && in_array($notificationStatus, ['accepted', 'completed'], true)) {
+                $schemePercent = (int) (TrainerAssignment::getSchemeDefinitions()[$notificationScheme]['percentage'] ?? 0);
+            }
+        }
+
+        $eventPrice = (float) ($event->price ?? 0);
+
+        if ($schemePercent <= 0 && $eventPrice > 0) {
+            // Fallback for legacy/main-trainer events that do not have assignment scheme yet.
+            $isFallbackToEventPrice = true;
+        }
+
+        $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
+            ? round(($eventPrice * $schemePercent) / 100, 2)
+            : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
+        $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
+            ? round($activeParticipants * $feePerParticipant, 2)
+            : 0;
+
+        return [
+            'scheme_percent' => $schemePercent,
+            'event_price' => $eventPrice,
+            'active_participants_count' => $activeParticipants,
+            'fee_per_participant' => $feePerParticipant,
+            'estimated_fee' => $estimatedFee,
+            'is_fallback_to_event_price' => $isFallbackToEventPrice,
+        ];
+    }
+
     private function ensureEventAssignmentForTrainer(Event $event, $trainer): ?TrainerAssignment
     {
         if (!$trainer) {
@@ -536,7 +594,15 @@ class TrainerController extends Controller
         $activeAssignments = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
-            ->with(['event'])
+            ->with([
+                'event' => function ($query) {
+                    $query->withCount([
+                        'registrations as active_participants_count' => function ($registrationQuery) {
+                            $registrationQuery->where('status', 'active');
+                        }
+                    ]);
+                }
+            ])
             ->orderByRaw('CASE WHEN sla_upload_deadline IS NULL THEN 1 ELSE 0 END')
             ->orderBy('sla_upload_deadline')
             ->limit(6)
@@ -545,13 +611,27 @@ class TrainerController extends Controller
                 $schemeDefinitions = TrainerAssignment::getSchemeDefinitions();
                 $schemeType = (int) ($assignment->scheme_type ?? 0);
                 $scheme = $schemeDefinitions[$schemeType] ?? [];
+                $event = $assignment->event;
+                $eventPrice = (float) ($event->price ?? 0);
+                $activeParticipants = (int) ($event->active_participants_count ?? 0);
+                $schemePercent = (int) ($scheme['percentage'] ?? 0);
+                $feePerParticipant = $eventPrice > 0 && $schemePercent > 0
+                    ? round(($eventPrice * $schemePercent) / 100, 2)
+                    : 0;
+                $estimatedFee = $activeParticipants > 0 && $feePerParticipant > 0
+                    ? round($activeParticipants * $feePerParticipant, 2)
+                    : 0;
 
                 return [
                     'assignment' => $assignment,
-                    'event_title' => (string) optional($assignment->event)->title,
-                    'event_date' => optional($assignment->event?->event_date)?->format('d M Y'),
+                    'event_title' => (string) optional($event)->title,
+                    'event_date' => optional($event?->event_date)?->format('d M Y'),
                     'scheme_label' => (string) ($scheme['label'] ?? 'Skema'),
-                    'scheme_percent' => (int) ($scheme['percentage'] ?? 0),
+                    'scheme_percent' => $schemePercent,
+                    'event_price' => $eventPrice,
+                    'active_participants_count' => $activeParticipants,
+                    'fee_per_participant' => $feePerParticipant,
+                    'estimated_fee' => $estimatedFee,
                     'deadline' => $assignment->sla_upload_deadline,
                     'remaining_hours' => $assignment->getRemainingHours(),
                     'status_label' => match ((string) $assignment->status) {
@@ -837,8 +917,15 @@ class TrainerController extends Controller
     {
         $user = \Illuminate\Support\Facades\Auth::user();
         $search = $request->query('search');
+        $trainerName = trim((string) ($user->name ?? ''));
 
-        $query = \App\Models\Event::where('trainer_id', $user->id)
+        // Include events where trainer is assigned via trainer_id OR speaker name match
+        $query = \App\Models\Event::where(function ($q) use ($user, $trainerName) {
+                $q->where('trainer_id', $user->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
@@ -854,11 +941,38 @@ class TrainerController extends Controller
         $events = $query
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->filter(function ($event) use ($user, $trainerName) {
+                // Exact name match for speaker field to avoid partial false positives
+                if ((int) ($event->trainer_id ?? 0) === (int) $user->id) return true;
+                if ($trainerName === '') return false;
+                $names = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
+                return in_array(mb_strtolower($trainerName), $names, true);
+            })
+            ->values();
 
-        $upcomingCount = \App\Models\Event::where('trainer_id', $user->id)
-            ->where('event_date', '>=', now())
-            ->count();
+        $assignmentMap = TrainerAssignment::query()
+            ->where('trainer_id', (int) $user->id)
+            ->whereIn('event_id', $events->pluck('id')->all())
+            ->orderByDesc('id')
+            ->get()
+            ->unique('event_id')
+            ->keyBy('event_id');
+
+        $events = $events->map(function ($event) use ($user, $assignmentMap) {
+            $assignment = $assignmentMap->get((int) $event->id);
+            $compensation = $this->resolveEventCompensation($event, (int) $user->id, $assignment);
+
+            foreach ($compensation as $key => $value) {
+                $event->setAttribute($key, $value);
+            }
+
+            return $event;
+        })->values();
+
+        $upcomingCount = $events->filter(function ($event) {
+            return $event->event_date && \Carbon\Carbon::parse($event->event_date)->gte(now()->startOfDay());
+        })->count();
 
         $certifiedEventIds = \App\Models\TrainerCertificate::query()
             ->where('trainer_id', $user->id)
@@ -919,6 +1033,7 @@ class TrainerController extends Controller
     public function eventDetail($id)
     {
         $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
 
         $pendingInvitation = TrainerNotification::query()
             ->where('trainer_id', (int) $trainerId)
@@ -939,8 +1054,15 @@ class TrainerController extends Controller
             && in_array($invitationStatus, ['pending', 'accepted'], true);
 
         $eventQuery = \App\Models\Event::query()->where('id', $id);
+
         if (!$canOpenFromInvitation) {
-            $eventQuery->where('trainer_id', $trainerId);
+            // Allow access if trainer_id matches OR trainer name is in speaker field
+            $eventQuery->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            });
         }
 
         $event = $eventQuery
@@ -951,12 +1073,40 @@ class TrainerController extends Controller
             ])
             ->firstOrFail();
 
-        return view('trainer.detail-event', compact('event'));
+        // Extra check: if matched via speaker LIKE, verify exact name match
+        if (!$canOpenFromInvitation && (int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
+            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
+            if (!in_array($trainerName, $speakerNames, true)) {
+                abort(403);
+            }
+        }
+
+        // Per-trainer module status
+        $myModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('trainer_id', $trainerId)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $myMaterialStatus = 'not_uploaded';
+        if ($myModules->isNotEmpty()) {
+            if ($myModules->contains('status', 'approved')) {
+                $myMaterialStatus = 'approved';
+            } elseif ($myModules->contains('status', 'pending_review')) {
+                $myMaterialStatus = 'pending_review';
+            } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
+                $myMaterialStatus = 'rejected';
+            }
+        }
+
+        $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId);
+
+        return view('trainer.detail-event', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
     }
 
     public function downloadEventVbg($id)
     {
         $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
 
         $pendingInvitation = TrainerNotification::query()
             ->where('trainer_id', (int) $trainerId)
@@ -978,11 +1128,15 @@ class TrainerController extends Controller
 
         $eventQuery = \App\Models\Event::query()->where('id', $id);
         if (!$canOpenFromInvitation) {
-            $eventQuery->where('trainer_id', $trainerId);
+            $eventQuery->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            });
         }
 
-        $event = $eventQuery
-            ->firstOrFail();
+        $event = $eventQuery->firstOrFail();
 
         $isOfflineEvent = !empty($event->maps_url)
             || (!empty($event->latitude) && !empty($event->longitude));
@@ -1272,6 +1426,8 @@ class TrainerController extends Controller
     public function eventStudio($id)
     {
         $trainer = Auth::user();
+        $trainerId = (int) ($trainer->id ?? 0);
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
         $event = \App\Models\Event::findOrFail($id);
 
         if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
@@ -1293,7 +1449,34 @@ class TrainerController extends Controller
             $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
         }
 
-        return view('trainer.event-studio', compact('event'));
+        // Exact speaker name check for LIKE matches
+        if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
+            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
+            if (!in_array($trainerName, $speakerNames, true)) {
+                abort(403);
+            }
+        }
+
+        // Per-trainer module status
+        $myModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('trainer_id', $trainerId)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $myMaterialStatus = 'not_uploaded';
+        if ($myModules->isNotEmpty()) {
+            if ($myModules->contains('status', 'approved')) {
+                $myMaterialStatus = 'approved';
+            } elseif ($myModules->contains('status', 'pending_review')) {
+                $myMaterialStatus = 'pending_review';
+            } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
+                $myMaterialStatus = 'rejected';
+            }
+        }
+
+        $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId, $assignment);
+
+        return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
     }
 
     public function saveEventQuiz(Request $request, $id)
@@ -1496,7 +1679,6 @@ class TrainerController extends Controller
     public function editProfile()
     {
         $trainer = Auth::user();
-
         return view('trainer.profile-edit', compact('trainer'));
     }
 
@@ -1962,6 +2144,9 @@ class TrainerController extends Controller
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000'
         ]);
 
+        $trainerId = Auth::id();
+        $trainerName = mb_strtolower(trim((string) (Auth::user()?->name ?? '')));
+
         $trainer = Auth::user();
         $event = \App\Models\Event::findOrFail($id);
         $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0);
@@ -1999,18 +2184,18 @@ class TrainerController extends Controller
 
         $invitationData = is_array($invitation?->data) ? $invitation->data : [];
         $invitationUploadDueAtRaw = (string) data_get($invitationData, 'upload_due_at', '');
-        $effectiveDeadline = $invitationUploadDueAtRaw !== ''
-            ? Carbon::parse($invitationUploadDueAtRaw)
-            : ($materialStatus === 'rejected'
-                ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
-                : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7)));
+        $effectiveDeadline = null;
+        if ($invitationUploadDueAtRaw !== '') {
+            $effectiveDeadline = Carbon::parse($invitationUploadDueAtRaw);
+        } elseif (!empty($event->material_deadline)) {
+            $effectiveDeadline = Carbon::parse($event->material_deadline);
+        }
+        // No deadline = always allowed to upload
 
-        if (!empty($effectiveDeadline) && now()->gt($effectiveDeadline)) {
+        if ($effectiveDeadline && now()->gt($effectiveDeadline)) {
             return response()->json([
                 'success' => false,
-                'error' => $materialStatus === 'rejected'
-                    ? 'Batas revisi materi sudah lewat (H-3). Silakan hubungi admin trainer.'
-                    : 'Batas pengumpulan materi sudah lewat (H-7). Silakan hubungi admin trainer.',
+                'error' => 'Batas pengumpulan materi sudah lewat. Silakan hubungi admin trainer.',
             ], 422);
         }
 
@@ -2022,6 +2207,7 @@ class TrainerController extends Controller
         $primaryMaterialPath = null;
         $latestImagePath = null;
         $latestModuleDocPath = null;
+        $firstFile = null;
 
         foreach ($request->file('files') as $file) {
             $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
@@ -2036,6 +2222,7 @@ class TrainerController extends Controller
 
             if ($primaryMaterialPath === null) {
                 $primaryMaterialPath = $filepath;
+                $firstFile = $file;
             }
         }
 
@@ -2089,7 +2276,6 @@ class TrainerController extends Controller
         if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
             $event->update($updates);
         }
-
         if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
             app(TrainerActivityService::class)->resetLateUploads(Auth::user(), [
                 'entity_type' => 'event',

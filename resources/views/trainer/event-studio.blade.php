@@ -260,6 +260,11 @@
             color: #92400e;
         }
 
+        .status-badge.not-submitted {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
         .status-banner {
             display: flex;
             align-items: flex-start;
@@ -918,19 +923,22 @@
                                     'approved' => 'approved',
                                     'rejected' => 'rejected',
                                     'pending_review' => 'pending',
-                                    default => 'pending',
+                                    'not_uploaded' => 'not-submitted',
+                                    default        => 'pending',
                                 };
                                 $statusIcon = match ($displayMaterialStatus) {
                                     'approved' => '✓',
                                     'rejected' => '✕',
                                     'pending_review' => '⏳',
-                                    default => '📋',
+                                    'not_uploaded' => '—',
+                                    default        => '📋',
                                 };
                                 $badgeLabel = match ($displayMaterialStatus) {
                                     'approved' => 'Material Approved',
                                     'rejected' => 'Revision Needed',
                                     'pending_review' => 'In Review',
-                                    default => 'Submitted',
+                                    'not_uploaded' => 'Not Submitted',
+                                    default        => 'Submitted',
                                 };
                             @endphp
                             <span class="status-badge {{ $badgeClass }}">
@@ -1218,7 +1226,7 @@
                     e.preventDefault();
 
                     if (uploadedFiles.length === 0) {
-                        console.warn("Silakan upload minimal 1 file sebelum submit.");
+                        alert('Silakan pilih file terlebih dahulu sebelum submit.');
                         return;
                     }
 
@@ -1230,7 +1238,7 @@
 
                     if (invalidFiles.length > 0) {
                         const names = invalidFiles.map((f) => f.name).join(', ');
-                        console.warn('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
+                        alert('File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.');
                         return;
                     }
 
@@ -1249,7 +1257,11 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     })
                         .then(async (response) => {
-                            const data = await response.json().catch(() => ({}));
+                            const text = await response.text();
+                            let data = {};
+                            try { data = JSON.parse(text); } catch(e) {
+                                throw new Error('Server error: ' + text.substring(0, 200));
+                            }
                             if (!response.ok || !data.success) {
                                 const message = data.error || data.message || 'Gagal mengunggah materi event.';
                                 throw new Error(message);
@@ -1264,7 +1276,7 @@
                             }, 1200);
                         })
                         .catch(error => {
-                            showNotificationModal('Gagal', error.message || 'Terjadi kesalahan saat mengunggah materi event.', 'error');
+                            alert('Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.'));
                         })
                         .finally(() => {
                             submitBtn.disabled = false;

@@ -66,6 +66,96 @@
                 </div>
             </div>
 
+            <!-- Event Modules Approval Section -->
+            <div class="detail-card mt-4">
+                <h5>
+                    <i class="bi bi-file-earmark-arrow-up" style="color: #3949ab;"></i>
+                    Materi Event (Upload Trainer)
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Event</th>
+                                <th>Nama File</th>
+                                <th>Tanggal Upload</th>
+                                <th>Status</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($pendingEventModules ?? collect() as $etm)
+                            <tr>
+                                <td>
+                                    <div class="fw-bold" style="font-size:0.85rem;">{{ $etm->event?->title ?? '-' }}</div>
+                                    <div class="text-muted" style="font-size:0.75rem;">{{ $etm->event?->jenis ?? '' }}{{ $etm->event?->event_date ? ' • ' . $etm->event->event_date->format('d M Y') : '' }}</div>
+                                </td>
+                                <td>{{ $etm->original_name }}</td>
+                                <td>{{ $etm->created_at?->format('d M Y H:i') }}</td>
+                                <td>
+                                    @if($etm->status === 'approved')
+                                        <span class="badge bg-success">Disetujui</span>
+                                    @elseif($etm->status === 'rejected')
+                                        <span class="badge bg-danger">Ditolak</span>
+                                        @if($etm->rejection_reason)
+                                            <div class="text-muted" style="font-size:0.7rem;">{{ $etm->rejection_reason }}</div>
+                                        @endif
+                                    @else
+                                        <span class="badge bg-warning text-dark">Pending Review</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="btn btn-outline-secondary btn-sm" title="Lihat file">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if($etm->status === 'pending_review')
+                                        <form action="{{ route('admin.event-material.approve', $etm->event) }}" method="POST" style="display:inline-block;">
+                                            @csrf
+                                            <input type="hidden" name="module_id" value="{{ $etm->id }}">
+                                            <button type="submit" class="btn btn-success btn-sm" title="Approve" onclick="return confirm('Approve materi ini?')">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-danger btn-sm" title="Tolak"
+                                            onclick="showRejectEventModuleModal({{ $etm->id }}, '{{ route('admin.event-material.reject', $etm->event) }}')">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Belum ada materi event yang diupload trainer ini.</td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal reject event module -->
+            <div class="modal fade" id="rejectEventModuleModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form id="rejectEventModuleForm" method="POST" action="#">
+                            @csrf
+                            <input type="hidden" name="module_id" id="rejectEventModuleId">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Alasan Penolakan Materi Event</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <textarea name="reason" class="form-control" rows="3" placeholder="Alasan penolakan (wajib)" required></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-danger">Tolak Materi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modal for rejection reason (simple JS, can be improved) -->
             <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
@@ -97,6 +187,12 @@
                 document.getElementById('rejectModuleId').value = moduleId;
                 document.getElementById('rejectForm').action = actionUrl;
                 var modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+                modal.show();
+            }
+            function showRejectEventModuleModal(moduleId, actionUrl) {
+                document.getElementById('rejectEventModuleId').value = moduleId;
+                document.getElementById('rejectEventModuleForm').action = actionUrl;
+                var modal = new bootstrap.Modal(document.getElementById('rejectEventModuleModal'));
                 modal.show();
             }
             </script>

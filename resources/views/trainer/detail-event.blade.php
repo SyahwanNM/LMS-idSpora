@@ -115,6 +115,31 @@
                 <span class="info-card-value">{{ $event->location ?? 'Tech Hub Hall A' }}</span>
               </div>
             </div>
+
+            <div class="info-card">
+              <div class="info-icon-shell">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M16 8h-5a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H8"></path>
+                  <path d="M12 6v2"></path>
+                  <path d="M12 16v2"></path>
+                </svg>
+              </div>
+              <div class="info-card-content">
+                <span class="info-card-label">FEE TRAINER</span>
+                @if((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
+                  <span class="info-card-value">
+                    Rp {{ number_format((float) ($eventCompensation['fee_per_participant'] ?? 0), 0, ',', '.') }}/peserta
+                  </span>
+                  @if((bool) ($eventCompensation['is_fallback_to_event_price'] ?? false))
+                    <span class="info-card-label">Sumber: harga event (skema belum dipilih)</span>
+                  @endif
+                @else
+                  <span class="info-card-value">Belum diatur admin</span>
+                @endif
+              </div>
+            </div>
           </div>
         </div>
 
@@ -343,6 +368,49 @@
             </div>
           </div>
         </div>
+
+        @php
+          $statusColor = match($myMaterialStatus ?? 'not_uploaded') {
+            'approved'     => '#166534',
+            'pending_review' => '#92400e',
+            'rejected'     => '#991b1b',
+            default        => '#64748b',
+          };
+          $statusBg = match($myMaterialStatus ?? 'not_uploaded') {
+            'approved'     => '#dcfce7',
+            'pending_review' => '#fef3c7',
+            'rejected'     => '#fee2e2',
+            default        => '#f1f5f9',
+          };
+          $statusLabel = match($myMaterialStatus ?? 'not_uploaded') {
+            'approved'     => '✓ Materi Disetujui',
+            'pending_review' => '⏳ Menunggu Review',
+            'rejected'     => '✕ Perlu Revisi',
+            default        => '— Belum Upload',
+          };
+        @endphp
+
+        <div style="margin-top:12px; padding:10px 14px; background:{{ $statusBg }}; border-radius:10px; font-size:13px; font-weight:600; color:{{ $statusColor }};">
+          {{ $statusLabel }}
+        </div>
+
+        @if(($myModules ?? collect())->isNotEmpty())
+          <div style="margin-top:10px;">
+            @foreach($myModules as $mod)
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:#f8fafc; border-radius:8px; margin-bottom:6px; border:1px solid #e2e8f0; font-size:12px;">
+                <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/><path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/></svg>
+                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">{{ $mod->original_name }}</span>
+                </div>
+                <span style="font-size:11px; padding:2px 7px; border-radius:20px; font-weight:700;
+                  background:{{ $mod->status === 'approved' ? '#dcfce7' : ($mod->status === 'rejected' ? '#fee2e2' : '#fef3c7') }};
+                  color:{{ $mod->status === 'approved' ? '#166534' : ($mod->status === 'rejected' ? '#991b1b' : '#92400e') }};">
+                  {{ $mod->status === 'approved' ? 'Approved' : ($mod->status === 'rejected' ? 'Ditolak' : 'Pending') }}
+                </span>
+              </div>
+            @endforeach
+          </div>
+        @endif
       </div>
     </div>
   </div>

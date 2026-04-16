@@ -3702,6 +3702,16 @@ input[type="time"] {
     width: 200%;
     margin-left: -250px;
 }
+.box-trainer-event{
+    display: flex;
+    gap: 20px;
+}
+.box-nama-trainer{
+    width: 240px;
+}
+.box-gaji-trainer{
+    width: 300px;
+}
 
 /*MODAL VIEW EVENT*/
 .img-event-view {

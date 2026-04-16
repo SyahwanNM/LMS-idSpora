@@ -835,7 +835,7 @@
                                                 $eventDeadline = $eventModule->event?->material_deadline;
                                                 $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
                                             @endphp
-                                            <div style="font-weight: 600; color: #334155;">{{ $eventDeadline ? $eventDeadline->format('d M Y H:i') : 'Belum ditentukan' }}</div>
+                                            <div style="font-weight: 600; color: #334155;">{{ $eventDeadline ? \Carbon\Carbon::parse($eventDeadline)->format('d M Y H:i') : 'Belum ditentukan' }}</div>
                                             <div style="font-size: 0.75rem; color: {{ $eventLate ? '#b91c1c' : '#64748b' }};">{{ $eventLate ? 'Melewati deadline' : 'Tanpa deadline' }}</div>
                                         </td>
                                         <td class="text-end">

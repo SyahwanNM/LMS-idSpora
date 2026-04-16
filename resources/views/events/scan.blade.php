@@ -109,8 +109,9 @@
         statusEl.className = 'status' + (cls ? (' ' + cls) : '');
     }
     function setResult(text, cls){
-        resultEl.textContent = text;
-        resultEl.className = 'status' + (cls ? (' ' + cls) : '');
+        // Tidak tampilkan teks hasil scan
+        resultEl.textContent = '';
+        resultEl.className = '';
     }
 
     function setUploadEnabled(enabled){
@@ -179,7 +180,7 @@
                 setStatus('Kamera dihentikan.', 'warn');
             }
         } catch (e) {
-            setStatus('Gagal menghentikan kamera.', 'err');
+            // Abaikan error saat menghentikan kamera
         }
     }
 
@@ -387,4 +388,4 @@
 </script>
 </body>
 </html>
-@include('partials.footer-before-login')
+@include('partials.footer-after-login')

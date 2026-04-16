@@ -1546,8 +1546,10 @@
 
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
-                    $moduleUnlocked = $isRegistered && $eventIsFinished && !empty($event->module_path);
+                    $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
+                    $moduleUnlocked = $isRegistered && $eventIsFinished && $approvedModules->isNotEmpty();
                 @endphp
+                @if($approvedModules->isNotEmpty() || !$eventIsFinished || !$isRegistered)
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -1561,19 +1563,18 @@
                     </div>
                     <div class="resource-value">
                         <h6>Modules Materi</h6>
-                        <p>
-                            @if(!$isRegistered)
-                                Available upon registration
-                            @elseif(!$eventIsFinished)
-                                Available after event completion
-                            @elseif(empty($event->module_path))
-                                Not available
-                            @else
-                                Download materi event
-                            @endif
-                        </p>
+                        @if(!$isRegistered)
+                            <p>Available upon registration</p>
+                        @elseif(!$eventIsFinished)
+                            <p>Available after event completion</p>
+                        @elseif($approvedModules->isEmpty())
+                            <p>Not available</p>
+                        @else
+                            <p>{{ $approvedModules->count() }} modul tersedia</p>
+                        @endif
                     </div>
                     @if($moduleUnlocked)
+<<<<<<< HEAD
                         <a class="link-share" href="{{ route('events.modules.download', $event) }}" title="Unduh Materi">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
                                 class="share-bi bi-download" viewBox="0 0 16 16">
@@ -1581,15 +1582,77 @@
                                     d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
                                 <path
                                     d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
+=======
+                        <button type="button" class="link-share d-flex align-items-center"
+                            data-bs-toggle="modal" data-bs-target="#modulesDownloadModal"
+                            title="Unduh Materi"
+                            style="background:none; border:none; padding:0; cursor:pointer; margin-left:auto;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+>>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                             </svg>
-                        </a>
+                        </button>
                     @else
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                     @endif
                 </div>
+                @endif
 
+<<<<<<< HEAD
                 <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}"
                     style="position:relative;">
+=======
+                {{-- Modal unduh modul --}}
+                @if($moduleUnlocked)
+                <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:16px;">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" id="modulesDownloadModalLabel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                                        <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                                    </svg>
+                                    Unduh Materi Event
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pt-2">
+                                <p class="text-muted mb-3" style="font-size:13px;">Pilih materi yang ingin diunduh:</p>
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach($approvedModules as $mod)
+                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
+                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                </svg>
+                                            </div>
+                                            <div style="overflow:hidden;">
+                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
+                                                @if($mod->trainer)
+                                                    <div style="font-size:11px;color:#64748b;">oleh {{ $mod->trainer->name }}</div>
+                                                @endif
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && !$eventIsFinished && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}" style="position:relative;">
+>>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
@@ -1670,6 +1733,7 @@
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
+<<<<<<< HEAD
                                 @php
                                     $certReady = $eventIsFinished || ($registration->certificate_issued_at ?? false);
                                 @endphp
@@ -1684,17 +1748,24 @@
                                 @else
                                     <p>Sertifikat akan tersedia setelah acara selesai.</p>
                                 @endif
+=======
+                                <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
+                                <div class="d-flex gap-2 mt-2">
+                                    <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
+                                    <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                                </div>
+>>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                             @elseif($eventIsFinished)
-                                <p>Sertifikat tersedia! Silakan isi feedback terlebih dahulu.</p>
-                                <a href="#feedbackSection" class="btn btn-sm btn-primary mt-2">Isi Feedback</a>
+                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
                             @else
-                                <p>Tersedia setelah Anda mengisi feedback untuk acara ini.</p>
+                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
                             @endif
                         @else
                             <p>Tersedia setelah acara selesai.</p>
                         @endif
                     </div>
                 </div>
+<<<<<<< HEAD
 
                 <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
                     @if(isset($event) && $event->type === 'online' && !empty($event->zoom_link))
@@ -1709,6 +1780,23 @@
                             <h6>Link Zoom</h6>
                             <p>Available for registered participants</p>
                         </div>
+=======
+            
+            <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                    @php
+                        $isHybrid = !empty($event->zoom_link) && (!empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude)));
+                    @endphp
+                    <div class="img-resource">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z"/>
+                        </svg>
+                    </div>
+                    <div class="resource-value">
+                        <h6>Link Zoom</h6>
+                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                    </div>
+                    @if($isRegistered && !empty($event->zoom_link))
+>>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                         <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
                                 class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
@@ -1719,6 +1807,7 @@
                             </svg>
                         </a>
                     @else
+<<<<<<< HEAD
                         <div class="img-resource">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                 class="bi bi-geo-alt" viewBox="0 0 16 16">
@@ -1764,6 +1853,65 @@
                                 </svg>
                             </a>
                         @else
+=======
+                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                    @endif
+                </div>
+
+                @php
+                    $mapLink = '';
+                    if (!empty($event->maps_url)) {
+                        $maps = trim($event->maps_url);
+                        if (\Illuminate\Support\Str::startsWith($maps, ['http://','https://','//'])) {
+                            $mapLink = $maps;
+                        } else {
+                            try { $mapLink = Storage::url($maps); } catch (\Throwable $e) { $mapLink = $maps; }
+                        }
+                    } elseif (!empty($event->latitude) && !empty($event->longitude)) {
+                        $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
+                    }
+                    $showMapsCard = !empty($mapLink) || (!empty($event->location) && empty($event->zoom_link));
+                @endphp
+
+                @if($showMapsCard)
+                <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                    <div class="img-resource">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
+                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
+                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+                        </svg>
+                    </div>
+                    <div class="resource-value">
+                        <h6>Location Map</h6>
+                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                    </div>
+                    @if($isRegistered && $mapLink)
+                        <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                            </svg>
+                        </a>
+                    @else
+                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                    @endif
+                </div>
+                @endif
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}" style="position:relative;">
+                <div class="img-resource">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
+                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                    </svg>
+                </div>
+                <div class="resource-value">
+                    <h6>Feedback and Ratings</h6>
+                    @if(isset($hasFeedback) && $hasFeedback)
+                        <p class="text-success" style="font-weight:600;">Feedback and Ratings berhasil dilakukan</p>
+                    @else
+                        <p>Please fill out your feedback for this event</p>
+                    @endif
+                </div>
+>>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
 
                         @endif
                     @endif
@@ -2958,6 +3106,7 @@
                         } else {
                             fallbackCopy(pageUrl);
                         }
+<<<<<<< HEAD
                         if (copyText) {
                             const prev = copyText.textContent;
                             copyText.textContent = 'Copied';
@@ -2972,5 +3121,13 @@
     </script>
     @include('partials.footer-before-login')
 </body>
+=======
+                    });
+                }
+            })();
+        </script>
+         @include('partials.footer-after-login')
+    </body>
+>>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
 
 </html>

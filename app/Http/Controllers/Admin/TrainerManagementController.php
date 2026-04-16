@@ -163,11 +163,26 @@ class TrainerManagementController extends Controller
             ->latest('created_at')
             ->get();
 
-        // Load all modules (with quizzes) for all trainer's courses
+        // Load all modules (with quizzes) for all trainer's courses in one query.
+        // This avoids relation calls on items inferred as stdClass after selective projections.
         $trainerModules = collect();
-        foreach ($trainerCourses as $course) {
-            $modules = $course->modules()->with('quizQuestions', 'quizAttempts')->get();
+        $trainerCourseIds = $trainerCourses->pluck('id')->filter()->values();
+        $courseMap = $trainerCourses->keyBy('id');
+
+        if ($trainerCourseIds->isNotEmpty()) {
+            $modules = \App\Models\CourseModule::query()
+                ->whereIn('course_id', $trainerCourseIds)
+                ->with('quizQuestions', 'quizAttempts')
+                ->orderBy('course_id')
+                ->orderBy('order_no')
+                ->get();
+
             foreach ($modules as $module) {
+                $course = $courseMap->get((int) $module->course_id);
+                if (!$course) {
+                    continue;
+                }
+
                 $trainerModules->push([
                     'course' => $course,
                     'module' => $module,
@@ -175,6 +190,24 @@ class TrainerManagementController extends Controller
                 ]);
             }
         }
+
+        // Load event trainer modules (per-trainer uploads)
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        $speakerEventIds = Event::query()
+            ->where(function ($q) use ($trainer, $trainerName) {
+                $q->where('trainer_id', $trainer->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
+            ->pluck('id');
+
+        $pendingEventModules = \App\Models\EventTrainerModule::query()
+            ->with(['event:id,title,jenis,event_date'])
+            ->where('trainer_id', $trainer->id)
+            ->whereIn('event_id', $speakerEventIds)
+            ->orderByDesc('created_at')
+            ->get();
 
         return view('admin.trainer.show', compact(
             'trainer',
@@ -185,7 +218,8 @@ class TrainerManagementController extends Controller
             'completedCoursesCount',
             'totalCompletedSessions',
             'averageRating',
-            'trainerModules'
+            'trainerModules',
+            'pendingEventModules'
         ));
     }
 

@@ -37,23 +37,35 @@ class PublicCourseController extends Controller
             });
         }
 
-        if($level = $request->get('level')){
-            $query->where('level',$level);
+        if ($level = $request->get('level')) {
+            $query->where('level', $level);
         }
 
-        if($request->boolean('free')){
-            $query->where('price',0);
+        if ($category = $request->get('category')) {
+            $query->where('category_id', $category);
         }
 
-        if($sort = $request->get('price')){
-            if(in_array($sort,['asc','desc'])){
-                $query->orderBy('price',$sort);
+        if ($topic = $request->get('topic')) {
+            $query->where('name', 'like', "%$topic%");
+        }
+
+        if ($request->boolean('free')) {
+            $query->where('price', 0);
+        }
+
+        if ($sort = $request->get('price')) {
+            if (in_array($sort, ['asc', 'desc'])) {
+                $query->orderBy('price', $sort);
             }
         } else {
             $query->latest();
         }
 
         $courses = $query->paginate(12)->withQueryString();
+
+        // Data for filter dropdowns
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $topics = Course::where('status', 'active')->distinct()->orderBy('name')->pluck('name');
 
         // Get carousel images for course page
         $courseCarousels = Carousel::active()
@@ -107,7 +119,7 @@ class PublicCourseController extends Controller
                 ->values();
         }
 
-            return view('course.index', compact('courses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments'));
+            return view('course.index', compact('courses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments', 'categories', 'topics'));
     }
     public function toggleSave(Request $request, Course $course)
     {
