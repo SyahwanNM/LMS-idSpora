@@ -263,6 +263,16 @@ class Event extends Model
         return $this->hasMany(Feedback::class);
     }
 
+    public function trainerModules()
+    {
+        return $this->hasMany(\App\Models\EventTrainerModule::class);
+    }
+
+    public function approvedTrainerModules()
+    {
+        return $this->hasMany(\App\Models\EventTrainerModule::class)->where('status', 'approved');
+    }
+
     public function getStartAtAttribute(): ?Carbon
     {
         if (empty($this->event_date))

@@ -177,7 +177,7 @@
                             
                             <img src="{{ $carousel->image_url }}"
                                 alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; "
                                 onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
                             @if($carousel->title)
@@ -197,7 +197,7 @@
                         <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
                             <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
                                 alt="Slide 1"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; ">
 
                             <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                                 <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>

@@ -199,68 +199,32 @@ class MaterialApprovalController extends Controller
 
         $pendingMaterials = $query->paginate(15);
 
-        $pendingEventModulesQuery = Event::query()
-            ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path')
-            ->where(function ($q) {
-                $q->whereNull('material_status')
-                    ->orWhereIn('material_status', ['pending', 'pending_review']);
-            });
+        $pendingEventModulesQuery = \App\Models\EventTrainerModule::query()
+            ->with([
+                'event:id,title,jenis,event_date,module_submitted_at,created_at,updated_at',
+                'trainer:id,name,email,avatar',
+            ])
+            ->where('status', 'pending_review');
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
             $pendingEventModulesQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhereHas('trainer', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
+                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+                  ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
         $pendingEventModules = $pendingEventModulesQuery
-            ->orderByDesc('module_submitted_at')
             ->orderByDesc('created_at')
-            ->orderByDesc('event_date')
-            ->get([
-                'id',
-                'trainer_id',
-                'title',
-                'jenis',
-                'event_date',
-                'module_path',
-                'module_submitted_at',
-                'created_at',
-                'updated_at',
-            ]);
-
-        // Backward-compat display: older rows may not have module_submitted_at filled.
-        // For pending items, updated_at usually reflects the module upload time.
-        $pendingEventModules->transform(function (Event $event) {
-            if (empty($event->module_submitted_at) && !empty($event->module_path)) {
-                $event->setAttribute('module_submitted_at', $event->updated_at);
-            }
-            return $event;
-        });
+            ->get();
 
         // Statistics
         $totalPending = Course::where('status', 'pending_review')->count()
-            + Event::query()
-                ->whereNotNull('module_path')
-                ->where(function ($q) {
-                    $q->whereNull('material_status')
-                        ->orWhereIn('material_status', ['pending', 'pending_review']);
-                })
-                ->count();
+            + \App\Models\EventTrainerModule::where('status', 'pending_review')->count();
         $totalApproved = Course::where('status', 'approved')->count()
-            + Event::query()
-                ->whereNotNull('module_path')
-                ->where('material_status', 'approved')
-                ->count();
+            + \App\Models\EventTrainerModule::where('status', 'approved')->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + Event::query()
-                ->whereNotNull('module_path')
-                ->where('material_status', 'rejected')
-                ->count();
+            + \App\Models\EventTrainerModule::where('status', 'rejected')->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 

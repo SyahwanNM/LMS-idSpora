@@ -23,6 +23,7 @@ use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleCont
 
 use App\Http\Controllers\User\NotificationsController;
 use App\Http\Controllers\Public\PublicPagesController;
+use App\Http\Controllers\Public\PublicTrainerProfileController;
 use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
@@ -255,6 +256,7 @@ Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide
 // Public event pages (accessible without login)
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
 Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+Route::get('/profil-trainer/{trainer}', [PublicTrainerProfileController::class, 'show'])->name('public.trainer-profile.show');
 // Redirect search to the best-matching event detail (exact title match preferred)
 Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
 

@@ -176,6 +176,24 @@ class TrainerManagementController extends Controller
             }
         }
 
+        // Load event trainer modules (per-trainer uploads)
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        $speakerEventIds = Event::query()
+            ->where(function ($q) use ($trainer, $trainerName) {
+                $q->where('trainer_id', $trainer->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
+            ->pluck('id');
+
+        $pendingEventModules = \App\Models\EventTrainerModule::query()
+            ->with(['event:id,title,jenis,event_date'])
+            ->where('trainer_id', $trainer->id)
+            ->whereIn('event_id', $speakerEventIds)
+            ->orderByDesc('created_at')
+            ->get();
+
         return view('admin.trainer.show', compact(
             'trainer',
             'trainerCourses',
@@ -185,7 +203,8 @@ class TrainerManagementController extends Controller
             'completedCoursesCount',
             'totalCompletedSessions',
             'averageRating',
-            'trainerModules'
+            'trainerModules',
+            'pendingEventModules'
         ));
     }
 

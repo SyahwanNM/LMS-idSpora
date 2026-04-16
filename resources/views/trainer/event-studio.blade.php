@@ -10,29 +10,39 @@
         ['label' => 'Studio'],
     ];
 
-    $materialStatus = (string) ($event->material_status ?? 'draft');
+    $materialStatus = (string) ($myMaterialStatus ?? 'not_uploaded');
     $isRevisionWindow = $materialStatus === 'rejected';
-    $deadline = $isRevisionWindow
-        ? (!empty($event->material_revision_deadline)
-            ? \Carbon\Carbon::parse($event->material_revision_deadline)
-            : ($event->start_at ? $event->start_at->copy()->subDays(3) : null))
-        : (!empty($event->material_deadline)
-            ? \Carbon\Carbon::parse($event->material_deadline)
-            : ($event->start_at ? $event->start_at->copy()->subDays(7) : null));
+
+    // Deadline: prefer invitation upload_due_at, then event material_deadline, else no deadline
+    $invitationForDeadline = \App\Models\TrainerNotification::where('trainer_id', auth()->id())
+        ->where('type', 'event_invitation')
+        ->where('data', 'like', '%"entity_id":' . $event->id . '%')
+        ->latest('id')->first();
+    $invDueAt = data_get($invitationForDeadline?->data ?? [], 'upload_due_at', '');
+    $deadline = $invDueAt !== ''
+        ? \Carbon\Carbon::parse($invDueAt)
+        : (!empty($event->material_deadline) ? \Carbon\Carbon::parse($event->material_deadline) : null);
+
     $deadlinePassed = $deadline ? now()->gt($deadline) : false;
     $deadlineLabel = $isRevisionWindow ? 'Deadline Revisi (H-3)' : 'Deadline Pengumpulan (H-7)';
     $deadlineHint = $deadlinePassed
         ? ($isRevisionWindow ? 'Batas revisi sudah lewat' : 'Batas pengumpulan sudah lewat')
         : ($isRevisionWindow ? 'Masa revisi masih terbuka' : 'Materi masih bisa diunggah');
     $materialStatusLabel = strtoupper(str_replace('_', ' ', $materialStatus));
-    $eventRejectionReason = trim((string) ($event->material_rejection_reason ?? ''));
-    if ($eventRejectionReason === '') {
-        $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
+
+    // Per-trainer rejection reason (from latest rejected module)
+    $eventRejectionReason = '';
+    $latestRejected = ($myModules ?? collect())->where('status', 'rejected')->sortByDesc('updated_at')->first();
+    if ($latestRejected) {
+        $eventRejectionReason = trim((string) ($latestRejected->rejection_reason ?? ''));
     }
     $showEventRejectionReason = $materialStatus === 'rejected' && $eventRejectionReason !== '';
-    $moduleFileUrl = $event->module_file_url;
-    $hasUploadedModule = !empty($event->module_path);
-    $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
+
+    // Per-trainer uploaded module info
+    $latestModule = ($myModules ?? collect())->sortByDesc('created_at')->first();
+    $hasUploadedModule = $latestModule !== null;
+    $uploadedModuleName = $hasUploadedModule ? $latestModule->original_name : null;
+    $moduleFileUrl = $hasUploadedModule ? \Illuminate\Support\Facades\Storage::disk('public')->url($latestModule->path) : null;
     $canUploadMaterials = $materialStatus !== 'approved';
 @endphp
 
@@ -257,6 +267,11 @@
         .status-badge.pending {
             background: #fef3c7;
             color: #92400e;
+        }
+
+        .status-badge.not-submitted {
+            background: #f1f5f9;
+            color: #64748b;
         }
 
         .status-banner {
@@ -985,22 +1000,25 @@
                         @if($materialStatus !== 'draft')
                             @php
                                 $badgeClass = match ($materialStatus) {
-                                    'approved' => 'approved',
-                                    'rejected' => 'rejected',
+                                    'approved'     => 'approved',
+                                    'rejected'     => 'rejected',
                                     'pending_review' => 'pending',
-                                    default => 'pending',
+                                    'not_uploaded' => 'not-submitted',
+                                    default        => 'pending',
                                 };
                                 $statusIcon = match ($materialStatus) {
-                                    'approved' => '✓',
-                                    'rejected' => '✕',
+                                    'approved'     => '✓',
+                                    'rejected'     => '✕',
                                     'pending_review' => '⏳',
-                                    default => '📋',
+                                    'not_uploaded' => '—',
+                                    default        => '📋',
                                 };
                                 $badgeLabel = match ($materialStatus) {
-                                    'approved' => 'Material Approved',
-                                    'rejected' => 'Revision Needed',
+                                    'approved'     => 'Material Approved',
+                                    'rejected'     => 'Revision Needed',
                                     'pending_review' => 'In Review',
-                                    default => 'Submitted',
+                                    'not_uploaded' => 'Not Submitted',
+                                    default        => 'Submitted',
                                 };
                             @endphp
                             <span class="status-badge {{ $badgeClass }}">
@@ -1010,7 +1028,9 @@
                         @else
                             <p class="value">{{ $materialStatusLabel }}</p>
                         @endif
-                        @if($materialStatus === 'draft')
+                        @if($materialStatus === 'not_uploaded')
+                            <p class="hint">Belum ada modul yang dikirim. Silakan upload materi Anda.</p>
+                        @elseif($materialStatus === 'draft')
                             <p class="hint">Status review akan berubah setelah admin memeriksa file.</p>
                         @elseif($materialStatus === 'approved')
                             <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
@@ -1215,7 +1235,7 @@
                     e.preventDefault();
 
                     if (uploadedFiles.length === 0) {
-                        console.warn("Silakan upload minimal 1 file sebelum submit.");
+                        alert('Silakan pilih file terlebih dahulu sebelum submit.');
                         return;
                     }
 
@@ -1227,7 +1247,7 @@
 
                     if (invalidFiles.length > 0) {
                         const names = invalidFiles.map((f) => f.name).join(', ');
-                        console.warn('File event hanya boleh materi (PDF/MP4/PPTX/DOCX). File tidak valid: ' + names);
+                        alert('File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.');
                         return;
                     }
 
@@ -1246,7 +1266,11 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     })
                         .then(async (response) => {
-                            const data = await response.json().catch(() => ({}));
+                            const text = await response.text();
+                            let data = {};
+                            try { data = JSON.parse(text); } catch(e) {
+                                throw new Error('Server error: ' + text.substring(0, 200));
+                            }
                             if (!response.ok || !data.success) {
                                 const message = data.error || data.message || 'Gagal mengunggah materi event.';
                                 throw new Error(message);
@@ -1255,10 +1279,11 @@
                             uploadedFiles = [];
                             updateFileList();
                             fileInput.value = '';
-                            showNotificationModal('Berhasil', data.message || 'Materi event berhasil diunggah dan dikirim ke admin.', 'success');
+                            alert(data.message || 'Materi event berhasil diunggah dan dikirim ke admin.');
+                            location.reload();
                         })
                         .catch(error => {
-                            showNotificationModal('Gagal', error.message || 'Terjadi kesalahan saat mengunggah materi event.', 'error');
+                            alert('Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.'));
                         })
                         .finally(() => {
                             submitBtn.disabled = false;

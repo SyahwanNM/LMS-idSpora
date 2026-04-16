@@ -57,7 +57,31 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
         return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi tersedia setelah acara selesai.');
     }
 
-    $path = (string) ($event->module_path ?? '');
+    // Support per-trainer module download via ?module_id=X
+    $moduleId = request()->query('module_id');
+    if ($moduleId) {
+        $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+            ->where('event_id', $event->id)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$module) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Module tidak tersedia.');
+        }
+
+        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'File module tidak ditemukan.');
+        }
+
+        $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($module->path);
+        return response()->download($fullPath, $module->original_name);
+    }
+
+    // Legacy: single module_path on event
+    $path = is_array($event->module_path)
+        ? ($event->module_path[0]['path'] ?? '')
+        : (string) ($event->module_path ?? '');
+
     if ($path === '' || !\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
         return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi belum tersedia.');
     }
