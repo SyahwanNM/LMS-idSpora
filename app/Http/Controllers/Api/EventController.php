@@ -87,6 +87,29 @@ class EventController extends Controller
             $query->whereRaw('LOWER(jenis) = ?', [mb_strtolower($category)]);
         }
 
+        // event_type: online | offline | hybrid
+        $eventType = strtolower(trim((string) $request->query('event_type', '')));
+        if ($eventType === 'online') {
+            $query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
+                ->where(fn($q) => $q->whereNull('location')->orWhere('location', ''));
+        } elseif ($eventType === 'offline') {
+            $query->where(fn($q) => $q->whereNull('zoom_link')->orWhere('zoom_link', ''))
+                ->whereNotNull('location')->where('location', '!=', '');
+        } elseif ($eventType === 'hybrid') {
+            $query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
+                ->whereNotNull('location')->where('location', '!=', '');
+        }
+
+        // day: today | weekdays | weekend
+        $day = strtolower(trim((string) $request->query('day', '')));
+        if ($day === 'today') {
+            $query->whereDate('event_date', now()->toDateString());
+        } elseif ($day === 'weekdays') {
+            $query->whereRaw('DAYOFWEEK(event_date) BETWEEN 2 AND 6');
+        } elseif ($day === 'weekend') {
+            $query->whereRaw('DAYOFWEEK(event_date) IN (1,7)');
+        }
+
         if ($request->has('free')) {
             $isFree = filter_var($request->query('free'), FILTER_VALIDATE_BOOL);
             if ($isFree) {
@@ -545,5 +568,93 @@ class EventController extends Controller
 
         $discounted = $base * (1 - self::REFERRAL_DISCOUNT_RATE);
         return max(0, round($discounted, 2));
+    }
+
+    /**
+     * Submit feedback for a finished event.
+     */
+    public function submitFeedback(Request $request, $id)
+    {
+        $user  = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return $this->jsonError('Event tidak ditemukan', 404);
+        }
+
+        $registration = EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$registration) {
+            return $this->jsonError('Anda tidak terdaftar di event ini', 403);
+        }
+
+        if ($registration->feedback_submitted_at) {
+            return $this->jsonError('Feedback sudah pernah dikirim', 409);
+        }
+
+        $validated = $request->validate([
+            'rating'         => 'required|integer|min:1|max:5',
+            'feedback_text'  => 'nullable|string|max:1000',
+            'speaker_rating' => 'nullable|integer|min:1|max:5',
+        ]);
+
+        \App\Models\Feedback::create([
+            'event_id'       => $event->id,
+            'user_id'        => $user->id,
+            'rating'         => $validated['rating'],
+            'comment'        => $validated['feedback_text'] ?? null,
+            'speaker_rating' => $validated['speaker_rating'] ?? null,
+        ]);
+
+        $registration->feedback_submitted_at = now();
+        if (empty($registration->certificate_issued_at)) {
+            $registration->certificate_issued_at = now();
+        }
+        $registration->save();
+
+        return $this->jsonSuccess('Feedback berhasil dikirim. Sertifikat Anda sudah tersedia.');
+    }
+
+    /**
+     * Get approved trainer modules for a finished event (for registered users).
+     */
+    public function materials(Request $request, $id)
+    {
+        $user  = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return $this->jsonError('Event tidak ditemukan', 404);
+        }
+
+        $registration = EventRegistration::where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$registration) {
+            return $this->jsonError('Anda tidak terdaftar di event ini', 403);
+        }
+
+        if (!method_exists($event, 'isFinished') || !$event->isFinished()) {
+            return $this->jsonError('Materi tersedia setelah event selesai', 403);
+        }
+
+        $modules = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('status', 'approved')
+            ->with('trainer:id,name')
+            ->get()
+            ->map(fn($m) => [
+                'id'            => $m->id,
+                'original_name' => $m->original_name,
+                'download_url'  => route('events.modules.download', [$event->id, 'module_id' => $m->id]),
+                'trainer'       => $m->trainer ? ['id' => $m->trainer->id, 'name' => $m->trainer->name] : null,
+                'uploaded_at'   => $m->created_at?->toISOString(),
+            ]);
+
+        return $this->jsonSuccess('Materi event', $modules);
     }
 }
