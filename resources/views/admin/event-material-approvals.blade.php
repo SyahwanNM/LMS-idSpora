@@ -261,7 +261,8 @@
                         </div>
                     </div>
                     <div class="material-actions">
-                        <a href="{{ route('admin.event-material.show', $material->event_id) }}?assignment_id={{ $material->id }}" class="btn-primary">
+                        <a href="{{ route('admin.event-material.show', $material->event_id) }}?assignment_id={{ $material->id }}"
+                            class="btn-primary">
                             View Details
                         </a>
                     </div>

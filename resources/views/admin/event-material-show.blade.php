@@ -299,7 +299,8 @@
 
                     <div class="material-info-item">
                         <div class="material-info-label">Trainer</div>
-                        <div class="material-info-value">{{ $materialTrainer->name ?? ($event->trainer->name ?? 'Unknown') }}</div>
+                        <div class="material-info-value">
+                            {{ $materialTrainer->name ?? ($event->trainer->name ?? 'Unknown') }}</div>
                     </div>
 
                     <div class="material-info-item">
@@ -334,7 +335,8 @@
                             </div>
                         </div>
 
-                        <a href="{{ route('admin.event-material.stream', $event->id) }}?@if(!empty($assignment?->id))assignment_id={{ $assignment->id }}&@endifdownload=1" target="_blank" class="btn"
+                        <a href="{{ route('admin.event-material.stream', $event->id) }}?@if(!empty($assignment?->id))assignment_id={{ $assignment->id }}&@endifdownload=1"
+                            target="_blank" class="btn"
                             style="background: var(--admin-secondary); color: white; text-decoration: none; text-align: center;">
                             📥 Download Material
                         </a>

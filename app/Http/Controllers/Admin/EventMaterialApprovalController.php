@@ -183,8 +183,8 @@ class EventMaterialApprovalController extends Controller
                 $q->whereHas('event', function ($q) use ($search) {
                     $q->where('title', 'like', "%{$search}%");
                 })->orWhereHas('trainer', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
+                    $q->where('name', 'like', "%{$search}%");
+                });
             });
         }
 

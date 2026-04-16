@@ -413,7 +413,7 @@ Route::middleware('auth')->group(function () {
 
     // Course Certificate (after rating)
     Route::get('/courses/{course}/certificate', [\App\Http\Controllers\User\CourseCertificateController::class, 'show'])->name('course.certificate');
-     Route::get('/courses/{course}/certificate/{enrollment}/preview', [\App\Http\Controllers\CRM\CertificateController::class, 'previewCourse'])->name('course.certificates.preview');
+    Route::get('/courses/{course}/certificate/{enrollment}/preview', [\App\Http\Controllers\CRM\CertificateController::class, 'previewCourse'])->name('course.certificates.preview');
 });
 Route::get('/courses', [\App\Http\Controllers\Public\PublicCourseController::class, 'index'])->name('courses.index');
 
