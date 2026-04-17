@@ -108,6 +108,13 @@
             padding: 16px 20px 24px;
         }
 
+        /* Tab content fits content height — no fixed/min height */
+        .desc-box .tab-content,
+        .desc-box .tab-content .tab-pane {
+            height: auto !important;
+            min-height: 0 !important;
+        }
+
         @media (max-width: 576px) {
             .desc-box .tab-content .tab-pane {
                 padding: 12px 14px 18px;
@@ -767,13 +774,24 @@
             <div class="box-event-creator">
                 <div class="event-creator">
                     <p><span class="highlite-yellow">Event</span> by
-                        @if($event->trainer)
-                            <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}"
-                                style="color: var(--secondary); text-decoration: none; font-weight: 600;">
-                                {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
-                            </a>
+                        @php
+                            $allSpeakers = $event->speakers()->with('trainer')->get();
+                            if ($allSpeakers->isEmpty()) {
+                                $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)['name' => trim($name), 'trainer' => null])->values();
+                            }
+                        @endphp
+                        @if($allSpeakers->isNotEmpty())
+                            @foreach($allSpeakers as $idx => $sp)
+                                @if($idx > 0), @endif
+                                @if($sp->trainer)
+                                    <a href="{{ route('public.trainer-profile.show', $sp->trainer->id) }}"
+                                        style="color: var(--secondary); text-decoration: none; font-weight: 600;">{{ $sp->name }}</a>
+                                @else
+                                    <span style="font-weight:600;">{{ $sp->name }}</span>
+                                @endif
+                            @endforeach
                         @else
-                            {{ $event->speaker ?? 'idSpora Team' }}
+                            idSpora Team
                         @endif
                     </p>
                 </div>
@@ -1086,34 +1104,40 @@
                         <span class="event-info-label">Speaker</span>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        @if($event->trainer)
-                            <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}"
-                                class="event-info-value" style="color: inherit; text-decoration: none;">
-                                {{ $event->speaker ?? '-' }}
-                            </a>
+                    @php
+                        $speakerRows = $event->speakers()->with('trainer')->get();
+                        if ($speakerRows->isEmpty()) {
+                            // Fallback: parse from speaker string
+                            $speakerRows = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)[
+                                'name'    => trim($name),
+                                'trainer' => null,
+                            ])->values();
+                        }
+                    @endphp
 
-                            <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}"
-                                class="event-speaker-value btn p-1" aria-label="Lihat profil trainer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd"
-                                        d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
-                                </svg>
-                            </a>
-                        @else
-                            <span class="event-info-value">
-                                {{ $event->speaker ?? '-' }}
-                            </span>
-
-                            <button class="event-speaker-value btn p-1" type="button">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd"
-                                        d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
-                                </svg>
-                            </button>
-                        @endif
+                    <div class="d-flex flex-column gap-1">
+                        @forelse($speakerRows as $sp)
+                            @php
+                                $trainerObj = $sp->trainer ?? null;
+                                $profileUrl = $trainerObj ? route('public.trainer-profile.show', $trainerObj->id) : null;
+                            @endphp
+                            <div class="d-flex align-items-center gap-2">
+                                @if($profileUrl)
+                                    <a href="{{ $profileUrl }}" class="event-info-value" style="color:inherit; text-decoration:none;">
+                                        {{ $sp->name }}
+                                    </a>
+                                    <a href="{{ $profileUrl }}" class="event-speaker-value btn p-1" aria-label="Lihat profil trainer">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span class="event-info-value">{{ $sp->name }}</span>
+                                @endif
+                            </div>
+                        @empty
+                            <span class="event-info-value">-</span>
+                        @endforelse
                     </div>
 
                 </div>
@@ -1574,15 +1598,6 @@
                         @endif
                     </div>
                     @if($moduleUnlocked)
-<<<<<<< HEAD
-                        <a class="link-share" href="{{ route('events.modules.download', $event) }}" title="Unduh Materi">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                class="share-bi bi-download" viewBox="0 0 16 16">
-                                <path
-                                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
-                                <path
-                                    d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
-=======
                         <button type="button" class="link-share d-flex align-items-center"
                             data-bs-toggle="modal" data-bs-target="#modulesDownloadModal"
                             title="Unduh Materi"
@@ -1590,7 +1605,6 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
                                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
                                 <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
->>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                             </svg>
                         </button>
                     @else
@@ -1599,10 +1613,6 @@
                 </div>
                 @endif
 
-<<<<<<< HEAD
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}"
-                    style="position:relative;">
-=======
                 {{-- Modal unduh modul --}}
                 @if($moduleUnlocked)
                 <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
@@ -1644,15 +1654,13 @@
                                 </div>
                             </div>
                             <div class="modal-footer border-0 pt-0">
-                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && !$eventIsFinished && ((isset($eventStarted) && $eventStarted) || (isset($attendanceSubmitted) && $attendanceSubmitted))) ? '' : 'locked' }}" style="position:relative;">
->>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
@@ -1733,28 +1741,11 @@
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-<<<<<<< HEAD
-                                @php
-                                    $certReady = $eventIsFinished || ($registration->certificate_issued_at ?? false);
-                                @endphp
-                                @if($certReady)
-                                    <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
-                                    <div class="d-flex gap-2 mt-2">
-                                        <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}"
-                                            class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
-                                        <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}"
-                                            class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
-                                    </div>
-                                @else
-                                    <p>Sertifikat akan tersedia setelah acara selesai.</p>
-                                @endif
-=======
                                 <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
                                 <div class="d-flex gap-2 mt-2">
                                     <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
                                     <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
                                 </div>
->>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                             @elseif($eventIsFinished)
                                 <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
                             @else
@@ -1765,22 +1756,6 @@
                         @endif
                     </div>
                 </div>
-<<<<<<< HEAD
-
-                <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
-                    @if(isset($event) && $event->type === 'online' && !empty($event->zoom_link))
-                        <div class="img-resource">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                class="bi bi-camera-video" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z" />
-                            </svg>
-                        </div>
-                        <div class="resource-value">
-                            <h6>Link Zoom</h6>
-                            <p>Available for registered participants</p>
-                        </div>
-=======
             
             <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
                     @php
@@ -1796,7 +1771,6 @@
                         <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
                     </div>
                     @if($isRegistered && !empty($event->zoom_link))
->>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
                         <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
                                 class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
@@ -1807,53 +1781,6 @@
                             </svg>
                         </a>
                     @else
-<<<<<<< HEAD
-                        <div class="img-resource">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                class="bi bi-geo-alt" viewBox="0 0 16 16">
-                                <path
-                                    d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
-                                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-                            </svg>
-                        </div>
-                        <div class="resource-value">
-                            <h6>{{ (!empty($event->zoom_link) ? 'Link Zoom' : 'Location Map') }}</h6>
-                            <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}
-                            </p>
-                        </div>
-                        @php
-                            $mapLink = '';
-                            if (isset($event)) {
-                                if (!empty($event->maps_url)) {
-                                    $maps = trim($event->maps_url);
-                                    if (\Illuminate\Support\Str::startsWith($maps, ['http://', 'https://', '//'])) {
-                                        $mapLink = $maps;
-                                    } else {
-                                        try {
-                                            $mapLink = Storage::url($maps);
-                                        } catch (\Throwable $e) {
-                                            $mapLink = $maps;
-                                        }
-                                    }
-                                } elseif (!empty($event->latitude) && !empty($event->longitude)) {
-                                    $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
-                                }
-                            }
-                        @endphp
-                        @if($isRegistered)
-                            <a class="link-share"
-                                href="{{ (!empty($event->zoom_link) ? $event->zoom_link : ($mapLink ?: '#')) }}" target="_blank"
-                                rel="noopener">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd"
-                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                    <path fill-rule="evenodd"
-                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                                </svg>
-                            </a>
-                        @else
-=======
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                     @endif
                 </div>
@@ -1897,26 +1824,7 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}" style="position:relative;">
-                <div class="img-resource">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
-                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
-                    </svg>
-                </div>
-                <div class="resource-value">
-                    <h6>Feedback and Ratings</h6>
-                    @if(isset($hasFeedback) && $hasFeedback)
-                        <p class="text-success" style="font-weight:600;">Feedback and Ratings berhasil dilakukan</p>
-                    @else
-                        <p>Please fill out your feedback for this event</p>
-                    @endif
-                </div>
->>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
-
-                        @endif
-                    @endif
-                </div>
-                <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -2481,7 +2389,7 @@
                                 </div>
                                 <br>
                             @empty
-                                <p class="text-muted" style="margin-left:30px;">Schedule will be announced.</p>
+                                <p class="text-muted" style="margin-left:0;">Schedule will be announced.</p>
                             @endforelse
                         </div>
                     </div>
@@ -2657,41 +2565,31 @@
                     e.preventDefault();
                     const text = feedbackText.value.trim();
                     if (!text) {
-                        alert('Isi feedback terlebih dahulu.');
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = 'Submit Feedback';
+                        showFeedbackNotif('Isi feedback terlebih dahulu.', 'error');
                         return;
                     }
-                    // ensure user picked at least an event rating
                     const eventRatingNow = getRatingByTarget('eventRating');
                     if (eventRatingNow < 1) {
-                        alert('Silakan pilih rating untuk acara.');
+                        showFeedbackNotif('Silakan pilih rating untuk acara.', 'error');
                         return;
                     }
-                    // ensure confirmation modal is initialized, then show
                     ensureModalInitialized();
                     if (feedbackConfirmModal) {
-                        // reset checkbox
                         const cb = modalEl.querySelector('#confirm-eval');
                         if (cb) cb.checked = false;
-                        // ensure modal confirm button is disabled when modal opens
                         const modalBtnEl = modalEl.querySelector('#confirm-submit-feedback');
                         if (modalBtnEl) modalBtnEl.disabled = true;
                         feedbackConfirmModal.show();
                         return;
                     }
-                    // fallback: if bootstrap not available, use simple confirm
                     const fallback = window.confirm('Saya yakin bahwa feedback ini digunakan untuk keperluan evaluasi IdSpora. Lanjutkan?');
                     if (!fallback) return;
-                    // perform submit directly if fallback confirmed
                     performFeedbackSubmit(true);
                 });
 
-                // Modal confirm button handler
                 const modalConfirmBtn = document.getElementById('confirm-submit-feedback');
                 if (modalConfirmBtn) {
                     const modalCheckbox = modalEl.querySelector('#confirm-eval');
-                    // start disabled
                     modalConfirmBtn.disabled = true;
                     if (modalCheckbox) {
                         modalCheckbox.addEventListener('change', function () {
@@ -2701,13 +2599,32 @@
                     modalConfirmBtn.addEventListener('click', function () {
                         const cb = modalEl.querySelector('#confirm-eval');
                         if (!cb || !cb.checked) {
-                            alert('Silakan centang kotak "Saya yakin bahwa feedback ini digunakan untuk keperluan evaluasi IdSpora." untuk melanjutkan.');
+                            showFeedbackNotif('Silakan centang kotak persetujuan untuk melanjutkan.', 'error');
                             return;
                         }
-                        // close modal
                         try { feedbackConfirmModal.hide(); } catch (e) { }
                         performFeedbackSubmit(true);
                     });
+                }
+
+                function showFeedbackNotif(message, type = 'success') {
+                    if (type === 'success' && typeof window.__idsporaFlashSuccess === 'function') {
+                        window.__idsporaFlashSuccess(message);
+                        return;
+                    }
+                    // Inline notif fallback
+                    let notif = document.getElementById('feedback-notif');
+                    if (!notif) {
+                        notif = document.createElement('div');
+                        notif.id = 'feedback-notif';
+                        notif.style.cssText = 'padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:10px;';
+                        submitBtn.parentNode.insertBefore(notif, submitBtn);
+                    }
+                    notif.style.background = type === 'error' ? '#fee2e2' : '#dcfce7';
+                    notif.style.color = type === 'error' ? '#991b1b' : '#166534';
+                    notif.textContent = message;
+                    notif.style.display = 'block';
+                    setTimeout(() => { notif.style.display = 'none'; }, 4000);
                 }
 
                 function performFeedbackSubmit(agreed) {
@@ -2735,10 +2652,7 @@
                             submitBtn.disabled = false;
                             submitBtn.innerText = 'Submit Feedback';
                             if (data.success) {
-                                // Show success message
-                                alert('Feedback berhasil dikirim! Terima kasih atas feedback Anda.');
-
-                                // Reset form
+                                showFeedbackNotif('Feedback berhasil dikirim! Terima kasih atas feedback Anda.', 'success');
                                 feedbackText.value = '';
                                 document.querySelectorAll('.stars-rating-input').forEach(container => {
                                     container.dataset.selectedRating = '0';
@@ -2747,21 +2661,16 @@
                                         s.style.color = '#ccc';
                                     });
                                 });
-
-                                // Reload page to show new feedback (section will remain open)
-                                // Store state before reload
                                 sessionStorage.setItem('feedbackSectionOpen', 'true');
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 500);
+                                setTimeout(() => { window.location.reload(); }, 1500);
                             } else {
-                                alert(data.message || 'Gagal menyimpan feedback.');
+                                showFeedbackNotif(data.message || 'Gagal menyimpan feedback.', 'error');
                             }
                         })
                         .catch(() => {
                             submitBtn.disabled = false;
                             submitBtn.innerText = 'Submit Feedback';
-                            alert('Gagal menyimpan feedback.');
+                            showFeedbackNotif('Gagal menyimpan feedback. Coba lagi.', 'error');
                         });
                 }
             }
@@ -3106,28 +3015,11 @@
                         } else {
                             fallbackCopy(pageUrl);
                         }
-<<<<<<< HEAD
-                        if (copyText) {
-                            const prev = copyText.textContent;
-                            copyText.textContent = 'Copied';
-                            window.setTimeout(() => { copyText.textContent = prev; }, 1200);
-                        }
-                    } catch (_e) {
-                        fallbackCopy(pageUrl);
-                    }
-                });
-            }
-        })();
-    </script>
-    @include('partials.footer-before-login')
-</body>
-=======
                     });
                 }
             })();
         </script>
          @include('partials.footer-after-login')
     </body>
->>>>>>> 56ca2be02bdfdd72674a0aa1746987a35b7a8b9f
 
 </html>
