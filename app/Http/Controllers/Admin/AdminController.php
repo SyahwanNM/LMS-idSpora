@@ -437,19 +437,15 @@ class AdminController extends Controller
         $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
-            
-            // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
-            $expense = (float) ($e->expenses_total ?? 0.0);
-            $profit = $revenue - $expense;
 
             // Detail items for the modal
             $registeredCount = (int) $e->registrations()->where('status', 'active')->count();
             $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
-            
+
             $incomeRows = [
                 ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
             ];
-            
+
             $expenseModels = $e->expenses()->get(['item', 'quantity', 'unit_price', 'total']);
             $expenseRows = $expenseModels->map(function($row) {
                 return [
@@ -459,6 +455,22 @@ class AdminController extends Controller
                     'total' => (float)($row->total ?? 0),
                 ];
             })->values()->all();
+
+            // Add trainer salaries from event_speakers
+            $speakerSalaries = \App\Models\EventSpeaker::where('event_id', $e->id)
+                ->where('salary', '>', 0)
+                ->get(['name', 'salary']);
+            foreach ($speakerSalaries as $sp) {
+                $expenseRows[] = [
+                    'label' => 'Gaji Trainer: ' . $sp->name,
+                    'qty'   => 1,
+                    'unit'  => (float) $sp->salary,
+                    'total' => (float) $sp->salary,
+                ];
+            }
+            $salaryTotal = $speakerSalaries->sum('salary');
+            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $salaryTotal;
+            $profit  = $revenue - $expense;
 
             return [
                 'id' => $e->id,
