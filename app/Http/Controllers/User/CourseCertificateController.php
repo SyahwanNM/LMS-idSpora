@@ -77,7 +77,7 @@ class CourseCertificateController extends Controller
             }
         }
 
-        return view('course.sertifikat-course', [
+        return view('courses.certificate', [
             'course' => $course,
             'user' => $user,
             'enrollment' => $enrollment,
