@@ -22,6 +22,125 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
+    private function latestEventInvitation(int $eventId, int $trainerId): ?TrainerNotification
+    {
+        if ($eventId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($eventId) {
+                $query->where('data', 'like', '%"entity_id":' . $eventId . '%');
+            })
+            ->latest('id')
+            ->first();
+    }
+
+    private function latestEventAssignment(int $eventId, int $trainerId): ?TrainerAssignment
+    {
+        if ($eventId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerAssignment::query()
+            ->where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->latest('id')
+            ->first();
+    }
+
+    private function resolveEventCompensation(Event $event, int $trainerId, ?TrainerAssignment $assignment = null): array
+    {
+        $activeParticipants = (int) ($event->active_participants_count ?? $event->participants_count ?? 0);
+        if ($activeParticipants <= 0 && method_exists($event, 'registrations')) {
+            $activeParticipants = (int) $event->registrations()
+                ->where('status', 'active')
+                ->count();
+        }
+
+        if (!$assignment && $trainerId > 0) {
+            $assignment = $this->latestEventAssignment((int) $event->id, $trainerId);
+        }
+
+        $schemePercent = (int) ($assignment?->getSchemePercentage() ?? 0);
+        $isFallbackToEventPrice = false;
+
+        if ($schemePercent <= 0 && $trainerId > 0) {
+            $acceptedNotification = TrainerNotification::query()
+                ->where('trainer_id', $trainerId)
+                ->where('type', 'event_invitation')
+                ->where(function ($query) use ($event) {
+                    $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+                })
+                ->orderByDesc('id')
+                ->first();
+
+            $notificationScheme = (int) data_get($acceptedNotification?->data ?? [], 'scheme_type', 0);
+            $notificationStatus = (string) data_get($acceptedNotification?->data ?? [], 'invitation_status', (string) ($acceptedNotification?->invitation_status ?? ''));
+
+            if ($notificationScheme > 0 && in_array($notificationStatus, ['accepted', 'completed'], true)) {
+                $schemePercent = (int) (TrainerAssignment::getSchemeDefinitions()[$notificationScheme]['percentage'] ?? 0);
+            }
+        }
+
+        $eventPrice = (float) ($event->price ?? 0);
+
+        if ($schemePercent <= 0 && $eventPrice > 0) {
+            // Fallback for legacy/main-trainer events that do not have assignment scheme yet.
+            $isFallbackToEventPrice = true;
+        }
+
+        $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
+            ? round(($eventPrice * $schemePercent) / 100, 2)
+            : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
+        $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
+            ? round($activeParticipants * $feePerParticipant, 2)
+            : 0;
+
+        return [
+            'scheme_percent' => $schemePercent,
+            'event_price' => $eventPrice,
+            'active_participants_count' => $activeParticipants,
+            'fee_per_participant' => $feePerParticipant,
+            'estimated_fee' => $estimatedFee,
+            'is_fallback_to_event_price' => $isFallbackToEventPrice,
+        ];
+    }
+
+    private function ensureEventAssignmentForTrainer(Event $event, $trainer): ?TrainerAssignment
+    {
+        if (!$trainer) {
+            return null;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
+            return null;
+        }
+
+        $existing = $this->latestEventAssignment((int) $event->id, (int) $trainer->id);
+        if ($existing) {
+            return $existing;
+        }
+
+        $invitation = $this->latestEventInvitation((int) $event->id, (int) $trainer->id);
+        $invitationStatus = $invitation ? (string) $invitation->effectiveInvitationStatus() : '';
+
+        // Backward compatibility: for legacy multi-speaker events without assignment records,
+        // create accepted assignment so each trainer has isolated material/status.
+        $assignmentStatus = in_array($invitationStatus, ['rejected', 'expired'], true) ? $invitationStatus : 'accepted';
+
+        return TrainerAssignment::query()->create([
+            'trainer_id' => (int) $trainer->id,
+            'event_id' => (int) $event->id,
+            'invitation_notification_id' => $invitation ? (int) $invitation->id : null,
+            'status' => $assignmentStatus,
+            'scheme_type' => null,
+            'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+        ]);
+    }
+
     private function latestCourseInvitation(int $courseId, int $trainerId): ?TrainerNotification
     {
         if ($courseId <= 0 || $trainerId <= 0) {
@@ -475,7 +594,15 @@ class TrainerController extends Controller
         $activeAssignments = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
-            ->with(['event'])
+            ->with([
+                'event' => function ($query) {
+                    $query->withCount([
+                        'registrations as active_participants_count' => function ($registrationQuery) {
+                            $registrationQuery->where('status', 'active');
+                        }
+                    ]);
+                }
+            ])
             ->orderByRaw('CASE WHEN sla_upload_deadline IS NULL THEN 1 ELSE 0 END')
             ->orderBy('sla_upload_deadline')
             ->limit(6)
@@ -484,13 +611,27 @@ class TrainerController extends Controller
                 $schemeDefinitions = TrainerAssignment::getSchemeDefinitions();
                 $schemeType = (int) ($assignment->scheme_type ?? 0);
                 $scheme = $schemeDefinitions[$schemeType] ?? [];
+                $event = $assignment->event;
+                $eventPrice = (float) ($event->price ?? 0);
+                $activeParticipants = (int) ($event->active_participants_count ?? 0);
+                $schemePercent = (int) ($scheme['percentage'] ?? 0);
+                $feePerParticipant = $eventPrice > 0 && $schemePercent > 0
+                    ? round(($eventPrice * $schemePercent) / 100, 2)
+                    : 0;
+                $estimatedFee = $activeParticipants > 0 && $feePerParticipant > 0
+                    ? round($activeParticipants * $feePerParticipant, 2)
+                    : 0;
 
                 return [
                     'assignment' => $assignment,
-                    'event_title' => (string) optional($assignment->event)->title,
-                    'event_date' => optional($assignment->event?->event_date)?->format('d M Y'),
+                    'event_title' => (string) optional($event)->title,
+                    'event_date' => optional($event?->event_date)?->format('d M Y'),
                     'scheme_label' => (string) ($scheme['label'] ?? 'Skema'),
-                    'scheme_percent' => (int) ($scheme['percentage'] ?? 0),
+                    'scheme_percent' => $schemePercent,
+                    'event_price' => $eventPrice,
+                    'active_participants_count' => $activeParticipants,
+                    'fee_per_participant' => $feePerParticipant,
+                    'estimated_fee' => $estimatedFee,
                     'deadline' => $assignment->sla_upload_deadline,
                     'remaining_hours' => $assignment->getRemainingHours(),
                     'status_label' => match ((string) $assignment->status) {
@@ -624,7 +765,19 @@ class TrainerController extends Controller
                 'enrollments' => function ($query) {
                     $query->where('status', 'active');
                 },
-                'modules' // Tambahkan ini untuk menghitung jumlah modul
+                'modules', // Tambahkan ini untuk menghitung jumlah modul
+                'modules as processing_assigned_count' => function ($query) {
+                    $query->where('processing_status', 'assigned_to_admin_course');
+                },
+                'modules as processing_uploaded_count' => function ($query) {
+                    $query->where('processing_status', 'processed_uploaded');
+                },
+                'modules as processing_revision_count' => function ($query) {
+                    $query->where('processing_status', 'revision_requested');
+                },
+                'modules as processing_ready_count' => function ($query) {
+                    $query->where('processing_status', 'ready_for_publish');
+                },
             ])
             ->withAvg('reviews', 'rating')
             ->orderBy('created_at', 'desc')
@@ -736,6 +889,18 @@ class TrainerController extends Controller
             $classAverage = round($totalScores / $totalSubmissions, 1);
         }
 
+        $processingModules = $course->modules->filter(function ($module) {
+            return filled($module->processing_status ?? null);
+        });
+
+        $processingSummary = [
+            'total' => $processingModules->count(),
+            'assigned' => $processingModules->where('processing_status', 'assigned_to_admin_course')->count(),
+            'uploaded' => $processingModules->where('processing_status', 'processed_uploaded')->count(),
+            'revision' => $processingModules->where('processing_status', 'revision_requested')->count(),
+            'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
+        ];
+
         return view('trainer.detail-course', compact(
             'course',
             'enrollmentCount',
@@ -744,7 +909,8 @@ class TrainerController extends Controller
             'activeStudents',
             'quizAttempts',
             'classAverage',
-            'totalSubmissions'
+            'totalSubmissions',
+            'processingSummary'
         ));
     }
     public function events(Request $request)
@@ -784,6 +950,25 @@ class TrainerController extends Controller
                 return in_array(mb_strtolower($trainerName), $names, true);
             })
             ->values();
+
+        $assignmentMap = TrainerAssignment::query()
+            ->where('trainer_id', (int) $user->id)
+            ->whereIn('event_id', $events->pluck('id')->all())
+            ->orderByDesc('id')
+            ->get()
+            ->unique('event_id')
+            ->keyBy('event_id');
+
+        $events = $events->map(function ($event) use ($user, $assignmentMap) {
+            $assignment = $assignmentMap->get((int) $event->id);
+            $compensation = $this->resolveEventCompensation($event, (int) $user->id, $assignment);
+
+            foreach ($compensation as $key => $value) {
+                $event->setAttribute($key, $value);
+            }
+
+            return $event;
+        })->values();
 
         $upcomingCount = $events->filter(function ($event) {
             return $event->event_date && \Carbon\Carbon::parse($event->event_date)->gte(now()->startOfDay());
@@ -913,7 +1098,9 @@ class TrainerController extends Controller
             }
         }
 
-        return view('trainer.detail-event', compact('event', 'myModules', 'myMaterialStatus'));
+        $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId);
+
+        return view('trainer.detail-event', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
     }
 
     public function downloadEventVbg($id)
@@ -1189,22 +1376,29 @@ class TrainerController extends Controller
         // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
-        $uploadedMaterials = $allModules
-            ->filter(function ($module) {
-                return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
-            })
-            ->map(function ($module) use ($course) {
-                $unitNo = (int) floor((((int) $module->order_no) - 1) / 3) + 1;
+        // Hanya tampilkan materi yang sudah diupload untuk bab (unit) yang sedang aktif saja.
+        // Mengambil ID modul yang ada di bab aktif untuk filter yang presisi.
+        $activeUnitModuleIds = $activeUnitModules->pluck('id')->all();
 
+        $uploadedMaterials = $allModules
+            ->filter(function ($module) use ($activeUnitModuleIds) {
+                // Hanya modul di bab aktif, dengan file yang sudah terupload
+                return in_array($module->id, $activeUnitModuleIds)
+                    && in_array($module->type, ['pdf', 'video'])
+                    && !empty($module->content_url);
+            })
+            ->map(function ($module) use ($course, $unitIndex) {
                 return [
                     'module_id' => (int) $module->id,
                     'order_no' => (int) $module->order_no,
-                    'unit_no' => $unitNo,
+                    'unit_no' => (int) $unitIndex + 1,
                     'type' => (string) $module->type,
                     'title' => (string) ($module->title ?? ''),
                     'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
                     'view_url' => route('trainer.courses.studio.material.view', [$course->id, $module->id]),
                     'updated_at' => optional($module->updated_at)->toDateTimeString(),
+                    'review_status' => (string) ($module->review_status ?? 'pending_review'),
+                    'processing_status' => (string) ($module->processing_status ?? ''),
                 ];
             })
             ->values();
@@ -1231,17 +1425,29 @@ class TrainerController extends Controller
 
     public function eventStudio($id)
     {
-        $trainerId = \Illuminate\Support\Facades\Auth::id();
-        $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
+        $trainer = Auth::user();
+        $trainerId = (int) ($trainer->id ?? 0);
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        $event = \App\Models\Event::findOrFail($id);
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where(function ($q) use ($trainerId, $trainerName) {
-                $q->where('trainer_id', $trainerId);
-                if ($trainerName !== '') {
-                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
-                }
-            })
-            ->firstOrFail();
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            abort(403, 'Anda tidak memiliki akses ke materi event ini.');
+        }
+
+        $assignment = $this->ensureEventAssignmentForTrainer($event, $trainer)
+            ?: $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+
+        // For co-speakers, material state must be isolated per assignment.
+        if ($assignment && (int) ($event->trainer_id ?? 0) !== (int) ($trainer->id ?? 0)) {
+            $event->setAttribute('module_path', (string) ($assignment->material_path ?? ''));
+            $event->setAttribute('module_submission_path', (string) ($assignment->material_path ?? ''));
+            $event->setAttribute('module_submitted_at', $assignment->material_submitted_at ?: $assignment->materials_uploaded_at);
+            $event->setAttribute('material_status', (string) ($assignment->material_status ?: 'pending'));
+            $event->setAttribute('material_approved_at', $assignment->material_approved_at);
+            $event->setAttribute('module_verified_at', $assignment->material_approved_at);
+            $event->setAttribute('material_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
+            $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
+        }
 
         // Exact speaker name check for LIKE matches
         if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
@@ -1268,7 +1474,9 @@ class TrainerController extends Controller
             }
         }
 
-        return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus'));
+        $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId, $assignment);
+
+        return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
     }
 
     public function saveEventQuiz(Request $request, $id)
@@ -1471,7 +1679,6 @@ class TrainerController extends Controller
     public function editProfile()
     {
         $trainer = Auth::user();
-
         return view('trainer.profile-edit', compact('trainer'));
     }
 
@@ -1940,36 +2147,29 @@ class TrainerController extends Controller
         $trainerId = Auth::id();
         $trainerName = mb_strtolower(trim((string) (Auth::user()?->name ?? '')));
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where(function ($q) use ($trainerId, $trainerName) {
-                $q->where('trainer_id', $trainerId);
-                if ($trainerName !== '') {
-                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
-                }
-            })
-            ->firstOrFail();
+        $trainer = Auth::user();
+        $event = \App\Models\Event::findOrFail($id);
+        $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0);
 
-        // Exact speaker name check
-        if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
-            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
-            if (!in_array($trainerName, $speakerNames, true)) {
-                return response()->json(['success' => false, 'error' => 'Akses ditolak.'], 403);
-            }
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Anda tidak memiliki akses ke materi event ini.',
+            ], 403);
         }
 
-        if (($event->material_status ?? '') === 'approved') {
-            // Check per-trainer: only block if THIS trainer's module is approved
-            $myApproved = \App\Models\EventTrainerModule::where('event_id', $event->id)
-                ->where('trainer_id', $trainerId)
-                ->where('status', 'approved')
-                ->exists();
+        $assignment = $this->ensureEventAssignmentForTrainer($event, $trainer)
+            ?: $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
 
-            if ($myApproved) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Materi Anda sudah disetujui admin, upload ulang tidak diizinkan.',
-                ], 422);
-            }
+        $effectiveMaterialStatus = (string) ($isPrimaryTrainer
+            ? ($event->material_status ?? '')
+            : ($assignment->material_status ?? 'pending'));
+
+        if ($effectiveMaterialStatus === 'approved') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
+            ], 422);
         }
 
         $materialStatus = (string) ($event->material_status ?? 'draft');
@@ -2026,34 +2226,43 @@ class TrainerController extends Controller
             }
         }
 
-        if (!empty($primaryMaterialPath) && $firstFile) {
-            // Save to per-trainer module table instead of global event module_path
-            \App\Models\EventTrainerModule::create([
-                'event_id'      => $event->id,
-                'trainer_id'    => $trainerId,
-                'original_name' => $firstFile->getClientOriginalName(),
-                'path'          => $primaryMaterialPath,
-                'status'        => 'pending_review',
-            ]);
-
-            // Update event-level status only if not already approved by someone
-            if (($event->material_status ?? '') !== 'approved') {
+        if (!empty($primaryMaterialPath)) {
+            if ($isPrimaryTrainer || !$assignment) {
                 $event->update([
-                    'material_status'          => 'pending_review',
-                    'module_submitted_at'      => now(),
-                    'module_verified_at'       => null,
-                    'module_verified_by'       => null,
-                    'module_rejected_at'       => null,
-                    'module_rejected_by'       => null,
-                    'module_rejection_reason'  => null,
-                    'material_approved_at'     => null,
-                    'material_approved_by'     => null,
-                    'material_rejection_reason'=> null,
+                    'module_path' => $primaryMaterialPath,
+                    'material_status' => 'pending_review',
+                    'module_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejection_reason' => null,
+                    'module_verified_at' => null,
+                    'module_verified_by' => null,
+                    'module_rejected_at' => null,
+                    'module_rejected_by' => null,
+                    'module_rejection_reason' => null,
+                ]);
+            } else {
+                $assignment->update([
+                    'material_path' => $primaryMaterialPath,
+                    'materials_uploaded_at' => now(),
+                    'material_status' => 'pending_review',
+                    'material_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejected_at' => null,
+                    'material_rejected_by' => null,
+                    'material_rejection_reason' => null,
                 ]);
             }
 
-            if (str_starts_with((string) $firstFile->getMimeType(), 'image/')) {
-                $latestImagePath = $primaryMaterialPath;
+            if (str_starts_with((string) $file->getMimeType(), 'image/')) {
+                $latestImagePath = $filepath;
+            } else {
+                // Treat non-image docs as a module submission (pending admin verification).
+                $ext = strtolower((string) $file->getClientOriginalExtension());
+                if (in_array($ext, ['pdf', 'ppt', 'pptx', 'doc', 'docx'], true)) {
+                    $latestModuleDocPath = $filepath;
+                }
             }
         }
 
@@ -2061,7 +2270,10 @@ class TrainerController extends Controller
         if ($latestImagePath) {
             $updates['vbg_path'] = $latestImagePath;
         }
-        if (!empty($updates)) {
+        if ($latestModuleDocPath) {
+            $updates['module_path'] = $latestModuleDocPath;
+        }
+        if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
             $event->update($updates);
         }
         if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
@@ -2439,6 +2651,51 @@ class TrainerController extends Controller
         }
 
         abort(404, 'File sertifikat belum tersedia.');
+    }
+
+    private function trainerCanManageEventMaterials(Event $event, $trainer): bool
+    {
+        if (!$trainer) {
+            return false;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
+            return true;
+        }
+
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        if ($trainerName === '') {
+            return false;
+        }
+
+        $speakerRaw = trim((string) ($event->speaker ?? ''));
+        if ($speakerRaw === '') {
+            return false;
+        }
+
+        $parts = preg_split('/\s*[,;]+\s*/', $speakerRaw) ?: [];
+        $speakerNames = collect($parts)
+            ->map(fn($name) => mb_strtolower(trim((string) $name)))
+            ->filter(fn($name) => $name !== '')
+            ->unique()
+            ->values();
+
+        if ($speakerNames->contains($trainerName)) {
+            $assignment = $this->latestEventAssignment((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
+            if ($assignment) {
+                return in_array((string) ($assignment->status ?? ''), ['accepted', 'active'], true);
+            }
+
+            $invitation = $this->latestEventInvitation((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
+            if ($invitation) {
+                return in_array((string) $invitation->effectiveInvitationStatus(), ['accepted', 'pending'], true);
+            }
+
+            // Legacy fallback: speaker listed but no invitation/assignment record yet.
+            return true;
+        }
+
+        return false;
     }
 
 

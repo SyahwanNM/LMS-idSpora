@@ -212,8 +212,16 @@
                                     </div>
                                 </div>
                                 <div class="author">
-                                    <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2" alt="Profile">
-                                    <h6 class="mb-0" style="font-size:13px; font-weight:500;">idSpora Team</h6>
+                                    @php
+                                        $trainer = $course->trainer;
+                                        $trainerName = $trainer ? ($trainer->full_name_with_title ?: $trainer->name) : 'idSpora Team';
+                                        $trainerAvatar = $trainer ? $trainer->avatar_url : 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2';
+                                        $trainerHref = $trainer ? route('public.trainer-profile.show', $trainer->id) : '#';
+                                    @endphp
+                                    <img src="{{ $trainerAvatar }}" alt="{{ $trainerName }}">
+                                    <a href="{{ $trainerHref }}" style="text-decoration:none; color:inherit;">
+                                        <h6 class="mb-0" style="font-size:13px; font-weight:600;">{{ $trainerName }}</h6>
+                                    </a>
                                     <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />

@@ -115,6 +115,31 @@
                 <span class="info-card-value">{{ $event->location ?? 'Tech Hub Hall A' }}</span>
               </div>
             </div>
+
+            <div class="info-card">
+              <div class="info-icon-shell">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M16 8h-5a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H8"></path>
+                  <path d="M12 6v2"></path>
+                  <path d="M12 16v2"></path>
+                </svg>
+              </div>
+              <div class="info-card-content">
+                <span class="info-card-label">FEE TRAINER</span>
+                @if((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
+                  <span class="info-card-value">
+                    Rp {{ number_format((float) ($eventCompensation['fee_per_participant'] ?? 0), 0, ',', '.') }}/peserta
+                  </span>
+                  @if((bool) ($eventCompensation['is_fallback_to_event_price'] ?? false))
+                    <span class="info-card-label">Sumber: harga event (skema belum dipilih)</span>
+                  @endif
+                @else
+                  <span class="info-card-value">Belum diatur admin</span>
+                @endif
+              </div>
+            </div>
           </div>
         </div>
 

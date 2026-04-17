@@ -3243,7 +3243,8 @@ label {
 
 .scroll-schedule-box {
     max-height: 350px;
-    height: 350px;
+    height: auto;
+    overflow-y: auto;
     overflow-y: auto;
     padding-right: 10px;
 }

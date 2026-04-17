@@ -256,7 +256,13 @@ Route::middleware('auth')->get('/panduan', [PublicPagesController::class, 'guide
 // Public event pages (accessible without login)
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
 Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-Route::get('/profil-trainer/{trainer}', [PublicTrainerProfileController::class, 'show'])->name('public.trainer-profile.show');
+// Public trainer profile: constrain to numeric ID to avoid colliding with /trainer/dashboard.
+Route::get('/trainer/{trainer}', [PublicTrainerProfileController::class, 'show'])
+    ->whereNumber('trainer')
+    ->name('public.trainer-profile.show');
+Route::get('/trainers/{trainer}', [PublicTrainerProfileController::class, 'show'])
+    ->whereNumber('trainer')
+    ->name('trainers.profile');
 // Redirect search to the best-matching event detail (exact title match preferred)
 Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
 
@@ -343,7 +349,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
     Route::get('/profile/events', function () {
-        return redirect()->route('profile.history'); }); // Redirect legacy route
+        return redirect()->route('profile.history');
+    }); // Redirect legacy route
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
@@ -406,9 +413,12 @@ Route::middleware('auth')->group(function () {
 
     // Course Certificate (after rating)
     Route::get('/courses/{course}/certificate', [\App\Http\Controllers\User\CourseCertificateController::class, 'show'])->name('course.certificate');
-     Route::get('/courses/{course}/certificate/{enrollment}/preview', [\App\Http\Controllers\CRM\CertificateController::class, 'previewCourse'])->name('course.certificates.preview');
+    Route::get('/courses/{course}/certificate/{enrollment}/preview', [\App\Http\Controllers\CRM\CertificateController::class, 'previewCourse'])->name('course.certificates.preview');
 });
 Route::get('/courses', [\App\Http\Controllers\Public\PublicCourseController::class, 'index'])->name('courses.index');
+
+// Redirect legacy /login path to the actual login page at /sign-in
+Route::get('/login', fn() => redirect('/sign-in'));
 
 // Authentication routes (only for guests)
 Route::middleware(['guest'])->group(function () {
@@ -709,6 +719,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/approved', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approved'])->name('admin.material.approved');
     Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.material.rejected');
     Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.material.module.stream');
+    Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
+    Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
+    Route::post('/admin/material/{material}/modules/{module}/assign-course', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'assignCourse'])->name('admin.material.module.assign-course');
+    Route::post('/admin/material/{material}/modules/{module}/upload-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'uploadProcessed'])->name('admin.material.module.upload-processed');
+    Route::post('/admin/material/{material}/modules/{module}/accept-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'acceptProcessed'])->name('admin.material.module.accept-processed');
+    Route::post('/admin/material/{material}/modules/{module}/request-revision', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'requestRevision'])->name('admin.material.module.request-revision');
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
     Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
     Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
@@ -718,6 +734,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Event Material Approval Routes
     Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');
     Route::get('/admin/event/{event}/material', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'show'])->name('admin.event-material.show');
+    Route::get('/admin/event/{event}/material/stream', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'stream'])->name('admin.event-material.stream');
     Route::post('/admin/event/{event}/material/approve', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'approve'])->name('admin.event-material.approve');
     Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
 });

@@ -163,11 +163,26 @@ class TrainerManagementController extends Controller
             ->latest('created_at')
             ->get();
 
-        // Load all modules (with quizzes) for all trainer's courses
+        // Load all modules (with quizzes) for all trainer's courses in one query.
+        // This avoids relation calls on items inferred as stdClass after selective projections.
         $trainerModules = collect();
-        foreach ($trainerCourses as $course) {
-            $modules = $course->modules()->with('quizQuestions', 'quizAttempts')->get();
+        $trainerCourseIds = $trainerCourses->pluck('id')->filter()->values();
+        $courseMap = $trainerCourses->keyBy('id');
+
+        if ($trainerCourseIds->isNotEmpty()) {
+            $modules = \App\Models\CourseModule::query()
+                ->whereIn('course_id', $trainerCourseIds)
+                ->with('quizQuestions', 'quizAttempts')
+                ->orderBy('course_id')
+                ->orderBy('order_no')
+                ->get();
+
             foreach ($modules as $module) {
+                $course = $courseMap->get((int) $module->course_id);
+                if (!$course) {
+                    continue;
+                }
+
                 $trainerModules->push([
                     'course' => $course,
                     'module' => $module,
