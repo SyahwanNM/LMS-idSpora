@@ -808,10 +808,13 @@ class MaterialApprovalController extends Controller
             ->where('status', 'approved')
             ->withCount('modules');
 
-        $approvedEventModulesQuery = Event::query()
-            ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path')
-            ->where('material_status', 'approved');
+        $approvedEventModulesQuery = \App\Models\EventTrainerModule::query()
+            ->with([
+                'event:id,title,jenis,event_date,material_deadline',
+                'trainer:id,name,email,avatar',
+                'reviewer:id,name',
+            ])
+            ->where('status', 'approved');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -823,10 +826,8 @@ class MaterialApprovalController extends Controller
             });
 
             $approvedEventModulesQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhereHas('trainer', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
+                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+                  ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -863,18 +864,9 @@ class MaterialApprovalController extends Controller
         $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
 
         $approvedEventModules = $approvedEventModulesQuery
-            ->orderByDesc('material_approved_at')
-            ->orderByDesc('event_date')
+            ->orderByDesc('reviewed_at')
             ->orderByDesc('created_at')
-            ->get([
-                'id',
-                'trainer_id',
-                'title',
-                'jenis',
-                'event_date',
-                'module_path',
-                'material_approved_at as module_verified_at',
-            ]);
+            ->get();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
 
