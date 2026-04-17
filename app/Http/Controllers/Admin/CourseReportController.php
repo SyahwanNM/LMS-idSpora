@@ -385,8 +385,18 @@ class CourseReportController extends Controller
         });
 
         if ($q === '') {
-            $rows = $rows->filter(function($row) {
-                return $row['total_views'] > 0 || $row['avg_watch_minutes'] > 0 || $row['comments_count'] > 0;
+            // Pre-fetch created_at to avoid N+1
+            $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
+                ->pluck('created_at', 'id');
+
+            $rows = $rows->filter(function($row) use ($from, $to, $courseCreatedMap) {
+                if ($row['total_views'] > 0 || $row['avg_watch_minutes'] > 0 || $row['comments_count'] > 0) return true;
+                $createdAt = $courseCreatedMap->get($row['course_id']);
+                if ($createdAt) {
+                    $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
+                    return $created->between($from, $to);
+                }
+                return false;
             });
         }
         $rows = $rows->values();
@@ -574,14 +584,24 @@ class CourseReportController extends Controller
                 'transactions_count' => $stat ? (int) $stat->transactions_count : 0,
                 'revenue_total' => $stat ? (float) $stat->revenue_total : 0.0,
                 'expense_total' => $expense,
-                'last_paid_at' => $stat && $stat->last_paid_at ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString() : null,
+                'last_paid_at' => $stat && $stat->last_paid_at
+                    ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString()
+                    : $c->created_at?->toDateString(),
+                'created_at' => $c->created_at,
             ];
         });
 
-        // Filter: only show courses with revenue/transactions unless searching
+        // Show courses that: have transactions in period OR were created in period
         if (!isset($q) || $q === '') {
-            $rows = $rows->filter(function($row) {
-                return $row['transactions_count'] > 0;
+            $rows = $rows->filter(function($row) use ($from, $to) {
+                if ($row['transactions_count'] > 0) return true;
+                // Also show courses created within the selected period
+                $createdAt = $row['created_at'];
+                if ($createdAt) {
+                    $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
+                    return $created->between($from, $to);
+                }
+                return false;
             });
         } elseif (isset($q) && $q !== '') {
             $rows = $rows->filter(function($row) use ($q) {

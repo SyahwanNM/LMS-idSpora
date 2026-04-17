@@ -58,29 +58,23 @@
 
                 <div class="pertanyaan_penilaian">
                     <h4>Bagaimana kurikulum dan proses belajar di kelas ini?</h4>
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="stars" id="course_stars" aria-label="Rating kelas">
-                            <i class="bi bi-star" data-value="1"></i>
-                            <i class="bi bi-star" data-value="2"></i>
-                            <i class="bi bi-star" data-value="3"></i>
-                            <i class="bi bi-star" data-value="4"></i>
-                            <i class="bi bi-star" data-value="5"></i>
-                        </div>
-                        <i class="bi bi-check-lg checkmark" id="course_check" aria-hidden="true"></i>
+                    <div class="stars" id="course_stars" aria-label="Rating kelas">
+                        <i class="bi bi-star" data-value="1"></i>
+                        <i class="bi bi-star" data-value="2"></i>
+                        <i class="bi bi-star" data-value="3"></i>
+                        <i class="bi bi-star" data-value="4"></i>
+                        <i class="bi bi-star" data-value="5"></i>
                     </div>
                 </div>
 
                 <div class="pertanyaan_penilaian">
                     <h4>Bagaimana Trainer mengajar dalam proses belajar di kelas ini?</h4>
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="stars_trainer" id="trainer_stars" aria-label="Rating trainer">
-                            <i class="bi bi-star" data-value="1"></i>
-                            <i class="bi bi-star" data-value="2"></i>
-                            <i class="bi bi-star" data-value="3"></i>
-                            <i class="bi bi-star" data-value="4"></i>
-                            <i class="bi bi-star" data-value="5"></i>
-                        </div>
-                        <i class="bi bi-check-lg checkmark" id="trainer_check" aria-hidden="true"></i>
+                    <div class="stars_trainer" id="trainer_stars" aria-label="Rating trainer">
+                        <i class="bi bi-star" data-value="1"></i>
+                        <i class="bi bi-star" data-value="2"></i>
+                        <i class="bi bi-star" data-value="3"></i>
+                        <i class="bi bi-star" data-value="4"></i>
+                        <i class="bi bi-star" data-value="5"></i>
                     </div>
                 </div>
             </div>

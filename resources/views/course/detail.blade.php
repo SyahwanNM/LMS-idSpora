@@ -1216,7 +1216,9 @@
 
         if ($userCanAccessCourse) {
           if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+            // Unlock entire first unit (all modules in unit 1, typically 3: pdf+video+quiz)
+            $firstUnitModules = $orderedAllModules->take(3);
+            $accessibleModuleIds = $firstUnitModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
           } else {
             $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
           }
@@ -1224,7 +1226,9 @@
           if ($freeAccessMode === 'all') {
             $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
           } elseif ($freeAccessMode === 'limit_2') {
-            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+            // Unlock entire first unit for non-enrolled users too (freemium preview)
+            $firstUnitModules = $orderedAllModules->take(3);
+            $accessibleModuleIds = $firstUnitModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
           } else {
             $accessibleModuleIds = [];
           }
@@ -1666,7 +1670,7 @@
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll"
               style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">
-              {{ (isset($paymentFailed) && $paymentFailed) ? 'Bayar Lagi' : 'Beli Sekarang' }}
+              {{ (isset($paymentFailed) && $paymentFailed) ? 'Bayar Lagi' : 'Daftar Sekarang' }}
             </a>
             @if($hasPreview)
               <a href="{{ route('course.learn', $course->id) }}" class="enroll"
@@ -1785,8 +1789,22 @@
     function copyLink(url) {
       const text = url || window.location.href;
       const done = () => {
-        // Simple feedback without changing layout
-        try { alert('Link berhasil disalin'); } catch (e) { }
+        // Show inline toast instead of alert
+        let toast = document.getElementById('copy-link-toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'copy-link-toast';
+          toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;';
+          toast.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#22c55e" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg> Link course berhasil disalin!';
+          document.body.appendChild(toast);
+        }
+        toast.style.opacity = '1';
+        toast.style.display = 'flex';
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => { toast.style.display = 'none'; }, 300);
+        }, 2500);
       };
 
       if (navigator.clipboard && window.isSecureContext) {

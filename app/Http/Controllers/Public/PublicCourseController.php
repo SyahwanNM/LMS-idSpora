@@ -22,7 +22,7 @@ class PublicCourseController extends Controller
             ->withCount([
                 'enrollments as enrollments_count' => function ($q) {
                     $q->select(DB::raw('COUNT(DISTINCT user_id)'))
-                        ->where('status', 'active');
+                        ->whereIn('status', ['active', 'completed']);
                 },
             ])
             ->where('status','active');
@@ -100,7 +100,7 @@ class PublicCourseController extends Controller
                             ->withCount([
                                 'enrollments as enrollments_count' => function ($qq) {
                                     $qq->select(DB::raw('COUNT(DISTINCT user_id)'))
-                                        ->where('status', 'active');
+                                        ->whereIn('status', ['active', 'completed']);
                                 },
                             ]);
                     },

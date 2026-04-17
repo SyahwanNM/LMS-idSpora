@@ -20,15 +20,22 @@
                         </thead>
                         <tbody>
                         @forelse($trainerModules as $item)
-                            @php $module = $item['module']; $course = $item['course']; @endphp
+                            @php
+                                $module = $item['module'];
+                                $course = $item['course'];
+                                $isQuiz = strtolower($module->type ?? '') === 'quiz';
+                                $quizHasQuestions = $isQuiz && ($item['quizzes'] ?? collect())->count() > 0;
+                                // Quiz with questions is auto-considered approved
+                                $effectiveStatus = $quizHasQuestions ? 'approved' : ($module->review_status ?? 'pending_review');
+                            @endphp
                             <tr>
                                 <td>{{ $course->name }}</td>
                                 <td>{{ $module->title }}</td>
                                 <td>{{ ucfirst($module->type) }}</td>
                                 <td>
-                                    @if($module->review_status === 'approved')
+                                    @if($effectiveStatus === 'approved')
                                         <span class="badge bg-success">Disetujui</span>
-                                    @elseif($module->review_status === 'rejected')
+                                    @elseif($effectiveStatus === 'rejected')
                                         <span class="badge bg-danger">Ditolak</span>
                                     @else
                                         <span class="badge bg-secondary">Menunggu</span>
@@ -38,7 +45,7 @@
                                 <td>{{ $module->reviewed_at ? $module->reviewed_at->format('d M Y H:i') : '-' }}</td>
                                 <td>{{ $module->review_rejection_reason ?? '-' }}</td>
                                 <td class="text-center">
-                                    @if($module->review_status !== 'approved')
+                                    @if($effectiveStatus !== 'approved')
                                     <form action="{{ route('admin.trainer.modules.approve', [$trainer->id, $module->id]) }}" method="POST" style="display:inline-block;">
                                         @csrf
                                         <button type="submit" class="btn btn-success btn-sm" title="Setujui" onclick="return confirm('Setujui modul ini?')">
@@ -46,7 +53,7 @@
                                         </button>
                                     </form>
                                     @endif
-                                    @if($module->review_status !== 'rejected')
+                                    @if($effectiveStatus !== 'rejected' && !$isQuiz)
                                     <form action="#" method="POST" style="display:inline-block; margin-left:4px;">
                                         @csrf
                                         <button type="button" class="btn btn-danger btn-sm" title="Tolak" onclick="showRejectModal({{ $module->id }}, '{{ route('admin.trainer.modules.reject', [$trainer->id, $module->id]) }}')">

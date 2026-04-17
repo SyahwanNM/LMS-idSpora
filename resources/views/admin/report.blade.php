@@ -159,7 +159,7 @@
                         <tr>
                             <td>{{ $row['course_name'] }}</td>
                             <td>
-                                {{ $row['last_paid_at'] ? \Carbon\Carbon::parse($row['last_paid_at'])->format('d/m/Y') : '-' }}
+                                {{ $row['last_paid_at'] ? \Carbon\Carbon::parse($row['last_paid_at'])->format('d/m/Y') : ($row['created_at'] ? \Carbon\Carbon::parse($row['created_at'])->format('d/m/Y') : '-') }}
                             </td>
                             <td>{{ (int)($row['participants_count'] ?? 0) }}</td>
                             <td>{{ number_format((float)($row['course_price'] ?? 0), 0, ',', '.') }}</td>
@@ -717,9 +717,10 @@
                 }
 
                 tbody.innerHTML = rows.map(r => {
-                    const lastPaid = r.last_paid_at ? new Date(r.last_paid_at) : null;
-                    const lastPaidText = lastPaid && !isNaN(lastPaid.getTime()) ?
-                        String(lastPaid.getDate()).padStart(2, '0') + '/' + String(lastPaid.getMonth() + 1).padStart(2, '0') + '/' + lastPaid.getFullYear() :
+                    const dateRaw = r.last_paid_at || r.created_at || null;
+                    const dateObj = dateRaw ? new Date(dateRaw) : null;
+                    const lastPaidText = dateObj && !isNaN(dateObj.getTime()) ?
+                        String(dateObj.getDate()).padStart(2, '0') + '/' + String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + dateObj.getFullYear() :
                         '-';
                     const previewUrl = @json(route('preview-pendapatan')) + '?course_id=' + encodeURIComponent(r.course_id);
                     return `

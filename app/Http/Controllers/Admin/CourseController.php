@@ -873,10 +873,10 @@ class CourseController extends Controller
                 $q->orderBy('order_no')->withCount('quizQuestions');
             },
         ]);
-        // Students enrolled (use active enrollments for the count)
+        // Students enrolled (use active + completed enrollments for the count)
         $course->loadCount([
             'enrollments as students_count' => function ($q) {
-                $q->where('status', 'active');
+                $q->whereIn('status', ['active', 'completed']);
             },
         ]);
 

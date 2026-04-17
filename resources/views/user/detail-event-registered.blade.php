@@ -123,7 +123,7 @@
 
         /* Reduce padding specifically for Terms & Condition tab (stronger override) */
         .desc-box .tab-content #nav-contact {
-            padding: 4px 8px 0 !important;
+            padding: 4px 8px 24px !important;
             margin-bottom: 0 !important;
         }
 
@@ -1353,30 +1353,15 @@
                 <div class="share">
                     <h6 class="share-title">Share this event:</h6>
                     <div class="share-list">
-                        @php
-                            $canShareLink = ($isRegistered && $eventFinished && !$hasFeedback) || $hasFeedback;
-                        @endphp
-                        @if($canShareLink)
-                            <button type="button" id="copyShareLink" class="share-action" aria-label="Copy link">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16"
-                                    fill="#4E5566" aria-hidden="true">
-                                    <path
-                                        d="M6.354 5.5H4A2.5 2.5 0 0 0 4 10h2.354a.5.5 0 0 1 0 1H4a3.5 3.5 0 1 1 0-7h2.354a.5.5 0 0 1 0 1Zm3.292 0a.5.5 0 0 1 0-1H12a3.5 3.5 0 1 1 0 7H9.646a.5.5 0 0 1 0-1H12a2.5 2.5 0 1 0 0-5H9.646Z" />
-                                    <path d="M5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z" />
-                                </svg>
-                                <span id="copyShareLinkText">Copy link</span>
-                            </button>
-                        @else
-                            <span class="share-action share-action--disabled" aria-label="Copy link locked"
-                                title="Complete required steps to unlock sharing">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#4E5566"
-                                    viewBox="0 0 16 16" aria-hidden="true">
-                                    <path
-                                        d="M8 1a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zM7 3a1 1 0 0 1 2 0v2H7V3z" />
-                                </svg>
-                                <span>Copy link</span>
-                            </span>
-                        @endif
+                        <button type="button" id="copyShareLink" class="share-action" aria-label="Copy link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16"
+                                fill="#4E5566" aria-hidden="true">
+                                <path
+                                    d="M6.354 5.5H4A2.5 2.5 0 0 0 4 10h2.354a.5.5 0 0 1 0 1H4a3.5 3.5 0 1 1 0-7h2.354a.5.5 0 0 1 0 1Zm3.292 0a.5.5 0 0 1 0-1H12a3.5 3.5 0 1 1 0 7H9.646a.5.5 0 0 1 0-1H12a2.5 2.5 0 1 0 0-5H9.646Z" />
+                                <path d="M5.5 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H6a.5.5 0 0 1-.5-.5Z" />
+                            </svg>
+                            <span id="copyShareLinkText">Copy link</span>
+                        </button>
 
                         <a id="fbShare" class="share-action share-icon" aria-label="Share on Facebook"
                             href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}"
@@ -2396,8 +2381,8 @@
                 </div>
                 <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab"
                     tabindex="0">
-                    <h6 class="mb-3 mt-2">Terms & Condition</h6>
-                    <div class="terms-content" style="margin-top: 10px;">
+                    <h6 style="margin-left: 40px;" class="title-schedule">Terms & Condition</h6>
+                    <div style="margin-left: 40px;"  class="terms-content" style="margin-top: 10px;">
                         @php
                             $termsHtml = isset($event) ? ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')) : '';
                             $termsText = trim(preg_replace('/\xC2\xA0|\s+/', ' ', strip_tags((string) $termsHtml)));

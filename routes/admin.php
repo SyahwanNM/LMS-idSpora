@@ -37,14 +37,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
-    // Pull non-admin users with event participations for the Manage User table and view modal
+    // Pull regular users only (exclude admin and trainer)
     $users = \App\Models\User::with([
         'eventRegistrations' => function ($q) {
             $q->with('event')->orderBy('created_at', 'desc');
         }
     ])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
-        ->where('role', '!=', 'admin')
+        ->where('role', 'user')
         ->orderBy('name')
         ->get();
     return view('/admin/add-users', compact('users'));

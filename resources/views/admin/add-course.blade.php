@@ -40,8 +40,8 @@
                             <div class="sanity-msg" data-for="course-title"></div>
                         </div>
 
-                        <div class="row g-3 box_select_level_status">
-                            <div class="col-md-12">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
                                 <label class="form-label text-dark" for="course-level">Level Course <span class="text-danger">*</span></label>
                                 <select id="course-level" name="level" class="form-select" required>
                                     <option value="" selected disabled>Choose your level</option>
@@ -51,22 +51,21 @@
                                 </select>
                                 <div class="sanity-msg" data-for="course-level"></div>
                             </div>
+                            @if(isset($categories) && $categories->count())
+                            <div class="col-md-6">
+                                <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
+                                <select id="course-category" name="category_id" class="form-select" required>
+                                    <option value="" selected disabled>Pilih kategori</option>
+                                    @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="sanity-msg" data-for="course-category"></div>
+                            </div>
+                            @else
+                            <input type="hidden" name="category_id" value="1">
+                            @endif
                         </div>
-
-                        @if(isset($categories) && $categories->count())
-                        <div class="box_select_kategori mb-3">
-                            <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
-                            <select id="course-category" name="category_id" class="form-select" required>
-                                <option value="" selected disabled>Pilih kategori</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                            <div class="sanity-msg" data-for="course-category"></div>
-                        </div>
-                        @else
-                        <input type="hidden" name="category_id" value="1">
-                        @endif
 
                         <div class="box_select_trainer mb-3">
                             <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>

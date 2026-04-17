@@ -274,7 +274,7 @@
         </div>
 
         <div class="box_kuis_kanan">
-            <div class="quiz-title-row" style="margin-top: 6px;">
+            <div class="quiz-title-row" style="margin-top: 24px;">
                 <div class="quiz-title-left">
                     <button type="button" class="quiz-modules-open d-none" id="openModulesBtn" aria-label="Buka daftar modul">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">

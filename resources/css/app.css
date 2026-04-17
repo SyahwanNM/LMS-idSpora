@@ -3228,6 +3228,7 @@ label {
     color: black;
 }
 
+
 .tab-pane p {
     margin-left: 30px;
 }
@@ -3586,56 +3587,73 @@ textarea {
 
 /*MODAL VIEW USERS*/
 .view-modal-user-event {
-    margin-top: 15%;
-    max-height: 550px;
-    height: 550px;
+    margin-top: 100px;
+    max-height: 90vh;
+    height: auto;
+    overflow-y: auto;
 }
 
 .box-modal-view {
     display: flex;
+    gap: 24px;
+    align-items: flex-start;
 }
 
 .modal-dialog.custom-modal {
-    max-width: 60%;
-    width: 60%;
+    max-width: 680px;
+    width: 90%;
 }
 
 .box-view-kiri {
-    width: 45%;
-    margin: -20px 0px -20px -20px;
+    width: 38%;
+    flex-shrink: 0;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
 }
 
 .box-view-kiri h5 {
-    text-align: center;
-    margin-bottom: 50px;
-    margin-top: 50px;
+    text-align: left;
+    margin-bottom: 16px;
+    margin-top: 0;
+    font-size: 15px;
 }
 
 .profile-biodata {
-    width: 120px;
-    max-width: 150px;
-    border-radius: 60%;
-    margin-left: 140px;
-    margin-bottom: 20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 12px;
+    display: block;
 }
 
 .box-view-kiri h6 {
-    margin: 0px;
+    margin: 0 0 4px;
+    font-size: 15px;
 }
 
 .box-view-kiri p {
-    margin: 0px;
+    margin: 0 0 2px;
+    font-size: 13px;
+    color: #555;
 }
 
 .box-biodata {
-    margin: 0px;
+    margin: 0;
     text-align: center;
 }
 
 .box-view-kanan {
-    margin-left: 30px;
-    padding: 20px;
-    border: solid 1.5px #cecdcb;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border: none;
+    padding: 0;
+    margin: 0;
 }
 
 .box-total h6 {
@@ -3646,23 +3664,23 @@ textarea {
     position: sticky;
     top: 0;
     z-index: 2;
-    font-size: medium;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .table-daftar-acara {
-    font-size: small;
+    font-size: 13px;
 }
 
 .scroll-view-box {
-    max-height: 400px;
+    max-height: 220px;
     overflow-y: auto;
-    padding-right: 10px;
-    margin-top: 15px;
+    padding-right: 4px;
+    margin-top: 0;
 }
 
 .scroll-view-box::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 /*MODAL ADD EVENT*/
@@ -5056,13 +5074,18 @@ input[type="time"] {
     margin-top:25px;
 }
 .pertanyaan_penilaian h4{
-    width:60%;
+    flex: 1;
+    margin: 0;
 }
 .stars,
 .stars_trainer{
     display:flex;
     gap:8px;
     font-size:28px;
+    width: 180px;
+    min-width: 180px;
+    justify-content: flex-end;
+    flex-shrink: 0;
 }
 .submit-rating{
     margin-left:20px;

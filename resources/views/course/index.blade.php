@@ -168,6 +168,7 @@
                     $course = $enrollment->course;
                     if(!$course) continue;
                     $courseHref = route('course.detail', $course->id);
+                    $continueHref = route('course.learn', $course->id);
                     $cardImage = $course->card_thumbnail ?? ($course->media ?? null);
                     $pct = $enrollment->getProgressPercentage();
                     $pct = max(0, min(100, (int) $pct));
@@ -236,7 +237,7 @@
                                     </div>
                                     <p>{{ $pct }}% selesai</p>
                                 </div>
-                                <div class="btn-lanjut" role="button">Lanjutkan</div>
+                                <a href="{{ $continueHref }}" class="btn-lanjut" style="text-decoration:none; display:block; text-align:center;" onclick="event.stopPropagation();">Lanjutkan</a>
                             </div>
                         </article>
                     </a>
