@@ -342,7 +342,7 @@
         // Count existing modules to determine next order
         const existingCount = {
             {
-                $course - > modules - > count()
+                $course->modules->count()
             }
         };
 
