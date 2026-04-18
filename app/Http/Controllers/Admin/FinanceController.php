@@ -8,10 +8,14 @@ use Illuminate\Http\Request;
 use App\Models\ManualPayment;
 use App\Models\Referral;
 use App\Models\Withdrawal;
+use App\Models\Expense;
+use App\Models\TrainerPayment;
+use App\Models\User;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class FinanceController extends Controller
 {
@@ -25,7 +29,12 @@ class FinanceController extends Controller
         // 2. Pendapatan Bersih (Net Profit)
         // paid reseller commissions
         $paidCommissions = Referral::where('status', 'paid')->sum('amount');
-        $pendapatanBersih = $totalOmzet - $paidCommissions;
+        
+        // Custom Expenses
+        $totalExpenses = Expense::sum('amount');
+        $totalTrainerPayments = TrainerPayment::sum('amount');
+        
+        $pendapatanBersih = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPayments;
 
         // 3. Status Kas
         // Masih Tertahan (Pending)
@@ -282,7 +291,10 @@ class FinanceController extends Controller
         
         $events = \App\Models\Event::withCount(['registrations as total_registrations', 'registrations as active_registrations' => function($q){
             $q->where('status', 'active');
-        }])->latest()->paginate(10);
+        }])
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
         // Add revenue per event from ManualPayment
         foreach($events as $event) {
@@ -345,5 +357,58 @@ class FinanceController extends Controller
         $commissions = Referral::where('description', 'LIKE', '%' . $course->name . '%')->where('status', 'paid')->sum('amount');
         
         return view('admin.finance.course_detail', compact('course', 'transactions', 'totalIncome', 'commissions', 'pendingWithdrawals'));
+    }
+
+    public function storeExpense(Request $request)
+    {
+        $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'expense_date' => 'required|date',
+            'category' => 'nullable|string'
+        ]);
+
+        Expense::create($request->all());
+
+        return back()->with('success', 'Pengeluaran berhasil dicatat.');
+    }
+
+    public function storeTrainerPayment(Request $request)
+    {
+        $request->validate([
+            'trainer_id' => 'required|exists:users,id',
+            'amount' => 'required|numeric|min:0',
+            'month' => 'required|integer|between:1,12',
+            'year' => 'required|integer',
+            'salary_slip' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'proof_of_payment' => 'nullable|image|max:5120',
+        ]);
+
+        $data = $request->only(['trainer_id', 'amount', 'month', 'year', 'note']);
+
+        if ($request->hasFile('salary_slip')) {
+            $data['salary_slip'] = $request->file('salary_slip')->store('finance/salary_slips', 'public');
+        }
+
+        if ($request->hasFile('proof_of_payment')) {
+            $data['proof_of_payment'] = $request->file('proof_of_payment')->store('finance/proof_payments', 'public');
+        }
+
+        $payment = TrainerPayment::create($data);
+
+        // Notify Trainer
+        \App\Models\TrainerNotification::create([
+            'trainer_id' => $request->trainer_id,
+            'type' => 'payout_processed',
+            'title' => 'Gaji & Nota Baru Tersedia',
+            'message' => 'Admin telah mengirimkan gaji Anda untuk periode ' . date('F', mktime(0, 0, 0, $request->month, 1)) . ' ' . $request->year . '.',
+            'data' => [
+                'payment_id' => $payment->id,
+                'amount' => $payment->amount,
+                'url' => route('trainer.finance')
+            ]
+        ]);
+
+        return back()->with('success', 'Gaji trainer berhasil dikirim dan notifikasi telah dikirim.');
     }
 }

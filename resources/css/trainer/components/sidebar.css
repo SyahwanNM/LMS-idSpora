@@ -1,0 +1,476 @@
+.trainer-page #sidebar {
+    box-sizing: border-box;
+    height: calc(100vh - 60px);
+    width: 250px;
+    padding: 0 16px 8px;
+    background-color: var(--white-clr);
+    border-right: 1px solid var(--line-clr);
+    position: fixed;
+    top: 60px;
+    left: 0;
+    align-self: start;
+    transition: none;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    z-index: 900;
+}
+
+.trainer-page #sidebar + .main-wrapper {
+    margin-left: 250px;
+    transition: none;
+}
+
+html.sidebar-ready .trainer-page #sidebar {
+    transition: 300ms ease-in-out;
+}
+
+html.sidebar-ready .trainer-page #sidebar + .main-wrapper {
+    transition: margin-left 300ms ease-in-out;
+}
+
+.trainer-page #sidebar ul li {
+    margin-bottom: 2px;
+}
+
+.trainer-page #sidebar.close {
+    padding: 0 5px 8px;
+    width: 60px;
+}
+
+html.sidebar-collapsed .trainer-page #sidebar {
+    padding: 0 5px 8px;
+    width: 60px;
+}
+
+.trainer-page #sidebar.close + .main-wrapper {
+    margin-left: 60px;
+}
+
+html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
+    margin-left: 60px;
+}
+
+.trainer-page #sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+}
+
+/*BASE*/
+.trainer-page #sidebar a,
+.trainer-page #sidebar .dropdown-btn,
+.trainer-page #sidebar .logo {
+    border-radius: 8px;
+    padding: 13.6px;
+    text-decoration: none;
+    color: var(--text-clr);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.trainer-page .dropdown-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.trainer-page #sidebar svg {
+    flex-shrink: 0;
+    fill: var(--text-clr);
+}
+
+/*ACTIVE*/
+
+.trainer-page #sidebar ul li.active a {
+    background-color: var(--main-navy-clr);
+    color: var(--white-clr);
+}
+
+.trainer-page #sidebar ul li.active a svg {
+    fill: var(--white-clr);
+}
+
+/*HOVER*/
+
+.trainer-page #sidebar ul li:not(.active) a:hover,
+.trainer-page #sidebar ul li:not(.active) .dropdown-btn:hover {
+    background-color: var(--base-clr);
+    color: var(--main-navy-clr);
+}
+
+.trainer-page #sidebar ul li:not(.active) a:hover svg,
+.trainer-page #sidebar ul li:not(.active) .dropdown-btn:hover svg {
+    fill: var(--main-navy-clr);
+}
+
+/*CLICK EFFECT*/
+
+.trainer-page #sidebar ul li:not(.active) a:active,
+.trainer-page #sidebar ul li:not(.active) .dropdown-btn:active {
+    background-color: var(--main-navy-clr);
+    color: var(--white-clr);
+}
+
+.trainer-page #sidebar ul li:not(.active) a:active svg,
+.trainer-page #sidebar ul li:not(.active) .dropdown-btn:active svg {
+    fill: var(--white-clr);
+}
+
+/*SUB MENU*/
+.trainer-page #sidebar .sub-menu {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: 300ms ease-in-out;
+}
+
+.trainer-page #sidebar .sub-menu > div {
+    overflow: hidden;
+}
+
+.trainer-page #sidebar .sub-menu.show {
+    grid-template-rows: 1fr;
+}
+
+.trainer-page #sidebar .sub-menu a {
+    padding-left: 32px;
+}
+
+/*DROPDOWN ICON*/
+.trainer-page .dropdown-btn svg {
+    transition: transform 200ms ease;
+}
+
+.trainer-page .rotate svg:last-child {
+    transform: rotate(180deg);
+}
+
+/*TOGGLE BUTTON*/
+.trainer-page #toggle-btn {
+    margin-left: auto;
+    margin-bottom: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+}
+
+.trainer-page #toggle-btn svg {
+    transition: transform 150ms ease;
+}
+
+.trainer-page #toggle-btn:hover {
+    background-color: var(--main-navy-clr);
+}
+
+.trainer-page #toggle-btn:hover svg {
+    fill: var(--white-clr);
+}
+
+.trainer-page .profile {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--line-clr);
+}
+
+.trainer-page .profile form {
+    margin: 0;
+}
+
+.trainer-page .profile .sidebar-logout-btn {
+    width: 100%;
+    border-radius: 8px;
+    padding: 13.6px;
+    text-decoration: none;
+    color: var(--text-clr);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+}
+
+.trainer-page .profile .sidebar-logout-btn svg {
+    flex-shrink: 0;
+    fill: var(--text-clr);
+}
+
+.trainer-page .profile .sidebar-logout-btn:hover {
+    background-color: var(--base-clr);
+    color: var(--main-navy-clr);
+}
+
+.trainer-page .profile .sidebar-logout-btn:hover svg {
+    fill: var(--main-navy-clr);
+}
+
+/* Navbar */
+.trainer-page .navbar {
+    height: 60px;
+    width: auto;
+    background-color: var(--white-clr);
+    border-bottom: 1px solid var(--line-clr);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.trainer-page .breadcrum {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.trainer-page .breadcrum a {
+    color: var(--text-clr);
+    text-decoration: none;
+    line-height: 1;
+}
+
+.trainer-page .breadcrum a:hover {
+    color: var(--main-navy-clr);
+    text-decoration: none;
+}
+
+.trainer-page .breadcrum span {
+    line-height: 1;
+}
+
+.trainer-page .breadcrum .active {
+    color: var(--main-navy-clr);
+    font-weight: 500;
+}
+
+.trainer-page .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.trainer-page .search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.trainer-page .search-box input {
+    padding: 10px 16px 10px 40px;
+    border: 1px solid var(--line-clr);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    width: 240px;
+    transition: all 0.3s ease;
+    line-height: 1.5;
+    height: 40px;
+}
+
+.trainer-page .search-box input:focus {
+    border-color: var(--main-navy-clr);
+    box-shadow: 0 0 0 3px rgba(37, 35, 70, 0.1);
+}
+
+.trainer-page .search-box svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    fill: var(--text-clr);
+    width: 18px;
+    height: 18px;
+}
+
+.trainer-page .notification {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.trainer-page .notification:hover {
+    background-color: var(--base-clr);
+}
+
+.trainer-page .notification svg {
+    color: var(--text-clr);
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+.trainer-page .profile-photo {
+    display: flex;
+    align-items: center;
+}
+
+.trainer-page .profile-photo .dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.trainer-page .profile-photo .dropdown-btn:hover {
+    background-color: var(--base-clr);
+}
+
+.trainer-page .profile-photo .dropdown-btn svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+.trainer-page .profile-photo .dropdown-btn .name {
+    line-height: 1;
+    font-size: 14px;
+}
+
+/*MOBILE RESPONSIVE*/
+@media (max-width: 400px) {
+    .trainer-page #sidebar {
+        height: 60px;
+        width: 100%;
+        border-right: none;
+        border-top: 1px solid var(--line-clr);
+        padding: 0;
+        position: fixed;
+        top: unset;
+        bottom: 0;
+    }
+
+    .trainer-page #sidebar + .main-wrapper,
+    .trainer-page #sidebar.close + .main-wrapper {
+        margin-left: 0;
+        margin-bottom: 60px;
+    }
+
+    .trainer-page #sidebar > ul {
+        display: grid;
+        grid-auto-columns: 60px;
+        grid-auto-flow: column;
+        align-items: center;
+        overflow-x: auto;
+    }
+
+    .trainer-page #sidebar ul li {
+        height: 100%;
+    }
+
+    .trainer-page #sidebar ul a,
+    .trainer-page #sidebar ul .dropdown-btn {
+        width: 60px;
+        height: 60px;
+        padding: 0;
+        border-radius: 0;
+        justify-content: center;
+    }
+
+    .trainer-page #sidebar ul li span,
+    .trainer-page #sidebar .dropdown-btn svg:last-child {
+        display: none;
+    }
+
+    .trainer-page #toggle-btn {
+        display: none;
+    }
+
+    .trainer-page #sidebar ul li .sub-menu.show {
+        position: fixed;
+        bottom: 60px;
+        left: 0;
+        height: 60px;
+        width: 100%;
+        background-color: var(--hover-clr);
+        border-top: 1px solid var(--line-clr);
+        display: flex;
+        justify-content: center;
+    }
+
+    .trainer-page #sidebar ul li .sub-menu.show > div {
+        overflow-x: auto;
+    }
+
+    .trainer-page #sidebar ul li .sub-menu.show li {
+        display: inline-flex;
+    }
+
+    .trainer-page #sidebar ul li .sub-menu.show a {
+        padding: 16px;
+        width: auto;
+        justify-content: center;
+    }
+
+    /* Navbar responsive */
+    .trainer-page .navbar {
+        padding: 0 8px;
+    }
+
+    .trainer-page .breadcrum {
+        font-size: 12px;
+    }
+
+    .trainer-page .navbar-right {
+        gap: 8px;
+    }
+
+    .trainer-page .search-box input {
+        width: 120px;
+        font-size: 12px;
+        padding: 6px 12px 6px 32px;
+    }
+
+    .trainer-page .search-box svg {
+        width: 14px;
+        height: 14px;
+        left: 10px;
+    }
+
+    .trainer-page .profile-photo .dropdown-btn .name {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .trainer-page .search-box input {
+        width: 180px;
+    }
+
+    .trainer-page .navbar-right {
+        gap: 12.8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .trainer-page .breadcrum a,
+    .trainer-page .breadcrum span:not(.active) {
+        display: none;
+    }
+
+    .trainer-page .breadcrum .active {
+        font-size: 14px;
+    }
+}

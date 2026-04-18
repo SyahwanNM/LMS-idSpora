@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Support\AdminSettings;
 
 class CheckUserMaintenance
 {
@@ -14,26 +15,39 @@ class CheckUserMaintenance
      */
     public function handle(Request $request, Closure $next)
     {
-        // Use admin settings file for maintenance flag
-        $path = storage_path('app/admin_settings.json');
-        $isDown = false;
-        $payload = null;
-        if (file_exists($path)) {
-            try {
-                $payload = json_decode(file_get_contents($path), true);
-                $isDown = !empty($payload['maintenance_mode']);
-            } catch (\Throwable $_e) {
-                $isDown = false;
-            }
-        }
-
-        if (!$isDown) {
+        if (!AdminSettings::maintenanceEnabled()) {
             return $next($request);
         }
 
-        // Allow admin routes (prefix /admin) and API or asset routes
-        $uri = $request->getRequestUri();
+        // If maintenance is enabled, non-admin users should not remain logged in.
+        // Force-logout to avoid showing authenticated navbar/state.
+        try {
+            if (Auth::check()) {
+                $role = strtolower(trim((string) (Auth::user()->role ?? '')));
+                if ($role !== 'admin') {
+                    Auth::logout();
+                    try {
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+                    } catch (\Throwable $e) {
+                    }
+                    $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+                    try {
+                        $request->session()->flash('maintenance_notice', $msg);
+                    } catch (\Throwable $e) {
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+        }
+
         $pathInfo = $request->path();
+
+        // Always allow landing page during maintenance
+        // Note: Request::path() returns '' for root ('/').
+        if ($pathInfo === '' || $pathInfo === '/') {
+            return $next($request);
+        }
 
         // Allow if route starts with admin
         if (str_starts_with('/'.$pathInfo, '/admin')) {
@@ -43,13 +57,24 @@ class CheckUserMaintenance
         // Allow login and sign-in routes
         $allowed = [
             'sign-in',
+            'sign-up',
             'login',
             'logout',
+            'auth',
+            'forgot-password',
+            'verifikasi',
+            'new-password',
+            'register',
         ];
         foreach ($allowed as $a) {
             if ($pathInfo === $a || str_starts_with($pathInfo, $a.'/')) {
                 return $next($request);
             }
+        }
+
+        // Allow storage proxy route for landing page images/files
+        if (str_starts_with('/'.$pathInfo, '/storage/')) {
+            return $next($request);
         }
 
         // Allow if authenticated user is admin (so admin can access pages)
@@ -61,8 +86,9 @@ class CheckUserMaintenance
             // ignore
         }
 
-        // Otherwise show maintenance page
-        $message = $payload['message'] ?? null;
-        return response()->view('errors.503', ['message' => $message], 503);
+        // Block all other routes for non-admin users by redirecting to landing page.
+        // This ensures user/trainer can't reach dashboards during maintenance.
+        $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
+        return redirect('/')->with('maintenance_notice', $msg);
     }
 }

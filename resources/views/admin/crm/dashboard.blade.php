@@ -1,10 +1,6 @@
-@extends('layouts.admin')
+@extends('layouts.crm')
 
 @section('title', 'CRM Dashboard')
-
-@section('navbar')
-    @include('partials.navbar-crm')
-@endsection
 
 @section('styles')
 <style>
@@ -103,73 +99,6 @@
         color: #fff;
     }
 
-    /* Sidebar-like Nav */
-    .crm-wrapper {
-        display: flex;
-        min-height: calc(100vh - 72px);
-    }
-
-    .crm-sidebar-new {
-        width: 260px;
-        background: #fff;
-        padding: 24px;
-        border-right: 1px solid #eee;
-        flex-shrink: 0;
-    }
-
-    .crm-main {
-        flex-grow: 1;
-        padding: 32px;
-        background-color: #F8F9FA;
-    }
-
-    .nav-menu-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #94a3b8;
-        letter-spacing: 1px;
-        margin-bottom: 16px;
-        display: block;
-        margin-top: 24px;
-    }
-
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        color: #1e293b;
-        text-decoration: none;
-        border-radius: 12px;
-        margin-bottom: 4px;
-        font-weight: 600;
-        transition: all 0.2s;
-        gap: 12px;
-    }
-
-    .sidebar-link i {
-        font-size: 1.1rem;
-        color: #64748b;
-    }
-
-    .sidebar-link:hover {
-        background-color: #f1f5f9;
-        color: #6d28d9;
-    }
-
-    .sidebar-link:hover i {
-        color: #6d28d9;
-    }
-
-    .sidebar-link.active {
-        background-color: #6d28d9;
-        color: #fff;
-    }
-
-    .sidebar-link.active i {
-        color: #fff;
-    }
-
     .kpi-card {
         border-radius: 20px;
         border: 1px solid #f1f5f9;
@@ -180,50 +109,25 @@
 @endsection
 
 @section('content')
-<div class="crm-wrapper">
-    <aside class="crm-sidebar-new d-none d-lg-block" style="position: sticky; top: 72px; height: calc(100vh - 72px);">
-        <span class="nav-menu-label mt-0">DASHBOARD</span>
-        <a href="{{ route('admin.crm.dashboard') }}" class="sidebar-link active">
-            <i class="bi bi-speedometer2"></i> Analitik Ringkas
-        </a>
-        <a href="{{ route('admin.crm.customers.index') }}" class="sidebar-link">
-            <i class="bi bi-people"></i> Data Pelanggan
-        </a>
-
-        <span class="nav-menu-label">OPERASIONAL</span>
-        <a href="{{ route('admin.crm.feedback.index') }}" class="sidebar-link">
-            <i class="bi bi-chat-heart"></i> Analisis Feedback
-        </a>
-        <a href="{{ route('admin.crm.broadcast.index') }}" class="sidebar-link">
-            <i class="bi bi-megaphone"></i> Blast Broadcast
-        </a>
-
-        <span class="nav-menu-label">BANTUAN</span>
-        <a href="{{ route('admin.crm.support.index') }}" class="sidebar-link">
-            <i class="bi bi-headset"></i> Tiket Support
-        </a>
-    </aside>
-
-    <main class="crm-main">
-        <!-- Premium Hero Header -->
-        <div class="crm-hero d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-            <div class="z-2">
-                <span class="hero-label">Relations Center</span>
-                <h1 class="hero-title">CRM Dashboard</h1>
-                <p class="hero-subtitle">Pantau performa ekosistem IDSPora, kelola interaksi pelanggan, hingga optimasi feedback dalam satu kendali terpadu.</p>
+<!-- Premium Hero Header -->
+<div class="crm-hero d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+    <div class="z-2">
+        <span class="hero-label">Relations Center</span>
+        <h1 class="hero-title">CRM Dashboard</h1>
+        <p class="hero-subtitle">Pantau performa ekosistem IDSPora, kelola interaksi pelanggan, hingga optimasi feedback dalam satu kendali terpadu.</p>
+    </div>
+    <div class="z-2 mt-4 mt-md-0">
+        <div class="calendar-badge shadow-lg">
+            <div class="calendar-icon">
+                <i class="bi bi-graph-up-arrow fs-5"></i>
             </div>
-            <div class="z-2 mt-4 mt-md-0">
-                <div class="calendar-badge shadow-lg">
-                    <div class="calendar-icon">
-                        <i class="bi bi-graph-up-arrow fs-5"></i>
-                    </div>
-                    <div class="calendar-text">
-                        <span class="date-label">Laporan Per Hari Ini</span>
-                        <span class="date-value">{{ now()->format('l, d F Y') }}</span>
-                    </div>
-                </div>
+            <div class="calendar-text">
+                <span class="date-label">Laporan Per Hari Ini</span>
+                <span class="date-value">{{ now()->format('l, d F Y') }}</span>
             </div>
         </div>
+    </div>
+</div>
 
         <div class="d-flex justify-content-end mb-4 gap-2">
             <button class="btn btn-white shadow-sm border px-4 py-2 rounded-3 text-navy fw-600">
@@ -257,18 +161,17 @@
                 <span class="badge-soft" style="background: rgba(109, 40, 217, 0.1); color: var(--crm-primary);">
                     {{ number_format($activeCustomersCount) }} Aktif
                 </span>
-                <span class="text-muted smaller">Bulan ini</span>
             </div>
         </div>
     </div>
     <div class="col-md-6 col-xl">
         <div class="card-minimal kpi-card" style="--bg-accent: #f59e0b;">
             <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">
-                <i class="bi bi-calendar-event-fill"></i>
+                <i class="bi bi-award-fill"></i>
             </div>
-            <div class="kpi-title">Registrasi Event</div>
-            <div class="kpi-value mb-2">{{ number_format($totalRegistrations) }}</div>
-            <div class="small text-muted">Aktivitas pendaftaran</div>
+            <div class="kpi-title">Sertifikat Terbit</div>
+            <div class="kpi-value mb-2">{{ number_format($totalCerts) }}</div>
+            <div class="small text-muted">Event & Course</div>
         </div>
     </div>
     <div class="col-md-6 col-xl">
@@ -278,7 +181,7 @@
             </div>
             <div class="kpi-title">Course Enrollment</div>
             <div class="kpi-value mb-2">{{ number_format($totalEnrollments) }}</div>
-            <div class="small text-muted">Modul dipelajari</div>
+            <div class="small text-muted">Siswa Aktif</div>
         </div>
     </div>
     <div class="col-md-6 col-xl">
@@ -288,11 +191,7 @@
             </div>
             <div class="kpi-title">Support Ticket</div>
             <div class="kpi-value mb-2">{{ number_format($newSupportMessages) }}</div>
-            <div class="mt-1">
-                <a href="{{ route('admin.crm.support.index') }}" class="text-decoration-none fw-700 smaller" style="color: #db2777;">
-                    Update Status <i class="bi bi-arrow-right ms-1"></i>
-                </a>
-            </div>
+            <div class="small text-muted">Menunggu Respon</div>
         </div>
     </div>
 </div>
@@ -324,7 +223,7 @@
                             <tr class="activity-row border-bottom" onclick="window.location='{{ route('admin.crm.customers.show', $registration->user->id) }}'">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ $registration->user->avatar_url }}" class="customer-avatar me-3 border" alt="user" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($registration->user->name) }}&background=6d28d9&color=fff'">
+                                        <img src="{{ $registration->user->avatar_url }}" class="customer-avatar rounded-circle me-3 border shadow-sm" style="width: 48px; height: 48px; object-fit: cover;" alt="user" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($registration->user->name) }}&background=6d28d9&color=fff'">
                                         <div>
                                             <div class="fw-700 text-navy fs-6">{{ $registration->user->name }}</div>
                                             <div class="text-muted smaller">{{ $registration->user->email }}</div>
@@ -340,9 +239,9 @@
                                     <div class="text-muted smaller">{{ $registration->created_at->format('H:i') }} WIB</div>
                                 </td>
                                 <td class="pe-4 text-end">
-                                    <button class="btn btn-icon btn-light rounded-circle btn-sm">
+                                    <a href="{{ route('admin.crm.customers.show', $registration->user->id) }}" class="btn btn-icon btn-light rounded-circle btn-sm">
                                         <i class="bi bi-chevron-right"></i>
-                                    </button>
+                                    </a>
                                 </td>
                             </tr>
                             @empty
@@ -464,7 +363,4 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
 @endsection
-

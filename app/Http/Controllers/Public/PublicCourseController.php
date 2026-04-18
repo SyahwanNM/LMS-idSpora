@@ -1,0 +1,161 @@
+<?php
+
+namespace App\Http\Controllers\Public;
+
+use App\Http\Controllers\Controller;
+
+use App\Models\Course;
+use App\Models\Carousel;
+use App\Models\Enrollment;
+use App\Models\ManualPayment;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PublicCourseController extends Controller
+{
+    public function index(Request $request)
+    {
+        // Only show published courses to users
+        $query = Course::query()
+            ->with(['category','modules'])
+            ->withCount([
+                'enrollments as enrollments_count' => function ($q) {
+                    $q->select(DB::raw('COUNT(DISTINCT user_id)'))
+                        ->whereIn('status', ['active', 'completed']);
+                },
+            ])
+            ->where('status','active');
+
+        if($search = $request->get('search')){
+            $query->where(function($q) use ($search){
+                $q->where('name','like',"%$search%")
+                  ->orWhere('description','like',"%$search%")
+                  ->orWhereHas('category', function($c) use ($search){
+                      $c->where('name','like',"%$search%");
+                  });
+            });
+        }
+
+        if ($level = $request->get('level')) {
+            $query->where('level', $level);
+        }
+
+        if ($category = $request->get('category')) {
+            $query->where('category_id', $category);
+        }
+
+        if ($topic = $request->get('topic')) {
+            $query->where('name', 'like', "%$topic%");
+        }
+
+        if ($request->boolean('free')) {
+            $query->where('price', 0);
+        }
+
+        if ($sort = $request->get('price')) {
+            if (in_array($sort, ['asc', 'desc'])) {
+                $query->orderBy('price', $sort);
+            }
+        } else {
+            $query->latest();
+        }
+
+        $courses = $query->paginate(12)->withQueryString();
+
+        // Data for filter dropdowns
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $topics = Course::where('status', 'active')->distinct()->orderBy('name')->pluck('name');
+
+        // Get carousel images for course page
+        $courseCarousels = Carousel::active()
+            ->forLocation('course')
+            ->orderBy('order')
+            ->get();
+
+        $learnableCourseIds = [];
+        $continueEnrollments = collect();
+        $user = $request->user();
+        if ($user) {
+            $fromEnrollments = Enrollment::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->pluck('course_id')
+                ->all();
+
+            $fromManualPayments = ManualPayment::query()
+                ->where('user_id', $user->id)
+                ->whereNotNull('course_id')
+                ->where('status', 'settled')
+                ->pluck('course_id')
+                ->all();
+
+            $learnableCourseIds = array_values(array_unique(array_merge($fromEnrollments, $fromManualPayments)));
+
+            // Continue learning: active enrollments, sorted by recent activity
+            $continueEnrollments = Enrollment::query()
+                ->with([
+                    'course' => function ($q) {
+                        $q->with(['category', 'modules'])
+                            ->withCount([
+                                'enrollments as enrollments_count' => function ($qq) {
+                                    $qq->select(DB::raw('COUNT(DISTINCT user_id)'))
+                                        ->whereIn('status', ['active', 'completed']);
+                                },
+                            ]);
+                    },
+                    'progress' => function ($q) {
+                        $q->where('completed', true);
+                    },
+                ])
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->orderByDesc('updated_at')
+                ->take(8)
+                ->get()
+                ->filter(function ($enrollment) {
+                    return $enrollment->getProgressPercentage() < 100;
+                })
+                ->values();
+        }
+
+            return view('course.index', compact('courses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments', 'categories', 'topics'));
+    }
+    public function toggleSave(Request $request, Course $course)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $isSaved = $user->savedCourses()->where('course_id', $course->id)->exists();
+
+        if ($isSaved) {
+            $user->savedCourses()->detach($course->id);
+            $action = 'Unsave Course';
+            $description = 'Menghapus course dari simpanan: ' . $course->name;
+            $saved = false;
+        } else {
+            $user->savedCourses()->attach($course->id);
+            $action = 'Save Course';
+            $description = 'Menyimpan course: ' . $course->name;
+            $saved = true;
+        }
+
+        \App\Models\ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => $action,
+            'description' => $description
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'saved' => $saved,
+                'message' => $saved ? 'Course berhasil disimpan' : 'Course dihapus dari simpanan'
+            ]);
+        }
+
+        return back()->with('success', $saved ? 'Course berhasil disimpan' : 'Course dihapus dari simpanan');
+    }
+}

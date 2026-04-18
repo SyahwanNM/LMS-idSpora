@@ -22,7 +22,7 @@
         <div class="tabel_paling_atas">
             <div class="tanggal_view">
                 <p>Tanggal</p>
-                <h5>{{ ($stats['last_paid_at'] ?? null) ? ($stats['last_paid_at'])->format('d/m/Y') : '-' }}</h5>
+                <h5>{{ ($stats['created_at'] ?? null) ? ($stats['created_at'])->format('d/m/Y') : '-' }}</h5>
             </div>
             <div class="total_peserta_view">
                 <p>Total peserta</p>
@@ -75,56 +75,43 @@
                 </svg>
                 <h2>Breakdown Pengeluaran</h2>
             </div>
-            <div class="box_isi_pengeluaran">
-                <div class="judul_pertama">
-                    <p class="subjudul_pertama">Honor Instruktur</p>
-                    <p class="persentase_box">40.0%</p>
+            @php
+                $expenseRows = is_array($expense_rows ?? null) ? $expense_rows : [];
+                $expenseTotal = (float)($stats['expense_total'] ?? 0);
+                $barClasses = ['garis_orange', 'garis_kuning', 'garis_ungu', 'garis_biru', 'garis_pink'];
+            @endphp
+
+            @if(count($expenseRows) <= 0)
+                <div class="box_isi_pengeluaran">
+                    <div class="judul_pertama">
+                        <p class="subjudul_pertama">Pengeluaran</p>
+                        <p class="persentase_box">0.0%</p>
+                    </div>
+                    <h5>Rp. 0</h5>
+                    <div class="garis_abu">
+                        <div class="garis_orange" style="width:0%"></div>
+                    </div>
                 </div>
-                <h5>Rp. {{ number_format((float)($expenses['honor'] ?? 0), 0, ',', '.') }}</h5>
-                <div class="garis_abu">
-                    <div class="garis_orange"></div>
-                </div>
-            </div>
-            <div class="box_isi_pengeluaran">
-                <div class="judul_pertama">
-                    <p class="subjudul_pertama">Platform Fee</p>
-                    <p class="persentase_box">20.0%</p>
-                </div>
-                <h5>Rp. {{ number_format((float)($expenses['platform'] ?? 0), 0, ',', '.') }}</h5>
-                <div class="garis_abu">
-                    <div class="garis_kuning"></div>
-                </div>
-            </div>
-            <div class="box_isi_pengeluaran">
-                <div class="judul_pertama">
-                    <p class="subjudul_pertama">Marketing $ Promosi</p>
-                    <p class="persentase_box">15.0%</p>
-                </div>
-                <h5>Rp. {{ number_format((float)($expenses['marketing'] ?? 0), 0, ',', '.') }}</h5>
-                <div class="garis_abu">
-                    <div class="garis_ungu"></div>
-                </div>
-            </div>
-            <div class="box_isi_pengeluaran">
-                <div class="judul_pertama">
-                    <p class="subjudul_pertama">Infrastruktur & Server</p>
-                    <p class="persentase_box">15.0%</p>
-                </div>
-                <h5>Rp. {{ number_format((float)($expenses['infra'] ?? 0), 0, ',', '.') }}</h5>
-                <div class="garis_abu">
-                    <div class="garis_biru"></div>
-                </div>
-            </div>
-            <div class="box_isi_pengeluaran">
-                <div class="judul_pertama">
-                    <p class="subjudul_pertama">Customer Support</p>
-                    <p class="persentase_box">10.0%</p>
-                </div>
-                <h5>Rp. {{ number_format((float)($expenses['support'] ?? 0), 0, ',', '.') }}</h5>
-                <div class="garis_abu">
-                    <div class="garis_pink"></div>
-                </div>
-            </div>
+            @else
+                @foreach($expenseRows as $i => $row)
+                    @php
+                        $item = is_array($row) ? trim((string)($row['item'] ?? 'Pengeluaran')) : 'Pengeluaran';
+                        $total = is_array($row) ? (float)($row['total'] ?? 0) : 0;
+                        $percent = $expenseTotal > 0 ? ($total / $expenseTotal * 100) : 0;
+                        $cls = $barClasses[$i % count($barClasses)];
+                    @endphp
+                    <div class="box_isi_pengeluaran">
+                        <div class="judul_pertama">
+                            <p class="subjudul_pertama">{{ $item !== '' ? $item : 'Pengeluaran' }}</p>
+                            <p class="persentase_box">{{ number_format($percent, 1) }}%</p>
+                        </div>
+                        <h5>Rp. {{ number_format($total, 0, ',', '.') }}</h5>
+                        <div class="garis_abu">
+                            <div class="{{ $cls }}" style="width: {{ number_format($percent, 2, '.', '') }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
             <div class="box_dalam_pengeluaran">
                 <h4>Total Pengeluaran</h4>
                 <h4 class="satu_juta">Rp. {{ number_format((float)($stats['expense_total'] ?? 0), 0, ',', '.') }}</h4>

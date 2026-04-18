@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Schema;
 class CourseRevenueDetailController extends Controller
 {
     /**
-     * Enrollment statuses that indicate a successful (paid/active) enrollment.
+     * Enrollment statuses that indicate a successful (paid/active/completed) enrollment.
      */
-    private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired'];
+    private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired', 'completed'];
 
     public function show(Request $request)
     {
@@ -24,23 +24,28 @@ class CourseRevenueDetailController extends Controller
         }
 
         $course = Course::query()
-            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end')
+            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end', 'expenses_json', 'created_at')
             ->findOrFail($courseId);
 
         [$from, $to] = $this->parseDateRange($request);
 
         $base = Enrollment::query()
+            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+            ->leftJoin('manual_payments', function ($join) {
+                $join->on('enrollments.id', '=', 'manual_payments.enrollment_id')
+                     ->whereIn('manual_payments.status', ['paid', 'verified', 'settled']);
+            })
             ->where('enrollments.course_id', $course->id)
             ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
             ->whereBetween('enrollments.enrolled_at', [$from, $to]);
 
-        $transactionsCount = (int) $base->clone()->count();
+        $transactionsCount = (int) $base->clone()->count('enrollments.id');
         $participantsCount = (int) $base->clone()->distinct('enrollments.user_id')->count('enrollments.user_id');
-        $lastPaidAt = $base->clone()->max('enrollments.enrolled_at');
 
-        $priceExpr = $this->coursePriceExpr('enrollments.enrolled_at');
+        $calcPrice = $this->coursePriceExpr('enrollments.enrolled_at');
+        $priceExpr = 'COALESCE(manual_payments.amount, ' . $calcPrice . ')';
+
         $revenueTotal = (float) ($base->clone()
-            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
             ->selectRaw('SUM(' . $priceExpr . ') as total_revenue')
             ->value('total_revenue') ?: 0);
 
@@ -49,13 +54,43 @@ class CourseRevenueDetailController extends Controller
             ? (float) round($revenueTotal / $transactionsCount)
             : (float) ($course->price ?? 0);
 
-        // Expense breakdown (currently UI uses fixed categories & percentages).
-        $expenseHonor = (float) round($revenueTotal * 0.40);
-        $expensePlatform = (float) round($revenueTotal * 0.20);
-        $expenseMarketing = (float) round($revenueTotal * 0.15);
-        $expenseInfra = (float) round($revenueTotal * 0.15);
-        $expenseSupport = (float) round($revenueTotal * 0.10);
-        $expenseTotal = $expenseHonor + $expensePlatform + $expenseMarketing + $expenseInfra + $expenseSupport;
+        // Expense breakdown: use course "Pengeluaran" column (expenses_json) as the source of truth.
+        $expenseRows = [];
+        $rawExpenses = $course->expenses_json;
+        if (is_array($rawExpenses)) {
+            foreach ($rawExpenses as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $item = trim((string) ($row['item'] ?? ''));
+
+                $total = $row['total'] ?? null;
+                if ($total === null) {
+                    $qty = (int) ($row['quantity'] ?? 0);
+                    $unit = (int) ($row['unit_price'] ?? 0);
+                    $total = max(0, $qty) * max(0, $unit);
+                }
+
+                $total = (float) $total;
+                $total = $total < 0 ? 0.0 : $total;
+
+                if ($item === '' && $total <= 0) {
+                    continue;
+                }
+
+                $expenseRows[] = [
+                    'item' => $item !== '' ? $item : 'Pengeluaran',
+                    'total' => $total,
+                ];
+            }
+        }
+
+        // Sort by total desc for nicer breakdown display.
+        usort($expenseRows, function ($a, $b) {
+            return ($b['total'] ?? 0) <=> ($a['total'] ?? 0);
+        });
+
+        $expenseTotal = (float) array_sum(array_map(fn ($r) => (float) ($r['total'] ?? 0), $expenseRows));
 
         $profit = (float) ($revenueTotal - $expenseTotal);
         $profitStatus = $profit >= 0 ? 'Menguntungkan' : 'Rugi';
@@ -67,7 +102,7 @@ class CourseRevenueDetailController extends Controller
                 'to' => $to,
             ],
             'stats' => [
-                'last_paid_at' => $lastPaidAt ? Carbon::parse($lastPaidAt) : null,
+                'created_at' => $course->created_at ? Carbon::parse($course->created_at) : null,
                 'participants' => $participantsCount,
                 'transactions' => $transactionsCount,
                 'status' => $course->status ? ucfirst((string) $course->status) : '-',
@@ -77,13 +112,7 @@ class CourseRevenueDetailController extends Controller
                 'profit' => $profit,
                 'profit_status' => $profitStatus,
             ],
-            'expenses' => [
-                'honor' => $expenseHonor,
-                'platform' => $expensePlatform,
-                'marketing' => $expenseMarketing,
-                'infra' => $expenseInfra,
-                'support' => $expenseSupport,
-            ],
+            'expense_rows' => $expenseRows,
             'chart' => [
                 'revenue' => $revenueTotal,
                 'expense' => $expenseTotal,

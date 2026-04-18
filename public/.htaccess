@@ -24,3 +24,19 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Increase upload limits for large video files
+<IfModule mod_php.c>
+    php_value upload_max_filesize 512M
+    php_value post_max_size 512M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 512M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 512M
+    php_value post_max_size 512M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 512M
+</IfModule>

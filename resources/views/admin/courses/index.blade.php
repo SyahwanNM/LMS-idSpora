@@ -10,70 +10,145 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .box_luar_course_builder { padding-top: 60px; }
+        .judul_course_builder { margin-top: 0; margin-bottom: 6px; line-height: 1.2; }
+        .deskripsi_course_builder { margin-top: 0; }
+    </style>
 </head>
 
 <body>
     @include('partials.navbar-admin-course')
-    @if(session('success'))
-    <div class="container mt-3">
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    @endif
-    @if(session('success'))
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="courseUpdatedToast" class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    <style>
+        /* New global notification component (replaces legacy Bootstrap toasts on this page) */
+        .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
+        .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+        .notification.show { transform: translateY(0) scale(1); opacity:1; }
+        .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
+        .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+        .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
+        .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
+    </style>
+
+    @if(session('success') || session('login_success') || session('error') || session('publish_warning') || session('already_published'))
+        <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
+            @if(session('login_success'))
+                <div class="notification success" role="status" data-timeout="4200">
+                    <div class="notif-message">{{ session('login_success') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
                 </div>
-            </div>
+            @elseif(session('success'))
+                <div class="notification success" role="status" data-timeout="3800">
+                    <div class="notif-message">{{ session('success') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
+
+            @php
+                $pw = session('publish_warning');
+                $pwList = is_array($pw) ? array_values(array_filter($pw)) : [];
+            @endphp
+            @if(!empty($pwList))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message">Oops, modul course belum lengkap: {{ implode(', ', $pwList) }} belum ada. Segera hubungi trainer.</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @elseif(session('already_published'))
+                <div class="notification error" role="status" data-timeout="5000">
+                    <div class="notif-message">Course ini sudah diterbitkan</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="notification error" role="status" data-timeout="6000">
+                    <div class="notif-message">{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close" type="button">&times;</button>
+                </div>
+            @endif
         </div>
-    </div>
+    @endif
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                var el = document.getElementById('courseUpdatedToast');
-                if (window.bootstrap && el) {
-                    var t = new bootstrap.Toast(el);
-                    t.show();
-                }
-            } catch (e) {}
-        });
+        (function(){
+            function wireBanner(){
+                try {
+                    const wrap = document.getElementById('globalNotifications');
+                    if(!wrap) return;
+                    wrap.querySelectorAll('.notification').forEach(function(n){
+                        setTimeout(function(){ n.classList.add('show'); }, 20);
+                        const timeout = parseInt(n.getAttribute('data-timeout') || 4000, 10);
+                        const closeBtn = n.querySelector('.notif-close');
+                        const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                        if(closeBtn) closeBtn.addEventListener('click', hide);
+                        setTimeout(hide, timeout);
+                    });
+                } catch(e){}
+            }
+
+            document.addEventListener('DOMContentLoaded', wireBanner);
+
+            window.adminNotify = function(type, message, timeout){
+                try {
+                    const kind = (type === 'error') ? 'error' : 'success';
+                    const text = (message == null) ? '' : String(message);
+                    const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+                    let wrap = document.getElementById('globalNotifications');
+                    if(!wrap){
+                        wrap = document.createElement('div');
+                        wrap.id = 'globalNotifications';
+                        wrap.className = 'global-notification';
+                        wrap.setAttribute('aria-live', 'polite');
+                        wrap.setAttribute('aria-atomic', 'true');
+                        document.body.appendChild(wrap);
+                    }
+
+                    const n = document.createElement('div');
+                    n.className = 'notification ' + kind;
+                    n.setAttribute('role', 'status');
+                    n.setAttribute('data-timeout', String(ms));
+
+                    const msg = document.createElement('div');
+                    msg.className = 'notif-message';
+                    msg.textContent = text;
+
+                    const close = document.createElement('button');
+                    close.className = 'notif-close';
+                    close.setAttribute('aria-label', 'Close');
+                    close.type = 'button';
+                    close.innerHTML = '&times;';
+
+                    n.appendChild(msg);
+                    n.appendChild(close);
+                    wrap.appendChild(n);
+
+                    const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+                    close.addEventListener('click', hide);
+                    setTimeout(function(){ n.classList.add('show'); }, 20);
+                    setTimeout(hide, ms);
+                } catch(e){}
+            };
+        })();
     </script>
-    @endif
-    <!-- Publish warning toast (shown when course has missing material) -->
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="publishWarningToast" class="toast align-items-center text-bg-warning border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4500">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <span class="me-2" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.964 0L.165 13.233c-.457.778.091 1.767.982 1.767h13.706c.89 0 1.438-.99.982-1.767L8.982 1.566zM8 5.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 5.5Zm0 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" />
-                            </svg>
-                        </span>
-                        Lengkapkan Material Course Modules terlebih dahulu sebelum menerbitkan Course
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+
+    <!-- Publish confirmation modal (UI, no browser alert/confirm) -->
+    <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="publishConfirmModalLabel">Course belum lengkap</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- Already published toast (shown when course is already active) -->
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080">
-            <div id="alreadyPublishedToast" class="toast align-items-center text-bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        Course ini sudah diterbitkan
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <div class="modal-body">
+                    <div style="font-weight:600;" id="publishModalMainText">Oops, modul course belum lengkap.</div>
+                    <div class="mt-2" id="publishModalSubText">Berikut yang belum ada:</div>
+                    <ul id="publishMissingList" class="mt-2 mb-3" style="padding-left: 18px;"></ul>
+                    <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Tetap Publish</button>
                 </div>
             </div>
         </div>
@@ -97,28 +172,28 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course_builder" type="text" placeholder="Cari Course">
+                            <input class="cari_course_builder" type="text" placeholder="Cari Course" value="{{ request('q') }}">
                         </div>
                     </div>
                     <div class="box_filter_course_builder">
                         <p class="mulai_course">Bulan</p>
-                        <input class="tanggal_course" type="month">
+                        <input class="tanggal_course" type="month" value="{{ request('month') }}">
                         <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
                     </div>
                     <div class="box_unduh_course">
-                        <button class="btn_unduh">
+                        <a class="btn_unduh" id="exportPdfBtn" href="{{ route('admin.courses.export', ['format' => 'pdf']) }}" style="text-decoration:none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
                                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
                                 <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
                             </svg>
                             <p>Export PDF</p>
-                        </button>
-                        <button class="btn_unduh">
+                        </a>
+                        <a class="btn_unduh" id="exportExcelBtn" href="{{ route('admin.courses.export', ['format' => 'excel']) }}" style="text-decoration:none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
                                 <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0M9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1m-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0" />
                             </svg>
                             <p>Export Excel</p>
-                        </button>
+                        </a>
                     </div>
 
 
@@ -131,7 +206,6 @@
                         <th>Level</th>
                         <th>Harga</th>
                         <th>Status Kelengkapan</th>
-                        <th>Pembayaran</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -140,6 +214,49 @@
                     @php
                     $hasModules = ($course->modules && $course->modules->count() > 0);
                     $isPublished = ($course->status === 'active');
+
+                    $modulesCol = $course->modules ?? collect();
+                    $totalModules = $modulesCol->count();
+                    $pdfSlots = $modulesCol->where('type', 'pdf');
+                    $videoSlots = $modulesCol->where('type', 'video');
+                    $quizSlots = $modulesCol->where('type', 'quiz');
+
+                    $pdfCount = $pdfSlots->count();
+                    $videoCount = $videoSlots->count();
+                    $quizCount = $quizSlots->count();
+
+                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url) && empty(trim(strip_tags($m->description ?? ''))))->count() > 0);
+                    $hasMissingVideo = ($videoCount <= 0) || ($videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingQuiz = false;
+                    if ($quizCount <= 0) {
+                        $hasMissingQuiz = true;
+                    } else {
+                        $hasMissingQuiz = $quizSlots->filter(function ($m) {
+                            $cnt = null;
+                            if (isset($m->quiz_questions_count)) {
+                                $cnt = (int) $m->quiz_questions_count;
+                            } elseif (method_exists($m, 'relationLoaded') && $m->relationLoaded('quizQuestions')) {
+                                $cnt = $m->quizQuestions ? (int) $m->quizQuestions->count() : 0;
+                            }
+                            $cnt = (int) ($cnt ?? 0);
+                            return $cnt <= 0;
+                        })->count() > 0;
+                    }
+
+                    // If it's a trainer course, ensure all modules have been approved
+                    $hasUnapprovedModules = false;
+                    if (!empty($course->trainer_id)) {
+                        $hasUnapprovedModules = $modulesCol->where('review_status', '!=', 'approved')->count() > 0;
+                    }
+
+                    $missingForPublish = [];
+                    if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
+                    if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
+                    if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
+                    if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasUnapprovedModules) { $missingForPublish[] = 'Approval Trainer'; }
+
+                    $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
                     <tr>
                         <td>{{ $course->name }}</td>
@@ -148,115 +265,10 @@
                         <td>
                             @if($isPublished)
                             <button class="status_kelengkapan_complete">Complete</button>
-                            @elseif(!$hasModules)
+                            @elseif($hasMissingMaterial)
                             <button class="status_kelengkapan_miss">Missing Material</button>
                             @else
-                            <button class="status_kelengkapan_inprogress">In Progress</button>
-                            @endif
-                        </td>
-                        <td>
-                            @php
-                            $coursePayments = $course->manualPayments ?? collect();
-                            $countPending = $coursePayments->where('status', 'pending')->count();
-                            $countApproved = $coursePayments->where('status', 'settled')->count();
-                            $countRejected = $coursePayments->where('status', 'rejected')->count();
-                            @endphp
-
-                            <div class="d-flex flex-wrap gap-1 align-items-center">
-                                <span class="badge text-bg-warning">Pending: {{ $countPending }}</span>
-                                <span class="badge text-bg-success">Approved: {{ $countApproved }}</span>
-                                <span class="badge text-bg-danger">Rejected: {{ $countRejected }}</span>
-                            </div>
-
-                            @if($coursePayments->count() > 0)
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
-                                Lihat user
-                            </button>
-
-                            <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-sm align-middle">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>User</th>
-                                                            <th>WhatsApp</th>
-                                                            <th>Referral</th>
-                                                            <th>Status</th>
-                                                            <th>Bukti</th>
-                                                            <th>Aksi</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($coursePayments->sortByDesc('created_at') as $payment)
-                                                        @php
-                                                        $proof = $payment->proofs->sortByDesc('created_at')->first();
-                                                        $status = $payment->status;
-                                                        $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
-                                                        $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
-                                                        @endphp
-                                                        <tr>
-                                                            <td>
-                                                                <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
-                                                                <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
-                                                            </td>
-                                                            <td>{{ $payment->whatsapp_number ?? '-' }}</td>
-                                                            <td>{{ $payment->referral_code ?: '-' }}</td>
-                                                            <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
-                                                            <td>
-                                                                @if($proof)
-                                                                @php
-                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
-                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
-                                                                $proofPath = substr($proofPath, strlen('uploads/'));
-                                                                }
-                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
-                                                                @endphp
-                                                                <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
-                                                                @else
-                                                                <span class="text-muted">-</span>
-                                                                @endif
-                                                            </td>
-                                                            <td>
-                                                                <form method="POST" class="d-flex flex-wrap gap-1 m-0">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-sm btn-success"
-                                                                        formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
-                                                                        onclick="return confirm('Approve pembayaran ini?')">
-                                                                        Approve
-                                                                    </button>
-                                                                    <button type="submit" class="btn btn-sm btn-danger"
-                                                                        formaction="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
-                                                                        onclick="return confirm('Reject pembayaran ini?')">
-                                                                        Reject
-                                                                    </button>
-                                                                    <button type="submit" class="btn btn-sm btn-warning"
-                                                                        formaction="{{ route('admin.courses.manual-payments.pending', [$course, $payment]) }}"
-                                                                        onclick="return confirm('Set ke pending lagi?')">
-                                                                        Pending
-                                                                    </button>
-                                                                </form>
-                                                            </td>
-                                                        </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @else
-                            <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
+                            <button class="status_kelengkapan_inprogress">On Progress</button>
                             @endif
                         </td>
                         <td>
@@ -269,17 +281,28 @@
                                 </a>
                                 @php
                                 $previewData = [
+                                'id' => $course->id,
                                 'title' => $course->name,
-                                'image' => $course->card_thumbnail ? Storage::url($course->card_thumbnail) : '',
+                                'image' => $course->card_thumbnail ? Storage::disk('public')->url($course->card_thumbnail) : '',
                                 'description' => trim($course->description),
-                                'modules' => $course->modules->map(function($m) {
+                                'enroll_count' => (int)($course->enrollments_count ?? 0),
+                                'edit_url' => route('admin.courses.edit', $course),
+                                'has_trainer' => !empty($course->trainer_id),
+                                'modules' => $course->modules->filter(function($m) use ($course) {
+                                    if (empty($course->trainer_id)) return true;
+                                    return $m->review_status === 'approved';
+                                })->map(function($m) {
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
                                 'title' => $m->title,
-                                'subtitle' => $m->description ?? '',
+                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Dokumen Materi',
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
+                                // Content completeness marker for preview
+                                'has_content' => $m->type === 'quiz'
+                                    ? (($m->quizQuestions->count() ?? 0) > 0)
+                                    : (!empty($m->content_url) || !empty($m->description)),
                                 ];
                                 })->values()->toArray(),
                                 'published' => $isPublished ? '1' : '0',
@@ -287,6 +310,7 @@
                                 'price' => 'Rp. ' . number_format($course->price, 0, ',', '.'),
                                 'duration' => $course->duration . ' jam',
                                 'status_text' => $isPublished ? 'Published' : ($hasModules ? 'Draft' : 'Incomplete'),
+                                'participants_url' => route('admin.courses.participants', $course),
                                 ];
                                 @endphp
                                 <button type="button" class="btn_view_course btn p-0 preview-course" title="Preview" data-course="{{ base64_encode(json_encode($previewData)) }}">
@@ -295,7 +319,7 @@
                                         <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
                                     </svg>
                                 </button>
-                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" onsubmit="return confirm('Hapus course ini?')">
+                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" class="delete-course-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn p-0" title="Delete">
@@ -304,9 +328,24 @@
                                         </svg>
                                     </button>
                                 </form>
-                                <button class="btn_publish_course">
-                                    Publish
-                                </button>
+                                @if($isPublished)
+                                    <form method="POST" action="{{ route('admin.courses.unpublish', $course) }}" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn_unpublish_course">
+                                            Batal Publish
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
+                                        @csrf
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-success btn_publish_course js-publish-course"
+                                            data-published="0"
+                                            data-missing='@json($missingForPublish)'>
+                                            Publish
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -339,10 +378,6 @@
                                 <button class="tab-btn" data-target="tab-kuis">Kuis</button>
                                 <button class="tab-btn" data-target="tab-participant">Participant</button>
                             </div>
-
-                            <div>
-                                <button class="button_edit_preview">Edit</button>
-                            </div>
                         </div>
 
                     </div>
@@ -367,38 +402,9 @@
                                     <h5>Status</h5>
                                     <h4 id="cp-status">Selesai</h4>
                                 </div>
-                                <div class="list-info info-green">
-                                    <h5>STUDENT ENROLL</h5>
-                                    <h4 id="cp-price">80 Peserta</h4>
-                                </div>
-                                <div class="list-info info-yellow">
-                                    <h5>Benefit</h5>
-                                    <h4 id="cp-status">
-                                        <ol>
-                                            <li>Sertifikat</li>
-                                            <li>Materi</li>
-                                            <li>Video</li>
-                                        </ol>
-                                    </h4>
-                                </div>
+                                
                             </div>
-                            <div class="ringkasan-konten">
-                                <h3>Deskripsi Konten</h3>
-                                <div class="info-ringkasan">
-                                    <p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum</p>
-                                </div>
-                            </div>
-                            <div class="ringkasan-konten">
-                                <h3>Syllabus</h3>
-                                <div class="syllabus-ringkasan">
-                                    <ol>
-                                        <li>akjbgkFGFD</li>
-                                        <li>akjbgkFGFD</li>
-                                        <li>akjbgkFGFD</li>
-                                        <li>akjbgkFGFD</li>
-                                    </ol>
-                                </div>
-                            </div>
+                            
                             <div class="ringkasan-konten">
                                 <h3>Ringkasan Konten</h3>
                                 <div class="info-ringkasan">
@@ -416,7 +422,7 @@
                                             <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2z" />
                                         </svg>
                                         <div class="detail-ringkasan">
-                                            <h5>2</h5>
+                                            <h5 id="count-video">0</h5>
                                             <p>Video Pembelajaran</p>
                                         </div>
                                     </div>
@@ -427,7 +433,7 @@
                                             <path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" />
                                         </svg>
                                         <div class="detail-ringkasan">
-                                            <h5>2</h5>
+                                            <h5 id="count-quiz">0</h5>
                                             <p>Kuis</p>
                                         </div>
                                     </div>
@@ -542,14 +548,9 @@
                                         </tr>
                                     </thead>
 
-                                    <tbody>
+                                    <tbody id="participantTableBody">
                                         <tr>
-                                            <td>Dini</td>
-                                            <td>Dini@gmail.com</td>
-                                            <td>80%</td>
-                                            <td>Aktif</td>
-                                            <td>17-10-2025</td>
-
+                                            <td colspan="5" class="text-center text-muted">Pilih course untuk melihat participant.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -658,10 +659,23 @@
                 });
             }
 
+            // Keep Edit as a real button; redirect using data attribute
+            (function bindEditButton(){
+                var editBtn = document.getElementById('coursePreviewEditBtn');
+                if (!editBtn) return;
+                if (editBtn.dataset.bound === '1') return;
+                editBtn.dataset.bound = '1';
+                editBtn.addEventListener('click', function() {
+                    var url = this.dataset.editUrl || '';
+                    if (!url) return;
+                    window.location.href = url;
+                });
+            })();
+
             // --- 3. Content Setter Functions ---
             function setText(id, val) {
                 var el = document.getElementById(id);
-                if (el) el.textContent = val || '';
+                if (el) el.textContent = (val === null || typeof val === 'undefined') ? '' : String(val);
             }
 
             function setImage(id, url) {
@@ -670,6 +684,23 @@
                     el.src = url || '';
                     el.style.display = url ? 'block' : 'none';
                 }
+            }
+
+            function escapeHtml(value) {
+                var s = String(value ?? '');
+                return s
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function moduleHasContent(m) {
+                if (!m) return false;
+                if (typeof m.has_content !== 'undefined') return !!m.has_content;
+                if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
+                return !!(m.content_url || m.subtitle || ''); // subtitle maps to description in previewData
             }
 
             // --- 4. Event Delegation for Preview Click ---
@@ -694,8 +725,25 @@
                 setText('modal-course-name', data.title || '-');
                 setText('modal-course-desc', data.description || 'Tidak ada deskripsi.');
 
+                // Edit button (keep as <button> to preserve shape)
+                (function(){
+                    var editBtn = document.getElementById('coursePreviewEditBtn');
+                    if (!editBtn) return;
+                    editBtn.dataset.editUrl = (data && data.edit_url) ? String(data.edit_url) : '';
+                })();
+
                 setText('cp-level', data.level || '-');
                 setText('cp-price', data.price || 'Rp0');
+
+                // Student enroll (jumlah user yang enroll course)
+                (function(){
+                    var enrollEl = document.getElementById('cp-enroll-count');
+                    if (!enrollEl) return;
+                    var n = 0;
+                    try { n = parseInt(data.enroll_count || '0', 10); } catch (e) { n = 0; }
+                    if (!Number.isFinite(n) || n < 0) n = 0;
+                    enrollEl.textContent = n + ' Peserta';
+                })();
 
                 // Status Color
                 var statusEl = document.getElementById('cp-status');
@@ -710,51 +758,106 @@
 
                 // --- MODULES PARSING ---
                 var modules = data.modules || [];
+                
+                // --- NORMALIZE MODULE TITLES ---
+                modules.forEach(function(m) {
+                    if (m && m.title) {
+                        if (['PDF Material', 'Video Lesson', 'Quiz', 'Modul PDF', 'Video Pembelajaran', 'Kuis'].includes(m.title)) {
+                            m.title = 'Module 1 - ' + m.title;
+                        }
+                    }
+                });
 
-                // 1. Hitung Ringkasan
-                var countPdf = modules.filter(m => m.type === 'pdf').length;
-                var countVideo = modules.filter(m => m.type === 'video').length;
-                var countQuiz = modules.filter(m => m.type === 'quiz').length;
+                var visibleModules = Array.isArray(modules)
+                    ? modules.filter(function(m) { return moduleHasContent(m); })
+                    : [];
+
+                // --- CONTENT DESCRIPTION ---
+                setText('cp-content-description', data.description || 'Tidak ada deskripsi.');
+
+                // --- SYLLABUS (judul bab modul) ---
+                (function renderSyllabus(){
+                    var ol = document.getElementById('cp-syllabus-list');
+                    if (!ol) return;
+                    if (!Array.isArray(visibleModules) || visibleModules.length === 0) {
+                        ol.innerHTML = '<li class="text-muted">Belum ada materi yang disetujui.</li>';
+                        return;
+                    }
+                    ol.innerHTML = visibleModules
+                        .map(function(m){ return '<li>' + escapeHtml(m && m.title ? m.title : '-') + '</li>'; })
+                        .join('');
+                })();
+
+                // --- PARTICIPANTS ---
+                (function loadParticipants() {
+                    var tbody = document.getElementById('participantTableBody');
+                    if (!tbody) return;
+
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Memuat participant...</td></tr>';
+
+                    var url = data.participants_url;
+                    if (!url) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Data participant tidak tersedia.</td></tr>';
+                        return;
+                    }
+
+                    fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(function(res) {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.json();
+                    })
+                    .then(function(json) {
+                        var participants = (json && json.participants) ? json.participants : [];
+                        if (!participants.length) {
+                            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada peserta yang enroll course ini.</td></tr>';
+                            return;
+                        }
+
+                        tbody.innerHTML = participants.map(function(p) {
+                            var name = (p && p.name) ? p.name : '-';
+                            var email = (p && p.email) ? p.email : '-';
+                            var progress = (p && typeof p.progress_percent !== 'undefined') ? (String(p.progress_percent) + '%') : '0%';
+                            var status = (p && p.status_label) ? p.status_label : (p && p.status ? p.status : '-');
+                            var enrolledAt = (p && p.enrolled_at) ? p.enrolled_at : '-';
+                            return (
+                                '<tr>' +
+                                    '<td>' + escapeHtml(name) + '</td>' +
+                                    '<td>' + escapeHtml(email) + '</td>' +
+                                    '<td>' + escapeHtml(progress) + '</td>' +
+                                    '<td>' + escapeHtml(status) + '</td>' +
+                                    '<td>' + escapeHtml(enrolledAt) + '</td>' +
+                                '</tr>'
+                            );
+                        }).join('');
+                    })
+                    .catch(function() {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Gagal memuat participant.</td></tr>';
+                    });
+                })();
+
+                // 1. Hitung Ringkasan (hanya yang sudah ada konten/diapprove)
+                var countPdf = visibleModules.filter(m => m.type === 'pdf').length;
+                var countVideo = visibleModules.filter(m => m.type === 'video').length;
+                var countQuiz = visibleModules.filter(m => m.type === 'quiz').length;
 
                 setText('count-pdf', countPdf);
                 setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
                 setText('count-quiz', countQuiz); // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
-
-                // Fix: Update HTML Ringkasan agar ID-nya sesuai
-                // Kita akan update HTML ringkasan via JS jika ID tidak ditemukan, atau pengguna harus memastikan HTML punya ID
-                // Di HTML asli: 
-                // <h5 id="count-pdf">0</h5> -> OK
-                // <div class="detail-ringkasan"><h5>2</h5><p>Video Pembelajaran</p></div> -> Belum ada ID
-                // Mari kita cari elemennya secara manual jika ID tidak ada, atau inject konten ringkasan ulang.
-
-                // Strategy: Re-render ringkasan numbers specific locations
-                // PDF
-                var pdfCountEl = document.getElementById('count-pdf');
-                if (pdfCountEl) pdfCountEl.textContent = countPdf;
-
-                // Video
-                // Cari elemen SVG video, lalu next sibling div > h5
-                // Cara lebih aman: Assign ID ke HTML (saya akan lakukan di chunk lain), 
-                // tapi di sini kita pakai selector pintar.
-                var summaryContainer = modalEl.querySelector('.info-ringkasan');
-                if (summaryContainer) {
-                    // Item 2: Video
-                    var vidSummary = summaryContainer.children[1];
-                    if (vidSummary) vidSummary.querySelector('h5').textContent = countVideo;
-
-                    // Item 3: Quiz
-                    var quizSummary = summaryContainer.children[2];
-                    if (quizSummary) quizSummary.querySelector('h5').textContent = countQuiz;
-                }
 
                 // --- RENDER TAB CONTENTS ---
 
                 // 1. PDF Tab
                 var pdfContainer = document.getElementById('list-pdf-container');
                 if (pdfContainer) {
-                    var pdfs = modules.filter(m => m.type === 'pdf');
+                    var pdfsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'pdf') : [];
+                    var pdfs = visibleModules.filter(m => m.type === 'pdf');
+                    var missingPdfCount = pdfsAll.filter(m => !moduleHasContent(m)).length;
                     if (pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload modul.</p> <button>Ingatkan Trainer</button>';
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF yang disetujui.</p>';
                     } else {
                         pdfContainer.innerHTML = pdfs.map(m => `
                              <div class="list-pdf">
@@ -773,9 +876,11 @@
                 // 2. Video Tab
                 var vidContainer = document.getElementById('list-video-container');
                 if (vidContainer) {
-                    var vids = modules.filter(m => m.type === 'video');
+                    var vidsAll = Array.isArray(modules) ? modules.filter(m => m.type === 'video') : [];
+                    var vids = visibleModules.filter(m => m.type === 'video');
+                    var missingVideoCount = vidsAll.filter(m => !moduleHasContent(m)).length;
                     if (vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload video.</p> <button>Ingatkan Trainer</button>';
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video yang disetujui.</p>';
                     } else {
                         vidContainer.innerHTML = vids.map(m => `
                             <div class="list-video">
@@ -794,9 +899,11 @@
                 // 3. Quiz Tab
                 var quizContainer = document.getElementById('list-kuis-container');
                 if (quizContainer) {
-                    var quizzes = modules.filter(m => m.type === 'quiz');
+                    var quizzesAll = Array.isArray(modules) ? modules.filter(m => m.type === 'quiz') : [];
+                    var quizzes = visibleModules.filter(m => m.type === 'quiz');
+                    var missingQuizCount = quizzesAll.filter(m => Number(m.question_count || 0) <= 0).length;
                     if (quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Trainer belum upload kuis.</p> <button>Ingatkan Trainer</button>';
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis yang disetujui.</p>';
                     } else {
                         quizContainer.innerHTML = quizzes.map(m => `
                              <div class="list-kuis">
@@ -826,6 +933,312 @@
             });
         });
     </script>
-</body>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // -- Generic Notify Helper (if adminNotify exists) --
+            function notifyError(message, ms) {
+                if (typeof window.adminNotify === 'function') {
+                    window.adminNotify('error', message, ms || 5000);
+                }
+            }
+
+            // -- Filter & Search Logic --
+            var applyBtn = document.getElementById('applyRevenueFilter');
+            var qEl = document.querySelector('.cari_course_builder');
+            var monthEl = document.querySelector('.tanggal_course');
+            var baseUrl = @json(route('admin.courses.index'));
+
+            function applyFilters() {
+                try {
+                    var url = new URL(baseUrl, window.location.origin);
+                    var q = qEl ? String(qEl.value || '').trim() : '';
+                    var month = monthEl ? String(monthEl.value || '').trim() : '';
+
+                    if (q !== '') url.searchParams.set('q', q);
+                    if (month !== '') url.searchParams.set('month', month);
+
+                    window.location.href = url.toString();
+                } catch (e) {
+                    window.location.href = baseUrl;
+                }
+            }
+
+            if (applyBtn) {
+                applyBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    applyFilters();
+                });
+            }
+
+            if (qEl) {
+                qEl.addEventListener('keydown', function(ev) {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        applyFilters();
+                    }
+                });
+            }
+
+            // -- Export Logic --
+            function buildExportUrl(anchorEl, format) {
+                if (!anchorEl) return null;
+
+                var href = anchorEl.getAttribute('href');
+                if (!href) return null;
+
+                var url = new URL(href, window.location.origin);
+                url.searchParams.set('format', format);
+
+                var q = qEl ? String(qEl.value || '').trim() : '';
+                var month = monthEl ? String(monthEl.value || '').trim() : '';
+
+                if (q !== '') url.searchParams.set('q', q);
+                else url.searchParams.delete('q');
+
+                if (month !== '') url.searchParams.set('month', month);
+                else url.searchParams.delete('month');
+
+                return url.toString();
+            }
+
+            var pdfBtn = document.getElementById('exportPdfBtn');
+            var excelBtn = document.getElementById('exportExcelBtn');
+
+            if (pdfBtn) {
+                pdfBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var u = buildExportUrl(this, 'pdf');
+                    if (u) window.location.href = u;
+                });
+            }
+
+            if (excelBtn) {
+                excelBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var u = buildExportUrl(this, 'excel');
+                    if (u) window.location.href = u;
+                });
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function notifyError(message, ms) {
+                if (typeof window.adminNotify === 'function') {
+                    window.adminNotify('error', message, ms || 5000);
+                }
+            }
+
+            // Pre-publish warning (client-side): inform admin before publishing incomplete content
+            var pendingPublishForm = null;
+            var publishModalEl = document.getElementById('publishConfirmModal');
+            var publishProceedBtn = document.getElementById('publishConfirmProceedBtn');
+            var publishMissingList = document.getElementById('publishMissingList');
+
+            function escapeHtml(s) {
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+
+            function openPublishModal(missing, formEl) {
+                pendingPublishForm = formEl || null;
+
+                var isComplete = !missing || missing.length === 0;
+
+                var labelEl = document.getElementById('publishConfirmModalLabel');
+                var mainTextEl = document.getElementById('publishModalMainText');
+                var subTextEl = document.getElementById('publishModalSubText');
+                var footerTextEl = document.getElementById('publishModalFooterText');
+                var btnEl = document.getElementById('publishConfirmProceedBtn');
+
+                if (isComplete) {
+                    if (labelEl) labelEl.textContent = 'Konfirmasi Publish Course';
+                    if (mainTextEl) mainTextEl.textContent = 'Apakah Anda yakin ingin publish course ini?';
+                    if (subTextEl) subTextEl.style.display = 'none';
+                    if (footerTextEl) footerTextEl.textContent = 'Tindakan ini tidak dapat dibatalkan.';
+                    if (btnEl) btnEl.textContent = 'Ya, Publish Course';
+                    if (publishMissingList) {
+                        publishMissingList.innerHTML = '';
+                        publishMissingList.style.display = 'none';
+                    }
+                } else {
+                    if (labelEl) labelEl.textContent = 'Course belum lengkap';
+                    if (mainTextEl) mainTextEl.textContent = 'Oops, modul course belum lengkap.';
+                    if (subTextEl) subTextEl.style.display = 'block';
+                    if (footerTextEl) footerTextEl.textContent = 'Segera hubungi trainer untuk melengkapi modul, video, dan kuis.';
+                    if (btnEl) btnEl.textContent = 'Tetap Publish';
+                    if (publishMissingList) {
+                        publishMissingList.style.display = 'block';
+                        publishMissingList.innerHTML = (missing || []).map(function(x) {
+                            return '<li>' + escapeHtml(x) + ' belum ada</li>';
+                        }).join('');
+                    }
+                }
+
+                try {
+                    if (window.bootstrap && window.bootstrap.Modal && publishModalEl) {
+                        window.bootstrap.Modal.getOrCreateInstance(publishModalEl).show();
+                        return;
+                    }
+                } catch (e) {}
+
+                // If bootstrap modal is unavailable, fall back
+                if (isComplete) {
+                    if (confirm('Apakah Anda yakin ingin publish course ini? Tindakan ini tidak dapat dibatalkan.')) {
+                        if (pendingPublishForm) pendingPublishForm.submit();
+                    }
+                } else {
+                    notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
+                }
+                pendingPublishForm = null;
+            }
+
+            if (publishProceedBtn) {
+                publishProceedBtn.addEventListener('click', function() {
+                    try {
+                        if (pendingPublishForm) {
+                            pendingPublishForm.submit();
+                        }
+                    } catch (e) {}
+                });
+            }
+
+            if (publishModalEl) {
+                publishModalEl.addEventListener('hidden.bs.modal', function() {
+                    pendingPublishForm = null;
+                });
+            }
+
+            document.addEventListener('click', function(ev) {
+                var btn = ev.target.closest('.js-publish-course');
+                if (!btn) return;
+
+                if ((btn.dataset.published || '') === '1') {
+                    ev.preventDefault();
+                    notifyError('Course ini sudah diterbitkan', 4500);
+                    return;
+                }
+
+                var missing = [];
+                try {
+                    missing = JSON.parse(btn.getAttribute('data-missing') || '[]');
+                    if (!Array.isArray(missing)) missing = [];
+                } catch (e) {
+                    missing = [];
+                }
+
+                ev.preventDefault();
+                openPublishModal(missing, btn.closest('form'));
+            });
+
+            // Reject course manual payment: show modal with rejection reason options (same as event)
+            var rejectModalEl = document.getElementById('rejectCoursePaymentModal');
+            var rejectFormEl = document.getElementById('rejectCoursePaymentForm');
+            var rejectReasonEl = document.getElementById('rejectCoursePaymentReason');
+            var rejectMetaEl = document.getElementById('rejectCoursePaymentMeta');
+
+            function openRejectCoursePaymentModal(btnEl) {
+                if (!btnEl || !rejectModalEl || !rejectFormEl) return;
+
+                var action = btnEl.getAttribute('data-action') || '';
+                rejectFormEl.setAttribute('action', action);
+
+                if (rejectReasonEl) {
+                    rejectReasonEl.value = '';
+                }
+
+                if (rejectMetaEl) {
+                    var user = btnEl.getAttribute('data-user') || 'User';
+                    var course = btnEl.getAttribute('data-course') || '';
+                    rejectMetaEl.textContent = course ? (user + ' • ' + course) : user;
+                }
+
+                try {
+                    if (window.bootstrap && window.bootstrap.Modal) {
+                        window.bootstrap.Modal.getOrCreateInstance(rejectModalEl).show();
+                    }
+                } catch (e) {}
+            }
+
+            document.addEventListener('click', function(ev) {
+                var btn = ev.target.closest('.js-reject-course-payment');
+                if (!btn) return;
+                ev.preventDefault();
+                openRejectCoursePaymentModal(btn);
+            });
+        });
+    </script>
+
+    <!-- Reject Course Manual Payment Modal (UI, no browser alert/confirm) -->
+    <div class="modal fade" id="rejectCoursePaymentModal" tabindex="-1" aria-labelledby="rejectCoursePaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectCoursePaymentModalLabel">Tolak Pembayaran Course</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectCoursePaymentForm" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="text-muted" style="font-size: 0.9rem;" id="rejectCoursePaymentMeta"></div>
+                        <p class="mt-2 mb-2">Pilih alasan penolakan:</p>
+                        <div class="mb-3">
+                            <label for="rejectCoursePaymentReason" class="form-label text-danger">Alasan Penolakan <span class="text-danger">*</span></label>
+                            <select class="form-select" id="rejectCoursePaymentReason" name="reason" required>
+                                <option value="" selected disabled>Pilih alasan penolakan</option>
+                                <option value="Nominal pembayaran kurang">Nominal pembayaran kurang</option>
+                                <option value="Nominal pembayaran lebih">Nominal pembayaran lebih</option>
+                                <option value="Gambar bukti pembayaran blur/buram. Silahkan kirim ulang">Gambar bukti pembayaran blur/buram. Silahkan kirim ulang</option>
+                                <option value="Pembayaran dinyatakan tidak valid">Pembayaran dinyatakan tidak valid</option>
+                            </select>
+                            <div class="form-text">Alasan ini akan digunakan sebagai keterangan penolakan.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 w-auto" style="flex: 0 0 auto;" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-3 w-auto" style="flex: 0 0 auto;">Tolak Pembayaran</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var deleteForms = document.querySelectorAll('.delete-course-form');
+            deleteForms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Apakah Anda yakin?',
+                            text: 'apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    } else {
+                        if (confirm('apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan')) {
+                            form.submit();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
 </html>
