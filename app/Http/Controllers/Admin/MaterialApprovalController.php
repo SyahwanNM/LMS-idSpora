@@ -189,7 +189,14 @@ class MaterialApprovalController extends Controller
         $this->syncLegacyEventMaterialsToAssignments();
 
         $query = Course::with(['trainer', 'category', 'modules'])
-            ->where('status', 'pending_review')
+            ->where(function ($q) {
+                $q->where('status', 'pending_review')
+                  ->orWhereHas('modules', function ($mq) {
+                      $mq->where('review_status', 'pending_review')
+                         ->whereNotNull('content_url')
+                         ->where('content_url', '!=', '');
+                  });
+            })
             ->withCount('modules');
 
         // Search functionality
@@ -252,67 +259,31 @@ class MaterialApprovalController extends Controller
 
         $pendingMaterials = $query->paginate(15);
 
-        $pendingEventModulesQuery = TrainerAssignment::query()
+        $pendingEventModulesQuery = \App\Models\EventTrainerModule::query()
             ->with([
                 'event:id,title,jenis,event_date,material_deadline',
                 'trainer:id,name,email,avatar',
             ])
-            ->whereHas('event')
-            ->whereNotNull('material_path')
-            ->where(function ($q) {
-                $q->whereNull('material_status')
-                    ->orWhereIn('material_status', ['pending', 'pending_review']);
-            });
+            ->where('status', 'pending_review');
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
             $pendingEventModulesQuery->where(function ($q) use ($search) {
-                $q->whereHas('event', function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%");
-                })->orWhereHas('trainer', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+                  ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
         $pendingEventModules = $pendingEventModulesQuery
-            ->orderByDesc('material_submitted_at')
-            ->orderByDesc('updated_at')
             ->orderByDesc('created_at')
-            ->get([
-                'id',
-                'event_id',
-                'trainer_id',
-                'material_path',
-                'material_status',
-                'material_submitted_at',
-                'created_at',
-                'updated_at',
-            ]);
-
-        // Backward-compat display: older rows may not have module_submitted_at filled.
-        // For pending items, updated_at usually reflects the module upload time.
-        $pendingEventModules->transform(function (TrainerAssignment $assignment) {
-            if (empty($assignment->material_submitted_at) && !empty($assignment->material_path)) {
-                $assignment->setAttribute('material_submitted_at', $assignment->updated_at);
-            }
-
-            $assignment->setAttribute('module_file_url', !empty($assignment->material_path)
-                ? Storage::url($assignment->material_path)
-                : null);
-
-            return $assignment;
-        });
+            ->get();
 
         // Statistics
-        $totalPending = Course::where('status', 'pending_review')->count()
-            + TrainerAssignment::query()
-                ->whereNotNull('material_path')
-                ->where(function ($q) {
-                    $q->whereNull('material_status')
-                        ->orWhereIn('material_status', ['pending', 'pending_review']);
-                })
-                ->count();
+        $totalPending = Course::where(function ($q) {
+                $q->where('status', 'pending_review')
+                  ->orWhereHas('modules', fn($mq) => $mq->where('review_status', 'pending_review')->whereNotNull('content_url')->where('content_url', '!=', ''));
+            })->count()
+            + \App\Models\EventTrainerModule::where('status', 'pending_review')->count();
         $totalApproved = Course::where('status', 'approved')->count()
             + TrainerAssignment::query()
                 ->whereNotNull('material_path')

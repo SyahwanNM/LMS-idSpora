@@ -469,7 +469,7 @@
                 <div class="mt-3">{{ $events->links() }}</div>
             @else <div class="text-center py-5">Belum ada event.</div> @endif
         </div></div>
-        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable="false" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
@@ -1038,8 +1038,9 @@
         }
 
         /* Prevent modal from sticking to the top header/navbar */
-        #addEventModal .modal-dialog {
-            margin-top: clamp(2rem, 10vh, 120px);
+        #addEventModal .modal-dialog,
+        #editEventModal .modal-dialog {
+            margin-top: 8px;
         }
             /* Draggable modal UX */
             .modal-draggable .modal-header { cursor: move; user-select: none; }
@@ -3078,7 +3079,7 @@ document.addEventListener('click', async function(e){
         if(!modalEl){ window.location.href = url; return; }
         // Inject forced label color styles into the modal (AJAX responses may lack page-level styles)
         try{
-            const css = `#editEventModal #editEventForm label,#editEventModal #editEventForm .form-label,#editEventModal #editEventForm small,#editEventModal #editEventForm .form-text,#editEventModal #editEventForm .input-group-text{color:#000!important} #editEventModal ::placeholder{color:#000!important;opacity:1!important}`;
+            const css = `#editEventModal #editEventForm label,#editEventModal #editEventForm .form-label,#editEventModal #editEventForm small,#editEventModal #editEventForm .form-text,#editEventModal #editEventForm .input-group-text{color:#000!important} #editEventModal ::placeholder{color:#000!important;opacity:1!important} #editEventModal .modal-dialog{margin-top:8px!important;}`;
             const styleEl = document.createElement('style'); styleEl.type = 'text/css'; styleEl.appendChild(document.createTextNode(css));
             modalEl.insertBefore(styleEl, modalEl.firstChild);
         }catch(e){}

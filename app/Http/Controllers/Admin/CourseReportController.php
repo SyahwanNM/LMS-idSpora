@@ -315,6 +315,7 @@ class CourseReportController extends Controller
 
         // Base: all courses, with optional enrollments in range.
         $courseAgg = Course::query()
+            ->whereIn('courses.status', ['active', 'approved', 'published', 'completed'])
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
                 $join->on('courses.id', '=', 'enrollments.course_id')
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -558,6 +559,7 @@ class CourseReportController extends Controller
             ->keyBy('course_id');
 
         $courses = \App\Models\Course::query()
+            ->whereIn('status', ['active', 'approved', 'published', 'completed'])
             ->select('id', 'name', 'level', 'price', 'expenses_json', 'created_at')
             ->orderByDesc('created_at')
             ->get();

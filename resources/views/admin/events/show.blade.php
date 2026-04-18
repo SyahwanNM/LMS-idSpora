@@ -241,25 +241,12 @@
                                                         </div>
                                                         <div class="d-flex align-items-center gap-1">
                                                             <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tm->path) }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
-                                                            @if($tm->status === 'pending_review')
-                                                                <form action="{{ route('admin.event-material.approve', $event) }}" method="POST" class="d-inline">
-                                                                    @csrf
-                                                                    <input type="hidden" name="module_id" value="{{ $tm->id }}">
-                                                                    <button type="submit" class="btn btn-xs btn-success py-0 px-2" title="Approve"><i class="bi bi-check2"></i></button>
-                                                                </form>
-                                                                <button type="button" class="btn btn-xs btn-danger py-0 px-2" data-bs-toggle="collapse" data-bs-target="#rejectTm-{{ $tm->id }}" title="Tolak"><i class="bi bi-x"></i></button>
-                                                                <div class="collapse w-100 mt-1" id="rejectTm-{{ $tm->id }}">
-                                                                    <form action="{{ route('admin.event-material.reject', $event) }}" method="POST" class="d-flex gap-1">
-                                                                        @csrf
-                                                                        <input type="hidden" name="module_id" value="{{ $tm->id }}">
-                                                                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Alasan penolakan" required>
-                                                                        <button type="submit" class="btn btn-sm btn-danger">Kirim</button>
-                                                                    </form>
-                                                                </div>
-                                                            @elseif($tm->status === 'approved')
+                                                            @if($tm->status === 'approved')
                                                                 <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
-                                                            @else
+                                                            @elseif($tm->status === 'rejected')
                                                                 <span class="badge bg-danger" style="font-size:0.65rem;">Ditolak</span>
+                                                            @else
+                                                                <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
                                                             @endif
                                                         </div>
                                                     </div>
@@ -270,7 +257,7 @@
                                     @if($modulePending ?? false)
                                         <li class="list-group-item">
                                             <div class="mt-2 small text-warning">
-                                                <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review.
+                                                <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review. Approve di halaman <a href="{{ route('admin.trainer.show', $event->trainer ?? 1) }}">Admin Trainer</a>.
                                             </div>
                                         </li>
                                     @endif
