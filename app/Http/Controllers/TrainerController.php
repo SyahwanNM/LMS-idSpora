@@ -1748,13 +1748,82 @@ class TrainerController extends Controller
 
     public function uploadCourseMaterials(Request $request, $id)
     {
-        $request->validate([
-            'target_modules' => 'required|string', // Kumpulan ID modul di Bab ini
-            'replace_module_id' => 'nullable|integer',
-            'module_content_html' => 'nullable|string|max:300000',
-            'files' => 'required_without:module_content_html|array',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
+        // Check if upload was silently rejected by PHP (post_max_size exceeded)
+        if ($request->server('CONTENT_LENGTH') > 0 && empty($_FILES) && empty($_POST)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'File terlalu besar. Ukuran maksimal yang diizinkan server adalah 512MB.',
+            ], 413);
+        }
+
+        // Log incoming request for debugging
+        \Illuminate\Support\Facades\Log::info('uploadCourseMaterials', [
+            'course_id' => $id,
+            'has_files' => $request->hasFile('files'),
+            'files_count' => count($request->file('files') ?? []),
+            'content_length' => $request->server('CONTENT_LENGTH'),
+            'files_info' => collect($request->file('files') ?? [])->map(fn($f) => [
+                'name' => $f?->getClientOriginalName(),
+                'size' => $f?->getSize(),
+                'mime' => $f?->getMimeType(),
+                'ext' => $f?->getClientOriginalExtension(),
+                'valid' => $f?->isValid(),
+                'error' => $f?->getError(),
+            ])->toArray(),
         ]);
+
+        try {
+            $request->validate([
+                'target_modules' => 'required|string',
+                'replace_module_id' => 'nullable|integer',
+                'module_content_html' => 'nullable|string|max:300000',
+                'files' => 'required_without:module_content_html|array',
+                'files.*' => [
+                    'required',
+                    function ($attribute, $value, $fail) {
+                        if (!$value || !($value instanceof \Illuminate\Http\UploadedFile)) {
+                            $fail('File tidak valid.');
+                            return;
+                        }
+                        // Check PHP upload error code directly
+                        if ($value->getError() !== UPLOAD_ERR_OK) {
+                            $errorMessages = [
+                                UPLOAD_ERR_INI_SIZE   => 'File melebihi batas upload_max_filesize di server (' . ini_get('upload_max_filesize') . ').',
+                                UPLOAD_ERR_FORM_SIZE  => 'File melebihi batas MAX_FILE_SIZE di form.',
+                                UPLOAD_ERR_PARTIAL    => 'File hanya terupload sebagian. Coba lagi.',
+                                UPLOAD_ERR_NO_FILE    => 'Tidak ada file yang diupload.',
+                                UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary server tidak tersedia.',
+                                UPLOAD_ERR_CANT_WRITE => 'Gagal menyimpan file ke disk server.',
+                                UPLOAD_ERR_EXTENSION  => 'Upload dihentikan oleh ekstensi PHP.',
+                            ];
+                            $fail($errorMessages[$value->getError()] ?? 'Upload gagal dengan error code: ' . $value->getError());
+                            return;
+                        }
+                        // Validate by extension only (avoid mimes which requires fileinfo)
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        $allowed = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc', 'jpg', 'png', 'jpeg'];
+                        if (!in_array($ext, $allowed)) {
+                            $fail("Format .$ext tidak diizinkan. Format yang diizinkan: " . implode(', ', $allowed));
+                            return;
+                        }
+                        // 512MB size limit
+                        if ($value->getSize() > 512 * 1024 * 1024) {
+                            $fail('Ukuran file maksimal 512MB. File Anda: ' . round($value->getSize() / 1024 / 1024, 1) . 'MB.');
+                        }
+                    },
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Illuminate\Support\Facades\Log::warning('uploadCourseMaterials validation failed', [
+                'errors' => $e->errors(),
+                'course_id' => $id,
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => collect($e->errors())->flatten()->first() ?? 'Validasi gagal.',
+                'validation_errors' => $e->errors(),
+            ], 422);
+        }
 
         $course = \App\Models\Course::findOrFail($id);
         if ($course->trainer_id !== Auth::id()) {
@@ -2226,7 +2295,16 @@ class TrainerController extends Controller
             }
         }
 
-        if (!empty($primaryMaterialPath)) {
+        if (!empty($primaryMaterialPath) && $firstFile) {
+            // Always save to event_trainer_modules for per-trainer tracking
+            \App\Models\EventTrainerModule::create([
+                'event_id'      => $event->id,
+                'trainer_id'    => $trainerId,
+                'original_name' => $firstFile->getClientOriginalName(),
+                'path'          => $primaryMaterialPath,
+                'status'        => 'pending_review',
+            ]);
+
             if ($isPrimaryTrainer || !$assignment) {
                 $event->update([
                     'module_path' => $primaryMaterialPath,

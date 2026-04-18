@@ -231,6 +231,10 @@ class AuthController extends Controller
         try {
             Mail::to($request->email)->send(new PasswordResetMail($verificationCode, $user->name));
 
+            // Simpan email ke session untuk resend
+            $request->session()->put('forgot_password_email', $request->email);
+            $request->session()->put('forgot_password_last_sent_at', now()->toIso8601String());
+
             return redirect()->route('verifikasi')
                 ->with('success', 'Kode verifikasi telah dikirim ke email Anda')
                 ->with('email', $request->email);
@@ -253,10 +257,13 @@ class AuthController extends Controller
 
     public function showVerification(Request $request)
     {
-        // Pastikan flash data email pendaftaran tetap tersedia untuk request berikutnya (verify/resend)
         try {
             $request->session()->keep('register_verify_email');
         } catch (\Throwable $e) {
+        }
+        // Jika ada email forgot password di session → tampilkan view forgot verify
+        if ($request->session()->has('forgot_password_email')) {
+            return view('auth.forgot-verify');
         }
         return view('auth.verifikasi');
     }
@@ -378,14 +385,55 @@ class AuthController extends Controller
 
     public function showNewPassword(Request $request)
     {
-        // Pastikan token tetap ada di sesi (jika datang via flash/redirect)
         try {
             $request->session()->keep('token');
-        } catch (\Throwable $e) {
-        }
-        return view('new-password');
-        try { $request->session()->keep('token'); } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {}
         return view('auth.new-password');
+    }
+
+    public function resendResetCode(Request $request)
+    {
+        // Cooldown 60 detik
+        $lastSent = $request->session()->get('forgot_password_last_sent_at');
+        if ($lastSent) {
+            $diff = now()->diffInSeconds(\Carbon\Carbon::parse($lastSent));
+            if ($diff < 60) {
+                $remaining = 60 - $diff;
+                // Don't show error — client-side countdown handles this
+                return back();
+            }
+        }
+
+        $email = $request->session()->get('forgot_password_email');
+        if (!$email) {
+            return redirect()->route('forgot-password')
+                ->withErrors(['error' => 'Sesi tidak ditemukan. Silakan masukkan email kembali.']);
+        }
+
+        $user = \App\Models\User::where('email', $email)->first();
+        if (!$user) {
+            return redirect()->route('forgot-password')
+                ->withErrors(['error' => 'Email tidak ditemukan.']);
+        }
+
+        $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $token = Str::random(64);
+
+        PasswordResetToken::where('email', $email)->delete();
+        PasswordResetToken::create([
+            'email' => $email,
+            'token' => $token,
+            'verification_code' => $verificationCode,
+            'expires_at' => now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_MINUTES),
+        ]);
+
+        try {
+            Mail::to($email)->send(new PasswordResetMail($verificationCode, $user->name));
+            $request->session()->put('forgot_password_last_sent_at', now()->toIso8601String());
+            return back()->with('success', 'Kode verifikasi baru telah dikirim ke email Anda.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengirim email. Coba lagi.']);
+        }
     }
 
     public function resetPassword(Request $request)
@@ -428,6 +476,13 @@ class AuthController extends Controller
         if (!$user) {
             return redirect()->route('forgot-password')
                 ->withErrors(['error' => 'User tidak ditemukan']);
+        }
+
+        // Cek apakah password baru sama dengan password lama
+        if (Hash::check($request->password, $user->password)) {
+            return redirect()->back()
+                ->withErrors(['password' => 'Password Anda sama dengan password sebelumnya. Gunakan password yang baru.'])
+                ->withInput($request->except('password', 'password_confirmation'));
         }
 
         // Update password

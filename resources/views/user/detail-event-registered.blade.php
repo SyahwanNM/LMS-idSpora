@@ -1556,9 +1556,10 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    $moduleUnlocked = $isRegistered && $eventIsFinished && $approvedModules->isNotEmpty();
+                    // Unlock saat event selesai dan user terdaftar (meski belum ada modul)
+                    $moduleUnlocked = $isRegistered && $eventIsFinished;
                 @endphp
-                @if($approvedModules->isNotEmpty() || !$eventIsFinished || !$isRegistered)
+                @if($isRegistered || $approvedModules->isNotEmpty())
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"

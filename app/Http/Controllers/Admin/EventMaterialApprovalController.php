@@ -298,53 +298,48 @@ class EventMaterialApprovalController extends Controller
      */
     public function approve(Request $request, Event $event)
     {
-        $assignment = $this->resolveTargetAssignment($event, $request);
-
-        if ($assignment && empty($assignment->material_path)) {
-            return back()->with('error', 'Material event tidak ditemukan.');
-        }
-
-        if (!$assignment && empty($event->module_path)) {
-            return back()->with('error', 'Material event tidak ditemukan.');
-        }
-
         if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
-            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
+            abort(403);
         }
 
-        if ($assignment) {
-            $assignment->update([
-                'material_status' => 'approved',
-                'material_approved_at' => now(),
-                'material_approved_by' => Auth::id(),
-                'material_rejected_at' => null,
-                'material_rejected_by' => null,
-                'material_rejection_reason' => null,
-            ]);
-        } else {
-            // Backward compatibility for legacy event-level material records.
-            $event->update([
-                'material_status' => 'approved',
-                'material_approved_at' => now(),
-                'material_approved_by' => Auth::id(),
-                'material_rejection_reason' => null,
-            ]);
-        }
+        $moduleId = $request->input('module_id');
 
-        $targetTrainerId = (int) ($assignment?->trainer_id ?: $event->trainer_id);
-        if ($targetTrainerId > 0) {
-            TrainerNotification::create([
-                'trainer_id' => $targetTrainerId,
-                'type' => 'event_material_approved',
-                'title' => 'Materi Event Diterima',
-                'message' => 'Materi event "' . $event->title . '" telah disetujui oleh admin.',
-                'data' => [
-                    'entity_type' => 'event',
-                    'entity_id' => (int) $event->id,
-                    'url' => route('trainer.events.show', $event->id),
-                ],
-                'expires_at' => now()->addDays(30),
+        if ($moduleId) {
+            $etm = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
+
+            $etm->update([
+                'status'           => 'approved',
+                'reviewed_by'      => Auth::id(),
+                'reviewed_at'      => now(),
+                'rejection_reason' => null,
             ]);
+
+            // Update event-level status if no more pending
+            $stillPending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')->count();
+            if ($stillPending === 0) {
+                $event->update([
+                    'material_status'           => 'approved',
+                    'material_approved_at'      => now(),
+                    'material_approved_by'      => Auth::id(),
+                    'material_rejection_reason' => null,
+                    'module_verified_at'        => now(),
+                    'module_verified_by'        => Auth::id(),
+                ]);
+            }
+
+            try {
+                TrainerNotification::create([
+                    'trainer_id' => $etm->trainer_id,
+                    'type'       => 'event_material_approved',
+                    'title'      => 'Materi Event Diterima',
+                    'message'    => 'Modul "' . $etm->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                    'data'       => ['entity_type' => 'event', 'entity_id' => (int) $event->id, 'url' => route('trainer.events.show', $event->id)],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            } catch (\Throwable $e) {}
         }
 
         return back()->with('success', 'Materi event berhasil disetujui. Trainer telah diberitahu.');
@@ -355,60 +350,41 @@ class EventMaterialApprovalController extends Controller
      */
     public function reject(Request $request, Event $event)
     {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403);
+        }
+
         $request->validate([
-            'rejection_reason' => 'required|string|max:500',
+            'reason' => 'required|string|max:500',
         ]);
 
-        $assignment = $this->resolveTargetAssignment($event, $request);
+        $rejectionReason = trim((string) $request->input('reason'));
+        $moduleId = $request->input('module_id');
 
-        if ($assignment && empty($assignment->material_path)) {
-            return back()->with('error', 'Material event tidak ditemukan.');
-        }
+        if ($moduleId) {
+            $etm = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
 
-        if (!$assignment && empty($event->module_path)) {
-            return back()->with('error', 'Material event tidak ditemukan.');
-        }
-
-        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
-            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
-        }
-
-        $rejectionReason = trim((string) $request->input('rejection_reason'));
-
-        if ($assignment) {
-            $assignment->update([
-                'material_status' => 'rejected',
-                'material_rejected_at' => now(),
-                'material_rejected_by' => Auth::id(),
-                'material_rejection_reason' => $rejectionReason,
+            $etm->update([
+                'status'           => 'rejected',
+                'reviewed_by'      => Auth::id(),
+                'reviewed_at'      => now(),
+                'rejection_reason' => $rejectionReason,
             ]);
-        } else {
-            // Backward compatibility for legacy event-level material records.
-            $event->update([
-                'material_status' => 'rejected',
-                'material_approved_at' => now(),
-                'material_approved_by' => Auth::id(),
-                'material_rejection_reason' => $rejectionReason,
-            ]);
+
+            try {
+                TrainerNotification::create([
+                    'trainer_id' => $etm->trainer_id,
+                    'type'       => 'event_material_rejected',
+                    'title'      => 'Materi Event Ditolak',
+                    'message'    => 'Modul "' . $etm->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $rejectionReason,
+                    'data'       => ['entity_type' => 'event', 'entity_id' => (int) $event->id, 'url' => route('trainer.events.show', $event->id), 'rejection_reason' => $rejectionReason],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            } catch (\Throwable $e) {}
         }
 
-        $targetTrainerId = (int) ($assignment?->trainer_id ?: $event->trainer_id);
-        if ($targetTrainerId > 0) {
-            TrainerNotification::create([
-                'trainer_id' => $targetTrainerId,
-                'type' => 'event_material_rejected',
-                'title' => 'Materi Event Ditolak',
-                'message' => 'Materi event "' . $event->title . '" ditolak. Alasan: ' . $rejectionReason,
-                'data' => [
-                    'entity_type' => 'event',
-                    'entity_id' => (int) $event->id,
-                    'url' => route('trainer.events.show', $event->id),
-                    'rejection_reason' => $rejectionReason,
-                ],
-                'expires_at' => now()->addDays(30),
-            ]);
-        }
-
-        return back()->with('success', 'Materi event berhasil ditolak. Trainer telah diberitahu untuk meng-upload ulang.');
+        return back()->with('success', 'Materi event berhasil ditolak. Trainer telah diberitahu.');
     }
 }

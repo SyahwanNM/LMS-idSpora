@@ -487,6 +487,7 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
         return view('admin.events.show', compact('event'));
     }
 

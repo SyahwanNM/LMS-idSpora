@@ -1277,7 +1277,8 @@
 
                                             $canOpenFile = !$module->isQuiz() && !empty($contentUrl) && !$hasTextContent;
                                             $canPreview = $canOpenFile || $module->isQuiz() || $hasTextContent;
-                                            $hasAnyContent = $canOpenFile || $hasTextContent || $module->isQuiz();
+                                            $quizEmpty = $module->isQuiz() && $module->quizQuestions->count() === 0;
+                                            $hasAnyContent = $canOpenFile || $hasTextContent || ($module->isQuiz() && !$quizEmpty);
                                             $reviewStatus = in_array(($module->review_status ?? ''), ['approved', 'rejected', 'pending_review'], true)
                                                 ? $module->review_status : 'pending_review';
                                             $processingStatus = (string) ($module->processing_status ?? '');
@@ -1375,8 +1376,14 @@
                                                             @endif
                                                         </div>
                                                     @else
-                                                        <span class="module-tag module-tag-missing"><i
-                                                                class="bi bi-exclamation me-1"></i>File belum diupload</span>
+                                                        @if($quizEmpty)
+                                                            <span class="module-tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">
+                                                                <i class="bi bi-question-circle me-1"></i>Kuis belum dibuat
+                                                            </span>
+                                                        @else
+                                                            <span class="module-tag module-tag-missing"><i
+                                                                    class="bi bi-exclamation me-1"></i>File belum diupload</span>
+                                                        @endif
                                                     @endif
 
                                                     {{-- Tombol Setujui/Tolak — tampil untuk SEMUA tipe modul (termasuk quiz) jika

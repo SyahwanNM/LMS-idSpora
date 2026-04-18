@@ -474,8 +474,8 @@
         .tooltip-hint-yellow.bs-tooltip-end .tooltip-arrow::before{ border-right-color: var(--bs-warning-bg-subtle); }
     </style>
     <style>
-        /* Edit modal: lower slightly to better center vertically */
-        #editEventModal .modal-dialog { margin-top: clamp(3rem, 12vh, 120px); }
+        /* Edit modal: position near top */
+        #editEventModal .modal-dialog { margin-top: clamp(2rem, 8vh, 80px); }
 
         /* Make the right-side helper panel sticky inside the modal-body so it follows when scrolling */
         #editEventModal .event-side-sticky {
