@@ -495,8 +495,8 @@
                                 @php 
                                     $registered = !empty($event->is_registered);
                                     $isFinished = ($status === 'finished');
-                                    $btnLabel = $isFinished ? 'Telah Selesai' : ($registered ? 'Anda Terdaftar' : 'Daftar');
-                                    $btnClass = $isFinished ? 'btn-secondary' : ($registered ? 'btn-success' : 'btn-primary');
+                                    $btnLabel = $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar');
+                                    $btnClass = $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary');
                                 @endphp
                                 <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
                                     {{ $btnLabel }}
@@ -714,7 +714,22 @@
                     const endAttr = el.getAttribute('data-end-ts');
                     const end = endAttr ? parseInt(endAttr,10) : null;
                     const label = el.closest('[data-countdown-wrapper]')?.querySelector('[data-countdown-label]');
-                    if(end && now > end){ el.textContent = 'Telah Selesai'; el.classList.remove('started'); el.classList.add('expired'); if(label) label.textContent = 'Status:'; return; }
+                    if(end && now > end){
+                        el.textContent = 'Telah Selesai'; el.classList.remove('started'); el.classList.add('expired');
+                        if(label) label.textContent = 'Status:';
+                        // Update register button if not registered
+                        const card = el.closest('.card-event');
+                        if(card){
+                            const btn = card.querySelector('.register-btn');
+                            if(btn && !btn.classList.contains('btn-success')){
+                                btn.textContent = 'Telah Selesai';
+                                btn.classList.remove('btn-primary','btn-warning');
+                                btn.classList.add('btn-secondary');
+                                btn.disabled = true;
+                            }
+                        }
+                        return;
+                    }
                     if(now >= start){ el.textContent = 'Sedang Berlangsung'; el.classList.remove('expired'); el.classList.add('started'); if(label) label.textContent = 'Status:'; return; }
                     const diff = start - now; el.textContent = formatDiff(diff); el.classList.remove('started','expired'); if(label) label.textContent = 'Mulai dalam:';
                 });
