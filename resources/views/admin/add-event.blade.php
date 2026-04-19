@@ -1015,6 +1015,14 @@
         }
         #addEventModal .modal-footer #submitHint { margin-right: auto; }
 
+        /* Force addEventModal dialog to sit centered vertically */
+        #addEventModal .modal-dialog {
+            margin-top: 80px !important;
+            margin-bottom: 30px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
         /* Modal (Upload Dokumen per Event): remove scrollbar + match logout modal look */
         .modal-upload-operasional.modal{ overflow-y: hidden; }
         .modal-upload-operasional .modal-content{ border-radius: 18px; overflow: hidden; }

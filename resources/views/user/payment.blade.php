@@ -76,8 +76,8 @@
         .warning-text { color: #EF4444; font-size: 11px; font-style: italic; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
 
         /* Whatsapp */
-        .wa-group { display: flex; gap: 8px; }
-        .wa-group select { width: 100px; }
+        .wa-group { display: flex; gap: 8px; align-items: center; }
+        .wa-group input[type="text"] { flex: 1; min-width: 0; }
 
         /* Order Detail Items */
         .order-detail-content { display: flex; gap: 12px; align-items: flex-start; }
@@ -172,9 +172,9 @@
 
                         <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">No Whatsapp</label>
                             <div class="wa-group">
-                                <span class="form-select-custom" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;padding:0 14px;min-width:64px;height:44px;color:#374151;flex-shrink:0;">+62</span>
+                                <span style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:#f1f5f9;border:1px solid #FCD34D;border-radius:6px;padding:0 14px;width:64px;flex-shrink:0;height:36px;color:#374151;font-size:13px;">+62</span>
                                 <input type="hidden" name="dial_code" value="+62">
-                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="No Whatsapp" inputmode="numeric" required>
+                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 81234567890" inputmode="numeric" required style="flex:1;min-width:0;">
                             </div>
                         </div>
                         @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
@@ -362,7 +362,7 @@
         const form = document.getElementById('paymentForm');
         if(!form) return;
         const fullName = form.querySelector('input[name="full_name"]');
-        const wa = form.querySelector('input[name="whatsapp"]');        const wa = form.querySelector('input[name="whatsapp"]');
+        const wa = form.querySelector('input[name="whatsapp"]');
         const showQrisBtn = document.getElementById('showQrisBtn');
         const paymentProofInput = document.getElementById('paymentProofInput');
         const referralInput = form.querySelector('input[name="referral_code"]');

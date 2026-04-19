@@ -329,7 +329,7 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">Any Category</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'workshop' ? 'active' : '' }}" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
-                            <li><a class="dropdown-item {{ request('category') === 'training' ? 'active' : '' }}" href="#" data-filter="category" data-value="training">Training</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'seminar' ? 'active' : '' }}" href="#" data-filter="category" data-value="seminar">Seminar</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'webinar' ? 'active' : '' }}" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
                         </ul>
                     </div>
