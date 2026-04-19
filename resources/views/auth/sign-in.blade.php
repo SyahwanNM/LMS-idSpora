@@ -322,7 +322,7 @@
       <h3>Selamat Datang</h3>
       <p class="subtitle">Silakan masuk ke akun Anda</p>
 
-      <form action="{{ route('login') }}" method="POST">
+      <form action="{{ route('login') }}" method="POST" novalidate id="signinForm">
         @csrf
         @php
           $redirectTarget = old('redirect', request('redirect'));
@@ -438,6 +438,31 @@
       } catch(e){}
     })();
   </script>
-</body>
+  <script>
+    // Validate all required fields at once
+    document.getElementById('signinForm')?.addEventListener('submit', function(e) {
+        const fields = this.querySelectorAll('[required]');
+        let hasError = false;
+        fields.forEach(function(field) {
+            field.style.borderColor = '';
+            // Remove previous error
+            const container = field.closest('.input-group') || field.parentNode;
+            const prev = container.parentNode.querySelector('.field-error');
+            if (prev) prev.remove();
 
+            if (!field.value.trim()) {
+                hasError = true;
+                field.style.borderColor = '#dc3545';
+                const err = document.createElement('small');
+                err.className = 'field-error';
+                err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;';
+                err.textContent = 'Field ini wajib diisi.';
+                // Insert after the input-group or field's parent
+                container.parentNode.insertBefore(err, container.nextSibling);
+            }
+        });
+        if (hasError) e.preventDefault();
+    });
+  </script>
+</body>
 </html>
