@@ -8,24 +8,6 @@
 
         <!-- PART 2: MOBILE CONTROLS (Always visible on mobile) -->
         <div class="d-flex align-items-center d-lg-none ms-auto me-2 position-relative">
-            <!-- Expandable Mobile Search Bar (Slides in from the right) -->
-            <div class="mobile-search-expandable" id="mobileSearchExpandable">
-                <form action="{{ request()->routeIs('events.*') ? route('events.index') : route('courses.index') }}" method="GET" class="d-flex align-items-center w-100 h-100 px-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="rgba(255,255,255,0.5)" viewBox="0 0 16 16" class="me-2">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                    </svg>
-                    <input type="text" name="search" class="form-control bg-transparent border-0 text-white p-0 shadow-none" placeholder="Cari..." id="mobileSearchInput" value="{{ request('search') }}">
-                    <button type="button" class="btn-close btn-close-white ms-2" id="closeMobileSearch" style="font-size: 0.7rem;"></button>
-                </form>
-            </div>
-
-            <!-- Mobile Search Icon -->
-            <button class="btn btn-nav-icon me-2" type="button" id="mobileSearchBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-                </svg>
-            </button>
-            
             <!-- Mobile Notif Icon -->
             <button class="btn btn-nav-icon position-relative me-3" type="button" id="mobileNotifBtn" onclick="toggleNotificationDropdown()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -66,18 +48,6 @@
                 <!-- RIGHT SIDE: DESKTOP ACTIONS (HIDDEN ON MOBILE TILL COLLAPSE) -->
                 <div class="desktop-actions-nav d-flex flex-column flex-lg-row align-items-start align-items-lg-center mt-lg-0 mt-3">
                     
-                    <!-- Search Bar (Desktop) -->
-                    <div class="nav-search-wrapper d-none d-lg-block me-lg-4">
-                        <form class="search-form-premium" action="{{ request()->routeIs('events.*') ? route('events.index') : route('courses.index') }}" method="GET" role="search">
-                            <span class="search-icon-inside">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                </svg>
-                            </span>
-                            <input class="form-control nav-input-premium" type="search" name="search" placeholder="Cari apa saja..." aria-label="Search" value="{{ request('search') }}">
-                        </form>
-                    </div>
-
                     <!-- Notif Icon (Desktop) -->
                     <div class="d-none d-lg-block me-lg-3">
                         <button class="btn btn-nav-icon position-relative" type="button" id="notifBtn" onclick="toggleNotificationDropdown()">

@@ -1120,19 +1120,27 @@
                             @php
                                 $trainerObj = $sp->trainer ?? null;
                                 $profileUrl = $trainerObj ? route('public.trainer-profile.show', $trainerObj->id) : null;
+                                $nameLen = mb_strlen($sp->name ?? '');
+                                $nameFontSize = $nameLen > 20 ? '11px' : ($nameLen > 14 ? '12px' : '13px');
                             @endphp
-                            <div class="d-flex align-items-center gap-2">
+                            <div class="d-flex align-items-center gap-2" style="max-width:180px;">
                                 @if($profileUrl)
-                                    <a href="{{ $profileUrl }}" class="event-info-value" style="color:inherit; text-decoration:none;">
+                                    <a href="{{ $profileUrl }}" class="event-info-value"
+                                       style="color:inherit; text-decoration:none; font-size:{{ $nameFontSize }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;"
+                                       title="{{ $sp->name }}">
                                         {{ $sp->name }}
                                     </a>
-                                    <a href="{{ $profileUrl }}" class="event-speaker-value btn p-1" aria-label="Lihat profil trainer">
+                                    <a href="{{ $profileUrl }}" class="event-speaker-value btn p-1 flex-shrink-0" aria-label="Lihat profil trainer">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
                                             <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
                                         </svg>
                                     </a>
                                 @else
-                                    <span class="event-info-value">{{ $sp->name }}</span>
+                                    <span class="event-info-value"
+                                          style="font-size:{{ $nameFontSize }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;"
+                                          title="{{ $sp->name }}">
+                                        {{ $sp->name }}
+                                    </span>
                                 @endif
                             </div>
                         @empty
