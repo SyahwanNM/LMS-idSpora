@@ -266,7 +266,7 @@ Route::middleware(['auth', 'throttle:120,1'])->group(function () {
 Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
 Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
 Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
-Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizpController::class, 'finish'])->name('user.quiz.finish');
+Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
 Route::get('/quiz/{attempt}/result', [QuizController::class, 'resultShort'])->name('user.quiz.result.short');
 Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 

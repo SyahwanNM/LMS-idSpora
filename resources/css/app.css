@@ -312,9 +312,9 @@
 .course-detail-page .time-alert {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     padding: 10px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
 }
 
 .course-detail-page .time-alert svg {

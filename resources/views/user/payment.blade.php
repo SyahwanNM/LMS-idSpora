@@ -172,12 +172,8 @@
 
                         <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">No Whatsapp</label>
                             <div class="wa-group">
-                                <select class="form-select-custom" name="dial_code" required>
-                                    <option value="">Kode</option>
-                                    <option value="+62" selected>+62</option>
-                                    <option value="+60">+60</option>
-                                    <option value="+65">+65</option>
-                                </select>
+                                <span class="form-select-custom" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;padding:0 14px;min-width:64px;height:44px;color:#374151;flex-shrink:0;">+62</span>
+                                <input type="hidden" name="dial_code" value="+62">
                                 <input type="text" class="form-control-custom" name="whatsapp" placeholder="No Whatsapp" inputmode="numeric" required>
                             </div>
                         </div>
@@ -366,8 +362,7 @@
         const form = document.getElementById('paymentForm');
         if(!form) return;
         const fullName = form.querySelector('input[name="full_name"]');
-        const dial = form.querySelector('select[name="dial_code"]');
-        const wa = form.querySelector('input[name="whatsapp"]');
+        const wa = form.querySelector('input[name="whatsapp"]');        const wa = form.querySelector('input[name="whatsapp"]');
         const showQrisBtn = document.getElementById('showQrisBtn');
         const paymentProofInput = document.getElementById('paymentProofInput');
         const referralInput = form.querySelector('input[name="referral_code"]');
@@ -466,11 +461,11 @@
             if(midtransSection) midtransSection.style.display = isManual ? 'none' : '';
         }
 
-        function isValidPhone(val){ return /^[0-9]{6,15}$/.test(String(val || '').trim()); }
+        function isValidPhone(val){ return /^[0-9]{8,15}$/.test(String(val || '').trim()); }
 
         function validate(){
             const nameOk = fullName && fullName.value.trim().length >= 3;
-            const dialOk = dial && dial.value.trim() !== '';
+            const dialOk = true; // dial code fixed to +62
             const waOk = wa && isValidPhone(wa.value);
             const allOk = nameOk && dialOk && waOk;
 
@@ -505,7 +500,6 @@
 
         ['input','change','keyup','blur'].forEach(evt => {
             if(fullName) fullName.addEventListener(evt, validate);
-            if(dial) dial.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
             if(paymentProofInput) paymentProofInput.addEventListener(evt, validate);
             if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
@@ -726,16 +720,10 @@
                 if (pending.whatsapp_number && wa && (!wa.value || wa.value.trim() === '')) {
                     const raw = String(pending.whatsapp_number).trim();
                     // Expect formats like +62xxxxxxxx or 62xxxxxxxx or 0xxxxxxxx
-                    const dialEl = dial;
                     if (raw.startsWith('+')) {
                         const m = raw.match(/^\+(\d{1,3})(.*)$/);
                         if (m) {
-                            const dialCode = '+' + m[1];
                             const rest = String(m[2] || '').replace(/\D/g, '');
-                            if (dialEl) {
-                                const opt = Array.from(dialEl.options || []).find(o => o.value === dialCode);
-                                if (opt) dialEl.value = dialCode;
-                            }
                             wa.value = rest;
                         }
                     } else {
@@ -790,7 +778,7 @@
                 return;
             }
 
-            const dialVal = (dial ? dial.value : '').trim();
+            const dialVal = '+62';
             const waVal = (wa ? wa.value : '').trim();
 
             async function getOrCreateSnapToken(forceNew){

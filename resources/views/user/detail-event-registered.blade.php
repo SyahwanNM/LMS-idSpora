@@ -1742,7 +1742,7 @@
                         @endif
                     </div>
                 </div>
-            
+            @if(!empty($event->zoom_link))
             <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
                     @php
                         $isHybrid = !empty($event->zoom_link) && (!empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude)));
@@ -1770,6 +1770,7 @@
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                     @endif
                 </div>
+            @endif
 
                 @php
                     $mapLink = '';

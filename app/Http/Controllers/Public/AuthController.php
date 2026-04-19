@@ -96,7 +96,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'\-\.]+$/u'],
             'email' => 'required|string|email|max:255|unique:users',
             'password' => [
                 'required',
@@ -110,6 +110,7 @@ class AuthController extends Controller
             'avatar' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'name.required' => 'Nama lengkap harus diisi',
+            'name.regex' => 'Nama lengkap hanya boleh berisi huruf, spasi, tanda petik, strip, dan titik.',
             'email.required' => 'Email harus diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',

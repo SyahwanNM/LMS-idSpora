@@ -85,6 +85,7 @@
                     <textarea
                         name="comment"
                         rows="4"
+                        required
                         placeholder="Ceritakan pengalaman belajar Anda selama mengikuti kelas ini. Ini akan membantu kami meningkatkan kualitas materi yang diajarkan."
                     ></textarea>
                 </div>
@@ -144,10 +145,18 @@
             document.getElementById('ratingForm')?.addEventListener('submit', function (e) {
                 const courseVal = parseInt(courseInput.value || '0', 10);
                 const trainerVal = parseInt(trainerInput.value || '0', 10);
+                const commentVal = (document.querySelector('textarea[name="comment"]')?.value || '').trim();
 
                 if (courseVal < 1 || trainerVal < 1) {
                     e.preventDefault();
                     alert('Silakan beri rating untuk kelas dan trainer terlebih dahulu.');
+                    return;
+                }
+
+                if (commentVal.length === 0) {
+                    e.preventDefault();
+                    alert('Feedback tidak boleh kosong. Silakan tuliskan pengalaman belajar Anda.');
+                    document.querySelector('textarea[name="comment"]')?.focus();
                 }
             });
         });

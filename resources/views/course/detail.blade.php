@@ -1540,7 +1540,7 @@
           @else
             <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
           @endif
-          @if(!$isFreeCourse)
+          @if(!$isFreeCourse && $hasDiscount)
             <div class="box-diskon">
               <div class="time-alert">
                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
@@ -1552,16 +1552,16 @@
                 @php
                   $now = \Carbon\Carbon::now();
                   $discountEnd = $course->discount_end ? \Carbon\Carbon::parse($course->discount_end) : null;
-                  $daysLeft = $discountEnd && $discountEnd->isFuture() ? $now->diffInDays($discountEnd, false) : null;
+                  $daysLeft = $discountEnd && $discountEnd->isFuture() ? (int) ceil($now->floatDiffInDays($discountEnd)) : null;
                 @endphp
-                @if($discountEnd && $daysLeft !== null && $daysLeft > 1)
-                  <p class="text-danger">{{ $daysLeft }} days</p>
-                @elseif($discountEnd && $daysLeft === 1)
-                  <p class="text-danger">1 day</p>
-                @elseif($discountEnd && $daysLeft === 0)
-                  <p class="text-danger">Last day</p>
-                @else
-                  <p class="text-danger">Limited time offer</p>
+                @if($hasDiscount && $discountEnd && $daysLeft !== null && $daysLeft > 1)
+                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span> <span style="font-size:13px;">{{ $daysLeft }} days left</span></p>
+                @elseif($hasDiscount && $discountEnd && $daysLeft === 1)
+                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span> <span style="font-size:13px;">1 day left</span></p>
+                @elseif($hasDiscount && $discountEnd && $daysLeft === 0)
+                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span> <span style="font-size:13px;">Last day!</span></p>
+                @elseif($hasDiscount && !$discountEnd)
+                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span></p>
                 @endif
                 @if($hasDiscount)
                   <small class="diskon">{{ $course->discount_percent }}% OFF</small>

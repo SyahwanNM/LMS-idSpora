@@ -160,11 +160,68 @@ class CoursePaymentController extends Controller
         }
 
         $validated = $request->validate([
-            'whatsapp' => 'nullable|string|max:32',
+            'whatsapp' => ['nullable', 'string', 'max:32', 'regex:/^[0-9]{8,15}$/'],
             'referral_code' => 'nullable|string|max:64',
         ]);
 
         $whatsapp = isset($validated['whatsapp']) ? trim((string) $validated['whatsapp']) : null;
+        $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;
+
+        // Referral/discount only applies for reseller-enabled courses.
+        if (!(bool) ($course->is_reseller_course ?? false)) {
+            $referralCode = null;
+        }
+
+        $referrer = $this->resolveValidReferrer($user, $referralCode);
+        $referralCode = $referrer ? $referralCode : null;
+
+        $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
+        $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
+        $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
+
+        DB::beginTransaction();
+        try {
+            $enrollment = Enrollment::firstOrCreate(
+                ['user_id' => $user->id, 'course_id' => $course->id],
+                ['status' => 'pending']
+            );
+
+            // Do not downgrade active enrollments. Only set to pending when not active.
+            if ($enrollment->status !== 'active' && $enrollment->status !== 'pending') {
+                $enrollment->status = 'pending';
+                $enrollment->save();
+            }
+
+            $manualPayment = ManualPayment::query()
+                ->where('course_id', $course->id)
+                ->where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'rejected', 'expired'])
+                ->latest('id')
+                ->first();
+
+            if (!$manualPayment) {
+                $manualPayment = new ManualPayment();
+            }
+
+            $manualPayment->course_id = $course->id;
+            $manualPayment->enrollment_id = $enrollment->id;
+            $manualPayment->user_id = $user->id;
+            $manualPayment->amount = $finalAmount;
+            $manualPayment->currency = 'IDR';
+            $manualPayment->method = 'qris';
+            $manualPayment->status = 'pending';
+            $manualPayment->rejection_reason = null;
+            $manualPayment->whatsapp_number = $whatsapp;
+            $manualPayment->referral_code = $referralCode;
+            if (!$manualPayment->order_id) {
+                $manualPayment->order_id = 'MP-' . strtoupper(uniqid());
+            }
+            $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
+                'source' => 'course',
+                'base_amount' => $baseAmount,
+                'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
+            ]);
+            $manualPayment->save();
         $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;
 
         // Referral/discount only applies for reseller-enabled courses.

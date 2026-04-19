@@ -329,7 +329,7 @@
       <h3>Daftar Akun</h3>
       <p class="subtitle">Buat akun untuk memulai perjalanan Anda</p>
 
-      <form action="{{ route('register.post') }}" method="POST" enctype="multipart/form-data">
+      <form action="{{ route('register.post') }}" method="POST" enctype="multipart/form-data" novalidate id="signupForm">
         @csrf
         <input type="hidden" name="referrer_code" value="{{ request()->query('ref') }}">
         @if ($errors->any())
@@ -429,6 +429,38 @@
     }
     setupToggle('reg-password', 'toggle-password', 'icon-eye', 'icon-eye-slash');
     setupToggle('reg-password-confirm', 'toggle-password-confirm', 'icon-eye-c', 'icon-eye-slash-c');
+  </script>
+  <script>
+    document.getElementById('signupForm')?.addEventListener('submit', function(e) {
+        const fields = this.querySelectorAll('[required]');
+        let hasError = false;
+
+        // Remove all previous errors
+        this.querySelectorAll('.field-error').forEach(el => el.remove());
+
+        fields.forEach(function(field) {
+            field.style.borderColor = '';
+            const container = field.closest('.input-group') || field.parentNode;
+            let errorMsg = '';
+
+            if (!field.value.trim()) {
+                errorMsg = 'Field ini wajib diisi.';
+            } else if (field.name === 'name' && !/^[\p{L}\s'\-\.]+$/u.test(field.value.trim())) {
+                errorMsg = 'Nama hanya boleh berisi huruf dan spasi.';
+            }
+
+            if (errorMsg) {
+                hasError = true;
+                field.style.borderColor = '#dc3545';
+                const err = document.createElement('small');
+                err.className = 'field-error';
+                err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;';
+                err.textContent = errorMsg;
+                container.parentNode.insertBefore(err, container.nextSibling);
+            }
+        });
+        if (hasError) e.preventDefault();
+    });
   </script>
 </body>
 </html>

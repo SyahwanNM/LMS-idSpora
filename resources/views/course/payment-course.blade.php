@@ -324,16 +324,7 @@
                 <div class="input_biodata">
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
-                        <div class="dropdown">
-                            <button class="btn_nomor dropdown-toggle" type="button" id="kodeDialBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                                +62
-                            </button>
-                        </div>
-                        <ul class="dropdown-menu" id="kodeDialMenu" aria-labelledby="kodeDialBtn" style="position: absolute;">
-                            <li><a class="dropdown-item" href="#" data-code="+62">+62</a></li>
-                            <li><a class="dropdown-item" href="#" data-code="+60">+60</a></li>
-                            <li><a class="dropdown-item" href="#" data-code="+1">+1</a></li>
-                        </ul>
+                        <span class="btn_nomor" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;cursor:default;">+62</span>
                         <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
                         <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
                     </div>
@@ -490,8 +481,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var kodeDialBtn = document.getElementById('kodeDialBtn');
-            var kodeDialMenu = document.getElementById('kodeDialMenu');
             var kodeDialInput = document.getElementById('kodeDialInput');
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
@@ -603,8 +592,8 @@
             function updatePayButtonState() {
                 if (!showQrisBtn && !midtransPayBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                // For free course, allow without WhatsApp. For paid, WhatsApp is required.
-                var disable = (!isFreeCourse) && (wa.length === 0);
+                // For free course, allow without WhatsApp. For paid, WhatsApp is required (min 8 digits).
+                var disable = (!isFreeCourse) && (wa.length < 8);
                 if (referralInput) {
                     var code = getReferralCode();
                     if (code !== '' && referralState !== 'valid') {
@@ -693,8 +682,8 @@
 
             function showPaymentValidationAlert() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                if ((!isFreeCourse) && wa.length === 0) {
-                    alert('Silakan isi No Whatsapp terlebih dahulu.');
+                if ((!isFreeCourse) && wa.length < 8) {
+                    alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
                     try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
                     return;
                 }
@@ -703,33 +692,6 @@
                     alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
                     try { referralInput.focus(); } catch (_e) {}
                 }
-            }
-
-            // Show dropdown on button click
-            if (kodeDialBtn) {
-                kodeDialBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    kodeDialMenu.classList.toggle('show');
-                });
-            }
-            // Hide dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (kodeDialBtn && kodeDialMenu && !kodeDialBtn.contains(e.target) && !kodeDialMenu.contains(e.target)) {
-                    kodeDialMenu.classList.remove('show');
-                }
-            });
-            // Select code
-            if (kodeDialMenu) {
-                kodeDialMenu.querySelectorAll('.dropdown-item').forEach(function(item) {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        var code = item.getAttribute('data-code');
-                        kodeDialBtn.textContent = code;
-                        kodeDialInput.value = code;
-                        formKodeDialInput.value = code;
-                        kodeDialMenu.classList.remove('show');
-                    });
-                });
             }
 
             // Enable/disable Bayar button based on required fields
@@ -854,11 +816,7 @@
                                 // Match +62xxxxxxxx etc
                                 var m = raw.match(/^\+(\d{1,3})(.*)$/);
                                 if (m) {
-                                    var dialCode = '+' + m[1];
                                     var rest = String(m[2] || '').replace(/\D/g, '');
-                                    if (kodeDialBtn) kodeDialBtn.textContent = dialCode;
-                                    if (kodeDialInput) kodeDialInput.value = dialCode;
-                                    if (formKodeDialInput) formKodeDialInput.value = dialCode;
                                     whatsappInput.value = rest;
                                 }
                             } else {

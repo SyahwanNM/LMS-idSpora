@@ -504,7 +504,7 @@
                                     Anda telah lulus kuis ini
                                 </button>
                             @else
-                                <a href="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
+                                <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
                                     Start
                                     <span style="margin-left:8px;">›</span>
                                 </a>
@@ -814,6 +814,56 @@
                 });
             @endif
         });
+    </script>
+
+    <!-- Quiz Start Confirmation Modal -->
+    <div id="quizStartModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:quizModalIn .2s ease;">
+            <div style="font-size:48px; margin-bottom:12px;">🎯</div>
+            <h3 style="font-weight:800; font-size:20px; color:#1f2937; margin:0 0 10px 0;">Selamat Mengerjakan!</h3>
+            <p style="color:#6b7280; font-size:14px; margin:0 0 24px 0;">Semoga berhasil dan raih nilai terbaik kamu! 💪</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button id="quizStartCancelBtn" type="button"
+                    style="flex:1; padding:10px 0; border-radius:999px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:600; font-size:14px; cursor:pointer;">
+                    Batal
+                </button>
+                <a id="quizStartConfirmBtn" href="#"
+                    style="flex:1; padding:10px 0; border-radius:999px; background:#f4c430; color:#1f2937; font-weight:700; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+                    Mulai Kuis
+                </a>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes quizModalIn {
+            from { transform: scale(.92); opacity: 0; }
+            to   { transform: scale(1);  opacity: 1; }
+        }
+    </style>
+    <script>
+        (function() {
+            const startBtn = document.getElementById('startQuizBtn');
+            const modal = document.getElementById('quizStartModal');
+            const cancelBtn = document.getElementById('quizStartCancelBtn');
+            const confirmBtn = document.getElementById('quizStartConfirmBtn');
+
+            if (!startBtn || !modal) return;
+
+            startBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = startBtn.getAttribute('data-start-url') || '#';
+                confirmBtn.href = url;
+                modal.style.display = 'flex';
+            });
+
+            cancelBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.style.display = 'none';
+            });
+        })();
     </script>
 </body>
 
