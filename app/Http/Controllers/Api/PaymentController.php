@@ -418,7 +418,15 @@ class PaymentController extends Controller
 
     private function buildMidtransSnapParams(string $orderId, int $grossAmount, array $itemDetails, array $customerDetails): array
     {
-        $finishUrl = (string) (config('midtrans.finish_url') ?: route('payment.finish'));
+        $configFinishUrl = (string) (config('midtrans.finish_url') ?? '');
+        $appUrl = (string) (config('app.url') ?? '');
+
+        // Only use configured finish_url if it belongs to the same domain as the app
+        if ($configFinishUrl !== '' && $appUrl !== '' && str_contains($configFinishUrl, parse_url($appUrl, PHP_URL_HOST) ?? '')) {
+            $finishUrl = $configFinishUrl;
+        } else {
+            $finishUrl = route('payment.finish');
+        }
 
         return [
             'transaction_details' => [
@@ -1382,6 +1390,64 @@ class PaymentController extends Controller
             ->latest('id')
             ->first();
 
+        // Real-time sync: check actual status from Midtrans if there's a pending payment
+        if ($payment && $payment->order_id) {
+            try {
+                $this->configureMidtrans();
+                $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
+                $actualStatus = $this->mapMidtransToInternalStatus(
+                    $midtransStatus['transaction_status'] ?? null,
+                    $midtransStatus['fraud_status'] ?? null
+                );
+
+                if ($actualStatus !== 'pending') {
+                    $payment->status = $actualStatus;
+                    $payment->save();
+
+                    if (in_array($actualStatus, ['expired', 'rejected'], true)) {
+                        $reg = EventRegistration::find($payment->event_registration_id);
+                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                            $reg->status = $actualStatus;
+                            $reg->save();
+                        }
+                    }
+
+                    $payment = null; // treat as no pending payment
+                }
+            } catch (\Throwable $e) {
+                // 404 = never charged → expired
+                if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
+                    $payment->status = 'expired';
+                    $payment->save();
+                    $reg = EventRegistration::find($payment->event_registration_id);
+                    if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                        $reg->status = 'expired';
+                        $reg->save();
+                    }
+                    $payment = null;
+                }
+                // Other errors: keep as pending, don't block the user
+            }
+        }
+
+        // If registration is expired/rejected, force new regardless of payment status
+        $registration = EventRegistration::query()
+            ->where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->latest('id')
+            ->first();
+
+        $registrationExpired = $registration && in_array($registration->status, ['expired', 'rejected'], true);
+
+        // If registration is expired, treat any pending payment as stale too
+        if ($registrationExpired && $payment) {
+            $payment->status = 'expired';
+            $payment->save();
+            $payment = null;
+        }
+
+        $hasExpiredRegistration = $registrationExpired && !$payment;
+
         return response()->json([
             'pending' => (bool) $payment,
             'order_id' => $payment?->order_id,
@@ -1389,6 +1455,7 @@ class PaymentController extends Controller
             'snap_token' => $this->getSnapTokenFromPayment($payment),
             'whatsapp_number' => $payment?->whatsapp_number,
             'referral_code' => $payment?->referral_code,
+            'needs_force_new' => $hasExpiredRegistration,
         ]);
     }
 
@@ -1410,6 +1477,57 @@ class PaymentController extends Controller
             ->latest('id')
             ->first();
 
+        // Real-time sync: check actual status from Midtrans if there's a pending payment
+        if ($payment && $payment->order_id) {
+            try {
+                $this->configureMidtrans();
+                $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
+                $actualStatus = $this->mapMidtransToInternalStatus(
+                    $midtransStatus['transaction_status'] ?? null,
+                    $midtransStatus['fraud_status'] ?? null
+                );
+
+                if ($actualStatus !== 'pending') {
+                    $payment->status = $actualStatus;
+                    $payment->save();
+
+                    if (in_array($actualStatus, ['expired', 'rejected'], true) && $payment->enrollment_id) {
+                        $enr = Enrollment::find($payment->enrollment_id);
+                        if ($enr && $enr->status !== 'active') {
+                            $enr->status = $actualStatus;
+                            $enr->save();
+                        }
+                    }
+
+                    $payment = null;
+                }
+            } catch (\Throwable $e) {
+                if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
+                    $payment->status = 'expired';
+                    $payment->save();
+                    if ($payment->enrollment_id) {
+                        $enr = Enrollment::find($payment->enrollment_id);
+                        if ($enr && $enr->status !== 'active') {
+                            $enr->status = 'expired';
+                            $enr->save();
+                        }
+                    }
+                    $payment = null;
+                }
+                // Other errors: keep as pending, don't block the user
+            }
+        }
+
+        // Check if there's an expired/rejected enrollment that needs force_new
+        $hasExpiredEnrollment = false;
+        if (!$payment) {
+            $hasExpiredEnrollment = Enrollment::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->whereIn('status', ['expired', 'rejected'])
+                ->exists();
+        }
+
         return response()->json([
             'pending' => (bool) $payment,
             'order_id' => $payment?->order_id,
@@ -1417,6 +1535,7 @@ class PaymentController extends Controller
             'snap_token' => $this->getSnapTokenFromPayment($payment),
             'whatsapp_number' => $payment?->whatsapp_number,
             'referral_code' => $payment?->referral_code,
+            'needs_force_new' => $hasExpiredEnrollment,
         ]);
     }
 
@@ -1471,6 +1590,16 @@ class PaymentController extends Controller
                     }
                 }
             }
+
+            // Update enrollment status for expired/rejected
+            if (in_array($internalStatus, ['expired', 'rejected'], true) && $payment->enrollment_id) {
+                $enrollment = Enrollment::find($payment->enrollment_id);
+                if ($enrollment && $enrollment->status !== 'active') {
+                    $enrollment->status = $internalStatus;
+                    $enrollment->save();
+                }
+            }
+
             DB::commit();
 
             return response()->json([

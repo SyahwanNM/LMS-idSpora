@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerE
 
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+// Register new account (5 req/min per IP to prevent spam)
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 // Public events listing throttled to avoid scraping (120 req/min)
 Route::get('/events', [EventController::class, 'index'])->middleware('throttle:120,1');
 Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+')->middleware('throttle:120,1');

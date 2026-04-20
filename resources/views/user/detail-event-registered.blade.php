@@ -3010,9 +3010,20 @@
                         } else {
                             fallbackCopy(pageUrl);
                         }
-                    });
-                }
-            })();
+                        if (copyText) {
+                            copyText.textContent = 'Tersalin!';
+                            setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
+                        }
+                    } catch (_e) {
+                        fallbackCopy(pageUrl);
+                        if (copyText) {
+                            copyText.textContent = 'Tersalin!';
+                            setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
+                        }
+                    }
+                });
+            }
+        })();
         </script>
          @include('partials.footer-after-login')
     </body>

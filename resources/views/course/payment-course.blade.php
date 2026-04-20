@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Payment - Digital Marketing</title>
+    <title>Payment Course</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
      @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -836,6 +836,11 @@
 
                         togglePayButtons();
                         updatePayButtonState();
+                    } else if (pending && pending.needs_force_new) {
+                        // Previous order expired/rejected — reset to fresh payment state
+                        cachedPending = null;
+                        midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                        updatePayButtonState();
                     }
                 }
 
@@ -894,10 +899,17 @@
 
                     try {
                         var data;
-                        try {
-                            data = await getOrCreateSnapToken(false);
-                        } catch(_e) {
+                        var forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
+                        var forceNewFromExpired = !!(cachedPending && cachedPending.needs_force_new);
+                        if (forceNewFromQuery || forceNewFromExpired) {
+                            cachedPending = null;
                             data = await getOrCreateSnapToken(true);
+                        } else {
+                            try {
+                                data = await getOrCreateSnapToken(false);
+                            } catch(_e) {
+                                data = await getOrCreateSnapToken(true);
+                            }
                         }
 
                         window.snap.pay(data.snap_token, {
@@ -925,7 +937,37 @@
                             onError: function(){
                                 alert('Pembayaran gagal. Silakan coba lagi.');
                             },
-                            onClose: function(){}
+                            onClose: async function(){
+                                // Always check status when popup closes
+                                midtransPayBtn.disabled = true;
+                                midtransPayBtn.textContent = 'Memeriksa status...';
+                                try {
+                                    var rUrl = refreshUrl.replace('ORDER_ID', encodeURIComponent(data.order_id));
+                                    var res = await fetch(rUrl, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': csrf,
+                                            'X-Requested-With': 'XMLHttpRequest'
+                                        },
+                                        credentials: 'same-origin',
+                                        body: JSON.stringify({})
+                                    });
+                                    var result = await res.json();
+                                    if (result && result.status === 'settled') {
+                                        window.location.href = @json(route('course.learn', $course));
+                                        return;
+                                    }
+                                    if (result && (result.status === 'expired' || result.status === 'rejected')) {
+                                        cachedPending = null;
+                                        window.location.href = window.location.pathname + '?force_new=1';
+                                        return;
+                                    }
+                                } catch(_e) {}
+                                midtransPayBtn.disabled = false;
+                                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                                updatePayButtonState();
+                            }
                         });
                     } catch(err) {
                         alert(String(err && err.message ? err.message : err));
@@ -942,6 +984,12 @@
 
                 // If there is a pending Midtrans payment, show "continue" label
                 ensurePendingCourseLabel();
+
+                // If force_new=1 in URL (redirect from expired), clear cached pending
+                if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
+                    cachedPending = null;
+                    midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                }
             }
 
             // Confirm modal before submitting payment proof

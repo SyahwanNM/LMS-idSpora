@@ -292,34 +292,41 @@
                             </div>
                             <div class="border border-gray-200 rounded-lg overflow-hidden">
                                 <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
-                                    <div class="col-span-5">Item</div>
+                                    <div class="col-span-4">Item</div>
                                     <div class="col-span-2">Qty</div>
-                                    <div class="col-span-3">Harga Satuan</div>
+                                    <div class="col-span-2">Harga Satuan</div>
+                                    <div class="col-span-2">Harga Total</div>
                                     <div class="col-span-2">Aksi</div>
                                 </div>
 
                                 <div id="expense-rows" class="divide-y divide-gray-200">
                                     @foreach($expenseRows as $i => $row)
                                         <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
-                                            <div class="col-span-12 md:col-span-5">
+                                            <div class="col-span-12 md:col-span-4">
                                                 <input type="text" name="expenses[{{ $i }}][item]"
                                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                                     value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
                                                     placeholder="Contoh: Iklan, Produksi, dll">
                                             </div>
                                             <div class="col-span-6 md:col-span-2">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
+                                                <input type="number" min="1" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
                                                     class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
-                                                    placeholder="0">
+                                                    value="{{ old('expenses.' . $i . '.quantity', max(1, (int) ($row['quantity'] ?? 1))) }}"
+                                                    placeholder="1">
                                             </div>
-                                            <div class="col-span-6 md:col-span-3">
+                                            <div class="col-span-6 md:col-span-2">
                                                 <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
                                                     class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                                     value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
                                                     placeholder="0">
                                             </div>
-                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" name="expenses[{{ $i }}][total]"
+                                                    class="expense-total w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600"
+                                                    value="{{ old('expenses.' . $i . '.total', (int) ($row['total'] ?? 0)) }}"
+                                                    readonly placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2 flex items-center gap-2">
                                                 <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
                                                     Hapus
                                                 </button>
@@ -338,22 +345,27 @@
 
                 <template id="expense-row-template">
                     <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="__INDEX__">
-                        <div class="col-span-12 md:col-span-5">
+                        <div class="col-span-12 md:col-span-4">
                             <input type="text" name="expenses[__INDEX__][item]"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="" placeholder="Contoh: Iklan, Produksi, dll">
                         </div>
                         <div class="col-span-6 md:col-span-2">
-                            <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][quantity]"
+                            <input type="number" min="1" inputmode="numeric" name="expenses[__INDEX__][quantity]"
                                 class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                value="0" placeholder="0">
+                                value="1" placeholder="1">
                         </div>
-                        <div class="col-span-6 md:col-span-3">
+                        <div class="col-span-6 md:col-span-2">
                             <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][unit_price]"
                                 class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="0" placeholder="0">
                         </div>
-                        <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                        <div class="col-span-6 md:col-span-2">
+                            <input type="number" min="0" name="expenses[__INDEX__][total]"
+                                class="expense-total w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600"
+                                value="0" readonly placeholder="0">
+                        </div>
+                        <div class="col-span-6 md:col-span-2 flex items-center gap-2">
                             <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
                                 Hapus
                             </button>
@@ -391,6 +403,19 @@
                 return max + 1;
             }
 
+            function recalcRow(rowEl) {
+                const qtyInp = rowEl.querySelector('.expense-qty');
+                const unitInp = rowEl.querySelector('.expense-unit');
+                let qty = parseInt(qtyInp?.value || '1', 10);
+                if (isNaN(qty) || qty < 1) {
+                    qty = 1;
+                    if (qtyInp) qtyInp.value = 1;
+                }
+                const unit = parseInt(unitInp?.value || '0', 10);
+                const totalEl = rowEl.querySelector('.expense-total');
+                if (totalEl) totalEl.value = Math.max(0, qty * (isNaN(unit) ? 0 : unit));
+            }
+
             function wireRow(rowEl) {
                 const removeBtn = rowEl.querySelector('.remove-expense-row');
                 if (removeBtn) {
@@ -398,6 +423,11 @@
                         rowEl.remove();
                     });
                 }
+                const qtyInp = rowEl.querySelector('.expense-qty');
+                const unitInp = rowEl.querySelector('.expense-unit');
+                if (qtyInp) qtyInp.addEventListener('input', () => recalcRow(rowEl));
+                if (unitInp) unitInp.addEventListener('input', () => recalcRow(rowEl));
+                recalcRow(rowEl);
             }
 
             rowsWrap.querySelectorAll('.expense-row').forEach(wireRow);
