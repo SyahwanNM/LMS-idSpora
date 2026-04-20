@@ -160,7 +160,7 @@
 
                         <div class="mb-custom">
                             <label class="form-label-custom" style="margin-bottom:0">Nama Lengkap</label>
-                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3">
+                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3" readonly>
                             <div class="warning-text" style="margin-top:4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
@@ -745,6 +745,11 @@
 
                 toggleMethodUI();
                 validate();
+            } else if (pending && pending.needs_force_new) {
+                // Previous order expired/rejected — reset to fresh payment state
+                cachedPending = null;
+                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                validate();
             }
         }
 
@@ -770,6 +775,7 @@
             }
 
             const forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
+            const forceNewFromExpired = !!(cachedPending && cachedPending.needs_force_new);
 
             // ensure validation up-to-date
             validate();
@@ -813,7 +819,7 @@
 
             try{
                 let data;
-                if (forceNewFromQuery) {
+                if (forceNewFromQuery || forceNewFromExpired) {
                     // Explicit user intent: always create a new Midtrans transaction.
                     cachedPending = null;
                     data = await getOrCreateSnapToken(true);
@@ -853,8 +859,29 @@
                     onError: function(){
                         showAppNotify('Pembayaran gagal. Silakan coba lagi.', 'error');
                     },
-                    onClose: function(){
-                        // user closed popup
+                    onClose: async function(){
+                        // Always check status when popup closes (handles timer expiry, close button, etc.)
+                        midtransPayBtn.disabled = true;
+                        midtransPayBtn.textContent = 'Memeriksa status...';
+                        try {
+                            const result = await postFinalize(data.order_id);
+                            if (result && result.status === 'settled') {
+                                showMidtransSuccessModal();
+                                setTimeout(function(){
+                                    window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                                }, 1400);
+                                return;
+                            }
+                            if (result && (result.status === 'expired' || result.status === 'rejected')) {
+                                cachedPending = null;
+                                window.location.href = window.location.pathname + '?force_new=1';
+                                return;
+                            }
+                        } catch(_e) {}
+                        // Still pending or unknown — re-enable button
+                        midtransPayBtn.disabled = false;
+                        midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        validate();
                     }
                 });
             } catch(e){
@@ -879,6 +906,14 @@
 
         // If there is a pending Midtrans payment, show "continue" label
         ensurePendingLabel();
+
+        // If force_new=1 in URL, clear cached pending and reset button label
+        if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
+            cachedPending = null;
+            if (midtransPayBtn) {
+                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+            }
+        }
     });
     </script>
 </body>

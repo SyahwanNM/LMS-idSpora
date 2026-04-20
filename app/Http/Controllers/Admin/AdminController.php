@@ -399,7 +399,7 @@ class AdminController extends Controller
             ->withCount('registrations')
             ->withAvg('feedbacks as event_rating_avg', 'rating')
             ->withAvg('feedbacks as speaker_rating_avg', 'speaker_rating')
-            ->orderBy('event_date', 'asc')
+            ->orderBy('event_date', 'desc')
             ->get();
 
         // Categorize events: upcoming, active, completed

@@ -34,10 +34,9 @@
 
         /* Footer Full Width */
         .footer-section-wrapper {
-            flex-shrink: 0;   /* Footer tidak boleh mengecil */
-            width: 100%;      /* Lebar penuh */
-            margin-top: auto; /* Dorong ke paling bawah jika konten sedikit */
-            background: #fff; /* Atau sesuaikan dengan warna background footer asli */
+            flex-shrink: 0;
+            width: 100%;
+            margin-top: auto;
         }
 
         /* --- EXISTING STYLES --- */
@@ -51,6 +50,7 @@
             row-gap: 40px;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 20px;
+            align-items: stretch;
         }
 
         @media (max-width: 576px) {
@@ -88,9 +88,9 @@
         section.event .header-card h3 { margin-top: 10px; font-weight: 700; color: #212529; }
 
         /* Titles */
-        .event .card-event { border: 1px solid #eee; border-radius: 12px; transition: box-shadow 0.3s; background: #fff; }
+        .event .card-event { border: 1px solid #eee; border-radius: 12px; transition: box-shadow 0.3s; background: #fff; display: flex; flex-direction: column; height: 100%; }
         .event .card-event:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-        .event .card-event .card-body { padding: 20px; }
+        .event .card-event .card-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
         .event .card-event .event-title {
             color: #212529;
             font-weight: 600;
@@ -103,6 +103,7 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             line-height: 1.4;
+            min-height: calc(1.4em * 2);
         }
 
         /* Badges */
@@ -132,7 +133,8 @@
 
         /* Description & Info */
         .desc-event { font-size: 0.9rem; color: #555; margin-bottom: 15px; line-height: 1.5; height: 42px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        
+        /* Push price+button to bottom of card */
+        .event .card-event .card-body .keterangan { margin-top: auto; }
         .keterangan-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #555; }
         .keterangan-item { display: flex; align-items: center; gap: 8px; }
 
@@ -461,7 +463,7 @@
                                 </div>
                                 <div class="keterangan-item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
-                                    <span>
+                                <span>
                                         @if($event->location)
                                             {{ $event->location }}@if($event->event_time) • {{ $event->event_time?->format('H:i') }} WIB @endif
                                         @else
