@@ -57,14 +57,39 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
         return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi tersedia setelah acara selesai.');
     }
 
-    $path = (string) ($event->module_path ?? '');
+    // Support per-trainer module download via ?module_id=X
+    $moduleId = request()->query('module_id');
+    if ($moduleId) {
+        $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+            ->where('event_id', $event->id)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$module) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Module tidak tersedia.');
+        }
+
+        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'File module tidak ditemukan.');
+        }
+
+        $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($module->path);
+        return response()->download($fullPath, $module->original_name);
+    }
+
+    // Legacy: single module_path on event
+    $path = is_array($event->module_path)
+        ? ($event->module_path[0]['path'] ?? '')
+        : (string) ($event->module_path ?? '');
+
     if ($path === '' || !\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
         return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi belum tersedia.');
     }
 
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $downloadName = 'materi-event-' . $event->id . ($ext ? ('.' . $ext) : '');
-    return \Illuminate\Support\Facades\Storage::disk('public')->download($path, $downloadName);
+    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($path);
+    return response()->download($fullPath, $downloadName);
 })->name('events.modules.download');
 
 
@@ -73,10 +98,6 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\User\FeedbackController::class, 'store'])->name('feedback.store');
-    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
-    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-    // Redirect search to the best-matching event detail (exact title match preferred)
-    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
     Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
@@ -91,23 +112,34 @@ Route::middleware('auth')->group(function () {
         if (!$registration || $registration->status !== 'active') {
             return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
         }
+
+        // Blok jika sudah absen
+        if (!empty($registration->attended_at) || !empty($registration->attendance_scan_qr)) {
+            return redirect()->route('events.registered.detail', $event)->with('info', 'Anda sudah melakukan absensi untuk event ini.');
+        }
+
         // Compute event start/end for gating
         $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
         $startTime = null;
         $endTime = null;
-        try {
-            $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null;
-        } catch (\Throwable $e) {
-        }
-        try {
-            $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
-        } catch (\Throwable $e) {
-        }
+        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch (\Throwable $e) {}
+        try { $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch (\Throwable $e) {}
         if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
         if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
+
+        // Blok jika event belum mulai
+        if (!$eventStarted) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Scan QR hanya tersedia saat event sedang berlangsung.');
+        }
+
+        // Blok jika event sudah selesai
+        if ($eventFinished) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Event sudah selesai, absensi tidak dapat dilakukan.');
+        }
+
         return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
     })->name('events.scan');
     // Attendance via scan: persist attendance when QR is decoded
@@ -122,7 +154,7 @@ Route::middleware('auth')->group(function () {
 
     // User profile
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
-    Route::get('/profile/events', [\App\Http\Controllers\User\ProfileController::class, 'events'])->name('profile.events');
+    Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
@@ -177,39 +209,77 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('events.registered.detail', $event)
             ->with('success', $saved ? 'Event disimpan.' : 'Event dihapus dari tersimpan.');
     })->name('events.save');
+
+    // Save/unsave course
+    Route::post('/courses/{course}/save', function (\Illuminate\Http\Request $request, \App\Models\Course $course) {
+        $user = $request->user();
+        if (!$user) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+            return redirect()->route('login');
+        }
+
+        $exists = \DB::table('user_saved_courses')
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->exists();
+
+        $saved = true;
+        if ($exists) {
+            \DB::table('user_saved_courses')
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->delete();
+            $saved = false;
+        } else {
+            \DB::table('user_saved_courses')->insert([
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            $saved = true;
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'saved' => $saved]);
+        }
+        return back()->with('success', $saved ? 'Course disimpan.' : 'Course dihapus dari tersimpan.');
+    })->name('courses.save');
 });
-    // User dashboard (only for non-admin users)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
-    // User module access routes
-    Route::get('/courses/{course}/modules', [UserModuleController::class, 'index'])->name('user.modules.index');
-    Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
-    Route::get('/courses/{course}/modules/{module}/download', [UserModuleController::class, 'download'])->name('user.modules.download');
-    Route::get('/courses/{course}/modules/{module}/stream', [UserModuleController::class, 'stream'])->name('user.modules.stream');
+// User dashboard (only for non-admin users)
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');
+// User module access routes
+Route::get('/courses/{course}/modules', [UserModuleController::class, 'index'])->name('user.modules.index');
+Route::get('/courses/{course}/modules/{module}', [UserModuleController::class, 'show'])->name('user.modules.show');
+Route::get('/courses/{course}/modules/{module}/download', [UserModuleController::class, 'download'])->name('user.modules.download');
+Route::get('/courses/{course}/modules/{module}/stream', [UserModuleController::class, 'stream'])->name('user.modules.stream');
 
-    // Learning time (realtime) endpoints for authenticated users
-    Route::middleware(['auth', 'throttle:120,1'])->group(function () {
-        Route::post('/learning-time/heartbeat', [\App\Http\Controllers\User\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
-        Route::get('/learning-time/chart', [\App\Http\Controllers\User\LearningTimeController::class, 'chart'])->name('learning-time.chart');
-    });
+// Learning time (realtime) endpoints for authenticated users
+Route::middleware(['auth', 'throttle:120,1'])->group(function () {
+    Route::post('/learning-time/heartbeat', [\App\Http\Controllers\User\LearningTimeController::class, 'heartbeat'])->name('learning-time.heartbeat');
+    Route::get('/learning-time/chart', [\App\Http\Controllers\User\LearningTimeController::class, 'chart'])->name('learning-time.chart');
+});
 
-    // User quiz routes
-    Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
-    Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
-    Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
-    Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
-    Route::get('/quiz/{attempt}/result', [QuizController::class, 'resultShort'])->name('user.quiz.result.short');
-    Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
+// User quiz routes
+Route::get('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->name('user.quiz.start');
+Route::get('/courses/{course}/modules/{module}/quiz/{attempt}', [QuizController::class, 'take'])->name('user.quiz.take');
+Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/answer', [QuizController::class, 'submitAnswer'])->name('user.quiz.answer');
+Route::post('/courses/{course}/modules/{module}/quiz/{attempt}/finish', [QuizController::class, 'finish'])->name('user.quiz.finish');
+Route::get('/quiz/{attempt}/result', [QuizController::class, 'resultShort'])->name('user.quiz.result.short');
+Route::get('/courses/{course}/modules/{module}/quiz/{attempt}/result', [QuizController::class, 'result'])->name('user.quiz.result');
 
-    Route::get('/course-quiz-result', function () {
-        return view('course.quiz.result');
-    })->name('course.quiz.result');
+Route::get('/course-quiz-result', function () {
+    return view('course.quiz.result');
+})->name('course.quiz.result');
 
-    Route::get('/course-quiz', function () {
-        return view('course.quiz.intro');
-    })->name('course.quiz.intro');
+Route::get('/course-quiz', function () {
+    return view('course.quiz.intro');
+})->name('course.quiz.intro');
 
-    Route::get('/course-quiz-start', function () {
-        return view('course.quiz.start');
-    })->name('course.quiz.start');
+Route::get('/course-quiz-start', function () {
+    return view('course.quiz.start');
+})->name('course.quiz.start');
 
 

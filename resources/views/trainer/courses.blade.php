@@ -14,6 +14,46 @@
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
+    <style>
+        .processing-mini-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0 12px;
+        }
+
+        .processing-mini-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            line-height: 1;
+        }
+
+        .processing-mini-pill.assigned {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .processing-mini-pill.uploaded {
+            background: #ecfeff;
+            color: #0f766e;
+        }
+
+        .processing-mini-pill.revision {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .processing-mini-pill.ready {
+            background: #dcfce7;
+            color: #166534;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -60,7 +100,9 @@
         </section>
 
         @php
+            $allCourses = ($courses ?? collect())->values();
             $statusData = [
+                ['id' => 'courses-all', 'label' => 'Semua', 'data' => $allCourses],
                 ['id' => 'courses-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingCourses ?? collect()],
                 ['id' => 'courses-upcoming', 'label' => 'Mendatang', 'data' => $upcomingCourses ?? collect()],
                 ['id' => 'courses-finished', 'label' => 'Selesai', 'data' => $finishedCourses ?? collect()],
@@ -87,17 +129,24 @@
                     @else
                         <div class="card-course">
                             @foreach($status['data'] as $course)
+                                @php
+                                    $courseCardImage = $course->card_thumbnail_url;
+                                    $processingAssigned = (int) ($course->processing_assigned_count ?? 0);
+                                    $processingUploaded = (int) ($course->processing_uploaded_count ?? 0);
+                                    $processingRevision = (int) ($course->processing_revision_count ?? 0);
+                                    $processingReady = (int) ($course->processing_ready_count ?? 0);
+                                    $hasProcessing = ($processingAssigned + $processingUploaded + $processingRevision + $processingReady) > 0;
+                                @endphp
                                 <article class="card-item">
-                                    <div class="card-media {{ $course->card_thumbnail ? '' : 'no-image' }}">
+                                    <div class="card-media {{ $courseCardImage ? '' : 'no-image' }}">
                                         <p class="badge-online">{{ strtoupper($course->level ?? 'GENERAL') }}</p>
                                         <div class="rating">
                                             <i class="bi bi-star-fill"></i>
                                             <p>{{ number_format($course->reviews_avg_rating ?? 0, 1) }}</p>
                                         </div>
 
-                                        @php $thumbUrl = $course->card_thumbnail_url; @endphp
-                                        @if(!empty($thumbUrl))
-                                            <img class="card-image" src="{{ $thumbUrl }}" alt="{{ $course->name }}">
+                                        @if($courseCardImage)
+                                            <img class="card-image" src="{{ $courseCardImage }}" alt="{{ $course->name }}">
                                         @else
                                             <div class="no-image-placeholder" aria-hidden="true">
                                                 <i class="bi bi-image"></i>
@@ -110,6 +159,27 @@
                                             <h3>{{ Str::limit($course->name, 44) }}</h3>
                                             <p>{{ Str::limit($course->description ?? 'Deskripsi belum tersedia.', 80) }}</p>
                                         </div>
+
+                                        @if($hasProcessing)
+                                            <div class="processing-mini-row" aria-label="Status proses materi">
+                                                @if($processingAssigned > 0)
+                                                    <span class="processing-mini-pill assigned"><i
+                                                            class="bi bi-send-check"></i>{{ $processingAssigned }} diserahkan</span>
+                                                @endif
+                                                @if($processingUploaded > 0)
+                                                    <span class="processing-mini-pill uploaded"><i
+                                                            class="bi bi-upload"></i>{{ $processingUploaded }} diunggah</span>
+                                                @endif
+                                                @if($processingRevision > 0)
+                                                    <span class="processing-mini-pill revision"><i
+                                                            class="bi bi-arrow-counterclockwise"></i>{{ $processingRevision }} revisi</span>
+                                                @endif
+                                                @if($processingReady > 0)
+                                                    <span class="processing-mini-pill ready"><i
+                                                            class="bi bi-check2-circle"></i>{{ $processingReady }} siap publikasi</span>
+                                                @endif
+                                            </div>
+                                        @endif
 
                                         <div class="bottom-card">
                                             <div class="total-participant-path">

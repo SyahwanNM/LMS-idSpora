@@ -22,7 +22,7 @@
         <div class="tabel_paling_atas">
             <div class="tanggal_view">
                 <p>Tanggal</p>
-                <h5>{{ ($stats['last_paid_at'] ?? null) ? ($stats['last_paid_at'])->format('d/m/Y') : '-' }}</h5>
+                <h5>{{ ($stats['created_at'] ?? null) ? ($stats['created_at'])->format('d/m/Y') : '-' }}</h5>
             </div>
             <div class="total_peserta_view">
                 <p>Total peserta</p>

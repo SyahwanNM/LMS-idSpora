@@ -52,6 +52,10 @@ class CRMController extends Controller
         $newSupportMessages = \App\Models\SupportMessage::where('status', 'new')->count();
         $totalBroadcasts = Broadcast::count();
         
+        $totalEventCerts = EventRegistration::whereNotNull('certificate_number')->count();
+        $totalCourseCerts = Enrollment::whereNotNull('certificate_number')->count();
+        $totalCerts = $totalEventCerts + $totalCourseCerts;
+        
         // Recent registrations (only show registrations with valid events)
         $recentRegistrations = EventRegistration::with(['user', 'event'])
             ->whereHas('event')
@@ -88,7 +92,8 @@ class CRMController extends Controller
             'recentRegistrations',
             'topCustomers',
             'topEvents',
-            'totalBroadcasts'
+            'totalBroadcasts',
+            'totalCerts'
         ));
     }
 

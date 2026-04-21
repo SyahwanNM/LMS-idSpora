@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\CourseModule;
-use App\Models\CourseTemplate;
+use App\Models\Feedback;
 use App\Models\Quiz;
+use App\Models\TrainerAssignment;
 use App\Models\TrainerNotification;
+use App\Services\TrainerActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,11 +22,151 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
-    private const AUTO_TEMPLATE_UNITS_BY_LEVEL = [
-        'beginner' => 3,
-        'intermediate' => 6,
-        'advanced' => 12,
-    ];
+    private function latestEventInvitation(int $eventId, int $trainerId): ?TrainerNotification
+    {
+        if ($eventId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($eventId) {
+                $query->where('data', 'like', '%"entity_id":' . $eventId . '%');
+            })
+            ->latest('id')
+            ->first();
+    }
+
+    private function latestEventAssignment(int $eventId, int $trainerId): ?TrainerAssignment
+    {
+        if ($eventId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerAssignment::query()
+            ->where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->latest('id')
+            ->first();
+    }
+
+    private function resolveEventCompensation(Event $event, int $trainerId, ?TrainerAssignment $assignment = null): array
+    {
+        $activeParticipants = (int) ($event->active_participants_count ?? $event->participants_count ?? 0);
+        if ($activeParticipants <= 0 && method_exists($event, 'registrations')) {
+            $activeParticipants = (int) $event->registrations()
+                ->where('status', 'active')
+                ->count();
+        }
+
+        if (!$assignment && $trainerId > 0) {
+            $assignment = $this->latestEventAssignment((int) $event->id, $trainerId);
+        }
+
+        $schemePercent = (int) ($assignment?->getSchemePercentage() ?? 0);
+        $isFallbackToEventPrice = false;
+
+        if ($schemePercent <= 0 && $trainerId > 0) {
+            $acceptedNotification = TrainerNotification::query()
+                ->where('trainer_id', $trainerId)
+                ->where('type', 'event_invitation')
+                ->where(function ($query) use ($event) {
+                    $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+                })
+                ->orderByDesc('id')
+                ->first();
+
+            $notificationScheme = (int) data_get($acceptedNotification?->data ?? [], 'scheme_type', 0);
+            $notificationStatus = (string) data_get($acceptedNotification?->data ?? [], 'invitation_status', (string) ($acceptedNotification?->invitation_status ?? ''));
+
+            if ($notificationScheme > 0 && in_array($notificationStatus, ['accepted', 'completed'], true)) {
+                $schemePercent = (int) (TrainerAssignment::getSchemeDefinitions()[$notificationScheme]['percentage'] ?? 0);
+            }
+        }
+
+        $eventPrice = (float) ($event->price ?? 0);
+
+        if ($schemePercent <= 0 && $eventPrice > 0) {
+            // Fallback for legacy/main-trainer events that do not have assignment scheme yet.
+            $isFallbackToEventPrice = true;
+        }
+
+        $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
+            ? round(($eventPrice * $schemePercent) / 100, 2)
+            : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
+        $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
+            ? round($activeParticipants * $feePerParticipant, 2)
+            : 0;
+
+        return [
+            'scheme_percent' => $schemePercent,
+            'event_price' => $eventPrice,
+            'active_participants_count' => $activeParticipants,
+            'fee_per_participant' => $feePerParticipant,
+            'estimated_fee' => $estimatedFee,
+            'is_fallback_to_event_price' => $isFallbackToEventPrice,
+        ];
+    }
+
+    private function ensureEventAssignmentForTrainer(Event $event, $trainer): ?TrainerAssignment
+    {
+        if (!$trainer) {
+            return null;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
+            return null;
+        }
+
+        $existing = $this->latestEventAssignment((int) $event->id, (int) $trainer->id);
+        if ($existing) {
+            return $existing;
+        }
+
+        $invitation = $this->latestEventInvitation((int) $event->id, (int) $trainer->id);
+        $invitationStatus = $invitation ? (string) $invitation->effectiveInvitationStatus() : '';
+
+        // Backward compatibility: for legacy multi-speaker events without assignment records,
+        // create accepted assignment so each trainer has isolated material/status.
+        $assignmentStatus = in_array($invitationStatus, ['rejected', 'expired'], true) ? $invitationStatus : 'accepted';
+
+        return TrainerAssignment::query()->create([
+            'trainer_id' => (int) $trainer->id,
+            'event_id' => (int) $event->id,
+            'invitation_notification_id' => $invitation ? (int) $invitation->id : null,
+            'status' => $assignmentStatus,
+            'scheme_type' => null,
+            'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+        ]);
+    }
+
+    private function latestCourseInvitation(int $courseId, int $trainerId): ?TrainerNotification
+    {
+        if ($courseId <= 0 || $trainerId <= 0) {
+            return null;
+        }
+
+        return TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'course_invitation')
+            ->where(function ($query) use ($courseId) {
+                $query->where('data', 'like', '%"entity_id":' . $courseId . '%');
+            })
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    private function isCourseMaterialLockedForTrainer(int $courseId, int $trainerId): bool
+    {
+        $invitation = $this->latestCourseInvitation($courseId, $trainerId);
+        if (!$invitation) {
+            return false;
+        }
+
+        return $invitation->effectiveInvitationStatus() !== 'accepted';
+    }
+
     private function ensureTrainerCertificatesSynced($trainer): void
     {
         $trainerId = (int) ($trainer->id ?? 0);
@@ -512,8 +654,26 @@ class TrainerController extends Controller
     {
         $user = Auth::user();
         $this->ensureTrainerCertificatesSynced($user);
+        $activityService = app(TrainerActivityService::class);
+        $trainerActivity = $activityService->refresh($user);
+        $availableContributionSchemes = $activityService->availableContributionSchemes($user);
 
-        $coursesQuery = $user->coursesAsTrainer();
+        // Get pending invitation course IDs to exclude them from displaying
+        $pendingInvitationCourseIds = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->where('type', 'course_invitation')
+            ->where('invitation_status', 'pending')
+            ->pluck('data')
+            ->map(function ($data) {
+                return (int) data_get($data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $coursesQuery = $user->coursesAsTrainer()
+            ->whereNotIn('id', $pendingInvitationCourseIds);
 
         $priorityCourses = (clone $coursesQuery)
             ->withCount([
@@ -539,8 +699,23 @@ class TrainerController extends Controller
             ->whereIn('status', ['published', 'approved', 'active'])
             ->count();
 
+        // Get pending invitation event IDs to exclude them from displaying
+        $pendingInvitationEventIds = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->where('type', 'event_invitation')
+            ->where('invitation_status', 'pending')
+            ->pluck('data')
+            ->map(function ($data) {
+                return (int) data_get($data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
         $activeEventsQuery = Event::query()
             ->where('trainer_id', $user->id)
+            ->whereNotIn('id', $pendingInvitationEventIds)
             ->whereNotNull('event_date')
             ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
 
@@ -568,7 +743,7 @@ class TrainerController extends Controller
             ->get();
 
         $students = $user->trainerEnrollments()
-            ->with(['student', 'course'])
+            ->with(['user', 'course'])
             ->orderBy('enrollments.created_at', 'desc')
             ->limit(5)
             ->get();
@@ -583,8 +758,16 @@ class TrainerController extends Controller
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
             ->orderByDesc('created_at')
-            ->limit(5)
-            ->get();
+            ->limit(40)
+            ->get()
+            ->filter(function ($notification) {
+                $statusFromData = trim((string) data_get($notification->data, 'invitation_status', ''));
+                $statusFromColumn = trim((string) ($notification->invitation_status ?? ''));
+                $effectiveStatus = $statusFromData !== '' ? $statusFromData : ($statusFromColumn !== '' ? $statusFromColumn : 'pending');
+                return $effectiveStatus === 'pending';
+            })
+            ->take(5)
+            ->values();
 
         $todoConfirmations = TrainerNotification::query()
             ->where('trainer_id', $user->id)
@@ -603,6 +786,13 @@ class TrainerController extends Controller
             ->where('trainer_id', $user->id)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->whereNull('read_at')
+            ->get()
+            ->filter(function ($notification) {
+                $statusFromData = trim((string) data_get($notification->data, 'invitation_status', ''));
+                $statusFromColumn = trim((string) ($notification->invitation_status ?? ''));
+                $effectiveStatus = $statusFromData !== '' ? $statusFromData : ($statusFromColumn !== '' ? $statusFromColumn : 'pending');
+                return $effectiveStatus === 'pending';
+            })
             ->count();
 
         $teachingHistory = TrainerCertificate::query()
@@ -612,6 +802,114 @@ class TrainerController extends Controller
             ->with('certifiable')
             ->latest('issued_at')
             ->limit(6)
+            ->get();
+
+        $activeAssignments = TrainerAssignment::query()
+            ->where('trainer_id', $user->id)
+            ->where('status', 'accepted')
+            ->with([
+                'event' => function ($query) {
+                    $query->withCount([
+                        'registrations as active_participants_count' => function ($registrationQuery) {
+                            $registrationQuery->where('status', 'active');
+                        }
+                    ]);
+                }
+            ])
+            ->orderByRaw('CASE WHEN sla_upload_deadline IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('sla_upload_deadline')
+            ->limit(6)
+            ->get()
+            ->map(function (TrainerAssignment $assignment) {
+                $schemeDefinitions = TrainerAssignment::getSchemeDefinitions();
+                $schemeType = (int) ($assignment->scheme_type ?? 0);
+                $scheme = $schemeDefinitions[$schemeType] ?? [];
+                $event = $assignment->event;
+                $eventPrice = (float) ($event->price ?? 0);
+                $activeParticipants = (int) ($event->active_participants_count ?? 0);
+                $schemePercent = (int) ($scheme['percentage'] ?? 0);
+                $feePerParticipant = $eventPrice > 0 && $schemePercent > 0
+                    ? round(($eventPrice * $schemePercent) / 100, 2)
+                    : 0;
+                $estimatedFee = $activeParticipants > 0 && $feePerParticipant > 0
+                    ? round($activeParticipants * $feePerParticipant, 2)
+                    : 0;
+
+                return [
+                    'assignment' => $assignment,
+                    'event_title' => (string) optional($event)->title,
+                    'event_date' => optional($event?->event_date)?->format('d M Y'),
+                    'scheme_label' => (string) ($scheme['label'] ?? 'Skema'),
+                    'scheme_percent' => $schemePercent,
+                    'event_price' => $eventPrice,
+                    'active_participants_count' => $activeParticipants,
+                    'fee_per_participant' => $feePerParticipant,
+                    'estimated_fee' => $estimatedFee,
+                    'deadline' => $assignment->sla_upload_deadline,
+                    'remaining_hours' => $assignment->getRemainingHours(),
+                    'status_label' => match ((string) $assignment->status) {
+                        'accepted' => 'Berjalan',
+                        'completed' => 'Selesai',
+                        'rejected' => 'Ditolak',
+                        'expired' => 'Expired',
+                        default => 'Pending',
+                    },
+                ];
+            })
+            ->values();
+
+        $revenueCourses = (clone $coursesQuery)
+            ->withCount([
+                'enrollments as monthly_active_students_count' => function ($query) {
+                    $query->where('status', 'active')
+                        ->whereYear('created_at', now()->year)
+                        ->whereMonth('created_at', now()->month);
+                },
+            ])
+            ->withAvg('reviews', 'rating')
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get()
+            ->map(function (Course $course) {
+                $activeStudents = (int) ($course->monthly_active_students_count ?? 0);
+                $price = (float) ($course->price ?? 0);
+                $schemePercent = (int) ($course->trainer_revenue_percent ?? 0);
+                $estimatedRevenue = $activeStudents > 0 && $price > 0 && $schemePercent > 0
+                    ? round(($activeStudents * $price * $schemePercent) / 100)
+                    : 0;
+
+                return [
+                    'course_id' => (int) $course->id,
+                    'course_name' => (string) $course->name,
+                    'active_students_count' => $activeStudents,
+                    'price' => $price,
+                    'scheme_percent' => $schemePercent,
+                    'estimated_revenue' => $estimatedRevenue,
+                    'rating' => (float) ($course->reviews_avg_rating ?? 0),
+                ];
+            })
+            ->values();
+
+        $completedCourses = (clone $coursesQuery)
+            ->whereIn('status', ['completed', 'finished', 'archived', 'approved'])
+            ->withCount([
+                'enrollments as active_students_count' => function ($query) {
+                    $query->where('status', 'active');
+                },
+            ])
+            ->withAvg('reviews', 'rating')
+            ->orderByDesc('approved_at')
+            ->orderByDesc('updated_at')
+            ->limit(6)
+            ->get();
+
+        $recentEventFeedbacks = Feedback::query()
+            ->whereHas('event', function ($query) use ($user) {
+                $query->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'event', 'replies.trainer'])
+            ->latest('created_at')
+            ->limit(5)
             ->get();
 
         $totalCertificates = (clone TrainerCertificate::query())
@@ -633,9 +931,42 @@ class TrainerController extends Controller
             'totalStudents',
             'totalCertificates',
             'teachingHistory',
+            'activeAssignments',
+            'revenueCourses',
+            'completedCourses',
+            'recentEventFeedbacks',
             'dashboardInvitations',
-            'unreadInvitationCount'
+            'unreadInvitationCount',
+            'trainerActivity',
+            'availableContributionSchemes'
         ));
+    }
+
+    public function toggleAvailability(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(403);
+        }
+
+        if ((string) ($user->user_status ?? 'active') === 'suspended') {
+            return back()->with('error', 'Akun suspended hanya bisa diaktifkan kembali oleh admin idSpora.');
+        }
+
+        $nextStatus = (string) ($user->user_status ?? 'active') === 'active' ? 'inactive' : 'active';
+        $payload = ['user_status' => $nextStatus];
+
+        if ($nextStatus === 'active') {
+            $payload['consecutive_expired_invitations'] = 0;
+            $payload['last_teaching_at'] = now();
+        }
+
+        $user->forceFill($payload)->save();
+        app(TrainerActivityService::class)->refresh($user);
+
+        return back()->with('success', $nextStatus === 'active'
+            ? 'Status Anda sekarang Active dan siap menerima undangan mengajar.'
+            : 'Status Anda sekarang Inactive. Anda tidak akan muncul di opsi undangan admin.');
     }
 
     public function courses()
@@ -647,7 +978,19 @@ class TrainerController extends Controller
                 'enrollments' => function ($query) {
                     $query->where('status', 'active');
                 },
-                'modules' // Tambahkan ini untuk menghitung jumlah modul
+                'modules', // Tambahkan ini untuk menghitung jumlah modul
+                'modules as processing_assigned_count' => function ($query) {
+                    $query->where('processing_status', 'assigned_to_admin_course');
+                },
+                'modules as processing_uploaded_count' => function ($query) {
+                    $query->where('processing_status', 'processed_uploaded');
+                },
+                'modules as processing_revision_count' => function ($query) {
+                    $query->where('processing_status', 'revision_requested');
+                },
+                'modules as processing_ready_count' => function ($query) {
+                    $query->where('processing_status', 'ready_for_publish');
+                },
             ])
             ->withAvg('reviews', 'rating')
             ->orderBy('created_at', 'desc')
@@ -664,21 +1007,37 @@ class TrainerController extends Controller
 
         $certifiedCourseIdSet = array_fill_keys($certifiedCourseIds, true);
 
+        $pendingInvitationCourseIds = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->where('type', 'course_invitation')
+            ->where('invitation_status', 'pending')
+            ->get(['data'])
+            ->map(function (TrainerNotification $notification) {
+                return (int) data_get($notification->data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $pendingInvitationCourseIdSet = array_fill_keys($pendingInvitationCourseIds, true);
+
         $finishedCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet) {
             $status = (string) ($course->status ?? '');
             return isset($certifiedCourseIdSet[(int) $course->id])
                 || in_array($status, ['completed', 'finished', 'archived'], true);
         })->values();
 
-        $ongoingCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet) {
+        $ongoingCourses = $courses->filter(function ($course) use ($certifiedCourseIdSet, $pendingInvitationCourseIdSet) {
             $status = (string) ($course->status ?? '');
             return !isset($certifiedCourseIdSet[(int) $course->id])
+                && !isset($pendingInvitationCourseIdSet[(int) $course->id])
                 && in_array($status, ['approved', 'published', 'active'], true);
         })->values();
 
-        $upcomingCourses = $courses->filter(function ($course) use ($finishedCourses, $ongoingCourses) {
+        $upcomingCourses = $courses->filter(function ($course) use ($finishedCourses, $ongoingCourses, $pendingInvitationCourseIdSet) {
             return !$finishedCourses->contains('id', $course->id)
-                && !$ongoingCourses->contains('id', $course->id);
+                && (isset($pendingInvitationCourseIdSet[(int) $course->id]) || !$ongoingCourses->contains('id', $course->id));
         })->values();
 
         return view('trainer.courses', compact(
@@ -707,9 +1066,6 @@ class TrainerController extends Controller
             'modules' => function ($query) {
                 // Urutkan modul, dan load relasi kuis
                 $query->orderBy('order_no', 'asc')->with('quizQuestions');
-            },
-            'units' => function ($query) {
-                $query->orderBy('unit_no', 'asc');
             },
             'enrollments.student',
             'reviews'
@@ -746,6 +1102,18 @@ class TrainerController extends Controller
             $classAverage = round($totalScores / $totalSubmissions, 1);
         }
 
+        $processingModules = $course->modules->filter(function ($module) {
+            return filled($module->processing_status ?? null);
+        });
+
+        $processingSummary = [
+            'total' => $processingModules->count(),
+            'assigned' => $processingModules->where('processing_status', 'assigned_to_admin_course')->count(),
+            'uploaded' => $processingModules->where('processing_status', 'processed_uploaded')->count(),
+            'revision' => $processingModules->where('processing_status', 'revision_requested')->count(),
+            'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
+        ];
+
         return view('trainer.detail-course', compact(
             'course',
             'enrollmentCount',
@@ -754,30 +1122,70 @@ class TrainerController extends Controller
             'activeStudents',
             'quizAttempts',
             'classAverage',
-            'totalSubmissions'
+            'totalSubmissions',
+            'processingSummary'
         ));
     }
     public function events(Request $request)
     {
         $user = \Illuminate\Support\Facades\Auth::user();
         $search = $request->query('search');
+        $trainerName = trim((string) ($user->name ?? ''));
 
-        $query = \App\Models\Event::where('trainer_id', $user->id)
+        // Include events where trainer is assigned via trainer_id OR speaker name match
+        $query = \App\Models\Event::where(function ($q) use ($user, $trainerName) {
+                $q->where('trainer_id', $user->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
-                }
-            ]);
+                },
+                'scheduleItems as schedule_count'
+            ])
+            ->withAvg('feedbacks', 'rating');
 
         if ($search) {
             $query->where('title', 'LIKE', "%{$search}%");
         }
 
-        $events = $query->orderBy('event_date', 'asc')->get();
+        $events = $query
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->get()
+            ->filter(function ($event) use ($user, $trainerName) {
+                // Exact name match for speaker field to avoid partial false positives
+                if ((int) ($event->trainer_id ?? 0) === (int) $user->id) return true;
+                if ($trainerName === '') return false;
+                $names = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
+                return in_array(mb_strtolower($trainerName), $names, true);
+            })
+            ->values();
 
-        $upcomingCount = \App\Models\Event::where('trainer_id', $user->id)
-            ->where('event_date', '>=', now())
-            ->count();
+        $assignmentMap = TrainerAssignment::query()
+            ->where('trainer_id', (int) $user->id)
+            ->whereIn('event_id', $events->pluck('id')->all())
+            ->orderByDesc('id')
+            ->get()
+            ->unique('event_id')
+            ->keyBy('event_id');
+
+        $events = $events->map(function ($event) use ($user, $assignmentMap) {
+            $assignment = $assignmentMap->get((int) $event->id);
+            $compensation = $this->resolveEventCompensation($event, (int) $user->id, $assignment);
+
+            foreach ($compensation as $key => $value) {
+                $event->setAttribute($key, $value);
+            }
+
+            return $event;
+        })->values();
+
+        $upcomingCount = $events->filter(function ($event) {
+            return $event->event_date && \Carbon\Carbon::parse($event->event_date)->gte(now()->startOfDay());
+        })->count();
 
         $certifiedEventIds = \App\Models\TrainerCertificate::query()
             ->where('trainer_id', $user->id)
@@ -838,9 +1246,39 @@ class TrainerController extends Controller
     public function eventDetail($id)
     {
         $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', $trainerId)
+        $pendingInvitation = TrainerNotification::query()
+            ->where('trainer_id', (int) $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($id) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        $invitationData = is_array($pendingInvitation?->data) ? $pendingInvitation->data : [];
+        $invitationStatus = (string) data_get(
+            $invitationData,
+            'invitation_status',
+            (string) ($pendingInvitation->invitation_status ?? 'pending')
+        );
+        $canOpenFromInvitation = $pendingInvitation
+            && in_array($invitationStatus, ['pending', 'accepted'], true);
+
+        $eventQuery = \App\Models\Event::query()->where('id', $id);
+
+        if (!$canOpenFromInvitation) {
+            // Allow access if trainer_id matches OR trainer name is in speaker field
+            $eventQuery->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            });
+        }
+
+        $event = $eventQuery
             ->with([
                 'scheduleItems' => function ($q) {
                     $q->orderBy('start', 'asc');
@@ -848,7 +1286,189 @@ class TrainerController extends Controller
             ])
             ->firstOrFail();
 
-        return view('trainer.detail-event', compact('event'));
+        // Extra check: if matched via speaker LIKE, verify exact name match
+        if (!$canOpenFromInvitation && (int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
+            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
+            if (!in_array($trainerName, $speakerNames, true)) {
+                abort(403);
+            }
+        }
+
+        // Per-trainer module status
+        $myModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('trainer_id', $trainerId)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $myMaterialStatus = 'not_uploaded';
+        if ($myModules->isNotEmpty()) {
+            if ($myModules->contains('status', 'approved')) {
+                $myMaterialStatus = 'approved';
+            } elseif ($myModules->contains('status', 'pending_review')) {
+                $myMaterialStatus = 'pending_review';
+            } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
+                $myMaterialStatus = 'rejected';
+            }
+        }
+
+        $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId);
+
+        return view('trainer.detail-event', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
+    }
+
+    public function downloadEventVbg($id)
+    {
+        $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
+
+        $pendingInvitation = TrainerNotification::query()
+            ->where('trainer_id', (int) $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($id) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        $invitationData = is_array($pendingInvitation?->data) ? $pendingInvitation->data : [];
+        $invitationStatus = (string) data_get(
+            $invitationData,
+            'invitation_status',
+            (string) ($pendingInvitation->invitation_status ?? 'pending')
+        );
+        $canOpenFromInvitation = $pendingInvitation
+            && in_array($invitationStatus, ['pending', 'accepted'], true);
+
+        $eventQuery = \App\Models\Event::query()->where('id', $id);
+        if (!$canOpenFromInvitation) {
+            $eventQuery->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            });
+        }
+
+        $event = $eventQuery->firstOrFail();
+
+        $isOfflineEvent = !empty($event->maps_url)
+            || (!empty($event->latitude) && !empty($event->longitude));
+
+        // Primary source: vbg_path. Legacy fallback for old online events: image.
+        $candidateSources = [];
+        if (!empty($event->vbg_path)) {
+            $candidateSources[] = (string) $event->vbg_path;
+        }
+        if (empty($event->vbg_path) && !$isOfflineEvent && !empty($event->image)) {
+            $candidateSources[] = (string) $event->image;
+        }
+
+        if (empty($candidateSources)) {
+            abort(404, 'VBG file tidak tersedia untuk event ini.');
+        }
+
+        $filePath = null;
+        $externalUrlFallback = null;
+
+        foreach ($candidateSources as $sourcePath) {
+            $sourcePath = trim($sourcePath);
+            if ($sourcePath === '') {
+                continue;
+            }
+
+            $normalized = $sourcePath;
+            if (preg_match('#^https?://#i', $sourcePath)) {
+                $externalUrlFallback = $sourcePath;
+                $urlPath = parse_url($sourcePath, PHP_URL_PATH);
+                if (!is_string($urlPath) || trim($urlPath) === '') {
+                    continue;
+                }
+                $normalized = $urlPath;
+            }
+
+            $normalized = str_replace('\\', '/', (string) $normalized);
+            $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+            $normalized = ltrim($normalized, '/');
+
+            // Common legacy prefixes
+            if (str_starts_with($normalized, 'public/')) {
+                $normalized = ltrim(substr($normalized, 7), '/');
+            }
+            if (str_starts_with($normalized, 'storage/app/public/')) {
+                $normalized = ltrim(substr($normalized, 19), '/');
+            }
+            if (str_starts_with($normalized, 'storage/')) {
+                $normalized = ltrim(substr($normalized, 8), '/');
+            }
+
+            $possiblePaths = [
+                storage_path('app/public/' . $normalized),
+                public_path('uploads/' . $normalized),
+                public_path($normalized),
+            ];
+
+            if (str_starts_with($normalized, 'uploads/')) {
+                $possiblePaths[] = storage_path('app/public/' . ltrim(substr($normalized, 8), '/'));
+            }
+
+            $possiblePaths = array_values(array_unique($possiblePaths));
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path) && is_file($path)) {
+                    $filePath = $path;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$filePath) {
+            if ($externalUrlFallback && preg_match('#^https?://#i', $externalUrlFallback)) {
+                return redirect()->away($externalUrlFallback);
+            }
+            abort(404, 'File VBG tidak ditemukan.');
+        }
+
+        // Security check: prevent directory traversal
+        $realPath = realpath($filePath);
+        $storagePath = realpath(storage_path('app/public'));
+        $uploadsPath = realpath(public_path('uploads'));
+        $eventDocsPublicPath = realpath(public_path('events/docs'));
+
+        if (!$realPath) {
+            abort(403, 'Akses file VBG ditolak.');
+        }
+
+        // Check if file is in allowed directories
+        $isInStorage = $storagePath && str_starts_with($realPath, $storagePath);
+        $isInUploads = $uploadsPath && str_starts_with($realPath, $uploadsPath);
+        $isInPublicEventDocs = $eventDocsPublicPath && str_starts_with($realPath, $eventDocsPublicPath);
+
+        if (!($isInStorage || $isInUploads || $isInPublicEventDocs)) {
+            abort(403, 'Akses file VBG ditolak.');
+        }
+
+        // Get MIME type
+        $mimeType = mime_content_type($filePath);
+        if (!$mimeType) {
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            $mimeTypes = [
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'gif' => 'image/gif',
+                'webp' => 'image/webp',
+            ];
+            $mimeType = $mimeTypes[$ext] ?? 'application/octet-stream';
+        }
+
+        // Generate filename
+        $fileName = 'VBG_' . $event->id . '_' . \Illuminate\Support\Str::slug(substr($event->title, 0, 20)) . '.' . pathinfo($filePath, PATHINFO_EXTENSION);
+
+        return response()->download($filePath, $fileName, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
     }
 
     public function feedback(Request $request)
@@ -908,7 +1528,42 @@ class TrainerController extends Controller
 
     public function courseStudio(Request $request, $id)
     {
-        $course = \App\Models\Course::where('id', $id)->where('trainer_id', Auth::id())->firstOrFail();
+        $trainerId = (int) Auth::id();
+        $course = \App\Models\Course::where('id', $id)->where('trainer_id', $trainerId)->firstOrFail();
+
+        $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
+        $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
+        $courseMaterialLocked = $this->isCourseMaterialLockedForTrainer((int) $course->id, $trainerId);
+
+        $requestedSchemeType = (int) $request->query('scheme', 0);
+        $sessionSchemeType = (int) session('trainer_active_scheme_type', 0);
+        $activeSchemeType = in_array($requestedSchemeType, [1, 2, 3], true)
+            ? $requestedSchemeType
+            : (in_array($sessionSchemeType, [1, 2, 3], true) ? $sessionSchemeType : 1);
+
+        $schemePermissions = [
+            1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
+            2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
+        ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
+
+        if ($courseMaterialLocked) {
+            $schemePermissions = [
+                'can_module' => false,
+                'can_video' => false,
+                'can_quiz' => false,
+            ];
+        }
+
+        $allowedTabs = array_values(array_filter([
+            'module' => $schemePermissions['can_module'] ?? false,
+            'video' => $schemePermissions['can_video'] ?? false,
+            'quiz' => $schemePermissions['can_quiz'] ?? false,
+        ]));
+        $requestedTab = (string) $request->query('tab', 'module');
+        $activeTab = in_array($requestedTab, $allowedTabs, true)
+            ? $requestedTab
+            : ($allowedTabs[0] ?? 'module');
 
         // Safety net: ensure unit slots from template exist before opening studio.
         $this->ensureTemplateStructureExists($course);
@@ -934,23 +1589,30 @@ class TrainerController extends Controller
         // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
-        $uploadedMaterials = $allModules
-            ->filter(function ($module) {
-                return in_array($module->type, ['pdf', 'video']) && !empty($module->content_url);
-            })
-            ->map(function ($module) use ($course) {
-                $unitNo = (int) floor((((int) $module->order_no) - 1) / 3) + 1;
+        // Hanya tampilkan materi yang sudah diupload untuk bab (unit) yang sedang aktif saja.
+        // Mengambil ID modul yang ada di bab aktif untuk filter yang presisi.
+        $activeUnitModuleIds = $activeUnitModules->pluck('id')->all();
 
+        $uploadedMaterials = $allModules
+            ->filter(function ($module) use ($activeUnitModuleIds) {
+                // Hanya modul di bab aktif, dengan file yang sudah terupload
+                return in_array($module->id, $activeUnitModuleIds)
+                    && in_array($module->type, ['pdf', 'video'])
+                    && !empty($module->content_url);
+            })
+            ->map(function ($module) use ($course, $unitIndex) {
                 return [
                     'module_id' => (int) $module->id,
                     'order_no' => (int) $module->order_no,
-                    'unit_no' => $unitNo,
+                    'unit_no' => (int) $unitIndex + 1,
                     'type' => (string) $module->type,
                     'title' => (string) ($module->title ?? ''),
                     'description' => (string) ($module->description ?? ''),
                     'file_name' => (string) ($module->file_name ?: basename((string) $module->content_url)),
                     'view_url' => route('trainer.courses.studio.material.view', [$course->id, $module->id]),
                     'updated_at' => optional($module->updated_at)->toDateTimeString(),
+                    'review_status' => (string) ($module->review_status ?? 'pending_review'),
+                    'processing_status' => (string) ($module->processing_status ?? ''),
                 ];
             })
             ->values();
@@ -961,18 +1623,74 @@ class TrainerController extends Controller
 
         $unitTitle = "Modul " . ($unitIndex + 1);
 
-        return view('trainer.content-studio', compact('course', 'activeUnitModules', 'unitTitle', 'unitIndex', 'uploadedMaterials'));
+        return view('trainer.content-studio', compact(
+            'course',
+            'activeUnitModules',
+            'unitTitle',
+            'unitIndex',
+            'uploadedMaterials',
+            'activeSchemeType',
+            'schemePermissions',
+            'activeTab',
+            'courseMaterialLocked',
+            'courseInvitationStatus'
+        ));
     }
 
     public function eventStudio($id)
     {
-        $trainerId = \Illuminate\Support\Facades\Auth::id();
+        $trainer = Auth::user();
+        $trainerId = (int) ($trainer->id ?? 0);
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        $event = \App\Models\Event::findOrFail($id);
 
-        $event = \App\Models\Event::where('id', $id)
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            abort(403, 'Anda tidak memiliki akses ke materi event ini.');
+        }
+
+        $assignment = $this->ensureEventAssignmentForTrainer($event, $trainer)
+            ?: $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+
+        // For co-speakers, material state must be isolated per assignment.
+        if ($assignment && (int) ($event->trainer_id ?? 0) !== (int) ($trainer->id ?? 0)) {
+            $event->setAttribute('module_path', (string) ($assignment->material_path ?? ''));
+            $event->setAttribute('module_submission_path', (string) ($assignment->material_path ?? ''));
+            $event->setAttribute('module_submitted_at', $assignment->material_submitted_at ?: $assignment->materials_uploaded_at);
+            $event->setAttribute('material_status', (string) ($assignment->material_status ?: 'pending'));
+            $event->setAttribute('material_approved_at', $assignment->material_approved_at);
+            $event->setAttribute('module_verified_at', $assignment->material_approved_at);
+            $event->setAttribute('material_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
+            $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
+        }
+
+        // Exact speaker name check for LIKE matches
+        if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
+            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
+            if (!in_array($trainerName, $speakerNames, true)) {
+                abort(403);
+            }
+        }
+
+        // Per-trainer module status
+        $myModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
             ->where('trainer_id', $trainerId)
-            ->firstOrFail();
+            ->orderByDesc('created_at')
+            ->get();
 
-        return view('trainer.event-studio', compact('event'));
+        $myMaterialStatus = 'not_uploaded';
+        if ($myModules->isNotEmpty()) {
+            if ($myModules->contains('status', 'approved')) {
+                $myMaterialStatus = 'approved';
+            } elseif ($myModules->contains('status', 'pending_review')) {
+                $myMaterialStatus = 'pending_review';
+            } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
+                $myMaterialStatus = 'rejected';
+            }
+        }
+
+        $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId, $assignment);
+
+        return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
     }
 
     public function saveEventQuiz(Request $request, $id)
@@ -1175,7 +1893,6 @@ class TrainerController extends Controller
     public function editProfile()
     {
         $trainer = Auth::user();
-
         return view('trainer.profile-edit', compact('trainer'));
     }
 
@@ -1248,9 +1965,6 @@ class TrainerController extends Controller
         $request->validate([
             'target_modules' => 'required|string', // Kumpulan ID modul di Bab ini
             'replace_module_id' => 'nullable|integer',
-            'description' => 'nullable|string|max:2000',
-            'descriptions' => 'nullable|array',
-            'descriptions.*' => 'nullable|string|max:2000',
             'files' => 'required|array',
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
         ]);
@@ -1258,6 +1972,13 @@ class TrainerController extends Controller
         $course = \App\Models\Course::findOrFail($id);
         if ($course->trainer_id !== Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
+        }
+
+        if ($this->isCourseMaterialLockedForTrainer((int) $course->id, (int) Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi course masih terkunci sampai undangan diterima.',
+            ], 422);
         }
 
         // Ubah string "1,2" menjadi array [1, 2]
@@ -1276,6 +1997,59 @@ class TrainerController extends Controller
         $adaptedSlotCount = 0;
         $rejectedFiles = [];
         $updatedModules = [];
+        $contentHtml = trim((string) $request->input('module_content_html', ''));
+        $targetTextModule = null;
+
+        // Save rich text draft HTML into module description (text-based material style).
+        if ($contentHtml !== '') {
+            $targetTextModule = \App\Models\CourseModule::where('course_id', $id)
+                ->whereIn('id', $targetIds)
+                ->where('type', 'pdf')
+                ->orderBy('order_no', 'asc')
+                ->first();
+
+            if (!$targetTextModule) {
+                $targetTextModule = \App\Models\CourseModule::where('course_id', $id)
+                    ->whereIn('id', $targetIds)
+                    ->orderBy('order_no', 'asc')
+                    ->first();
+            }
+
+            if ($targetTextModule) {
+                $targetTextModule->update([
+                    'description' => $contentHtml,
+                    'review_status' => 'pending_review',
+                    'reviewed_at' => null,
+                    'reviewed_by' => null,
+                    'review_rejection_reason' => null,
+                ]);
+                $targetTextModule->refresh();
+                $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $targetTextModule);
+            }
+        }
+
+        // Support text-only submission flow for module authoring (without file attachment).
+        if (!$request->hasFile('files')) {
+            if ($contentHtml !== '') {
+                $course->update([
+                    'status' => 'pending_review',
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+                $this->resetCourseLateStrikeIfOnTime($course);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Materi teks berhasil disubmit ke Admin.',
+                    'updated_modules' => $updatedModules,
+                    'rejected_files' => [],
+                ]);
+            }
+
+            return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+        }
 
         if ($request->hasFile('files')) {
             $replaceModuleId = $request->input('replace_module_id');
@@ -1316,13 +2090,19 @@ class TrainerController extends Controller
                     'file_name' => $file->getClientOriginalName(),
                     'mime_type' => $file->getMimeType(),
                     'file_size' => $file->getSize(),
-                    'description' => (string) ($request->input('description') ?? $replaceModule->description ?? ''),
                 ]);
 
                 $replaceModule->refresh();
                 $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $replaceModule);
 
-                $course->update(['status' => 'pending_review']);
+                $course->update([
+                    'status' => 'pending_review',
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+                $this->resetCourseLateStrikeIfOnTime($course);
 
                 return response()->json([
                     'success' => true,
@@ -1422,13 +2202,7 @@ class TrainerController extends Controller
                         'file_name' => $file->getClientOriginalName(),
                         'mime_type' => $file->getMimeType(),
                         'file_size' => $file->getSize(),
-                    ];
-
-                    if (trim((string) $descriptionForFile) !== '') {
-                        $updatePayload['description'] = (string) $descriptionForFile;
-                    }
-
-                    $module->update($updatePayload);
+                    ]);
                     $module->refresh();
                     $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $module);
                     $uploadedCount++;
@@ -1445,7 +2219,14 @@ class TrainerController extends Controller
             }
 
             if ($uploadedCount > 0) {
-                $course->update(['status' => 'pending_review']);
+                $course->update([
+                    'status' => 'pending_review',
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+                $this->resetCourseLateStrikeIfOnTime($course);
             }
 
             // Build helpful error message
@@ -1492,6 +2273,81 @@ class TrainerController extends Controller
         return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
     }
 
+    public function uploadCourseEditorImage(Request $request, $id)
+    {
+        $request->validate([
+            'image' => 'required|image|max:5120',
+        ]);
+
+        $course = \App\Models\Course::findOrFail($id);
+        if ($course->trainer_id !== Auth::id()) {
+            return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
+        }
+
+        if ($this->isCourseMaterialLockedForTrainer((int) $course->id, (int) Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi course masih terkunci sampai undangan diterima.',
+            ], 422);
+        }
+
+        $file = $request->file('image');
+        $uploadDir = public_path('uploads/courses/' . $id . '/editor-images');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $filename = time() . '_' . preg_replace('/[^A-Za-z0-9._-]/', '_', (string) $file->getClientOriginalName());
+        $file->move($uploadDir, $filename);
+        $relativePath = 'courses/' . $id . '/editor-images/' . $filename;
+
+        return response()->json([
+            'success' => true,
+            'url' => '/uploads/' . $relativePath,
+        ]);
+    }
+
+    private function resetCourseLateStrikeIfOnTime(Course $course): void
+    {
+        $invitation = TrainerNotification::query()
+            ->where('trainer_id', (int) Auth::id())
+            ->where('type', 'course_invitation')
+            ->where(function ($query) use ($course) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $course->id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        if (!$invitation) {
+            return;
+        }
+
+        $data = is_array($invitation->data) ? $invitation->data : [];
+        $uploadDueAtRaw = (string) data_get($data, 'upload_due_at', '');
+        if ($uploadDueAtRaw === '') {
+            return;
+        }
+
+        try {
+            $uploadDueAt = Carbon::parse($uploadDueAtRaw);
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        if (now()->lte($uploadDueAt)) {
+            app(TrainerActivityService::class)->resetLateUploads(Auth::user(), [
+                'entity_type' => 'course',
+                'entity_id' => (int) $course->id,
+                'entity_title' => (string) ($course->name ?? ''),
+                'url' => route('trainer.detail-course', $course->id),
+            ]);
+        }
+
+        $data['material_uploaded_at'] = now()->toIso8601String();
+        $invitation->data = $data;
+        $invitation->save();
+    }
+
     public function uploadEventMaterials(Request $request, $id)
     {
         $request->validate([
@@ -1499,11 +2355,55 @@ class TrainerController extends Controller
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000'
         ]);
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', Auth::id())
-            ->firstOrFail();
+        $trainerId = Auth::id();
+        $trainerName = mb_strtolower(trim((string) (Auth::user()?->name ?? '')));
 
-        if (!empty($event->material_deadline) && now()->gt($event->material_deadline)) {
+        $trainer = Auth::user();
+        $event = \App\Models\Event::findOrFail($id);
+        $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0);
+
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Anda tidak memiliki akses ke materi event ini.',
+            ], 403);
+        }
+
+        $assignment = $this->ensureEventAssignmentForTrainer($event, $trainer)
+            ?: $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+
+        $effectiveMaterialStatus = (string) ($isPrimaryTrainer
+            ? ($event->material_status ?? '')
+            : ($assignment->material_status ?? 'pending'));
+
+        if ($effectiveMaterialStatus === 'approved') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
+            ], 422);
+        }
+
+        $materialStatus = (string) ($event->material_status ?? 'draft');
+        $invitation = TrainerNotification::query()
+            ->where('trainer_id', (int) Auth::id())
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($event) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        $invitationData = is_array($invitation?->data) ? $invitation->data : [];
+        $invitationUploadDueAtRaw = (string) data_get($invitationData, 'upload_due_at', '');
+        $effectiveDeadline = null;
+        if ($invitationUploadDueAtRaw !== '') {
+            $effectiveDeadline = Carbon::parse($invitationUploadDueAtRaw);
+        } elseif (!empty($event->material_deadline)) {
+            $effectiveDeadline = Carbon::parse($event->material_deadline);
+        }
+        // No deadline = always allowed to upload
+
+        if ($effectiveDeadline && now()->gt($effectiveDeadline)) {
             return response()->json([
                 'success' => false,
                 'error' => 'Batas pengumpulan materi sudah lewat. Silakan hubungi admin trainer.',
@@ -1518,6 +2418,7 @@ class TrainerController extends Controller
         $primaryMaterialPath = null;
         $latestImagePath = null;
         $latestModuleDocPath = null;
+        $firstFile = null;
 
         foreach ($request->file('files') as $file) {
             $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
@@ -1532,14 +2433,48 @@ class TrainerController extends Controller
 
             if ($primaryMaterialPath === null) {
                 $primaryMaterialPath = $filepath;
+                $firstFile = $file;
             }
         }
 
-        if (!empty($primaryMaterialPath)) {
-            $event->update([
-                'module_path' => $primaryMaterialPath,
-                'material_status' => 'pending_review',
+        if (!empty($primaryMaterialPath) && $firstFile) {
+            // Always save to event_trainer_modules for per-trainer tracking
+            \App\Models\EventTrainerModule::create([
+                'event_id'      => $event->id,
+                'trainer_id'    => $trainerId,
+                'original_name' => $firstFile->getClientOriginalName(),
+                'path'          => $primaryMaterialPath,
+                'status'        => 'pending_review',
             ]);
+
+            if ($isPrimaryTrainer || !$assignment) {
+                $event->update([
+                    'module_path' => $primaryMaterialPath,
+                    'material_status' => 'pending_review',
+                    'module_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejection_reason' => null,
+                    'module_verified_at' => null,
+                    'module_verified_by' => null,
+                    'module_rejected_at' => null,
+                    'module_rejected_by' => null,
+                    'module_rejection_reason' => null,
+                ]);
+            } else {
+                $assignment->update([
+                    'material_path' => $primaryMaterialPath,
+                    'materials_uploaded_at' => now(),
+                    'material_status' => 'pending_review',
+                    'material_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejected_at' => null,
+                    'material_rejected_by' => null,
+                    'material_rejection_reason' => null,
+                ]);
+            }
+
             if (str_starts_with((string) $file->getMimeType(), 'image/')) {
                 $latestImagePath = $filepath;
             } else {
@@ -1558,8 +2493,22 @@ class TrainerController extends Controller
         if ($latestModuleDocPath) {
             $updates['module_path'] = $latestModuleDocPath;
         }
-        if (!empty($updates)) {
+        if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
             $event->update($updates);
+        }
+        if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
+            app(TrainerActivityService::class)->resetLateUploads(Auth::user(), [
+                'entity_type' => 'event',
+                'entity_id' => (int) $event->id,
+                'entity_title' => (string) ($event->title ?? ''),
+                'url' => route('trainer.events.show', $event->id),
+            ]);
+        }
+
+        if ($invitation) {
+            $invitationData['material_uploaded_at'] = now()->toIso8601String();
+            $invitation->data = $invitationData;
+            $invitation->save();
         }
 
         return response()->json([
@@ -1583,6 +2532,13 @@ class TrainerController extends Controller
             return response()->json(['success' => false, 'message' => 'Akses ditolak.']);
         }
 
+        if ($this->isCourseMaterialLockedForTrainer((int) $course->id, (int) Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Materi course masih terkunci sampai undangan diterima.',
+            ], 422);
+        }
+
         $questionsData = $request->questions;
         if (empty($questionsData)) {
             return response()->json(['success' => false, 'message' => 'Kuis minimal 1 soal.']);
@@ -1590,7 +2546,7 @@ class TrainerController extends Controller
 
         // Kunci Quiz ke Slot Bab Ini
         $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
-        $quizModule->update(['content_url' => 'quiz_submitted']);
+        $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'approved']);
 
         // Delete old questions
         $quizModule->quizQuestions()->delete();
@@ -1624,6 +2580,7 @@ class TrainerController extends Controller
         }
 
         $course->update(['status' => 'pending_review']);
+        $this->resetCourseLateStrikeIfOnTime($course);
 
         return response()->json([
             'success' => true,
@@ -1645,6 +2602,15 @@ class TrainerController extends Controller
     public function acceptEventInvitation(Request $request, $id)
     {
         $trainerId = Auth::id();
+        $trainer = Auth::user();
+        if (!$trainer) {
+            abort(403);
+        }
+
+        if ((string) ($trainer->user_status ?? 'active') !== 'active') {
+            return back()->with('error', 'Akun Anda tidak aktif untuk menerima undangan.');
+        }
+
         $event = \App\Models\Event::where('id', $id)
             ->where('trainer_id', $trainerId)
             ->firstOrFail();
@@ -1656,7 +2622,14 @@ class TrainerController extends Controller
                 $q->whereJsonContains('data->entity_id', $id)
                     ->orWhereJsonContains('data->entity_id', (string) $id);
             })
-            ->delete();
+            ->first();
+
+        if ($notification) {
+            $notification->update([
+                'invitation_status' => 'accepted',
+                'responded_at' => now(),
+            ]);
+        }
 
         return back()->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
     }
@@ -1667,6 +2640,7 @@ class TrainerController extends Controller
     public function rejectEventInvitation(Request $request, $id)
     {
         $trainerId = Auth::id();
+        $trainer = Auth::user();
         $event = \App\Models\Event::where('id', $id)
             ->where('trainer_id', $trainerId)
             ->firstOrFail();
@@ -1678,7 +2652,14 @@ class TrainerController extends Controller
                 $q->whereJsonContains('data->entity_id', $id)
                     ->orWhereJsonContains('data->entity_id', (string) $id);
             })
-            ->delete();
+            ->first();
+
+        if ($notification) {
+            $notification->update([
+                'invitation_status' => 'rejected',
+                'responded_at' => now(),
+            ]);
+        }
 
         return back()->with('success', 'Undangan event berhasil ditolak.');
     }
@@ -1871,6 +2852,51 @@ class TrainerController extends Controller
         }
 
         abort(404, 'File sertifikat belum tersedia.');
+    }
+
+    private function trainerCanManageEventMaterials(Event $event, $trainer): bool
+    {
+        if (!$trainer) {
+            return false;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
+            return true;
+        }
+
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        if ($trainerName === '') {
+            return false;
+        }
+
+        $speakerRaw = trim((string) ($event->speaker ?? ''));
+        if ($speakerRaw === '') {
+            return false;
+        }
+
+        $parts = preg_split('/\s*[,;]+\s*/', $speakerRaw) ?: [];
+        $speakerNames = collect($parts)
+            ->map(fn($name) => mb_strtolower(trim((string) $name)))
+            ->filter(fn($name) => $name !== '')
+            ->unique()
+            ->values();
+
+        if ($speakerNames->contains($trainerName)) {
+            $assignment = $this->latestEventAssignment((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
+            if ($assignment) {
+                return in_array((string) ($assignment->status ?? ''), ['accepted', 'active'], true);
+            }
+
+            $invitation = $this->latestEventInvitation((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
+            if ($invitation) {
+                return in_array((string) $invitation->effectiveInvitationStatus(), ['accepted', 'pending'], true);
+            }
+
+            // Legacy fallback: speaker listed but no invitation/assignment record yet.
+            return true;
+        }
+
+        return false;
     }
 
 

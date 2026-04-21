@@ -344,7 +344,6 @@
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation -->
         @include('admin.trainer._sidebar')
-        @include('admin.trainer._top-text-color')
 
         <!-- Main Content -->
         <main class="trainer-main">
@@ -413,6 +412,15 @@
                                                     placeholder="Contoh: Budi Santoso" value="{{ old('name') }}" required>
                                             </div>
                                             @error('name')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label">Gelar Akademik</label>
+                                            <input type="text" name="academic_title"
+                                                class="form-control @error('academic_title') is-invalid @enderror"
+                                                placeholder="Contoh: S.Kom., M.Kom." value="{{ old('academic_title') }}">
+                                            @error('academic_title')<div class="text-danger small mt-2"><i
                                             class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
                                         </div>
                                     </div>
@@ -508,6 +516,44 @@
                                                 class="form-control @error('website') is-invalid @enderror"
                                                 placeholder="https://example.com" value="{{ old('website') }}">
                                             @error('website')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <label class="form-label">LinkedIn</label>
+                                            <input type="url" name="linkedin_url"
+                                                class="form-control @error('linkedin_url') is-invalid @enderror"
+                                                placeholder="https://www.linkedin.com/in/username"
+                                                value="{{ old('linkedin_url') }}">
+                                            @error('linkedin_url')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nama Bank</label>
+                                            <input type="text" name="bank_name"
+                                                class="form-control @error('bank_name') is-invalid @enderror"
+                                                placeholder="Contoh: BCA" value="{{ old('bank_name') }}">
+                                            @error('bank_name')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nomor Rekening</label>
+                                            <input type="text" name="bank_account_number"
+                                                class="form-control @error('bank_account_number') is-invalid @enderror"
+                                                placeholder="Masukkan nomor rekening"
+                                                value="{{ old('bank_account_number') }}">
+                                            @error('bank_account_number')<div class="text-danger small mt-2"><i
+                                            class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nama Pemilik Rekening</label>
+                                            <input type="text" name="bank_account_holder"
+                                                class="form-control @error('bank_account_holder') is-invalid @enderror"
+                                                placeholder="Sesuai buku tabungan" value="{{ old('bank_account_holder') }}">
+                                            @error('bank_account_holder')<div class="text-danger small mt-2"><i
                                             class="bi bi-exclamation-circle me-1"></i>{{ $message }}</div>@enderror
                                         </div>
 

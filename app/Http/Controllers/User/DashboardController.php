@@ -51,7 +51,7 @@ class DashboardController extends Controller
             $registeredIds = EventRegistration::query()
                 ->where('user_id', $userId)
                 ->whereIn('event_id', $eventIds)
-                ->where('status', '!=', 'rejected')
+                ->where('status', 'active')
                 ->pluck('event_id')
                 ->all();
 
@@ -77,6 +77,22 @@ class DashboardController extends Controller
             ->orderByDesc('created_at')
             ->limit(6)
             ->get();
+
+        // Feature courses: mark saved
+        if (Auth::check() && Auth::user()->role !== 'admin' && $featuredCourses->isNotEmpty()) {
+            $userId = Auth::id();
+            $courseIds = $featuredCourses->pluck('id');
+            $savedCourseIds = \DB::table('user_saved_courses')
+                ->where('user_id', $userId)
+                ->whereIn('course_id', $courseIds)
+                ->pluck('course_id')
+                ->all();
+
+            $featuredCourses->transform(function ($c) use ($savedCourseIds) {
+                $c->is_saved = in_array($c->id, $savedCourseIds, true);
+                return $c;
+            });
+        }
 
         // Distinct materi & jenis from events for dynamic listing
         $materiList = Event::query()->where('is_published', true)->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');

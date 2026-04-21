@@ -34,6 +34,13 @@ class User extends Authenticatable
         'points',
         'badge',
         'last_event_date',
+        'total_courses_completed',
+        'average_rating',
+        'late_uploads',
+        'user_status',
+        'consecutive_expired_invitations',
+        'consecutive_late_uploads',
+        'last_teaching_at',
         'profession',
         'institution',
         'bank_name',
@@ -66,6 +73,13 @@ class User extends Authenticatable
             'password' => 'hashed',
             'last_event_date' => 'date',
             'points' => 'integer',
+            'total_courses_completed' => 'integer',
+            'average_rating' => 'decimal:2',
+            'late_uploads' => 'integer',
+            'user_status' => 'string',
+            'consecutive_expired_invitations' => 'integer',
+            'consecutive_late_uploads' => 'integer',
+            'last_teaching_at' => 'datetime',
         ];
     }
 
@@ -77,6 +91,11 @@ class User extends Authenticatable
     public function savedEvents()
     {
         return $this->belongsToMany(Event::class, 'user_saved_events', 'user_id', 'event_id')->withTimestamps();
+    }
+
+    public function savedCourses()
+    {
+        return $this->belongsToMany(Course::class, 'user_saved_courses', 'user_id', 'course_id')->withTimestamps();
     }
 
     public function enrollments()
@@ -373,6 +392,34 @@ class User extends Authenticatable
         }
 
         return null;
+    }
+
+    /**
+     * Live trainer activity summary.
+     */
+    public function getTrainerActivitySummaryAttribute(): array
+    {
+        return app(\App\Services\TrainerActivityService::class)->summary($this, false);
+    }
+
+    /**
+     * Human label for trainer account status.
+     */
+    public function getUserStatusLabelAttribute(): string
+    {
+        return match ((string) ($this->user_status ?? 'active')) {
+            'inactive' => 'Inactive',
+            'suspended' => 'Suspended',
+            default => 'Active',
+        };
+    }
+
+    /**
+     * Schemes available to this trainer.
+     */
+    public function getAvailableContributionSchemesAttribute(): array
+    {
+        return app(\App\Services\TrainerActivityService::class)->availableContributionSchemes($this);
     }
     // Nambahin relasi
     public function referrals()

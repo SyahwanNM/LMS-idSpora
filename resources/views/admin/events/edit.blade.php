@@ -2,52 +2,23 @@
 @section('title', 'Edit Event')
 @section('content')
     <div class="container-fluid py-4">
-        @if(session('success'))
-            <div aria-live="polite" aria-atomic="true" class="position-relative">
-                <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
-                    <div id="eventUpdatedToast" class="toast align-items-center text-bg-success border-0" role="alert"
-                        aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                {{ session('success') }}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                                aria-label="Close"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    try {
-                        var el = document.getElementById('eventUpdatedToast');
-                        if (window.bootstrap && el) {
-                            var t = new bootstrap.Toast(el);
-                            t.show();
-                        }
-                    } catch (e) { }
-                });
-            </script>
-        @endif
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
-            <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>
-                Kembali</a>
         </div>
         @if($errors->any())
             <div class="alert alert-danger">
                 <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data"
-                    id="eventForm">@csrf @method('PUT')
+        <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="editEventModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Event</h5></div>
+                <div class="modal-body">
+                    <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data" id="editEventForm" novalidate>@csrf @method('PUT')
                     <div class="row g-3">
                         <div class="col-lg-8">
                             <div class="mb-3">
-                                <label for="image" class="form-label fw-semibold">Gambar Event</label>
-                                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                                <label for="gambar" class="form-label fw-semibold">Gambar Event</label>
+                                <input type="file" name="image" id="gambar" class="form-control" accept="image/*">
                                 <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span
                                         id="imageSizeInfo" class="fw-semibold"></span></div>
                                 @if($event->image)
@@ -67,31 +38,49 @@
                                         class="text-danger">*</span></label>
                                 <input type="text" name="title" id="nama" class="form-control" required
                                     value="{{ old('title', $event->title) }}" placeholder="Masukkan Nama Event">
+                                <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Pembicara <span
                                         class="text-danger">*</span></label>
-                                @php $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values(); @endphp
+                                @php
+                                    $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
+                                    $existingSpeakers = $event->speakers()->get()->keyBy(fn($s) => mb_strtolower(trim($s->name)));
+                                @endphp
                                 <div id="speakersContainer" class="d-flex flex-column gap-2">
                                     @if($speakerList->count())
                                         @foreach($speakerList as $i => $sp)
-                                            <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select"
-                                                    data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                    <option value="" disabled>Memuat pembicara...</option>
-                                                    <option value="{{ $sp }}" selected>{{ $sp }}</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i === 0 ? 'disabled' : '' }} title="Hapus">&times;</button>
+                                            @php $spData = $existingSpeakers->get(mb_strtolower($sp)); @endphp
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select"
+                                                        data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                        value="{{ old('speaker_salaries.'.$i, $spData?->salary ?? '') }}"
+                                                        min="0" step="1000">
+                                                    <div class="form-text">Gaji untuk {{ $sp ?: 'pembicara ini' }}</div>
+                                                </div>
                                             </div>
                                         @endforeach
                                     @else
-                                        <div class="input-group speaker-row">
-                                            <select name="speakers[]" class="form-select speaker-select" data-selected=""
-                                                required>
-                                                <option value="" selected disabled>Pilih pembicara</option>
-                                            </select>
-                                            <button type="button" class="btn btn-outline-danger remove-speaker" disabled
-                                                title="Hapus">&times;</button>
+                                        <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                    <option value="" selected disabled>Pilih narasumber</option>
+                                                </select>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            </div>
+                                            <div class="mt-2">
+                                                <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
@@ -101,8 +90,95 @@
                                     value="{{ old('speaker', $event->speaker) }}">
                                 <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara opsional.</div>
                             </div>
+                            <!-- Materi (kategori konten) -->
                             <div class="mb-3">
-                                <!-- Level field removed per request -->
+                                <label for="materi" class="form-label fw-semibold">Materi <span class="text-danger">*</span></label>
+                                @php
+                                    $materiDefaults = [
+                                        'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
+                                        'Frontend Development',
+                                        'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
+                                        'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                    ];
+                                    $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                    $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
+                                        ->map(fn($v) => trim((string)$v))
+                                        ->filter()
+                                        ->unique(fn($v) => mb_strtolower($v))
+                                        ->values()
+                                        ->all();
+                                    $currentMateri = old('materi', $event->materi);
+                                    $materiMerged = collect($materiMerged)
+                                        ->sortBy(fn($v) => mb_strtolower((string) $v))
+                                        ->values()
+                                        ->all();
+                                @endphp
+                                <div class="position-relative">
+                                    <input type="text" name="materi" id="materi" class="form-control" required
+                                           value="{{ $currentMateri }}"
+                                           placeholder="Klik untuk lihat daftar, lalu ketik untuk mencari"
+                                           autocomplete="off" data-options="@json($materiMerged ?? [])">
+                                    <div id="materiSuggestions"
+                                         class="list-group position-absolute w-100 shadow-sm"
+                                         style="display:none; z-index: 1060; max-height: 240px; overflow-y:auto;"></div>
+                                </div>
+                                <div class="form-text">Klik kolom untuk melihat daftar. Ketik untuk mencari.</div>
+                                <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
+                            </div>
+
+                            <!-- Kelola Event: Manage / Create -->
+                            <div class="mb-3">
+                                <label for="manage_action" class="form-label fw-semibold">Kelola Event <span class="text-danger">*</span></label>
+                                @php $currentManage = old('manage_action', $event->manage_action); @endphp
+                                <select name="manage_action" id="manage_action" class="form-select" required>
+                                    <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
+                                    <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
+                                    <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
+                                </select>
+                                <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reseller Event</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-yes" value="1" {{ old('is_reseller_event', $event->is_reseller_event) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="reseller-event-yes">Ya</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-no" value="0" {{ old('is_reseller_event', $event->is_reseller_event) ? '' : 'checked' }}>
+                                        <label class="form-check-label" for="reseller-event-no">Tidak</label>
+                                    </div>
+                                </div>
+                                <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                            </div>
+
+                            </div>
+
+                            <!-- Jenis Acara (autocomplete after 2 chars) -->
+                            <div class="mb-3">
+                                <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    @php
+                                        $jenisDefaults = ['Webinar','Seminar','Workshop'];
+                                        $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                        $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))
+                                            ->map(fn($v) => trim((string)$v))
+                                            ->filter()
+                                            ->unique(fn($v) => mb_strtolower($v))
+                                            ->values()
+                                            ->all();
+
+                                        $currentJenis = trim((string) old('jenis', $event->jenis));
+                                    @endphp
+                                    <select name="jenis" id="jenis" class="form-select" required>
+                                        <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Pilih jenis acara</option>
+                                        @foreach($jenisMerged as $opt)
+                                            @php $optStr = (string) $opt; @endphp
+                                            <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-text">Pilih jenis acara untuk event ini.</div>
                             </div>
                             <!-- Penjelasan Singkat (maks 40 kata) -->
                             <div class="mb-3">
@@ -113,30 +189,18 @@
                                 <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40
                                     kata</small>
                             </div>
+
                             <div class="mb-3">
-                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span
-                                        class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6"
-                                    required>{{ old('description', $event->description) }}</textarea>
+                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ strip_tags(old('description', $event->description ?? '')) }}</textarea>
+                                <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
                             </div>
-                            <!-- Kelola Event: Manage / Create -->
+
                             <div class="mb-3">
-                                <label for="manage_action" class="form-label fw-semibold">Kelola Event <span
-                                        class="text-danger">*</span></label>
-                                <select name="manage_action" id="manage_action" class="form-select" required>
-                                    @php $currentManage = old('manage_action', $event->manage_action ?? null); @endphp
-                                    <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
-                                    <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
-                                    <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
-                                </select>
-                                <small class="text-muted">Pilih apakah event ini dikelola (Manage) atau dibuat baru
-                                    (Create).</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="tanggal" class="form-label fw-semibold">Tanggal <span
-                                        class="text-danger">*</span></label>
-                                <input type="date" name="event_date" id="tanggal" class="form-control" required
-                                    value="{{ old('event_date', $event->event_date) }}">
+                                <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
+                                <input type="text" name="event_date" id="tanggal" class="form-control" required autocomplete="off"
+                                    value="{{ old('event_date', $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : '') }}">
+                                <div class="form-text">Format tampilan: Hari, DD Bulan YYYY</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Waktu Mulai & Selesai <span
@@ -148,20 +212,39 @@
                                     <input type="time" name="event_time_end" id="masuk2" class="form-control"
                                         value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}">
                                 </div>
+                                <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan
-                                    Materi</label>
-                                <input type="datetime-local" name="material_deadline" id="material_deadline"
-                                    class="form-control"
-                                    value="{{ old('material_deadline', $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d\\TH:i') : '') }}">
-                                <small class="form-text">Opsional. Harus sebelum hari-H event.</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="lokasi" class="form-label fw-semibold">Lokasi <span
+                                <label for="lokasi" class="form-label fw-semibold">Tipe Pelaksanaan <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="location" id="lokasi" class="form-control" required
-                                    value="{{ old('location', $event->location) }}" placeholder="Masukkan Lokasi">
+                                @php
+                                    $oldMode = old('location_mode');
+                                    $oldMaps = trim((string) old('maps_url', $event->maps_url));
+                                    $oldZoom = trim((string) old('zoom_link', $event->zoom_link));
+                                    $defaultMode = 'offline';
+                                    if ($oldMode) {
+                                        $defaultMode = $oldMode;
+                                    } elseif ($oldMaps !== '' && $oldZoom !== '') {
+                                        $defaultMode = 'hybrid';
+                                    } elseif ($oldZoom !== '') {
+                                        $defaultMode = 'online';
+                                    } elseif ($oldMaps !== '') {
+                                        $defaultMode = 'offline';
+                                    }
+
+                                    $defaultPlaceName = '';
+                                    if ($defaultMode === 'offline' || $defaultMode === 'hybrid') {
+                                        $defaultPlaceName = old('place_name', $event->location);
+                                    } else {
+                                        $defaultPlaceName = old('place_name', '');
+                                    }
+                                @endphp
+                                <select name="location_mode" id="lokasi" class="form-select" required>
+                                    <option value="offline" {{ $defaultMode === 'offline' ? 'selected' : '' }}>Offline</option>
+                                    <option value="online" {{ $defaultMode === 'online' ? 'selected' : '' }}>Online</option>
+                                    <option value="hybrid" {{ $defaultMode === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                                </select>
+                                <div class="form-text">Pilih tipe lokasi event. Field Maps/Zoom akan menyesuaikan.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span
@@ -179,6 +262,7 @@
                                 <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0"
                                     max="100" step="1" value="{{ old('discount_percentage', $event->discount_percentage) }}"
                                     placeholder="0">
+                                <div class="form-text">Isi 0 jika tidak ada diskon.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="discount_until" class="form-label fw-semibold">Jangka Waktu Diskon</label>
@@ -193,12 +277,18 @@
                                 <div id="benefitsContainer"></div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addBenefitRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Benefit</button>
-                                <input type="hidden" name="benefit" id="benefitHidden"
+                                <input type="hidden" name="benefit" id="benefit"
                                     value="{{ old('benefit', $event->benefit) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
-                            <div class="mb-3">
-                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Jika Offline)</label>
+                            <div class="mb-3 {{ trim($defaultPlaceName) !== '' ? '' : 'd-none' }}" id="placeNameGroup">
+                                <label for="place_name" class="form-label fw-semibold">Nama Tempat <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
+                                <input type="text" name="place_name" id="place_name" class="form-control"
+                                    value="{{ $defaultPlaceName }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
+                                <div class="form-text">Muncul setelah klik "Deteksi" untuk offline/hybrid.</div>
+                            </div>
+                            <div class="mb-3" id="mapsGroup">
+                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
                                 <div class="input-group">
                                     <input type="text" name="maps_url" id="maps" class="form-control"
                                         value="{{ old('maps_url', $event->maps_url) }}"
@@ -206,19 +296,23 @@
                                     <button class="btn btn-outline-secondary" type="button"
                                         id="btnResolveMaps">Deteksi</button>
                                 </div>
+                                <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude', $event->latitude) }}">
+                                <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude', $event->longitude) }}">
                                 <div id="mapsPreview" class="mt-2 rounded border" style="display:none;height:260px;"></div>
                                 <div class="form-text">Klik "Deteksi" untuk membaca koordinat dari short link Google Maps.
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Jika Online)</label>
+                            <div class="mb-3" id="zoomGroup">
+                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
                                 <input type="text" name="zoom_link" id="zoom" class="form-control"
                                     value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Masukkan Link Zoom">
+                                <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
-                                    rows="6">{{ old('terms_and_conditions', $event->terms_and_conditions) }}</textarea>
+                                    rows="6">{{ strip_tags(old('terms_and_conditions', $event->terms_and_conditions ?? '')) }}</textarea>
+                                <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Schedule <span
@@ -258,6 +352,7 @@
                                 </table>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Baris</button>
+                                <div class="form-text">Opsional. Tambahkan rundown/acara per sesi jika diperlukan.</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Pengeluaran <span
@@ -303,6 +398,7 @@
                                         class="bi bi-plus-circle me-1"></i>Tambah Pengeluaran</button>
                                 <div class="d-flex justify-content-end mt-2"><span class="me-2 fw-semibold">Total
                                         Pengeluaran:</span><span id="expensesGrandTotal" class="fw-bold">Rp0</span></div>
+                                <div class="form-text">Opsional. Catat biaya untuk kebutuhan laporan/operasional.</div>
                             </div>
                         </div>
                         <div class="col-lg-4">
@@ -312,20 +408,27 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">Status Harga
                                     <span class="badge bg-secondary" id="statusHarga">Berbayar</span></li>
                                 <li class="list-group-item">Diskon aktif jika persentase > 0.</li>
-                                <li class="list-group-item">Gunakan Maps untuk offline dan Zoom untuk online.</li>
+                                <li class="list-group-item">Jika event hybrid, isi Maps dan Zoom sekaligus.</li>
                             </ul>
                         </div>
                     </div>
                     <div class="d-flex justify-content-end mt-3 gap-2">
-                        <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i
-                                class="bi bi-x-circle me-1"></i> Batal</a>
-                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled><i
-                                class="bi bi-check-circle me-1"></i> Update Event</button>
+                        @if((bool)($event->is_published ?? false))
+                            <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan publikasi event ini?')">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-megaphone me-1"></i> Batal Terbitkan
+                                </button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Batal</a>
+                        <button type="submit" class="btn btn-primary" form="editEventForm" id="editSubmitBtn"><i class="bi bi-check-circle me-1"></i> Update Event</button>
                     </div>
-                    <div class="small text-muted mt-2" id="submitHint" style="display:none;">Lengkapi semua field wajib
-                        untuk mengaktifkan tombol Update.</div>
-                </form>
-            </div>
+                    <div class="small text-muted mt-2" id="editSubmitHint" style="display:none;">Lengkapi semua field wajib untuk mengaktifkan tombol Update.</div>
+                    </form>
+                </div>
+                
+            </div></div>
         </div>
     </div>
 @endsection
@@ -336,16 +439,16 @@
             min-height: 260px
         }
 
-        #eventForm label,
-        #eventForm .form-label,
-        #eventForm input,
-        #eventForm textarea,
-        #eventForm select {
+        #editEventForm label,
+        #editEventForm .form-label,
+        #editEventForm input,
+        #editEventForm textarea,
+        #editEventForm select {
             color: #000
         }
 
-        #eventForm input::placeholder,
-        #eventForm textarea::placeholder {
+        #editEventForm input::placeholder,
+        #editEventForm textarea::placeholder {
             color: #666
         }
 
@@ -355,6 +458,80 @@
 
         #mapsPreview {
             min-height: 240px
+        }
+
+        /* Yellow hint tooltip (Bootstrap tooltip custom class) */
+        .tooltip-hint-yellow .tooltip-inner{
+            background-color: var(--bs-warning-bg-subtle);
+            color: var(--bs-warning-text-emphasis);
+            border: 1px solid var(--bs-warning-border-subtle);
+            max-width: 320px;
+            text-align: left;
+        }
+        .tooltip-hint-yellow.bs-tooltip-top .tooltip-arrow::before{ border-top-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-bottom .tooltip-arrow::before{ border-bottom-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-start .tooltip-arrow::before{ border-left-color: var(--bs-warning-bg-subtle); }
+        .tooltip-hint-yellow.bs-tooltip-end .tooltip-arrow::before{ border-right-color: var(--bs-warning-bg-subtle); }
+    </style>
+    <style>
+        /* Edit modal: position near top */
+        #editEventModal .modal-dialog { margin-top: clamp(2rem, 8vh, 80px); }
+
+        /* Make the right-side helper panel sticky inside the modal-body so it follows when scrolling */
+        #editEventModal .event-side-sticky {
+            position: sticky;
+            top: 0.75rem;
+            z-index: 1060;
+            align-self: flex-start;
+            display: block;
+        }
+
+        /* Blue Tips alert: float to right and appear as a compact floating box */
+        /* Keep the Tips box full-width within the side column (no float) */
+        #editEventModal .event-side-sticky .alert {
+            display: block;
+            float: none;
+            max-width: 100%;
+            width: 100%;
+            text-align: left;
+            color: #000; /* ensure black text */
+        }
+
+        /* Force list items and headings in the side column to be black */
+        #editEventModal .event-side-sticky .list-group-item,
+        #editEventModal .event-side-sticky .list-group-item *,
+        #editEventModal .event-side-sticky .alert,
+        #editEventModal .event-side-sticky .alert * {
+            color: #000 !important;
+        }
+
+        /* Force all form labels, helper text, table headers and modal title inside edit modal to black */
+        #editEventModal label,
+        #editEventModal .form-label,
+        #editEventModal th,
+        #editEventModal .modal-title,
+        #editEventModal .form-text,
+        #editEventModal .text-muted,
+        #editEventModal small {
+            color: #000 !important;
+        }
+
+        /* Also ensure placeholders and muted helper texts appear black */
+        #editEventModal ::placeholder,
+        #editEventModal input::placeholder,
+        #editEventModal textarea::placeholder {
+            color: #000 !important;
+            opacity: 1 !important;
+        }
+
+        /* Stronger target: ensure all labels and small helper texts within the form are black */
+        #editEventModal #editEventForm label,
+        #editEventModal #editEventForm .form-label,
+        #editEventModal #editEventForm .form-label.fw-semibold,
+        #editEventModal #editEventForm small,
+        #editEventModal #editEventForm .form-text,
+        #editEventModal #editEventForm .input-group-text {
+            color: #000 !important;
         }
     </style>
 @endsection
@@ -370,7 +547,163 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Bootstrap tooltips
+            try {
+                if (window.bootstrap && typeof bootstrap.Tooltip === 'function') {
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        try { new bootstrap.Tooltip(el); } catch (_) { }
+                    });
+                }
+            } catch (_) { }
+
+            // Auto-show edit modal when visiting the edit page
+            try {
+                const modalEl = document.getElementById('editEventModal');
+                if (modalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
+                    const editModal = new bootstrap.Modal(modalEl);
+                    editModal.show();
+                }
+            } catch (e) { console.error(e); }
+            // Jenis Acara autocomplete (show after 2 chars)
+            (function setupJenisAutocomplete(){
+                const jenisInput = document.getElementById('jenis');
+                const box = document.getElementById('jenisSuggestions');
+                if(!jenisInput || !box) return;
+
+                const options = @json($jenisMerged ?? []);
+                const norm = (s) => String(s || '').trim();
+                const lower = (s) => norm(s).toLowerCase();
+
+                function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+                function show(items){
+                    if(!items.length){ hide(); return; }
+                    box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                    box.style.display = 'block';
+                }
+                function filter(q){
+                    const query = lower(q);
+                    if(query.length < 2) return [];
+                    return options
+                        .map(norm)
+                        .filter(Boolean)
+                        .filter(v => lower(v).includes(query))
+                        .slice(0, 8);
+                }
+
+                jenisInput.addEventListener('input', () => {
+                    const items = filter(jenisInput.value);
+                    show(items);
+                });
+                jenisInput.addEventListener('focus', () => {
+                    const items = filter(jenisInput.value);
+                    show(items);
+                });
+                jenisInput.addEventListener('blur', () => setTimeout(hide, 150));
+
+                box.addEventListener('mousedown', (e) => {
+                    const btn = e.target?.closest('[data-value]');
+                    if(!btn) return;
+                    e.preventDefault();
+                    jenisInput.value = btn.getAttribute('data-value') || '';
+                    hide();
+                });
+                document.addEventListener('click', (e) => {
+                    if (e.target === jenisInput) return;
+                    if (box.contains(e.target)) return;
+                    hide();
+                });
+            })();
+
+            // Materi autocomplete (show after 2 chars) + validation
+            (function setupMateriAutocomplete(){
+                const materiInput = document.getElementById('materi');
+                const box = document.getElementById('materiSuggestions');
+                const invalidText = document.getElementById('materiInvalidText');
+                if(!materiInput || !box) return;
+
+                const options = @json($materiMerged ?? []);
+                const norm = (s) => String(s || '').trim();
+                const lower = (s) => norm(s).toLowerCase();
+                const optionSet = new Set(options.map(v => lower(v)).filter(Boolean));
+
+                function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+                function show(items){
+                    if(!items.length){ hide(); return; }
+                    box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                    box.style.display = 'block';
+                }
+                function filter(q){
+                    const query = lower(q);
+                    const base = options.map(norm).filter(Boolean);
+                    if(!query) return base.slice(0, 30);
+                    return base
+                        .filter(v => lower(v).includes(query))
+                        .slice(0, 30);
+                }
+                function applyValidity(){
+                    const raw = norm(materiInput.value);
+                    if(!raw){
+                        materiInput.setCustomValidity('');
+                        if(invalidText) invalidText.style.display = 'none';
+                        return;
+                    }
+                    const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
+                    materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
+                    if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
+                }
+
+                materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
+                materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
+                materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
+
+                box.addEventListener('mousedown', (e) => {
+                    const btn = e.target?.closest('[data-value]');
+                    if(!btn) return;
+                    e.preventDefault();
+                    materiInput.value = btn.getAttribute('data-value') || '';
+                    hide();
+                    applyValidity();
+                });
+                document.addEventListener('click', (e) => {
+                    if (e.target === materiInput) return;
+                    if (box.contains(e.target)) return;
+                    hide();
+                });
+                applyValidity();
+            })();
+
             // CKEditor init
             ClassicEditor.create(document.querySelector('#deskripsi'), { toolbar: ['heading', '|', 'bold', 'italic', 'underline', '|', 'bulletedList', 'numberedList', '|', 'link', 'blockQuote', 'insertTable', '|', 'undo', 'redo', 'removeFormat'] }).then(e => { window.editorDeskripsi = e; const ta = document.getElementById('deskripsi'); if (ta) ta.value = e.getData(); e.model.document.on('change:data', () => { if (ta) ta.value = e.getData(); if (typeof window.updateSubmitState === 'function') { window.updateSubmitState(); } }); }).catch(console.error);
             ClassicEditor.create(document.querySelector('#terms'), { toolbar: ['bold', 'italic', 'underline', 'bulletedList', 'numberedList', 'link', 'undo', 'redo', 'removeFormat'] }).then(e => window.editorTerms = e).catch(console.error);
@@ -381,8 +714,23 @@
             imgInp?.addEventListener('change', ev => { const f = ev.target.files[0]; const wrap = document.getElementById('imagePreview'); const sizeInfo = document.getElementById('imageSizeInfo'); if (!f) { wrap.style.display = 'none'; if (sizeInfo) sizeInfo.textContent = ''; return; } const sizeMB = f.size / (1024 * 1024); if (sizeInfo) sizeInfo.textContent = 'Ukuran: ' + sizeMB.toFixed(2) + 'MB'; if (sizeMB > 5) { alert('Ukuran gambar melebihi 5MB. Pilih file lain.'); imgInp.value = ''; wrap.style.display = 'none'; if (sizeInfo) sizeInfo.textContent = ''; return; } const r = new FileReader(); r.onload = e => { document.getElementById('previewImg').src = e.target.result; wrap.style.display = 'block'; }; r.readAsDataURL(f); });
 
 
-            // Maps logic
-            let leafletMap = null, leafletMarker = null; const mapsInput = document.getElementById('maps'); const mapsPreview = document.getElementById('mapsPreview'); const btnResolveMaps = document.getElementById('btnResolveMaps'); const csrfToken = '{{ csrf_token() }}'; const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
+            // Maps + location mode logic
+            const locationModeEl = document.getElementById('lokasi');
+            const placeNameGroup = document.getElementById('placeNameGroup');
+            const placeNameInput = document.getElementById('place_name');
+            const mapsGroup = document.getElementById('mapsGroup');
+            const zoomGroup = document.getElementById('zoomGroup');
+
+            let leafletMap = null, leafletMarker = null;
+            const mapsInput = document.getElementById('maps');
+            const mapsPreview = document.getElementById('mapsPreview');
+            const btnResolveMaps = document.getElementById('btnResolveMaps');
+            const zoomInput = document.getElementById('zoom');
+            const mapsRequiredStar = document.getElementById('mapsRequiredStar');
+            const zoomRequiredStar = document.getElementById('zoomRequiredStar');
+            const placeNameRequiredStar = document.getElementById('placeNameRequiredStar');
+            const csrfToken = '{{ csrf_token() }}';
+            const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
             function parseLatLngFromUrl(url) {
                 if (!url) return null;
                 try {
@@ -399,10 +747,134 @@
                 return null;
             }
             function ensureMap() { if (!mapsPreview) return; if (!leafletMap) { leafletMap = L.map(mapsPreview).setView([-6.200, 106.816], 12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(leafletMap); } setTimeout(() => leafletMap.invalidateSize(), 50); }
-            function showMap(lat, lng) { if (!mapsPreview) return; mapsPreview.style.display = 'block'; ensureMap(); const pos = [lat, lng]; leafletMap.setView(pos, 14); if (leafletMarker) { leafletMarker.setLatLng(pos); } else { leafletMarker = L.marker(pos).addTo(leafletMap); } }
-            function tryRenderMap() { const v = mapsInput?.value || ''; const p = parseLatLngFromUrl(v); if (p) showMap(p.lat, p.lng); else if (mapsPreview) mapsPreview.style.display = 'none'; }
-            mapsInput?.addEventListener('change', tryRenderMap); mapsInput?.addEventListener('blur', tryRenderMap); tryRenderMap();
-            btnResolveMaps?.addEventListener('click', async () => { const url = mapsInput?.value || ''; if (!url) { alert('Masukkan link terlebih dahulu'); return; } try { btnResolveMaps.disabled = true; const resp = await fetch(resolveMapsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ url }) }); const data = await resp.json(); if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); } else alert(data.message || 'Koordinat tidak ditemukan.'); } catch (e) { alert('Gagal mendeteksi koordinat.'); } finally { btnResolveMaps.disabled = false; } });
+            function showMap(lat, lng) {
+                if (!mapsPreview) return;
+                mapsPreview.style.display = 'block';
+                ensureMap();
+                const pos = [lat, lng];
+                leafletMap.setView(pos, 14);
+                if (leafletMarker) { leafletMarker.setLatLng(pos); }
+                else { leafletMarker = L.marker(pos).addTo(leafletMap); }
+                const latInp = document.getElementById('latitude');
+                const lngInp = document.getElementById('longitude');
+                if (latInp) latInp.value = (+lat).toFixed(7);
+                if (lngInp) lngInp.value = (+lng).toFixed(7);
+            }
+            function tryRenderMap() {
+                const v = mapsInput?.value || '';
+                const p = parseLatLngFromUrl(v);
+                if (p) {
+                    showMap(p.lat, p.lng);
+                    return;
+                }
+                const latInp = document.getElementById('latitude');
+                const lngInp = document.getElementById('longitude');
+                const lat = latInp ? parseFloat(String(latInp.value || '')) : NaN;
+                const lng = lngInp ? parseFloat(String(lngInp.value || '')) : NaN;
+                if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                    showMap(lat, lng);
+                } else if (mapsPreview) {
+                    mapsPreview.style.display = 'none';
+                }
+            }
+            function syncMapsUI(){
+                const hasMaps = !!(mapsInput && String(mapsInput.value || '').trim());
+                if (btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
+                if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
+            }
+
+            function setResolveMapsLoading(isLoading){
+                if(!btnResolveMaps) return;
+                if(isLoading){
+                    if(!btnResolveMaps.dataset.originalHtml){
+                        btnResolveMaps.dataset.originalHtml = btnResolveMaps.innerHTML;
+                    }
+                    btnResolveMaps.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memuat...';
+                    btnResolveMaps.setAttribute('aria-busy', 'true');
+                }else{
+                    btnResolveMaps.innerHTML = btnResolveMaps.dataset.originalHtml || 'Deteksi';
+                    btnResolveMaps.removeAttribute('aria-busy');
+                }
+            }
+
+            function showPlaceNameIfNeeded(forceShow = false){
+                if(!placeNameGroup || !placeNameInput) return;
+                const mode = String(locationModeEl?.value || '').toLowerCase();
+                const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+                const hasValue = String(placeNameInput.value || '').trim() !== '';
+                const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+                placeNameGroup.classList.toggle('d-none', !shouldShow);
+                placeNameInput.required = shouldShow;
+                if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
+            }
+
+            function syncLocationModeUI(){
+                const mode = String(locationModeEl?.value || '').toLowerCase();
+                const isOffline = mode === 'offline';
+                const isOnline = mode === 'online';
+                const isHybrid = mode === 'hybrid';
+
+                if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+                if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+                if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+                if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+                if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+                if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
+
+                showPlaceNameIfNeeded(false);
+
+                if(isOnline){
+                    if(mapsInput) mapsInput.value = '';
+                    const latInp = document.getElementById('latitude');
+                    const lngInp = document.getElementById('longitude');
+                    if(latInp) latInp.value = '';
+                    if(lngInp) lngInp.value = '';
+                    if(mapsPreview) mapsPreview.style.display = 'none';
+                    if(btnResolveMaps) btnResolveMaps.disabled = true;
+                }
+                if(isOffline){
+                    if(zoomInput) zoomInput.value = '';
+                }
+                syncMapsUI();
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+            }
+
+            mapsInput?.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
+            mapsInput?.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
+            mapsInput?.addEventListener('blur', () => { tryRenderMap(); syncMapsUI(); });
+
+            tryRenderMap();
+            syncMapsUI();
+            btnResolveMaps?.addEventListener('click', async () => {
+                showPlaceNameIfNeeded(true);
+                if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+                    placeNameInput.focus();
+                }
+                const url = mapsInput?.value || '';
+                if (!url) { alert('Masukkan link terlebih dahulu'); return; }
+                try {
+                    setResolveMapsLoading(true);
+                    btnResolveMaps.disabled = true;
+                    const resp = await fetch(resolveMapsUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ url })
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); }
+                    else alert(data.message || 'Koordinat tidak ditemukan.');
+                } catch (e) {
+                    alert('Gagal mendeteksi koordinat.');
+                } finally {
+                    setResolveMapsLoading(false);
+                    btnResolveMaps.disabled = false;
+                    syncMapsUI();
+                }
+            });
+
+            locationModeEl?.addEventListener('change', syncLocationModeUI);
+            syncLocationModeUI();
 
             // Speakers (from Trainer API)
             const speakersContainer = document.getElementById('speakersContainer');
@@ -417,7 +889,16 @@
                 catch (e) { trainersCache = []; }
                 return trainersCache;
             }
-            function updateSpeakerRowsState() { speakersContainer?.querySelectorAll('.speaker-row').forEach((row, idx) => { const sel = row.querySelector('select[name="speakers[]"]'); const rm = row.querySelector('.remove-speaker'); if (sel) sel.required = (idx === 0); if (rm) rm.disabled = (idx === 0); }); }
+            function updateSpeakerRowsState() {
+                if (!speakersContainer) return;
+                const rows = speakersContainer.querySelectorAll('.speaker-row');
+                rows.forEach((row, idx) => {
+                    const sel = row.querySelector('select[name="speakers[]"]');
+                    const rm = row.querySelector('.remove-speaker');
+                    if (sel) sel.required = (idx === 0);
+                    if (rm) rm.disabled = (rows.length <= 1);
+                });
+            }
             function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join(', '); }
             function populateSpeakerSelect(selectEl, selectedName, trainers) {
                 if (!selectEl) return;
@@ -439,9 +920,20 @@
             function addSpeakerRow(prefill = '') {
                 if (!speakersContainer) return;
                 const div = document.createElement('div');
-                div.className = 'input-group speaker-row';
+                div.className = 'speaker-row border rounded p-2';
+                div.style.background = '#f8fafc';
                 const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
-                div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih pembicara</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>`;
+                div.innerHTML = `
+                    <div class="d-flex gap-2 align-items-center">
+                        <select name="speakers[]" class="form-select speaker-select" data-selected="${safe}">
+                            <option value="" selected disabled>Pilih narasumber</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="mt-2">
+                        <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                            placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                    </div>`;
                 speakersContainer.appendChild(div);
                 updateSpeakerRowsState();
                 refreshSpeakerSelects();
@@ -502,9 +994,24 @@
 
             // Flatpickr init for tanggal & discount_until
             let eventDateFp = null, discountUntilFp = null;
+            const eventDateInput = document.getElementById('tanggal');
+            if (eventDateInput) {
+                eventDateInput.removeAttribute('min');
+            }
             if (window.flatpickr) {
-                eventDateFp = flatpickr('#tanggal', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true });
-                discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true, clickOpens: true });
+                eventDateFp = flatpickr('#tanggal', {
+                    locale: 'id',
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'l, d F Y',
+                    disableMobile: true,
+                    allowInput: true,
+                    defaultDate: eventDateInput?.value || null,
+                    onChange: function () {
+                        if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
+                    }
+                });
+                discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, d F Y', disableMobile: true, clickOpens: true });
             }
             function updateDiscountUntilBounds() {
                 if (!discountUntilFp) return;
@@ -527,31 +1034,55 @@
                 if (current) { const curDate = new Date(current + 'T00:00:00'); if (curDate >= eventDate) { discountUntilFp.clear(); discountUntilInput.value = ''; } }
             }
             const eventDateEl = document.getElementById('tanggal');
-            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, updateDiscountUntilBounds));
+            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, () => { updateDiscountUntilBounds(); }));
             // Initial states
             toggleDiscountUntil();
             updateDiscountUntilBounds();
 
             // Schedule dynamic
-            const scheduleTableBody = document.querySelector('#scheduleTable tbody'); const addScheduleBtn = document.getElementById('addScheduleRow'); let scheduleIndex = 0;
-            function createScheduleRow(idx) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`; return tr; }
-            function addScheduleRow() { scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
-            addScheduleBtn?.addEventListener('click', addScheduleRow); scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } }); addScheduleRow();
+            const scheduleTableBody = document.querySelector('#scheduleTable tbody');
+            const addScheduleBtn = document.getElementById('addScheduleRow');
+            let scheduleIndex = 0;
+            if (scheduleTableBody) scheduleIndex = scheduleTableBody.querySelectorAll('tr').length;
+            function createScheduleRow(idx) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
+                return tr;
+            }
+            function addScheduleRow() { if (!scheduleTableBody) return; console.debug('addScheduleRow()', scheduleIndex); scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
+            // prefer delegated click so handler works even if button moves or is re-rendered
+            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addScheduleRow')) { console.debug('delegated addScheduleRow click'); addScheduleRow(); } });
+            // also attach directly to the button when available (reliability across browsers/modal states)
+            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addScheduleBtn click'); addScheduleRow(); });
+            scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } });
+            // only add an initial row if there are no existing rows
+            if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) { addScheduleRow(); }
 
             // Expenses dynamic
-            const expensesTableBody = document.querySelector('#expensesTable tbody'); const addExpenseBtn = document.getElementById('addExpenseRow'); const expensesGrandTotalEl = document.getElementById('expensesGrandTotal'); let expenseIndex = 0;
-            function clampNonNeg(input, step = 1) { input.addEventListener('keydown', e => { if (['-', 'Subtract'].includes(e.key) || e.keyCode === 189) e.preventDefault(); }); input.addEventListener('input', () => { if (input.value === '') return; let v = parseFloat(input.value); if (isNaN(v) || v < 0) v = 0; if (step >= 1) v = Math.floor(v); input.value = v; }); }
+            const expensesTableBody = document.querySelector('#expensesTable tbody');
+            const addExpenseBtn = document.getElementById('addExpenseRow');
+            const expensesGrandTotalEl = document.getElementById('expensesGrandTotal');
+            let expenseIndex = 0;
+            if (expensesTableBody) expenseIndex = expensesTableBody.querySelectorAll('tr').length;
+            function clampNonNeg(input, step = 1) { if (!input) return; input.addEventListener('keydown', e => { if (['-', 'Subtract'].includes(e.key) || e.keyCode === 189) e.preventDefault(); }); input.addEventListener('input', () => { if (input.value === '') return; let v = parseFloat(input.value); if (isNaN(v) || v < 0) v = 0; if (step >= 1) v = Math.floor(v); input.value = v; }); }
             function formatRupiah(n) { const v = Math.max(0, Math.floor(n || 0)); return 'Rp' + v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-            function recalcExpensesGrandTotal() { let total = 0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp => { const val = parseFloat(inp.value || '0'); if (!isNaN(val)) total += val; }); expensesGrandTotalEl.textContent = formatRupiah(total); }
-            function recalcExpenseRow(tr) { const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0'); const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0'); const tot = tr.querySelector('input[data-expense-total]'); const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit); if (tot) tot.value = Math.max(0, Math.round(total)); recalcExpensesGrandTotal(); }
-            function createExpenseRow(idx) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`; const q = tr.querySelector('input[data-expense-qty]'); const u = tr.querySelector('input[data-expense-unit]'); clampNonNeg(q, 1); clampNonNeg(u, 1); q.addEventListener('input', () => recalcExpenseRow(tr)); u.addEventListener('input', () => recalcExpenseRow(tr)); return tr; }
-            function addExpenseRow() { const row = createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
-            addExpenseBtn?.addEventListener('click', addExpenseRow); expensesTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove-expense"]'); if (b) { b.closest('tr').remove(); recalcExpensesGrandTotal(); } }); addExpenseRow();
+            function recalcExpensesGrandTotal() { if (!expensesTableBody || !expensesGrandTotalEl) return; let total = 0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp => { const val = parseFloat(inp.value || '0'); if (!isNaN(val)) total += val; }); expensesGrandTotalEl.textContent = formatRupiah(total); }
+            function recalcExpenseRow(tr) { if (!tr) return; const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0'); const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0'); const tot = tr.querySelector('input[data-expense-total]'); const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit); if (tot) tot.value = Math.max(0, Math.round(total)); recalcExpensesGrandTotal(); }
+            function createExpenseRow(idx) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`;
+                const q = tr.querySelector('input[data-expense-qty]'); const u = tr.querySelector('input[data-expense-unit]'); clampNonNeg(q, 1); clampNonNeg(u, 1); q.addEventListener('input', () => recalcExpenseRow(tr)); u.addEventListener('input', () => recalcExpenseRow(tr)); return tr;
+            }
+            function addExpenseRow() { if (!expensesTableBody) return; console.debug('addExpenseRow()', expenseIndex); const row = createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
+            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addExpenseRow')) { console.debug('delegated addExpenseRow click'); addExpenseRow(); } });
+            if (addExpenseBtn) addExpenseBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addExpenseBtn click'); addExpenseRow(); });
+            expensesTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove-expense"]'); if (b) { b.closest('tr').remove(); recalcExpensesGrandTotal(); } });
+            if (expensesTableBody && expensesTableBody.querySelectorAll('tr').length === 0) { addExpenseRow(); }
 
             // Benefits dynamic (serialize to hidden field)
             const benefitsContainer = document.getElementById('benefitsContainer');
             const addBenefitBtn = document.getElementById('addBenefitRow');
-            const benefitHidden = document.getElementById('benefitHidden');
+            const benefitHidden = document.getElementById('benefit');
             function renderBenefitRow(prefill = '') {
                 if (!benefitsContainer) return;
                 const row = document.createElement('div');
@@ -574,19 +1105,64 @@
             })();
 
             // Validation & submit state
-            const form = document.getElementById('eventForm'); if (form) {
-                const submitBtn = document.getElementById('submitBtn'); const submitHint = document.getElementById('submitHint'); const requiredFields = Array.from(form.querySelectorAll('[required]'));
-                function fieldFriendlyName(el) { if (!el) return 'Field'; const id = el.id || ''; const name = el.name || ''; if (id === 'image' || name === 'image') return 'Gambar Event'; if (id === 'nama' || name === 'title') return 'Nama Event'; if (name === 'speakers[]') return 'Nama Pembicara'; if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat'; if (id === 'deskripsi' || name === 'description') return 'Deskripsi'; if (id === 'tanggal' || name === 'event_date') return 'Tanggal'; if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai'; if (id === 'lokasi' || name === 'location') return 'Lokasi'; if (id === 'harga' || name === 'price') return 'Harga'; return id || name || 'Field'; }
-                function missingRequired() { return requiredFields.filter(f => !(f.value || '').trim()); }
+            const form = document.getElementById('editEventForm'); if (form) {
+                const submitBtn = document.getElementById('editSubmitBtn');
+                const submitHint = document.getElementById('editSubmitHint');
+                const getRequiredFields = () => {
+                    const fields = [
+                        document.getElementById('nama'),
+                        form.querySelector('select[name="speakers[]"]'),
+                        document.getElementById('materi'),
+                        document.getElementById('manage_action'),
+                        document.getElementById('jenis'),
+                        document.getElementById('short_desc'),
+                        document.getElementById('deskripsi'),
+                        document.getElementById('tanggal'),
+                        document.getElementById('masuk1'),
+                        document.getElementById('lokasi'),
+                        document.getElementById('hargaDisplay'),
+                    ];
+
+                    const mode = String(document.getElementById('lokasi')?.value || '').toLowerCase();
+                    if (mode === 'offline' || mode === 'hybrid') {
+                        fields.push(document.getElementById('maps'));
+                    }
+                    if (mode === 'online' || mode === 'hybrid') {
+                        fields.push(document.getElementById('zoom'));
+                    }
+                    if ((mode === 'offline' || mode === 'hybrid') && !document.getElementById('placeNameGroup')?.classList.contains('d-none')) {
+                        fields.push(document.getElementById('place_name'));
+                    }
+
+                    return fields.filter(el => el && !el.disabled);
+                };
+
+                function fieldFriendlyName(el) {
+                    if (!el) return 'Field';
+                    const id = el.id || '';
+                    const name = el.name || '';
+                    if (id === 'image' || name === 'image') return 'Gambar Event';
+                    if (id === 'nama' || name === 'title') return 'Nama Event';
+                    if (name === 'speakers[]') return 'Nama Pembicara';
+                    if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
+                    if (id === 'deskripsi' || name === 'description') return 'Deskripsi';
+                    if (id === 'tanggal' || name === 'event_date') return 'Tanggal';
+                    if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
+                    if (id === 'lokasi' || name === 'location_mode') return 'Lokasi';
+                    if (id === 'place_name' || name === 'place_name') return 'Nama Tempat';
+                    if (id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
+                    return id || name || 'Field';
+                }
+
+                function missingRequired() { return getRequiredFields().filter(f => !(f.value || '').trim()); }
                 window.updateSubmitState = function () {
-                    const filled = missingRequired().length === 0;
+                    const missing = missingRequired();
                     const sdEl = document.getElementById('short_desc');
                     const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                     const overLimit = sdEl ? sdWords > 40 : false;
-                    if (submitBtn) submitBtn.disabled = (!filled || overLimit);
                     if (submitHint) {
-                        if (!filled) {
-                            submitHint.textContent = 'Lengkapi: ' + missingRequired().map(fieldFriendlyName).join(', ');
+                        if (missing.length) {
+                            submitHint.textContent = 'Cek wajib isi: ' + missing.map(fieldFriendlyName).join(', ');
                             submitHint.style.display = 'block';
                         } else if (overLimit) {
                             submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';
@@ -596,7 +1172,7 @@
                         }
                     }
                 };
-                requiredFields.forEach(f => ['input', 'change', 'blur'].forEach(ev => f.addEventListener(ev, window.updateSubmitState)));
+                ['input', 'change', 'blur'].forEach(ev => form.addEventListener(ev, window.updateSubmitState));
                 window.updateSubmitState();
                 form.addEventListener('submit', ev => {
                     if (window.editorDeskripsi) document.getElementById('deskripsi').value = window.editorDeskripsi.getData(); if (window.editorTerms) document.getElementById('terms').value = window.editorTerms.getData(); updateSpeakerCombined(); // sync hidden harga
@@ -619,7 +1195,18 @@
                             shortDescEl.classList.remove('border-danger');
                         }
                     }
-                    let ok = true; requiredFields.forEach(f => { if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; } else f.classList.remove('border-danger'); }); if (!ok) { ev.preventDefault(); alert('Lengkapi semua field wajib.\nYang belum: ' + missingRequired().map(fieldFriendlyName).join(', ')); return; } expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
+                    const reqNow = getRequiredFields();
+                    let ok = true;
+                    reqNow.forEach(f => {
+                        if (!String(f.value || '').trim()) { f.classList.add('border-danger'); ok = false; }
+                        else f.classList.remove('border-danger');
+                    });
+                    if (!ok) {
+                        ev.preventDefault();
+                        alert('Lengkapi semua field wajib.\nYang belum: ' + missingRequired().map(fieldFriendlyName).join(', '));
+                        return;
+                    }
+                    expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
                 });
 
                 // Live word count update for short description
@@ -631,7 +1218,16 @@
                     shortDescCountEl.textContent = words.length;
                     if (words.length > 40) { shortDescCountEl.classList.add('text-danger'); } else { shortDescCountEl.classList.remove('text-danger'); }
                 }
+                // Direct listeners (keep) + delegated fallback for robustness.
                 ['input', 'change', 'blur'].forEach(ev => shortDescEl2?.addEventListener(ev, () => { updateShortDescCount(); window.updateSubmitState(); }));
+                document.addEventListener('input', function(e){
+                    const t = e.target;
+                    if(!(t instanceof HTMLElement)) return;
+                    if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                        updateShortDescCount();
+                        if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                    }
+                }, true);
                 updateShortDescCount();
             }
             // Event listener for add benefit button

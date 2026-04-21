@@ -118,7 +118,9 @@ class AdminController extends Controller
             ->get()
             ->filter(function (TrainerNotification $notification) {
                 $data = is_array($notification->data) ? $notification->data : [];
-                $status = (string) data_get($data, 'invitation_status', 'pending');
+                $status = method_exists($notification, 'effectiveInvitationStatus')
+                    ? $notification->effectiveInvitationStatus()
+                    : (string) data_get($data, 'invitation_status', 'pending');
                 if ($status !== 'pending') {
                     return false;
                 }
@@ -150,7 +152,9 @@ class AdminController extends Controller
                     'id' => $notification->id,
                     'trainer' => $notification->trainer?->name ?? 'Trainer',
                     'title' => (string) $notification->title,
-                    'entity_type' => (string) data_get($data, 'entity_type', 'course'),
+                    'entity_type' => method_exists($notification, 'effectiveEntityType')
+                        ? $notification->effectiveEntityType()
+                        : (string) data_get($data, 'entity_type', 'course'),
                     'entity_id' => (int) data_get($data, 'entity_id', 0),
                     'due_at_text' => $dueAtText,
                 ];
@@ -298,6 +302,85 @@ class AdminController extends Controller
 
     public function reports()
     {
+        $activeTab = (string) request('tab', 'pendapatan');
+
+        // Period selection shared across tabs (?period=YYYY-MM)
+        $earliestDate = Carbon::create(2025, 11, 1, 0, 0, 0);
+        $periodParam = (string) request('period', '');
+        if ($periodParam && preg_match('/^(\d{4})-(\d{2})$/', $periodParam, $m)) {
+            $selectedYear = (int) $m[1];
+            $selectedMonth = (int) $m[2];
+        } else {
+            $selectedYear = (int) now()->year;
+            $selectedMonth = (int) now()->month;
+        }
+        $selectedDate = Carbon::create($selectedYear, $selectedMonth, 1, 0, 0, 0);
+        if ($selectedDate->lt($earliestDate)) {
+            $selectedDate = $earliestDate->copy();
+        }
+
+        // Chart labels (days in selected month)
+        $daysInMonth = (int) $selectedDate->daysInMonth;
+        $chartLabels = range(1, $daysInMonth);
+
+        // === Pertumbuhan chart: free vs paid by EVENT DATE (per-day in selected month) ===
+        $paidMap = \App\Models\Event::query()
+            ->whereNotNull('event_date')
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
+            ->whereRaw('COALESCE(price, 0) > 0')
+            ->selectRaw('DAY(event_date) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $freeMap = \App\Models\Event::query()
+            ->whereNotNull('event_date')
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
+            ->whereRaw('COALESCE(price, 0) <= 0')
+            ->selectRaw('DAY(event_date) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $chartPaidData = [];
+        $chartFreeData = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $chartPaidData[] = (int) ($paidMap[$d] ?? 0);
+            $chartFreeData[] = (int) ($freeMap[$d] ?? 0);
+        }
+
+        $totalPaidEventsSelected = array_sum($chartPaidData);
+        $totalFreeEventsSelected = array_sum($chartFreeData);
+
+        // === Operasional chart: create vs manage by CREATED AT (per-day in selected month) ===
+        $createMap = \App\Models\Event::query()
+            ->whereYear('created_at', $selectedDate->year)
+            ->whereMonth('created_at', $selectedDate->month)
+            ->where(function ($q) {
+                $q->where('manage_action', 'create')->orWhereNull('manage_action');
+            })
+            ->selectRaw('DAY(created_at) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $manageMap = \App\Models\Event::query()
+            ->whereYear('created_at', $selectedDate->year)
+            ->whereMonth('created_at', $selectedDate->month)
+            ->where('manage_action', 'manage')
+            ->selectRaw('DAY(created_at) as d, COUNT(*) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $chartCreateData = [];
+        $chartManageData = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $chartCreateData[] = (int) ($createMap[$d] ?? 0);
+            $chartManageData[] = (int) ($manageMap[$d] ?? 0);
+        }
+
+        $totalCreateEventsSelected = array_sum($chartCreateData);
+        $totalManageEventsSelected = array_sum($chartManageData);
+
         // Build revenue per event and basic finance overview for the report
         // Paid statuses based on Midtrans typical values
         $paidStatuses = ['settlement', 'capture', 'success'];
@@ -309,10 +392,14 @@ class AdminController extends Controller
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
-        // Get events with participants count
+        // Get events filtered by the selected month/year with participants count + average ratings
         $events = \App\Models\Event::query()
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
             ->withCount('registrations')
-            ->orderBy('event_date', 'asc')
+            ->withAvg('feedbacks as event_rating_avg', 'rating')
+            ->withAvg('feedbacks as speaker_rating_avg', 'speaker_rating')
+            ->orderBy('event_date', 'desc')
             ->get();
 
         // Categorize events: upcoming, active, completed
@@ -350,31 +437,69 @@ class AdminController extends Controller
         $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
-            // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
-            $expense = (float) ($e->expenses_total ?? 0.0);
-            $profit = $revenue - $expense;
+
+            // Detail items for the modal
+            $registeredCount = (int) $e->registrations()->where('status', 'active')->count();
+            $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+
+            $incomeRows = [
+                ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
+            ];
+
+            $expenseModels = $e->expenses()->get(['item', 'quantity', 'unit_price', 'total']);
+            $expenseRows = $expenseModels->map(function($row) {
+                return [
+                    'label' => $row->item,
+                    'qty' => (int)($row->quantity ?? 0),
+                    'unit' => (float)($row->unit_price ?? 0),
+                    'total' => (float)($row->total ?? 0),
+                ];
+            })->values()->all();
+
+            // Add trainer salaries from event_speakers
+            $speakerSalaries = \App\Models\EventSpeaker::where('event_id', $e->id)
+                ->where('salary', '>', 0)
+                ->get(['name', 'salary']);
+            foreach ($speakerSalaries as $sp) {
+                $expenseRows[] = [
+                    'label' => 'Gaji Trainer: ' . $sp->name,
+                    'qty'   => 1,
+                    'unit'  => (float) $sp->salary,
+                    'total' => (float) $sp->salary,
+                ];
+            }
+            $salaryTotal = $speakerSalaries->sum('salary');
+            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $salaryTotal;
+            $profit  = $revenue - $expense;
+
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
+                'registered_count' => $registeredCount,
                 'price' => (float) $price,
                 'revenue' => $revenue,
                 'expense' => $expense,
                 'profit' => $profit,
+                'income_rows' => $incomeRows,
+                'expense_rows' => $expenseRows,
             ];
         });
 
         // Build rows for Pertumbuhan table (growth metrics per event)
         $growthRows = $events->map(function ($e) {
+            $eventRating = $e->event_rating_avg;
+            $speakerRating = $e->speaker_rating_avg;
+
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
                 'speaker' => $e->speaker,
-                'event_rating' => null, // placeholder until rating source available
-                'speaker_rating' => null, // placeholder
+                'event_rating' => is_null($eventRating) ? null : round((float) $eventRating, 1),
+                'speaker_rating' => is_null($speakerRating) ? null : round((float) $speakerRating, 1),
             ];
         });
 
@@ -395,12 +520,13 @@ class AdminController extends Controller
                 'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
                 // attendance QR data
                 'qr_token' => $e->attendance_qr_token,
-                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
+                'qr_url' => $e->attendance_qr_token ? url('/events/' . $e->id . '?t=' . $e->attendance_qr_token) : null,
                 'qr_image_url' => $e->attendance_qr_image_url,
             ];
         });
 
         return view('admin.reports', compact(
+            'activeTab',
             'eventRows',
             'growthRows',
             'operationalRows',
@@ -408,7 +534,16 @@ class AdminController extends Controller
             'completedCount',
             'upcomingCount',
             'percentCompleted',
-            'percentNotCompleted'
+            'percentNotCompleted',
+            'chartLabels',
+            'chartFreeData',
+            'chartPaidData',
+            'chartCreateData',
+            'chartManageData',
+            'totalPaidEventsSelected',
+            'totalFreeEventsSelected',
+            'totalCreateEventsSelected',
+            'totalManageEventsSelected'
         ));
     }
 

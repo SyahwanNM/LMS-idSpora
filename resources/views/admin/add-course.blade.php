@@ -32,6 +32,7 @@
 
                     <form class="box_form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="status" value="archive">
                         <h4 class="h5 mb-2">Formulir Pengaturan Course</h4>
                         <div class="mb-3">
                             <label class="form-label text-dark" for="course-title">Judul Course <span class="text-danger">*</span></label>
@@ -39,16 +40,7 @@
                             <div class="sanity-msg" data-for="course-title"></div>
                         </div>
 
-                        <div class="row g-3 box_select_level_status">
-                            <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-status">Status <span class="text-danger">*</span></label>
-                                <select id="course-status" name="status" class="form-select" required>
-                                    <option value="" selected disabled>Choose your Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="archive">Archive</option>
-                                </select>
-                                <div class="sanity-msg" data-for="course-status"></div>
-                            </div>
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label text-dark" for="course-level">Level Course <span class="text-danger">*</span></label>
                                 <select id="course-level" name="level" class="form-select" required>
@@ -59,22 +51,21 @@
                                 </select>
                                 <div class="sanity-msg" data-for="course-level"></div>
                             </div>
+                            @if(isset($categories) && $categories->count())
+                            <div class="col-md-6">
+                                <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
+                                <select id="course-category" name="category_id" class="form-select" required>
+                                    <option value="" selected disabled>Pilih kategori</option>
+                                    @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="sanity-msg" data-for="course-category"></div>
+                            </div>
+                            @else
+                            <input type="hidden" name="category_id" value="1">
+                            @endif
                         </div>
-
-                        @if(isset($categories) && $categories->count())
-                        <div class="box_select_kategori mb-3">
-                            <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
-                            <select id="course-category" name="category_id" class="form-select" required>
-                                <option value="" selected disabled>Pilih kategori</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                            <div class="sanity-msg" data-for="course-category"></div>
-                        </div>
-                        @else
-                        <input type="hidden" name="category_id" value="1">
-                        @endif
 
                         <div class="box_select_trainer mb-3">
                             <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
@@ -93,6 +84,55 @@
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
+                        <!-- Akses Course (Freemium Mode) -->
+                        <div class="mb-3">
+                            <label for="free_access_mode" class="form-label text-dark">Akses Course</label>
+                            <select name="free_access_mode" id="free_access_mode" class="form-select">
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
+                            </select>
+                            <div class="form-text text-muted small">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-dark">Reseller Course</label>
+                            @php
+                                $isResellerCourse = (int) old('is_reseller_course', 0);
+                            @endphp
+                            <div class="reseller-course-radios d-flex flex-wrap align-items-center" style="column-gap: 2rem; row-gap: .5rem;" role="radiogroup" aria-label="Reseller Course">
+                                <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
+                                    <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0"
+                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
+                                    <label class="text-dark" for="is_reseller_course_0">Tidak</label>
+                                </div>
+                                <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
+                                    <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1"
+                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
+                                    <label class="text-dark" for="is_reseller_course_1">Ya</label>
+                                </div>
+                            </div>
+                            <div class="form-text">Jika Ya, course ini ditandai sebagai course reseller.</div>
+                            <style>
+                                .reseller-course-radios input[type="radio"]{
+                                    appearance: auto !important;
+                                    -webkit-appearance: radio !important;
+                                    -moz-appearance: auto !important;
+                                    vertical-align: middle !important;
+                                }
+                                .reseller-course-radios label{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    margin: 0 0 0 .5rem !important;
+                                    cursor: pointer;
+                                    user-select: none;
+                                }
+                                .reseller-course-radios .reseller-course-option:first-child label{
+                                    margin-left: .05rem !important;
+                                }
+                            </style>
+                        </div>
+
                         <div class="box_select_deskripsi mb-3">
                             <label class="form-label text-dark" for="course-description">Deskripsi Course</label>
                             <textarea id="course-description" name="description" class="form-control" placeholder="Deskripsikan course secara lengkap"></textarea>
@@ -102,12 +142,22 @@
                         <div class="box_select_deskripsi mb-1">
                             <label class="form-label text-dark" for="course-thumbnail">Thumbnail/Intro Media <span class="text-danger">*</span></label>
                             <input id="course-thumbnail" name="image" type="file" class="form-control" accept="image/*,video/mp4,video/webm,video/ogg" required>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <div id="course-thumbnail-preview" class="border rounded bg-light overflow-hidden d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                    <small class="text-muted">Preview</small>
+                                </div>
+                            </div>
                             <div class="form-text">Bisa upload gambar <b>atau</b> video (mp4, webm, ogg)</div>
                             <div class="sanity-msg" data-for="course-thumbnail"></div>
                         </div>
                         <div class="box_select_deskripsi mb-3">
                             <label class="form-label text-dark" for="card-thumbnail">Thumbnail Card Course <span class="text-danger">*</span></label>
                             <input id="card-thumbnail" name="card_thumbnail" type="file" class="form-control" accept="image/*" required>
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <div id="card-thumbnail-preview" class="border rounded bg-light overflow-hidden d-flex align-items-center justify-content-center" style="width:72px;height:72px;">
+                                    <small class="text-muted">Preview</small>
+                                </div>
+                            </div>
                             <div class="form-text">Upload gambar untuk thumbnail card course (jpg/png/webp)</div>
                             <div class="sanity-msg" data-for="card-thumbnail"></div>
                         </div>
@@ -800,7 +850,6 @@
         (function() {
             const fields = {
                 title: document.getElementById('course-title'),
-                status: document.getElementById('course-status'),
                 level: document.getElementById('course-level'),
                 category: document.getElementById('course-category'),
                 trainer: document.getElementById('course-trainer'),
@@ -810,6 +859,58 @@
                 cardThumbnail: document.getElementById('card-thumbnail'),
                 duration: document.getElementById('course-duration'),
             };
+
+            function onlyDigits(s) {
+                return (s || '').toString().replace(/[^0-9]/g, '');
+            }
+
+            function formatThousandsID(digits) {
+                let d = onlyDigits(digits);
+                // keep at least one digit if user typed zeros
+                d = d.replace(/^0+(?=\d)/, '');
+                if (d.length === 0) return '';
+                // group by thousands with '.'
+                return d.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function countDigitsBeforeCaret(value, caretPos) {
+                if (caretPos == null) return 0;
+                const before = (value || '').slice(0, Math.max(0, caretPos));
+                const m = before.match(/\d/g);
+                return m ? m.length : 0;
+            }
+
+            function caretPosForDigitIndex(formattedValue, digitIndex) {
+                if (digitIndex <= 0) return 0;
+                let seen = 0;
+                for (let i = 0; i < formattedValue.length; i++) {
+                    if (/[0-9]/.test(formattedValue[i])) {
+                        seen++;
+                        if (seen >= digitIndex) return i + 1;
+                    }
+                }
+                return formattedValue.length;
+            }
+
+            function formatPriceFieldLive(inputEl) {
+                if (!inputEl) return;
+                const raw = inputEl.value || '';
+                const caret = inputEl.selectionStart;
+                const digitIndex = countDigitsBeforeCaret(raw, caret);
+
+                const digits = onlyDigits(raw);
+                const formatted = formatThousandsID(digits);
+                if (formatted === raw) return;
+
+                inputEl.value = formatted;
+                // Restore caret so typing feels natural
+                const newCaret = caretPosForDigitIndex(formatted, digitIndex);
+                try {
+                    inputEl.setSelectionRange(newCaret, newCaret);
+                } catch (e) {
+                    // ignore (some input types / browsers)
+                }
+            }
 
             function msgEl(id) {
                 return document.querySelector('.sanity-msg[data-for="' + id + '"]');
@@ -841,6 +942,8 @@
             }
 
             function validateStatus() {
+                // Status is enforced as 'archive' for new courses; field may not exist in markup.
+                if (!fields.status) return true;
                 const v = fields.status.value;
                 const ok = (v === 'active' || v === 'archive');
                 setIndicator('course-status', ok, 'Status wajib dipilih.');
@@ -936,17 +1039,29 @@
 
             // live validation (guard for optional fields)
             fields.title?.addEventListener('input', validateTitle);
-            fields.status?.addEventListener('change', validateStatus);
             fields.level?.addEventListener('change', validateLevel);
             fields.category?.addEventListener('change', validateCategory);
             fields.trainer?.addEventListener('change', validateTrainer);
-            fields.price?.addEventListener('input', validatePrice);
+            fields.price?.addEventListener('input', function() {
+                formatPriceFieldLive(fields.price);
+                validatePrice();
+            });
+            fields.price?.addEventListener('blur', function() {
+                // ensure final formatting on blur
+                formatPriceFieldLive(fields.price);
+                validatePrice();
+            });
             fields.thumbnail?.addEventListener('change', validateThumbnail);
             fields.cardThumbnail?.addEventListener('change', validateCardThumbnail);
             fields.duration?.addEventListener('input', validateDuration);
 
             // initial state
             validateAll();
+
+            // apply formatting if field has an initial value (e.g. browser autofill)
+            if (fields.price && (fields.price.value || '').trim() !== '') {
+                formatPriceFieldLive(fields.price);
+            }
 
             const formEl = document.querySelector('form.box_form');
             if (formEl) {
@@ -961,6 +1076,11 @@
                         }
                         return;
                     }
+                    // enforce archive on create
+                    const statusInputs = formEl.querySelectorAll('input[name="status"], select[name="status"]');
+                    statusInputs.forEach((el) => {
+                        if (el) el.value = 'archive';
+                    });
                     // normalize price to digits
                     const priceInput = document.getElementById('course-price');
                     if (priceInput) {
@@ -1088,10 +1208,10 @@
             }
 
             function recalcRow(tr) {
-                const qty = parseInt(tr.querySelector('input[data-expense-qty]')?.value || '0', 10);
+                const qty = Math.max(1, parseInt(tr.querySelector('input[data-expense-qty]')?.value || '1', 10));
                 const unit = parseInt(tr.querySelector('input[data-expense-unit]')?.value || '0', 10);
                 const totalEl = tr.querySelector('input[data-expense-total]');
-                const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit);
+                const total = qty * (isNaN(unit) ? 0 : unit);
                 if (totalEl) totalEl.value = Math.max(0, total);
             }
 
@@ -1108,7 +1228,7 @@
                 tr.innerHTML = `
                     <th scope="row" data-expense-no></th>
                     <td><input type="text" class="form-control form-control-sm" name="expenses[${rowIndex}][item]" placeholder="Nama kebutuhan"></td>
-                    <td style="width:120px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][quantity]" data-expense-qty min="0" step="1" value="0"></td>
+                    <td style="width:120px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][quantity]" data-expense-qty min="1" step="1" value="1"></td>
                     <td style="width:180px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][unit_price]" data-expense-unit min="0" step="1" value="0"></td>
                     <td style="width:180px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][total]" data-expense-total readonly value="0"></td>
                     <td style="width:80px" class="text-center">
@@ -1183,6 +1303,85 @@
                     trainerSelect.innerHTML = '<option value="" selected disabled>Gagal memuat trainer</option>';
                 });
         })();
+
+            // File previews (small box)
+            (function(){
+                function setPlaceholder(previewEl){
+                    if(!previewEl) return;
+                    // cleanup previous object URL
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+                    previewEl.dataset.objectUrl = '';
+                    previewEl.innerHTML = '<small class="text-muted">Preview</small>';
+                }
+
+                function renderPreview(inputEl, previewEl, allowVideo){
+                    if(!inputEl || !previewEl) return;
+                    const file = inputEl.files && inputEl.files[0];
+                    if(!file){
+                        setPlaceholder(previewEl);
+                        return;
+                    }
+
+                    // cleanup old
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+
+                    const url = URL.createObjectURL(file);
+                    previewEl.dataset.objectUrl = url;
+                    previewEl.innerHTML = '';
+
+                    const type = (file.type || '').toLowerCase();
+                    const isImage = type.startsWith('image/');
+                    const isVideo = allowVideo && type.startsWith('video/');
+
+                    if(isImage){
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Preview';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        previewEl.appendChild(img);
+                        return;
+                    }
+
+                    if(isVideo){
+                        const video = document.createElement('video');
+                        video.src = url;
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.loop = true;
+                        video.autoplay = true;
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        previewEl.appendChild(video);
+                        return;
+                    }
+
+                    // fallback
+                    const span = document.createElement('small');
+                    span.className = 'text-muted';
+                    span.textContent = file.name || 'File dipilih';
+                    previewEl.appendChild(span);
+                }
+
+                const introInput = document.getElementById('course-thumbnail');
+                const introPreview = document.getElementById('course-thumbnail-preview');
+                const cardInput = document.getElementById('card-thumbnail');
+                const cardPreview = document.getElementById('card-thumbnail-preview');
+
+                setPlaceholder(introPreview);
+                setPlaceholder(cardPreview);
+
+                introInput?.addEventListener('change', () => renderPreview(introInput, introPreview, true));
+                cardInput?.addEventListener('change', () => renderPreview(cardInput, cardPreview, false));
+            })();
     </script>
 </body>
 

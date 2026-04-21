@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Schema;
 class CourseRevenueDetailController extends Controller
 {
     /**
-     * Enrollment statuses that indicate a successful (paid/active) enrollment.
+     * Enrollment statuses that indicate a successful (paid/active/completed) enrollment.
      */
-    private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired'];
+    private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired', 'completed'];
 
     public function show(Request $request)
     {
@@ -24,23 +24,28 @@ class CourseRevenueDetailController extends Controller
         }
 
         $course = Course::query()
-            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end')
+            ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end', 'expenses_json', 'created_at')
             ->findOrFail($courseId);
 
         [$from, $to] = $this->parseDateRange($request);
 
         $base = Enrollment::query()
+            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+            ->leftJoin('manual_payments', function ($join) {
+                $join->on('enrollments.id', '=', 'manual_payments.enrollment_id')
+                     ->whereIn('manual_payments.status', ['paid', 'verified', 'settled']);
+            })
             ->where('enrollments.course_id', $course->id)
             ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
             ->whereBetween('enrollments.enrolled_at', [$from, $to]);
 
-        $transactionsCount = (int) $base->clone()->count();
+        $transactionsCount = (int) $base->clone()->count('enrollments.id');
         $participantsCount = (int) $base->clone()->distinct('enrollments.user_id')->count('enrollments.user_id');
-        $lastPaidAt = $base->clone()->max('enrollments.enrolled_at');
 
-        $priceExpr = $this->coursePriceExpr('enrollments.enrolled_at');
+        $calcPrice = $this->coursePriceExpr('enrollments.enrolled_at');
+        $priceExpr = 'COALESCE(manual_payments.amount, ' . $calcPrice . ')';
+
         $revenueTotal = (float) ($base->clone()
-            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
             ->selectRaw('SUM(' . $priceExpr . ') as total_revenue')
             ->value('total_revenue') ?: 0);
 
@@ -97,7 +102,7 @@ class CourseRevenueDetailController extends Controller
                 'to' => $to,
             ],
             'stats' => [
-                'last_paid_at' => $lastPaidAt ? Carbon::parse($lastPaidAt) : null,
+                'created_at' => $course->created_at ? Carbon::parse($course->created_at) : null,
                 'participants' => $participantsCount,
                 'transactions' => $transactionsCount,
                 'status' => $course->status ? ucfirst((string) $course->status) : '-',

@@ -115,7 +115,7 @@
                     <td>{{ $course->id }}</td>
                     <td>
                         <div style="font-weight:bold">{{ $course->name }}</div>
-                        <div class="muted">{{ $course->description ? Str::limit(strip_tags((string) $course->description), 80) : '' }}</div>
+                        <div class="muted">{{ $course->description ? \Illuminate\Support\Str::limit(strip_tags((string) $course->description), 80) : '' }}</div>
                     </td>
                     <td>{{ optional($course->category)->name ?? '-' }}</td>
                     <td>{{ ucfirst((string) $course->level) }}</td>

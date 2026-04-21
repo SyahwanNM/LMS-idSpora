@@ -73,20 +73,23 @@ class PublicEventController extends Controller
 			}
 		}
 
-		// Filter: event_type (online|onsite|hybrid)
+		// Filter: event_type (online|offline|hybrid)
+		// online  = has zoom_link, no physical location
+		// offline = no zoom_link, has physical location
+		// hybrid  = has both zoom_link and physical location
 		if ($type = $request->get('event_type')) {
 			if ($type === 'online') {
-				$query->whereNotNull('zoom_link')
-					->where(function($q){
-						$q->whereNull('location')
-						  ->orWhere('location', 'like', '%online%');
+				$query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
+					->where(function ($q) {
+						$q->whereNull('location')->orWhere('location', '');
 					});
-			} elseif ($type === 'onsite') {
-				$query->whereNull('zoom_link')
-					->whereNotNull('location');
+			} elseif ($type === 'offline') {
+				$query->where(function ($q) {
+					$q->whereNull('zoom_link')->orWhere('zoom_link', '');
+				})->whereNotNull('location')->where('location', '!=', '');
 			} elseif ($type === 'hybrid') {
-				$query->whereNotNull('zoom_link')
-					->whereNotNull('location');
+				$query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
+					->whereNotNull('location')->where('location', '!=', '');
 			}
 		}
 
@@ -133,7 +136,7 @@ class PublicEventController extends Controller
 		// Tandai event yang sudah diregistrasi user login
 		if($request->user()){
 			$userRegEventIds = $request->user()->eventRegistrations()
-                ->where('status', '!=', 'rejected')
+				->where('status', 'active')
                 ->pluck('event_id')->toArray();
             
             // Tandai event yang disimpan
@@ -214,7 +217,7 @@ class PublicEventController extends Controller
 		if($request->user()){
 			$isRegistered = $request->user()->eventRegistrations()
                 ->where('event_id',$event->id)
-                ->where('status', '!=', 'rejected')
+                ->where('status', 'active')
                 ->exists();
 		}
 		$event->is_registered = $isRegistered;

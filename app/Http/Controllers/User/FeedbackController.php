@@ -56,6 +56,9 @@ class FeedbackController extends Controller
             if (empty($registration->certificate_issued_at)) {
                 $registration->certificate_issued_at = Carbon::now();
             }
+            if (empty($registration->certificate_number)) {
+                $registration->certificate_number = \App\Http\Controllers\CRM\CertificateController::generateCertificateNumber($event, $registration);
+            }
             $registration->save();
             
             // Add points for feedback

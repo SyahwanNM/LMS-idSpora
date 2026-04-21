@@ -24,6 +24,21 @@ class CourseModule extends Model
         'is_free',
         'preview_pages',
         'duration',
+        'review_status',
+        'processing_status',
+        'assigned_by_admin_trainer_id',
+        'assigned_to_admin_course_id',
+        'assigned_at',
+        'assignment_notes',
+        'processed_file_url',
+        'processed_file_name',
+        'processed_mime',
+        'processed_file_size',
+        'processed_at',
+        'processing_version',
+        'reviewed_at',
+        'reviewed_by',
+        'review_rejection_reason',
     ];
 
     protected $casts = [
@@ -32,11 +47,26 @@ class CourseModule extends Model
         'preview_pages' => 'integer',
         'duration' => 'integer',
         'file_size' => 'integer',
+        'processed_file_size' => 'integer',
+        'processing_version' => 'integer',
+        'assigned_at' => 'datetime',
+        'processed_at' => 'datetime',
+        'reviewed_at' => 'datetime',
     ];
 
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function assignedByAdminTrainer()
+    {
+        return $this->belongsTo(User::class, 'assigned_by_admin_trainer_id');
+    }
+
+    public function assignedToAdminCourse()
+    {
+        return $this->belongsTo(User::class, 'assigned_to_admin_course_id');
     }
 
     public function quizQuestions()
@@ -61,12 +91,12 @@ class CourseModule extends Model
         $m = intdiv($rem, 60);
         $s = $rem % 60;
         if ($h > 0) {
-            return $h.'j '.$m.'m '.$s.'d';
+            return $h . 'j ' . $m . 'm ' . $s . 'd';
         }
         if ($m > 0) {
-            return $m.'m '.$s.'d';
+            return $m . 'm ' . $s . 'd';
         }
-        return $s.' detik';
+        return $s . ' detik';
     }
 
     public function getFileExtensionAttribute()

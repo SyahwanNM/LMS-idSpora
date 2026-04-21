@@ -28,6 +28,7 @@
         <main class="max-w-4xl mx-auto">
             <form id="admin-course-create-form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
+                <input type="hidden" name="status" id="status" value="archive">
 
                 <!-- Formulir Pengaturan Course -->
                 <div class="mb-8">
@@ -53,8 +54,8 @@
                             <p id="name_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
-                        <!-- Level & Status -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Level -->
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                             <div>
                                 <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Level Course <span class="text-red-600">*</span></label>
                                 <select name="level" id="level" required
@@ -69,21 +70,10 @@
                                 </select>
                                 <p id="level_error" class="mt-1 text-xs text-red-600 hidden"></p>
                             </div>
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status <span class="text-red-600">*</span></label>
-                                <select name="status" id="status" required
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                    <option value="">Select Status</option>
-                                    <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                                    <option value="archive" {{ old('status') == 'archive' ? 'selected' : '' }}>Archive
-                                    </option>
-                                </select>
-                                <p id="status_error" class="mt-1 text-xs text-red-600 hidden"></p>
-                            </div>
                         </div>
 
-                        <!-- Category & Template -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Category -->
+                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                             <div>
                                 <label for="category_id"
                                     class="block text-sm font-medium text-gray-700 mb-2">Kategori <span class="text-red-600">*</span></label>
@@ -95,22 +85,6 @@
                                     @endforeach
                                 </select>
                                 <p id="category_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
-                            </div>
-
-                            <div>
-                                <label for="template_id" class="block text-sm font-medium text-gray-700 mb-2">Course
-                                    Template</label>
-                                <select name="template_id" id="template_id"
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                    <option value="">-- Tanpa template --</option>
-                                    @foreach($templates as $template)
-                                        <option value="{{ $template->id }}" {{ old('template_id') == $template->id ? 'selected' : '' }}>
-                                            {{ $template->name }} ({{ $template->modules_count }} modules)
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500">Pilih template untuk pre-populate struktur modul
-                                    course</p>
                             </div>
                         </div>
 
@@ -141,17 +115,62 @@
                             <p id="price_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
-                        <!-- Akses Course Gratis -->
+                        <!-- Akses Course (Freemium Mode) -->
                         <div>
-                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
-                                Gratis</label>
+                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course</label>
                             <select name="free_access_mode" id="free_access_mode"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka semua
-                                    materi</option>
-                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                            <p class="mt-1 text-xs text-gray-500">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</p>
+                        </div>
+
+                        <!-- Reseller Course -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reseller Course</label>
+                            @php
+                                $isResellerCourse = (int) old('is_reseller_course', 0);
+                            @endphp
+                            <div class="reseller-course-radios mt-1 flex flex-wrap items-center gap-x-8 gap-y-2" role="radiogroup" aria-label="Reseller Course">
+                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
+                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0" class="h-4 w-4"
+                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
+                                    <label for="is_reseller_course_0" class="text-sm text-gray-700">Tidak</label>
+                                </div>
+                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
+                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1" class="h-4 w-4"
+                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
+                                    <label for="is_reseller_course_1" class="text-sm text-gray-700">Ya</label>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Jika Ya, course ini ditandai sebagai course reseller.</p>
+                            <style>
+                                .reseller-course-radios .reseller-course-option{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    flex: 0 0 auto !important;
+                                    white-space: nowrap !important;
+                                }
+                                .reseller-course-radios label{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    margin: 0 0 0 0.5rem !important;
+                                    cursor: pointer;
+                                    user-select: none;
+                                }
+                                .reseller-course-radios .reseller-course-option:first-child label{
+                                    margin-left: 0.15rem !important;
+                                }
+                                .reseller-course-radios input[type="radio"]{
+                                    appearance: auto !important;
+                                    -webkit-appearance: radio !important;
+                                    -moz-appearance: auto !important;
+                                    margin: 0 !important;
+                                    vertical-align: middle !important;
+                                }
+                            </style>
                         </div>
 
                         <!-- Deskripsi -->
@@ -168,6 +187,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Intro Media (Video/Image) <span class="text-red-600">*</span></label>
                             <input type="file" name="image" id="image" accept="image/*,video/mp4,video/webm,video/ogg" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
+                            <div id="image_preview" class="mt-2 w-20 h-20 border border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center text-xs text-gray-400">Preview</div>
                             <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, MP4. Digunakan untuk intro course.</p>
                             <p id="image_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
@@ -177,6 +197,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail Course <span class="text-red-600">*</span></label>
                             <input type="file" name="card_thumbnail" id="card_thumbnail" accept="image/*" required
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer border border-gray-300 rounded-lg">
+                            <div id="card_thumbnail_preview" class="mt-2 w-20 h-20 border border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center text-xs text-gray-400">Preview</div>
                             <p class="mt-1 text-xs text-gray-500">Format: JPG, PNG, WebP</p>
                             <p id="card_thumbnail_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
@@ -344,6 +365,77 @@
             getEl('price')?.addEventListener('input', validate);
             getEl('image')?.addEventListener('change', validate);
             getEl('card_thumbnail')?.addEventListener('change', validate);
+
+            // File previews (small box)
+            (function(){
+                const introInput = getEl('image');
+                const introPreview = document.getElementById('image_preview');
+                const cardInput = getEl('card_thumbnail');
+                const cardPreview = document.getElementById('card_thumbnail_preview');
+
+                function setPlaceholder(previewEl){
+                    if(!previewEl) return;
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+                    previewEl.dataset.objectUrl = '';
+                    previewEl.textContent = 'Preview';
+                    previewEl.classList.add('text-gray-400');
+                }
+
+                function renderPreview(inputEl, previewEl, allowVideo){
+                    if(!inputEl || !previewEl) return;
+                    const file = inputEl.files && inputEl.files[0];
+                    if(!file){ setPlaceholder(previewEl); return; }
+
+                    try {
+                        const prevUrl = previewEl.dataset.objectUrl;
+                        if(prevUrl) URL.revokeObjectURL(prevUrl);
+                    } catch(_e) {}
+
+                    const url = URL.createObjectURL(file);
+                    previewEl.dataset.objectUrl = url;
+                    previewEl.innerHTML = '';
+                    previewEl.classList.remove('text-gray-400');
+
+                    const type = (file.type || '').toLowerCase();
+                    const isImage = type.startsWith('image/');
+                    const isVideo = allowVideo && type.startsWith('video/');
+
+                    if(isImage){
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Preview';
+                        img.className = 'w-full h-full object-cover';
+                        previewEl.appendChild(img);
+                        return;
+                    }
+
+                    if(isVideo){
+                        const video = document.createElement('video');
+                        video.src = url;
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.loop = true;
+                        video.autoplay = true;
+                        video.className = 'w-full h-full object-cover';
+                        previewEl.appendChild(video);
+                        return;
+                    }
+
+                    const span = document.createElement('span');
+                    span.className = 'text-xs text-gray-500 px-2 text-center break-words';
+                    span.textContent = file.name || 'File dipilih';
+                    previewEl.appendChild(span);
+                }
+
+                setPlaceholder(introPreview);
+                setPlaceholder(cardPreview);
+
+                introInput?.addEventListener('change', () => renderPreview(introInput, introPreview, true));
+                cardInput?.addEventListener('change', () => renderPreview(cardInput, cardPreview, false));
+            })();
 
             form.addEventListener('submit', function(e) {
                 const firstInvalid = validate();

@@ -8,6 +8,26 @@
         margin-top: 85px; /* Jarak dikurangi agar lebih rapat dengan navbar */
     }
 </style>
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </head>
 
 @include('partials.navbar-after-login') 
@@ -39,7 +59,7 @@
                             
                             <img src="{{ $carousel->image_url }}"
                                 alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; "
                                 onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
                             @if($carousel->title)
@@ -59,7 +79,7 @@
                         <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
                             <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
                                 alt="Slide 1"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; ">
 
                             <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                                 <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
@@ -83,60 +103,58 @@
                 </button>
             </div>
 
-        <div class="row justify-content-center mb-5" style="margin-top: -30px; position: relative; z-index: 10;">
-            <div class="col-lg-8">
-                <form action="{{ route('courses.index') }}" method="GET" class="d-flex bg-white rounded-pill p-2 shadow-sm border">
-                    <input class="form-control border-0 rounded-pill ps-4 py-2" type="search" name="search" placeholder="Cari kursus berdasarkan judul, kategori..." aria-label="Search" style="box-shadow: none;" value="{{ request('search') }}">
-                    <button class="btn rounded-pill px-4 fw-bold" type="submit" style="background-color: #51376c; color: white;">
-                        Cari
-                    </button>
-                </form>
+    <div class="filter-container" style="margin-top: -30px; position: relative; z-index: 10;">
+        <form action="{{ route('courses.index') }}" method="GET" id="filter-form">
+            <div class="filter-box">
+                <div class="options">
+                    <label>Level</label>
+                    <select name="level" onchange="document.getElementById('filter-form').submit()">
+                        <option value="">Semua Level</option>
+                        <option value="beginner" {{ request('level') == 'beginner' ? 'selected' : '' }}>Beginner</option>
+                        <option value="intermediate" {{ request('level') == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
+                        <option value="advanced" {{ request('level') == 'advanced' ? 'selected' : '' }}>Advanced</option>
+                    </select>
+                </div>
+                <div class="options">
+                    <label>Topic</label>
+                    <select name="category" onchange="document.getElementById('filter-form').submit()">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="options">
+                    <label>Nama Kursus</label>
+                    <select name="topic" onchange="document.getElementById('filter-form').submit()">
+                        <option value="">Semua Topik</option>
+                        @foreach($topics as $t)
+                            <option value="{{ $t }}" {{ request('topic') == $t ? 'selected' : '' }}>{{ $t }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="options">
+                    <label>Price</label>
+                    <select name="price" onchange="document.getElementById('filter-form').submit()">
+                        <option value="">Default</option>
+                        <option value="asc" {{ request('price') == 'asc' ? 'selected' : '' }}>Low to High</option>
+                        <option value="desc" {{ request('price') == 'desc' ? 'selected' : '' }}>High to Low</option>
+                    </select>
+                </div>
             </div>
-        </div>
-    
-    <div class="filter-container">
-        <div class="filter-box">
-            <div class="options">
-                <label>Level</label>
-                <select>
-                    <option>Beginner</option>
-                    <option>Intermediate</option>
-                    <option>Advanced</option>
-                </select>
-            </div>
-            <div class="options">
-                <label>Place</label>
-                <select>
-                    <option>Bandung</option>
-                    <option>Jakarta</option>
-                    <option>Bekasi</option>
-                </select>
-            </div>
-            <div class="options">
-                <label>Price</label>
-                <select>
-                    <option>Low to High</option>
-                    <option>High to Low</option>
-                </select>
-            </div>
-        </div>
-        <div class="search-container">
-            <form class="search-form" action="{{ route('courses.index') }}" method="get" autocomplete="off">
+            <div class="search-container">
                 <div class="search-wrap">
                     <input id="site-search" class="form-control search-input-2" type="search" name="search"
-                        placeholder="Search" aria-label="Search" aria-expanded="false" aria-controls="search-suggest">
-                    <span class="search-icon" ariza-hidden="false">
-                        <svg id="search-icon-svg" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                            fill="currentColor" viewBox="0 0 16 16" focusable="false" style="cursor:pointer;">
-                            <path
-                                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                        placeholder="Search" aria-label="Search" value="{{ request('search') }}">
+                    <span class="search-icon" style="cursor:pointer;" onclick="document.getElementById('filter-form').submit()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                            fill="currentColor" viewBox="0 0 16 16" focusable="false">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
                         </svg>
                     </span>
-
-                    <ul id="search-suggest" class="search-suggest" role="listbox"></ul>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <section class="kursus-pelatihan">
@@ -150,6 +168,7 @@
                     $course = $enrollment->course;
                     if(!$course) continue;
                     $courseHref = route('course.detail', $course->id);
+                    $continueHref = route('course.learn', $course->id);
                     $cardImage = $course->card_thumbnail ?? ($course->media ?? null);
                     $pct = $enrollment->getProgressPercentage();
                     $pct = max(0, min(100, (int) $pct));
@@ -194,8 +213,16 @@
                                     </div>
                                 </div>
                                 <div class="author">
-                                    <img src="https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2" alt="Profile">
-                                    <h6 class="mb-0" style="font-size:13px; font-weight:500;">idSpora Team</h6>
+                                    @php
+                                        $trainer = $course->trainer;
+                                        $trainerName = $trainer ? ($trainer->full_name_with_title ?: $trainer->name) : 'idSpora Team';
+                                        $trainerAvatar = $trainer ? $trainer->avatar_url : 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=facearea&w=64&h=64&facepad=2';
+                                        $trainerHref = $trainer ? route('public.trainer-profile.show', $trainer->id) : '#';
+                                    @endphp
+                                    <img src="{{ $trainerAvatar }}" alt="{{ $trainerName }}">
+                                    <a href="{{ $trainerHref }}" style="text-decoration:none; color:inherit;">
+                                        <h6 class="mb-0" style="font-size:13px; font-weight:600;">{{ $trainerName }}</h6>
+                                    </a>
                                     <div style="margin-left:auto; display:flex; align-items:center; gap:6px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
@@ -210,7 +237,7 @@
                                     </div>
                                     <p>{{ $pct }}% selesai</p>
                                 </div>
-                                <div class="btn-lanjut" role="button">Lanjutkan</div>
+                                <a href="{{ $continueHref }}" class="btn-lanjut" style="text-decoration:none; display:block; text-align:center;" onclick="event.stopPropagation();">Lanjutkan</a>
                             </div>
                         </article>
                     </a>
@@ -230,14 +257,8 @@
         <div class="section-title">
             <h3>Kursus Pilihan</h3>
         </div>
-
-        @php
-            $publishedFeaturedCourses = isset($featuredCourses)
-                ? collect($featuredCourses)->filter(function($c){ return ($c->status ?? null) === 'active'; })
-                : collect();
-        @endphp
         <ul class="course-list">
-            @forelse($publishedFeaturedCourses as $course)
+            @forelse($courses as $course)
             <li>
                 @php
                     // Always go to detail first when clicking the card
@@ -304,7 +325,20 @@
                         </div>
                         <div class="price-row">
                             <div class="price-col">
-                                <span class="price-now">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                                <span class="price-now">
+                                    @if($course->hasDiscount())
+                                        <div class="d-flex flex-column" style="line-height:1.2;">
+                                            <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px; font-weight: normal; opacity: 0.7;">
+                                                Rp{{ number_format($course->price, 0, ',', '.') }}
+                                            </span>
+                                            <span style="font-size: 16px;">Rp{{ number_format($course->discounted_price, 0, ',', '.') }}</span>
+                                        </div>
+                                    @elseif((int) ($course->price ?? 0) <= 0)
+                                        GRATIS
+                                    @else
+                                        Rp{{ number_format($course->price, 0, ',', '.') }}
+                                    @endif
+                                </span>
                             </div>
                             <a href="{{ $courseHref }}" class="btn-enroll" style="text-decoration:none;">Lihat Detail</a>
                         </div>
@@ -322,66 +356,17 @@
             @endforelse
         </ul>
         <div class="align-items-center" style="padding: 20px; text-align: center !important;">
-            <a href="#" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
+            <a href="{{ route('courses.index') }}" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
         </div>
     </section>
 </main>
 
-    <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center mt-4">
-                <li class="page-item">
-                    <a class="page-link" href="#" id="prevBtn" aria-label="Previous">
-                        <span aria-hidden="true">&lt;</span>
-                    </a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="javascript:void(0)" data-page="1">1</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">2</a></li>
-                <li class="page-item"><a class="page-link" href="javascript:void(0)" data-page="2">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#" aria-label="Next">
-                        <span aria-hidden="true">&gt;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const pageLinks = document.querySelectorAll('.pagination .page-link[data-page]');
-            const paginationContainer = document.querySelector('.pagination');
-            const eventLists = document.querySelectorAll('.event-list');
-
-            eventLists.forEach((list, index) => {
-                if (list.id !== 'page-1') {
-                    list.style.display = 'none';
-                }
-            });
-
-            paginationContainer.addEventListener('click', function(e) {
-                const clickedElement = e.target.closest('.page-link');
-                if (!clickedElement) return;
-
-                e.preventDefault();
-
-                const targetPage = clickedElement.getAttribute('data-page');
-
-                if (targetPage) {
-                    document.querySelectorAll('.pagination .page-item').forEach(item => {
-                        item.classList.remove('active');
-                    });
-
-                    eventLists.forEach(list => {
-                        if (list.id === 'page-' + targetPage) {
-                            list.style.display = 'grid';
-                        } else {
-                            list.style.display = 'none';
-                        }
-                    });
-                    clickedElement.closest('.page-item').classList.add('active');
-                }
-            });
-        });
-    </script>
-    @include('partials.footer-before-login')
+    @if($courses->hasPages())
+        <div class="d-flex justify-content-center mt-4">
+            {{ $courses->onEachSide(1)->links('pagination::bootstrap-5') }}
+        </div>
+    @endif
+   @include('partials.footer-after-login')
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

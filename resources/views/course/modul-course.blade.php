@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -21,15 +22,159 @@
             @php
                 $modulesList = $modules ?? (isset($course) ? ($course->modules ?? collect()) : collect());
                 $modulesList = $modulesList instanceof \Illuminate\Support\Collection ? $modulesList->values() : collect($modulesList)->values();
+                $modulesList = $modulesList->sortBy('order_no')->values();
                 $activeModule = $currentModule ?? $modulesList->first();
                 $passingPercent = 75;
+
+                $normalizeGroupKey = function ($title, $fallbackIndex = 1) {
+                    $t = trim((string) $title);
+                    if ($t === '') {
+                        return 'UNIT_'.$fallbackIndex;
+                    }
+
+                    if (preg_match('/^(Module\s*\d+)/i', $t, $m)) {
+                        return mb_strtoupper(trim($m[1]));
+                    }
+
+                    $t2 = preg_replace('/\s*-\s*(PDF\s*Material|Video\s*Lesson|Quiz)\s*$/i', '', $t);
+                    $t2 = trim((string) $t2);
+                    return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
+                };
+
+                $formatDisplayTitle = function (string $groupKey, string $kind) {
+                    $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
+                    $isUnitKey = \Illuminate\Support\Str::startsWith($groupKey, 'UNIT_');
+
+                    $prefix = '';
+                    if ($isModuleKey) {
+                        $prefix = ucwords(strtolower($groupKey));
+                    } elseif ($isUnitKey) {
+                        $num = str_replace('UNIT_', '', $groupKey);
+                        $prefix = 'Module ' . $num;
+                    }
+
+                    $hasPrefix = $isModuleKey || $isUnitKey;
+
+                    if ($kind === 'material') {
+                        return $hasPrefix ? ($prefix . ' - Materi') : 'Materi';
+                    }
+                    if ($kind === 'quiz') {
+                        return $hasPrefix ? ($prefix . ' - Quiz') : 'Quiz';
+                    }
+                    return $hasPrefix ? $prefix : $groupKey;
+                };
+
+                // Build display list: per group show (Materi = PDF+Video combined) + Quiz
+                $grouped = [];
+                $groupOrder = [];
+                $unitCounter = 1;
+                $currentGenericKey = null;
+                $isGenericUnitTitle = function ($title) {
+                    $t = trim((string) $title);
+                    return (bool) preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $t);
+                };
+                foreach ($modulesList as $m) {
+                    $titleStr = (string) ($m->title ?? '');
+                    $type = strtolower(trim((string) ($m->type ?? '')));
+
+                    if ($isGenericUnitTitle($titleStr)) {
+                        if (!$currentGenericKey) {
+                            $currentGenericKey = 'UNIT_'.$unitCounter;
+                            $unitCounter++;
+                        }
+                        $key = $currentGenericKey;
+                        if ($type === 'quiz') {
+                            $currentGenericKey = null;
+                        }
+                    } else {
+                        $currentGenericKey = null;
+                        $key = $normalizeGroupKey($titleStr, $unitCounter);
+                        if (\Illuminate\Support\Str::startsWith($key, 'UNIT_')) {
+                            $unitCounter++;
+                        }
+                    }
+
+                    if (!array_key_exists($key, $grouped)) {
+                        $grouped[$key] = [
+                            'key' => $key,
+                            'pdf' => null,
+                            'video' => null,
+                            'quiz' => null,
+                        ];
+                        $groupOrder[] = $key;
+                    }
+
+                    if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
+                    if ($type === 'video' && !$grouped[$key]['video']) $grouped[$key]['video'] = $m;
+                    if ($type === 'quiz' && !$grouped[$key]['quiz']) $grouped[$key]['quiz'] = $m;
+                }
+
+                $displayItems = collect();
+                foreach ($groupOrder as $key) {
+                    $g = $grouped[$key];
+
+                    if ($g['pdf'] || $g['video']) {
+                        $rep = $g['pdf'] ?: $g['video'];
+                        $displayItems->push([
+                            'kind' => 'material',
+                            'key' => $key,
+                            'title' => $formatDisplayTitle($key, 'material'),
+                            'rep' => $rep,
+                            'pdf' => $g['pdf'],
+                            'video' => $g['video'],
+                            'quiz' => $g['quiz'],
+                        ]);
+                    }
+
+                    if ($g['quiz']) {
+                        $displayItems->push([
+                            'kind' => 'quiz',
+                            'key' => $key,
+                            'title' => $formatDisplayTitle($key, 'quiz'),
+                            'rep' => $g['quiz'],
+                            'pdf' => $g['pdf'],
+                            'video' => $g['video'],
+                            'quiz' => $g['quiz'],
+                        ]);
+                    }
+                }
+
+                $activeGroupKey = null;
+                if ($activeModule) {
+                    foreach ($grouped as $gk => $g) {
+                        foreach (['pdf', 'video', 'quiz'] as $k) {
+                            if (!empty($g[$k]?->id) && (int) $g[$k]->id === (int) $activeModule->id) {
+                                $activeGroupKey = $gk;
+                                break 2;
+                            }
+                        }
+                    }
+                    $activeGroupKey = $activeGroupKey ?: $normalizeGroupKey($activeModule->title ?? '', 1);
+                }
+                $activeKind = ($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') ? 'quiz' : 'material';
+                $activeDisplay = $displayItems->first(function ($it) use ($activeGroupKey, $activeKind) {
+                    return ($it['key'] ?? null) === $activeGroupKey && ($it['kind'] ?? null) === $activeKind;
+                });
+                $activeDisplay = $activeDisplay ?: $displayItems->first();
+                $activeDisplay = $activeDisplay ?: [
+                    'kind' => null,
+                    'key' => null,
+                    'title' => null,
+                    'rep' => null,
+                    'pdf' => null,
+                    'video' => null,
+                    'quiz' => null,
+                ];
+                $activeDisplayModuleId = !empty($activeDisplay['rep']?->id)
+                    ? (int) $activeDisplay['rep']->id
+                    : ($activeModule?->id);
 
                 $freeAccessMode = $freeAccessMode ?? ((isset($course) && (int)($course->price ?? 0) <= 0) ? (string)($course->free_access_mode ?? 'limit_2') : 'all');
                 $freeAccessibleModuleIds = $freeAccessibleModuleIds ?? [];
                 if (!is_array($freeAccessibleModuleIds)) {
                     $freeAccessibleModuleIds = [];
                 }
-                $isFreeLimited = ((int)($course->price ?? 0) <= 0) && ((string)$freeAccessMode === 'limit_2');
+                $isFreeLimited = ((string)($freeAccessMode ?? 'all') === 'limit_2');
 
                 $passedQuizModuleIds = [];
                 if (auth()->check() && $modulesList->isNotEmpty()) {
@@ -85,48 +230,79 @@
 
             <div class="accordion-box"
                 data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
-                data-active-module-id="{{ $activeModule?->id }}"
+                data-active-module-id="{{ $activeDisplayModuleId }}"
             >
-                @forelse($modulesList as $m)
+                @php $hasFailedPrevQuiz = false; @endphp
+                @forelse($displayItems as $it)
                     @php
-                        $isActive = $activeModule && ((int)$activeModule->id === (int)$m->id);
-                        $typeLabel = $m->type ? strtoupper($m->type) : 'MATERI';
-                        $prevModule = $modulesList->get($loop->index - 1);
-                        $isLocked = false;
-                        $lockReason = '';
+                        $rep = $it['rep'];
+                        $isActive = ((int) ($activeDisplayModuleId ?? 0) === (int) ($rep->id ?? 0))
+                            && (($activeDisplay['kind'] ?? '') === ($it['kind'] ?? ''));
+                        $typeLabel = ($it['kind'] ?? '') === 'quiz' ? 'QUIZ' : 'MATERI';
+                        
+                        $isLocked = $hasFailedPrevQuiz;
+                        $lockReason = $hasFailedPrevQuiz ? 'quiz' : '';
 
-                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
-                            $isLocked = true;
-                            $lockReason = 'free';
+                        if ($isFreeLimited && !$isLocked) {
+                            $candidateIds = [];
+                            if (($it['kind'] ?? '') === 'quiz') {
+                                $candidateIds[] = (int) ($rep->id ?? 0);
+                            } else {
+                                if (!empty($it['pdf']?->id)) $candidateIds[] = (int) $it['pdf']->id;
+                                if (!empty($it['video']?->id)) $candidateIds[] = (int) $it['video']->id;
+                                if (empty($candidateIds)) $candidateIds[] = (int) ($rep->id ?? 0);
+                            }
+
+                            $allowedAny = false;
+                            foreach ($candidateIds as $cid) {
+                                if ($cid > 0 && in_array($cid, $freeAccessibleModuleIds, true)) { $allowedAny = true; break; }
+                            }
+
+                            if (!$allowedAny) {
+                                $isLocked = true;
+                                $lockReason = 'free';
+                            }
                         }
-                        if (auth()->check() && $prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
-                            if (!$isLocked) {
-                                $isLocked = !in_array((int) $prevModule->id, $passedQuizModuleIds, true);
-                                if ($isLocked) {
-                                    $lockReason = 'quiz';
+
+                        // Cascading quiz check: if this is a quiz and not passed, ALL subsequent items will be locked.
+                        if (($it['kind'] ?? '') === 'quiz') {
+                            $quizId = (int) ($rep->id ?? 0);
+                            if (auth()->check() && !in_array($quizId, $passedQuizModuleIds, true)) {
+                                $hasFailedPrevQuiz = true;
+                            }
+                        }
+
+                        $descLines = [];
+                        $descSource = ($it['kind'] ?? '') === 'quiz'
+                            ? ($it['quiz']?->description ?? '')
+                            : (($it['pdf']?->description ?? '') ?: ($it['video']?->description ?? '') ?: ($rep->description ?? ''));
+
+                        if (!empty($descSource)) {
+                            $cleanDesc = trim(strip_tags((string) $descSource));
+                            if ($cleanDesc !== '') {
+                                // If it's a trainer-edited HTML content, just show a snippet or nothing in sub-items
+                                // to avoid cluttering the sidebar with split sentences.
+                                $isRich = str_contains((string)$descSource, '<') && str_contains((string)$descSource, '>');
+                                if ($isRich) {
+                                    $descLines = [\Illuminate\Support\Str::limit($cleanDesc, 80)];
+                                } else {
+                                    // Split into short lines to preserve the original "list" feel for legacy content
+                                    $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
+                                    $descLines = array_slice($descLines, 0, 3);
                                 }
                             }
                         }
-                        $descLines = [];
-                        if (!empty($m->description)) {
-                            $cleanDesc = trim(strip_tags((string) $m->description));
-                            if ($cleanDesc !== '') {
-                                // Split into short lines to preserve the original "list" feel
-                                $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
-                            }
-                        }
-                        $descLines = array_slice($descLines, 0, 3);
                     @endphp
 
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
-                        <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
+                        <button class="accordion-header" type="button" data-module-id="{{ $rep->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Materi') }}</span>
                             </span>
                             <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
                                 @if($isLocked)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#111827" viewBox="0 0 16 16" aria-hidden="true">
-                                        <path d="M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m2 6V4a2 2 0 1 0-4 0v3z"/>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                                     </svg>
                                 @endif
                                 <span class="arrow">▲</span>
@@ -137,12 +313,13 @@
                             @if($isLocked)
                                 <hr>
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Course gratis ini hanya membuka 2 modul pertama.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
                                 @else
                                     <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
                                 @endif
                             @endif
-                            @if(!empty($descLines))
+                            {{-- HIDE DESKRIPSI DI ACCORDION MENU BAWAH --}}
+                            {{-- @if(!empty($descLines))
                                 <hr>
                                 @foreach($descLines as $idx => $line)
                                     <p>{{ trim($line) }}</p>
@@ -150,7 +327,7 @@
                                         <hr>
                                     @endif
                                 @endforeach
-                            @endif
+                            @endif --}}
                         </div>
                     </div>
                 @empty
@@ -160,52 +337,115 @@
         </div>
         <div class="box_modul_kanan">
             @php
-                $cm = $activeModule;
-                $content = $cm->content_url ?? null;
-                $isHttp = is_string($content) && (str_starts_with($content, 'http://') || str_starts_with($content, 'https://'));
-                $storageUrl = null;
-                if (is_string($content)) {
-                    $normalized = ltrim($content, '/');
-                    if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
-                        $normalized = substr($normalized, strlen('uploads/'));
-                    }
-                    $storageUrl = asset('uploads/' . $normalized);
-                }
-                $streamUrl = (!$isHttp && isset($course) && $cm) ? route('user.modules.stream', [$course, $cm]) : null;
-                $videoUrl = $isHttp ? $content : ($storageUrl ?: $streamUrl);
+                $activeKind = $activeDisplay['kind'] ?? (($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') ? 'quiz' : 'material');
+
+                $pdfModule = $activeDisplay['pdf'] ?? null;
+                $videoModule = $activeDisplay['video'] ?? null;
+                $quizModule = $activeDisplay['quiz'] ?? null;
+
+                $cm = $activeKind === 'quiz'
+                    ? ($quizModule ?: $activeModule)
+                    : ($activeDisplay['rep'] ?? $activeModule);
+
                 $moduleType = $cm ? strtolower(trim((string) ($cm->type ?? ''))) : '';
-                $isVideo = $cm && ($moduleType === 'video');
-                $isPdf = $cm && ($moduleType === 'pdf');
-                $isQuiz = $cm && ($moduleType === 'quiz');
+                $isQuiz = ($activeKind === 'quiz');
+
+                $resolveMediaUrl = function ($module) use ($course) {
+                    if (!$module) return [null, false, null, null];
+                    $content = trim((string) ($module->content_url ?? ''));
+                    // If content is empty or just a slash, it's not a real file
+                    if ($content === '' || $content === '/') return [null, false, null, null];
+
+                    $isHttp = str_starts_with($content, 'http://') || str_starts_with($content, 'https://');
+                    $storageUrl = null;
+                    if (!$isHttp) {
+                        $normalized = ltrim($content, '/');
+                        if (\Illuminate\Support\Str::startsWith($normalized, 'uploads/')) {
+                            $normalized = substr($normalized, strlen('uploads/'));
+                        }
+                        $storageUrl = asset('uploads/' . $normalized);
+                    }
+                    $streamUrl = (!$isHttp && isset($course) && $module) ? route('user.modules.stream', [$course, $module]) : null;
+                    $url = $isHttp ? $content : ($storageUrl ?: $streamUrl);
+                    return [$url, $isHttp, $storageUrl, $streamUrl];
+                };
+
+                [$pdfUrl] = $resolveMediaUrl($pdfModule);
+                [$vidUrl, $vidIsHttp] = $resolveMediaUrl($videoModule);
             @endphp
 
-            {{-- Hapus area media kosong untuk modul kuis --}}
-            @if(!($isQuiz ?? false))
+            @php
+                // Detect if the PDF module has rich HTML content from trainer editor
+                $pdfDescription = trim((string) ($pdfModule?->description ?? ''));
+                $videoDescription = trim((string) ($videoModule?->description ?? ''));
+                $cmDescription = trim((string) ($cm->description ?? ''));
+                $materialDescription = $pdfDescription ?: $videoDescription ?: $cmDescription;
+                
+                // Content counts as HTML if it contains tags
+                $hasRichHtml = $materialDescription !== '' && (
+                    str_contains($materialDescription, '<') && str_contains($materialDescription, '>')
+                );
+                
+                $hasPdfFile = !empty($pdfUrl);
+                
+                // Prioritize showing HTML content if a file doesn't exist OR if it's explicitly HTML content
+                $showHtmlContent = $hasRichHtml && !$hasPdfFile;
+            @endphp
+
+            {{-- Materi: PDF + Video jadi satu kesatuan. Kuis: tidak menampilkan media kosong. --}}
+            @if(!$isQuiz)
                 <div class="modul_media_card">
-                    {{-- Tampilan tetap: iframe/video area di atas --}}
-                    @if($isVideo)
-                        @if($isHttp)
-                            <iframe class="video_course" width="560" height="315" src="{{ $content }}" title="YouTube video player" frameborder="0"
+                    @if($videoModule && $vidUrl)
+                        @if($vidIsHttp)
+                            <iframe class="video_course" width="560" height="315" src="{{ $videoModule->content_url }}" title="Video" frameborder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                 referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
                         @else
                             <video class="video_course" width="560" height="315" controls preload="auto" playsinline>
-                                <source src="{{ $videoUrl }}" type="{{ $cm->mime_type ?: 'video/mp4' }}">
+                                <source src="{{ $vidUrl }}" type="{{ $videoModule->mime_type ?: 'video/mp4' }}">
                             </video>
                         @endif
-                    @elseif($isPdf)
-                        <iframe class="video_course" width="560" height="315" src="{{ $isHttp ? $content : ($streamUrl ?: $storageUrl) }}" title="PDF" frameborder="0"></iframe>
-                    @else
+                    @endif
+
+                    @if($hasPdfFile)
+                        @if($videoModule && $vidUrl)
+                            <div style="margin-top:12px;"></div>
+                        @endif
+                        <iframe class="video_course" width="560" height="315" src="{{ $pdfUrl }}" title="PDF" frameborder="0"></iframe>
+                    @endif
+
+                    @if(!$showHtmlContent && !$hasPdfFile && (!$videoModule || !$vidUrl))
                         <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
                     @endif
                 </div>
             @endif
-            <h2 class="judul_modul">{{ $cm->title ?? 'Gambaran Umum' }}</h2>
 
-            @if(!($isQuiz ?? false))
+            <h2 class="judul_modul">{{ $activeDisplay['title'] ?? ($cm->title ?? 'Gambaran Umum') }}</h2>
+
+            @if(!$isQuiz)
                 <div class="box_luar_deskripsi_modul">
-                    <div class="box_deskripsi_modul">
-                        <p class="deskripsi_modul">{{ $cm->description ?? 'Deskripsi modul belum tersedia.' }}</p>
+                    <div class="box_deskripsi_modul" style="padding: 2px;">
+                        @if($showHtmlContent)
+                            {{-- Trainer rich text HTML content --}}
+                            <div class="trainer-html-content" style="padding: 20px; background: #fff; border-radius: 12px; border: none; max-height: 600px; overflow-y: auto;">
+                                <div class="wysiwyg-output">
+                                    {!! $materialDescription !!}
+                                </div>
+                            </div>
+                        @else
+                            <div style="padding: 24px;">
+                                @if($hasRichHtml)
+                                    {{-- HTML content exists but PDF file also exists, show as secondary content --}}
+                                    <div class="deskripsi_modul wysiwyg-output" style="font-size: 14px; color: #374151;">
+                                        {!! $materialDescription !!}
+                                    </div>
+                                @else
+                                    <p class="deskripsi_modul" style="font-size: 14px; color: #374151;">
+                                        {{ $materialDescription ?: 'Deskripsi modul belum tersedia.' }}
+                                    </p>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
             @else
@@ -217,7 +457,10 @@
                     $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '5 menit';
 
                     $beforeQuizTitle = null;
-                    if ($cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
+                    if ($activeDisplay && (($activeDisplay['kind'] ?? '') === 'quiz')) {
+                        $beforeQuizTitle = $formatDisplayTitle($activeDisplay['key'], 'material');
+                    }
+                    if (!$beforeQuizTitle && $cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
                         $idx = $modulesList->search(fn($x) => (int) ($x->id ?? 0) === (int) $cm->id);
                         if ($idx !== false && $idx > 0) {
                             $prev = $modulesList->get($idx - 1);
@@ -261,7 +504,7 @@
                                     Anda telah lulus kuis ini
                                 </button>
                             @else
-                                <a href="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
+                                <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
                                     Start
                                     <span style="margin-left:8px;">›</span>
                                 </a>
@@ -320,45 +563,75 @@
                 </div>
             @endif
             @php
-                $nextModule = null;
-                if ($cm && $modulesList && $modulesList->count() > 0) {
-                    $idx = $modulesList->search(function ($x) use ($cm) { return (int)$x->id === (int)$cm->id; });
-                    if ($idx !== false) {
-                        $nextModule = $modulesList->get($idx + 1);
+                // Find current item's index in the display list
+                $activeIndexInDisplay = -1;
+                foreach($displayItems as $idx => $it) {
+                    if (($it['key'] ?? null) === ($activeDisplay['key'] ?? null) && ($it['kind'] ?? null) === ($activeDisplay['kind'] ?? null)) {
+                        $activeIndexInDisplay = $idx;
+                        break;
+                    }
+                }
+                
+                $nextDisplayItem = ($activeIndexInDisplay !== -1) ? $displayItems->get($activeIndexInDisplay + 1) : null;
+                $nextTargetRep = $nextDisplayItem ? ($nextDisplayItem['rep'] ?? null) : null;
+
+                // Lock logic
+                // 1. If currently on a quiz and haven't passed it yet, lock the next step.
+                $lockNext = ($activeKind === 'quiz' && auth()->check() && !$currentQuizPassed);
+
+                // 2. Handle free access (limit_2) logic for the next item
+                $lockNextByFree = false;
+                if (((string)($freeAccessMode ?? 'all') === 'limit_2') && $nextTargetRep) {
+                    $candidateIds = [];
+                    if (($nextDisplayItem['kind'] ?? '') === 'quiz') {
+                        $candidateIds[] = (int) ($nextTargetRep->id ?? 0);
+                    } else {
+                        if (!empty($nextDisplayItem['pdf']?->id)) $candidateIds[] = (int) $nextDisplayItem['pdf']->id;
+                        if (!empty($nextDisplayItem['video']?->id)) $candidateIds[] = (int) $nextDisplayItem['video']->id;
+                    }
+
+                    $allowedAny = false;
+                    foreach ($candidateIds as $cid) {
+                        if ($cid > 0 && in_array($cid, $freeAccessibleModuleIds, true)) { $allowedAny = true; break; }
+                    }
+                    if (!$allowedAny) {
+                        $lockNextByFree = true;
                     }
                 }
 
-                $lockNext = ($cm && ($moduleType === 'quiz') && auth()->check() && !$currentQuizPassed);
-
-                $lockNextByFree = false;
-                if (isset($course) && (int)($course->price ?? 0) <= 0 && ((string)($freeAccessMode ?? 'all') === 'limit_2') && $nextModule) {
-                    $lockNextByFree = !in_array((int) $nextModule->id, (array) $freeAccessibleModuleIds, true);
-                }
                 $lockNext = $lockNext || $lockNextByFree;
             @endphp
 
             {{-- Tombol Next tetap seperti sebelumnya (button), tapi arahnya dinamis --}}
             <button class="next_kanan_modul" type="button"
-                @if(isset($course) && $nextModule && !$lockNext)
-                    data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]) }}"
-                @elseif(isset($course) && !$nextModule && !$lockNext)
+                @if(isset($course) && $nextTargetRep && !$lockNext)
+                    data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextTargetRep->id]) }}"
+                @elseif(isset($course) && !$nextTargetRep && !$lockNext)
                     data-next-url="{{ route('course.rating', ['course' => $course->id]) }}"
+                @elseif($lockNext && $lockNextByFree)
+                    data-is-locked-free="1"
+                    data-buy-url="{{ route('course.payment', $course->id) }}"
+                    data-course-name="{{ $course->name }}"
+                @elseif($lockNext)
+                    data-is-locked-quiz="1"
                 @else
                     disabled style="opacity:.6; cursor:not-allowed;"
                 @endif
             >
                 <p>
-                    @if($lockNext)
+                    @if($lockNext && $lockNextByFree)
+                        Beli Course
+                    @elseif($lockNext)
                         Terkunci
-                    @elseif(!$nextModule)
+                    @elseif(!$nextTargetRep)
                         Selesai & Beri Ulasan
                     @else
                         Next
                     @endif
                 </p>
                 @if($lockNext)
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="0 0 16 16" aria-hidden="true">
-                        <path d="M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m2 6V4a2 2 0 1 0-4 0v3z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                     </svg>
                 @else
                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="white" class="bi-right bi-caret-right-fill" viewBox="0 0 16 16">
@@ -406,9 +679,19 @@
                 if (locked) {
                     const reason = item.getAttribute('data-locked-reason') || '';
                     if (reason === 'free') {
-                        alert('Materi ini terkunci. Course gratis ini hanya membuka 2 modul pertama.');
+                        Swal.fire({
+                            title: 'Oops!',
+                            text: 'Materi ini terkunci. Silakan beli atau daftar course ini untuk membuka seluruh materi.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f4c430',
+                        });
                     } else {
-                        alert('Materi ini terkunci. Kamu harus lulus kuis terlebih dahulu.');
+                        Swal.fire({
+                            title: 'Oops!',
+                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f4c430',
+                        });
                     }
                     return;
                 }
@@ -419,18 +702,53 @@
             });
         });
 
-        const nextBtn = document.querySelector('.next_kanan_modul[data-next-url]');
+        const nextBtn = document.querySelector('.next_kanan_modul');
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
                 const url = nextBtn.getAttribute('data-next-url');
-                if (url) window.location.href = url;
+                const isLockedFree = nextBtn.getAttribute('data-is-locked-free') === '1';
+
+                if (isLockedFree) {
+                    const buyUrl = nextBtn.getAttribute('data-buy-url');
+                    const courseName = nextBtn.getAttribute('data-course-name') || 'course';
+                    
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: `Layanan free course ${courseName} ini sudah habis. Ketuk tombol untuk membeli dan menikmati akses penuh.`,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Beli Sekarang',
+                        cancelButtonText: 'Nanti Saja',
+                        confirmButtonColor: '#f4c430',
+                        cancelButtonColor: '#d33',
+                    }).then((result) => {
+                        if (result.isConfirmed && buyUrl) {
+                            window.location.href = buyUrl;
+                        }
+                    });
+                    return;
+                }
+
+                const isLockedQuiz = nextBtn.getAttribute('data-is-locked-quiz') === '1';
+                if (isLockedQuiz) {
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f4c430',
+                    });
+                    return;
+                }
+
+                if (url) {
+                    window.location.href = url;
+                }
             });
         }
 
-        const videoEl = document.querySelector('.video_course');
-        if (videoEl && videoEl.tagName === 'VIDEO') {
-            videoEl.load();
-        }
+        document.querySelectorAll('video.video_course').forEach((v) => {
+            try { v.load(); } catch (e) {}
+        });
     </script>
 
     <script>
@@ -475,6 +793,76 @@
                 if (document.hidden || !isRecentlyActive) return;
                 sendHeartbeat(HEARTBEAT_SECONDS);
             }, HEARTBEAT_SECONDS * 1000);
+        })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('error'))
+                Swal.fire({
+                    title: 'Oops!',
+                    text: '{{ session('error') }}',
+                    icon: 'warning',
+                    confirmButtonColor: '#f4c430',
+                });
+            @endif
+            @if(session('success'))
+                Swal.fire({
+                    title: 'Berhasil',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    confirmButtonColor: '#16a34a',
+                });
+            @endif
+        });
+    </script>
+
+    <!-- Quiz Start Confirmation Modal -->
+    <div id="quizStartModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:quizModalIn .2s ease;">
+            <div style="font-size:48px; margin-bottom:12px;">🎯</div>
+            <h3 style="font-weight:800; font-size:20px; color:#1f2937; margin:0 0 10px 0;">Selamat Mengerjakan!</h3>
+            <p style="color:#6b7280; font-size:14px; margin:0 0 24px 0;">Semoga berhasil dan raih nilai terbaik kamu! 💪</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button id="quizStartCancelBtn" type="button"
+                    style="flex:1; padding:10px 0; border-radius:999px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:600; font-size:14px; cursor:pointer;">
+                    Batal
+                </button>
+                <a id="quizStartConfirmBtn" href="#"
+                    style="flex:1; padding:10px 0; border-radius:999px; background:#f4c430; color:#1f2937; font-weight:700; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+                    Mulai Kuis
+                </a>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes quizModalIn {
+            from { transform: scale(.92); opacity: 0; }
+            to   { transform: scale(1);  opacity: 1; }
+        }
+    </style>
+    <script>
+        (function() {
+            const startBtn = document.getElementById('startQuizBtn');
+            const modal = document.getElementById('quizStartModal');
+            const cancelBtn = document.getElementById('quizStartCancelBtn');
+            const confirmBtn = document.getElementById('quizStartConfirmBtn');
+
+            if (!startBtn || !modal) return;
+
+            startBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = startBtn.getAttribute('data-start-url') || '#';
+                confirmBtn.href = url;
+                modal.style.display = 'flex';
+            });
+
+            cancelBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.style.display = 'none';
+            });
         })();
     </script>
 </body>

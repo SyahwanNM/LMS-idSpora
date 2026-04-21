@@ -12,13 +12,117 @@
 
     $courseModules = $course->modules ?? collect();
     $moduleChunks = $courseModules->values()->chunk(3);
-
-    $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
 @endphp
 
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
+    <style>
+        .processing-summary {
+            margin-top: 18px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .processing-summary-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .processing-summary-title {
+            margin: 0;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.78);
+            font-weight: 700;
+        }
+
+        .processing-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .processing-chip {
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
+            min-height: 64px;
+        }
+
+        .processing-chip .value {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+
+        .processing-chip .label {
+            display: block;
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.3;
+        }
+
+        .module-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .module-status-pill.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .module-status-pill.assigned {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .module-status-pill.uploaded {
+            background: #ecfeff;
+            color: #0f766e;
+        }
+
+        .module-status-pill.revision {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .module-status-pill.ready {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        @media (max-width: 992px) {
+            .processing-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .processing-summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -68,11 +172,68 @@
                             </div>
                         </div>
                     </div>
+
+                    @if(($processingSummary['total'] ?? 0) > 0)
+                        <div class="processing-summary">
+                            <div class="processing-summary-head">
+                                <p class="processing-summary-title">Processing Snapshot</p>
+                                <span class="hero-pill-outline">{{ $processingSummary['total'] }} module handoff aktif</span>
+                            </div>
+                            <div class="processing-summary-grid">
+                                <div class="processing-chip">
+                                    <span class="value">{{ $processingSummary['assigned'] ?? 0 }}</span>
+                                    <span class="label">Diserahkan ke admin course</span>
+                                </div>
+                                <div class="processing-chip">
+                                    <span class="value">{{ $processingSummary['uploaded'] ?? 0 }}</span>
+                                    <span class="label">Hasil edit diunggah</span>
+                                </div>
+                                <div class="processing-chip">
+                                    <span class="value">{{ $processingSummary['revision'] ?? 0 }}</span>
+                                    <span class="label">Revisi diminta</span>
+                                </div>
+                                <div class="processing-chip">
+                                    <span class="value">{{ $processingSummary['ready'] ?? 0 }}</span>
+                                    <span class="label">Siap dipublikasikan</span>
+                                </div>
+                                <div class="processing-chip">
+                                    <span class="value">{{ $processingSummary['total'] ?? 0 }}</span>
+                                    <span class="label">Total modul terlibat</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
                 <div class="hero-media">
                     <div class="hero-image-wrap">
-                        @php $thumbUrl = $course->card_thumbnail_url; @endphp
-                        @if(!empty($thumbUrl))
+                        @if($course->card_thumbnail)
+                            @php
+                                $rawThumb = str_replace('\\', '/', trim((string) $course->card_thumbnail));
+                                $thumbUrl = null;
+
+                                if (str_starts_with($rawThumb, 'http://') || str_starts_with($rawThumb, 'https://')) {
+                                    $thumbUrl = $rawThumb;
+                                } elseif (str_starts_with($rawThumb, 'uploads/')) {
+                                    $thumbUrl = asset($rawThumb);
+                                } else {
+                                    $rel = $rawThumb;
+                                    $markerPos = stripos($rel, 'storage/app/public/');
+                                    if ($markerPos !== false) {
+                                        $rel = substr($rel, $markerPos + strlen('storage/app/public/'));
+                                    }
+                                    if (str_starts_with($rel, 'storage/')) {
+                                        $rel = ltrim(substr($rel, 8), '/');
+                                    }
+                                    if (str_starts_with($rel, 'public/')) {
+                                        $rel = ltrim(substr($rel, 7), '/');
+                                    }
+                                    $rel = ltrim($rel, '/');
+                                    if ($rel !== '' && !str_contains($rel, '/')) {
+                                        $rel = 'courses/card_thumbnails/' . $rel;
+                                    }
+                                    $thumbUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($rel);
+                                }
+                            @endphp
                             <img src="{{ $thumbUrl }}" alt="{{ $course->name }}" />
                         @else
                             <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=360&fit=crop"
@@ -102,10 +263,6 @@
             <section id="curriculum-map" class="tab-content active">
                 <div class="unit-header">
                     <p>ACADEMIC UNITS (ADMIN MANAGED)</p>
-                    <a href="{{ route('trainer.courses.studio', $course->id) }}" class="btn-propose"
-                        style="text-decoration:none;">
-                        <i class="bi bi-cloud-upload"></i> UPLOAD MATERI
-                    </a>
                 </div>
 
                 @if($moduleChunks->count() > 0)
@@ -115,17 +272,9 @@
                                 <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
                                 </div>
                                 <div class="unit-title">
-                                    @php
-                                        $unitNo = (int) ($idx + 1);
-                                        $unitTitle = (string) optional($unitTitlesByNo->get($unitNo))->title;
-                                        if (trim($unitTitle) === '') {
-                                            $unitTitle = 'Academic Unit: Module ' . $unitNo;
-                                        }
-                                    @endphp
-                                    <h3>{{ $unitTitle }}</h3>
+                                    <h3>Academic Unit: Module {{ $idx + 1 }}</h3>
                                     <div class="unit-meta">
                                         <span><i class="bi bi-folder"></i> {{ $chunk->count() }} OPERATIONAL ASSETS</span>
-                                        <span class="unit-status"><i class="bi bi-check-circle-fill"></i> VALIDATED</span>
                                     </div>
                                 </div>
                                 <button class="unit-toggle" type="button"><i class="bi bi-chevron-down"></i></button>
@@ -136,44 +285,34 @@
                                     @php
                                         $icon = $module->type === 'video' ? 'bi-film' : ($module->type === 'quiz' ? 'bi-check-circle' : 'bi-file-earmark-pdf');
                                         $label = $module->type === 'video' ? 'Video Asset' : ($module->type === 'quiz' ? 'Quiz Engine' : 'PDF Material');
-                                        $assetTab = $module->type === 'quiz' ? 'quiz' : 'module';
-
-                                        $courseStatus = (string) ($course->status ?? '');
-                                        $isApproved = $courseStatus === 'approved';
-                                        $isPending = $courseStatus === 'pending_review';
-                                        $isRejected = $courseStatus === 'rejected';
-
-                                        $hasFile = $module->type !== 'quiz' && !empty($module->content_url) && $module->content_url !== 'quiz_submitted';
-                                        $quizReady = $module->type === 'quiz' && ($module->quizQuestions?->count() ?? 0) > 0;
-
-                                        $primaryTitle = (string) ($module->title ?? $label);
-                                        if ($module->type !== 'quiz' && $hasFile) {
-                                            $primaryTitle = (string) ($module->file_name ?: basename((string) $module->content_url));
-                                        }
-
-                                        $statusText = 'Belum diupload';
-                                        if ($module->type === 'quiz') {
-                                            $statusText = $quizReady ? 'Quiz tersimpan' : 'Quiz belum dibuat';
-                                        } else {
-                                            $statusText = $hasFile ? 'File terupload' : 'Belum diupload';
-                                        }
-
-                                        if (($hasFile || $quizReady) && $isPending) {
-                                            $statusText = 'Menunggu approval admin';
-                                        }
-                                        if (($hasFile || $quizReady) && $isApproved) {
-                                            $statusText = 'Approved';
-                                        }
-                                        if (($hasFile || $quizReady) && $isRejected) {
-                                            $statusText = 'Perlu revisi (ditolak admin)';
-                                        }
+                                        $assetTab = $module->type === 'quiz' ? 'quiz' : ($module->type === 'video' ? 'video' : 'module');
+                                        $processingStatus = (string) ($module->processing_status ?? '');
+                                        $processingLabel = match ($processingStatus) {
+                                            'assigned_to_admin_course' => 'Diserahkan',
+                                            'processed_uploaded' => 'Hasil Edit Diunggah',
+                                            'revision_requested' => 'Revisi Diminta',
+                                            'ready_for_publish' => 'Siap Publikasi',
+                                            default => '',
+                                        };
+                                        $processingClass = match ($processingStatus) {
+                                            'assigned_to_admin_course' => 'assigned',
+                                            'processed_uploaded' => 'uploaded',
+                                            'revision_requested' => 'revision',
+                                            'ready_for_publish' => 'ready',
+                                            default => 'pending',
+                                        };
                                       @endphp
                                     <div class="asset-mini"
                                         data-redirect="{{ route('trainer.courses.studio', $course->id) }}?unit={{ $idx }}&tab={{ $assetTab }}">
                                         <i class="bi {{ $icon }}"></i>
                                         <div>
-                                            <h4>{{ Str::limit($primaryTitle, 32) }}</h4>
-                                            <p>{{ $statusText }}</p>
+                                            <h4>{{ Str::limit($module->title, 25) }}</h4>
+                                            <p>{{ $label }}</p>
+                                            @if($module->isVideo() && $processingStatus !== '')
+                                                <span class="module-status-pill {{ $processingClass }}">
+                                                    <i class="bi bi-activity"></i>{{ $processingLabel }}
+                                                </span>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -214,8 +353,7 @@
                 <div class="grading-registry">
                     <div class="registry-header">
                         <h3>AUTOMATIC GRADING REGISTRY</h3>
-                        <button class="export-btn" type="button" onclick="alert('Exporting Ledger to CSV...')"><i
-                                class="bi bi-download"></i> EXPORT LEDGER</button>
+                        <button class="export-btn" type="button"><i class="bi bi-download"></i> EXPORT LEDGER</button>
                     </div>
                     <div class="registry-table">
                         <div class="table-header">
@@ -272,11 +410,11 @@
                 <div class="learner-grid">
                     @forelse($activeStudents as $enrollment)
                         <div class="learner-card">
-                            <img src="{{ $enrollment->student->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->student->name) }}"
-                                alt="{{ $enrollment->student->name }}" />
+                            <img src="{{ $enrollment->user->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->user->name) }}"
+                                alt="{{ $enrollment->user->name }}" />
                             <div class="learner-info">
-                                <h4>{{ $enrollment->student->name ?? 'Anonim' }}</h4>
-                                <p>{{ strtoupper($enrollment->student->email ?? 'NO EMAIL') }}</p>
+                                <h4>{{ $enrollment->user->name ?? 'Anonim' }}</h4>
+                                <p>{{ strtoupper($enrollment->user->email ?? 'NO EMAIL') }}</p>
                                 <span class="learner-date">Joined: {{ $enrollment->created_at->format('Y-m-d') }}</span>
                             </div>
                         </div>
@@ -289,37 +427,6 @@
                     @endforelse
                 </div>
             </section>
-
-            <aside class="course-right">
-                <div class="grading-card">
-                    <div class="grading-head">
-                        <i class="bi bi-lightning-fill grading-icon"></i>
-                        <p>GRADING PROTOCOL</p>
-                    </div>
-                    <div class="grading-status">
-                        <p>Oversight Status</p>
-                        <h4>Active Automated</h4>
-                    </div>
-                    <ul class="grading-notes">
-                        <li>System automatically calculates percentage scores.</li>
-                        <li>Manual overrides are disabled for audit compliance.</li>
-                    </ul>
-                    <button class="grading-btn" type="button">View Audit Ledger</button>
-                </div>
-
-                <div class="instructor-card">
-                    <p class="instructor-title">INSTRUCTOR HUB</p>
-                    <a href="{{ route('trainer.courses.studio', $course->id) }}" style="text-decoration:none;">
-                        <div class="instructor-item" style="cursor:pointer;">
-                            <span class="dot"></span>
-                            <div>
-                                <h4>Submit Assets</h4>
-                                <p>Pedagogical Materials</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </aside>
         </div>
     </main>
 @endsection

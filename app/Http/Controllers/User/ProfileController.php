@@ -184,7 +184,7 @@ class ProfileController extends Controller
         return redirect()->route('profile.edit')->with('success', 'Profil berhasil diperbarui!');
     }
     
-    public function events()
+    public function history()
     {
         $user = Auth::user();
         
@@ -194,41 +194,68 @@ class ProfileController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
         
+        // Get all course enrollments
+        $enrollments = \App\Models\Enrollment::where('user_id', $user->id)
+            ->with(['course', 'user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
         // Get all manual payments for this user
         $payments = \App\Models\ManualPayment::where('user_id', $user->id)
             ->where('status', 'settled')
             ->get()
-            ->keyBy('event_id');
-        
-        // Calculate total spending
-        $totalSpending = $payments->sum('amount');
+            ->keyBy('id'); // Use ID as key, not event_id to avoid collision
         
         // Count statistics
-        $totalEvents = $registrations->count();
-        $paidEvents = $registrations->filter(function($reg) {
-            return $reg->event && $reg->event->price > 0;
-        })->count();
-        $freeEvents = $totalEvents - $paidEvents;
-        $attendedEvents = $registrations->filter(function($reg) {
-            return !empty($reg->attendance_status);
-        })->count();
+        $totalEventsCount = $registrations->count();
+        $totalCoursesCount = $enrollments->count();
         $certifiedEvents = $registrations->filter(function($reg) {
             return !empty($reg->certificate_issued_at);
         })->count();
+        $certifiedCourses = $enrollments->filter(function($enr) {
+            return !empty($enr->certificate_issued_at);
+        })->count();
+        
         $feedbackSubmitted = $registrations->filter(function($reg) {
             return !empty($reg->feedback_submitted_at);
         })->count();
+        $reviewsSubmitted = \App\Models\Review::where('user_id', $user->id)->count();
         
-        return view('profile.events', compact(
+        // Fetch saved item IDs to mark them in the UI
+        $savedEventIds = \DB::table('user_saved_events')
+            ->where('user_id', $user->id)
+            ->pluck('event_id')
+            ->all();
+            
+        $savedCourseIds = \DB::table('user_saved_courses')
+            ->where('user_id', $user->id)
+            ->pluck('course_id')
+            ->all();
+
+        // Also fetch the full saved items for the 'Saved' tab
+        $savedEvents = \App\Models\Event::whereIn('id', $savedEventIds)->get();
+        $savedCourses = \App\Models\Course::whereIn('id', $savedCourseIds)->get();
+            
+        $activitiesLogs = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->take(50)
+            ->get();
+
+        return view('profile.history', compact(
             'registrations', 
+            'enrollments',
             'payments', 
-            'totalSpending',
-            'totalEvents',
-            'paidEvents',
-            'freeEvents',
-            'attendedEvents',
+            'totalEventsCount',
+            'totalCoursesCount',
             'certifiedEvents',
-            'feedbackSubmitted'
+            'certifiedCourses',
+            'feedbackSubmitted',
+            'reviewsSubmitted',
+            'savedEventIds',
+            'savedCourseIds',
+            'savedEvents',
+            'savedCourses',
+            'activitiesLogs'
         ));
     }
     

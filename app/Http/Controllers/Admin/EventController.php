@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\EventPaymentRejectedMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
@@ -61,6 +62,32 @@ class EventController extends Controller
             ->all();
     }
 
+    private function syncEventSpeakers(Event $event, array $speakerNames, array $salaries): void
+    {
+        // Delete existing and re-sync
+        \App\Models\EventSpeaker::where('event_id', $event->id)->delete();
+
+        foreach ($speakerNames as $i => $name) {
+            $name = trim((string) $name);
+            if ($name === '') continue;
+
+            $salary = (float) preg_replace('/[^\d.]/', '', (string) ($salaries[$i] ?? 0));
+
+            // Try to find matching trainer
+            $trainer = \App\Models\User::where('role', 'trainer')
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                ->first();
+
+            \App\Models\EventSpeaker::create([
+                'event_id'   => $event->id,
+                'trainer_id' => $trainer?->id,
+                'name'       => $name,
+                'salary'     => $salary,
+                'order'      => $i,
+            ]);
+        }
+    }
+
     private function resolveAssignedTrainerIds(?int $trainerId, ?string $speaker): array
     {
         $ids = [];
@@ -90,6 +117,12 @@ class EventController extends Controller
             return;
         }
 
+        $hasZoomLink = !empty($event->zoom_link);
+        $hasMapLink = !empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude));
+        $locationMode = $hasZoomLink && $hasMapLink
+            ? 'hybrid'
+            : ($hasZoomLink ? 'online' : 'offline');
+
         TrainerNotification::create([
             'trainer_id' => $trainer->id,
             'type' => 'event_invitation',
@@ -102,6 +135,11 @@ class EventController extends Controller
                 'url' => route('trainer.events.show', $event->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
+                'location_mode' => $locationMode,
+                'location' => $event->location,
+                'maps_url' => $event->maps_url,
+                'zoom_link' => $event->zoom_link,
+                'vbg_path' => $event->vbg_path,
                 'due_at' => ($event->material_deadline ?: now()->addDays(7))->toIso8601String(),
                 'material_deadline' => optional($event->material_deadline)->toIso8601String(),
             ],
@@ -125,9 +163,18 @@ class EventController extends Controller
     public function create()
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
-        $events = Event::query()->latest()->paginate(10);
+        $events = Event::query()
+            ->with(['approvedTrainerModules.trainer'])
+            ->orderByDesc('event_date')
+            ->orderByDesc('created_at')
+            ->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
     }
 
@@ -142,6 +189,14 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        // Normalize price input: allow formatted values (e.g. "1.000.000") from client-side
+        // by stripping non-digit characters so validation accepts numeric values.
+        $rawPrice = $request->input('price', null);
+        if (!is_null($rawPrice)) {
+            $clean = preg_replace('/\D/', '', (string) $rawPrice);
+            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'trainer_id' => [
@@ -158,18 +213,18 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
-            'maps_url' => 'nullable|string|max:512',
+            'location_mode' => 'required|in:offline,online,hybrid',
+            'place_name' => 'nullable|string|max:255|required_if:location_mode,offline,hybrid',
+            'maps_url' => 'nullable|string|max:512|required_if:location_mode,offline,hybrid',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255',
+            'zoom_link' => 'nullable|url|max:255|required_if:location_mode,online,hybrid',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -182,7 +237,37 @@ class EventController extends Controller
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
+
+            'is_reseller_event' => 'nullable|boolean',
         ]);
+
+        // Debug: log submitted reseller inputs
+        Log::info('EventController@update submitted reseller values', [
+            'is_reseller_event_raw' => $request->input('is_reseller_event'),
+            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
+        ]);
+
+        // Debug: log submitted reseller inputs
+        Log::info('EventController@store submitted reseller values', [
+            'is_reseller_event_raw' => $request->input('is_reseller_event'),
+            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
+        ]);
+
+        $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $placeName = trim((string) $request->input('place_name', ''));
+
+        // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
+        $mapsUrl = trim((string) $request->input('maps_url', ''));
+        $zoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($locationMode === 'online') {
+            $mapsUrl = '';
+        } elseif ($locationMode === 'offline') {
+            $zoomLink = '';
+        }
+
+        $latitude = $mapsUrl !== '' ? $request->input('latitude') : null;
+        $longitude = $mapsUrl !== '' ? $request->input('longitude') : null;
+        $locationValue = $locationMode === 'online' ? 'Online' : $placeName;
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
@@ -238,45 +323,74 @@ class EventController extends Controller
         }
 
         // Simpan data ke database
+        // Determine reseller flag: prefer explicit hidden field, fallback to radio input
+        $isReseller = null;
+        if ($request->has('is_reseller_event')) {
+            $isReseller = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $isReseller = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $isReseller = false;
+        }
+
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
         $event = Event::create([
             'trainer_id' => $request->input('trainer_id') ?: null,
             'title' => $request->title,
-            'speaker' => $request->speaker,
+            'speaker' => $normalizedSpeaker,
             'manage_action' => $request->manage_action,
+            'is_reseller_event' => $request->boolean('is_reseller_event'),
             'materi' => $request->materi,
             'jenis' => $request->jenis,
             'short_description' => $request->short_description,
             'description' => $request->description,
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
-            'location' => $request->location,
-            'maps_url' => $request->maps_url,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'zoom_link' => $request->zoom_link,
+            'location' => $locationValue,
+            'maps_url' => $mapsUrl !== '' ? $mapsUrl : null,
+            'latitude' => $mapsUrl !== '' ? $latitude : null,
+            'longitude' => $mapsUrl !== '' ? $longitude : null,
+            'zoom_link' => $zoomLink !== '' ? $zoomLink : null,
             'price' => $request->price,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'discount_until' => $request->discount_until,
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
-            'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
+            'is_reseller_event' => (bool) $isReseller,
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        // Sync speakers with salaries
+        $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
+        $speakerSalaries = (array) $request->input('speaker_salaries', []);
+        if (!empty($speakerNames)) {
+            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
+        }
+
         foreach ($assignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, $trainerId, $source);
         }
 
         // Notify about zoom link if provided
-        if (!empty($request->zoom_link)) {
+        if (!empty($zoomLink)) {
             foreach ($assignedTrainerIds as $trainerId) {
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainerId,
@@ -286,7 +400,7 @@ class EventController extends Controller
                     'data' => [
                         'entity_type' => 'event',
                         'entity_id' => (int) $event->id,
-                        'zoom_link' => $request->zoom_link,
+                        'zoom_link' => $zoomLink,
                         'url' => route('trainer.events.show', $event->id),
                     ],
                     'expires_at' => now()->addDays(30),
@@ -373,12 +487,20 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
         return view('admin.events.show', compact('event'));
     }
 
     public function edit(Event $event)
     {
-        return view('admin.events.edit', compact('event'));
+        $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
+        $jenisOptions = Event::query()
+            ->whereNotNull('jenis')
+            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
+            ->distinct()
+            ->orderBy('jenis')
+            ->pluck('jenis');
+        return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
     }
 
     public function update(Request $request, Event $event)
@@ -387,6 +509,46 @@ class EventController extends Controller
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
+        $normalizedLocationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $normalizedPlaceName = trim((string) $request->input('place_name', ''));
+        if ($normalizedPlaceName === '' && $normalizedLocationMode !== 'online') {
+            $existingLocation = trim((string) $event->location);
+            if ($existingLocation !== '' && strtolower($existingLocation) !== 'online') {
+                $normalizedPlaceName = $existingLocation;
+            }
+        }
+
+        $normalizedMapsUrl = trim((string) $request->input('maps_url', ''));
+        $normalizedZoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($normalizedZoomLink !== '' && !preg_match('#^https?://#i', $normalizedZoomLink)) {
+            $normalizedZoomLink = 'https://' . ltrim($normalizedZoomLink, '/');
+        }
+
+        $request->merge([
+            'speaker' => $normalizedSpeaker,
+            'location_mode' => $normalizedLocationMode,
+            'place_name' => $normalizedPlaceName,
+            'maps_url' => $normalizedMapsUrl,
+            'zoom_link' => $normalizedZoomLink,
+        ]);
+
+        // Normalize price input in case client sent a formatted string (e.g. "1.000.000").
+        $rawPrice = $request->input('price', null);
+        if (!is_null($rawPrice)) {
+            $clean = preg_replace('/\D/', '', (string) $rawPrice);
+            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -403,18 +565,18 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
-            'maps_url' => 'nullable|string|max:512',
+            'location_mode' => 'required|in:offline,online,hybrid',
+            'place_name' => 'nullable|string|max:255|required_if:location_mode,offline,hybrid',
+            'maps_url' => 'nullable|string|max:512|required_if:location_mode,offline,hybrid',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255',
+            'zoom_link' => 'nullable|url|max:255|required_if:location_mode,online,hybrid',
             'price' => 'required|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -427,6 +589,8 @@ class EventController extends Controller
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
+
+            'is_reseller_event' => 'nullable|boolean',
         ]);
 
         $data = $request->only([
@@ -440,7 +604,6 @@ class EventController extends Controller
             'description',
             'benefit',
             'terms_and_conditions',
-            'location',
             'maps_url',
             'latitude',
             'longitude',
@@ -450,9 +613,35 @@ class EventController extends Controller
             'discount_until',
             'event_date',
             'event_time',
-            'event_time_end',
-            'material_deadline'
+            'event_time_end'
         ]);
+
+        // Determine reseller flag robustly (hidden input or radio fallback)
+        if ($request->has('is_reseller_event')) {
+            $data['is_reseller_event'] = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $data['is_reseller_event'] = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $data['is_reseller_event'] = false;
+        }
+
+        $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $placeName = trim((string) $request->input('place_name', ''));
+
+        // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
+        $mapsUrl = trim((string) $request->input('maps_url', ''));
+        $zoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($locationMode === 'online') {
+            $mapsUrl = '';
+        } elseif ($locationMode === 'offline') {
+            $zoomLink = '';
+        }
+
+        $data['location'] = $locationMode === 'online' ? 'Online' : $placeName;
+        $data['maps_url'] = $mapsUrl !== '' ? $mapsUrl : null;
+        $data['zoom_link'] = $zoomLink !== '' ? $zoomLink : null;
+        $data['latitude'] = $mapsUrl !== '' ? $request->input('latitude') : null;
+        $data['longitude'] = $mapsUrl !== '' ? $request->input('longitude') : null;
 
         if (array_key_exists('trainer_id', $data) && empty($data['trainer_id'])) {
             $data['trainer_id'] = null;
@@ -523,6 +712,16 @@ class EventController extends Controller
             }
         }
 
+        // Ensure price is numeric (accept formatted strings)
+        if (array_key_exists('price', $data)) {
+            if (is_string($data['price'])) {
+                $clean = preg_replace('/\D/', '', $data['price']);
+                $data['price'] = $clean === '' ? 0 : (float) $clean;
+            } else {
+                $data['price'] = (float) $data['price'];
+            }
+        }
+
         $event->update($data);
 
         $currentAssignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -530,6 +729,14 @@ class EventController extends Controller
             $event->speaker
         );
         $newlyAssignedTrainerIds = array_values(array_diff($currentAssignedTrainerIds, $previousAssignedTrainerIds));
+
+        // Sync speakers with salaries
+        $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
+        $speakerSalaries = (array) $request->input('speaker_salaries', []);
+        if (!empty($speakerNames)) {
+            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
+        }
+
         foreach ($newlyAssignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, (int) $trainerId, $source);
@@ -598,12 +805,57 @@ class EventController extends Controller
             return back()->with('success', 'Event sudah diterbitkan.');
         }
 
+        // Prevent publishing if operational documents are incomplete
+        $pct = (int) $event->documents_completion_percent;
+        if ($pct < 100) {
+            // Recompute missing items similarly to admin view logic
+            $hasMapsLink = !empty($event->maps_url);
+            $hasZoomLink = !empty($event->zoom_link);
+            $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+            $hasVbg = !empty($event->vbg_path);
+            $hasModule = !empty($event->module_path);
+            $hasAbsFile = !empty($event->attendance_path);
+            $hasAbsQrImg = !empty($event->attendance_qr_image);
+            $hasAbsQrToken = !empty($event->attendance_qr_token);
+            $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+
+            $missing = [];
+            if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+            if (!$hasModule) $missing[] = 'Module (Trainer)';
+            if (!$hasAbs) $missing[] = 'Absensi';
+
+            $msg = 'Kelengkapan dokumen belum 100%.';
+            if (!empty($missing)) {
+                $msg .= ' Item yang belum lengkap: ' . implode(', ', $missing) . '.';
+            }
+            $msg .= ' Lengkapi dokumen sebelum menerbitkan.';
+
+            return back()->with('error', $msg)->with('publish_missing_items', $missing);
+        }
+
         $event->forceFill([
             'is_published' => true,
             'published_at' => now(),
         ])->save();
 
         return back()->with('success', 'Event berhasil diterbitkan!');
+    }
+
+    /**
+     * Admin: unpublish event (batal publish).
+     */
+    public function unpublish(Request $request, Event $event)
+    {
+        if (!(bool) $event->is_published) {
+            return back()->with('success', 'Event memang belum diterbitkan.');
+        }
+
+        $event->forceFill([
+            'is_published' => false,
+            'published_at' => null,
+        ])->save();
+
+        return back()->with('success', 'Publikasi event berhasil dibatalkan!');
     }
 
     // Public registration (AJAX)
@@ -712,20 +964,19 @@ class EventController extends Controller
         } catch (\Throwable $e) { /* ignore */
         }
         return response()->json([
-            'status' => 'ok',
-            'message' => 'Berhasil daftar event (GRATIS)',
+            'success' => true,
+            'message' => 'Berhasil daftar event (Gratis)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.show', $event)
+            'redirect' => route('events.registered.detail', $event)
         ]);
     }
 
-    // Admin: upload operational documents (VBG, certificate, attendance)
+    // Admin: upload operational documents (VBG, attendance)
     public function uploadDocuments(Request $request, Event $event)
     {
         $validated = $request->validate([
             'virtual_background' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
-            'certificate' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
             'attendance' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:8192',
         ]);
 
@@ -735,10 +986,6 @@ class EventController extends Controller
         if ($request->hasFile('virtual_background')) {
             $updates['vbg_path'] = $request->file('virtual_background')->store('events/docs', 'public');
             $notificationMessages[] = 'Virtual background (VBG)';
-        }
-        if ($request->hasFile('certificate')) {
-            $updates['certificate_path'] = $request->file('certificate')->store('events/docs', 'public');
-            $notificationMessages[] = 'Sertifikat';
         }
         if ($request->hasFile('attendance')) {
             $updates['attendance_path'] = $request->file('attendance')->store('events/docs', 'public');
@@ -771,60 +1018,9 @@ class EventController extends Controller
         return back()->with('success', 'Dokumen berhasil diperbarui.');
     }
 
-    // Admin: remind trainer(s) to upload event module
-    public function remindModuleUpload(Request $request, Event $event)
-    {
-        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
-            abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
-        }
-
-        if (!empty($event->module_path)) {
-            return back()->with('success', 'Module sudah diupload.');
-        }
-
-        $speaker = trim((string) ($event->speaker ?? ''));
-        if ($speaker === '') {
-            return back()->with('error', 'Tidak ada pembicara yang terdaftar pada event ini.');
-        }
-
-        $parts = preg_split('/\s*[,;]+\s*/', $speaker) ?: [];
-        $names = array_values(array_unique(array_filter(array_map('trim', $parts))));
-        if (empty($names)) {
-            return back()->with('error', 'Tidak dapat membaca nama pembicara.');
-        }
-
-        $trainers = User::query()
-            ->where('role', 'trainer')
-            ->whereIn('name', $names)
-            ->get();
-
-        if ($trainers->isEmpty()) {
-            return back()->with('error', 'Trainer tidak ditemukan untuk pembicara: ' . implode(', ', $names));
-        }
-
-        $sent = 0;
-        foreach ($trainers as $t) {
-            TrainerNotification::create([
-                'trainer_id' => (int) $t->id,
-                'type' => 'event_module_reminder',
-                'title' => 'Ingat Upload Module Event',
-                'message' => 'Mohon upload module/materi untuk event "' . $event->title . '".',
-                'data' => [
-                    'entity_type' => 'event',
-                    'entity_id' => (int) $event->id,
-                    'url' => route('trainer.events.modules'),
-                ],
-                'expires_at' => now()->addDays(14),
-            ]);
-            $sent++;
-        }
-
-        return back()->with('success', 'Reminder terkirim ke ' . $sent . ' trainer.');
-    }
-
     /**
      * Admin: approve trainer module submission for an event.
-     * Once approved, module_path will be set and document completeness will increase.
+     * Supports per-trainer module via event_trainer_modules table.
      */
     public function approveModule(Request $request, Event $event)
     {
@@ -832,18 +1028,88 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $modulePath = trim((string) ($event->module_path ?? ''));
-        if ($modulePath === '') {
-            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
-                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+        $moduleId = $request->input('module_id');
+
+        if ($moduleId) {
+            // Approve specific module
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
+
+            $module->update([
+                'status'      => 'approved',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+                'rejection_reason' => null,
+            ]);
+
+            // Notify the specific trainer
+            try {
+                \App\Models\TrainerNotification::create([
+                    'trainer_id' => $module->trainer_id,
+                    'type'       => 'event_material_approved',
+                    'title'      => 'Materi Event Diterima',
+                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                    'data'       => [
+                        'entity_type' => 'event',
+                        'entity_id'   => (int) $event->id,
+                        'url'         => route('trainer.events.show', $event->id),
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            } catch (\Throwable $e) {}
+        } else {
+            // Legacy: approve all pending modules for this event
+            $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')
+                ->get();
+
+            if ($pending->isEmpty()) {
+                return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                    ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+            }
+
+            foreach ($pending as $module) {
+                $module->update([
+                    'status'      => 'approved',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                    'rejection_reason' => null,
+                ]);
+
+                try {
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $module->trainer_id,
+                        'type'       => 'event_material_approved',
+                        'title'      => 'Materi Event Diterima',
+                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                        'data'       => [
+                            'entity_type' => 'event',
+                            'entity_id'   => (int) $event->id,
+                            'url'         => route('trainer.events.show', $event->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                } catch (\Throwable $e) {}
+            }
         }
 
-        $event->update([
-            'material_status' => 'approved',
-            'material_approved_at' => now(),
-            'material_approved_by' => auth()->id(),
-            'material_rejection_reason' => null,
-        ]);
+        // Update event-level material_status if all modules approved
+        $stillPending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('status', 'pending_review')->count();
+        if ($stillPending === 0) {
+            $event->update([
+                'material_status'    => 'approved',
+                'material_approved_at' => now(),
+                'material_approved_by' => auth()->id(),
+                'material_rejection_reason' => null,
+                'module_verified_at' => now(),
+                'module_verified_by' => auth()->id(),
+                'module_rejected_at' => null,
+                'module_rejected_by' => null,
+                'module_rejection_reason' => null,
+            ]);
+        }
 
         return back()->with('success', 'Module trainer berhasil diverifikasi.')
             ->with('module_success', 'Module trainer berhasil diverifikasi.');
@@ -858,22 +1124,88 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $modulePath = trim((string) ($event->module_path ?? ''));
-        if ($modulePath === '') {
-            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
-                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
-        }
-
         $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
+            'reason'    => ['required', 'string', 'max:500'],
+            'module_id' => ['nullable', 'integer'],
         ]);
 
-        $event->update([
-            'material_status' => 'rejected',
-            'material_approved_at' => null,
-            'material_approved_by' => null,
-            'material_rejection_reason' => $validated['reason'],
-        ]);
+        $moduleId = $validated['module_id'] ?? null;
+
+        if ($moduleId) {
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
+
+            $module->update([
+                'status'           => 'rejected',
+                'reviewed_by'      => auth()->id(),
+                'reviewed_at'      => now(),
+                'rejection_reason' => $validated['reason'],
+            ]);
+
+            try {
+                \App\Models\TrainerNotification::create([
+                    'trainer_id' => $module->trainer_id,
+                    'type'       => 'event_material_rejected',
+                    'title'      => 'Materi Event Ditolak',
+                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                    'data'       => [
+                        'entity_type'      => 'event',
+                        'entity_id'        => (int) $event->id,
+                        'url'              => route('trainer.events.show', $event->id),
+                        'rejection_reason' => $validated['reason'],
+                    ],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            } catch (\Throwable $e) {}
+        } else {
+            // Legacy: reject all pending
+            $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')
+                ->get();
+
+            if ($pending->isEmpty()) {
+                return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                    ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
+            }
+
+            foreach ($pending as $module) {
+                $module->update([
+                    'status'           => 'rejected',
+                    'reviewed_by'      => auth()->id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => $validated['reason'],
+                ]);
+
+                try {
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $module->trainer_id,
+                        'type'       => 'event_material_rejected',
+                        'title'      => 'Materi Event Ditolak',
+                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                        'data'       => [
+                            'entity_type'      => 'event',
+                            'entity_id'        => (int) $event->id,
+                            'url'              => route('trainer.events.show', $event->id),
+                            'rejection_reason' => $validated['reason'],
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+
+            $event->update([
+                'material_status'           => 'rejected',
+                'material_approved_at'      => null,
+                'material_approved_by'      => null,
+                'material_rejection_reason' => $validated['reason'],
+                'module_verified_at'        => null,
+                'module_verified_by'        => null,
+                'module_rejected_at'        => now(),
+                'module_rejected_by'        => auth()->id(),
+                'module_rejection_reason'   => $validated['reason'],
+            ]);
+        }
 
         return back()->with('success', 'Module trainer ditolak.')
             ->with('module_success', 'Module trainer ditolak.');
@@ -1027,8 +1359,8 @@ class EventController extends Controller
                     $m->status = 'settled';
                     $m->save();
 
-                    // Process Referral Commission (10%)
-                    if (!empty($m->referral_code)) {
+                    // Process Referral Commission (10%) only for reseller-enabled events
+                    if ((bool) ($event->is_reseller_event ?? false) && !empty($m->referral_code)) {
                         $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
                         if ($referrer && $referrer->id !== $m->user_id) {
                             $commissionAmount = $m->amount * 0.10; // 10% commission
@@ -1149,5 +1481,38 @@ class EventController extends Controller
         }
 
         return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
+    }
+
+    /**
+     * Delete an event registration and cleanup related data/files.
+     */
+    public function destroyRegistration(Event $event, EventRegistration $registration)
+    {
+        try {
+            // Cleanup related manual payments and their physical proof files
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $proofs = \App\Models\PaymentProof::where('manual_payment_id', $m->id)->get();
+                foreach ($proofs as $p) {
+                    if ($p->file_path && Storage::disk('public')->exists($p->file_path)) {
+                        Storage::disk('public')->delete($p->file_path);
+                    }
+                    $p->delete();
+                }
+                $m->delete();
+            }
+
+            // Cleanup the primary payment_proof file if exists
+            if ($registration->payment_proof && Storage::disk('public')->exists($registration->payment_proof)) {
+                Storage::disk('public')->delete($registration->payment_proof);
+            }
+
+            $registration->delete();
+
+            return redirect()->back()->with('success', 'Data pendaftaran berhasil dihapus.');
+        } catch (\Throwable $e) {
+            \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
+        }
     }
 }

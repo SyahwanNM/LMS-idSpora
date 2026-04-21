@@ -133,6 +133,14 @@
             transform: scale(1.1);
             color: #ef4444 !important;
         }
+        .save-btn.active svg {
+            fill: #ef4444 !important;
+            color: #ef4444 !important;
+        }
+        
+        .save-btn {
+            transition: all 0.2s ease;
+        }
     </style>
 </head>
 
@@ -169,7 +177,7 @@
                             
                             <img src="{{ $carousel->image_url }}"
                                 alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; "
                                 onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
                             @if($carousel->title)
@@ -189,7 +197,7 @@
                         <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
                             <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
                                 alt="Slide 1"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; ">
 
                             <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                                 <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
@@ -246,15 +254,7 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            @php
-                                                                $cMedia = $course->card_thumbnail ?? $course->media;
-                                                                if ($cMedia) {
-                                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
-                                                                } else {
-                                                                    $imgSrc = asset('aset/poster.png');
-                                                                }
-                                                            @endphp
-                                                            <img src="{{ $imgSrc }}"
+                                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -322,23 +322,21 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            @php
-                                                $cMedia = $course->card_thumbnail ?? $course->media;
-                                                if ($cMedia) {
-                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
-                                                } else {
-                                                    $imgSrc = 'https://via.placeholder.com/280x160';
-                                                }
-                                            @endphp
-                                            <img src="{{ $imgSrc }}"
+                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
                                                 style="font-size: 11px;">{{ ucfirst($course->level ?? 'General') }}</span>
                                             <button
-                                                class="btn btn-light btn-sm rounded-circle shadow-sm position-absolute top-0 end-0 m-2 d-flex align-items-center justify-content-center"
-                                                style="width: 32px; height: 32px; padding: 0;">
-                                                <i class="bi bi-bookmark"></i>
+                                                class="save-btn course-save-btn {{ !empty($course->is_saved) ? 'active' : '' }}" 
+                                                aria-label="Save course" type="button" 
+                                                data-course-id="{{ $course->id }}"
+                                                data-save-url="{{ route('courses.save', $course) }}"
+                                                onclick="event.stopPropagation(); toggleSaveCourse(this)"
+                                                style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                </svg>
                                             </button>
                                         </div>
 
@@ -366,10 +364,20 @@
                                                 </div>
                                             </div>
 
-                                            <div
-                                                class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
-                                                    {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                            <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    @if($course->hasDiscount())
+                                                        <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px;">
+                                                            Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                        </span>
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
+                                                        </div>
+                                                    @else
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                                 <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
                                                     class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
@@ -838,6 +846,47 @@
             }, 30000);
         });
 
+        function toggleSaveCourse(btn) {
+            const url = btn.getAttribute('data-save-url');
+            
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '#64748b';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            });
+        }
+
         function toggleSaveEvent(btn) {
             const url = btn.getAttribute('data-save-url');
             
@@ -880,6 +929,27 @@
             });
         }
     </script>
+
+<style>
+    .carousel-control-prev,
+    .carousel-control-next {
+        display: none !important;
+    }
+    .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #f4c430;
+        opacity: 0.5;
+        transition: opacity 0.2s;
+        border: none;
+        margin: 0 4px;
+    }
+    .carousel-indicators .active {
+        opacity: 1;
+        background-color: #51376c;
+    }
+</style>
 </body>
 
 </html>

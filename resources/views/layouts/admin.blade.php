@@ -108,22 +108,11 @@
                     </div>
                     <div class="modal-body pt-0">
                         <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
-
-                        <div class="logout-check d-flex align-items-start gap-3 p-3 rounded-3">
-                            
-                            <div class="flex-grow-1">
-                                <div class="form-check m-0">
-                                    <input class="form-check-input" type="checkbox" value="1" id="logoutConfirmCheck" aria-describedby="logoutConfirmHelp">
-                                    <label class="form-check-label fw-semibold" for="logoutConfirmCheck">Saya yakin ingin logout</label>
-                                </div>
-                                <small id="logoutConfirmHelp" class="text-muted d-block mt-1">Anda akan keluar dari sesi admin dan perlu login kembali.</small>
-                            </div>
-                        </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                             <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn" disabled>
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                             </button>
@@ -201,13 +190,6 @@
             const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
             const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
 
-            function setConfirmState(checked){
-                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
-                const box = modalEl.querySelector('.logout-check .check-anim');
-                if(confirmBtn) confirmBtn.disabled = !checked;
-                if(box) box.classList.toggle('active', !!checked);
-            }
-
             function resetLogoutModal(){
                 const body = modalEl.querySelector('.modal-body');
                 const footer = modalEl.querySelector('.modal-footer');
@@ -219,26 +201,18 @@
                     footer.style.display = initialFooterDisplay;
                     footer.innerHTML = initialFooterHtml;
                 }
-                const confirmCheck = modalEl.querySelector('#logoutConfirmCheck');
-                if(confirmCheck) confirmCheck.checked = false;
-                setConfirmState(false);
+                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
+                if(confirmBtn) confirmBtn.disabled = false;
             }
 
             logoutTrigger.addEventListener('click', function(ev){
                 ev.preventDefault();
                 resetLogoutModal();
                 confirmModal.show();
-                // focus checkbox for faster keyboard flow
+                // focus confirm button for faster keyboard flow
                 setTimeout(function(){
-                    try { modalEl.querySelector('#logoutConfirmCheck')?.focus(); } catch(e) {}
+                    try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
                 }, 150);
-            });
-
-            modalEl.addEventListener('change', function(ev){
-                const target = ev.target;
-                if(target && target.id === 'logoutConfirmCheck'){
-                    setConfirmState(!!target.checked);
-                }
             });
 
             function showLogoutSuccessState(){
@@ -264,8 +238,6 @@
                 const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
                 if(!btn) return;
                 ev.preventDefault();
-                const confirmCheck = modalEl.querySelector('#logoutConfirmCheck');
-                if(!confirmCheck || !confirmCheck.checked) return;
                 btn.disabled = true;
                 try { showLogoutSuccessState(); } catch(e){}
                 setTimeout(function(){ logoutForm.submit(); }, 900);

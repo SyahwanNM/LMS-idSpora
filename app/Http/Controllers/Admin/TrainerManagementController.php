@@ -78,12 +78,17 @@ class TrainerManagementController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'academic_title' => ['nullable', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:30'],
             'profession' => ['nullable', 'string', 'max:100'], // Field Baru
             'institution' => ['nullable', 'string', 'max:255'], // Field Baru
             'website' => ['nullable', 'string', 'max:255'],
+            'linkedin_url' => ['nullable', 'url', 'max:255'],
+            'bank_name' => ['nullable', 'string', 'max:120'],
+            'bank_account_number' => ['nullable', 'string', 'max:60'],
+            'bank_account_holder' => ['nullable', 'string', 'max:150'],
             'bio' => ['nullable', 'string'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // Validasi Foto
         ]);
@@ -109,6 +114,36 @@ class TrainerManagementController extends Controller
 
         $trainer->loadCount(['coursesAsTrainer', 'eventsAsTrainer']);
 
+        $completedEventsCount = Event::query()
+            ->where('trainer_id', $trainer->id)
+            ->whereDate('event_date', '<', now()->toDateString())
+            ->count();
+
+        $completedCoursesCount = Course::query()
+            ->where('trainer_id', $trainer->id)
+            ->where('status', 'approved')
+            ->whereNotNull('approved_at')
+            ->where('approved_at', '<', now())
+            ->count();
+
+        $eventIds = Event::query()
+            ->where('trainer_id', $trainer->id)
+            ->pluck('id');
+
+        $averageRating = 0;
+        if ($eventIds->isNotEmpty()) {
+            $averageRating = round(
+                (float) (
+                    \App\Models\Feedback::query()
+                        ->whereIn('event_id', $eventIds)
+                        ->avg('rating')
+                ),
+                1
+            );
+        }
+
+        $totalCompletedSessions = (int) $completedEventsCount + (int) $completedCoursesCount;
+
         $trainerCourses = Course::query()
             ->where('trainer_id', $trainer->id)
             ->orderByDesc('approved_at')
@@ -128,7 +163,64 @@ class TrainerManagementController extends Controller
             ->latest('created_at')
             ->get();
 
-        return view('admin.trainer.show', compact('trainer', 'trainerCourses', 'trainerEvents', 'trainerCertificates'));
+        // Load all modules (with quizzes) for all trainer's courses in one query.
+        // This avoids relation calls on items inferred as stdClass after selective projections.
+        $trainerModules = collect();
+        $trainerCourseIds = $trainerCourses->pluck('id')->filter()->values();
+        $courseMap = $trainerCourses->keyBy('id');
+
+        if ($trainerCourseIds->isNotEmpty()) {
+            $modules = \App\Models\CourseModule::query()
+                ->whereIn('course_id', $trainerCourseIds)
+                ->with('quizQuestions', 'quizAttempts')
+                ->orderBy('course_id')
+                ->orderBy('order_no')
+                ->get();
+
+            foreach ($modules as $module) {
+                $course = $courseMap->get((int) $module->course_id);
+                if (!$course) {
+                    continue;
+                }
+
+                $trainerModules->push([
+                    'course' => $course,
+                    'module' => $module,
+                    'quizzes' => $module->quizQuestions ?? collect(),
+                ]);
+            }
+        }
+
+        // Load event trainer modules (per-trainer uploads)
+        $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
+        $speakerEventIds = Event::query()
+            ->where(function ($q) use ($trainer, $trainerName) {
+                $q->where('trainer_id', $trainer->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
+            ->pluck('id');
+
+        $pendingEventModules = \App\Models\EventTrainerModule::query()
+            ->with(['event:id,title,jenis,event_date'])
+            ->where('trainer_id', $trainer->id)
+            ->whereIn('event_id', $speakerEventIds)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('admin.trainer.show', compact(
+            'trainer',
+            'trainerCourses',
+            'trainerEvents',
+            'trainerCertificates',
+            'completedEventsCount',
+            'completedCoursesCount',
+            'totalCompletedSessions',
+            'averageRating',
+            'trainerModules',
+            'pendingEventModules'
+        ));
     }
 
     public function issueCertificate(Request $request, User $trainer)
@@ -540,12 +632,17 @@ class TrainerManagementController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'academic_title' => ['nullable', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:30'],
             'profession' => ['nullable', 'string', 'max:100'],
             'institution' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'string', 'max:255'],
+            'linkedin_url' => ['nullable', 'url', 'max:255'],
+            'bank_name' => ['nullable', 'string', 'max:120'],
+            'bank_account_number' => ['nullable', 'string', 'max:60'],
+            'bank_account_holder' => ['nullable', 'string', 'max:150'],
             'bio' => ['nullable', 'string'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
@@ -569,6 +666,42 @@ class TrainerManagementController extends Controller
         $trainer->update($data);
 
         return redirect()->route('admin.trainer.index')->with('success', 'Data trainer berhasil diperbarui!');
+    }
+
+    public function approveModule(Request $request, User $trainer, \App\Models\CourseModule $module)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $module->update([
+            'review_status' => 'approved',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+            'review_rejection_reason' => null
+        ]);
+
+        return back()->with('success', 'Modul berhasil disetujui.');
+    }
+
+    public function rejectModule(Request $request, User $trainer, \App\Models\CourseModule $module)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:1000'
+        ]);
+
+        $module->update([
+            'review_status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+            'review_rejection_reason' => $request->rejection_reason
+        ]);
+
+        return back()->with('success', 'Modul berhasil ditolak.');
     }
 
     public function destroy(User $trainer)

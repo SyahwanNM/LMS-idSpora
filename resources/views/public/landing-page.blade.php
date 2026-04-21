@@ -505,7 +505,34 @@
     <!-- Background Color Shift Overlay -->
     <div id="bg-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -2; transition: background 1s ease; opacity: 0.1;"></div>
 
-    @include('partials.navbar-before-login')
+    @if(Auth::check())
+        @include('partials.navbar-after-login')
+
+        <form id="landingLogoutForm" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
+        <script>
+            // Fallback: navbar-after-login expects openLogoutModal() on some pages.
+            // On landing page, submit logout directly.
+            window.openLogoutModal = window.openLogoutModal || function () {
+                try {
+                    document.getElementById('landingLogoutForm')?.submit();
+                } catch (e) {}
+            };
+        </script>
+    @else
+        @include('partials.navbar-before-login')
+    @endif
+
+    @include('partials.flash')
+
+    @if(session('maintenance_notice'))
+        <div class="container" style="position: fixed; top: 92px; left: 0; right: 0; z-index: 1100;">
+            <div class="d-flex align-items-start gap-2 px-3 py-2 rounded" style="background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.38); color: #ffffff;">
+                <div style="line-height: 1; margin-top: 2px;">&#9888;</div>
+                <div style="font-weight: 600; font-size: 0.95rem;">{{ session('maintenance_notice') }}</div>
+                <button type="button" class="btn-close btn-close-white ms-auto" aria-label="Close" onclick="this.closest('.container')?.remove();"></button>
+            </div>
+        </div>
+    @endif
 
     <!-- HERO SECTION -->
     <section class="hero-section" id="hero-parallax">
@@ -908,10 +935,13 @@
                 <div class="col-lg-3 col-md-6 reveal reveal-delay-{{ $loop->iteration }}">
                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative group">
                         <div class="position-relative">
-                             @if($course->image)
-                                <img src="{{ Storage::url($course->image) }}" class="card-img-top" alt="{{ $course->name }}" style="height: 180px; object-fit: cover;">
+                            @php
+                                $courseThumb = $course->card_thumbnail_url ?? null;
+                            @endphp
+                            @if(!empty($courseThumb))
+                                <img src="{{ $courseThumb }}" onerror="this.src='https://via.placeholder.com/300x200/4f46e5/ffffff?text=Course'" class="card-img-top" alt="{{ $course->name }}" style="height: 180px; object-fit: cover;">
                             @else
-                                <img src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=Course" class="card-img-top" style="height: 180px; object-fit: cover;">
+                                <img src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=Course" class="card-img-top" alt="{{ $course->name }}" style="height: 180px; object-fit: cover;">
                             @endif
                             <div class="position-absolute top-0 end-0 m-3">
                                 <span class="badge bg-white text-dark shadow-sm">{{ ucfirst($course->level) }}</span>
@@ -935,7 +965,7 @@
                                         <span class="text-white fw-bold">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
                                      @endif
                                 </div>
-                                <button class="btn btn-sm btn-outline-primary rounded-pill">Enroll</button>
+                                <a href="{{ route('courses.show', $course) }}" class="btn btn-sm btn-outline-primary rounded-pill">Enroll</a>
                             </div>
                         </div>
                     </div>

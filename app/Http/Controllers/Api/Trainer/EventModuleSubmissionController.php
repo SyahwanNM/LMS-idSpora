@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Trainer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\TrainerNotification;
+use App\Services\TrainerActivityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -60,6 +62,38 @@ class EventModuleSubmissionController extends Controller
             abort(403, 'Event ini bukan milik Anda.');
         }
 
+        if (($event->material_status ?? '') === 'approved') {
+            return response()->json([
+                'message' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
+            ], 422);
+        }
+
+        $materialStatus = (string) ($event->material_status ?? 'draft');
+        $invitation = TrainerNotification::query()
+            ->where('trainer_id', (int) $user->id)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($event) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        $invitationData = is_array($invitation?->data) ? $invitation->data : [];
+        $invitationUploadDueAtRaw = (string) data_get($invitationData, 'upload_due_at', '');
+        $effectiveDeadline = $invitationUploadDueAtRaw !== ''
+            ? \Carbon\Carbon::parse($invitationUploadDueAtRaw)
+            : ($materialStatus === 'rejected'
+                ? ($event->material_revision_deadline ?: $event->start_at?->copy()->subDays(3))
+                : ($event->material_deadline ?: $event->start_at?->copy()->subDays(7)));
+
+        if (!empty($effectiveDeadline) && now()->gt($effectiveDeadline)) {
+            return response()->json([
+                'message' => $materialStatus === 'rejected'
+                    ? 'Batas revisi materi sudah lewat (H-3).'
+                    : 'Batas pengumpulan materi sudah lewat (H-7).',
+            ], 422);
+        }
+
         $request->validate([
             'module' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);
@@ -72,13 +106,29 @@ class EventModuleSubmissionController extends Controller
             'module_path' => $path,
         ]);
 
+        $activityService = app(TrainerActivityService::class);
+        if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
+            $activityService->resetLateUploads($user, [
+                'entity_type' => 'event',
+                'entity_id' => (int) $event->id,
+                'entity_title' => (string) $event->title,
+                'url' => route('trainer.events.show', $event->id),
+            ]);
+        }
+
+        if ($invitation) {
+            $invitationData['material_uploaded_at'] = now()->toIso8601String();
+            $invitation->data = $invitationData;
+            $invitation->save();
+        }
+
         return response()->json([
             'message' => 'Module berhasil diupload dan menunggu verifikasi admin.',
             'data' => [
                 'event_id' => $event->id,
                 'module_submission_path' => $event->module_path,
                 'module_submission_url' => $event->module_file_url,
-                'module_submitted_at' => $event->created_at,
+                'module_submitted_at' => $event->module_submitted_at,
             ],
         ], 201);
     }
