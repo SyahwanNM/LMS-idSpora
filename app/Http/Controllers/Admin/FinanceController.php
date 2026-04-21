@@ -345,5 +345,4 @@ class FinanceController extends Controller
         $commissions = Referral::where('description', 'LIKE', '%' . $course->name . '%')->where('status', 'paid')->sum('amount');
         
         return view('admin.finance.course_detail', compact('course', 'transactions', 'totalIncome', 'commissions', 'pendingWithdrawals'));
-    }
-}
+    }}
