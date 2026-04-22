@@ -299,13 +299,15 @@
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
                                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Materi') }}</span>
                             </span>
-                            <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
-                                @if($isLocked)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
-                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                                    </svg>
-                                @endif
-                                <span class="arrow">▲</span>
+                            <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+                                <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    @if($isLocked)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    @endif
+                                </span>
+                                <span class="arrow" style="width:16px; text-align:center;">▲</span>
                             </span>
                         </button>
                         <div class="accordion-content">
@@ -454,7 +456,17 @@
                     $passingPercent = 75;
                     $durationSeconds = (int) ($cm->duration ?? 0);
                     $durationMinutes = $durationSeconds > 0 ? (int) ceil($durationSeconds / 60) : 0;
-                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '5 menit';
+
+                    // Jika durasi tidak di-set, gunakan default: 15 menit untuk kuis terakhir, 10 menit lainnya
+                    if ($durationMinutes <= 0 && $cm) {
+                        $isLastQuiz = !$course->modules()
+                            ->where('type', 'quiz')
+                            ->where('order_no', '>', $cm->order_no)
+                            ->exists();
+                        $durationMinutes = $isLastQuiz ? 15 : 10;
+                    }
+
+                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '10 menit';
 
                     $beforeQuizTitle = null;
                     if ($activeDisplay && (($activeDisplay['kind'] ?? '') === 'quiz')) {
@@ -481,6 +493,17 @@
                     }
 
                     $startUrl = (isset($course) && $cm) ? route('user.quiz.start', [$course, $cm]) : '#';
+
+                    // Cooldown: 2 menit setelah not pass terakhir
+                    $cooldownSeconds = 120; // 2 menit
+                    $lastFailedAttempt = $attempts->first(fn($a) => !$a->isPassed($passingPercent));
+                    $cooldownEndsAt = null;
+                    $inCooldown = false;
+                    if (!$currentQuizPassed && $lastFailedAttempt && $lastFailedAttempt->completed_at) {
+                        $cooldownEndsAt = $lastFailedAttempt->completed_at->copy()->addSeconds($cooldownSeconds);
+                        $inCooldown = $cooldownEndsAt->isFuture();
+                    }
+                    $cooldownEndsAtIso = $cooldownEndsAt ? $cooldownEndsAt->toISOString() : null;
                 @endphp
 
                 <div class="box_luar_deskripsi_modul">
@@ -502,6 +525,13 @@
                                 <button type="button" class="btn" disabled
                                     style="background:#eafff3; color:#16a34a; border-radius:999px; padding:10px 18px; font-weight:800; cursor:not-allowed;">
                                     Anda telah lulus kuis ini
+                                </button>
+                            @elseif($inCooldown)
+                                <button type="button" class="btn" id="startQuizBtn" disabled
+                                    style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
+                                    data-start-url="{{ $startUrl }}"
+                                    data-cooldown-ends="{{ $cooldownEndsAtIso }}">
+                                    Tunggu <span id="quizCooldownTimer">...</span>
                                 </button>
                             @else
                                 <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
@@ -847,14 +877,42 @@
             const cancelBtn = document.getElementById('quizStartCancelBtn');
             const confirmBtn = document.getElementById('quizStartConfirmBtn');
 
-            if (!startBtn || !modal) return;
+            // Cooldown countdown timer
+            const cooldownTimerEl = document.getElementById('quizCooldownTimer');
+            if (cooldownTimerEl && startBtn && startBtn.getAttribute('data-cooldown-ends')) {
+                const endsAt = new Date(startBtn.getAttribute('data-cooldown-ends')).getTime();
+                function tickCooldown() {
+                    const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+                    const m = Math.floor(remaining / 60);
+                    const s = remaining % 60;
+                    cooldownTimerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+                    if (remaining <= 0) {
+                        clearInterval(cooldownInterval);
+                        // Cooldown selesai — aktifkan tombol Start
+                        startBtn.disabled = false;
+                        startBtn.style.background = '#f4c430';
+                        startBtn.style.color = '#1f2937';
+                        startBtn.style.cursor = 'pointer';
+                        startBtn.innerHTML = 'Start <span style="margin-left:8px;">›</span>';
+                        // Pasang event listener modal
+                        startBtn.addEventListener('click', openQuizModal);
+                    }
+                }
+                const cooldownInterval = setInterval(tickCooldown, 1000);
+                tickCooldown();
+            }
 
-            startBtn.addEventListener('click', function(e) {
+            function openQuizModal(e) {
                 e.preventDefault();
                 const url = startBtn.getAttribute('data-start-url') || '#';
                 confirmBtn.href = url;
                 modal.style.display = 'flex';
-            });
+            }
+
+            if (!startBtn || !modal) return;
+            if (!startBtn.disabled) {
+                startBtn.addEventListener('click', openQuizModal);
+            }
 
             cancelBtn.addEventListener('click', function() {
                 modal.style.display = 'none';

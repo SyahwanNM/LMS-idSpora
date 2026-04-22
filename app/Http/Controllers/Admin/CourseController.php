@@ -339,17 +339,17 @@ class CourseController extends Controller
             $missing[] = 'Kuis';
         }
 
+        // Hard block: jika ada missing material, tidak bisa publish
+        if (!empty($missing)) {
+            return redirect()->route('admin.courses.index')
+                ->with('error', 'Course belum bisa dipublikasikan. Lengkapi Modul Course ini terlebih dahulu: ' . implode(', ', $missing) . '.');
+        }
+
         $course->status = 'active';
         $course->save();
 
-        $redirect = redirect()->route('admin.courses.index')
+        return redirect()->route('admin.courses.index')
             ->with('success', 'Course berhasil diterbitkan!');
-
-        if (!empty($missing)) {
-            $redirect->with('publish_warning', $missing);
-        }
-
-        return $redirect;
     }
 
     /**

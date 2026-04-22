@@ -17,8 +17,17 @@
 <body>
     @include("partials.navbar-admin-course")
     <div class="box_luar_view_pendapatan">
-        <h1 class="judul_view">{{ $course->name ?? '-' }}</h1>
-        <p class="deskripsi_view">Laporan Detail Financial & Konten Course </p>
+        <div class="d-flex align-items-center gap-3 mb-1">
+            <a href="{{ route('report') }}" title="Kembali ke Report Course"
+               style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:#f1f5f9;color:#475569;text-decoration:none;flex-shrink:0;transition:background .15s;"
+               onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                </svg>
+            </a>
+            <h1 class="judul_view mb-0">{{ $course->name ?? '-' }}</h1>
+        </div>
+        <p class="deskripsi_view">Laporan Detail Financial & Konten Course</p>
         <div class="tabel_paling_atas">
             <div class="tanggal_view">
                 <p>Tanggal</p>

@@ -1017,7 +1017,7 @@
 
         /* Force addEventModal dialog to sit centered vertically */
         #addEventModal .modal-dialog {
-            margin-top: 80px !important;
+            margin-top: 55px !important;
             margin-bottom: 30px !important;
             margin-left: auto !important;
             margin-right: auto !important;

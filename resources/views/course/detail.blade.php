@@ -1688,7 +1688,6 @@
             <i class="bi {{ $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' }} me-2"></i>
             <span id="save-text">{{ $isSaved ? 'Saved' : 'Save' }}</span>
           </button>
-          <p class="note">Note: all course have 30-days money-back guarantee</p>
         </div>
         <hr>
 
