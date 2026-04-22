@@ -2,37 +2,6 @@
 <html lang="en">
 
 <head>
-    <style>
-        .stars-bi {
-            transition: color 0.2s, transform 0.18s;
-            color: gray;
-        }
-
-        .stars-bi.active {
-            color: #FFD600 !important;
-        }
-
-        .stars-bi.hovered {
-            transform: scale(1.22) rotate(-8deg) !important;
-            filter: drop-shadow(0 2px 6px #FFD600cc) !important;
-            z-index: 2 !important;
-        }
-    </style>
-    <style>
-        .stars-bi {
-            transition: color 0.2s, transform 0.18s;
-        }
-
-        .add-stars .stars-bi.hovered,
-        .add-stars .stars-bi.hovered:focus {
-            transform: scale(1.22) rotate(-8deg) !important;
-            color: #FFD600 !important;
-            filter: drop-shadow(0 2px 6px #FFD600cc) !important;
-            z-index: 2 !important;
-            transition: color 0.2s !important;
-            transition-property: color, transform, filter !important;
-        }
-    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -43,67 +12,13 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        /* Make the top navy section flush to the very top */
         html,
-        body {
-            margin: 0;
-            padding: 0;
-        }
 
         .container-ungu {
             margin-top: 0 !important;
         }
 
-        /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-        .container-ungu .link-box {
-            padding-top: 110px;
-            padding-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-left: 70px;
-            /* Align with title on desktop */
-        }
-
-        .container-ungu .link-box a {
-            text-decoration: none;
-            color: #fbbf24;
-            font-weight: 500;
-        }
-
-        .container-ungu .link-box a:hover {
-            color: #ffd33b;
-            text-decoration: underline;
-        }
-
-        .container-ungu .link-box span.sep {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .container-ungu .link-box .active {
-            color: white;
-            font-weight: 600;
-        }
-
-        @media (max-width: 992px) {
-            .container-ungu .link-box {
-                margin-left: 20px !important;
-                padding-top: 100px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .container-ungu .link-box {
-                margin-left: 15px !important;
-                padding-top: 100px;
-                gap: 6px;
-                font-size: 13px;
-            }
-        }
-
-        /* Add breathing space inside tab panes (Overview, etc.) */
+       
         .desc-box .tab-content .tab-pane {
             padding: 16px 20px 24px;
         }
@@ -115,11 +30,6 @@
             min-height: 0 !important;
         }
 
-        @media (max-width: 576px) {
-            .desc-box .tab-content .tab-pane {
-                padding: 12px 14px 18px;
-            }
-        }
 
         /* Reduce padding specifically for Terms & Condition tab (stronger override) */
         .desc-box .tab-content #nav-contact {
@@ -147,13 +57,6 @@
         .desc-box .tab-content #nav-contact .terms-content {
             margin-top: 4px !important;
         }
-
-        @media (max-width: 576px) {
-            .desc-box .tab-content #nav-contact {
-                padding: 4px 8px 0 !important;
-            }
-        }
-
         /* Align Facebook icon baseline with other share icons */
         .share .share-list .bi-facebook {
             position: relative;
@@ -329,13 +232,13 @@
             min-height: 92px !important;
             height: auto !important;
         }
-
         .resource-box .participant-resources .resource-card .img-resource {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 34px;
             height: 34px;
+            
         }
 
         .resource-box .participant-resources .resource-card .resource-value h6 {
@@ -347,6 +250,7 @@
             line-height: 1.25;
         }
 
+        
         /* Feedback card: do NOT blur when locked, instead show an overlay message */
         .add-rating.locked {
             opacity: 1 !important;
@@ -600,7 +504,6 @@
             width: 20px !important;
             height: 20px !important;
         }
-
         /* RESPONSIVENESS FIXES */
         @media (max-width: 992px) {
             .container-ungu {
@@ -751,7 +654,10 @@
             .box-copy button {
                 width: 100% !important;
             }
+           
         }
+    
+        
     </style>
 
 </head>
@@ -762,7 +668,7 @@
     @else
         @include('partials.navbar-before-login')
     @endauth
-    <div class="all">
+    <main class="all">
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
@@ -999,7 +905,7 @@
                         'Certificate' => $hasCertificate,
                     ];
                 @endphp
-                <div class="progress-box">
+                <section class="progress-box">
                     <h5>Your Progress</h5>
                     <div class="progress-line">&nbsp;</div>
                     <div class="progress-steps">
@@ -1023,9 +929,9 @@
                             </div>
                         @endforeach
                     </div>
-                </div>
+                </section>
             </div>
-            <div class="detail-box-right">
+            <section class="detail-box-right">
                 @php
                     $eventObj = isset($event) ? $event : null;
                     $nowTs = \Carbon\Carbon::now();
@@ -1121,7 +1027,7 @@
                                 $trainerObj = $sp->trainer ?? null;
                                 $profileUrl = $trainerObj ? route('public.trainer-profile.show', $trainerObj->id) : null;
                                 $nameLen = mb_strlen($sp->name ?? '');
-                                $nameFontSize = $nameLen > 20 ? '11px' : ($nameLen > 14 ? '12px' : '13px');
+                                $nameFontSize = $nameLen > 20 ? '11px' : ($nameLen > 14 ? '12px' : '18px');
                             @endphp
                             <div class="d-flex align-items-center gap-2" style="max-width:180px;">
                                 @if($profileUrl)
@@ -1412,7 +1318,7 @@
                         </a>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
 
         <!-- Registration Modal -->
@@ -1520,7 +1426,7 @@
                 </div>
             </div>
         </div>
-        <div class="resource-box">
+        <section class="resource-box">
             <h5>Participant Resources</h5>
             <div class="participant-resources">
 
@@ -1687,14 +1593,14 @@
                     <div class="resource-value">
                         <h6>Attendance QR Event</h6>
                         @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Absensi Berhasil Dilakukan</p>
+                            <p class="text-success" style="font-weight:600;">Berhasil Dilakukan</p>
                         @else
-                            <p>Scan QR Event to mark your attendance.</p>
+                            <p>Scan QR Event untuk absensi.</p>
                         @endif
                     </div>
                     @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
-                        <span class="d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px;"
-                            title="Absensi Berhasil Dilakukan">
+                        <span class="d-inline-flex align-items-center""
+                            title="Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                 aria-label="Absensi Berhasil">
@@ -1735,15 +1641,23 @@
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
-                                <div class="d-flex gap-2 mt-2">
-                                    <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
-                                    <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                            <div class="box-resources-sertif">
+                              <p>Silakan preview / unduh.</p>
+                                <div class="box-sertif-after-event">
+                                  
+                                    <a class="view-sertif-event" href="{{ route('certificates.show', [$event->id, $registration->id]) }}" target="_blank"
+                                       style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; color:#111;">
+                                        <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                        </svg>
+                                    </a>
                                 </div>
+                            </div>
                             @elseif($eventIsFinished)
-                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
+                                <p>Tersedia setelah mengisi feedback.</p>
                             @else
-                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
+                                <p>Tersedia setelah mengisi feedback.</p>
                             @endif
                         @else
                             <p>Tersedia setelah acara selesai.</p>
@@ -1762,7 +1676,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Link Zoom</h6>
-                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                        <p>{{ $isRegistered ? 'Tersedia setelah bookseat' : 'Tersedia setelah bookseat' }}</p>
                     </div>
                     @if($isRegistered && !empty($event->zoom_link))
                         <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
@@ -1805,7 +1719,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Location Map</h6>
-                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                        <p>{{ $isRegistered ? 'Tersedia setelah bookseat' : 'Tersedia setelah bookseat' }}</p>
                     </div>
                     @if($isRegistered && $mapLink)
                         <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
@@ -1831,9 +1745,9 @@
                     <div class="resource-value">
                         <h6>Feedback and Ratings</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
-                            <p class="text-success" style="font-weight:600;">Feedback and Ratings berhasil dilakukan</p>
+                            <p class="text-success" style="font-weight:600;">Berhasil dilakukan</p>
                         @else
-                            <p>Please fill out your feedback for this event</p>
+                            <p style="width: 70%;">Dibuka setelah acara selesai</p>
                         @endif
                     </div>
 
@@ -1862,7 +1776,7 @@
                     @endif
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Feedback & Reviews Section (Hidden by default) -->
         @if($isRegistered && $attendanceSubmitted)
@@ -1891,56 +1805,46 @@
                             <form action="#" method="POST" id="feedback-form">
                                 @csrf
 
-                                <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                                <div class="feedback-rating-row" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
                                     <!-- Event Rating -->
-                                    <div style="flex: 5;">
+                                    <div style="flex: 1 1 140px; min-width: 0;">
                                         <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating
                                             Event</label>
                                         <div class="stars-rating-input" data-target="eventRating"
-                                            style="font-size: 30px !important; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                            <span data-rating="1"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="2"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="3"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="4"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="5"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                            style="letter-spacing: 2px; cursor: pointer; user-select: none; line-height: 1;">
+                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                         </div>
                                     </div>
 
                                     <!-- Speaker Rating -->
-                                    <div style="flex: 5;">
+                                    <div style="flex: 1 1 140px; min-width: 0;">
                                         <label class="form-label mb-1"
                                             style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
                                         <div class="stars-rating-input" data-target="speakerRating"
-                                            style="font-size: 30px !important; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                            <span data-rating="1"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="2"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="3"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="4"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="5"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                            style="letter-spacing: 2px; cursor: pointer; user-select: none; line-height: 1;">
+                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Feedback Text -->
                                 <div class="mb-3">
-                                    <textarea style="width: 1200px;" id="feedback-text" name="feedback" class="form-control"
+                                    <textarea id="feedback-text" name="feedback" class="form-control"
                                         rows="4" placeholder="Write your thoughts..." required
-                                        style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
+                                        style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
                                 </div>
 
                                 <!-- Submit Button -->
                                 <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
-                                    style="width: 1200px; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                                    style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
                                     Submit Feedback
                                 </button>
                             </form>
@@ -1950,7 +1854,7 @@
             </div>
         @endif
 
-    <div class="desc-box">
+        <div class="desc-box">
         <nav>
             <div class="nav nav-tabs" id="nav-tab" role="tablist">
                 <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab"
@@ -2406,6 +2310,10 @@
                     </div>
                 </div>
             </div>
+            
+</main>
+ <div class="footer-section-wrapper">
+        @include('partials.footer-after-login')
     </div>
 
     <script>
@@ -2514,12 +2422,12 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                                                 <div class="modal-body">
-                                                    <p class="text-center mb-2">
+                                                    <label class="form-check-label text-dark mb-0">
                                                         Mohon pastikan feedback Anda sesuai pedoman. Feedback tidak boleh mengandung SARA, pornografi, ancaman, ujaran kebencian, atau konten ilegal lainnya.
-                                                    </p>
+                                                    </label>
                                                     <div class="d-flex align-items-center mb-3" style="justify-content: flex-start;">
                                                         <input class="form-check-input me-2" type="checkbox" value="" id="confirm-eval">
-                                                        <label class="form-check-label fw-semibold text-dark mb-0" for="confirm-eval">Saya yakin bahwa feedback ini digunakan untuk keperluan evaluasi IdSpora. Lanjutkan?</label>
+                                                        <label class="form-check-label text-dark mb-0" for="confirm-eval">Saya yakin ingin mengirim feedback ini</label>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
@@ -3025,7 +2933,7 @@
             }
         })();
         </script>
-         @include('partials.footer-after-login')
+        
     </body>
 
 </html>

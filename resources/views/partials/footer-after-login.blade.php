@@ -104,7 +104,8 @@
     }
     @media (max-width: 768px) {
         .footer-section {
-            padding: 30px 0 15px !important;
+            padding: 30px 0 15px  !important;
         }
     }
+    
 </style>

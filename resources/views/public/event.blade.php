@@ -45,6 +45,7 @@
         }
 
         /* Event Grid Responsive */
+        
         .event .event-list {
             display: grid;
             row-gap: 40px;
@@ -53,78 +54,7 @@
             align-items: stretch;
         }
 
-        @media (max-width: 576px) {
-            .event .event-list {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .event .card-event .thumb-wrapper {
-            position: relative;
-            height: 380px;
-            overflow: hidden;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .event .card-event .card-image-event {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .event .card-event:hover .card-image-event {
-            transform: scale(1.05);
-        }
-
-        /* Media Queries for Thumb Height */
-        @media (max-width:1200px) { .event .card-event .thumb-wrapper { height: 360px; } }
-        @media (max-width:992px) { .event .card-event .thumb-wrapper { height: 340px; } }
-        @media (max-width:768px) { .event .card-event .thumb-wrapper { height: 280px; } }
-
-        /* Event Section Spacing */
-        section.event { margin-top: 55px; }
-        section.event .header-card { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; }
-        section.event .header-card h3 { margin-top: 10px; font-weight: 700; color: #212529; }
-
-        /* Titles */
-        .event .card-event { border: 1px solid #eee; border-radius: 12px; transition: box-shadow 0.3s; background: #fff; display: flex; flex-direction: column; height: 100%; }
-        .event .card-event:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-        .event .card-event .card-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-        .event .card-event .event-title {
-            color: #212529;
-            font-weight: 600;
-            font-size: 1.25rem;
-            margin-bottom: 10px;
-            margin-left: 0;
-            text-align: left;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
-            min-height: calc(1.4em * 2);
-        }
-
-        /* Badges */
-        .event .card-event .discount-badge {
-            position: absolute; bottom: 12px; left: 12px;
-            background: #212f4d; color: #d6bc3a;
-            font-size: 13px; font-weight: 600; padding: 6px 10px 5px;
-            border-radius: 6px; line-height: 1; letter-spacing: .5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
-            display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase;
-        }
-
-        .event .card-event .manage-badge {
-            position: absolute; top: 12px; left: 12px;
-            color: #fff; font-size: 12px; font-weight: 600;
-            padding: 5px 10px; border-radius: 6px;
-            line-height: 1; letter-spacing: .5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .25); text-transform: uppercase;
-        }
-        .event .card-event .manage-badge.manage { background: #0d6efd; }
-        .event .card-event .manage-badge.create { background: #6f42c1; }
+     
 
         /* Tags & Meta */
         .tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.85rem; }

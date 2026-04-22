@@ -313,9 +313,9 @@ class CourseReportController extends Controller
                 ->select('id');
         }
 
-        // Base: all courses, with optional enrollments in range.
+        // Base: only published/completed courses (exclude on progress)
         $courseAgg = Course::query()
-            ->whereIn('courses.status', ['active', 'approved', 'published', 'completed'])
+            ->whereIn('courses.status', ['active', 'published', 'completed'])
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
                 $join->on('courses.id', '=', 'enrollments.course_id')
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -559,7 +559,7 @@ class CourseReportController extends Controller
             ->keyBy('course_id');
 
         $courses = \App\Models\Course::query()
-            ->whereIn('status', ['active', 'approved', 'published', 'completed'])
+            ->whereIn('status', ['active', 'published', 'completed'])
             ->select('id', 'name', 'level', 'price', 'expenses_json', 'created_at')
             ->orderByDesc('created_at')
             ->get();
@@ -593,19 +593,8 @@ class CourseReportController extends Controller
             ];
         });
 
-        // Show courses that: have transactions in period OR were created in period
-        if (!isset($q) || $q === '') {
-            $rows = $rows->filter(function($row) use ($from, $to) {
-                if ($row['transactions_count'] > 0) return true;
-                // Also show courses created within the selected period
-                $createdAt = $row['created_at'];
-                if ($createdAt) {
-                    $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
-                    return $created->between($from, $to);
-                }
-                return false;
-            });
-        } elseif (isset($q) && $q !== '') {
+        // Show all courses (no period filter) — filter only by search query if provided
+        if (isset($q) && $q !== '') {
             $rows = $rows->filter(function($row) use ($q) {
                 return stripos($row['course_name'], $q) !== false;
             });

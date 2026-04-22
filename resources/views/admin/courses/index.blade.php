@@ -136,19 +136,18 @@
     <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header" id="publishModalHeader">
                     <h5 class="modal-title" id="publishConfirmModalLabel">Course belum lengkap</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div style="font-weight:600;" id="publishModalMainText">Oops, modul course belum lengkap.</div>
                     <div class="mt-2" id="publishModalSubText">Berikut yang belum ada:</div>
                     <ul id="publishMissingList" class="mt-2 mb-3" style="padding-left: 18px;"></ul>
                     <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Tetap Publish</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Ya, Publish Course</button>
                 </div>
             </div>
         </div>
@@ -203,6 +202,7 @@
                 <thead>
                     <tr>
                         <th>Nama Course</th>
+                        <th>Tanggal Dibuat</th>
                         <th>Level</th>
                         <th>Harga</th>
                         <th>Status Kelengkapan</th>
@@ -260,15 +260,16 @@
                     @endphp
                     <tr>
                         <td>{{ $course->name }}</td>
+                        <td>{{ $course->created_at ? $course->created_at->format('d M Y') : '-' }}</td>
                         <td>{{ ucfirst($course->level) }}</td>
                         <td>Rp. {{ number_format($course->price, 0, ',', '.') }}</td>
                         <td>
                             @if($isPublished)
-                            <button class="status_kelengkapan_complete">Complete</button>
+                            <div class="status_kelengkapan_complete">Complete</div>
                             @elseif($hasMissingMaterial)
-                            <button class="status_kelengkapan_miss">Missing Material</button>
+                            <div class="status_kelengkapan_miss">Missing Material</div>
                             @else
-                            <button class="status_kelengkapan_inprogress">On Progress</button>
+                            <div class="status_kelengkapan_inprogress">On Progress</div>
                             @endif
                         </td>
                         <td>
@@ -1056,27 +1057,38 @@
                 var subTextEl = document.getElementById('publishModalSubText');
                 var footerTextEl = document.getElementById('publishModalFooterText');
                 var btnEl = document.getElementById('publishConfirmProceedBtn');
+                var headerEl = document.getElementById('publishModalHeader');
 
                 if (isComplete) {
                     if (labelEl) labelEl.textContent = 'Konfirmasi Publish Course';
+                    if (headerEl) headerEl.style.background = '';
                     if (mainTextEl) mainTextEl.textContent = 'Apakah Anda yakin ingin publish course ini?';
                     if (subTextEl) subTextEl.style.display = 'none';
                     if (footerTextEl) footerTextEl.textContent = 'Tindakan ini tidak dapat dibatalkan.';
-                    if (btnEl) btnEl.textContent = 'Ya, Publish Course';
+                    if (btnEl) {
+                        btnEl.textContent = 'Ya, Publish Course';
+                        btnEl.style.display = '';
+                        btnEl.className = 'btn btn-primary';
+                    }
                     if (publishMissingList) {
                         publishMissingList.innerHTML = '';
                         publishMissingList.style.display = 'none';
                     }
                 } else {
-                    if (labelEl) labelEl.textContent = 'Course belum lengkap';
-                    if (mainTextEl) mainTextEl.textContent = 'Oops, modul course belum lengkap.';
-                    if (subTextEl) subTextEl.style.display = 'block';
-                    if (footerTextEl) footerTextEl.textContent = 'Segera hubungi trainer untuk melengkapi modul, video, dan kuis.';
-                    if (btnEl) btnEl.textContent = 'Tetap Publish';
+                    if (labelEl) { labelEl.textContent = 'Course Belum Bisa Dipublikasikan'; labelEl.style.color = '#dc2626'; }
+                    if (headerEl) headerEl.style.background = '#fef2f2';
+                    if (subTextEl) {
+                        subTextEl.textContent = 'Lengkapi Modul Course ini terlebih dahulu:';
+                        subTextEl.style.display = 'block';
+                    }
+                    if (footerTextEl) footerTextEl.textContent = 'Segera lengkapi semua modul sebelum mempublikasikan course ini.';
+                    if (btnEl) {
+                        btnEl.style.display = 'none'; // Sembunyikan tombol publish
+                    }
                     if (publishMissingList) {
                         publishMissingList.style.display = 'block';
                         publishMissingList.innerHTML = (missing || []).map(function(x) {
-                            return '<li>' + escapeHtml(x) + ' belum ada</li>';
+                            return '<li style="color:#dc2626;">' + escapeHtml(x) + ' belum ada</li>';
                         }).join('');
                     }
                 }

@@ -168,7 +168,10 @@
                     $course = $enrollment->course;
                     if(!$course) continue;
                     $courseHref = route('course.detail', $course->id);
-                    $continueHref = route('course.learn', $course->id);
+                    $nextModuleId = $enrollment->getNextModuleId();
+                    $continueHref = $nextModuleId
+                        ? route('course.learn', $course->id) . '?module=' . $nextModuleId
+                        : route('course.learn', $course->id);
                     $cardImage = $course->card_thumbnail ?? ($course->media ?? null);
                     $pct = $enrollment->getProgressPercentage();
                     $pct = max(0, min(100, (int) $pct));

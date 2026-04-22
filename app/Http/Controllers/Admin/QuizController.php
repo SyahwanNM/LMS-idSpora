@@ -169,7 +169,7 @@ class QuizController extends Controller
                 ->with('error', 'No questions available for this quiz');
         }
 
-        // Check if user already has an attempt
+        // Check if user already has an incomplete attempt
         $existingAttempt = QuizAttempt::where('user_id', Auth::id())
             ->where('course_module_id', $module->id)
             ->whereNull('completed_at')
@@ -177,6 +177,27 @@ class QuizController extends Controller
 
         if ($existingAttempt) {
             return redirect()->route('user.quiz.take', [$course, $module, $existingAttempt]);
+        }
+
+        // Cooldown check: 2 menit setelah not pass terakhir
+        $cooldownSeconds = 120;
+        $lastFailedAttempt = QuizAttempt::where('user_id', Auth::id())
+            ->where('course_module_id', $module->id)
+            ->whereNotNull('completed_at')
+            ->orderByDesc('completed_at')
+            ->first();
+
+        if ($lastFailedAttempt && !$lastFailedAttempt->isPassed($this->passingPercent)) {
+            $cooldownEndsAt = $lastFailedAttempt->completed_at->copy()->addSeconds($cooldownSeconds);
+            if ($cooldownEndsAt->isFuture()) {
+                $remaining = (int) ceil(now()->diffInSeconds($cooldownEndsAt, false));
+                $minutes = (int) floor($remaining / 60);
+                $seconds = $remaining % 60;
+                $waitText = sprintf('%02d:%02d', $minutes, $seconds);
+                return redirect()->route('course.learn', $course->id)
+                    ->with('error', "Kamu harus menunggu {$waitText} menit sebelum mengulang kuis ini.")
+                    ->with('module', $module->id);
+            }
         }
 
         // Create new attempt
@@ -233,10 +254,15 @@ class QuizController extends Controller
             }
         }
 
-        // Timer: default to 5 minutes if duration isn't set
+        // Timer: 15 menit untuk kuis terakhir, 10 menit untuk kuis lainnya (jika duration tidak di-set)
         $durationSeconds = (int) ($module->duration ?? 0);
         if ($durationSeconds <= 0) {
-            $durationSeconds = 300;
+            // Cek apakah ini kuis terakhir di course
+            $isLastQuiz = !$course->modules()
+                ->where('type', 'quiz')
+                ->where('order_no', '>', $module->order_no)
+                ->exists();
+            $durationSeconds = $isLastQuiz ? 900 : 600; // 15 menit atau 10 menit
         }
 
         $endsAtIso = null;

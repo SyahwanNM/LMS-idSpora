@@ -275,7 +275,13 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center pe-4 py-3">
-                                                    <a href="{{ route('course.learn', $course->id) }}"
+                                                    @php
+                                                        $nextModuleId = $enrollment->getNextModuleId();
+                                                        $continueUrl = $nextModuleId
+                                                            ? route('course.learn', $course->id) . '?module=' . $nextModuleId
+                                                            : route('course.learn', $course->id);
+                                                    @endphp
+                                                    <a href="{{ $continueUrl }}"
                                                         class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
                                                         style="width: 36px; height: 36px; background-color: var(--navy);">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"

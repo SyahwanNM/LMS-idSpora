@@ -159,7 +159,7 @@
                         <tr>
                             <td>{{ $row['course_name'] }}</td>
                             <td>
-                                {{ $row['last_paid_at'] ? \Carbon\Carbon::parse($row['last_paid_at'])->format('d/m/Y') : ($row['created_at'] ? \Carbon\Carbon::parse($row['created_at'])->format('d/m/Y') : '-') }}
+                                {{ $row['created_at'] ? \Carbon\Carbon::parse($row['created_at'])->format('d/m/Y') : '-' }}
                             </td>
                             <td>{{ (int)($row['participants_count'] ?? 0) }}</td>
                             <td>{{ number_format((float)($row['course_price'] ?? 0), 0, ',', '.') }}</td>
