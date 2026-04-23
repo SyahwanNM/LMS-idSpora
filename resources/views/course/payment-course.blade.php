@@ -440,7 +440,7 @@
                     @endif
 
                     @if($isFreeCourse || !$midtransClientKey)
-                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
+                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Mulai Belajar!</button>
                     @endif
                     @if(!$isFreeCourse)
                         <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Bayar dengan Midtrans</button>
@@ -592,8 +592,8 @@
             function updatePayButtonState() {
                 if (!showQrisBtn && !midtransPayBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                // For free course, allow without WhatsApp. For paid, WhatsApp is required (min 8 digits).
-                var disable = (!isFreeCourse) && (wa.length < 8);
+                // WhatsApp wajib diisi untuk semua course (gratis maupun berbayar), minimal 8 digit
+                var disable = wa.length < 8;
                 if (referralInput) {
                     var code = getReferralCode();
                     if (code !== '' && referralState !== 'valid') {

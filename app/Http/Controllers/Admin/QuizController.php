@@ -179,8 +179,8 @@ class QuizController extends Controller
             return redirect()->route('user.quiz.take', [$course, $module, $existingAttempt]);
         }
 
-        // Cooldown check: 2 menit setelah not pass terakhir
-        $cooldownSeconds = 120;
+        // Cooldown check: 1 menit setelah attempt terakhir yang tidak lulus
+        $cooldownSeconds = 60;
         $lastFailedAttempt = QuizAttempt::where('user_id', Auth::id())
             ->where('course_module_id', $module->id)
             ->whereNotNull('completed_at')
@@ -191,11 +191,9 @@ class QuizController extends Controller
             $cooldownEndsAt = $lastFailedAttempt->completed_at->copy()->addSeconds($cooldownSeconds);
             if ($cooldownEndsAt->isFuture()) {
                 $remaining = (int) ceil(now()->diffInSeconds($cooldownEndsAt, false));
-                $minutes = (int) floor($remaining / 60);
                 $seconds = $remaining % 60;
-                $waitText = sprintf('%02d:%02d', $minutes, $seconds);
                 return redirect()->route('course.learn', $course->id)
-                    ->with('error', "Kamu harus menunggu {$waitText} menit sebelum mengulang kuis ini.")
+                    ->with('error', "Tunggu {$seconds} detik sebelum mengulang kuis ini.")
                     ->with('module', $module->id);
             }
         }
@@ -207,7 +205,6 @@ class QuizController extends Controller
             'total_questions' => $questions->count(),
             'started_at' => now(),
         ]);
-
         return redirect()->route('user.quiz.take', [$course, $module, $attempt]);
     }
 
@@ -377,6 +374,12 @@ class QuizController extends Controller
             $attempt->update(['completed_at' => now()]);
         }
         $this->syncProgressIfPassed($course, $module, $attempt);
+
+        // Jika dipanggil via AJAX (misal: auto-submit saat waktu habis), kembalikan JSON
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['status' => 'ok', 'redirect' => route('user.quiz.result.short', $attempt)]);
+        }
+
         return redirect()->route('user.quiz.result.short', $attempt);
     }
 

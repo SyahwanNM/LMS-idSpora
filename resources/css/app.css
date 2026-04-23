@@ -263,12 +263,15 @@
 .course-detail-page .text-danger {
     width: 100%;
     margin: 0;
+    display: flex;
 }
 
 .course-detail-page .diskon {
     background-color: #252346;
     color: #f4c430;
     padding: 10px;
+    display: flex;
+    width: 70px;
 }
 
 .course-detail-page .info-box {
@@ -315,6 +318,13 @@
     gap: 6px;
     padding: 10px;
     flex-wrap: wrap;
+}
+.diskon_course{
+    background-color: #252346;
+    color: #f4c430;
+    padding: 5px;
+    margin-left: 25px;
+
 }
 
 .course-detail-page .time-alert svg {
@@ -1690,6 +1700,9 @@ body {
         flex-direction: column;
         align-items: stretch;
     }
+    .dropdown-item{
+        background-color:var(--primary-dark);
+    }
    
     .dropdown-box {
         width: 100%;
@@ -1877,6 +1890,7 @@ body {
     width: 100%;
     object-fit: cover;
     display: block;
+    margin-top: 7px;
 }
 
 .card-image-event-wrapper {
@@ -2408,6 +2422,7 @@ label {
 .text-danger {
     width: 190px;
     font-size: medium;
+    display: flex;
 }
 
 .diskon {
@@ -2440,9 +2455,9 @@ label {
 
 .time-alert {
     display: flex;
-    align-items: center;
     font-weight: 500;
     margin-top: 5px;
+    gap: 10px;
 }
 
 .time-alert svg {
@@ -2971,6 +2986,7 @@ label {
     border-radius: 26px;
     display: block;
     margin-bottom: 40px;
+    margin-top: 20px;
 }
 
 .detail-box-right {
@@ -3346,11 +3362,13 @@ label {
 .nav-event {
     color: black;
     flex: 1;
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
+    line-height: 1.2;
     min-width: 0;
     padding: 16px 12px;
     font-size: 13px;
-    text-align: center;
-    white-space: nowrap;
 }
 
 .nav-tabs .nav-link:hover,
@@ -3479,9 +3497,10 @@ label {
 
 .resource-value h6,
 .resource-value p {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
 }
 
 .resource-card {
@@ -3494,6 +3513,7 @@ label {
     width: 100%;
     min-height: 70px;
     box-sizing: border-box;
+    flex-wrap: nowrap;
 }
 
 .resource-card .share-bi {
@@ -3530,17 +3550,19 @@ label {
 .resource-value h6 {
     margin: 0 0 4px;
     font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
 }
 
 .resource-value p {
     font-size: 12px;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
 }
 
 .box-sertif-after-event {
@@ -3577,10 +3599,15 @@ label {
 }
 .box-resources-sertif{
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
 }
 .view-sertif-event{
-    margin-left: 210px;
-    margin-top: -10px;
+    margin-left: auto;
+    margin-top: 0;
+    flex-shrink: 0;
 }
 
 @media (min-width: 1200px) {
@@ -3657,7 +3684,7 @@ label {
         
     }
     .box-sertif-after-event{
-        margin-left: 40px;
+        margin-left: 0;
     }
     .event-creator {
         margin-left: 0;
@@ -3734,7 +3761,13 @@ label {
     }
     .nav-event {
         font-size: 11px;
-        padding: 12px 6px;
+        padding: 10px 6px;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.2;
+    }
+    .desc-box .nav-tabs {
+        flex-wrap: wrap;
     }
     .tab-pane p {
         margin-left: 8px;
@@ -3781,7 +3814,10 @@ label {
     }
     .nav-event {
         font-size: 10px;
-        padding: 10px 4px;
+        padding: 8px 4px;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.2;
     }
     .stars-rating-input span {
         font-size: 28px !important;
@@ -3948,6 +3984,19 @@ textarea {
     border: none;
     padding: 15px 20px;
     margin-left: 20px;
+}
+.export-event{
+    background-color: #4b2dbf;
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    margin-left: 20px;
+}
+.export-event:hover {
+    box-shadow: 0 0 10px grey;
+}
+.export-event p{
+    margin-top: -10px;
 }
 
 .add-button:hover {
@@ -4287,7 +4336,7 @@ input[type="time"] {
 
 .recap-card {
     background-color: white;
-    padding: 20px;
+    padding: 30px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     width: 350px;
@@ -4311,6 +4360,10 @@ input[type="time"] {
 }
 
 .recap-card h3 {
+    color: #4b2dbf;
+}
+
+.recap-card h5 {
     color: #4b2dbf;
 }
 
@@ -5171,6 +5224,7 @@ input[type="time"] {
     grid-row: 1;
     justify-self: start;
     margin: 6px 0 6px 0;
+    margin-top: 10px;
 }
 
 .box_luar_kuis.quiz-take-v2.modules-closed .quiz-title-row {
@@ -5215,6 +5269,7 @@ input[type="time"] {
     font-weight: 700;
     margin: 0;
     color: #111827;
+    margin-top: 10px;
 }
 
 .box_luar_kuis.quiz-take-v2 .box_soal_kuis {
@@ -5232,6 +5287,7 @@ input[type="time"] {
     font-weight: 600;
     color: #111827;
     margin-bottom: 14px;
+    margin-top: 50px;
 }
 
 .box_luar_kuis.quiz-take-v2 .pilihan_jawaban_kuis {
@@ -5417,6 +5473,7 @@ input[type="time"] {
 
 .pertanyaan_kuis {
     margin-left: 80px;
+    text-align: justify;
 }
 
 .pilihan_jawaban_kuis {
@@ -8456,5 +8513,390 @@ textarea::placeholder {
 
     .judul_modul {
         font-size: 22px;
+    }
+}
+
+/* ============================================================
+   TAB PERTUMBUHAN EVENT — Growth Charts & Stats
+   ============================================================ */
+
+/* Wrapper: grafik kiri + grafik kanan berdampingan */
+.growth-charts-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+    .growth-charts-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Card grafik (kiri & kanan) */
+.growth-chart-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.growth-chart-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.growth-chart-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+.growth-chart-canvas-wrap {
+    position: relative;
+    height: 260px;
+}
+
+/* Badge Kelola Event & Tipe Harga di tabel */
+.growth-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.growth-badge-manage {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.growth-badge-create {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.growth-badge-free {
+    background: #f3e8ff;
+    color: #6d28d9;
+}
+
+.growth-badge-paid {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+/* ============================================================
+   RESPONSIVE — Report Course (report.blade.php)
+   ============================================================ */
+
+/* Filter bar report course */
+.box_filter_cari {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.box_filter {
+    flex-wrap: wrap;
+}
+
+.cari_pendapatan {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Tabel report course — biarkan mengisi lebar penuh */
+.tabel_pendapatan {
+    width: 100%;
+    min-width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+/* Card summary report course */
+.box_detail_laporan {
+    flex-wrap: wrap;
+}
+
+.detail_laporan {
+    flex: 1 1 calc(33% - 16px);
+    min-width: 200px;
+}
+
+/* Report course — tab + export button */
+@media (max-width: 640px) {
+    .btn_box_report {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .box_unduh {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .btn_unduh {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .detail_laporan {
+        flex: 1 1 100%;
+    }
+
+    .box_filter_cari {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .box_filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tanggal_course {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .btn_terapkan {
+        width: 100%;
+    }
+
+    .cari_course {
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    .detail_laporan {
+        flex: 1 1 calc(50% - 16px);
+    }
+
+    .box_filter_cari {
+        flex-wrap: wrap;
+    }
+
+    .tanggal_course {
+        width: 140px;
+    }
+}
+
+/* ============================================================
+   RESPONSIVE — Report Event (reports.blade.php)
+   ============================================================ */
+
+/* Recap card grid event — override inline grid */
+.recap-card-box {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px;
+    margin: 14px 0;
+}
+
+/* Filter section event */
+.filter-section {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+}
+
+.filter-kiri,
+.filter-kanan {
+    flex-wrap: wrap;
+}
+
+.filter-kanan {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    align-items: flex-end !important;
+}
+
+/* Tabel event — biarkan tabel mengisi lebar penuh, scroll hanya jika overflow */
+.tabel-pendapatan {
+    width: 100%;
+    min-width: 100%;
+}
+
+/* Wrapper table-responsive sudah menangani scroll horizontal */
+.table-responsive > .tabel-pendapatan {
+    min-width: 600px; /* pastikan kolom tidak terlalu sempit */
+}
+
+/* Tab navigation event report */
+.btn-report {
+    white-space: nowrap;
+}
+
+/* Growth charts wrapper — sudah ada di app.css, pastikan responsive */
+.growth-charts-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+/* Tablet: 641px – 1024px */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .recap-card-box {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .growth-charts-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .filter-kanan {
+        flex-wrap: wrap !important;
+    }
+
+    .filter-input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Tabel di iPad — isi penuh, tidak ada white-space nowrap */
+    .tabel-pendapatan,
+    .tabel_pendapatan {
+        white-space: normal;
+        min-width: 100%;
+        width: 100%;
+    }
+
+    .tabel-pendapatan th,
+    .tabel-pendapatan td,
+    .tabel_pendapatan th,
+    .tabel_pendapatan td {
+        white-space: normal;
+        word-break: break-word;
+    }
+}
+
+/* Mobile: ≤ 640px */
+@media (max-width: 640px) {
+    /* Recap cards — 1 kolom di mobile */
+    .recap-card-box {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Charts — stack vertikal */
+    .growth-charts-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    /* Filter — stack vertikal */
+    .filter-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .filter-kiri,
+    .filter-kanan {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-kanan {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .filter-input {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .btn-apply,
+    .btn-reset,
+    .btn-cari {
+        width: 100%;
+    }
+
+    /* Tab buttons event report */
+    .d-flex.gap-2.flex-wrap {
+        flex-wrap: wrap !important;
+    }
+
+    .btn-report {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+
+    /* Export button */
+    .btn-export-report {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Period form */
+    .d-flex.flex-wrap.align-items-end.gap-2 {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    /* Inline grid recap card event (override) */
+    [style*="grid-template-columns:repeat(3,1fr)"],
+    [style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Inline grid recap card event 2 kolom */
+    [style*="grid-template-columns:repeat(2,1fr)"],
+    [style*="grid-template-columns: repeat(2, 1fr)"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Tabel — font lebih kecil di mobile */
+    .tabel-pendapatan th,
+    .tabel-pendapatan td {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    .tabel_pendapatan th,
+    .tabel_pendapatan td {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    /* Chart canvas height lebih kecil di mobile */
+    .growth-chart-canvas-wrap {
+        height: 200px !important;
+    }
+}
+
+/* iPad Pro / Laptop kecil: 1025px – 1280px */
+@media (min-width: 1025px) and (max-width: 1280px) {
+    .recap-card-box {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .growth-charts-wrapper {
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .filter-kanan {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
     }
 }

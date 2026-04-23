@@ -56,6 +56,11 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::post('/events/{id}/feedback', [EventController::class, 'submitFeedback']);
     Route::get('/events/{id}/materials', [EventController::class, 'materials']);
 
+    // Midtrans payment endpoints untuk event
+    Route::get('/events/{id}/midtrans/pending-order', [EventController::class, 'midtransPendingOrder'])->where('id', '[0-9]+');
+    Route::get('/events/{id}/midtrans/snap-token',    [EventController::class, 'midtransSnapToken'])->where('id', '[0-9]+');
+    Route::post('/events/{id}/midtrans/finalize',     [EventController::class, 'midtransFinalize'])->where('id', '[0-9]+');
+
     // Manual Payment Endpoints
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/{id}', [PaymentController::class, 'show']);

@@ -11,6 +11,35 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* ===== RESPONSIVE — Report Course ===== */
+        @media (max-width: 1024px) {
+            .box_filter_cari { flex-wrap: wrap; gap: 10px; }
+            .box_filter { flex-wrap: wrap; }
+            .detail_laporan { flex: 1 1 calc(50% - 16px); }
+        }
+        @media (max-width: 640px) {
+            .btn_box_report { flex-direction: column; align-items: flex-start; }
+            .box_unduh { width: 100%; justify-content: flex-start; }
+            .btn_unduh { flex: 1 1 auto; justify-content: center; }
+            .detail_laporan { flex: 1 1 100%; }
+            .box_filter_cari { flex-direction: column; align-items: stretch; }
+            .box_filter { flex-direction: column; align-items: stretch; }
+            .tanggal_course { width: 100% !important; max-width: 100%; }
+            .btn_terapkan { width: 100%; }
+            .cari_course { max-width: 100%; }
+            .box_pendapatan_per_course { width: 100%; }
+            /* Summary cards */
+            .box_detail_laporan { flex-direction: column; }
+            /* Tabel */
+            .tabel_pendapatan th, .tabel_pendapatan td { font-size: 12px; padding: 5px 6px; }
+        }
+        @media (max-width: 480px) {
+            .judul_report { font-size: 1.3rem; }
+            .keterangan_judul { font-size: 14px; }
+            .btn_report, .btn_laporan { font-size: 13px; padding: 7px 10px; }
+        }
+    </style>
 </head>
 
 <body>
@@ -159,7 +188,7 @@
                         <tr>
                             <td>{{ $row['course_name'] }}</td>
                             <td>
-                                {{ $row['created_at'] ? \Carbon\Carbon::parse($row['created_at'])->format('d/m/Y') : '-' }}
+                                {{ $row['last_paid_at'] ? \Carbon\Carbon::parse($row['last_paid_at'])->format('d/m/Y') : '-' }}
                             </td>
                             <td>{{ (int)($row['participants_count'] ?? 0) }}</td>
                             <td>{{ number_format((float)($row['course_price'] ?? 0), 0, ',', '.') }}</td>
@@ -260,6 +289,7 @@
                     <thead>
                         <tr>
                             <th>Nama Course</th>
+                            <th>Tanggal Dibuat</th>
                             <th>Level</th>
                             <th>Total View</th>
                             <th>Waktu tonton rata-rata</th>
@@ -271,6 +301,7 @@
                         @forelse(($growthReport['rows'] ?? []) as $row)
                         <tr>
                             <td>{{ $row['course_name'] ?? '-' }}</td>
+                            <td>{{ $row['course_created_at'] ? \Carbon\Carbon::parse($row['course_created_at'])->format('d/m/Y') : '-' }}</td>
                             <td>{{ $row['course_level'] ?? '-' }}</td>
                             <td>{{ $row['total_views_compact'] ?? '0' }}</td>
                             <td>{{ $row['avg_watch_time_label'] ?? '0 min' }}</td>
@@ -280,7 +311,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Belum ada data.</td>
+                            <td colspan="7" class="text-center text-muted">Belum ada data.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -825,12 +856,21 @@
 
             const renderRows = (rows) => {
                 if (!Array.isArray(rows) || rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada data.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Belum ada data.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = rows.map((r) => {
                     const name = escapeHtml(r.course_name ?? '-');
+                    // Tanggal pembuatan course — tidak berubah meski filter bulan diganti
+                    const rawDate = r.course_created_at || null;
+                    let dateText = '-';
+                    if (rawDate) {
+                        const d = new Date(rawDate);
+                        if (!isNaN(d.getTime())) {
+                            dateText = d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        }
+                    }
                     const level = escapeHtml(r.course_level ?? '-');
                     const views = escapeHtml(r.total_views_compact ?? String(r.total_views ?? 0));
                     const avg = escapeHtml(r.avg_watch_time_label ?? '0 min');
@@ -840,6 +880,7 @@
                     return (
                         '<tr>' +
                         '<td>' + name + '</td>' +
+                        '<td>' + dateText + '</td>' +
                         '<td>' + level + '</td>' +
                         '<td>' + views + '</td>' +
                         '<td>' + avg + '</td>' +

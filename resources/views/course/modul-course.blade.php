@@ -494,8 +494,8 @@
 
                     $startUrl = (isset($course) && $cm) ? route('user.quiz.start', [$course, $cm]) : '#';
 
-                    // Cooldown: 2 menit setelah not pass terakhir
-                    $cooldownSeconds = 120; // 2 menit
+                    // Cooldown: 1 menit setelah attempt tidak lulus
+                    $cooldownSeconds = 60;
                     $lastFailedAttempt = $attempts->first(fn($a) => !$a->isPassed($passingPercent));
                     $cooldownEndsAt = null;
                     $inCooldown = false;
@@ -515,7 +515,7 @@
                             <li><strong>Jumlah Soal:</strong> {{ $questionCount }} pertanyaan pilihan ganda.</li>
                             <li><strong>Durasi Pengerjaan:</strong> {{ $durationText }}.</li>
                             <li><strong>Nilai Kelulusan:</strong> Minimum {{ $passingPercent }}% untuk dinyatakan lulus.</li>
-                            <li>Jika belum mencapai nilai kelulusan, Anda dapat mengulang kuis setelah 2 menit. Gunakan waktu tersebut untuk mempelajari kembali materi sebelumnya.</li>
+                            <li>Jika belum mencapai nilai kelulusan, Anda dapat mengulang kuis setelah 1 menit.</li>
                             <li>Pastikan Anda menjawab semua pertanyaan sebelum waktu habis.</li>
                         </ol>
                         <p style="margin:0;">Selamat mengerjakan dan semoga sukses!</p>
@@ -877,24 +877,21 @@
             const cancelBtn = document.getElementById('quizStartCancelBtn');
             const confirmBtn = document.getElementById('quizStartConfirmBtn');
 
-            // Cooldown countdown timer
+            // Cooldown countdown timer (1 menit)
             const cooldownTimerEl = document.getElementById('quizCooldownTimer');
             if (cooldownTimerEl && startBtn && startBtn.getAttribute('data-cooldown-ends')) {
                 const endsAt = new Date(startBtn.getAttribute('data-cooldown-ends')).getTime();
                 function tickCooldown() {
                     const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
-                    const m = Math.floor(remaining / 60);
                     const s = remaining % 60;
-                    cooldownTimerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+                    cooldownTimerEl.textContent = String(s).padStart(2,'0') + 's';
                     if (remaining <= 0) {
                         clearInterval(cooldownInterval);
-                        // Cooldown selesai — aktifkan tombol Start
                         startBtn.disabled = false;
                         startBtn.style.background = '#f4c430';
                         startBtn.style.color = '#1f2937';
                         startBtn.style.cursor = 'pointer';
                         startBtn.innerHTML = 'Start <span style="margin-left:8px;">›</span>';
-                        // Pasang event listener modal
                         startBtn.addEventListener('click', openQuizModal);
                     }
                 }
