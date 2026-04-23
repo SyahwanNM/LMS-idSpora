@@ -1,6 +1,14 @@
 @extends('layouts.admin')
 @section('title', 'Edit Event')
 @section('content')
+    <style>
+        #editEventModal label.form-label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            white-space: nowrap !important;
+        }
+    </style>
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
         </div>

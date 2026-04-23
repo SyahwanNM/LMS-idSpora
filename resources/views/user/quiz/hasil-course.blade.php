@@ -45,7 +45,32 @@
     <main class="quiz-result-page">
         <div class="box_luar_hasil">
             <div class="box_kiri_hasil">
-                <h5>Tanggal Ujian : {{ $tanggalText }}</h5>
+                <h5 id="tanggal-ujian-text">Tanggal Ujian : {{ $tanggalText }}</h5>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const dateElement = document.getElementById('tanggal-ujian-text');
+                        if (dateElement) {
+                            const now = new Date();
+                            const serverDate = new Date("{{ $completedAt->toIso8601String() }}");
+                            const diffMinutes = Math.abs(now - serverDate) / 60000;
+                            
+                            // Jika ujian baru saja diselesaikan (selisih kurang dari 60 menit),
+                            // gunakan waktu browser untuk mem-bypass selisih waktu/drift server.
+                            if (diffMinutes < 60) {
+                                const pad = (num) => num.toString().padStart(2, '0');
+                                const day = pad(now.getDate());
+                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+                                const month = months[now.getMonth()];
+                                const year = now.getFullYear();
+                                const hours = pad(now.getHours());
+                                const minutes = pad(now.getMinutes());
+                                const seconds = pad(now.getSeconds());
+                                
+                                dateElement.innerHTML = `Tanggal Ujian : ${day} ${month} ${year} pukul ${hours}:${minutes}:${seconds}`;
+                            }
+                        }
+                    });
+                </script>
 
                 @if($isTimeExpired)
                     <div style="background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:flex-start; gap:10px;">

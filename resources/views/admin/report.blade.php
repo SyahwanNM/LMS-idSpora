@@ -28,7 +28,7 @@
             .tanggal_course { width: 100% !important; max-width: 100%; }
             .btn_terapkan { width: 100%; }
             .cari_course { max-width: 100%; }
-            .box_pendapatan_per_course { width: 100%; }
+            .box_pendapatan_per_course { width: 500%; }
             /* Summary cards */
             .box_detail_laporan { flex-direction: column; }
             /* Tabel */
@@ -39,6 +39,11 @@
             .keterangan_judul { font-size: 14px; }
             .btn_report, .btn_laporan { font-size: 13px; padding: 7px 10px; }
         }
+        /* Force tabel pendapatan full width */
+        #pendapatan .table-responsive { width: 100% !important; display: block !important; }
+        #pendapatan .tabel_pendapatan { width: 100% !important; }
+        .box_luar_report { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+        #pendapatan { width: 100% !important; }
     </style>
 </head>
 
@@ -171,7 +176,7 @@
                 </div>
             </div>
             <div class="table-responsive">
-                <table class="tabel_pendapatan table table-striped table-hover align-middle">
+               <table class="tabel_pendapatan table table-striped table-hover align-middle">
                     <thead>
                         <tr>
                             <th>Nama Course</th>

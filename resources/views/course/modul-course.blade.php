@@ -484,6 +484,33 @@
                     $attempts = collect();
                     $ongoingAttempt = null;
                     if (auth()->check() && $cm) {
+                        // Selesaikan ongoing attempt yang sudah expired sebelum query attempts
+                        $rawOngoing = \App\Models\QuizAttempt::query()
+                            ->where('user_id', auth()->id())
+                            ->where('course_module_id', $cm->id)
+                            ->whereNull('completed_at')
+                            ->latest()
+                            ->first();
+
+                        if ($rawOngoing) {
+                            $isLastQuizCheck = !$course->modules()
+                                ->where('type', 'quiz')
+                                ->where('order_no', '>', $cm->order_no)
+                                ->exists();
+                            $ongoingDurSec = ($isLastQuizCheck ? 15 : 10) * 60;
+                            $ongoingStarted = $rawOngoing->started_at ?? $rawOngoing->created_at;
+                            $ongoingExpired = $ongoingStarted ? $ongoingStarted->copy()->addSeconds($ongoingDurSec) : null;
+
+                            if ($ongoingExpired && $ongoingExpired->isFuture()) {
+                                // Masih berjalan — tampilkan tombol Lanjutkan
+                                $ongoingAttempt = $rawOngoing;
+                            } else {
+                                // Sudah expired — complete sekarang agar cooldown 60s dihitung dari now()
+                                $rawOngoing->update(['completed_at' => now()]);
+                                $rawOngoing->refresh();
+                            }
+                        }
+
                         $attempts = \App\Models\QuizAttempt::query()
                             ->where('user_id', auth()->id())
                             ->where('course_module_id', $cm->id)
@@ -491,13 +518,6 @@
                             ->orderByDesc('completed_at')
                             ->limit(10)
                             ->get();
-
-                        $ongoingAttempt = \App\Models\QuizAttempt::query()
-                            ->where('user_id', auth()->id())
-                            ->where('course_module_id', $cm->id)
-                            ->whereNull('completed_at')
-                            ->latest()
-                            ->first();
                     }
 
                     $startUrl = (isset($course) && $cm) ? route('user.quiz.start', [$course, $cm]) : '#';
@@ -505,16 +525,23 @@
                         ? route('user.quiz.take', [$course, $cm, $ongoingAttempt])
                         : null;
 
-                    // Cooldown: 1 menit setelah attempt tidak lulus
+                    // Cooldown: 1 menit setelah attempt terbaru yang tidak lulus
                     $cooldownSeconds = 60;
-                    $lastFailedAttempt = $attempts->first(fn($a) => !$a->isPassed($passingPercent));
+                    $latestCompletedAttempt = $attempts->first(); // sudah orderByDesc completed_at
+                    $lastFailedAttempt = ($latestCompletedAttempt && !$latestCompletedAttempt->isPassed($passingPercent))
+                        ? $latestCompletedAttempt
+                        : null;
                     $cooldownEndsAt = null;
                     $inCooldown = false;
-                    if (!$currentQuizPassed && $lastFailedAttempt && $lastFailedAttempt->completed_at) {
+                    if (!$currentQuizPassed && !$ongoingAttempt && $lastFailedAttempt && $lastFailedAttempt->completed_at) {
                         $cooldownEndsAt = $lastFailedAttempt->completed_at->copy()->addSeconds($cooldownSeconds);
                         $inCooldown = $cooldownEndsAt->isFuture();
                     }
-                    $cooldownEndsAtIso = $cooldownEndsAt ? $cooldownEndsAt->toISOString() : null;
+                   $remainingCooldownSec = 0;
+if ($inCooldown && $cooldownEndsAt) {
+    // Hitung sisa detik murni di sisi server agar aman dari masalah zona waktu/jam PC lambat
+    $remainingCooldownSec = max(0, $cooldownEndsAt->timestamp - now()->timestamp);
+}
                 @endphp
 
                 <div class="box_luar_deskripsi_modul">
@@ -544,11 +571,11 @@
                                 </a>
                             @elseif($inCooldown)
                                 <button type="button" class="btn" id="startQuizBtn" disabled
-                                    style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
-                                    data-start-url="{{ $startUrl }}"
-                                    data-cooldown-ends="{{ $cooldownEndsAtIso }}">
-                                    Tunggu <span id="quizCooldownTimer">...</span>
-                                </button>
+    style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
+    data-start-url="{{ $startUrl }}"
+    data-cooldown-remaining="{{ $remainingCooldownSec }}">
+    Tunggu <span id="quizCooldownTimer">...</span>
+</button>
                             @else
                                 <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
                                     Start
@@ -894,30 +921,35 @@
             const confirmBtn = document.getElementById('quizStartConfirmBtn');
 
             // Cooldown countdown timer (1 menit)
-            const cooldownTimerEl = document.getElementById('quizCooldownTimer');
-            if (cooldownTimerEl && startBtn && startBtn.getAttribute('data-cooldown-ends')) {
-                const endsAt = new Date(startBtn.getAttribute('data-cooldown-ends')).getTime();
-                let cooldownDone = false;
-                function tickCooldown() {
-                    if (cooldownDone) return;
-                    const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
-                    const m = Math.floor(remaining / 60);
-                    const s = remaining % 60;
-                    cooldownTimerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-                    if (remaining <= 0) {
-                        cooldownDone = true;
-                        clearInterval(cooldownInterval);
-                        startBtn.disabled = false;
-                        startBtn.style.background = '#f4c430';
-                        startBtn.style.color = '#1f2937';
-                        startBtn.style.cursor = 'pointer';
-                        startBtn.innerHTML = 'Start <span style="margin-left:8px;">›</span>';
-                        startBtn.addEventListener('click', openQuizModal);
-                    }
-                }
-                const cooldownInterval = setInterval(tickCooldown, 1000);
-                tickCooldown();
-            }
+           // Cooldown countdown timer (1 menit)
+const cooldownTimerEl = document.getElementById('quizCooldownTimer');
+if (cooldownTimerEl && startBtn && startBtn.hasAttribute('data-cooldown-remaining')) {
+    let remaining = parseInt(startBtn.getAttribute('data-cooldown-remaining')) || 0;
+    let cooldownDone = false;
+    
+    function tickCooldown() {
+        if (cooldownDone) return;
+        
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        cooldownTimerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        
+        if (remaining <= 0) {
+            cooldownDone = true;
+            clearInterval(cooldownInterval);
+            startBtn.disabled = false;
+            startBtn.style.background = '#f4c430';
+            startBtn.style.color = '#1f2937';
+            startBtn.style.cursor = 'pointer';
+            startBtn.innerHTML = 'Start <span style="margin-left:8px;">›</span>';
+            startBtn.addEventListener('click', openQuizModal);
+        }
+        remaining--; // kurangi 1 detik setiap interval berjalan
+    }
+    
+    const cooldownInterval = setInterval(tickCooldown, 1000);
+    tickCooldown(); // panggil sekali untuk inisialisasi awal
+}
 
             function openQuizModal(e) {
                 e.preventDefault();

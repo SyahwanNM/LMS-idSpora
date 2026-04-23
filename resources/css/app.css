@@ -4180,11 +4180,14 @@ input[type="time"] {
 }
 
 .modal-add-event label.form-label {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: #333 !important;
     font-weight: 500;
     margin-bottom: 5px;
     font-size: 14px;
+    white-space: nowrap;
 }
 
 .content-event {
@@ -5874,6 +5877,14 @@ body{
 /*ADD COURSE ADMIN*/
 .box_luar_add_course {
     padding: 40px;
+}
+
+.box_luar_add_course label.form-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 0.4rem;
+    white-space: nowrap;
 }
 
 .box_link {
@@ -8615,8 +8626,6 @@ textarea::placeholder {
 .tabel_pendapatan {
     width: 100%;
     min-width: 100%;
-    overflow-x: auto;
-    display: block;
 }
 
 /* Card summary report course */

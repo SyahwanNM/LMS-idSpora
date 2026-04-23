@@ -569,6 +569,7 @@
             modulesSidebar.classList.toggle('closed', !isOpen);
             if (openModulesBtn) openModulesBtn.classList.toggle('d-none', isOpen);
             if (rootEl) rootEl.classList.toggle('modules-closed', !isOpen);
+            sessionStorage.setItem('quizSidebarOpen', isOpen ? 'true' : 'false');
         }
 
         if (closeModulesBtn) {
@@ -578,11 +579,12 @@
             openModulesBtn.addEventListener('click', () => setModulesOpen(true));
         }
 
-        // Default: sidebar tertutup saat halaman dimuat
-        setModulesOpen(false);
+        // Default: sidebar mengingat state terakhir, default awal tutup
+        const isSidebarOpen = sessionStorage.getItem('quizSidebarOpen') === 'true';
+        setModulesOpen(isSidebarOpen);
 
-        // Timer (module duration in seconds), based on server-provided endsAt
-        const endsAtIso = @json($endsAtIso ?? null);
+        // ── LOGIKA TIMER BARU (Berbasis remainingSeconds dari Server) ─────────────────
+        const remainingSeconds = @json($remainingSeconds ?? 0);
         const timerEl = document.getElementById('quizTimer');
         const finishUrl = @json($finishUrl);
         const resultUrl = @json($resultUrl);
@@ -630,19 +632,24 @@
             window.location.href = resultUrl;
         }
 
-        if (timerEl && endsAtIso) {
-            const endsAt = new Date(endsAtIso).getTime();
+        if (timerEl && remainingSeconds > 0) {
+            let currentRemaining = remainingSeconds;
+            
             const tick = () => {
-                const now = Date.now();
-                const remaining = Math.floor((endsAt - now) / 1000);
-                timerEl.textContent = formatTime(remaining);
-                if (remaining <= 0) {
+                timerEl.textContent = formatTime(currentRemaining);
+                if (currentRemaining <= 0) {
                     clearInterval(intv);
                     finishAttempt();
                 }
+                currentRemaining--; // Kurangi 1 detik
             };
-            tick();
+            
+            tick(); // Panggil pertama kali agar tidak ada jeda
             const intv = setInterval(tick, 1000);
+        } else if (timerEl && remainingSeconds <= 0) {
+            // Jika waktu dari server memang sudah habis saat halaman dimuat
+            timerEl.textContent = "00:00:00";
+            finishAttempt();
         }
     </script>
 

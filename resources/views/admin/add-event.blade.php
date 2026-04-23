@@ -79,10 +79,10 @@
                 </div>
             </div>
             <div class="d-flex align-items-end gap-2 flex-shrink-0 ms-auto mt-2 mt-md-0">
-                 <button type="button" class="export-event btn btn-danger" style="height:38px; min-width:110px;">
+                 <button type="button" class="export-event btn btn-danger" style="height:38px; min-width:110px; display:inline-flex; align-items:center; justify-content:center;">
                      <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
                  </button>
-                 <button type="button" class="export-event btn btn-success" style="height:38px; min-width:120px;">
+                 <button type="button" class="export-event btn btn-success" style="height:38px; min-width:120px; display:inline-flex; align-items:center; justify-content:center;">
                      <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
                  </button>
             </div>
@@ -213,22 +213,22 @@
                                         @if(!(bool)($event->is_published ?? false))
                                             <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline publish-form">
                                                 @csrf
-                                                <button type="button" class="btn btn-outline-success btn-action-icon publish-event-btn" data-doc-pct="{{ $pct }}" data-missing='@json($missing)' data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan">
+                                                <button type="button" class="btn btn-outline-success btn-action-icon publish-event-btn" data-doc-pct="{{ $pct }}" data-missing='@json($missing)' data-bs-toggle="tooltip" data-bs-placement="bottom" title="Terbitkan">
                                                     <i class="bi bi-megaphone"></i><span class="visually-hidden">Terbitkan</span>
                                                 </button>
                                             </form>
                                         @else
                                             <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline unpublish-form">
                                                 @csrf
-                                                <button type="button" class="btn btn-success btn-action-icon unpublish-event-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="Batal Terbitkan">
+                                                <button type="button" class="btn btn-success btn-action-icon unpublish-event-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Batal Terbitkan">
                                                     <i class="bi bi-check2-circle"></i><span class="visually-hidden">Batal Terbitkan</span>
                                                 </button>
                                             </form>
                                         @endif
-                                        <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat">
+                                        <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Lihat">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
-                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
                                             <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-action-icon"
@@ -1237,6 +1237,15 @@
             margin-bottom: 30px !important;
             margin-left: auto !important;
             margin-right: auto !important;
+        }
+
+        /* Fix asterisk position — inline with label title */
+        #addEventModal label.form-label,
+        #editEventModal label.form-label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            white-space: nowrap !important;
         }
 
         /* Modal (Upload Dokumen per Event): remove scrollbar + match logout modal look */
@@ -3305,7 +3314,7 @@ document.addEventListener('click', async function(e){
         if(!modalEl){ window.location.href = url; return; }
         // Inject forced label color styles into the modal (AJAX responses may lack page-level styles)
         try{
-            const css = `#editEventModal #editEventForm label,#editEventModal #editEventForm .form-label,#editEventModal #editEventForm small,#editEventModal #editEventForm .form-text,#editEventModal #editEventForm .input-group-text{color:#000!important} #editEventModal ::placeholder{color:#000!important;opacity:1!important} #editEventModal .modal-dialog{margin-top:8px!important;}`;
+            const css = `#editEventModal #editEventForm label,#editEventModal #editEventForm .form-label,#editEventModal #editEventForm small,#editEventModal #editEventForm .form-text,#editEventModal #editEventForm .input-group-text{color:#000!important} #editEventModal ::placeholder{color:#000!important;opacity:1!important} #editEventModal .modal-dialog{margin-top:8px!important;} #editEventModal label.form-label{display:inline-flex!important;align-items:center!important;gap:4px!important;white-space:nowrap!important;}`;
             const styleEl = document.createElement('style'); styleEl.type = 'text/css'; styleEl.appendChild(document.createTextNode(css));
             modalEl.insertBefore(styleEl, modalEl.firstChild);
         }catch(e){}

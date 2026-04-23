@@ -74,15 +74,12 @@ class PublicEventController extends Controller
 		}
 
 		// Filter: event_type (online|offline|hybrid)
-		// online  = has zoom_link, no physical location
-		// offline = no zoom_link, has physical location
-		// hybrid  = has both zoom_link and physical location
+		// online  = has zoom_link
+		// offline = no zoom_link, has location
+		// hybrid  = has both zoom_link and location
 		if ($type = $request->get('event_type')) {
 			if ($type === 'online') {
-				$query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
-					->where(function ($q) {
-						$q->whereNull('location')->orWhere('location', '');
-					});
+				$query->whereNotNull('zoom_link')->where('zoom_link', '!=', '');
 			} elseif ($type === 'offline') {
 				$query->where(function ($q) {
 					$q->whereNull('zoom_link')->orWhere('zoom_link', '');

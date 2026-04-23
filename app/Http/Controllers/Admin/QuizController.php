@@ -176,7 +176,24 @@ class QuizController extends Controller
             ->first();
 
         if ($existingAttempt) {
-            return redirect()->route('user.quiz.take', [$course, $module, $existingAttempt]);
+            // Cek apakah attempt sudah expired
+            $isLastQuiz = !$course->modules()
+                ->where('type', 'quiz')
+                ->where('order_no', '>', $module->order_no)
+                ->exists();
+            $durationSeconds = ($isLastQuiz ? 15 : 10) * 60;
+
+            $startedAt = $existingAttempt->started_at ?? $existingAttempt->created_at;
+            $expiredAt = $startedAt ? $startedAt->copy()->addSeconds($durationSeconds) : null;
+
+            if ($expiredAt && $expiredAt->isPast()) {
+                // Attempt sudah expired — auto-complete dengan waktu sekarang agar cooldown 60s dihitung dari sekarang
+                $existingAttempt->update(['completed_at' => now()]);
+                $this->syncProgressIfPassed($course, $module, $existingAttempt);
+                $existingAttempt = null;
+            } else {
+                return redirect()->route('user.quiz.take', [$course, $module, $existingAttempt]);
+            }
         }
 
         // Cooldown check: 1 menit setelah attempt terakhir yang tidak lulus
@@ -224,6 +241,19 @@ class QuizController extends Controller
             $attempt->refresh();
         }
 
+        // Auto-complete jika attempt sudah expired
+        $isLastQuiz = !$course->modules()
+            ->where('type', 'quiz')
+            ->where('order_no', '>', $module->order_no)
+            ->exists();
+        $durationSeconds = ($isLastQuiz ? 15 : 10) * 60;
+        $expiredAt = $attempt->started_at->copy()->addSeconds($durationSeconds);
+        if ($expiredAt->isPast()) {
+            $attempt->update(['completed_at' => now()]);
+            $this->syncProgressIfPassed($course, $module, $attempt);
+            return redirect()->route('user.quiz.result.short', $attempt);
+        }
+
         $questions = $module->quizQuestions()->with('answers')->get();
 
         if ($questions->count() === 0) {
@@ -251,22 +281,22 @@ class QuizController extends Controller
             }
         }
 
-        // Timer: duration di course_module disimpan dalam MENIT
-        // 15 menit untuk kuis terakhir, 10 menit untuk kuis lainnya (jika duration tidak di-set)
-        $durationMinutes = (int) ($module->duration ?? 0);
-        if ($durationMinutes <= 0) {
-            // Cek apakah ini kuis terakhir di course
-            $isLastQuiz = !$course->modules()
-                ->where('type', 'quiz')
-                ->where('order_no', '>', $module->order_no)
-                ->exists();
-            $durationMinutes = $isLastQuiz ? 15 : 10;
-        }
+        // Timer: kuis terakhir = 15 menit, kuis lainnya = 10 menit (selalu override nilai DB)
+        $isLastQuiz = !$course->modules()
+            ->where('type', 'quiz')
+            ->where('order_no', '>', $module->order_no)
+            ->exists();
+        $durationMinutes = $isLastQuiz ? 15 : 10;
         $durationSeconds = $durationMinutes * 60;
 
-        $endsAtIso = null;
+        // HITUNG SISA DETIK DARI SERVER (Mencegah bug beda waktu lokal vs server)
+        $remainingSeconds = 0;
         if ($attempt->started_at) {
-            $endsAtIso = $attempt->started_at->copy()->addSeconds($durationSeconds)->toISOString();
+            $endsAt = $attempt->started_at->copy()->addSeconds($durationSeconds);
+            $remainingSeconds = (int) ceil(now()->diffInSeconds($endsAt, false));
+            if ($remainingSeconds < 0) {
+                $remainingSeconds = 0;
+            }
         }
 
         $currentQuestion = $questions[$currentQuestionIndex];
@@ -279,7 +309,7 @@ class QuizController extends Controller
             'currentQuestion' => $currentQuestion,
             'currentQuestionIndex' => $currentQuestionIndex,
             'answeredQuestionIds' => $answeredQuestionIds,
-            'endsAtIso' => $endsAtIso,
+            'remainingSeconds' => $remainingSeconds, // Variabel baru untuk view
         ]);
     }
 

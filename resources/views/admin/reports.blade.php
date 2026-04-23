@@ -122,8 +122,6 @@
                 </div>
                 <div class="d-flex gap-2 align-items-end">
                     <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
-                    <a href="{{ $isPastPrev ? '#' : url()->current().'?period='.$periodFmt($prevDate) }}" class="btn btn-outline-secondary btn-sm {{ $isPastPrev ? 'disabled' : '' }}" style="height:38px;">&laquo; {{ $prevDate->translatedFormat('F Y') }}</a>
-                    <a href="{{ $isFutureNext ? '#' : url()->current().'?period='.$periodFmt($nextDate) }}" class="btn btn-outline-secondary btn-sm {{ $isFutureNext ? 'disabled' : '' }}" style="height:38px;">{{ $nextDate->translatedFormat('F Y') }} &raquo;</a>
                 </div>
                 <div class="ms-auto d-flex align-items-center gap-2">
                     <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-pendapatan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
@@ -416,14 +414,6 @@
                     </div>
                     <div class="d-flex gap-2 align-items-end">
                         <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
-                        @php
-                            $prevOp = (clone $selectedDate)->subMonth();
-                            $nextOp = (clone $selectedDate)->addMonth();
-                            $curr = \Carbon\Carbon::now()->startOfMonth();
-                            $isFut = $nextOp->gt($curr);
-                        @endphp
-                        <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
-                        <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
                     </div>
                     <div class="ms-auto d-flex align-items-center gap-2">
                         <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
@@ -433,31 +423,47 @@
             </div>
 
             <h5 class="title-laporan-metrik">Metrik Operasional Rinci</h5>
-            <div class="filter-section" id="filters-pertumbuhan">
-                <div class="filter-kiri">
-                    <div class="filter-group" style="padding-left:50px;">
-                        <div style="display:flex; gap:6px; align-items:center; position:relative;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
-                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                            </svg>
-                            <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event...">
-                        </div>
+            <div class="filter-section" id="filters-pertumbuhan" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px; margin-bottom:10px;">
+                <div class="filter-group">
+                    <label class="filter-label">Cari Event</label>
+                    <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                        </svg>
+                        <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event..." style="min-width:160px;">
                     </div>
                 </div>
-                <div class="filter-kanan">
-                    <div class="filter-group">
-                        <label for="date-from-pertumbuhan" class="filter-label">Dari Tanggal</label>
-                        <div class="filter-date-group">
-                            <input type="date" id="date-from-pertumbuhan" class="filter-input">
-                        </div>
+                <div class="filter-group">
+                    <label for="filter-kelola-pertumbuhan" class="filter-label">Kelola Event</label>
+                    <select id="filter-kelola-pertumbuhan" class="filter-input" style="min-width:130px;">
+                        <option value="">Semua Tipe</option>
+                        <option value="manage">Manage</option>
+                        <option value="create">Create</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-harga-pertumbuhan" class="filter-label">Tipe Harga</label>
+                    <select id="filter-harga-pertumbuhan" class="filter-input" style="min-width:130px;">
+                        <option value="">Semua Harga</option>
+                        <option value="paid">Berbayar</option>
+                        <option value="free">Free</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="date-from-pertumbuhan" class="filter-label">Dari Tanggal</label>
+                    <div class="filter-date-group">
+                        <input type="date" id="date-from-pertumbuhan" class="filter-input">
                     </div>
-                    <div class="filter-group">
-                        <label for="date-to-pertumbuhan" class="filter-label">Sampai Tanggal</label>
-                        <div class="filter-date-group">
-                            <input type="date" id="date-to-pertumbuhan" class="filter-input">
-                        </div>
+                </div>
+                <div class="filter-group">
+                    <label for="date-to-pertumbuhan" class="filter-label">Sampai Tanggal</label>
+                    <div class="filter-date-group">
+                        <input type="date" id="date-to-pertumbuhan" class="filter-input">
                     </div>
-                    <div class="filter-actions"><button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d;">Reset</button></div>
+                </div>
+                <div class="filter-group" style="justify-content:flex-end;">
+                    <label class="filter-label">&nbsp;</label>
+                    <button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d; width:auto; padding:6px 16px; align-self:flex-start;">Reset</button>
                 </div>
             </div>
 
@@ -483,6 +489,8 @@
                             data-participants="{{ $row['participants'] }}"
                             data-event-rating="{{ $row['event_rating'] ?? '' }}"
                             data-speaker-rating="{{ $row['speaker_rating'] ?? '' }}"
+                            data-manage="{{ strtolower(trim($row['manage_action'] ?? 'create')) }}"
+                            data-is-free="{{ ($row['is_free'] ?? true) ? 'free' : 'paid' }}"
                             data-title="{{ $row['name'] }}">
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['date'] ?? '-' }}</td>
@@ -957,12 +965,11 @@ document.addEventListener('DOMContentLoaded', function(){
         const {
             searchInput, dateFromInput, dateToInput, applyBtn, searchBtn, resetBtn, tableSelector
         } = config;
+        const extraFilters = config.extraFilters || [];
         const table = document.querySelector(tableSelector);
         if(!table) return;
         const rows = Array.from(table.querySelectorAll('tbody tr'));
         function matches(row){
-            // Prefer explicit data-name (already lowercased server-side),
-            // but fall back to first cell text when attribute is missing.
             const nameAttr = row.getAttribute('data-name') || '';
             const name = (nameAttr ? nameAttr : (row.querySelector('td')?.textContent || '')).toLowerCase();
             const rawDateAttr = row.getAttribute('data-date') || '';
@@ -972,8 +979,16 @@ document.addEventListener('DOMContentLoaded', function(){
             const fromVal = dateFromInput?.value || '';
             const toVal = dateToInput?.value || '';
 
-            // Name filter
             if(searchVal && !name.includes(searchVal)) return false;
+
+            // Extra dropdown filters
+            for(const f of extraFilters){
+                const val = (f.el?.value || '').trim();
+                if(val){
+                    const rowVal = (row.getAttribute(f.attr) || '').toLowerCase();
+                    if(rowVal !== val) return false;
+                }
+            }
 
             // Generic parser: supports YYYY-MM-DD, YYYY/MM/DD and DD/MM/YYYY
             function parseToTimestamp(s){
@@ -1057,11 +1072,13 @@ document.addEventListener('DOMContentLoaded', function(){
         if(resetBtn) resetBtn.addEventListener('click', () => {
             if(dateFromInput) dateFromInput.value='';
             if(dateToInput) dateToInput.value='';
+            extraFilters.forEach(f => { if(f.el) f.el.value=''; });
             apply();
         });
         if(searchBtn) searchBtn.addEventListener('click', apply);
         if(searchInput) searchInput.addEventListener('keyup', debounce(apply,300));
         [dateFromInput,dateToInput].forEach(inp => inp && inp.addEventListener('change', apply));
+        extraFilters.forEach(f => f.el && f.el.addEventListener('change', apply));
     }
 
     function debounce(fn, delay){
@@ -1085,7 +1102,11 @@ document.addEventListener('DOMContentLoaded', function(){
             applyBtn: document.getElementById('btn-apply-pertumbuhan'),
             searchBtn: document.getElementById('btn-cari-pertumbuhan'),
             resetBtn: document.getElementById('btn-reset-pertumbuhan'),
-            tableSelector: '#pertumbuhan table.tabel-pendapatan'
+            tableSelector: '#pertumbuhan table.tabel-pendapatan',
+            extraFilters: [
+                { el: document.getElementById('filter-kelola-pertumbuhan'), attr: 'data-manage' },
+                { el: document.getElementById('filter-harga-pertumbuhan'), attr: 'data-is-free' },
+            ]
         },
         {
             searchInput: document.getElementById('filter-event-operasional'),

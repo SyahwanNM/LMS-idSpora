@@ -610,12 +610,7 @@ class CourseController extends Controller
         ])->withCount('enrollments')->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         if ($month !== '') {
@@ -697,12 +692,7 @@ class CourseController extends Controller
             ->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         $periodName = 'Semua Data';
