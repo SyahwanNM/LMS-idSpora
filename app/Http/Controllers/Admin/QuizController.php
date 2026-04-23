@@ -251,16 +251,18 @@ class QuizController extends Controller
             }
         }
 
-        // Timer: 15 menit untuk kuis terakhir, 10 menit untuk kuis lainnya (jika duration tidak di-set)
-        $durationSeconds = (int) ($module->duration ?? 0);
-        if ($durationSeconds <= 0) {
+        // Timer: duration di course_module disimpan dalam MENIT
+        // 15 menit untuk kuis terakhir, 10 menit untuk kuis lainnya (jika duration tidak di-set)
+        $durationMinutes = (int) ($module->duration ?? 0);
+        if ($durationMinutes <= 0) {
             // Cek apakah ini kuis terakhir di course
             $isLastQuiz = !$course->modules()
                 ->where('type', 'quiz')
                 ->where('order_no', '>', $module->order_no)
                 ->exists();
-            $durationSeconds = $isLastQuiz ? 900 : 600; // 15 menit atau 10 menit
+            $durationMinutes = $isLastQuiz ? 15 : 10;
         }
+        $durationSeconds = $durationMinutes * 60;
 
         $endsAtIso = null;
         if ($attempt->started_at) {

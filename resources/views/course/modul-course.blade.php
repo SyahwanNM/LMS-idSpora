@@ -482,6 +482,7 @@
                     $beforeQuizTitle = $beforeQuizTitle ?: ($cm->title ?? 'materi sebelumnya');
 
                     $attempts = collect();
+                    $ongoingAttempt = null;
                     if (auth()->check() && $cm) {
                         $attempts = \App\Models\QuizAttempt::query()
                             ->where('user_id', auth()->id())
@@ -490,9 +491,19 @@
                             ->orderByDesc('completed_at')
                             ->limit(10)
                             ->get();
+
+                        $ongoingAttempt = \App\Models\QuizAttempt::query()
+                            ->where('user_id', auth()->id())
+                            ->where('course_module_id', $cm->id)
+                            ->whereNull('completed_at')
+                            ->latest()
+                            ->first();
                     }
 
                     $startUrl = (isset($course) && $cm) ? route('user.quiz.start', [$course, $cm]) : '#';
+                    $continueUrl = ($ongoingAttempt && isset($course) && $cm)
+                        ? route('user.quiz.take', [$course, $cm, $ongoingAttempt])
+                        : null;
 
                     // Cooldown: 1 menit setelah attempt tidak lulus
                     $cooldownSeconds = 60;
@@ -526,6 +537,11 @@
                                     style="background:#eafff3; color:#16a34a; border-radius:999px; padding:10px 18px; font-weight:800; cursor:not-allowed;">
                                     Anda telah lulus kuis ini
                                 </button>
+                            @elseif($ongoingAttempt)
+                                <a href="{{ $continueUrl }}" class="btn" style="background:#252346; color:#f4c430; border-radius:999px; padding:10px 18px; font-weight:700;">
+                                    Lanjutkan
+                                    <span style="margin-left:8px;">›</span>
+                                </a>
                             @elseif($inCooldown)
                                 <button type="button" class="btn" id="startQuizBtn" disabled
                                     style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
@@ -881,11 +897,15 @@
             const cooldownTimerEl = document.getElementById('quizCooldownTimer');
             if (cooldownTimerEl && startBtn && startBtn.getAttribute('data-cooldown-ends')) {
                 const endsAt = new Date(startBtn.getAttribute('data-cooldown-ends')).getTime();
+                let cooldownDone = false;
                 function tickCooldown() {
+                    if (cooldownDone) return;
                     const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+                    const m = Math.floor(remaining / 60);
                     const s = remaining % 60;
-                    cooldownTimerEl.textContent = String(s).padStart(2,'0') + 's';
+                    cooldownTimerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
                     if (remaining <= 0) {
+                        cooldownDone = true;
                         clearInterval(cooldownInterval);
                         startBtn.disabled = false;
                         startBtn.style.background = '#f4c430';

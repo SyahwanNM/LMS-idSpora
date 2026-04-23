@@ -8211,7 +8211,7 @@ textarea::placeholder {
     display: flex;
     flex-direction: column;
     gap: 18px;
-    padding-top: 6px;
+    padding-top: 24px;
 }
 
 /* Scope accordion styling to module page only (avoid affecting quiz page) */
@@ -8309,7 +8309,7 @@ textarea::placeholder {
     background: #fff;
     border: 1px solid #f1f5f9;
     border-radius: 18px;
-    padding: 14px 16px;
+    padding: 24px 20px 18px;
     box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
 }
 
