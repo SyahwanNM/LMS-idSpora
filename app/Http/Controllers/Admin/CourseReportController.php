@@ -374,6 +374,7 @@ class CourseReportController extends Controller
                 'course_id' => $courseId,
                 'course_name' => (string) $r->name,
                 'course_level' => $r->level,
+                'course_created_at' => $r->created_at ? \Carbon\Carbon::parse($r->created_at)->toDateString() : null,
                 'total_views' => $totalViews,
                 'total_views_compact' => $this->formatCompactNumber($totalViews),
                 'participants_count' => $participantsCount,
@@ -385,21 +386,18 @@ class CourseReportController extends Controller
             ];
         });
 
-        if ($q === '') {
-            // Pre-fetch created_at to avoid N+1
-            $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
-                ->pluck('created_at', 'id');
+        // Selalu filter berdasarkan created_at course sesuai periode yang dipilih.
+        // Berlaku baik saat ada search query maupun tidak.
+        $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
+            ->pluck('created_at', 'id');
 
-            $rows = $rows->filter(function($row) use ($from, $to, $courseCreatedMap) {
-                if ($row['total_views'] > 0 || $row['avg_watch_minutes'] > 0 || $row['comments_count'] > 0) return true;
-                $createdAt = $courseCreatedMap->get($row['course_id']);
-                if ($createdAt) {
-                    $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
-                    return $created->between($from, $to);
-                }
-                return false;
-            });
-        }
+        $rows = $rows->filter(function ($row) use ($from, $to, $courseCreatedMap) {
+            $createdAt = $courseCreatedMap->get($row['course_id']);
+            if (!$createdAt) return false;
+            $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
+            return $created->between($from, $to);
+        });
+
         $rows = $rows->values();
 
         $baseEnrollments = Enrollment::query()
@@ -564,9 +562,11 @@ class CourseReportController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $rows = $courses->map(function ($c) use ($stats) {
+        $rows = $courses->map(function ($c) use ($stats, $from, $to) {
             $stat = $stats->get($c->id);
 
+            // Hanya tampilkan course yang memiliki transaksi di periode yang dipilih
+            // Course tanpa transaksi di periode ini tetap ditampilkan tapi dengan nilai 0
             $expense = 0.0;
             $expensesArr = $c->expenses_json;
             if (is_array($expensesArr)) {
@@ -586,12 +586,17 @@ class CourseReportController extends Controller
                 'transactions_count' => $stat ? (int) $stat->transactions_count : 0,
                 'revenue_total' => $stat ? (float) $stat->revenue_total : 0.0,
                 'expense_total' => $expense,
+                // Tanggal transaksi terakhir di periode ini, bukan tanggal pembuatan course
                 'last_paid_at' => $stat && $stat->last_paid_at
                     ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString()
-                    : $c->created_at?->toDateString(),
+                    : null,
                 'created_at' => $c->created_at,
+                'has_transaction_in_period' => $stat !== null,
             ];
         });
+
+        // Filter: hanya tampilkan course yang punya transaksi di periode yang dipilih
+        $rows = $rows->filter(fn($row) => $row['has_transaction_in_period']);
 
         // Show all courses (no period filter) — filter only by search query if provided
         if (isset($q) && $q !== '') {

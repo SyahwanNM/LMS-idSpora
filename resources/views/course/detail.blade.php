@@ -294,6 +294,7 @@
 
   .time-alert .ikon {
     margin-top: 0;
+    display: flex;
   }
 
   .time-alert p {
@@ -1534,40 +1535,36 @@
           @if($isFreeCourse)
             <h4 class="price-text">GRATIS</h4>
           @elseif($hasDiscount)
-            <span
-              class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
-            <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
-          @else
-            <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
-          @endif
-          @if(!$isFreeCourse && $hasDiscount)
-            <div class="box-diskon">
-              <div class="time-alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
-                  viewBox="0 0 16 16">
-                  <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
-                  <path
-                    d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
-                </svg>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+              <div>
+                <span class="text-muted text-decoration-line-through" style="font-size:15px;">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                <h4 class="price-text" style="margin:4px 0;">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
                 @php
-                  $now = \Carbon\Carbon::now();
                   $discountEnd = $course->discount_end ? \Carbon\Carbon::parse($course->discount_end) : null;
-                  $daysLeft = $discountEnd && $discountEnd->isFuture() ? (int) ceil($now->floatDiffInDays($discountEnd)) : null;
+                  $daysLeft = $discountEnd && $discountEnd->isFuture() ? (int) ceil(\Carbon\Carbon::now()->floatDiffInDays($discountEnd)) : null;
                 @endphp
-                @if($hasDiscount && $discountEnd && $daysLeft !== null && $daysLeft > 1)
-                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span> <span style="font-size:13px;">{{ $daysLeft }} days left</span></p>
-                @elseif($hasDiscount && $discountEnd && $daysLeft === 1)
-                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span> <span style="font-size:13px;">1 day left</span></p>
-                @elseif($hasDiscount && $discountEnd && $daysLeft === 0)
-                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span> <span style="font-size:13px;">Last day!</span></p>
-                @elseif($hasDiscount && !$discountEnd)
-                  <p class="text-danger"><span style="font-weight:700;font-size:13px;">🔥 Limited Offer!</span></p>
-                @endif
-                @if($hasDiscount)
-                  <small class="diskon">{{ $course->discount_percent }}% OFF</small>
-                @endif
+                <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-alarm" viewBox="0 0 16 16">
+                    <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/>
+                    <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/>
+                  </svg>
+                  @if($daysLeft !== null && $daysLeft > 1)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">{{ $daysLeft }} days left at this price!</span>
+                  @elseif($daysLeft === 1)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">1 day left at this price!</span>
+                  @elseif($daysLeft === 0)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">Last day!</span>
+                  @elseif(!$discountEnd)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">Limited Offer!</span>
+                  @endif
+                </div>
+              </div>
+              <div style="flex-shrink:0;">
+                <span style="display:inline-block; background:#252346; color:#f4c430; font-weight:700; font-size:15px; padding:10px 18px; border-radius:6px; letter-spacing:0.5px;">{{ $course->discount_percent }}% off</span>
               </div>
             </div>
+          @else
+            <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
           @endif
           <hr>
           <div class="info-box">
@@ -1590,7 +1587,7 @@
               <p class="location-text">{{ $course->students_count ?? 0 }}</p>
             </div>
             <div class="bahasa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#black"
                 class="ikon bi bi-journal-text" viewBox="0 0 20 20">
                 <path
                   d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
@@ -1603,7 +1600,7 @@
               <p class="bahasa-text">{{ $courseLanguage ?? 'Indonesia' }}</p>
             </div>
             <div class="sertifikat">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="var(--secondary)"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black"
                 class="ikon bi bi-book" viewBox="0 0 20 20">
                 <path
                   d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783" />

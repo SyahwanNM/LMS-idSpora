@@ -35,8 +35,8 @@
 
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
-    <div class="box_luar_kuis quiz-take-v2" id="quizTakeRoot">
-        <div class="box_kuis_kiri quiz-modules">
+    <div class="box_luar_kuis quiz-take-v2" id="quizTakeRoot" class="modules-closed">
+        <div class="box_kuis_kiri quiz-modules closed">
             @php
                 $modulesList = $course->modules()->orderBy('order_no')->get();
                 $passingPercent = 75;
@@ -278,7 +278,7 @@
         <div class="box_kuis_kanan">
             <div class="quiz-title-row" style="margin-top: 24px;">
                 <div class="quiz-title-left">
-                    <button type="button" class="quiz-modules-open d-none" id="openModulesBtn" aria-label="Buka daftar modul">
+                    <button type="button" class="quiz-modules-open" id="openModulesBtn" aria-label="Buka daftar modul">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                             <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
                         </svg>
@@ -288,10 +288,10 @@
             </div>
 
             <div class="box_soal_kuis">
-                <div id="quizHeaderBlock" style="margin-bottom:12px;">
+                <div id="quizHeaderBlock" style="margin-bottom:12px; margin-top: 30px;">
                     <p class="waktu_kuis" id="quizTimer">--:--:--</p>
                     <div class="quiz-sidebar-heading" style="margin-top: 8px; margin-bottom:6px; font-weight:600;">Questions</div>
-                    <div class="nomor_kuis" style="margin-bottom: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <div class="nomor_kuis" style="margin-bottom: 16px;margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
                         @foreach($questions as $idx => $q)
                             @php
                                 $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
@@ -578,6 +578,9 @@
             openModulesBtn.addEventListener('click', () => setModulesOpen(true));
         }
 
+        // Default: sidebar tertutup saat halaman dimuat
+        setModulesOpen(false);
+
         // Timer (module duration in seconds), based on server-provided endsAt
         const endsAtIso = @json($endsAtIso ?? null);
         const timerEl = document.getElementById('quizTimer');
@@ -610,16 +613,20 @@
 
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             try {
+                // Gunakan keepalive agar fetch tidak di-cancel saat browser navigasi
                 await fetch(finishUrl, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': token || '',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
+                    keepalive: true,
                 });
             } catch (e) {
-                // ignore
+                // ignore network errors
             }
+            // Tunggu sebentar agar database commit selesai sebelum redirect
+            await new Promise(resolve => setTimeout(resolve, 600));
             window.location.href = resultUrl;
         }
 

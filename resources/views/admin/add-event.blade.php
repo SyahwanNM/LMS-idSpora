@@ -28,8 +28,8 @@
         </div>
 
         <div class="card shadow-sm"><div class="card-body">
-            {{-- Month keys removed: using native month picker instead of precomputed list --}}
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-start mb-3 gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
                 <div class="d-flex flex-column" style="max-width:420px">
                     <small class="text-muted fw-semibold mb-1">Cari Nama</small>
                     <div class="input-group">
@@ -77,6 +77,15 @@
                         <button type="button" id="clearMonthFilter" class="btn btn-outline-secondary" title="Reset filter bulan"><i class="bi bi-x-circle"></i></button>
                     </div>
                 </div>
+            </div>
+            <div class="d-flex align-items-end gap-2 flex-shrink-0 ms-auto mt-2 mt-md-0">
+                 <button type="button" class="export-event btn btn-danger" style="height:38px; min-width:110px;">
+                     <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                 </button>
+                 <button type="button" class="export-event btn btn-success" style="height:38px; min-width:120px;">
+                     <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                 </button>
+            </div>
             </div>
             @if(isset($events) && $events->count())
                 <div class="table-responsive">
@@ -252,8 +261,7 @@
                     const val = manageSel.value || '';
                     const invalid = (val === '' || val === null);
                     if(manageHelp){ manageHelp.style.display = invalid ? 'block' : 'none'; }
-                    return !invalid;
-                };
+                    return !invalid;                };
                 manageSel.addEventListener('change', checkManage);
                 form.addEventListener('submit', function(e){ if(!checkManage()){ e.preventDefault(); manageSel.focus(); } });
             }
@@ -317,6 +325,214 @@
                 currentMonth = 'all';
                 applyFilters();
             });
+
+            // ===== EXPORT PDF & EXCEL =====
+            // Guard: hanya inisialisasi sekali meski script dirender berkali-kali
+            if (!window.__manageEventExportInitialized) {
+                window.__manageEventExportInitialized = true;
+
+            const exportBtns = document.querySelectorAll('.export-event');
+            const exportPdfBtn  = exportBtns[0] ?? null;
+            const exportExcelBtn = exportBtns[1] ?? null;
+
+            function getFilterLabel(){
+                const parts = [];
+                const s = document.getElementById('eventSearch')?.value?.trim();
+                if(s) parts.push('Cari: "' + s + '"');
+                const st = document.getElementById('statusFilter')?.value;
+                if(st && st !== 'all') parts.push('Status: ' + st);
+                const mg = document.getElementById('manageFilter')?.value;
+                if(mg && mg !== 'all') parts.push('Tipe: ' + mg);
+                const mo = document.getElementById('eventMonthFilter')?.value;
+                if(mo) {
+                    const [y,m] = mo.split('-');
+                    const label = new Date(+y, +m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+                    parts.push('Bulan: ' + label);
+                }
+                return parts.length ? parts.join(' · ') : 'Semua Event';
+            }
+
+            function buildExportTable(){
+                // Ambil hanya baris yang terlihat
+                const visibleRows = rows.filter(r => r.style.display !== 'none');
+                const headers = ['No', 'Judul', 'Pembicara', 'Tanggal', 'Lokasi', 'Tipe Kelola', 'Reseller', 'Kelengkapan'];
+
+                const table = document.createElement('table');
+                table.style.cssText = 'border-collapse:collapse; width:100%; font-size:10px; font-family:Arial,sans-serif; table-layout:fixed;';
+
+                // Lebar kolom proporsional agar tidak overflow
+                const colgroup = document.createElement('colgroup');
+                ['4%','18%','14%','12%','14%','10%','10%','18%'].forEach(w => {
+                    const col = document.createElement('col');
+                    col.style.width = w;
+                    colgroup.appendChild(col);
+                });
+                table.appendChild(colgroup);
+
+                // Header
+                const thead = table.createTHead();
+                const hRow = thead.insertRow();
+                headers.forEach(h => {
+                    const th = document.createElement('th');
+                    th.textContent = h;
+                    th.style.cssText = 'background:#1e3a5f; color:#fff; padding:6px 7px; border:1px solid #1e3a5f; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+                    hRow.appendChild(th);
+                });
+
+                // Body
+                const tbody = table.createTBody();
+                const tdBase = 'padding:5px 7px; border:1px solid #d1d5db; vertical-align:middle; overflow:hidden;';
+
+                visibleRows.forEach((row, idx) => {
+                    const cells = row.querySelectorAll('td');
+                    const tr = tbody.insertRow();
+                    tr.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#f3f4f6';
+
+                    // No
+                    const tdNo = tr.insertCell();
+                    tdNo.textContent = idx + 1;
+                    tdNo.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+
+                    // Judul
+                    const tdJudul = tr.insertCell();
+                    tdJudul.textContent = cells[1]?.textContent?.trim() ?? '-';
+                    tdJudul.style.cssText = tdBase + 'font-weight:600; word-break:break-word;';
+
+                    // Pembicara
+                    const tdPembicara = tr.insertCell();
+                    tdPembicara.textContent = cells[3]?.textContent?.trim() ?? '-';
+                    tdPembicara.style.cssText = tdBase + 'word-break:break-word;';
+
+                    // Tanggal
+                    const tdTanggal = tr.insertCell();
+                    tdTanggal.textContent = cells[4]?.textContent?.trim() ?? '-';
+                    tdTanggal.style.cssText = tdBase + 'white-space:nowrap;';
+
+                    // Lokasi
+                    const tdLokasi = tr.insertCell();
+                    tdLokasi.textContent = cells[5]?.textContent?.trim() ?? '-';
+                    tdLokasi.style.cssText = tdBase + 'word-break:break-word;';
+
+                    // Tipe Kelola
+                    const tdManage = tr.insertCell();
+                    const manageVal = row.getAttribute('data-manage') || '-';
+                    tdManage.textContent = manageVal === 'manage' ? 'Manage' : manageVal === 'create' ? 'Create' : manageVal;
+                    tdManage.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+
+                    // Reseller
+                    const tdReseller = tr.insertCell();
+                    tdReseller.textContent = cells[7]?.textContent?.trim() ?? '-';
+                    tdReseller.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+
+                    // Kelengkapan
+                    const tdDoc = tr.insertCell();
+                    const docSpan = cells[8]?.querySelector('.doc-pct');
+                    const docSmall = cells[8]?.querySelector('small');
+                    tdDoc.textContent = (docSpan?.textContent?.trim() ?? '') + ' ' + (docSmall?.textContent?.trim() ?? '');
+                    tdDoc.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+                });
+
+                return table;
+            }
+
+            // Export PDF
+            exportPdfBtn && exportPdfBtn.addEventListener('click', function(){
+                if(typeof window.html2pdf !== 'function'){
+                    alert('Library html2pdf belum dimuat. Coba refresh halaman.');
+                    return;
+                }
+                const filterLabel = getFilterLabel();
+                const printDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+                const table = buildExportTable();
+
+                const printable = document.createElement('div');
+                printable.style.cssText = 'width:880px; padding:16px 24px; background:#fff; color:#111827; font-family:Arial,sans-serif; box-sizing:border-box; font-size:10px; margin:0 auto;';
+                printable.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:3px solid #1e3a5f;">
+                        <div>
+                            <div style="font-size:16px; font-weight:700; color:#1e3a5f;">Laporan Manage Event</div>
+                            <div style="font-size:11px; color:#6b7280; margin-top:3px;">Filter: <strong style="color:#111827;">${filterLabel}</strong></div>
+                        </div>
+                        <div style="text-align:right; font-size:10px; color:#9ca3af; line-height:1.6;">
+                            <div style="font-weight:600; color:#374151; font-size:12px;">LMS IdSpora</div>
+                            <div>Dicetak: ${printDate}</div>
+                        </div>
+                    </div>`;
+                printable.appendChild(table);
+
+                const footer = document.createElement('div');
+                footer.style.cssText = 'margin-top:12px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:9px; color:#9ca3af; display:flex; justify-content:space-between;';
+                footer.innerHTML = `<span>LMS IdSpora — Manage Event</span><span>${printDate}</span>`;
+                printable.appendChild(footer);
+
+                const offscreen = document.createElement('div');
+                offscreen.style.cssText = 'position:fixed; left:0; top:-9999px; z-index:-1;';
+                offscreen.appendChild(printable);
+                document.body.appendChild(offscreen);
+
+                window.html2pdf().set({
+                    margin: [8, 14, 8, 14],
+                    filename: 'manage-event-' + new Date().toISOString().slice(0,10) + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, windowWidth: 920, useCORS: true, logging: false, x: 0, y: 0 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                }).from(printable).save().then(() => offscreen.remove()).catch(() => offscreen.remove());
+            });
+
+            // Export Excel
+            exportExcelBtn && exportExcelBtn.addEventListener('click', function(){
+                if(!window.XLSX){
+                    alert('Library XLSX belum dimuat. Coba refresh halaman.');
+                    return;
+                }
+                const filterLabel = getFilterLabel();
+                const printDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+                const visibleRows = rows.filter(r => r.style.display !== 'none');
+
+                const headers = ['No', 'Judul', 'Pembicara', 'Tanggal', 'Lokasi', 'Tipe Kelola', 'Reseller', 'Kelengkapan'];
+                const data = [
+                    ['Laporan Manage Event'],
+                    ['Filter: ' + filterLabel],
+                    ['Dicetak: ' + printDate],
+                    [],
+                    headers,
+                ];
+
+                visibleRows.forEach((row, idx) => {
+                    const cells = row.querySelectorAll('td');
+                    const manageVal = row.getAttribute('data-manage') || '-';
+                    const docSpan = cells[8]?.querySelector('.doc-pct');
+                    const docSmall = cells[8]?.querySelector('small');
+                    data.push([
+                        idx + 1,
+                        cells[1]?.textContent?.trim() ?? '-',
+                        cells[3]?.textContent?.trim() ?? '-',
+                        cells[4]?.textContent?.trim() ?? '-',
+                        cells[5]?.textContent?.trim() ?? '-',
+                        manageVal === 'manage' ? 'Manage' : manageVal === 'create' ? 'Create' : manageVal,
+                        cells[7]?.textContent?.trim() ?? '-',
+                        (docSpan?.textContent?.trim() ?? '') + ' ' + (docSmall?.textContent?.trim() ?? ''),
+                    ]);
+                });
+
+                const wb = window.XLSX.utils.book_new();
+                const ws = window.XLSX.utils.aoa_to_sheet(data);
+
+                // Merge judul di baris pertama
+                if(!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s:{r:0,c:0}, e:{r:0,c:7} });
+
+                // Lebar kolom
+                ws['!cols'] = [
+                    {wch:5}, {wch:30}, {wch:20}, {wch:15}, {wch:20},
+                    {wch:12}, {wch:10}, {wch:15}
+                ];
+
+                window.XLSX.utils.book_append_sheet(wb, ws, 'Manage Event');
+                window.XLSX.writeFile(wb, 'manage-event-' + new Date().toISOString().slice(0,10) + '.xlsx');
+            });
+
+            } // end guard __manageEventExportInitialized
         });
         </script>
                     <div class="modal-dialog modal-dialog-centered">
@@ -1097,6 +1313,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/id.js"></script>
+    <!-- Export libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
@@ -1128,10 +1347,9 @@
             }
             function applyValidity(){
                 const raw = norm(inputEl.value);
-                if(!raw){ inputEl.setCustomValidity(''); if(invalidEl) invalidEl.style.display = 'none'; return; }
-                const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
-                inputEl.setCustomValidity(ok ? '' : 'Tidak valid');
-                if(invalidEl) invalidEl.style.display = ok ? 'none' : 'block';
+                // Validasi dihilangkan: user boleh input materi bebas (tidak harus dari daftar)
+                inputEl.setCustomValidity('');
+                if(invalidEl) invalidEl.style.display = 'none';
             }
 
             inputEl.addEventListener('input', () => { show(filter(inputEl.value)); applyValidity(); });
